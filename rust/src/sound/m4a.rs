@@ -19,8 +19,6 @@
 )]
 
 #[unsafe(no_mangle)]
-pub static mut SoundMainRAM_Buffer: crate::ffi::Align4<[u8; 2048]> = crate::ffi::Align4([0; 2048]);
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gSoundInfo: crate::ffi::Align4<[u8; 4016]> = crate::ffi::Align4([0; 4016]);
 #[unsafe(no_mangle)]
@@ -59,7 +57,6 @@ pub static mut gMPlayMemAccArea: crate::ffi::Align4<[u8; 16]> = crate::ffi::Alig
 pub static mut gMPlayInfo_SE3: crate::ffi::Align4<[u8; 64]> = crate::ffi::Align4([0; 64]);
 
 unsafe extern "C" {
-    static mut SoundMainRAM: u8;
     static mut gCgb3Vol: u8;
     static mut gCgbFreqTable: u8;
     static mut gCgbScaleTable: u8;
@@ -156,30 +153,8 @@ pub unsafe extern "C" fn MPlayFadeOut(mplayInfo: *mut u8, speed: u16) {
 pub unsafe extern "C" fn m4aSoundInit() {
     unsafe {
         let mut i: i32 = 0i32;
-        'l1: loop {
-            'l2: {
-                'l3: loop {
-                    'l4: {
-                        CpuSet(
-                            (((((&raw mut SoundMainRAM).cast::<u8>()) as usize as i32) & (-2i32))
-                                as usize as *mut u8),
-                            ((&raw mut SoundMainRAM_Buffer).cast::<u8>()).cast::<u8>(),
-                            (67108864u32
-                                | (crate::c::div_u32(
-                                    2048u32,
-                                    ((crate::c::div_i32(32i32, 8i32)) as u32),
-                                ) & 2097151u32)),
-                        );
-                    }
-                    if !((0i32) != 0) {
-                        break 'l3;
-                    }
-                }
-            }
-            if !((0i32) != 0) {
-                break 'l1;
-            }
-        }
+        // The mixer (m4a_mixer.rs) is linked into IWRAM and copied there by
+        // Init, so there is no SoundMainRAM_Buffer to copy it into here.
         SoundInit((&raw mut gSoundInfo).cast::<u8>());
         MPlayExtender(((&raw mut gCgbChans).cast::<u8>()).cast::<u8>());
         m4aSoundMode(9749760u32);

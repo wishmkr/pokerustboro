@@ -66,7 +66,6 @@ SECTIONS {
     lib_text :
     ALIGN(4)
     {
-        src/m4a_1.o(.text);
         *rust_builtins.a:*.o(.text*);
     } > ROM =0
 
@@ -106,6 +105,18 @@ SECTIONS {
     ALIGN(4)
     {
     } > ROM =0
+
+    /* Code that runs from IWRAM (the sound mixer). Stored at the end of the
+       ROM, copied to the end of the IWRAM variables by Init. */
+    iwram_code :
+    ALIGN(4)
+    {
+        __iwram_code_start = .;
+        *(.iwram_code .iwram_code.*);
+        . = ALIGN(4);
+        __iwram_code_end = .;
+    } > IWRAM AT> ROM
+    __iwram_code_lma = LOADADDR(iwram_code);
 
     /* DWARF debug sections.
        Symbols in the DWARF debugging sections are relative to the beginning

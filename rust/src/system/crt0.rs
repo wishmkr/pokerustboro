@@ -7,7 +7,8 @@
 
 /// Reset entry: sets up the IRQ and System mode stacks, installs
 /// [`IntrMain`] as the interrupt handler, clears RAM and registers with the
-/// BIOS (`RegisterRamReset(RESET_ALL)`), then runs `AgbMain`, forever.
+/// BIOS (`RegisterRamReset(RESET_ALL)`), copies the `.iwram_code` section
+/// (the sound mixer) from ROM to IWRAM, then runs `AgbMain`, forever.
 #[cfg(target_arch = "arm")]
 #[unsafe(no_mangle)]
 #[unsafe(naked)]
@@ -25,6 +26,14 @@ pub unsafe extern "C" fn Init() {
         "str r0, [r1]",
         "mov r0, #255",            // RESET_ALL
         "svc #0x10000",            // RegisterRamReset (ARM encoding of svc 1)
+        "ldr r0, =__iwram_code_lma", // copy the IWRAM code from ROM
+        "ldr r1, =__iwram_code_start",
+        "ldr r2, =__iwram_code_end",
+        "1:",
+        "cmp r1, r2",
+        "ldrlo r3, [r0], #4",
+        "strlo r3, [r1], #4",
+        "blo 1b",
         "ldr r1, ={agb_main}",
         "mov lr, pc",
         "bx r1",

@@ -521,7 +521,7 @@ RUST_SRCS := $(shell find $(RUST_SUBDIR)/src -name "*.rs")
 RUST_OBJS := $(C_BUILDDIR)/rust.o
 
 # Assembly files whose code now lives in the Rust crate.
-RUST_PORTED_ASM := rom_header.s crt0.s libgcnmultiboot.s
+RUST_PORTED_ASM := rom_header.s crt0.s libgcnmultiboot.s m4a_1.s
 C_ASM_SRCS := $(filter-out $(RUST_PORTED_ASM:%=$(C_SUBDIR)/%),$(wildcard $(C_SUBDIR)/*.s $(C_SUBDIR)/*/*.s $(C_SUBDIR)/*/*/*.s))
 C_ASM_OBJS := $(patsubst $(C_SUBDIR)/%.s,$(C_BUILDDIR)/%.o,$(C_ASM_SRCS))
 
@@ -664,16 +664,6 @@ endif
 
 $(C_BUILDDIR)/%.o: $(C_SUBDIR)/%.s
 	$(PREPROC) $< charmap.txt | $(CPP) $(INCLUDE_SCANINC_ARGS) - | $(PREPROC) -ie $< charmap.txt | $(AS) $(ASFLAGS) -o $@
-
-# m4a_1.s still provides the mixer (SoundMain, SoundMainRAM); its sequencer
-# routines are Rust now (m4a_engine.rs), so the assembly's copies are made weak.
-M4A_1_RUST := umul3232H32 SoundMainBTM RealClearChain ply_fine MPlayJumpTableCopy \
-	ply_goto ply_patt ply_pend ply_rept ply_prio ply_tempo ply_keysh ply_voice ply_vol \
-	ply_pan ply_bend ply_bendr ply_lfodl ply_modt ply_tune ply_port m4aSoundVSync MPlayMain \
-	TrackStop ChnVolSetAsm ply_note ply_endtie clear_modM ply_lfos ply_mod
-$(C_BUILDDIR)/m4a_1.o: $(C_SUBDIR)/m4a_1.s
-	$(PREPROC) $< charmap.txt | $(CPP) $(INCLUDE_SCANINC_ARGS) - | $(PREPROC) -ie $< charmap.txt | $(AS) $(ASFLAGS) -o $@
-	$(OBJCOPY) $(addprefix --weaken-symbol=,$(M4A_1_RUST)) $@
 
 $(C_BUILDDIR)/%.d: $(C_SUBDIR)/%.s
 	$(SCANINC) -M $@ -g $(ASSETS_DIR_NAME) $(INCLUDE_SCANINC_ARGS) -I "" $<

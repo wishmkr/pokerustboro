@@ -132,7 +132,9 @@ pub static mut gIntrTable: Align4<[usize; INTR_COUNT]> = Align4([0; INTR_COUNT])
 pub static mut gLinkVSyncDisabled: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut IntrMain_Buffer: Align4<[u32; 0x200]> = Align4([0; 0x200]);
+// IntrMain is 0x15C bytes with its literal pool (the C build reserved
+// 0x800); rustcheck.sh checks that it still fits.
+pub static mut IntrMain_Buffer: Align4<[u32; 0x80]> = Align4([0; 0x80]);
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gPcmDmaCounter: i8 = 0;
@@ -383,7 +385,7 @@ pub unsafe extern "C" fn InitIntrHandlers() {
     let dma3 = 0x0400_00d4 as *mut u32;
     unsafe { dma3.write_volatile(crate::crt0::IntrMain as *const () as usize as u32) };
     unsafe { dma3.add(1).write_volatile(buffer as usize as u32) };
-    unsafe { dma3.add(2).write_volatile((0x8400 << 16) | 0x200) };
+    unsafe { dma3.add(2).write_volatile((0x8400 << 16) | 0x80) };
     unsafe { dma3.add(2).read_volatile() };
     unsafe { INTR_VECTOR.write_volatile(buffer) };
     unsafe { SetVBlankCallback(None) };

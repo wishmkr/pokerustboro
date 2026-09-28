@@ -356,6 +356,8 @@ mod lottery_corner;
 mod m4a;
 #[path = "sound/m4a_engine.rs"]
 mod m4a_engine;
+#[path = "sound/m4a_mixer.rs"]
+mod m4a_mixer;
 #[path = "menus/mail.rs"]
 mod mail;
 #[path = "menus/mail_data.rs"]

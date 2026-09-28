@@ -34,6 +34,5 @@ image (a Rust compiler cannot produce that); it plays the same game.
 |---|---|
 | `rust/src/` | the game, grouped by subject (`battle/`, `field/`, `menus/`, `sound/`, `system/`...); `rust/src/data/` holds the constant tables |
 | `graphics/`, `sound/`, `data/` | assets, as in pret/pokeemerald |
-| `src/m4a_1.s` | the sound mixer, the last piece still in assembly |
 | `tools/`, `Makefile`, `*.mk`, `ld_script_modern.ld` | pret's asset tools and build rules |
 | `include/`, `constants/`, `asm/` | constants and macros the data files are assembled with |
