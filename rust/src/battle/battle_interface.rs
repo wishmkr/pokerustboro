@@ -3,37 +3,166 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    clippy::missing_transmute_annotations,
+    clippy::unnecessary_cast,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::battle_anim_mons::{GetBattlerPosition, GetBattlerSide, IsDoubleBattle};
+use crate::battle_gfx_sfx_util::LoadBattleBarGfx;
+use crate::battle_main::{
+    gBattleSpritesDataPtr, gBattleStruct, gBattleTypeFlags, gBattlersCount, gMonSpritesGfxPtr,
+};
+use crate::battle_main::{
+    gBattlerPartyIndexes, gBattlerPositions, gDisplayedStringBattle, gHealthboxSpriteIds,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::gpu_regs::SetGpuReg;
+use crate::menu::AddTextPrinterParameterized4;
+use crate::palette::FillPalette;
+use crate::pokedex::GetSetPokedexFlag;
+use crate::pokemon::{
+    GetMonData2, GetMonData3, GetMonGender, GetNature, SpeciesToNationalPokedexNum, gEnemyParty,
+    gPlayerParty,
+};
+use crate::safari_zone::gNumSafariBalls;
+use crate::sound::{PlaySE1WithPanning, PlaySE2WithPanning, PlaySE12WithPanning};
+use crate::sprite::gSprites;
+use crate::string_util::StringGet_Nickname;
+use crate::task::{DestroyTask, TaskDummy};
+use crate::task::{task_get, task_set, task_set_func};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{FillWindowPixelBuffer, GetWindowAttribute, RemoveWindow};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateSpriteAtEnd` with this module's view of its types.
+#[inline]
+unsafe fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSpriteAtEnd(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `DestroySpriteAndFreeResources` with this module's view of its types.
+#[inline]
+unsafe fn DestroySpriteAndFreeResources(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySpriteAndFreeResources(a0 as _);
+    }
+}
+/// `FreeSpriteOamMatrix` with this module's view of its types.
+#[inline]
+unsafe fn FreeSpriteOamMatrix(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::FreeSpriteOamMatrix(a0 as _);
+    }
+}
+/// `GetStringRightAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringRightAlignXOffset(a0, a1 as _, a2) }
+}
+/// `LoadCompressedSpriteSheetUsingHeap` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheetUsingHeap(a0 as _) }
+}
+/// `LoadSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
+    unsafe { crate::sprite::LoadSpritePalette(a0 as _) }
+}
+/// `LoadSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
+    unsafe { crate::sprite::LoadSpriteSheet(a0 as _) }
+}
+/// `RenderTextHandleBold` with this module's view of its types.
+#[inline]
+unsafe fn RenderTextHandleBold(a0: *mut u8, a1: u8, a2: *mut u8) -> u8 {
+    unsafe { crate::text::RenderTextHandleBold(a0 as _, a1, a2 as _) }
+}
+/// `SetSubspriteTables` with this module's view of its types.
+#[inline]
+unsafe fn SetSubspriteTables(a0: *mut Sprite, a1: *mut SubspriteTable) {
+    unsafe {
+        crate::sprite::SetSubspriteTables(a0 as _, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StringAppend` with this module's view of its types.
+#[inline]
+unsafe fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringAppend(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringCompare` with this module's view of its types.
+#[inline]
+unsafe fn StringCompare(a0: *mut u8, a1: *mut u8) -> i32 {
+    unsafe { crate::string_util::StringCompare(a0 as _, a1 as _) }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const tBattler: usize = 0;
+const tSummaryBarSpriteId: usize = 1;
+const hBar_HealthBoxSpriteId: usize = 5;
+const hMain_HealthBarSpriteId: usize = 5;
+const hOther_HealthBoxSpriteId: usize = 5;
+const hBar_Data6: usize = 6;
+const hMain_Battler: usize = 6;
+const hMain_Data7: usize = 7;
+const tIsBattleStart: usize = 10;
+const tBlend: usize = 15;
 // Data tables (translate with cdata.py): sOamData_64x32 sHealthboxPlayerSpriteTemplates sHealthboxOpponentSpriteTemplates sHealthboxSafariSpriteTemplate sOamData_Healthbar sHealthbarSpriteTemplates sUnused_Subsprites_0 sUnused_Subsprites_2 sUnused_Subsprites_1 sUnused_Subsprites_3 sHealthBar_Subsprites_Player sHealthBar_Subsprites_Opponent sUnused_SubspriteTable sHealthBar_SubspriteTables sStatusSummaryBar_Subsprites_Enter sStatusSummaryBar_Subsprites_Exit sStatusSummaryBar_SubspriteTable_Enter sStatusSummaryBar_SubspriteTable_Exit sUnusedStatusSummary sStatusSummaryBarSpriteSheet sStatusSummaryBarSpritePal sStatusSummaryBallsSpritePal sStatusSummaryBallsSpriteSheet sOamData_Unused64x32 sOamData_StatusSummaryBalls sStatusSummaryBarSpriteTemplates sStatusSummaryBallsSpriteTemplates sEmptyWhiteText_GrayHighlight sEmptyWhiteText_TransparentHighlight sStatusIconColors sHealthboxWindowTemplate
 
 /// `struct TestingBar`
@@ -50,11 +179,11 @@ pub struct TestingBar {
 impl TestingBar {
     #[inline(always)]
     pub fn unkC_0(&self) -> u32 {
-        ((self.bits_12 as u32 >> 0) & 0x1f) as u32
+        (self.bits_12 as u32) & 0x1f
     }
     #[inline(always)]
     pub fn set_unkC_0(&mut self, v: u32) {
-        self.bits_12 = (self.bits_12 & !(0x1f << 0)) | ((v as u8 & 0x1f) << 0);
+        self.bits_12 = (self.bits_12 & !0x1f) | (v as u8 & 0x1f);
     }
 }
 
@@ -147,109 +276,28 @@ static sStatusSummaryBar_SubspriteTable_Enter: Table<CArray<SubspriteTable, 1>> 
 static sStatusSummaryBar_SubspriteTable_Exit: Table<CArray<SubspriteTable, 1>> =
     Table((&raw const crate::data::battle_interface::sStatusSummaryBar_SubspriteTable_Exit).cast());
 
-unsafe extern "C" {
-    static mut gBattleSpritesDataPtr: *mut BattleSpriteData;
-    static mut gBattleStruct: *mut BattleStruct;
-    static mut gBattleTypeFlags: u32;
-    static mut gBattlerPartyIndexes: CArray<u16, 4>;
-    static mut gBattlerPositions: CArray<u8, 4>;
-    static mut gBattlersCount: u8;
-    static gBitTable: CArray<u32, 0>;
-    static mut gDisplayedStringBattle: CArray<u8, 300>;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static gExperienceTables: CArray<CArray<u32, 101>, 0>;
-    static gHealthboxElementsGfxTable: CArray<CArray<u8, 32>, 0>;
-    static mut gHealthboxSpriteIds: CArray<u8, 4>;
-    static mut gMonSpritesGfxPtr: *mut MonSpritesGfx;
-    static gNatureNamePointers: CArray<*mut u8, 0>;
-    static mut gNumSafariBalls: u8;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_HealthboxGender_Female: CArray<u8, 0>;
-    static gText_HealthboxGender_Male: CArray<u8, 0>;
-    static gText_HealthboxGender_None: CArray<u8, 0>;
-    static gText_HealthboxNickname: CArray<u8, 0>;
-    static gText_SafariBallLeft: CArray<u8, 0>;
-    static gText_SafariBalls: CArray<u8, 0>;
-    static gText_Slash: CArray<u8, 0>;
-    fn AddTextPrinterParameterized4(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: i8,
-        a8: *mut u8,
-    );
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroySpriteAndFreeResources(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn FillPalette(a0: u16, a1: u16, a2: u16);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FreeSpriteOamMatrix(a0: *mut Sprite);
-    fn GetBattlerPosition(a0: u8) -> u8;
-    fn GetBattlerSide(a0: u8) -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetMonGender(a0: *mut Pokemon) -> u8;
-    fn GetNature(a0: *mut Pokemon) -> u8;
-    fn GetSetPokedexFlag(a0: u16, a1: u8) -> i8;
-    fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetWindowAttribute(a0: u8, a1: u8) -> u32;
-    fn IsDoubleBattle() -> u8;
-    fn LoadBattleBarGfx(a0: u8);
-    fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8;
-    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
-    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
-    fn PlaySE12WithPanning(a0: u16, a1: i8);
-    fn PlaySE1WithPanning(a0: u16, a1: i8);
-    fn PlaySE2WithPanning(a0: u16, a1: i8);
-    fn RemoveWindow(a0: u8);
-    fn RenderTextHandleBold(a0: *mut u8, a1: u8, a2: *mut u8) -> u8;
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetSubspriteTables(a0: *mut Sprite, a1: *mut SubspriteTable);
-    fn SpeciesToNationalPokedexNum(a0: u16) -> u16;
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCompare(a0: *mut u8, a1: *mut u8) -> i32;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringGet_Nickname(a0: *mut u8) -> *mut u8;
-    fn TaskDummy(a0: u8);
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
 }
 
-pub(crate) unsafe extern "C" fn DummiedOutFunction(
-    unused1: i16,
-    unused2: i16,
-    unused3: i32,
-) -> i32 {
-    return 9;
+unsafe fn DummiedOutFunction(unused1: i16, unused2: i16, unused3: i32) -> i32 {
+    9
 }
-pub(crate) unsafe extern "C" fn Debug_DrawNumber(mut number: i16, mut dest: *mut u16, unk: u8) {
-    let mut i: i8 = 0;
+unsafe fn Debug_DrawNumber(mut number: i16, dest: *mut u16, unk: u8) {
     let mut j: i8 = 0;
     let mut buff: CArray<u8, 4> = zeroed();
-    i = 0;
-    while i < 4 {
+    for i in 0..4i8 {
         buff[i] = 0;
-        i += 1;
     }
-    i = 3;
+    let mut i: i8 = 3;
     loop {
         if number > 0 {
             buff[i] = (number % 10) as u8;
-            number = number / 10;
+            number /= 10;
         } else {
             while i > -1 {
                 buff[i] = 0xFF;
@@ -263,57 +311,47 @@ pub(crate) unsafe extern "C" fn Debug_DrawNumber(mut number: i16, mut dest: *mut
         i -= 1;
     }
     if unk == 0 {
-        i = 0;
         j = 0;
-        while i < 4 {
+        for i in 0..4i8 {
             if buff[j] == 0xFF {
-                *dest.at(j as i32 + 0x00) &= 0xFC00;
-                *dest.at(j as i32 + 0x00) |= 0x1E;
+                *dest.at(j as i32) &= 0xFC00;
+                *dest.at(j as i32) |= 0x1E;
                 *dest.at(i as i32 + 0x20) &= 0xFC00;
                 *dest.at(i as i32 + 0x20) |= 0x1E;
             } else {
-                *dest.at(j as i32 + 0x00) &= 0xFC00;
-                *dest.at(j as i32 + 0x00) |= 0x14 + buff[j] as u16;
+                *dest.at(j as i32) &= 0xFC00;
+                *dest.at(j as i32) |= 0x14 + buff[j] as u16;
                 *dest.at(i as i32 + 0x20) &= 0xFC00;
                 *dest.at(i as i32 + 0x20) |= 0x34 + buff[i] as u16;
             }
             j += 1;
-            i += 1;
         }
     } else {
-        i = 0;
-        while i < 4 {
+        for i in 0..4i8 {
             if buff[i] == 0xFF {
-                *dest.at(i as i32 + 0x00) &= 0xFC00;
-                *dest.at(i as i32 + 0x00) |= 0x1E;
+                *dest.at(i as i32) &= 0xFC00;
+                *dest.at(i as i32) |= 0x1E;
                 *dest.at(i as i32 + 0x20) &= 0xFC00;
                 *dest.at(i as i32 + 0x20) |= 0x1E;
             } else {
-                *dest.at(i as i32 + 0x00) &= 0xFC00;
-                *dest.at(i as i32 + 0x00) |= 0x14 + buff[i] as u16;
+                *dest.at(i as i32) &= 0xFC00;
+                *dest.at(i as i32) |= 0x14 + buff[i] as u16;
                 *dest.at(i as i32 + 0x20) &= 0xFC00;
                 *dest.at(i as i32 + 0x20) |= 0x34 + buff[i] as u16;
             }
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn Debug_DrawNumberPair(
-    number1: i16,
-    number2: i16,
-    mut dest: *mut u16,
-) {
+unsafe fn Debug_DrawNumberPair(number1: i16, number2: i16, dest: *mut u16) {
     *dest.at(4) = 0x1E;
     Debug_DrawNumber(number2, dest, FALSE);
     Debug_DrawNumber(number1, dest.at(5), TRUE);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateBattlerHealthboxSprites(battler: u8) -> u8 {
+pub unsafe fn CreateBattlerHealthboxSprites(battler: u8) -> u8 {
     let mut data6: i16 = 0;
     let mut healthboxLeftSpriteId: u8 = 0;
     let mut healthboxRightSpriteId: u8 = 0;
-    let mut healthbarSpriteId: u8 = 0;
-    let mut healthBarSpritePtr: *mut Sprite = null_mut();
     if IsDoubleBattle() == 0 {
         if GetBattlerSide(battler) == B_SIDE_PLAYER {
             healthboxLeftSpriteId = CreateSprite(
@@ -407,13 +445,13 @@ pub unsafe extern "C" fn CreateBattlerHealthboxSprites(battler: u8) -> u8 {
             data6 = 2;
         }
     }
-    healthbarSpriteId = CreateSpriteAtEnd(
+    let healthbarSpriteId: u8 = CreateSpriteAtEnd(
         (&raw const sHealthbarSpriteTemplates[gBattlerPositions[battler]]).cast_mut(),
         140,
         60,
         0,
     );
-    healthBarSpritePtr = &raw mut gSprites[healthbarSpriteId];
+    let healthBarSpritePtr: *mut Sprite = &raw mut gSprites[healthbarSpriteId];
     SetSubspriteTables(
         healthBarSpritePtr,
         (&raw const sHealthBar_SubspriteTables[GetBattlerSide(battler)]).cast_mut(),
@@ -432,19 +470,17 @@ pub unsafe extern "C" fn CreateBattlerHealthboxSprites(battler: u8) -> u8 {
     (*healthBarSpritePtr).data[5] = healthboxLeftSpriteId as i16;
     (*healthBarSpritePtr).data[6] = data6;
     (*healthBarSpritePtr).set_invisible(TRUE as u16);
-    return healthboxLeftSpriteId;
+    healthboxLeftSpriteId
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateSafariPlayerHealthboxSprites() -> u8 {
-    let mut healthboxLeftSpriteId: u8 = 0;
-    let mut healthboxRightSpriteId: u8 = 0;
-    healthboxLeftSpriteId = CreateSprite(
+pub unsafe fn CreateSafariPlayerHealthboxSprites() -> u8 {
+    let healthboxLeftSpriteId: u8 = CreateSprite(
         (&raw const *sHealthboxSafariSpriteTemplate).cast_mut(),
         DISPLAY_WIDTH as i16,
         DISPLAY_HEIGHT as i16,
         1,
     );
-    healthboxRightSpriteId = CreateSpriteAtEnd(
+    let healthboxRightSpriteId: u8 = CreateSpriteAtEnd(
         (&raw const *sHealthboxSafariSpriteTemplate).cast_mut(),
         DISPLAY_WIDTH as i16,
         DISPLAY_HEIGHT as i16,
@@ -458,16 +494,19 @@ pub unsafe extern "C" fn CreateSafariPlayerHealthboxSprites() -> u8 {
         .oam
         .set_tileNum(gSprites[healthboxRightSpriteId].oam.tileNum() + 64);
     gSprites[healthboxLeftSpriteId].oam.affineParam = healthboxRightSpriteId as u16;
-    gSprites[healthboxRightSpriteId].data[5] = healthboxLeftSpriteId as i16;
+    gSprites[healthboxRightSpriteId].data[hOther_HealthBoxSpriteId] = healthboxLeftSpriteId as i16;
     gSprites[healthboxRightSpriteId].callback = Some(SpriteCB_HealthBoxOther);
-    return healthboxLeftSpriteId;
+    healthboxLeftSpriteId
 }
-pub(crate) unsafe extern "C" fn GetHealthboxElementGfxPtr(elementId: u8) -> *mut u8 {
-    return gHealthboxElementsGfxTable[elementId].as_ptr().cast_mut();
+unsafe fn GetHealthboxElementGfxPtr(elementId: u8) -> *mut u8 {
+    (*(&raw const crate::data::graphics::gHealthboxElementsGfxTable)
+        .cast::<CArray<CArray<u8, 32>, 0>>())[elementId]
+        .as_ptr()
+        .cast_mut()
 }
-pub(crate) unsafe extern "C" fn SpriteCB_HealthBar(sprite: *mut Sprite) {
-    let mut healthboxSpriteId: u8 = (*sprite).data[5] as u8;
-    match (*sprite).data[6] {
+pub(crate) unsafe fn SpriteCB_HealthBar(sprite: *mut Sprite) {
+    let healthboxSpriteId: u8 = (*sprite).data[hBar_HealthBoxSpriteId] as u8;
+    match (*sprite).data[hBar_Data6] {
         0 => {
             (*sprite).x = gSprites[healthboxSpriteId].x + 16;
             (*sprite).y = gSprites[healthboxSpriteId].y;
@@ -484,15 +523,14 @@ pub(crate) unsafe extern "C" fn SpriteCB_HealthBar(sprite: *mut Sprite) {
     (*sprite).x2 = gSprites[healthboxSpriteId].x2;
     (*sprite).y2 = gSprites[healthboxSpriteId].y2;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_HealthBoxOther(sprite: *mut Sprite) {
-    let mut healthboxMainSpriteId: u8 = (*sprite).data[5] as u8;
+pub(crate) unsafe fn SpriteCB_HealthBoxOther(sprite: *mut Sprite) {
+    let healthboxMainSpriteId: u8 = (*sprite).data[hOther_HealthBoxSpriteId] as u8;
     (*sprite).x = gSprites[healthboxMainSpriteId].x + 64;
     (*sprite).y = gSprites[healthboxMainSpriteId].y;
     (*sprite).x2 = gSprites[healthboxMainSpriteId].x2;
     (*sprite).y2 = gSprites[healthboxMainSpriteId].y2;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBattleBarStruct(
+pub unsafe fn SetBattleBarStruct(
     battler: u8,
     healthboxSpriteId: u8,
     maxVal: i32,
@@ -506,41 +544,35 @@ pub unsafe extern "C" fn SetBattleBarStruct(
     (*(*gBattleSpritesDataPtr).battleBars.at(battler)).currValue = -32768;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetHealthboxSpriteInvisible(healthboxSpriteId: u8) {
+pub unsafe fn SetHealthboxSpriteInvisible(healthboxSpriteId: u8) {
     gSprites[healthboxSpriteId].set_invisible(TRUE as u16);
-    gSprites[gSprites[healthboxSpriteId].data[5]].set_invisible(TRUE as u16);
+    gSprites[gSprites[healthboxSpriteId].data[hMain_HealthBarSpriteId]].set_invisible(TRUE as u16);
     gSprites[gSprites[healthboxSpriteId].oam.affineParam].set_invisible(TRUE as u16);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetHealthboxSpriteVisible(healthboxSpriteId: u8) {
+pub unsafe fn SetHealthboxSpriteVisible(healthboxSpriteId: u8) {
     gSprites[healthboxSpriteId].set_invisible(FALSE as u16);
-    gSprites[gSprites[healthboxSpriteId].data[5]].set_invisible(FALSE as u16);
+    gSprites[gSprites[healthboxSpriteId].data[hMain_HealthBarSpriteId]].set_invisible(FALSE as u16);
     gSprites[gSprites[healthboxSpriteId].oam.affineParam].set_invisible(FALSE as u16);
 }
-pub(crate) unsafe extern "C" fn UpdateSpritePos(spriteId: u8, x: i16, y: i16) {
+unsafe fn UpdateSpritePos(spriteId: u8, x: i16, y: i16) {
     gSprites[spriteId].x = x;
     gSprites[spriteId].y = y;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DestoryHealthboxSprite(healthboxSpriteId: u8) {
+pub unsafe fn DestoryHealthboxSprite(healthboxSpriteId: u8) {
     DestroySprite(&raw mut gSprites[gSprites[healthboxSpriteId].oam.affineParam]);
-    DestroySprite(&raw mut gSprites[gSprites[healthboxSpriteId].data[5]]);
+    DestroySprite(&raw mut gSprites[gSprites[healthboxSpriteId].data[hMain_HealthBarSpriteId]]);
     DestroySprite(&raw mut gSprites[healthboxSpriteId]);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DummyBattleInterfaceFunc(
-    healthboxSpriteId: u8,
-    isDoubleBattleBattlerOnly: u8,
-) {
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateOamPriorityInAllHealthboxes(priority: u8) {
+pub unsafe fn DummyBattleInterfaceFunc(healthboxSpriteId: u8, isDoubleBattleBattlerOnly: u8) {}
+pub unsafe fn UpdateOamPriorityInAllHealthboxes(priority: u8) {
     let mut i: i32 = 0;
-    i = 0;
     while i < gBattlersCount as i32 {
-        let mut healthboxLeftSpriteId: u8 = gHealthboxSpriteIds[i];
-        let mut healthboxRightSpriteId: u8 = gSprites[gHealthboxSpriteIds[i]].oam.affineParam as u8;
-        let mut healthbarSpriteId: u8 = gSprites[gHealthboxSpriteIds[i]].data[5] as u8;
+        let healthboxLeftSpriteId: u8 = gHealthboxSpriteIds[i];
+        let healthboxRightSpriteId: u8 = gSprites[gHealthboxSpriteIds[i]].oam.affineParam as u8;
+        let healthbarSpriteId: u8 =
+            gSprites[gHealthboxSpriteIds[i]].data[hMain_HealthBarSpriteId] as u8;
         gSprites[healthboxLeftSpriteId]
             .oam
             .set_priority(priority as u16);
@@ -554,7 +586,7 @@ pub unsafe extern "C" fn UpdateOamPriorityInAllHealthboxes(priority: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitBattlerHealthboxCoords(battler: u8) {
+pub unsafe fn InitBattlerHealthboxCoords(battler: u8) {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
     if IsDoubleBattle() == 0 {
@@ -588,27 +620,23 @@ pub unsafe extern "C" fn InitBattlerHealthboxCoords(battler: u8) {
     }
     UpdateSpritePos(gHealthboxSpriteIds[battler], x, y);
 }
-pub(crate) unsafe extern "C" fn UpdateLvlInHealthbox(healthboxSpriteId: u8, lvl: u8) {
+unsafe fn UpdateLvlInHealthbox(healthboxSpriteId: u8, lvl: u8) {
     let mut windowId: u32 = 0;
-    let mut spriteTileNum: u32 = 0;
-    let mut windowTileData: *mut u8 = null_mut();
     let mut text: CArray<u8, 16> = zeroed();
-    let mut xPos: u32 = 0;
-    let mut objVram: *mut u8 = null_mut();
     text[0] = CHAR_EXTRA_SYMBOL;
     text[1] = CHAR_LV_2;
-    objVram = ConvertIntToDecimalStringN(
+    let mut objVram: *mut u8 = ConvertIntToDecimalStringN(
         text.as_mut_ptr().at(2),
         lvl as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         3,
     );
-    xPos =
+    let xPos: u32 =
         5 * (3 - (objVram as usize).wrapping_sub(text.as_mut_ptr().at(2) as usize) as i32 as u32);
-    windowTileData =
+    let windowTileData: *mut u8 =
         AddTextPrinterAndCreateWindowOnHealthbox(text.as_mut_ptr(), xPos, 3, 2, &raw mut windowId);
-    spriteTileNum = gSprites[healthboxSpriteId].oam.tileNum() as u32 * 32;
-    if GetBattlerSide(gSprites[healthboxSpriteId].data[6] as u8) == B_SIDE_PLAYER {
+    let spriteTileNum: u32 = gSprites[healthboxSpriteId].oam.tileNum() as u32 * 32;
+    if GetBattlerSide(gSprites[healthboxSpriteId].data[hMain_Battler] as u8) == B_SIDE_PLAYER {
         objVram = OBJ_VRAM0 as usize as *mut c_void as *mut u8;
         if IsDoubleBattle() == 0 {
             objVram = objVram.at(spriteTileNum + 0x820);
@@ -622,12 +650,7 @@ pub(crate) unsafe extern "C" fn UpdateLvlInHealthbox(healthboxSpriteId: u8, lvl:
     TextIntoHealthboxObject(objVram as *mut c_void, windowTileData, 3);
     RemoveWindowOnHealthbox(windowId);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateHpTextInHealthbox(
-    healthboxSpriteId: u8,
-    value: i16,
-    maxOrCurrent: u8,
-) {
+pub unsafe fn UpdateHpTextInHealthbox(healthboxSpriteId: u8, value: i16, maxOrCurrent: u8) {
     let mut windowId: u32 = 0;
     let mut spriteTileNum: u32 = 0;
     let mut windowTileData: *mut u8 = null_mut();
@@ -680,18 +703,16 @@ pub unsafe extern "C" fn UpdateHpTextInHealthbox(
             RemoveWindowOnHealthbox(windowId);
         }
     } else {
-        let mut battler: u8 = 0;
         memcpy(
             text.as_mut_ptr(),
             sEmptyWhiteText_GrayHighlight.as_ptr().cast_mut(),
             20,
         );
-        battler = gSprites[healthboxSpriteId].data[6] as u8;
+        let battler: u8 = gSprites[healthboxSpriteId].data[6] as u8;
         if IsDoubleBattle() == 1 || GetBattlerSide(battler) == 1 {
             UpdateHpTextInHealthboxInDoubles(healthboxSpriteId, value, maxOrCurrent);
         } else {
             let mut var: u32 = 0;
-            let mut i: u8 = 0;
             if GetBattlerSide(gSprites[healthboxSpriteId].data[6] as u8) == B_SIDE_PLAYER {
                 if maxOrCurrent == HP_CURRENT {
                     var = 29;
@@ -716,8 +737,7 @@ pub unsafe extern "C" fn UpdateHpTextInHealthbox(
                 FONT_BOLD,
                 text.as_mut_ptr(),
             );
-            i = 0;
-            while i < 3 {
+            for i in 0..3u8 {
                 CpuSet(
                     (*gMonSpritesGfxPtr).barFontGfx.at(i as i32 * 64 + 32) as *mut c_void,
                     (0x6010000
@@ -725,16 +745,11 @@ pub unsafe extern "C" fn UpdateHpTextInHealthbox(
                         as usize as *mut c_void,
                     0x4000008,
                 );
-                i += 1;
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn UpdateHpTextInHealthboxInDoubles(
-    healthboxSpriteId: u8,
-    value: i16,
-    maxOrCurrent: u8,
-) {
+unsafe fn UpdateHpTextInHealthboxInDoubles(healthboxSpriteId: u8, value: i16, maxOrCurrent: u8) {
     let mut windowId: u32 = 0;
     let mut spriteTileNum: u32 = 0;
     let mut windowTileData: *mut u8 = null_mut();
@@ -774,7 +789,7 @@ pub(crate) unsafe extern "C" fn UpdateHpTextInHealthboxInDoubles(
                 RemoveWindowOnHealthbox(windowId);
                 CpuSet(
                     GetHealthboxElementGfxPtr(HEALTHBOX_GFX_FRAME_END) as *mut c_void,
-                    (100730496 as usize as *mut c_void as *mut u8).at(gSprites[healthboxSpriteId]
+                    (100730496_usize as *mut c_void as *mut u8).at(gSprites[healthboxSpriteId]
                         .oam
                         .tileNum()
                         as i32
@@ -799,7 +814,7 @@ pub(crate) unsafe extern "C" fn UpdateHpTextInHealthboxInDoubles(
                 );
                 FillHealthboxObject(objVram, 0, 3);
                 HpTextIntoHealthboxObject(
-                    (100728928 as usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void,
+                    (100728928_usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void,
                     windowTileData,
                     3,
                 );
@@ -807,37 +822,38 @@ pub(crate) unsafe extern "C" fn UpdateHpTextInHealthboxInDoubles(
             }
         }
     } else {
-        let mut battler: u8 = 0;
         memcpy(
             text.as_mut_ptr(),
             sEmptyWhiteText_TransparentHighlight.as_ptr().cast_mut(),
             20,
         );
-        battler = gSprites[healthboxSpriteId].data[6] as u8;
+        let battler: u8 = gSprites[healthboxSpriteId].data[6] as u8;
         if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).hpNumbersNoBars() != 0 {
             let mut var: u8 = 4;
-            let mut r7: u8 = 0;
-            let mut txtPtr: *mut u8 = null_mut();
-            let mut i: u8 = 0;
             if maxOrCurrent == HP_CURRENT {
                 var = 0;
             }
-            r7 = gSprites[healthboxSpriteId].data[5] as u8;
-            txtPtr = ConvertIntToDecimalStringN(
+            let r7: u8 = gSprites[healthboxSpriteId].data[5] as u8;
+            let txtPtr: *mut u8 = ConvertIntToDecimalStringN(
                 text.as_mut_ptr().at(6),
                 value as i32,
                 STR_CONV_MODE_RIGHT_ALIGN,
                 3,
             );
             if maxOrCurrent == 0 {
-                StringCopy(txtPtr, gText_Slash.as_ptr().cast_mut());
+                StringCopy(
+                    txtPtr,
+                    (*(&raw const crate::data::strings::gText_Slash).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                );
             }
             RenderTextHandleBold(
                 (*gMonSpritesGfxPtr).barFontGfx,
                 FONT_BOLD,
                 text.as_mut_ptr(),
             );
-            i = var;
+            let mut i: u8 = var;
             while (i as i32) < var as i32 + 3 {
                 if i < 3 {
                     CpuSet(
@@ -885,8 +901,7 @@ pub(crate) unsafe extern "C" fn UpdateHpTextInHealthboxInDoubles(
                 if GetBattlerSide(battler) == B_SIDE_PLAYER {
                     CpuSet(
                         GetHealthboxElementGfxPtr(HEALTHBOX_GFX_FRAME_END) as *mut c_void,
-                        (0x6010000 as usize as *mut c_void as *mut u8).at((gSprites
-                            [healthboxSpriteId]
+                        (0x6010000_usize as *mut c_void as *mut u8).at((gSprites[healthboxSpriteId]
                             .oam
                             .tileNum()
                             as i32
@@ -899,29 +914,27 @@ pub(crate) unsafe extern "C" fn UpdateHpTextInHealthboxInDoubles(
         }
     }
 }
-pub(crate) unsafe extern "C" fn PrintSafariMonInfo(healthboxSpriteId: u8, mon: *mut Pokemon) {
+unsafe fn PrintSafariMonInfo(healthboxSpriteId: u8, mon: *mut Pokemon) {
     let mut text: CArray<u8, 20> = zeroed();
-    let mut j: i32 = 0;
     let mut spriteTileNum: i32 = 0;
     let mut barFontGfx: *mut u8 = null_mut();
-    let mut i: u8 = 0;
-    let mut var: u8 = 0;
-    let mut nature: u8 = 0;
-    let mut healthBarSpriteId: u8 = 0;
     memcpy(
         text.as_mut_ptr(),
         sEmptyWhiteText_GrayHighlight.as_ptr().cast_mut(),
         20,
     );
-    barFontGfx = (*gMonSpritesGfxPtr)
-        .barFontGfx
-        .at(0x520 + GetBattlerPosition(gSprites[healthboxSpriteId].data[6] as u8) as i32 * 384);
-    var = 5;
-    nature = GetNature(mon);
-    StringCopy(&raw mut text[6], gNatureNamePointers[nature]);
+    barFontGfx = (*gMonSpritesGfxPtr).barFontGfx.at(0x520
+        + GetBattlerPosition(gSprites[healthboxSpriteId].data[hMain_Battler] as u8) as i32 * 384);
+    let var: u8 = 5;
+    let nature: u8 = GetNature(mon);
+    StringCopy(
+        &raw mut text[6],
+        (*(&raw const crate::data::pokemon_summary_screen::gNatureNamePointers)
+            .cast::<CArray<*mut u8, 0>>())[nature],
+    );
     RenderTextHandleBold(barFontGfx, FONT_BOLD, text.as_mut_ptr());
-    j = 6;
-    i = 0;
+    let mut j: i32 = 6;
+    let mut i: u8 = 0;
     while i < var {
         let mut elementId: u8 = 0;
         if text[j] >= 55 && text[j] <= 74 || text[j] >= 135 && text[j] <= 154 {
@@ -939,8 +952,7 @@ pub(crate) unsafe extern "C" fn PrintSafariMonInfo(healthboxSpriteId: u8, mon: *
         i += 1;
         j += 1;
     }
-    j = 1;
-    while j < var as i32 + 1 {
+    for j in 1..(var as i32 + 1) {
         spriteTileNum =
             (gSprites[healthboxSpriteId].oam.tileNum() as i32 + j % 8 + j / 8 * 64) * 32;
         CpuSet(
@@ -957,9 +969,8 @@ pub(crate) unsafe extern "C" fn PrintSafariMonInfo(healthboxSpriteId: u8, mon: *
             0x4000008,
         );
         barFontGfx = barFontGfx.at(32);
-        j += 1;
     }
-    healthBarSpriteId = gSprites[healthboxSpriteId].data[5] as u8;
+    let healthBarSpriteId: u8 = gSprites[healthboxSpriteId].data[hMain_HealthBarSpriteId] as u8;
     ConvertIntToDecimalStringN(
         &raw mut text[6],
         (*gBattleStruct).safariCatchFactor as i32,
@@ -980,12 +991,11 @@ pub(crate) unsafe extern "C" fn PrintSafariMonInfo(healthboxSpriteId: u8, mon: *
         text.as_mut_ptr(),
     );
     j = healthBarSpriteId as i32;
-    j = 0;
-    while j < 5 {
+    for j in 0..5i32 {
         if j <= 1 {
             CpuSet(
                 (*gMonSpritesGfxPtr).barFontGfx.at(0x40 * j + 0x20) as *mut c_void,
-                (0x6010000 as usize as *mut c_void as *mut u8).at((gSprites[healthBarSpriteId]
+                (0x6010000_usize as *mut c_void as *mut u8).at((gSprites[healthBarSpriteId]
                     .oam
                     .tileNum()
                     as i32
@@ -997,7 +1007,7 @@ pub(crate) unsafe extern "C" fn PrintSafariMonInfo(healthboxSpriteId: u8, mon: *
         } else {
             CpuSet(
                 (*gMonSpritesGfxPtr).barFontGfx.at(0x40 * j + 0x20) as *mut c_void,
-                (100729024 as usize as *mut c_void as *mut u8).at((j + gSprites[healthBarSpriteId]
+                (100729024_usize as *mut c_void as *mut u8).at((j + gSprites[healthBarSpriteId]
                     .oam
                     .tileNum()
                     as i32)
@@ -1005,26 +1015,23 @@ pub(crate) unsafe extern "C" fn PrintSafariMonInfo(healthboxSpriteId: u8, mon: *
                 0x4000008,
             );
         }
-        j += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SwapHpBarsWithHpText() {
-    let mut i: i32 = 0;
+pub unsafe fn SwapHpBarsWithHpText() {
     let mut healthBarSpriteId: u8 = 0;
-    i = 0;
+    let mut i: i32 = 0;
     while i < gBattlersCount as i32 {
         'l1: {
             if gSprites[gHealthboxSpriteIds[i]].callback
-                == Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
+                == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
                 && GetBattlerSide(i as u8) != B_SIDE_OPPONENT
                 && (IsDoubleBattle() != 0 || GetBattlerSide(i as u8) != B_SIDE_PLAYER)
             {
-                let mut noBars: u8 = 0;
                 (*(*gBattleSpritesDataPtr).battlerData.at(i)).set_hpNumbersNoBars(
                     (*(*gBattleSpritesDataPtr).battlerData.at(i)).hpNumbersNoBars() ^ 1,
                 );
-                noBars = (*(*gBattleSpritesDataPtr).battlerData.at(i)).hpNumbersNoBars() as u8;
+                let noBars: u8 =
+                    (*(*gBattleSpritesDataPtr).battlerData.at(i)).hpNumbersNoBars() as u8;
                 if GetBattlerSide(i as u8) == B_SIDE_PLAYER {
                     if IsDoubleBattle() == 0 {
                         break 'l1;
@@ -1033,7 +1040,8 @@ pub unsafe extern "C" fn SwapHpBarsWithHpText() {
                         break 'l1;
                     }
                     if noBars == TRUE {
-                        healthBarSpriteId = gSprites[gHealthboxSpriteIds[i]].data[5] as u8;
+                        healthBarSpriteId =
+                            gSprites[gHealthboxSpriteIds[i]].data[hMain_HealthBarSpriteId] as u8;
                         {
                             {
                                 let mut tmp: u32 = 0;
@@ -1083,7 +1091,9 @@ pub unsafe extern "C" fn SwapHpBarsWithHpText() {
                                 &raw mut gEnemyParty[gBattlerPartyIndexes[i]],
                             );
                         } else {
-                            healthBarSpriteId = gSprites[gHealthboxSpriteIds[i]].data[5] as u8;
+                            healthBarSpriteId = gSprites[gHealthboxSpriteIds[i]].data
+                                [hMain_HealthBarSpriteId]
+                                as u8;
                             {
                                 {
                                     let mut tmp: u32 = 0;
@@ -1131,14 +1141,13 @@ pub unsafe extern "C" fn SwapHpBarsWithHpText() {
                         }
                     }
                 }
-                gSprites[gHealthboxSpriteIds[i]].data[7] ^= 1;
+                gSprites[gHealthboxSpriteIds[i]].data[hMain_Data7] ^= 1;
             }
         }
         i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreatePartyStatusSummarySprites(
+pub unsafe fn CreatePartyStatusSummarySprites(
     battler: u8,
     partyInfo: *mut HpAndStatus,
     skipPlayer: u8,
@@ -1149,12 +1158,8 @@ pub unsafe extern "C" fn CreatePartyStatusSummarySprites(
     let mut bar_Y: i16 = 0;
     let mut bar_pos2_X: i16 = 0;
     let mut bar_data0: i16 = 0;
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
     let mut var: i32 = 0;
-    let mut summaryBarSpriteId: u8 = 0;
     let mut ballIconSpritesIds: CArray<u8, 6> = zeroed();
-    let mut taskId: u8 = 0;
     if skipPlayer == 0 || GetBattlerPosition(battler) != B_POSITION_OPPONENT_RIGHT {
         if GetBattlerSide(battler) == B_SIDE_PLAYER {
             isOpponent = FALSE;
@@ -1185,7 +1190,7 @@ pub unsafe extern "C" fn CreatePartyStatusSummarySprites(
     LoadSpriteSheet((&raw const *sStatusSummaryBallsSpriteSheet).cast_mut());
     LoadSpritePalette((&raw const *sStatusSummaryBarSpritePal).cast_mut());
     LoadSpritePalette((&raw const *sStatusSummaryBallsSpritePal).cast_mut());
-    summaryBarSpriteId = CreateSprite(
+    let summaryBarSpriteId: u8 = CreateSprite(
         (&raw const sStatusSummaryBarSpriteTemplates[isOpponent]).cast_mut(),
         bar_X,
         bar_Y,
@@ -1203,7 +1208,7 @@ pub unsafe extern "C" fn CreatePartyStatusSummarySprites(
     } else {
         gSprites[summaryBarSpriteId].x += 96;
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i < PARTY_SIZE {
         ballIconSpritesIds[i] = CreateSpriteAtEnd(
             (&raw const sStatusSummaryBallsSpriteTemplates[isOpponent]).cast_mut(),
@@ -1234,8 +1239,7 @@ pub unsafe extern "C" fn CreatePartyStatusSummarySprites(
     }
     if GetBattlerSide(battler) == B_SIDE_PLAYER {
         if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
-            i = 0;
-            while i < PARTY_SIZE {
+            for i in 0..PARTY_SIZE {
                 if (*partyInfo.at(i)).hp == HP_EMPTY_SLOT {
                     gSprites[ballIconSpritesIds[i]]
                         .oam
@@ -1250,13 +1254,11 @@ pub unsafe extern "C" fn CreatePartyStatusSummarySprites(
                         .oam
                         .set_tileNum(gSprites[ballIconSpritesIds[i]].oam.tileNum() + 2);
                 }
-                i += 1;
             }
         } else {
             i = 0;
             var = 5;
-            j = 0;
-            while j < PARTY_SIZE {
+            for j in 0..PARTY_SIZE {
                 'l3: {
                     if (*partyInfo.at(j)).hp == HP_EMPTY_SLOT {
                         gSprites[ballIconSpritesIds[var]]
@@ -1270,7 +1272,9 @@ pub unsafe extern "C" fn CreatePartyStatusSummarySprites(
                             .oam
                             .set_tileNum(gSprites[ballIconSpritesIds[i]].oam.tileNum() + 3);
                     } else if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0
-                        && (*gBattleStruct).arenaLostPlayerMons as u32 & gBitTable[j] != 0
+                        && (*gBattleStruct).arenaLostPlayerMons as u32
+                            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[j]
+                            != 0
                     {
                         gSprites[ballIconSpritesIds[i]]
                             .oam
@@ -1282,14 +1286,12 @@ pub unsafe extern "C" fn CreatePartyStatusSummarySprites(
                     }
                     i += 1;
                 }
-                j += 1;
             }
         }
     } else {
         if gBattleTypeFlags & 32832 != 0 {
             var = 5;
-            i = 0;
-            while i < PARTY_SIZE {
+            for i in 0..PARTY_SIZE {
                 if (*partyInfo.at(i)).hp == HP_EMPTY_SLOT {
                     gSprites[ballIconSpritesIds[var]]
                         .oam
@@ -1305,13 +1307,11 @@ pub unsafe extern "C" fn CreatePartyStatusSummarySprites(
                         .set_tileNum(gSprites[ballIconSpritesIds[var]].oam.tileNum() + 2);
                 }
                 var -= 1;
-                i += 1;
             }
         } else {
             var = 0;
             i = 0;
-            j = 0;
-            while j < PARTY_SIZE {
+            for j in 0..PARTY_SIZE {
                 'l6: {
                     if (*partyInfo.at(j)).hp == HP_EMPTY_SLOT {
                         gSprites[ballIconSpritesIds[i]]
@@ -1325,7 +1325,9 @@ pub unsafe extern "C" fn CreatePartyStatusSummarySprites(
                             .oam
                             .set_tileNum(gSprites[ballIconSpritesIds[5 - var]].oam.tileNum() + 3);
                     } else if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0
-                        && (*gBattleStruct).arenaLostOpponentMons as u32 & gBitTable[j] != 0
+                        && (*gBattleStruct).arenaLostOpponentMons as u32
+                            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[j]
+                            != 0
                     {
                         gSprites[ballIconSpritesIds[5 - var]]
                             .oam
@@ -1337,45 +1339,35 @@ pub unsafe extern "C" fn CreatePartyStatusSummarySprites(
                     }
                     var += 1;
                 }
-                j += 1;
             }
         }
     }
-    taskId = CreateTask(Some(TaskDummy), 5);
-    gTasks[taskId].data[0] = battler as i16;
-    gTasks[taskId].data[1] = summaryBarSpriteId as i16;
-    i = 0;
-    while i < PARTY_SIZE {
-        gTasks[taskId].data[3 + i] = ballIconSpritesIds[i] as i16;
-        i += 1;
+    let taskId: u8 = CreateTask(Some(TaskDummy), 5);
+    task_set(taskId, 0, battler as i16);
+    task_set(taskId, 1, summaryBarSpriteId as i16);
+    for i in 0..PARTY_SIZE {
+        task_set(taskId, 3 + i, ballIconSpritesIds[i] as i16);
     }
-    gTasks[taskId].data[10] = isBattleStart as i16;
+    task_set(taskId, tIsBattleStart, isBattleStart as i16);
     if isBattleStart != 0 {
         (*(*gBattleSpritesDataPtr).animationData)
             .set_field_9_x1C((*(*gBattleSpritesDataPtr).animationData).field_9_x1C() + 1);
     }
     PlaySE12WithPanning(SE_BALL_TRAY_ENTER, 0);
-    return taskId;
+    taskId
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Task_HidePartyStatusSummary(taskId: u8) {
+pub unsafe fn Task_HidePartyStatusSummary(taskId: u8) {
     let mut ballIconSpriteIds: CArray<u8, 6> = zeroed();
-    let mut isBattleStart: u8 = 0;
-    let mut summaryBarSpriteId: u8 = 0;
-    let mut battler: u8 = 0;
-    let mut i: i32 = 0;
-    isBattleStart = gTasks[taskId].data[10] as u8;
-    summaryBarSpriteId = gTasks[taskId].data[1] as u8;
-    battler = gTasks[taskId].data[0] as u8;
-    i = 0;
-    while i < PARTY_SIZE {
-        ballIconSpriteIds[i] = gTasks[taskId].data[3 + i] as u8;
-        i += 1;
+    let isBattleStart: u8 = task_get(taskId, tIsBattleStart) as u8;
+    let summaryBarSpriteId: u8 = task_get(taskId, 1) as u8;
+    let battler: u8 = task_get(taskId, 0) as u8;
+    for i in 0..PARTY_SIZE {
+        ballIconSpriteIds[i] = task_get(taskId, 3 + i) as u8;
     }
     SetGpuReg(REG_OFFSET_BLDCNT, 16192);
     SetGpuReg(REG_OFFSET_BLDALPHA, 16);
-    gTasks[taskId].data[15] = 16;
-    i = 0;
+    task_set(taskId, tBlend, 16);
+    let mut i: i32 = 0;
     while i < PARTY_SIZE {
         gSprites[ballIconSpriteIds[i]]
             .oam
@@ -1386,8 +1378,7 @@ pub unsafe extern "C" fn Task_HidePartyStatusSummary(taskId: u8) {
         .oam
         .set_objMode(ST_OAM_OBJ_BLEND);
     if isBattleStart != 0 {
-        i = 0;
-        while i < PARTY_SIZE {
+        for i in 0..PARTY_SIZE {
             if GetBattlerSide(battler) != B_SIDE_PLAYER {
                 gSprites[ballIconSpriteIds[5 - i]].data[1] = 7 * i as i16;
                 gSprites[ballIconSpriteIds[5 - i]].data[3] = 0;
@@ -1400,57 +1391,56 @@ pub unsafe extern "C" fn Task_HidePartyStatusSummary(taskId: u8) {
                 gSprites[ballIconSpriteIds[i]].data[4] = 0;
                 gSprites[ballIconSpriteIds[i]].callback = Some(SpriteCB_StatusSummaryBalls_Exit);
             }
-            i += 1;
         }
-        gSprites[summaryBarSpriteId].data[0] = gSprites[summaryBarSpriteId].data[0] / 2;
+        gSprites[summaryBarSpriteId].data[0] /= 2;
         gSprites[summaryBarSpriteId].data[1] = 0;
         gSprites[summaryBarSpriteId].callback = Some(SpriteCB_StatusSummaryBar_Exit);
         SetSubspriteTables(
             &raw mut gSprites[summaryBarSpriteId],
             sStatusSummaryBar_SubspriteTable_Exit.as_ptr().cast_mut(),
         );
-        gTasks[taskId].func = Some(Task_HidePartyStatusSummary_BattleStart_1);
+        task_set_func(taskId, Some(Task_HidePartyStatusSummary_BattleStart_1));
     } else {
-        gTasks[taskId].func = Some(Task_HidePartyStatusSummary_DuringBattle);
+        task_set_func(taskId, Some(Task_HidePartyStatusSummary_DuringBattle));
     }
 }
-pub(crate) unsafe extern "C" fn Task_HidePartyStatusSummary_BattleStart_1(taskId: u8) {
+pub(crate) unsafe fn Task_HidePartyStatusSummary_BattleStart_1(taskId: u8) {
     if ({
-        let t1 = gTasks[taskId].data[11];
-        gTasks[taskId].data[11] += 1;
+        let t1 = task_get(taskId, 11);
+        task_set(taskId, 11, task_get(taskId, 11) + 1);
         t1
     }) % 2
         == 0
     {
         if ({
-            gTasks[taskId].data[15] -= 1;
-            gTasks[taskId].data[15]
+            task_set(taskId, tBlend, task_get(taskId, tBlend) - 1);
+            task_get(taskId, tBlend)
         }) < 0
         {
             return;
         }
         SetGpuReg(
             REG_OFFSET_BLDALPHA,
-            (16 - gTasks[taskId].data[15] as u16) << 8 | gTasks[taskId].data[15] as u16,
+            (16 - task_get(taskId, tBlend) as u16) << 8 | task_get(taskId, tBlend) as u16,
         );
     }
-    if gTasks[taskId].data[15] == 0 {
-        gTasks[taskId].func = Some(Task_HidePartyStatusSummary_BattleStart_2);
+    if task_get(taskId, tBlend) == 0 {
+        task_set_func(taskId, Some(Task_HidePartyStatusSummary_BattleStart_2));
     }
 }
-pub(crate) unsafe extern "C" fn Task_HidePartyStatusSummary_BattleStart_2(taskId: u8) {
+pub(crate) unsafe fn Task_HidePartyStatusSummary_BattleStart_2(taskId: u8) {
     let mut ballIconSpriteIds: CArray<u8, 6> = zeroed();
     let mut i: i32 = 0;
-    let mut battler: u8 = gTasks[taskId].data[0] as u8;
+    let battler: u8 = task_get(taskId, tBattler) as u8;
     if ({
-        gTasks[taskId].data[15] -= 1;
-        gTasks[taskId].data[15]
+        task_set(taskId, tBlend, task_get(taskId, tBlend) - 1);
+        task_get(taskId, tBlend)
     }) == -1
     {
-        let mut summaryBarSpriteId: u8 = gTasks[taskId].data[1] as u8;
+        let summaryBarSpriteId: u8 = task_get(taskId, tSummaryBarSpriteId) as u8;
         i = 0;
         while i < PARTY_SIZE {
-            ballIconSpriteIds[i] = gTasks[taskId].data[3 + i] as u8;
+            ballIconSpriteIds[i] = task_get(taskId, 3 + i) as u8;
             i += 1;
         }
         (*(*gBattleSpritesDataPtr).animationData)
@@ -1464,58 +1454,54 @@ pub(crate) unsafe extern "C" fn Task_HidePartyStatusSummary_BattleStart_2(taskId
             FreeSpriteOamMatrix(&raw mut gSprites[ballIconSpriteIds[0]]);
             DestroySprite(&raw mut gSprites[ballIconSpriteIds[0]]);
         }
-        i = 1;
-        while i < PARTY_SIZE {
+        for i in 1..PARTY_SIZE {
             DestroySprite(&raw mut gSprites[ballIconSpriteIds[i]]);
-            i += 1;
         }
-    } else if gTasks[taskId].data[15] == -3 {
+    } else if task_get(taskId, tBlend) == -3 {
         (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).set_partyStatusSummaryShown(0);
         SetGpuReg(REG_OFFSET_BLDCNT, 0);
         SetGpuReg(REG_OFFSET_BLDALPHA, 0);
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_HidePartyStatusSummary_DuringBattle(taskId: u8) {
+pub(crate) unsafe fn Task_HidePartyStatusSummary_DuringBattle(taskId: u8) {
     let mut ballIconSpriteIds: CArray<u8, 6> = zeroed();
     let mut i: i32 = 0;
-    let mut battler: u8 = gTasks[taskId].data[0] as u8;
+    let battler: u8 = task_get(taskId, tBattler) as u8;
     if ({
-        gTasks[taskId].data[15] -= 1;
-        gTasks[taskId].data[15]
+        task_set(taskId, tBlend, task_get(taskId, tBlend) - 1);
+        task_get(taskId, tBlend)
     }) >= 0
     {
         SetGpuReg(
             REG_OFFSET_BLDALPHA,
-            (16 - gTasks[taskId].data[15] as u16) << 8 | gTasks[taskId].data[15] as u16,
+            (16 - task_get(taskId, tBlend) as u16) << 8 | task_get(taskId, tBlend) as u16,
         );
-    } else if gTasks[taskId].data[15] == -1 {
-        let mut summaryBarSpriteId: u8 = gTasks[taskId].data[1] as u8;
+    } else if task_get(taskId, tBlend) == -1 {
+        let summaryBarSpriteId: u8 = task_get(taskId, tSummaryBarSpriteId) as u8;
         i = 0;
         while i < PARTY_SIZE {
-            ballIconSpriteIds[i] = gTasks[taskId].data[3 + i] as u8;
+            ballIconSpriteIds[i] = task_get(taskId, 3 + i) as u8;
             i += 1;
         }
         DestroySpriteAndFreeResources(&raw mut gSprites[summaryBarSpriteId]);
         DestroySpriteAndFreeResources(&raw mut gSprites[ballIconSpriteIds[0]]);
-        i = 1;
-        while i < PARTY_SIZE {
+        for i in 1..PARTY_SIZE {
             DestroySprite(&raw mut gSprites[ballIconSpriteIds[i]]);
-            i += 1;
         }
-    } else if gTasks[taskId].data[15] == -3 {
+    } else if task_get(taskId, tBlend) == -3 {
         (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).set_partyStatusSummaryShown(0);
         SetGpuReg(REG_OFFSET_BLDCNT, 0);
         SetGpuReg(REG_OFFSET_BLDALPHA, 0);
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_StatusSummaryBar_Enter(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_StatusSummaryBar_Enter(sprite: *mut Sprite) {
     if (*sprite).x2 != 0 {
         (*sprite).x2 += (*sprite).data[0];
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_StatusSummaryBar_Exit(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_StatusSummaryBar_Exit(sprite: *mut Sprite) {
     (*sprite).data[1] += 32;
     if (*sprite).data[0] > 0 {
         (*sprite).x2 += (*sprite).data[1] >> 4;
@@ -1524,16 +1510,14 @@ pub(crate) unsafe extern "C" fn SpriteCB_StatusSummaryBar_Exit(sprite: *mut Spri
     }
     (*sprite).data[1] &= 0xF;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_StatusSummaryBalls_Enter(sprite: *mut Sprite) {
-    let mut var1: u8 = 0;
-    let mut var2: u16 = 0;
+pub(crate) unsafe fn SpriteCB_StatusSummaryBalls_Enter(sprite: *mut Sprite) {
     let mut pan: i8 = 0;
     if (*sprite).data[1] > 0 {
         (*sprite).data[1] -= 1;
         return;
     }
-    var1 = (*sprite).data[2] as u8;
-    var2 = (*sprite).data[3] as u16;
+    let var1: u8 = (*sprite).data[2] as u8;
+    let mut var2: u16 = (*sprite).data[3] as u16;
     var2 += 56;
     (*sprite).data[3] = var2 as i16 & -16;
     if var1 != 0 {
@@ -1560,15 +1544,13 @@ pub(crate) unsafe extern "C" fn SpriteCB_StatusSummaryBalls_Enter(sprite: *mut S
         (*sprite).callback = Some(SpriteCallbackDummy);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_StatusSummaryBalls_Exit(sprite: *mut Sprite) {
-    let mut var1: u8 = 0;
-    let mut var2: u16 = 0;
+pub(crate) unsafe fn SpriteCB_StatusSummaryBalls_Exit(sprite: *mut Sprite) {
     if (*sprite).data[1] > 0 {
         (*sprite).data[1] -= 1;
         return;
     }
-    var1 = (*sprite).data[2] as u8;
-    var2 = (*sprite).data[3] as u16;
+    let var1: u8 = (*sprite).data[2] as u8;
+    let mut var2: u16 = (*sprite).data[3] as u16;
     var2 += 56;
     (*sprite).data[3] = var2 as i16 & -16;
     if var1 != 0 {
@@ -1583,32 +1565,34 @@ pub(crate) unsafe extern "C" fn SpriteCB_StatusSummaryBalls_Exit(sprite: *mut Sp
         (*sprite).callback = Some(SpriteCallbackDummy);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_StatusSummaryBalls_OnSwitchout(sprite: *mut Sprite) {
-    let mut barSpriteId: u8 = (*sprite).data[0] as u8;
+pub(crate) unsafe fn SpriteCB_StatusSummaryBalls_OnSwitchout(sprite: *mut Sprite) {
+    let barSpriteId: u8 = (*sprite).data[0] as u8;
     (*sprite).x2 = gSprites[barSpriteId].x2;
     (*sprite).y2 = gSprites[barSpriteId].y2;
 }
-pub(crate) unsafe extern "C" fn UpdateNickInHealthbox(healthboxSpriteId: u8, mon: *mut Pokemon) {
+unsafe fn UpdateNickInHealthbox(healthboxSpriteId: u8, mon: *mut Pokemon) {
     let mut nickname: CArray<u8, 11> = zeroed();
-    let mut ptr: *mut c_void = null_mut();
     let mut windowId: u32 = 0;
-    let mut spriteTileNum: u32 = 0;
     let mut windowTileData: *mut u8 = null_mut();
-    let mut species: u16 = 0;
-    let mut gender: u8 = 0;
     StringCopy(
         gDisplayedStringBattle.as_mut_ptr(),
-        gText_HealthboxNickname.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_HealthboxNickname).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     GetMonData3(mon, MON_DATA_NICKNAME, nickname.as_mut_ptr());
     StringGet_Nickname(nickname.as_mut_ptr());
-    ptr = StringAppend(gDisplayedStringBattle.as_mut_ptr(), nickname.as_mut_ptr()) as *mut c_void;
-    gender = GetMonGender(mon);
-    species = GetMonData2(mon, MON_DATA_SPECIES) as u16;
+    let mut ptr: *mut c_void =
+        StringAppend(gDisplayedStringBattle.as_mut_ptr(), nickname.as_mut_ptr()) as *mut c_void;
+    let mut gender: u8 = GetMonGender(mon);
+    let species: u16 = GetMonData2(mon, MON_DATA_SPECIES) as u16;
     if (species == SPECIES_NIDORAN_F || species == SPECIES_NIDORAN_M)
         && StringCompare(
             nickname.as_mut_ptr(),
-            gSpeciesNames[species].as_ptr().cast_mut(),
+            (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())[species]
+                .as_ptr()
+                .cast_mut(),
         ) == 0
     {
         gender = 100;
@@ -1617,7 +1601,10 @@ pub(crate) unsafe extern "C" fn UpdateNickInHealthbox(healthboxSpriteId: u8, mon
         MON_MALE => {
             StringCopy(
                 ptr as *mut u8,
-                gText_HealthboxGender_Male.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_HealthboxGender_Male)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
             windowTileData = AddTextPrinterAndCreateWindowOnHealthbox(
                 gDisplayedStringBattle.as_mut_ptr(),
@@ -1630,7 +1617,10 @@ pub(crate) unsafe extern "C" fn UpdateNickInHealthbox(healthboxSpriteId: u8, mon
         MON_FEMALE => {
             StringCopy(
                 ptr as *mut u8,
-                gText_HealthboxGender_Female.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_HealthboxGender_Female)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
             windowTileData = AddTextPrinterAndCreateWindowOnHealthbox(
                 gDisplayedStringBattle.as_mut_ptr(),
@@ -1643,7 +1633,10 @@ pub(crate) unsafe extern "C" fn UpdateNickInHealthbox(healthboxSpriteId: u8, mon
         _ => {
             StringCopy(
                 ptr as *mut u8,
-                gText_HealthboxGender_None.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_HealthboxGender_None)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
             windowTileData = AddTextPrinterAndCreateWindowOnHealthbox(
                 gDisplayedStringBattle.as_mut_ptr(),
@@ -1654,7 +1647,7 @@ pub(crate) unsafe extern "C" fn UpdateNickInHealthbox(healthboxSpriteId: u8, mon
             );
         }
     }
-    spriteTileNum = gSprites[healthboxSpriteId].oam.tileNum() as u32 * 32;
+    let spriteTileNum: u32 = gSprites[healthboxSpriteId].oam.tileNum() as u32 * 32;
     if GetBattlerSide(gSprites[healthboxSpriteId].data[6] as u8) == B_SIDE_PLAYER {
         TextIntoHealthboxObject(
             (0x6010040 + spriteTileNum) as usize as *mut c_void,
@@ -1677,16 +1670,14 @@ pub(crate) unsafe extern "C" fn UpdateNickInHealthbox(healthboxSpriteId: u8, mon
     }
     RemoveWindowOnHealthbox(windowId);
 }
-pub(crate) unsafe extern "C" fn TryAddPokeballIconToHealthbox(healthboxSpriteId: u8, noStatus: u8) {
-    let mut battler: u8 = 0;
-    let mut healthBarSpriteId: u8 = 0;
+unsafe fn TryAddPokeballIconToHealthbox(healthboxSpriteId: u8, noStatus: u8) {
     if gBattleTypeFlags & BATTLE_TYPE_WALLY_TUTORIAL != 0 {
         return;
     }
     if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
         return;
     }
-    battler = gSprites[healthboxSpriteId].data[6] as u8;
+    let battler: u8 = gSprites[healthboxSpriteId].data[hMain_Battler] as u8;
     if GetBattlerSide(battler) == B_SIDE_PLAYER {
         return;
     }
@@ -1700,7 +1691,7 @@ pub(crate) unsafe extern "C" fn TryAddPokeballIconToHealthbox(healthboxSpriteId:
     {
         return;
     }
-    healthBarSpriteId = gSprites[healthboxSpriteId].data[5] as u8;
+    let healthBarSpriteId: u8 = gSprites[healthboxSpriteId].data[hMain_HealthBarSpriteId] as u8;
     if noStatus != 0 {
         CpuSet(
             GetHealthboxElementGfxPtr(HEALTHBOX_GFX_STATUS_BALL_CAUGHT) as *mut c_void,
@@ -1723,17 +1714,13 @@ pub(crate) unsafe extern "C" fn TryAddPokeballIconToHealthbox(healthboxSpriteId:
         }
     }
 }
-pub(crate) unsafe extern "C" fn UpdateStatusIconInHealthbox(healthboxSpriteId: u8) {
-    let mut i: i32 = 0;
-    let mut battler: u8 = 0;
-    let mut healthBarSpriteId: u8 = 0;
+unsafe fn UpdateStatusIconInHealthbox(healthboxSpriteId: u8) {
     let mut status: u32 = 0;
-    let mut pltAdder: u32 = 0;
     let mut statusGfxPtr: *mut u8 = null_mut();
     let mut tileNumAdder: i16 = 0;
     let mut statusPalId: u8 = 0;
-    battler = gSprites[healthboxSpriteId].data[6] as u8;
-    healthBarSpriteId = gSprites[healthboxSpriteId].data[5] as u8;
+    let battler: u8 = gSprites[healthboxSpriteId].data[hMain_Battler] as u8;
+    let healthBarSpriteId: u8 = gSprites[healthboxSpriteId].data[hMain_HealthBarSpriteId] as u8;
     if GetBattlerSide(battler) == B_SIDE_PLAYER {
         status = GetMonData2(
             &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
@@ -1783,8 +1770,7 @@ pub(crate) unsafe extern "C" fn UpdateStatusIconInHealthbox(healthboxSpriteId: u
         statusPalId = PAL_STATUS_PAR;
     } else {
         statusGfxPtr = GetHealthboxElementGfxPtr(HEALTHBOX_GFX_39);
-        i = 0;
-        while i < 3 {
+        for i in 0..3i32 {
             CpuSet(
                 statusGfxPtr as *mut c_void,
                 (OBJ_VRAM0
@@ -1792,7 +1778,6 @@ pub(crate) unsafe extern "C" fn UpdateStatusIconInHealthbox(healthboxSpriteId: u
                         * 32) as usize as *mut c_void,
                 0x4000008,
             );
-            i += 1;
         }
         if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).hpNumbersNoBars() == 0 {
             CpuSet(
@@ -1805,7 +1790,7 @@ pub(crate) unsafe extern "C" fn UpdateStatusIconInHealthbox(healthboxSpriteId: u
         TryAddPokeballIconToHealthbox(healthboxSpriteId, TRUE);
         return;
     }
-    pltAdder = gSprites[healthboxSpriteId].oam.paletteNum() as u32 * 16;
+    let mut pltAdder: u32 = gSprites[healthboxSpriteId].oam.paletteNum() as u32 * 16;
     pltAdder += battler as u32 + 12;
     FillPalette(
         sStatusIconColors[statusPalId],
@@ -1813,7 +1798,9 @@ pub(crate) unsafe extern "C" fn UpdateStatusIconInHealthbox(healthboxSpriteId: u
         2,
     );
     CpuSet(
-        &raw mut gPlttBufferUnfaded[OBJ_PLTT_OFFSET as u32 + pltAdder] as *mut c_void,
+        &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            .cast::<CArray<u16, 512>>()
+            .cast_mut())[OBJ_PLTT_OFFSET as u32 + pltAdder] as *mut c_void,
         (OBJ_PLTT as usize as *mut u16).at(pltAdder) as *mut c_void,
         1,
     );
@@ -1823,25 +1810,25 @@ pub(crate) unsafe extern "C" fn UpdateStatusIconInHealthbox(healthboxSpriteId: u
             as usize as *mut c_void,
         0x4000018,
     );
-    if IsDoubleBattle() == 1 || GetBattlerSide(battler) == 1 {
-        if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).hpNumbersNoBars() == 0 {
-            CpuSet(
-                GetHealthboxElementGfxPtr(HEALTHBOX_GFX_0) as *mut c_void,
-                (OBJ_VRAM0 + gSprites[healthBarSpriteId].oam.tileNum() as i32 * 32) as usize
-                    as *mut c_void,
-                0x4000008,
-            );
-            CpuSet(
-                GetHealthboxElementGfxPtr(HEALTHBOX_GFX_65) as *mut c_void,
-                (OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum() as i32 + 1) * 32) as usize
-                    as *mut c_void,
-                0x4000008,
-            );
-        }
+    if (IsDoubleBattle() == 1 || GetBattlerSide(battler) == 1)
+        && (*(*gBattleSpritesDataPtr).battlerData.at(battler)).hpNumbersNoBars() == 0
+    {
+        CpuSet(
+            GetHealthboxElementGfxPtr(HEALTHBOX_GFX_0) as *mut c_void,
+            (OBJ_VRAM0 + gSprites[healthBarSpriteId].oam.tileNum() as i32 * 32) as usize
+                as *mut c_void,
+            0x4000008,
+        );
+        CpuSet(
+            GetHealthboxElementGfxPtr(HEALTHBOX_GFX_65) as *mut c_void,
+            (OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum() as i32 + 1) * 32) as usize
+                as *mut c_void,
+            0x4000008,
+        );
     }
     TryAddPokeballIconToHealthbox(healthboxSpriteId, FALSE);
 }
-pub(crate) unsafe extern "C" fn GetStatusIconForBattlerId(statusElementId: u8, battler: u8) -> u8 {
+fn GetStatusIconForBattlerId(statusElementId: u8, battler: u8) -> u8 {
     let mut ret: u8 = statusElementId;
     match statusElementId {
         HEALTHBOX_GFX_STATUS_PSN_BATTLER0 => {
@@ -1901,74 +1888,71 @@ pub(crate) unsafe extern "C" fn GetStatusIconForBattlerId(statusElementId: u8, b
         }
         _ => {}
     }
-    return ret;
+    ret
 }
-pub(crate) unsafe extern "C" fn UpdateSafariBallsTextOnHealthbox(healthboxSpriteId: u8) {
+unsafe fn UpdateSafariBallsTextOnHealthbox(healthboxSpriteId: u8) {
     let mut windowId: u32 = 0;
-    let mut spriteTileNum: u32 = 0;
-    let mut windowTileData: *mut u8 = null_mut();
-    windowTileData = AddTextPrinterAndCreateWindowOnHealthbox(
-        gText_SafariBalls.as_ptr().cast_mut(),
+    let windowTileData: *mut u8 = AddTextPrinterAndCreateWindowOnHealthbox(
+        (*(&raw const crate::data::battle_message::gText_SafariBalls).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         3,
         2,
         &raw mut windowId,
     );
-    spriteTileNum = gSprites[healthboxSpriteId].oam.tileNum() as u32 * 32;
+    let spriteTileNum: u32 = gSprites[healthboxSpriteId].oam.tileNum() as u32 * 32;
     TextIntoHealthboxObject(
-        (100728896 as usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void,
+        (100728896_usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void,
         windowTileData,
         6,
     );
     TextIntoHealthboxObject(
-        (0x6010800 as usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void,
+        (0x6010800_usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void,
         windowTileData.at(192),
         2,
     );
     RemoveWindowOnHealthbox(windowId);
 }
-pub(crate) unsafe extern "C" fn UpdateLeftNoOfBallsTextOnHealthbox(healthboxSpriteId: u8) {
+unsafe fn UpdateLeftNoOfBallsTextOnHealthbox(healthboxSpriteId: u8) {
     let mut text: CArray<u8, 16> = zeroed();
-    let mut txtPtr: *mut u8 = null_mut();
     let mut windowId: u32 = 0;
-    let mut spriteTileNum: u32 = 0;
-    let mut windowTileData: *mut u8 = null_mut();
-    txtPtr = StringCopy(text.as_mut_ptr(), gText_SafariBallLeft.as_ptr().cast_mut());
+    let txtPtr: *mut u8 = StringCopy(
+        text.as_mut_ptr(),
+        (*(&raw const crate::data::battle_message::gText_SafariBallLeft).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
     ConvertIntToDecimalStringN(txtPtr, gNumSafariBalls as i32, STR_CONV_MODE_LEFT_ALIGN, 2);
-    windowTileData = AddTextPrinterAndCreateWindowOnHealthbox(
+    let windowTileData: *mut u8 = AddTextPrinterAndCreateWindowOnHealthbox(
         text.as_mut_ptr(),
         GetStringRightAlignXOffset(FONT_SMALL as i32, text.as_mut_ptr(), 0x2F) as u32,
         3,
         2,
         &raw mut windowId,
     );
-    spriteTileNum = gSprites[healthboxSpriteId].oam.tileNum() as u32 * 32;
+    let spriteTileNum: u32 = gSprites[healthboxSpriteId].oam.tileNum() as u32 * 32;
     SafariTextIntoHealthboxObject(
-        (100729536 as usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void,
+        (100729536_usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void,
         windowTileData,
         2,
     );
     SafariTextIntoHealthboxObject(
-        (0x6010a00 as usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void,
+        (0x6010a00_usize as *mut c_void as *mut u8).at(spriteTileNum) as *mut c_void,
         windowTileData.at(64),
         4,
     );
     RemoveWindowOnHealthbox(windowId);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateHealthboxAttribute(
-    healthboxSpriteId: u8,
-    mon: *mut Pokemon,
-    elementId: u8,
-) {
+pub unsafe fn UpdateHealthboxAttribute(healthboxSpriteId: u8, mon: *mut Pokemon, elementId: u8) {
     let mut maxHp: i32 = 0;
     let mut currHp: i32 = 0;
-    let mut battler: u8 = gSprites[healthboxSpriteId].data[6] as u8;
+    let battler: u8 = gSprites[healthboxSpriteId].data[hMain_Battler] as u8;
     if elementId == HEALTHBOX_ALL && IsDoubleBattle() == 0 {
         GetBattlerSide(battler);
     }
-    if GetBattlerSide(gSprites[healthboxSpriteId].data[6] as u8) == B_SIDE_PLAYER {
-        let mut isDoubles: u8 = 0;
+    if GetBattlerSide(gSprites[healthboxSpriteId].data[hMain_Battler] as u8) == B_SIDE_PLAYER {
         if elementId == HEALTHBOX_LEVEL || elementId == HEALTHBOX_ALL {
             UpdateLvlInHealthbox(healthboxSpriteId, GetMonData2(mon, MON_DATA_LEVEL) as u8);
         }
@@ -1993,22 +1977,23 @@ pub unsafe extern "C" fn UpdateHealthboxAttribute(
             SetBattleBarStruct(battler, healthboxSpriteId, maxHp, currHp, 0);
             MoveBattleBar(battler, healthboxSpriteId, HEALTH_BAR, 0);
         }
-        isDoubles = IsDoubleBattle();
+        let isDoubles: u8 = IsDoubleBattle();
         if isDoubles == 0 && (elementId == HEALTHBOX_EXP_BAR || elementId == HEALTHBOX_ALL) {
-            let mut species: u16 = 0;
-            let mut exp: u32 = 0;
-            let mut currLevelExp: u32 = 0;
-            let mut currExpBarValue: i32 = 0;
-            let mut maxExpBarValue: i32 = 0;
-            let mut level: u8 = 0;
             LoadBattleBarGfx(3);
-            species = GetMonData2(mon, MON_DATA_SPECIES) as u16;
-            level = GetMonData2(mon, MON_DATA_LEVEL) as u8;
-            exp = GetMonData2(mon, MON_DATA_EXP);
-            currLevelExp = gExperienceTables[gSpeciesInfo[species].growthRate][level];
-            currExpBarValue = exp as i32 - currLevelExp as i32;
-            maxExpBarValue = gExperienceTables[gSpeciesInfo[species].growthRate][level as i32 + 1]
-                as i32
+            let species: u16 = GetMonData2(mon, MON_DATA_SPECIES) as u16;
+            let level: u8 = GetMonData2(mon, MON_DATA_LEVEL) as u8;
+            let exp: u32 = GetMonData2(mon, MON_DATA_EXP);
+            let currLevelExp: u32 = (*(&raw const crate::data::pokemon::gExperienceTables)
+                .cast::<CArray<CArray<u32, 101>, 0>>())
+                [(*(&raw const crate::data::pokemon::gSpeciesInfo)
+                    .cast::<CArray<SpeciesInfo, 0>>())[species]
+                    .growthRate][level];
+            let currExpBarValue: i32 = exp as i32 - currLevelExp as i32;
+            let maxExpBarValue: i32 = (*(&raw const crate::data::pokemon::gExperienceTables)
+                .cast::<CArray<CArray<u32, 101>, 0>>())
+                [(*(&raw const crate::data::pokemon::gSpeciesInfo)
+                    .cast::<CArray<SpeciesInfo, 0>>())[species]
+                    .growthRate][level as i32 + 1] as i32
                 - currLevelExp as i32;
             SetBattleBarStruct(
                 battler,
@@ -2050,13 +2035,7 @@ pub unsafe extern "C" fn UpdateHealthboxAttribute(
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MoveBattleBar(
-    battler: u8,
-    healthboxSpriteId: u8,
-    whichBar: u8,
-    unused: u8,
-) -> i32 {
+pub unsafe fn MoveBattleBar(battler: u8, healthboxSpriteId: u8, whichBar: u8, unused: u8) -> i32 {
     let mut currentBarValue: i32 = 0;
     if whichBar == HEALTH_BAR {
         currentBarValue = CalcNewBarValue(
@@ -2110,14 +2089,13 @@ pub unsafe extern "C" fn MoveBattleBar(
     if currentBarValue == -1 {
         (*(*gBattleSpritesDataPtr).battleBars.at(battler)).currValue = 0;
     }
-    return currentBarValue;
+    currentBarValue
 }
-pub(crate) unsafe extern "C" fn MoveBattleBarGraphically(battler: u8, whichBar: u8) {
+unsafe fn MoveBattleBarGraphically(battler: u8, whichBar: u8) {
     let mut array: CArray<u8, 8> = zeroed();
     let mut filledPixelsCount: u8 = 0;
     let mut level: u8 = 0;
     let mut barElementId: u8 = 0;
-    let mut i: u8 = 0;
     match whichBar {
         HEALTH_BAR => {
             filledPixelsCount = CalcBarFilledPixels(
@@ -2135,11 +2113,10 @@ pub(crate) unsafe extern "C" fn MoveBattleBarGraphically(battler: u8, whichBar: 
             } else {
                 barElementId = HEALTHBOX_GFX_HP_BAR_RED;
             }
-            i = 0;
-            while i < 6 {
-                let mut healthbarSpriteId: u8 = gSprites
-                    [(*(*gBattleSpritesDataPtr).battleBars.at(battler)).healthboxSpriteId]
-                    .data[5] as u8;
+            for i in 0..6u8 {
+                let healthbarSpriteId: u8 =
+                    gSprites[(*(*gBattleSpritesDataPtr).battleBars.at(battler)).healthboxSpriteId]
+                        .data[hMain_HealthBarSpriteId] as u8;
                 if i < 2 {
                     CpuSet(
                         GetHealthboxElementGfxPtr(barElementId).at(array[i] as i32 * 32)
@@ -2159,7 +2136,6 @@ pub(crate) unsafe extern "C" fn MoveBattleBarGraphically(battler: u8, whichBar: 
                         0x4000008,
                     );
                 }
-                i += 1;
             }
         }
         EXP_BAR => {
@@ -2176,14 +2152,11 @@ pub(crate) unsafe extern "C" fn MoveBattleBarGraphically(battler: u8, whichBar: 
                 MON_DATA_LEVEL,
             ) as u8;
             if level == MAX_LEVEL as u8 {
-                i = 0;
-                while i < 8 {
+                for i in 0..8u8 {
                     array[i] = 0;
-                    i += 1;
                 }
             }
-            i = 0;
-            while i < 8 {
+            for i in 0..8u8 {
                 if i < 4 {
                     CpuSet(
                         GetHealthboxElementGfxPtr(HEALTHBOX_GFX_12).at(array[i] as i32 * 32)
@@ -2212,13 +2185,12 @@ pub(crate) unsafe extern "C" fn MoveBattleBarGraphically(battler: u8, whichBar: 
                         0x4000008,
                     );
                 }
-                i += 1;
             }
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CalcNewBarValue(
+unsafe fn CalcNewBarValue(
     maxValue: i32,
     oldValue: i32,
     receivedValue: i32,
@@ -2227,7 +2199,6 @@ pub(crate) unsafe extern "C" fn CalcNewBarValue(
     toAdd: u16,
 ) -> i32 {
     let mut ret: i32 = 0;
-    let mut newValue: i32 = 0;
     scale *= 8;
     if *currValue == -32768 {
         if maxValue < scale as i32 {
@@ -2236,7 +2207,7 @@ pub(crate) unsafe extern "C" fn CalcNewBarValue(
             *currValue = oldValue;
         }
     }
-    newValue = oldValue - receivedValue;
+    let mut newValue: i32 = oldValue - receivedValue;
     if newValue < 0 {
         newValue = 0;
     } else if newValue > maxValue {
@@ -2252,7 +2223,7 @@ pub(crate) unsafe extern "C" fn CalcNewBarValue(
         }
     }
     if maxValue < scale as i32 {
-        let mut toAdd: i32 = div_i32(maxValue << 8, scale as i32);
+        let toAdd: i32 = div_i32(maxValue << 8, scale as i32);
         if receivedValue < 0 {
             *currValue += toAdd;
             ret = *currValue >> 8;
@@ -2286,28 +2257,25 @@ pub(crate) unsafe extern "C" fn CalcNewBarValue(
             ret = *currValue;
         }
     }
-    return ret;
+    ret
 }
-pub(crate) unsafe extern "C" fn CalcBarFilledPixels(
+unsafe fn CalcBarFilledPixels(
     maxValue: i32,
     oldValue: i32,
     receivedValue: i32,
     currValue: *mut i32,
-    mut pixelsArray: *mut u8,
+    pixelsArray: *mut u8,
     scale: u8,
 ) -> u8 {
     let mut pixels: u8 = 0;
-    let mut filledPixels: u8 = 0;
-    let mut totalPixels: u8 = 0;
-    let mut i: u8 = 0;
     let mut newValue: i32 = oldValue - receivedValue;
     if newValue < 0 {
         newValue = 0;
     } else if newValue > maxValue {
         newValue = maxValue;
     }
-    totalPixels = scale * 8;
-    i = 0;
+    let totalPixels: u8 = scale * 8;
+    let mut i: u8 = 0;
     while i < scale {
         *pixelsArray.at(i) = 0;
         i += 1;
@@ -2317,13 +2285,12 @@ pub(crate) unsafe extern "C" fn CalcBarFilledPixels(
     } else {
         pixels = div_i32(*currValue * totalPixels as i32, maxValue) as u8;
     }
-    filledPixels = pixels;
+    let mut filledPixels: u8 = pixels;
     if filledPixels == 0 && newValue > 0 {
         *pixelsArray = 1;
         filledPixels = 1;
     } else {
-        i = 0;
-        while i < scale {
+        for i in 0..scale {
             if pixels >= 8 {
                 *pixelsArray.at(i) = 8;
             } else {
@@ -2331,20 +2298,18 @@ pub(crate) unsafe extern "C" fn CalcBarFilledPixels(
                 break;
             }
             pixels -= 8;
-            i += 1;
         }
     }
-    return filledPixels;
+    filledPixels
 }
-pub(crate) unsafe extern "C" fn Debug_TestHealthBar(
+unsafe fn Debug_TestHealthBar(
     barInfo: *mut TestingBar,
     currValue: *mut i32,
     dest: *mut u16,
     unused: i32,
 ) -> i16 {
-    let mut ret: i16 = 0;
     let mut var: i16 = 0;
-    ret = CalcNewBarValue(
+    let ret: i16 = CalcNewBarValue(
         (*barInfo).maxValue,
         (*barInfo).oldValue,
         (*barInfo).receivedValue,
@@ -2359,16 +2324,15 @@ pub(crate) unsafe extern "C" fn Debug_TestHealthBar(
         var = *currValue as i16;
     }
     DummiedOutFunction((*barInfo).maxValue as i16, var, unused);
-    return ret;
+    ret
 }
-pub(crate) unsafe extern "C" fn Debug_TestHealthBar_Helper(
+unsafe fn Debug_TestHealthBar_Helper(
     barInfo: *mut TestingBar,
     currValue: *mut i32,
     dest: *mut u16,
 ) {
     let mut pixels: CArray<u8, 6> = zeroed();
     let mut src: CArray<u16, 6> = zeroed();
-    let mut i: u8 = 0;
     CalcBarFilledPixels(
         (*barInfo).maxValue,
         (*barInfo).oldValue,
@@ -2377,50 +2341,38 @@ pub(crate) unsafe extern "C" fn Debug_TestHealthBar_Helper(
         pixels.as_mut_ptr(),
         6,
     );
-    i = 0;
-    while i < 6 {
-        src[i] = ((*barInfo).unkC_0() as u16) << 12 | (*barInfo).unk10 as u16 + pixels[i] as u16;
-        i += 1;
+    for i in 0..6u8 {
+        src[i] =
+            (((*barInfo).unkC_0() as u16) << 12) | ((*barInfo).unk10 as u16 + pixels[i] as u16);
     }
     CpuSet(src.as_mut_ptr() as *mut c_void, dest as *mut c_void, 6);
 }
-pub(crate) unsafe extern "C" fn GetScaledExpFraction(
-    oldValue: i32,
-    receivedValue: i32,
-    maxValue: i32,
-    mut scale: u8,
-) -> u8 {
-    let mut newVal: i32 = 0;
-    let mut result: i32 = 0;
-    let mut oldToMax: i8 = 0;
-    let mut newToMax: i8 = 0;
+fn GetScaledExpFraction(oldValue: i32, receivedValue: i32, maxValue: i32, mut scale: u8) -> u8 {
     scale *= 8;
-    newVal = oldValue - receivedValue;
+    let mut newVal: i32 = oldValue - receivedValue;
     if newVal < 0 {
         newVal = 0;
     } else if newVal > maxValue {
         newVal = maxValue;
     }
-    oldToMax = div_i32(oldValue * scale as i32, maxValue) as i8;
-    newToMax = div_i32(newVal * scale as i32, maxValue) as i8;
-    result = oldToMax as i32 - newToMax as i32;
-    return (if result < 0 { -result } else { result }) as u8;
+    let oldToMax: i8 = div_i32(oldValue * scale as i32, maxValue) as i8;
+    let newToMax: i8 = div_i32(newVal * scale as i32, maxValue) as i8;
+    let result: i32 = oldToMax as i32 - newToMax as i32;
+    (if result < 0 { -result } else { result }) as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetScaledHPFraction(hp: i16, maxhp: i16, scale: u8) -> u8 {
-    let mut result: u8 = div_i32(hp as i32 * scale as i32, maxhp as i32) as u8;
+pub fn GetScaledHPFraction(hp: i16, maxhp: i16, scale: u8) -> u8 {
+    let result: u8 = div_i32(hp as i32 * scale as i32, maxhp as i32) as u8;
     if result == 0 && hp > 0 {
         return 1;
     }
-    return result;
+    result
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetHPBarLevel(hp: i16, maxhp: i16) -> u8 {
+pub unsafe fn GetHPBarLevel(hp: i16, maxhp: i16) -> u8 {
     let mut result: u8 = 0;
     if hp == maxhp {
         result = HP_BAR_FULL;
     } else {
-        let mut fraction: u8 = GetScaledHPFraction(hp, maxhp, B_HEALTHBAR_PIXELS as u8);
+        let fraction: u8 = GetScaledHPFraction(hp, maxhp, B_HEALTHBAR_PIXELS as u8);
         if fraction > 24 {
             result = HP_BAR_GREEN;
         } else if fraction > 9 {
@@ -2431,20 +2383,18 @@ pub unsafe extern "C" fn GetHPBarLevel(hp: i16, maxhp: i16) -> u8 {
             result = HP_BAR_EMPTY;
         }
     }
-    return result;
+    result
 }
-pub(crate) unsafe extern "C" fn AddTextPrinterAndCreateWindowOnHealthbox(
+unsafe fn AddTextPrinterAndCreateWindowOnHealthbox(
     str: *mut u8,
     x: u32,
     y: u32,
     bgColor: u32,
     windowId: *mut u32,
 ) -> *mut u8 {
-    let mut winId: u16 = 0;
     let mut color: CArray<u8, 3> = zeroed();
-    let mut winTemplate: WindowTemplate = zeroed();
-    winTemplate = *sHealthboxWindowTemplate;
-    winId = AddWindow(&raw mut winTemplate);
+    let mut winTemplate: WindowTemplate = *sHealthboxWindowTemplate;
+    let winId: u16 = AddWindow(&raw mut winTemplate);
     FillWindowPixelBuffer(winId as u8, bgColor as u8 | (bgColor as u8) << 4);
     color[0] = bgColor as u8;
     color[1] = 1;
@@ -2461,16 +2411,12 @@ pub(crate) unsafe extern "C" fn AddTextPrinterAndCreateWindowOnHealthbox(
         str,
     );
     *windowId = winId as u32;
-    return GetWindowAttribute(winId as u8, WINDOW_TILE_DATA) as usize as *mut u8;
+    GetWindowAttribute(winId as u8, WINDOW_TILE_DATA) as usize as *mut u8
 }
-pub(crate) unsafe extern "C" fn RemoveWindowOnHealthbox(windowId: u32) {
+unsafe fn RemoveWindowOnHealthbox(windowId: u32) {
     RemoveWindow(windowId as u8);
 }
-pub(crate) unsafe extern "C" fn FillHealthboxObject(
-    dest: *mut c_void,
-    valMult: u32,
-    numTiles: u32,
-) {
+unsafe fn FillHealthboxObject(dest: *mut c_void, valMult: u32, numTiles: u32) {
     {
         {
             let mut tmp: u32 = 0;
@@ -2478,35 +2424,29 @@ pub(crate) unsafe extern "C" fn FillHealthboxObject(
             CpuSet(
                 &raw mut tmp as *mut c_void,
                 dest,
-                0x5000000 | numTiles * 32 / 4 & 0x1FFFFF,
+                0x5000000 | (numTiles * 32 / 4) & 0x1FFFFF,
             );
         }
     }
 }
-pub(crate) unsafe extern "C" fn HpTextIntoHealthboxObject(
-    dest: *mut c_void,
-    windowTileData: *mut u8,
-    windowWidth: u32,
-) {
+unsafe fn HpTextIntoHealthboxObject(dest: *mut c_void, windowTileData: *mut u8, windowWidth: u32) {
     CpuSet(
         windowTileData.at(256) as *mut c_void,
         dest,
-        0x04000000 | windowWidth * 32 / 4 & 0x1FFFFF,
+        0x04000000 | (windowWidth * 32 / 4) & 0x1FFFFF,
     );
 }
-pub(crate) unsafe extern "C" fn TextIntoHealthboxObject(
+unsafe fn TextIntoHealthboxObject(
     mut dest: *mut c_void,
     mut windowTileData: *mut u8,
     windowWidth: i32,
 ) {
-    let mut i: i32 = 0;
     CpuSet(
         windowTileData.at(256) as *mut c_void,
         (dest as *mut u8).at(256) as *mut c_void,
         0x04000000 | (windowWidth * 32 / 4) as u32 & 0x1FFFFF,
     );
-    i = 0;
-    while i < windowWidth {
+    for i in 0..windowWidth {
         CpuSet(
             windowTileData.at(20) as *mut c_void,
             (dest as *mut u8).at(20) as *mut c_void,
@@ -2514,10 +2454,9 @@ pub(crate) unsafe extern "C" fn TextIntoHealthboxObject(
         );
         dest = (dest as *mut u8).at(32) as *mut c_void;
         windowTileData = windowTileData.at(32);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SafariTextIntoHealthboxObject(
+unsafe fn SafariTextIntoHealthboxObject(
     dest: *mut c_void,
     windowTileData: *mut u8,
     windowWidth: u32,
@@ -2525,11 +2464,11 @@ pub(crate) unsafe extern "C" fn SafariTextIntoHealthboxObject(
     CpuSet(
         windowTileData as *mut c_void,
         dest,
-        0x04000000 | windowWidth * 32 / 4 & 0x1FFFFF,
+        0x04000000 | (windowWidth * 32 / 4) & 0x1FFFFF,
     );
     CpuSet(
         windowTileData.at(256) as *mut c_void,
         (dest as *mut u8).at(256) as *mut c_void,
-        0x04000000 | windowWidth * 32 / 4 & 0x1FFFFF,
+        0x04000000 | (windowWidth * 32 / 4) & 0x1FFFFF,
     );
 }

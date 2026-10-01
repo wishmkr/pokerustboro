@@ -3,37 +3,230 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::agb_main::{SetHBlankCallback, SetVBlankCallback};
+use crate::battle_ai_script_commands::{ClearBattlerAbilityHistory, ClearBattlerMoveHistory};
+use crate::battle_anim_mons::{GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide};
+use crate::battle_arena::BattleArena_InitPoints;
+use crate::battle_bg::{
+    DrawBattleEntryBackground, InitBattleBgsVideo, InitLinkBattleVsScreen, LoadBattleMenuWindowGfx,
+    LoadBattleTextboxAndBackground, LoadChosenBattleElement,
+};
+use crate::battle_controllers::{
+    BtlController_EmitChooseAction, BtlController_EmitChooseItem, BtlController_EmitChooseMove,
+    BtlController_EmitChoosePokemon, BtlController_EmitDrawPartyStatusSummary,
+    BtlController_EmitDrawTrainerPic, BtlController_EmitEndBounceEffect,
+    BtlController_EmitGetMonData, BtlController_EmitIntroSlide,
+    BtlController_EmitIntroTrainerBallThrow, BtlController_EmitLinkStandbyMsg,
+    BtlController_EmitLoadMonSprite, BtlController_EmitSwitchInAnim, HandleLinkBattleSetup,
+    InitBattleControllers, SetUpBattleVarsAndBirchZigzagoon,
+};
+use crate::battle_gfx_sfx_util::{
+    AllocateBattleSpritesData, AllocateMonSpritesGfx, BattleInitAllSprites, BattleStopLowHpSound,
+    FillAroundBattleWindows, FreeBattleSpritesData, FreeMonSpritesGfx,
+};
+use crate::battle_interface::SetHealthboxSpriteVisible;
+use crate::battle_message::{
+    BattlePutTextOnWindow, BattleStringExpandPlaceholdersToDisplayedString,
+};
+use crate::battle_script_commands::{
+    BattleCreateYesNoCursorAt, BattleDestroyYesNoCursorAt, HandleBattleWindow,
+};
+use crate::battle_setup::{
+    BattleSetup_GetEnvironmentId, gPartnerTrainerId, gTrainerBattleOpponent_A,
+    gTrainerBattleOpponent_B,
+};
+use crate::battle_tower::{
+    GetBattleTowerTrainerLanguage, GetFrontierTrainerName, TrySetLinkBattleTowerEnemyPartyLevel,
+};
+use crate::battle_util::{
+    AbilityBattleEffects, AreAllMovesUnusable, BattleScriptExecute, CancelMultiTurnMoves,
+    DoBattlerEndTurnEffects, DoFieldEndTurnEffects, HandleFaintedMonActions,
+    HandleWishPerishSongOnTurnEnd, ItemBattleEffects, MarkBattlerForControllerExec,
+    PrepareStringBattle, ResetSentPokesToOpponentValue, TryClearRageStatuses,
+    TrySetCantSelectMoveBattleScript,
+};
+use crate::battle_util2::{
+    AllocateBattleResources, FreeBattleResources, SwitchPartyOrderInGameMulti,
+};
+use crate::berry::{GetBerryInfo, IsEnigmaBerryValid, ItemIdToBerryType};
+use crate::bg::{IsDma3ManagerBusyWithBgCopy, ShowBg};
 #[allow(unused_imports)]
 use crate::c::*;
+use crate::cable_club::Task_ReconnectWithLinkPlayers;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::FlagGet;
+use crate::evolution_scene::{EvolutionScene, gCB2_AfterEvolution};
+use crate::ffi::gSpecialVar_Result;
+use crate::gpu_regs::SetGpuReg;
+use crate::international_string_util::PadNameString;
+use crate::item::{GetItemHoldEffect, GetItemHoldEffectParam};
+use crate::link::gBlockRecvBuffer;
+use crate::link::{
+    BitmaskAllOtherLinkPlayers, GetBlockReceivedStatus, GetMultiplayerId, IsLinkTaskFinished,
+    ResetBlockReceivedFlags, SendBlock, SetCloseLinkCallback, SetLinkStandbyCallback, gLinkPlayers,
+    gReceivedRemoteLinkPlayers, gWirelessCommType,
+};
+use crate::link_rfu_2::IsLinkRfuTaskFinished;
+use crate::link_rfu_3::{
+    CreateWirelessStatusIndicatorSprite, LoadWirelessStatusIndicatorSpriteGfx,
+};
+use crate::load_save::MoveSaveBlocks_ResetHeap;
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::m4a::{gMPlayInfo_SE1, gMPlayInfo_SE2, m4aMPlayStop, m4aSongNumStop};
+use crate::palette::{
+    BeginFastPaletteFade, BeginNormalPaletteFade, LoadCompressedPalette, ResetPaletteFade,
+    ResetPaletteFadeControl, TransferPlttBuffer, UpdatePaletteFade, gPaletteFade,
+};
+use crate::party_menu::gBattlePartyCurrentOrder;
+use crate::party_menu::{
+    GetPartyIdFromBattlePartyId, ShowPartyMenuToShowcaseMultiBattleParty, SwitchPartyMonSlots,
+};
+use crate::pokeball::StartHealthboxSlideIn;
+use crate::pokemon::{
+    AdjustFriendship, BattleAnimateBackSprite, BattleAnimateFrontSprite, CalculatePPWithBonus,
+    CreateMon, GetAbilityBySpecies, GetEvolutionTargetSpecies, GetMonData2, GetMonData3,
+    GetMonGender, HandleSetPokedexFlag, HasTwoFramesAnimation, IsMonShiny,
+    IsPlayerPartyAndPokemonStorageFull, PartySpreadPokerus, RandomlyGivePartyPokerus,
+    SetDeoxysStats, SetMonData, SetWildMonHeldItem, SpeciesToNationalPokedexNum,
+    ZeroEnemyPartyMons, gEnemyParty, gPlayerParty,
+};
+use crate::random::Random;
+use crate::recorded_battle::{
+    GetBattleSceneInRecordedBattle, MoveRecordedBattleToSaveData, RecordedBattle_CanStopPlayback,
+    RecordedBattle_CheckMovesetChanges, RecordedBattle_ClearBattlerAction,
+    RecordedBattle_ClearFrontierPassFlag, RecordedBattle_CopyBattlerMoves,
+    RecordedBattle_GetFrontierPassFlag, RecordedBattle_SetBattlerAction,
+    RecordedBattle_SetFrontierPassFlagFromHword, RecordedBattle_SetPlaybackFinished,
+    RecordedBattle_SetTrainerInfo, gBattlePalaceMoveSelectionRngValue, gRecordedBattleRngSeed,
+};
+use crate::roamer::SetRoamerInactive;
+use crate::scanline_effect::gScanlineEffect;
+use crate::scanline_effect::{ScanlineEffect_Clear, ScanlineEffect_InitHBlankDmaTransfer};
+use crate::sound::{FadeOutMapMusic, PlayBGM, PlaySE, StopCryAndClearCrySongs};
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, FreeSpritePaletteByTag,
+    FreeSpriteTilesByTag, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData,
+    gReservedSpritePaletteCount,
+};
+use crate::string_util::StringCompareWithoutExtCtrlCodes;
+use crate::string_util::StripExtCtrlCodes;
+use crate::task::{ResetTasks, RunTasks};
+use crate::task::{task_get, task_set};
+use crate::text::{IsTextPrinterActive, RunTextPrinters};
+use crate::trig::Sin;
+use crate::tv::{TryPutBreakingNewsOnAir, TryPutPokemonTodayOnAir};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::util::gBitTable;
+use crate::window::FreeAllWindowBuffers;
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateInvisibleSpriteWithCallback` with this module's view of its types.
+#[inline]
+unsafe fn CreateInvisibleSpriteWithCallback(a0: Option<unsafe fn(*mut Sprite)>) -> u8 {
+    unsafe { crate::util::CreateInvisibleSpriteWithCallback(core::mem::transmute(a0)) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `FreeSpriteOamMatrix` with this module's view of its types.
+#[inline]
+unsafe fn FreeSpriteOamMatrix(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::FreeSpriteOamMatrix(a0 as _);
+    }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `ScanlineEffect_SetParams` with this module's view of its types.
+#[inline]
+unsafe fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
+    unsafe {
+        crate::scanline_effect::ScanlineEffect_SetParams(core::mem::transmute(a0));
+    }
+}
+/// `StartSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAffineAnim(a0 as _, a1);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StartSpriteAnimIfDifferent` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnimIfDifferent(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnimIfDifferent(a0 as _, a1);
+    }
+}
+/// `UpdateRoamerHPStatus` with this module's view of its types.
+#[inline]
+unsafe fn UpdateRoamerHPStatus(a0: *mut Pokemon) {
+    unsafe {
+        crate::roamer::UpdateRoamerHPStatus(a0 as _);
+    }
+}
+// The C's names for task and sprite data slots.
+const sBattler: usize = 0;
+const sSinIndex: usize = 0;
+const sState: usize = 0;
+const sDelta: usize = 1;
+const sSpeedX: usize = 1;
+const sAmplitude: usize = 2;
+const sSpeciesId: usize = 2;
+const sSpeedY: usize = 2;
+const sBouncerSpriteId: usize = 3;
+const sNumFlickers: usize = 3;
+const sDelay: usize = 4;
+const sWhich: usize = 4;
 // Data tables (translate with cdata.py): sIntroScanlineParams16Bit sIntroScanlineParams32Bit gUnusedBattleInitSprite sText_ShedinjaJpnName gOamData_BattleSpriteOpponentSide gOamData_BattleSpritePlayerSide sAnim_Unused sAnims_Unused sAffineAnim_Unused sAffineAnims_Unused sCenterToCornerVecXs gTypeEffectiveness gTypeNames gTrainerMoneyTable sNoneDescription sStenchDescription sDrizzleDescription sSpeedBoostDescription sBattleArmorDescription sSturdyDescription sDampDescription sLimberDescription sSandVeilDescription sStaticDescription sVoltAbsorbDescription sWaterAbsorbDescription sObliviousDescription sCloudNineDescription sCompoundEyesDescription sInsomniaDescription sColorChangeDescription sImmunityDescription sFlashFireDescription sShieldDustDescription sOwnTempoDescription sSuctionCupsDescription sIntimidateDescription sShadowTagDescription sRoughSkinDescription sWonderGuardDescription sLevitateDescription sEffectSporeDescription sSynchronizeDescription sClearBodyDescription sNaturalCureDescription sLightningRodDescription sSereneGraceDescription sSwiftSwimDescription sChlorophyllDescription sIlluminateDescription sTraceDescription sHugePowerDescription sPoisonPointDescription sInnerFocusDescription sMagmaArmorDescription sWaterVeilDescription sMagnetPullDescription sSoundproofDescription sRainDishDescription sSandStreamDescription sPressureDescription sThickFatDescription sEarlyBirdDescription sFlameBodyDescription sRunAwayDescription sKeenEyeDescription sHyperCutterDescription sPickupDescription sTruantDescription sHustleDescription sCuteCharmDescription sPlusDescription sMinusDescription sForecastDescription sStickyHoldDescription sShedSkinDescription sGutsDescription sMarvelScaleDescription sLiquidOozeDescription sOvergrowDescription sBlazeDescription sTorrentDescription sSwarmDescription sRockHeadDescription sDroughtDescription sArenaTrapDescription sVitalSpiritDescription sWhiteSmokeDescription sPurePowerDescription sShellArmorDescription sCacophonyDescription sAirLockDescription gAbilityNames gAbilityDescriptionPointers sTurnActionsFuncsTable sEndTurnFuncsTable gStatusConditionString_PoisonJpn gStatusConditionString_SleepJpn gStatusConditionString_ParalysisJpn gStatusConditionString_BurnJpn gStatusConditionString_IceJpn gStatusConditionString_ConfusionJpn gStatusConditionString_LoveJpn gStatusConditionStringsTable
 
 const STATE_ASK_RECORD: u8 = 3;
@@ -61,13 +254,13 @@ const STATE_WAIT_SET_BEFORE_ACTION: u8 = 7;
 
 static sCenterToCornerVecXs: Table<CArray<i8, 8>> =
     Table((&raw const crate::data::battle_main::sCenterToCornerVecXs).cast());
-static sEndTurnFuncsTable: Table<CArray<Option<unsafe extern "C" fn()>, 11>> =
+static sEndTurnFuncsTable: Table<CArray<Option<unsafe fn()>, 11>> =
     Table((&raw const crate::data::battle_main::sEndTurnFuncsTable).cast());
 static sIntroScanlineParams16Bit: Table<ScanlineEffectParams> =
     Table((&raw const crate::data::battle_main::sIntroScanlineParams16Bit).cast());
 static sText_ShedinjaJpnName: Table<CArray<u8, 5>> =
     Table((&raw const crate::data::battle_main::sText_ShedinjaJpnName).cast());
-static sTurnActionsFuncsTable: Table<CArray<Option<unsafe extern "C" fn()>, 14>> =
+static sTurnActionsFuncsTable: Table<CArray<Option<unsafe fn()>, 14>> =
     Table((&raw const crate::data::battle_main::sTurnActionsFuncsTable).cast());
 
 #[unsafe(no_mangle)]
@@ -94,16 +287,12 @@ pub static mut gBattle_BG3_X: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattle_BG3_Y: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattle_WIN0H: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattle_WIN0V: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattle_WIN1H: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattle_WIN1V: u16 = 0;
 #[unsafe(no_mangle)]
@@ -123,13 +312,10 @@ pub(crate) static mut sFlickerArray: CArray<u32, 25> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattleTypeFlags: u32 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattleEnvironment: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gUnusedFirstBattleVar1: u32 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gMultiPartnerParty: CArray<MultiPartnerMenuPokemon, 3> = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
@@ -149,7 +335,6 @@ pub static mut gBattleBufferB: Aligned<CArray<CArray<u8, 512>, 4>> = Aligned(uns
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gActiveBattler: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattleControllerExecFlags: u32 = 0;
 #[unsafe(no_mangle)]
@@ -167,10 +352,8 @@ pub static mut gActionsByTurnOrder: Aligned<CArray<u8, 4>> = Aligned(unsafe { ze
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattlerByTurnOrder: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gCurrentTurnActionNumber: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gCurrentActionFuncId: u8 = 0;
 #[unsafe(no_mangle)]
@@ -179,10 +362,8 @@ pub static mut gBattleMons: CArray<BattlePokemon, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattlerSpriteIds: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gCurrMovePos: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gChosenMovePos: u8 = 0;
 #[unsafe(no_mangle)]
@@ -191,7 +372,6 @@ pub static mut gCurrentMove: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gChosenMove: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gCalledMove: u16 = 0;
 #[unsafe(no_mangle)]
@@ -200,13 +380,11 @@ pub static mut gBattleMoveDamage: i32 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gHpDealt: i32 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBideDmg: CArray<i32, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gLastUsedItem: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gLastUsedAbility: u8 = 0;
 #[unsafe(no_mangle)]
@@ -221,31 +399,25 @@ pub static mut gBattlerFainted: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gEffectBattler: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gPotentialItemEffectBattler: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gAbsentBattlerFlags: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gCritMultiplier: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gMultiHitCounter: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattlescriptCurrInstr: *mut u8 = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gUnusedBattleMainVar: u32 = 0;
+pub static gUnusedBattleMainVar: crate::global::Global<u32> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gChosenActionByBattler: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gSelectionBattleScripts: CArray<*mut u8, 4> = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gPalaceSelectionBattleScripts: CArray<*mut u8, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
@@ -283,49 +455,38 @@ pub(crate) static mut sUnusedBattlersArray: Aligned<CArray<u8, 4>> = Aligned(uns
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBideTarget: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gUnusedFirstBattleVar2: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gSideStatuses: Aligned<CArray<u16, 2>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gSideTimers: CArray<SideTimer, 2> = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gStatuses3: CArray<u32, 4> = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gDisableStructs: CArray<DisableStruct, 4> = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gPauseCounterBattle: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gPaydayMoney: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gRandomTurnNumber: u16 = 0;
+pub static gRandomTurnNumber: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattleCommunication: Aligned<CArray<u8, 8>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattleOutcome: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gProtectStructs: CArray<ProtectStruct, 4> = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gSpecialStatuses: CArray<SpecialStatus, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattleWeather: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gWishFutureKnock: WishFutureKnock = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gIntroSlideFlags: u16 = 0;
 #[unsafe(no_mangle)]
@@ -334,10 +495,8 @@ pub static mut gSentPokesToOpponent: Aligned<CArray<u8, 2>> = Aligned(unsafe { z
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gDynamicBasePower: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gExpShareExp: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gEnigmaBerries: CArray<BattleEnigmaBerry, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
@@ -367,309 +526,72 @@ pub static mut gBattlerStatusSummaryTaskId: Aligned<CArray<u8, 4>> = Aligned(uns
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattlerInMenuId: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gDoingBattleAnim: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gTransformedPersonalities: CArray<u32, 4> = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gPlayerDpadHoldFrames: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattleSpritesDataPtr: *mut BattleSpriteData = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gMonSpritesGfxPtr: *mut MonSpritesGfx = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattleControllerOpponentHealthboxData: *mut BattleHealthboxInfo = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattleControllerOpponentFlankHealthboxData: *mut BattleHealthboxInfo = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattleMovePower: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gMoveToLearn: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattleMonForms: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gPreBattleCallback1: Option<unsafe extern "C" fn()> = None;
-#[unsafe(no_mangle)]
+pub static mut gPreBattleCallback1: Option<unsafe fn()> = None;
 #[unsafe(link_section = "common_data")]
-pub static mut gBattleMainFunc: Option<unsafe extern "C" fn()> = None;
+pub static mut gBattleMainFunc: Option<unsafe fn()> = None;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gBattleResults: BattleResults = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gLeveledUpInBattle: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gBattlerControllerFuncs: CArray<Option<unsafe extern "C" fn()>, 4> =
-    unsafe { zeroed() };
+pub static mut gBattlerControllerFuncs: CArray<Option<unsafe fn()>, 4> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gHealthboxSpriteIds: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gMultiUsePlayerCursor: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gNumberOfMovesToChoose: u8 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gBattleControllerData: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
 
-unsafe extern "C" {
-    static BattleFrontier_BattleTowerBattleRoom_Text_RecordCouldntBeSaved: CArray<u8, 0>;
-    static BattleScript_ActionSelectionItemsCantBeUsed: CArray<u8, 0>;
-    static BattleScript_ArenaTurnBeginning: CArray<u8, 0>;
-    static BattleScript_AskIfWantsToForfeitMatch: CArray<u8, 0>;
-    static BattleScript_FocusPunchSetUp: CArray<u8, 0>;
-    static BattleScript_FrontierLinkBattleLost: CArray<u8, 0>;
-    static BattleScript_FrontierTrainerBattleWon: CArray<u8, 0>;
-    static BattleScript_GotAwaySafely: CArray<u8, 0>;
-    static BattleScript_LinkBattleWonOrLost: CArray<u8, 0>;
-    static BattleScript_LocalBattleLost: CArray<u8, 0>;
-    static BattleScript_LocalTrainerBattleWon: CArray<u8, 0>;
-    static BattleScript_PalacePrintFlavorText: CArray<u8, 0>;
-    static BattleScript_PayDayMoneyAndPickUpItems: CArray<u8, 0>;
-    static BattleScript_PrintCantEscapeFromBattle: CArray<u8, 0>;
-    static BattleScript_PrintCantRunFromTrainer: CArray<u8, 0>;
-    static BattleScript_PrintFullBox: CArray<u8, 0>;
-    static BattleScript_PrintPlayerForfeited: CArray<u8, 0>;
-    static BattleScript_PrintPlayerForfeitedLinkBattle: CArray<u8, 0>;
-    static BattleScript_RanAwayUsingMonAbility: CArray<u8, 0>;
-    static BattleScript_SmokeBallEscape: CArray<u8, 0>;
-    static BattleScript_WildMonFled: CArray<u8, 0>;
-    static gBattleBgTemplates: CArray<BgTemplate, 0>;
-    static gBattleMoves: CArray<BattleMove, 0>;
-    static mut gBattlePalaceMoveSelectionRngValue: u32;
-    static mut gBattlePartyCurrentOrder: CArray<u8, 3>;
-    static gBattleScriptingCommandsTable: CArray<Option<unsafe extern "C" fn()>, 0>;
-    static gBattleTextboxPalette: CArray<u32, 0>;
-    static gBattleWindowTemplates: CArray<*mut WindowTemplate, 0>;
-    static gBitTable: CArray<u32, 0>;
-    static mut gBlockRecvBuffer: CArray<CArray<u16, 128>, 5>;
-    static mut gCB2_AfterEvolution: Option<unsafe extern "C" fn()>;
-    static gCastformFrontSpriteCoords: CArray<MonCoords, 0>;
-    static mut gDecompressionBuffer: CArray<u8, 16384>;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gMPlayInfo_SE1: MusicPlayerInfo;
-    static mut gMPlayInfo_SE2: MusicPlayerInfo;
-    static mut gMain: Main;
-    static gMonFrontPicCoords: CArray<MonCoords, 0>;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPartnerTrainerId: u16;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gRecordedBattleRngSeed: u32;
-    static mut gReservedSpritePaletteCount: u8;
-    static mut gRngValue: u32;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gScanlineEffect: ScanlineEffect;
-    static mut gScanlineEffectRegBuffers: CArray<CArray<u16, 960>, 2>;
-    static mut gSpecialVar_Result: u16;
-    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static gStatStageRatios: CArray<CArray<u8, 2>, 13>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_BattleRecordedOnPass: CArray<u8, 0>;
-    static gText_BattleYesNoChoice: CArray<u8, 0>;
-    static gText_EmptyString3: CArray<u8, 0>;
-    static gText_LinkStandby3: CArray<u8, 0>;
-    static gText_RecordBattleToPass: CArray<u8, 0>;
-    static mut gTrainerBattleOpponent_A: u16;
-    static mut gTrainerBattleOpponent_B: u16;
-    static gTrainers: CArray<Trainer, 0>;
-    static mut gWirelessCommType: u8;
-    fn AbilityBattleEffects(a0: u8, a1: u8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn AdjustFriendship(a0: *mut Pokemon, a1: u8);
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AllocateBattleResources();
-    fn AllocateBattleSpritesData();
-    fn AllocateMonSpritesGfx();
-    fn AnimateSprites();
-    fn AreAllMovesUnusable() -> u8;
-    fn BattleAnimateBackSprite(a0: *mut Sprite, a1: u16);
-    fn BattleAnimateFrontSprite(a0: *mut Sprite, a1: u16, a2: u8, a3: u8);
-    fn BattleArena_InitPoints();
-    fn BattleCreateYesNoCursorAt(a0: u8);
-    fn BattleDestroyYesNoCursorAt(a0: u8);
-    fn BattleInitAllSprites(a0: *mut u8, a1: *mut u8) -> u8;
-    fn BattlePutTextOnWindow(a0: *mut u8, a1: u8);
-    fn BattleScriptExecute(a0: *mut u8);
-    fn BattleSetup_GetEnvironmentId() -> u8;
-    fn BattleStopLowHpSound();
-    fn BattleStringExpandPlaceholdersToDisplayedString(a0: *mut u8) -> u32;
-    fn BeginFastPaletteFade(a0: u8);
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BitmaskAllOtherLinkPlayers() -> u8;
-    fn BtlController_EmitChooseAction(a0: u8, a1: u8, a2: u16);
-    fn BtlController_EmitChooseItem(a0: u8, a1: *mut u8);
-    fn BtlController_EmitChooseMove(a0: u8, a1: u8, a2: u8, a3: *mut ChooseMoveStruct);
-    fn BtlController_EmitChoosePokemon(a0: u8, a1: u8, a2: u8, a3: u8, a4: *mut u8);
-    fn BtlController_EmitDrawPartyStatusSummary(a0: u8, a1: *mut HpAndStatus, a2: u8);
-    fn BtlController_EmitDrawTrainerPic(a0: u8);
-    fn BtlController_EmitEndBounceEffect(a0: u8);
-    fn BtlController_EmitGetMonData(a0: u8, a1: u8, a2: u8);
-    fn BtlController_EmitIntroSlide(a0: u8, a1: u8);
-    fn BtlController_EmitIntroTrainerBallThrow(a0: u8);
-    fn BtlController_EmitLinkStandbyMsg(a0: u8, a1: u8, a2: u32);
-    fn BtlController_EmitLoadMonSprite(a0: u8);
-    fn BtlController_EmitSwitchInAnim(a0: u8, a1: u8, a2: u8);
-    fn BuildOamBuffer();
-    fn CalculatePPWithBonus(a0: u16, a1: u8, a2: u8) -> u8;
-    fn CancelMultiTurnMoves(a0: u8);
-    fn ClearBattlerAbilityHistory(a0: u8);
-    fn ClearBattlerMoveHistory(a0: u8);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateInvisibleSpriteWithCallback(a0: Option<unsafe extern "C" fn(*mut Sprite)>) -> u8;
-    fn CreateMon(a0: *mut Pokemon, a1: u16, a2: u8, a3: u8, a4: u8, a5: u32, a6: u8, a7: u32);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateWirelessStatusIndicatorSprite(a0: u8, a1: u8);
-    fn DestroySprite(a0: *mut Sprite);
-    fn DoBattlerEndTurnEffects() -> u8;
-    fn DoFieldEndTurnEffects() -> u8;
-    fn DrawBattleEntryBackground();
-    fn EvolutionScene(a0: *mut Pokemon, a1: u16, a2: u8, a3: u8);
-    fn FadeOutMapMusic(a0: u8);
-    fn FillAroundBattleWindows();
-    fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeBattleResources();
-    fn FreeBattleSpritesData();
-    fn FreeMonSpritesGfx();
-    fn FreeSpriteOamMatrix(a0: *mut Sprite);
-    fn FreeSpritePaletteByTag(a0: u16);
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetAbilityBySpecies(a0: u16, a1: u8) -> u8;
-    fn GetBattleSceneInRecordedBattle() -> u8;
-    fn GetBattleTowerTrainerLanguage(a0: *mut u8, a1: u16);
-    fn GetBattlerAtPosition(a0: u8) -> u8;
-    fn GetBattlerPosition(a0: u8) -> u8;
-    fn GetBattlerSide(a0: u8) -> u8;
-    fn GetBerryInfo(a0: u8) -> *mut Berry;
-    fn GetBlockReceivedStatus() -> u8;
-    fn GetEvolutionTargetSpecies(a0: *mut Pokemon, a1: u8, a2: u16) -> u16;
-    fn GetFrontierTrainerName(a0: *mut u8, a1: u16);
-    fn GetItemHoldEffect(a0: u16) -> u8;
-    fn GetItemHoldEffectParam(a0: u16) -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetMonGender(a0: *mut Pokemon) -> u8;
-    fn GetMultiplayerId() -> u8;
-    fn GetPartyIdFromBattlePartyId(a0: u8) -> u8;
-    fn HandleBattleWindow(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8);
-    fn HandleFaintedMonActions() -> u8;
-    fn HandleLinkBattleSetup();
-    fn HandleSetPokedexFlag(a0: u16, a1: u8, a2: u32);
-    fn HandleWishPerishSongOnTurnEnd() -> u8;
-    fn HasTwoFramesAnimation(a0: u16) -> u8;
-    fn InitBattleBgsVideo();
-    fn InitBattleControllers();
-    fn InitLinkBattleVsScreen(a0: u8);
-    fn IsDma3ManagerBusyWithBgCopy() -> u8;
-    fn IsEnigmaBerryValid() -> u32;
-    fn IsLinkRfuTaskFinished() -> u8;
-    fn IsLinkTaskFinished() -> u8;
-    fn IsMonShiny(a0: *mut Pokemon) -> u8;
-    fn IsPlayerPartyAndPokemonStorageFull() -> u8;
-    fn IsTextPrinterActive(a0: u8) -> u16;
-    fn ItemBattleEffects(a0: u8, a1: u8, a2: u8) -> u8;
-    fn ItemIdToBerryType(a0: u16) -> u8;
-    fn LoadBattleMenuWindowGfx();
-    fn LoadBattleTextboxAndBackground();
-    fn LoadChosenBattleElement(a0: u8) -> u8;
-    fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadOam();
-    fn LoadWirelessStatusIndicatorSpriteGfx();
-    fn MarkBattlerForControllerExec(a0: u8);
-    fn MoveRecordedBattleToSaveData() -> u32;
-    fn MoveSaveBlocks_ResetHeap();
-    fn PadNameString(a0: *mut u8, a1: u8);
-    fn PartySpreadPokerus(a0: *mut Pokemon);
-    fn PlayBGM(a0: u16);
-    fn PlaySE(a0: u16);
-    fn PrepareStringBattle(a0: u16, a1: u8);
-    fn ProcessSpriteCopyRequests();
-    fn Random() -> u16;
-    fn RandomlyGivePartyPokerus(a0: *mut Pokemon);
-    fn RecordedBattle_CanStopPlayback() -> u8;
-    fn RecordedBattle_CheckMovesetChanges(a0: u8);
-    fn RecordedBattle_ClearBattlerAction(a0: u8, a1: u8);
-    fn RecordedBattle_ClearFrontierPassFlag();
-    fn RecordedBattle_CopyBattlerMoves();
-    fn RecordedBattle_GetFrontierPassFlag() -> u8;
-    fn RecordedBattle_SetBattlerAction(a0: u8, a1: u8);
-    fn RecordedBattle_SetFrontierPassFlagFromHword(a0: u16);
-    fn RecordedBattle_SetPlaybackFinished();
-    fn RecordedBattle_SetTrainerInfo();
-    fn ResetBlockReceivedFlags();
-    fn ResetPaletteFade();
-    fn ResetPaletteFadeControl();
-    fn ResetSentPokesToOpponentValue();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn RunTasks();
-    fn RunTextPrinters();
-    fn ScanlineEffect_Clear();
-    fn ScanlineEffect_InitHBlankDmaTransfer();
-    fn ScanlineEffect_SetParams(a0: ScanlineEffectParams);
-    fn SendBlock(a0: u8, a1: *mut c_void, a2: u16) -> u8;
-    fn SetCloseLinkCallback();
-    fn SetDeoxysStats();
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetHBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetHealthboxSpriteVisible(a0: u8);
-    fn SetLinkStandbyCallback();
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
-    fn SetRoamerInactive();
-    fn SetUpBattleVarsAndBirchZigzagoon();
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetWildMonHeldItem();
-    fn ShowBg(a0: u8);
-    fn ShowPartyMenuToShowcaseMultiBattleParty();
-    fn Sin(a0: i16, a1: i16) -> i16;
-    fn SpeciesToNationalPokedexNum(a0: u16) -> u16;
-    fn StartHealthboxSlideIn(a0: u8);
-    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StartSpriteAnimIfDifferent(a0: *mut Sprite, a1: u8);
-    fn StopCryAndClearCrySongs();
-    fn StringCompareWithoutExtCtrlCodes(a0: *mut u8, a1: *mut u8) -> i32;
-    fn StripExtCtrlCodes(a0: *mut u8);
-    fn SwitchPartyMonSlots(a0: u8, a1: u8);
-    fn SwitchPartyOrderInGameMulti(a0: u8, a1: u8);
-    fn Task_ReconnectWithLinkPlayers(a0: u8);
-    fn TransferPlttBuffer();
-    fn TryClearRageStatuses();
-    fn TryPutBreakingNewsOnAir();
-    fn TryPutPokemonTodayOnAir();
-    fn TrySetCantSelectMoveBattleScript() -> u8;
-    fn TrySetLinkBattleTowerEnemyPartyLevel();
-    fn UpdatePaletteFade() -> u8;
-    fn UpdateRoamerHPStatus(a0: *mut Pokemon);
-    fn ZeroEnemyPartyMons();
-    fn m4aMPlayStop(a0: *mut MusicPlayerInfo);
-    fn m4aSongNumStop(a0: u16);
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_InitBattle() {
+pub unsafe fn CB2_InitBattle() {
     MoveSaveBlocks_ResetHeap();
     AllocateBattleResources();
     AllocateBattleSpritesData();
@@ -689,7 +611,7 @@ pub unsafe extern "C" fn CB2_InitBattle() {
         CB2_InitBattleInternal();
     }
 }
-pub(crate) unsafe extern "C" fn CB2_InitBattleInternal() {
+pub(crate) unsafe fn CB2_InitBattleInternal() {
     let mut i: i32 = 0;
     SetHBlankCallback(None);
     SetVBlankCallback(None);
@@ -721,13 +643,21 @@ pub(crate) unsafe extern "C" fn CB2_InitBattleInternal() {
         ScanlineEffect_Clear();
         i = 0;
         while i < 80 {
-            gScanlineEffectRegBuffers[0][i] = 0xF0;
-            gScanlineEffectRegBuffers[1][i] = 0xF0;
+            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[0][i] = 0xF0;
+            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[1][i] = 0xF0;
             i += 1;
         }
         while i < DISPLAY_HEIGHT as i32 {
-            gScanlineEffectRegBuffers[0][i] = 0xFF10;
-            gScanlineEffectRegBuffers[1][i] = 0xFF10;
+            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[0][i] = 0xFF10;
+            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[1][i] = 0xFF10;
             i += 1;
         }
         ScanlineEffect_SetParams(*sIntroScanlineParams16Bit);
@@ -775,23 +705,19 @@ pub(crate) unsafe extern "C" fn CB2_InitBattleInternal() {
     }
     gMain.set_inBattle(TRUE);
     (*gSaveBlock2Ptr).frontier.set_disableRecordBattle(FALSE);
-    i = 0;
-    while i < PARTY_SIZE {
+    for i in 0..PARTY_SIZE {
         AdjustFriendship(&raw mut gPlayerParty[i], FRIENDSHIP_EVENT_LEAGUE_BATTLE);
-        i += 1;
     }
     gBattleCommunication[0] = 0;
 }
-pub(crate) unsafe extern "C" fn BufferPartyVsScreenHealth_AtStart() {
+unsafe fn BufferPartyVsScreenHealth_AtStart() {
     let mut flags: u16 = 0;
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 6 {
+    for i in 0..6i32 {
         'l1: {
-            let mut species: u16 =
+            let species: u16 =
                 GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) as u16;
-            let mut hp: u16 = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HP) as u16;
-            let mut status: u32 = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_STATUS);
+            let hp: u16 = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HP) as u16;
+            let status: u32 = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_STATUS);
             if species == 0 {
                 break 'l1;
             }
@@ -811,25 +737,24 @@ pub(crate) unsafe extern "C" fn BufferPartyVsScreenHealth_AtStart() {
                 flags |= shl_i32(3, i as u32 * 2) as u16;
             }
         }
-        i += 1;
     }
     (*gBattleStruct)
         .multiBuffer
         .linkBattlerHeader
         .vsScreenHealthFlagsLo = flags as u8;
-    *(&raw mut (*gBattleStruct)
+    (*gBattleStruct)
         .multiBuffer
         .linkBattlerHeader
-        .vsScreenHealthFlagsHi) = (flags >> 8) as u8;
+        .vsScreenHealthFlagsHi = (flags >> 8) as u8;
     (*gBattleStruct)
         .multiBuffer
         .linkBattlerHeader
         .vsScreenHealthFlagsHi |= FlagGet(FLAG_SYS_FRONTIER_PASS) << 7;
 }
-pub(crate) unsafe extern "C" fn SetPlayerBerryDataInBattleStruct() {
+unsafe fn SetPlayerBerryDataInBattleStruct() {
     let mut i: i32 = 0;
-    let mut battleStruct: *mut BattleStruct = gBattleStruct;
-    let mut battleBerry: *mut BattleEnigmaBerry = &raw mut (*battleStruct)
+    let battleStruct: *mut BattleStruct = gBattleStruct;
+    let battleBerry: *mut BattleEnigmaBerry = &raw mut (*battleStruct)
         .multiBuffer
         .linkBattlerHeader
         .battleEnigmaBerry;
@@ -840,31 +765,27 @@ pub(crate) unsafe extern "C" fn SetPlayerBerryDataInBattleStruct() {
             i += 1;
         }
         (*battleBerry).name[i] = EOS;
-        i = 0;
-        while i < BERRY_ITEM_EFFECT_COUNT {
+        for i in 0..BERRY_ITEM_EFFECT_COUNT {
             (*battleBerry).itemEffect[i] = (*gSaveBlock1Ptr).enigmaBerry.itemEffect[i];
-            i += 1;
         }
         (*battleBerry).holdEffect = (*gSaveBlock1Ptr).enigmaBerry.holdEffect;
         (*battleBerry).holdEffectParam = (*gSaveBlock1Ptr).enigmaBerry.holdEffectParam;
     } else {
-        let mut berryData: *mut Berry = GetBerryInfo(ItemIdToBerryType(ITEM_ENIGMA_BERRY));
+        let berryData: *mut Berry = GetBerryInfo(ItemIdToBerryType(ITEM_ENIGMA_BERRY));
         i = 0;
         while i < BERRY_NAME_LENGTH {
             (*battleBerry).name[i] = (*berryData).name[i];
             i += 1;
         }
         (*battleBerry).name[i] = EOS;
-        i = 0;
-        while i < BERRY_ITEM_EFFECT_COUNT {
+        for i in 0..BERRY_ITEM_EFFECT_COUNT {
             (*battleBerry).itemEffect[i] = 0;
-            i += 1;
         }
         (*battleBerry).holdEffect = HOLD_EFFECT_NONE;
         (*battleBerry).holdEffectParam = 0;
     }
 }
-pub(crate) unsafe extern "C" fn SetAllPlayersBerryData() {
+unsafe fn SetAllPlayersBerryData() {
     let mut i: i32 = 0;
     let mut j: i32 = 0;
     if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
@@ -877,18 +798,16 @@ pub(crate) unsafe extern "C" fn SetAllPlayersBerryData() {
             }
             gEnigmaBerries[0].name[i] = EOS;
             gEnigmaBerries[2].name[i] = EOS;
-            i = 0;
-            while i < BERRY_ITEM_EFFECT_COUNT {
+            for i in 0..BERRY_ITEM_EFFECT_COUNT {
                 gEnigmaBerries[0].itemEffect[i] = (*gSaveBlock1Ptr).enigmaBerry.itemEffect[i];
                 gEnigmaBerries[2].itemEffect[i] = (*gSaveBlock1Ptr).enigmaBerry.itemEffect[i];
-                i += 1;
             }
             gEnigmaBerries[0].holdEffect = (*gSaveBlock1Ptr).enigmaBerry.holdEffect;
             gEnigmaBerries[2].holdEffect = (*gSaveBlock1Ptr).enigmaBerry.holdEffect;
             gEnigmaBerries[0].holdEffectParam = (*gSaveBlock1Ptr).enigmaBerry.holdEffectParam;
             gEnigmaBerries[2].holdEffectParam = (*gSaveBlock1Ptr).enigmaBerry.holdEffectParam;
         } else {
-            let mut berryData: *mut Berry = GetBerryInfo(ItemIdToBerryType(ITEM_ENIGMA_BERRY));
+            let berryData: *mut Berry = GetBerryInfo(ItemIdToBerryType(ITEM_ENIGMA_BERRY));
             i = 0;
             while i < BERRY_NAME_LENGTH {
                 gEnigmaBerries[0].name[i] = (*berryData).name[i];
@@ -897,11 +816,9 @@ pub(crate) unsafe extern "C" fn SetAllPlayersBerryData() {
             }
             gEnigmaBerries[0].name[i] = EOS;
             gEnigmaBerries[2].name[i] = EOS;
-            i = 0;
-            while i < BERRY_ITEM_EFFECT_COUNT {
+            for i in 0..BERRY_ITEM_EFFECT_COUNT {
                 gEnigmaBerries[0].itemEffect[i] = 0;
                 gEnigmaBerries[2].itemEffect[i] = 0;
-                i += 1;
             }
             gEnigmaBerries[0].holdEffect = 0;
             gEnigmaBerries[2].holdEffect = HOLD_EFFECT_NONE;
@@ -918,8 +835,7 @@ pub(crate) unsafe extern "C" fn SetAllPlayersBerryData() {
             } else {
                 numPlayers = 4;
             }
-            i = 0;
-            while i < numPlayers {
+            for i in 0..numPlayers {
                 src = gBlockRecvBuffer[i].as_mut_ptr().at(2) as *mut BattleEnigmaBerry;
                 battler = gLinkPlayers[i].id as u8;
                 j = 0;
@@ -928,18 +844,14 @@ pub(crate) unsafe extern "C" fn SetAllPlayersBerryData() {
                     j += 1;
                 }
                 gEnigmaBerries[battler].name[j] = EOS;
-                j = 0;
-                while j < BERRY_ITEM_EFFECT_COUNT {
+                for j in 0..BERRY_ITEM_EFFECT_COUNT {
                     gEnigmaBerries[battler].itemEffect[j] = (*src).itemEffect[j];
-                    j += 1;
                 }
                 gEnigmaBerries[battler].holdEffect = (*src).holdEffect;
                 gEnigmaBerries[battler].holdEffectParam = (*src).holdEffectParam;
-                i += 1;
             }
         } else {
-            i = 0;
-            while i < 2 {
+            for i in 0..2i32 {
                 src = gBlockRecvBuffer[i].as_mut_ptr().at(2) as *mut BattleEnigmaBerry;
                 j = 0;
                 while j < BERRY_NAME_LENGTH {
@@ -949,22 +861,19 @@ pub(crate) unsafe extern "C" fn SetAllPlayersBerryData() {
                 }
                 gEnigmaBerries[i].name[j] = EOS;
                 gEnigmaBerries[i + 2].name[j] = EOS;
-                j = 0;
-                while j < BERRY_ITEM_EFFECT_COUNT {
+                for j in 0..BERRY_ITEM_EFFECT_COUNT {
                     gEnigmaBerries[i].itemEffect[j] = (*src).itemEffect[j];
                     gEnigmaBerries[i + 2].itemEffect[j] = (*src).itemEffect[j];
-                    j += 1;
                 }
                 gEnigmaBerries[i].holdEffect = (*src).holdEffect;
                 gEnigmaBerries[i + 2].holdEffect = (*src).holdEffect;
                 gEnigmaBerries[i].holdEffectParam = (*src).holdEffectParam;
                 gEnigmaBerries[i + 2].holdEffectParam = (*src).holdEffectParam;
-                i += 1;
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn FindLinkBattleMaster(numPlayers: u8, multiPlayerId: u8) {
+unsafe fn FindLinkBattleMaster(numPlayers: u8, multiPlayerId: u8) {
     let mut found: u8 = 0;
     if gBlockRecvBuffer[0][0] == 0x100 {
         if multiPlayerId == 0 {
@@ -976,7 +885,6 @@ pub(crate) unsafe extern "C" fn FindLinkBattleMaster(numPlayers: u8, multiPlayer
     }
     if found == 0 {
         let mut i: i32 = 0;
-        i = 0;
         while i < numPlayers as i32 {
             if gBlockRecvBuffer[0][0] != gBlockRecvBuffer[i][0] {
                 break;
@@ -994,10 +902,11 @@ pub(crate) unsafe extern "C" fn FindLinkBattleMaster(numPlayers: u8, multiPlayer
         if found == 0 {
             i = 0;
             while i < numPlayers as i32 {
-                if gBlockRecvBuffer[i][0] == 0x300 && i != multiPlayerId as i32 {
-                    if i < multiPlayerId as i32 {
-                        break;
-                    }
+                if gBlockRecvBuffer[i][0] == 0x300
+                    && i != multiPlayerId as i32
+                    && i < multiPlayerId as i32
+                {
+                    break;
                 }
                 if gBlockRecvBuffer[i][0] > 0x300 && i != multiPlayerId as i32 {
                     break;
@@ -1012,20 +921,17 @@ pub(crate) unsafe extern "C" fn FindLinkBattleMaster(numPlayers: u8, multiPlayer
         }
     }
 }
-pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
-    let mut playerMultiplayerId: u8 = 0;
-    let mut enemyMultiplayerId: u8 = 0;
+pub(crate) unsafe fn CB2_HandleStartBattle() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
-    playerMultiplayerId = GetMultiplayerId();
+    let playerMultiplayerId: u8 = GetMultiplayerId();
     gBattleScripting.multiplayerId = playerMultiplayerId;
-    enemyMultiplayerId = playerMultiplayerId ^ BIT_SIDE;
+    let enemyMultiplayerId: u8 = playerMultiplayerId ^ BIT_SIDE;
     'l1: {
         let sw1: u8 = gBattleCommunication[0];
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             if IsDma3ManagerBusyWithBgCopy() == 0 {
                 ShowBg(0);
                 ShowBg(1);
@@ -1040,18 +946,17 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
             break 'l1;
         }
         if sw1 == 1 {
-            fall = true;
             if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
                 if gReceivedRemoteLinkPlayers != 0 {
                     if IsLinkTaskFinished() != 0 {
-                        *(&raw mut (*gBattleStruct)
+                        (*gBattleStruct)
                             .multiBuffer
                             .linkBattlerHeader
-                            .versionSignatureLo) = 0;
-                        *(&raw mut (*gBattleStruct)
+                            .versionSignatureLo = 0;
+                        (*gBattleStruct)
                             .multiBuffer
                             .linkBattlerHeader
-                            .versionSignatureHi) = 3;
+                            .versionSignatureHi = 3;
                         BufferPartyVsScreenHealth_AtStart();
                         SetPlayerBerryDataInBattleStruct();
                         if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
@@ -1079,26 +984,28 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 3 == 3 {
-                let mut taskId: u8 = 0;
                 ResetBlockReceivedFlags();
                 FindLinkBattleMaster(2, playerMultiplayerId);
                 SetAllPlayersBerryData();
-                taskId = CreateTask(Some(InitLinkBattleVsScreen), 0);
-                gTasks[taskId].data[1] = 0x10E;
-                gTasks[taskId].data[2] = 0x5A;
-                gTasks[taskId].data[5] = 0;
-                gTasks[taskId].data[3] = (*gBattleStruct)
-                    .multiBuffer
-                    .linkBattlerHeader
-                    .vsScreenHealthFlagsLo as i16
-                    | ((*gBattleStruct)
+                let taskId: u8 = CreateTask(Some(InitLinkBattleVsScreen), 0);
+                task_set(taskId, 1, 0x10E);
+                task_set(taskId, 2, 0x5A);
+                task_set(taskId, 5, 0);
+                task_set(
+                    taskId,
+                    3,
+                    (*gBattleStruct)
                         .multiBuffer
                         .linkBattlerHeader
-                        .vsScreenHealthFlagsHi as i16)
-                        << 8;
-                gTasks[taskId].data[4] = gBlockRecvBuffer[enemyMultiplayerId][1] as i16;
+                        .vsScreenHealthFlagsLo as i16
+                        | ((*gBattleStruct)
+                            .multiBuffer
+                            .linkBattlerHeader
+                            .vsScreenHealthFlagsHi as i16)
+                            << 8,
+                );
+                task_set(taskId, 4, gBlockRecvBuffer[enemyMultiplayerId][1] as i16);
                 RecordedBattle_SetFrontierPassFlagFromHword(
                     gBlockRecvBuffer[playerMultiplayerId][1],
                 );
@@ -1111,7 +1018,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
             break 'l1;
         }
         if sw1 == 3 {
-            fall = true;
             if IsLinkTaskFinished() != 0 {
                 SendBlock(
                     BitmaskAllOtherLinkPlayers(),
@@ -1123,7 +1029,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
             break 'l1;
         }
         if sw1 == 4 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 3 == 3 {
                 ResetBlockReceivedFlags();
                 memcpy(
@@ -1136,7 +1041,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
             break 'l1;
         }
         if sw1 == 7 {
-            fall = true;
             if IsLinkTaskFinished() != 0 {
                 SendBlock(
                     BitmaskAllOtherLinkPlayers(),
@@ -1148,7 +1052,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
             break 'l1;
         }
         if sw1 == 8 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 3 == 3 {
                 ResetBlockReceivedFlags();
                 memcpy(
@@ -1161,7 +1064,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
             break 'l1;
         }
         if sw1 == 11 {
-            fall = true;
             if IsLinkTaskFinished() != 0 {
                 SendBlock(
                     BitmaskAllOtherLinkPlayers(),
@@ -1173,7 +1075,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
             break 'l1;
         }
         if sw1 == 12 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 3 == 3 {
                 ResetBlockReceivedFlags();
                 memcpy(
@@ -1192,14 +1093,12 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
             break 'l1;
         }
         if sw1 == 15 {
-            fall = true;
             InitBattleControllers();
             RecordedBattle_SetTrainerInfo();
             gBattleCommunication[1] = 0;
             gBattleCommunication[2] = 0;
             if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
                 let mut i: i32 = 0;
-                i = 0;
                 while i < 2 && gLinkPlayers[i].version as i32 & 0xFF == VERSION_EMERALD as i32 {
                     i += 1;
                 }
@@ -1214,7 +1113,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
             break 'l1;
         }
         if sw1 == 16 {
-            fall = true;
             if IsLinkTaskFinished() != 0 {
                 SendBlock(
                     BitmaskAllOtherLinkPlayers(),
@@ -1226,7 +1124,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
             break 'l1;
         }
         if sw1 == 17 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 3 == 3 {
                 ResetBlockReceivedFlags();
                 if gBattleTypeFlags & BATTLE_TYPE_IS_MASTER == 0 {
@@ -1241,7 +1138,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
             break 'l1;
         }
         if sw1 == 18 {
-            fall = true;
             if BattleInitAllSprites(
                 &raw mut gBattleCommunication[1],
                 &raw mut gBattleCommunication[2],
@@ -1262,7 +1158,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
             gBattleCommunication[1] = 1;
         }
         if fall || sw1 == 6 || sw1 == 10 || sw1 == 14 {
-            fall = true;
             if ({
                 gBattleCommunication[1] -= 1;
                 gBattleCommunication[1]
@@ -1274,15 +1169,13 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartBattle() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
-    let mut playerMultiplayerId: u8 = 0;
-    let mut partnerMultiplayerId: u8 = 0;
+pub(crate) unsafe fn CB2_HandleStartMultiPartnerBattle() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
-    playerMultiplayerId = GetMultiplayerId();
+    let playerMultiplayerId: u8 = GetMultiplayerId();
     gBattleScripting.multiplayerId = playerMultiplayerId;
-    partnerMultiplayerId = playerMultiplayerId ^ BIT_SIDE;
+    let partnerMultiplayerId: u8 = playerMultiplayerId ^ BIT_SIDE;
     'l1: {
         let sw1: u8 = gBattleCommunication[0];
         let mut fall = false;
@@ -1301,7 +1194,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             }
         }
         if fall || sw1 == 1 {
-            fall = true;
             if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
                 if gReceivedRemoteLinkPlayers != 0 {
                     let mut language: u8 = 0;
@@ -1322,14 +1214,14 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
                     GetBattleTowerTrainerLanguage(&raw mut language, gTrainerBattleOpponent_B);
                     gLinkPlayers[3].language = language as u16;
                     if IsLinkTaskFinished() != 0 {
-                        *(&raw mut (*gBattleStruct)
+                        (*gBattleStruct)
                             .multiBuffer
                             .linkBattlerHeader
-                            .versionSignatureLo) = 0;
-                        *(&raw mut (*gBattleStruct)
+                            .versionSignatureLo = 0;
+                        (*gBattleStruct)
                             .multiBuffer
                             .linkBattlerHeader
-                            .versionSignatureHi) = 3;
+                            .versionSignatureHi = 3;
                         BufferPartyVsScreenHealth_AtStart();
                         SetPlayerBerryDataInBattleStruct();
                         SendBlock(
@@ -1353,24 +1245,21 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 3 == 3 {
-                let mut taskId: u8 = 0;
                 ResetBlockReceivedFlags();
                 FindLinkBattleMaster(2, playerMultiplayerId);
                 SetAllPlayersBerryData();
-                taskId = CreateTask(Some(InitLinkBattleVsScreen), 0);
-                gTasks[taskId].data[1] = 0x10E;
-                gTasks[taskId].data[2] = 0x5A;
-                gTasks[taskId].data[5] = 0;
-                gTasks[taskId].data[3] = 0x145;
-                gTasks[taskId].data[4] = 0x145;
+                let taskId: u8 = CreateTask(Some(InitLinkBattleVsScreen), 0);
+                task_set(taskId, 1, 0x10E);
+                task_set(taskId, 2, 0x5A);
+                task_set(taskId, 5, 0);
+                task_set(taskId, 3, 0x145);
+                task_set(taskId, 4, 0x145);
                 gBattleCommunication[0] += 1;
             }
             break 'l1;
         }
         if sw1 == 3 {
-            fall = true;
             if IsLinkTaskFinished() != 0 {
                 SendBlock(
                     BitmaskAllOtherLinkPlayers(),
@@ -1382,7 +1271,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             break 'l1;
         }
         if sw1 == 4 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 3 == 3 {
                 ResetBlockReceivedFlags();
                 if gLinkPlayers[playerMultiplayerId].id != 0 {
@@ -1413,7 +1301,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             break 'l1;
         }
         if sw1 == 5 {
-            fall = true;
             if IsLinkTaskFinished() != 0 {
                 SendBlock(
                     BitmaskAllOtherLinkPlayers(),
@@ -1425,7 +1312,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             break 'l1;
         }
         if sw1 == 6 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 3 == 3 {
                 ResetBlockReceivedFlags();
                 if gLinkPlayers[playerMultiplayerId].id != 0 {
@@ -1456,7 +1342,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             break 'l1;
         }
         if sw1 == 7 {
-            fall = true;
             if IsLinkTaskFinished() != 0 {
                 SendBlock(
                     BitmaskAllOtherLinkPlayers(),
@@ -1468,7 +1353,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             break 'l1;
         }
         if sw1 == 8 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 3 == 3 {
                 ResetBlockReceivedFlags();
                 if GetMultiplayerId() != 0 {
@@ -1483,7 +1367,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             break 'l1;
         }
         if sw1 == 9 {
-            fall = true;
             if IsLinkTaskFinished() != 0 {
                 SendBlock(
                     BitmaskAllOtherLinkPlayers(),
@@ -1495,7 +1378,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             break 'l1;
         }
         if sw1 == 10 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 3 == 3 {
                 ResetBlockReceivedFlags();
                 if GetMultiplayerId() != 0 {
@@ -1510,7 +1392,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             break 'l1;
         }
         if sw1 == 11 {
-            fall = true;
             if IsLinkTaskFinished() != 0 {
                 SendBlock(
                     BitmaskAllOtherLinkPlayers(),
@@ -1522,7 +1403,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             break 'l1;
         }
         if sw1 == 12 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 3 == 3 {
                 ResetBlockReceivedFlags();
                 if GetMultiplayerId() != 0 {
@@ -1549,7 +1429,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             break 'l1;
         }
         if sw1 == 13 {
-            fall = true;
             InitBattleControllers();
             RecordedBattle_SetTrainerInfo();
             gBattleCommunication[1] = 0;
@@ -1562,7 +1441,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             break 'l1;
         }
         if sw1 == 14 {
-            fall = true;
             if IsLinkTaskFinished() != 0 {
                 SendBlock(
                     BitmaskAllOtherLinkPlayers(),
@@ -1574,7 +1452,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             break 'l1;
         }
         if sw1 == 15 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 3 == 3 {
                 ResetBlockReceivedFlags();
                 if gBattleTypeFlags & BATTLE_TYPE_IS_MASTER == 0 {
@@ -1589,7 +1466,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
             break 'l1;
         }
         if sw1 == 16 {
-            fall = true;
             if BattleInitAllSprites(
                 &raw mut gBattleCommunication[1],
                 &raw mut gBattleCommunication[2],
@@ -1607,10 +1483,8 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiPartnerBattle() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SetMultiPartnerMenuParty(offset: u8) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < MULTI_PARTY_SIZE {
+unsafe fn SetMultiPartnerMenuParty(offset: u8) {
+    for i in 0..MULTI_PARTY_SIZE {
         gMultiPartnerParty[i].species =
             GetMonData2(&raw mut gPlayerParty[offset as i32 + i], MON_DATA_SPECIES) as u16;
         gMultiPartnerParty[i].heldItem =
@@ -1639,7 +1513,6 @@ pub(crate) unsafe extern "C" fn SetMultiPartnerMenuParty(offset: u8) {
         {
             PadNameString(gMultiPartnerParty[i].nickname.as_mut_ptr(), CHAR_SPACE);
         }
-        i += 1;
     }
     memcpy(
         sMultiPartnerPartyBuffer as *mut u8,
@@ -1647,18 +1520,16 @@ pub(crate) unsafe extern "C" fn SetMultiPartnerMenuParty(offset: u8) {
         96,
     );
 }
-pub(crate) unsafe extern "C" fn CB2_PreInitMultiBattle() {
-    let mut i: i32 = 0;
-    let mut playerMultiplierId: u8 = 0;
+pub(crate) unsafe fn CB2_PreInitMultiBattle() {
     let mut numPlayers: i32 = MAX_BATTLERS_COUNT as i32;
     let mut blockMask: u8 = 0xF;
     let mut savedBattleTypeFlags: *mut u32 = null_mut();
-    let mut savedCallback: *mut Option<unsafe extern "C" fn()> = null_mut();
+    let mut savedCallback: *mut Option<unsafe fn()> = null_mut();
     if gBattleTypeFlags & BATTLE_TYPE_BATTLE_TOWER != 0 {
         numPlayers = 2;
         blockMask = 3;
     }
-    playerMultiplierId = GetMultiplayerId();
+    let playerMultiplierId: u8 = GetMultiplayerId();
     gBattleScripting.multiplayerId = playerMultiplierId;
     savedCallback = &raw mut (*gBattleStruct).savedCallback;
     savedBattleTypeFlags = &raw mut (*gBattleStruct).savedBattleTypeFlags;
@@ -1681,8 +1552,7 @@ pub(crate) unsafe extern "C" fn CB2_PreInitMultiBattle() {
         1 => {
             if GetBlockReceivedStatus() as i32 & blockMask as i32 == blockMask as i32 {
                 ResetBlockReceivedFlags();
-                i = 0;
-                while i < numPlayers {
+                for i in 0..numPlayers {
                     'l2: {
                         if i == playerMultiplierId as i32 {
                             break 'l2;
@@ -1707,7 +1577,6 @@ pub(crate) unsafe extern "C" fn CB2_PreInitMultiBattle() {
                             );
                         }
                     }
-                    i += 1;
                 }
                 gBattleCommunication[0] += 1;
                 *savedCallback = gMain.savedCallback;
@@ -1746,9 +1615,9 @@ pub(crate) unsafe extern "C" fn CB2_PreInitMultiBattle() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CB2_PreInitIngamePlayerPartnerBattle() {
+pub(crate) unsafe fn CB2_PreInitIngamePlayerPartnerBattle() {
     let mut savedBattleTypeFlags: *mut u32 = null_mut();
-    let mut savedCallback: *mut Option<unsafe extern "C" fn()> = null_mut();
+    let mut savedCallback: *mut Option<unsafe fn()> = null_mut();
     savedCallback = &raw mut (*gBattleStruct).savedCallback;
     savedBattleTypeFlags = &raw mut (*gBattleStruct).savedBattleTypeFlags;
     RunTasks();
@@ -1764,24 +1633,21 @@ pub(crate) unsafe extern "C" fn CB2_PreInitIngamePlayerPartnerBattle() {
             gMain.savedCallback = Some(CB2_PreInitIngamePlayerPartnerBattle);
             ShowPartyMenuToShowcaseMultiBattleParty();
         }
-        1 => {
-            if gPaletteFade.active() == 0 {
-                gBattleCommunication[0] = 2;
-                gBattleTypeFlags = *savedBattleTypeFlags;
-                gMain.savedCallback = *savedCallback;
-                SetMainCallback2(Some(CB2_InitBattleInternal));
-                Free(sMultiPartnerPartyBuffer as *mut c_void);
-                sMultiPartnerPartyBuffer = null_mut();
-            }
+        1 if gPaletteFade.active() == 0 => {
+            gBattleCommunication[0] = 2;
+            gBattleTypeFlags = *savedBattleTypeFlags;
+            gMain.savedCallback = *savedCallback;
+            SetMainCallback2(Some(CB2_InitBattleInternal));
+            Free(sMultiPartnerPartyBuffer as *mut c_void);
+            sMultiPartnerPartyBuffer = null_mut();
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
-    let mut playerMultiplayerId: u8 = 0;
+pub(crate) unsafe fn CB2_HandleStartMultiBattle() {
     let mut id: i32 = 0;
     let mut var: u8 = 0;
-    playerMultiplayerId = GetMultiplayerId();
+    let playerMultiplayerId: u8 = GetMultiplayerId();
     gBattleScripting.multiplayerId = playerMultiplayerId;
     RunTasks();
     AnimateSprites();
@@ -1790,7 +1656,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
         let sw1: u8 = gBattleCommunication[0];
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             if IsDma3ManagerBusyWithBgCopy() == 0 {
                 ShowBg(0);
                 ShowBg(1);
@@ -1805,18 +1670,17 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
             break 'l1;
         }
         if sw1 == 1 {
-            fall = true;
             if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
                 if gReceivedRemoteLinkPlayers != 0 {
                     if IsLinkTaskFinished() != 0 {
-                        *(&raw mut (*gBattleStruct)
+                        (*gBattleStruct)
                             .multiBuffer
                             .linkBattlerHeader
-                            .versionSignatureLo) = 0;
-                        *(&raw mut (*gBattleStruct)
+                            .versionSignatureLo = 0;
+                        (*gBattleStruct)
                             .multiBuffer
                             .linkBattlerHeader
-                            .versionSignatureHi) = 3;
+                            .versionSignatureHi = 3;
                         BufferPartyVsScreenHealth_AtStart();
                         SetPlayerBerryDataInBattleStruct();
                         SendBlock(
@@ -1847,30 +1711,44 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
                 SetAllPlayersBerryData();
                 SetDeoxysStats();
                 var = CreateTask(Some(InitLinkBattleVsScreen), 0);
-                gTasks[var].data[1] = 0x10E;
-                gTasks[var].data[2] = 0x5A;
-                gTasks[var].data[5] = 0;
-                gTasks[var].data[3] = 0;
-                gTasks[var].data[4] = 0;
-                id = 0;
-                while id < MAX_LINK_PLAYERS {
+                task_set(var, 1, 0x10E);
+                task_set(var, 2, 0x5A);
+                task_set(var, 5, 0);
+                task_set(var, 3, 0);
+                task_set(var, 4, 0);
+                for id in 0..MAX_LINK_PLAYERS {
                     RecordedBattle_SetFrontierPassFlagFromHword(gBlockRecvBuffer[id][1]);
                     match gLinkPlayers[id].id {
                         0 => {
-                            gTasks[var].data[3] |= gBlockRecvBuffer[id][1] as i16 & 0x3F;
+                            task_set(
+                                var,
+                                3,
+                                task_get(var, 3) | (gBlockRecvBuffer[id][1] as i16 & 0x3F),
+                            );
                         }
                         1 => {
-                            gTasks[var].data[4] |= gBlockRecvBuffer[id][1] as i16 & 0x3F;
+                            task_set(
+                                var,
+                                4,
+                                task_get(var, 4) | (gBlockRecvBuffer[id][1] as i16 & 0x3F),
+                            );
                         }
                         2 => {
-                            gTasks[var].data[3] |= (gBlockRecvBuffer[id][1] as i16 & 0x3F) << 6;
+                            task_set(
+                                var,
+                                3,
+                                task_get(var, 3) | ((gBlockRecvBuffer[id][1] as i16 & 0x3F) << 6),
+                            );
                         }
                         3 => {
-                            gTasks[var].data[4] |= (gBlockRecvBuffer[id][1] as i16 & 0x3F) << 6;
+                            task_set(
+                                var,
+                                4,
+                                task_get(var, 4) | ((gBlockRecvBuffer[id][1] as i16 & 0x3F) << 6),
+                            );
                         }
                         _ => {}
                     }
-                    id += 1;
                 }
                 ZeroEnemyPartyMons();
                 gBattleCommunication[0] += 1;
@@ -1879,7 +1757,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
             }
         }
         if fall || sw1 == 3 {
-            fall = true;
             if IsLinkTaskFinished() != 0 {
                 SendBlock(
                     BitmaskAllOtherLinkPlayers(),
@@ -1891,11 +1768,9 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
             break 'l1;
         }
         if sw1 == 4 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 0xF == 0xF {
                 ResetBlockReceivedFlags();
-                id = 0;
-                while id < MAX_LINK_PLAYERS {
+                for id in 0..MAX_LINK_PLAYERS {
                     if id == playerMultiplayerId as i32 {
                         match gLinkPlayers[id].id {
                             0 | 3 => {
@@ -1957,14 +1832,12 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
                             }
                         }
                     }
-                    id += 1;
                 }
                 gBattleCommunication[0] += 1;
             }
             break 'l1;
         }
         if sw1 == 5 {
-            fall = true;
             if IsLinkTaskFinished() != 0 {
                 SendBlock(
                     BitmaskAllOtherLinkPlayers(),
@@ -1976,11 +1849,9 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
             break 'l1;
         }
         if sw1 == 6 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 0xF == 0xF {
                 ResetBlockReceivedFlags();
-                id = 0;
-                while id < MAX_LINK_PLAYERS {
+                for id in 0..MAX_LINK_PLAYERS {
                     if id == playerMultiplayerId as i32 {
                         match gLinkPlayers[id].id {
                             0 | 3 => {
@@ -2042,7 +1913,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
                             }
                         }
                     }
-                    id += 1;
                 }
                 TryCorrectShedinjaLanguage(&raw mut gPlayerParty[0]);
                 TryCorrectShedinjaLanguage(&raw mut gPlayerParty[1]);
@@ -2061,7 +1931,6 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
             break 'l1;
         }
         if sw1 == 7 {
-            fall = true;
             InitBattleControllers();
             RecordedBattle_SetTrainerInfo();
             gBattleCommunication[1] = 0;
@@ -2084,9 +1953,8 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
             break 'l1;
         }
         if sw1 == 8 {
-            fall = true;
             if IsLinkTaskFinished() != 0 {
-                let mut ptr: *mut u32 = (*gBattleStruct).multiBuffer.battleVideo.as_mut_ptr();
+                let ptr: *mut u32 = (*gBattleStruct).multiBuffer.battleVideo.as_mut_ptr();
                 *ptr = gBattleTypeFlags;
                 *ptr.at(1) = gRecordedBattleRngSeed;
                 SendBlock(BitmaskAllOtherLinkPlayers(), ptr as *mut c_void, 8);
@@ -2095,12 +1963,10 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
             break 'l1;
         }
         if sw1 == 9 {
-            fall = true;
             if GetBlockReceivedStatus() as i32 & 0xF == 0xF {
                 ResetBlockReceivedFlags();
-                var = 0;
-                while var < 4 {
-                    let mut blockValue: u32 = gBlockRecvBuffer[var][0] as u32;
+                for var in 0..4u8 {
+                    let blockValue: u32 = gBlockRecvBuffer[var][0] as u32;
                     if blockValue & 4 != 0 {
                         memcpy(
                             &raw mut gRecordedBattleRngSeed as *mut u8,
@@ -2109,14 +1975,12 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
                         );
                         break;
                     }
-                    var += 1;
                 }
                 gBattleCommunication[0] += 1;
             }
             break 'l1;
         }
         if sw1 == 10 {
-            fall = true;
             if BattleInitAllSprites(
                 &raw mut gBattleCommunication[1],
                 &raw mut gBattleCommunication[2],
@@ -2135,7 +1999,7 @@ pub(crate) unsafe extern "C" fn CB2_HandleStartMultiBattle() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleMainCB2() {
+pub unsafe fn BattleMainCB2() {
     AnimateSprites();
     BuildOamBuffer();
     RunTextPrinters();
@@ -2154,7 +2018,7 @@ pub unsafe extern "C" fn BattleMainCB2() {
         SetMainCallback2(Some(CB2_QuitRecordedBattle));
     }
 }
-pub(crate) unsafe extern "C" fn FreeRestoreBattleData() {
+unsafe fn FreeRestoreBattleData() {
     gMain.callback1 = gPreBattleCallback1;
     gScanlineEffect.state = 3;
     gMain.set_inBattle(FALSE);
@@ -2164,8 +2028,7 @@ pub(crate) unsafe extern "C" fn FreeRestoreBattleData() {
     FreeBattleSpritesData();
     FreeBattleResources();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_QuitRecordedBattle() {
+pub unsafe fn CB2_QuitRecordedBattle() {
     UpdatePaletteFade();
     if gPaletteFade.active() == 0 {
         m4aMPlayStop(&raw mut gMPlayInfo_SE1);
@@ -2175,34 +2038,33 @@ pub unsafe extern "C" fn CB2_QuitRecordedBattle() {
         SetMainCallback2(gMain.savedCallback);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_UnusedBattleInit(sprite: *mut Sprite) {
-    (*sprite).data[0] = 0;
+pub(crate) unsafe fn SpriteCB_UnusedBattleInit(sprite: *mut Sprite) {
+    (*sprite).data[sState] = 0;
     (*sprite).callback = Some(SpriteCB_UnusedBattleInit_Main);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_UnusedBattleInit_Main(sprite: *mut Sprite) {
-    let mut arr: *mut u16 = gDecompressionBuffer.as_mut_ptr() as *mut u16;
+pub(crate) unsafe fn SpriteCB_UnusedBattleInit_Main(sprite: *mut Sprite) {
+    let arr: *mut u16 = (*(&raw const crate::decompress::gDecompressionBuffer)
+        .cast::<CArray<u8, 16384>>()
+        .cast_mut())
+    .as_mut_ptr() as *mut u16;
     'l1: {
-        let sw1: i16 = (*sprite).data[0];
+        let sw1: i16 = (*sprite).data[sState];
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
-            (*sprite).data[0] += 1;
+            (*sprite).data[sState] += 1;
             (*sprite).data[1] = 0;
             (*sprite).data[2] = 0x281;
             (*sprite).data[3] = 0;
-            (*sprite).data[4] = 1;
+            (*sprite).data[sDelay] = 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
-            (*sprite).data[4] -= 1;
-            if (*sprite).data[4] == 0 {
+            (*sprite).data[sDelay] -= 1;
+            if (*sprite).data[sDelay] == 0 {
+                (*sprite).data[sDelay] = 2;
+                let r2: i32 = (*sprite).data[1] as i32 + (*sprite).data[3] as i32 * 32;
+                let r0: i32 = (*sprite).data[2] as i32 - (*sprite).data[3] as i32 * 32;
                 let mut i: i32 = 0;
-                let mut r2: i32 = 0;
-                let mut r0: i32 = 0;
-                (*sprite).data[4] = 2;
-                r2 = (*sprite).data[1] as i32 + (*sprite).data[3] as i32 * 32;
-                r0 = (*sprite).data[2] as i32 - (*sprite).data[3] as i32 * 32;
-                i = 0;
                 while i < 29 {
                     *arr.at(r2 + i) = 0x3D;
                     *arr.at(r0 + i) = 0x3D;
@@ -2210,14 +2072,13 @@ pub(crate) unsafe extern "C" fn SpriteCB_UnusedBattleInit_Main(sprite: *mut Spri
                 }
                 (*sprite).data[3] += 1;
                 if (*sprite).data[3] == 21 {
-                    (*sprite).data[0] += 1;
+                    (*sprite).data[sState] += 1;
                     (*sprite).data[1] = 32;
                 }
             }
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             (*sprite).data[1] -= 1;
             if (*sprite).data[1] == 20 {
                 SetMainCallback2(Some(CB2_InitBattle));
@@ -2226,15 +2087,10 @@ pub(crate) unsafe extern "C" fn SpriteCB_UnusedBattleInit_Main(sprite: *mut Spri
         }
     }
 }
-pub(crate) unsafe extern "C" fn CreateNPCTrainerParty(
-    mut party: *mut Pokemon,
-    trainerNum: u16,
-    firstTrainer: u8,
-) -> u8 {
+unsafe fn CreateNPCTrainerParty(party: *mut Pokemon, trainerNum: u16, firstTrainer: u8) -> u8 {
     let mut nameHash: u32 = 0;
     let mut personalityValue: u32 = 0;
     let mut fixedIV: u8 = 0;
-    let mut i: i32 = 0;
     let mut j: i32 = 0;
     let mut monsCount: u8 = 0;
     if trainerNum == TRAINER_SECRET_BASE {
@@ -2245,36 +2101,72 @@ pub(crate) unsafe extern "C" fn CreateNPCTrainerParty(
             ZeroEnemyPartyMons();
         }
         if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
-            if gTrainers[trainerNum].partySize > 3 {
+            if (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
+                [trainerNum]
+                .partySize
+                > 3
+            {
                 monsCount = 3;
             } else {
-                monsCount = gTrainers[trainerNum].partySize;
+                monsCount = (*(&raw const crate::data::data_tables::gTrainers)
+                    .cast::<CArray<Trainer, 0>>())[trainerNum]
+                    .partySize;
             }
         } else {
-            monsCount = gTrainers[trainerNum].partySize;
+            monsCount = (*(&raw const crate::data::data_tables::gTrainers)
+                .cast::<CArray<Trainer, 0>>())[trainerNum]
+                .partySize;
         }
-        i = 0;
-        while i < monsCount as i32 {
-            if gTrainers[trainerNum].doubleBattle == TRUE {
+        for i in 0..(monsCount as i32) {
+            if (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
+                [trainerNum]
+                .doubleBattle
+                == TRUE
+            {
                 personalityValue = 0x80;
-            } else if gTrainers[trainerNum].encounterMusic_gender as i32 & F_TRAINER_FEMALE != 0 {
+            } else if (*(&raw const crate::data::data_tables::gTrainers)
+                .cast::<CArray<Trainer, 0>>())[trainerNum]
+                .encounterMusic_gender as i32
+                & F_TRAINER_FEMALE
+                != 0
+            {
                 personalityValue = 0x78;
             } else {
                 personalityValue = 0x88;
             }
             j = 0;
-            while gTrainers[trainerNum].trainerName[j] != EOS {
-                nameHash += gTrainers[trainerNum].trainerName[j] as u32;
+            while (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
+                [trainerNum]
+                .trainerName[j]
+                != EOS
+            {
+                nameHash += (*(&raw const crate::data::data_tables::gTrainers)
+                    .cast::<CArray<Trainer, 0>>())[trainerNum]
+                    .trainerName[j] as u32;
                 j += 1;
             }
             'l3: {
-                match gTrainers[trainerNum].partyFlags {
+                match (*(&raw const crate::data::data_tables::gTrainers)
+                    .cast::<CArray<Trainer, 0>>())[trainerNum]
+                    .partyFlags
+                {
                     0 => {
-                        let mut partyData: *mut TrainerMonNoItemDefaultMoves =
-                            gTrainers[trainerNum].party.NoItemDefaultMoves;
+                        let partyData: *mut TrainerMonNoItemDefaultMoves =
+                            (*(&raw const crate::data::data_tables::gTrainers)
+                                .cast::<CArray<Trainer, 0>>())[trainerNum]
+                                .party
+                                .NoItemDefaultMoves;
                         j = 0;
-                        while gSpeciesNames[(*partyData.at(i)).species][j] != EOS {
-                            nameHash += gSpeciesNames[(*partyData.at(i)).species][j] as u32;
+                        while (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<
+                            CArray<u8, 11>,
+                            0,
+                        >>(
+                        ))[(*partyData.at(i)).species][j]
+                            != EOS
+                        {
+                            nameHash += (*(&raw const crate::data::data_tables::gSpeciesNames)
+                                .cast::<CArray<CArray<u8, 11>, 0>>())[(*partyData.at(i)).species][j]
+                                as u32;
                             j += 1;
                         }
                         personalityValue += nameHash << 8;
@@ -2293,11 +2185,22 @@ pub(crate) unsafe extern "C" fn CreateNPCTrainerParty(
                         break 'l3;
                     }
                     F_TRAINER_PARTY_CUSTOM_MOVESET => {
-                        let mut partyData: *mut TrainerMonNoItemCustomMoves =
-                            gTrainers[trainerNum].party.NoItemCustomMoves;
+                        let partyData: *mut TrainerMonNoItemCustomMoves =
+                            (*(&raw const crate::data::data_tables::gTrainers)
+                                .cast::<CArray<Trainer, 0>>())[trainerNum]
+                                .party
+                                .NoItemCustomMoves;
                         j = 0;
-                        while gSpeciesNames[(*partyData.at(i)).species][j] != EOS {
-                            nameHash += gSpeciesNames[(*partyData.at(i)).species][j] as u32;
+                        while (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<
+                            CArray<u8, 11>,
+                            0,
+                        >>(
+                        ))[(*partyData.at(i)).species][j]
+                            != EOS
+                        {
+                            nameHash += (*(&raw const crate::data::data_tables::gSpeciesNames)
+                                .cast::<CArray<CArray<u8, 11>, 0>>())[(*partyData.at(i)).species][j]
+                                as u32;
                             j += 1;
                         }
                         personalityValue += nameHash << 8;
@@ -2313,8 +2216,7 @@ pub(crate) unsafe extern "C" fn CreateNPCTrainerParty(
                             OT_ID_RANDOM_NO_SHINY,
                             0,
                         );
-                        j = 0;
-                        while j < MAX_MON_MOVES {
+                        for j in 0..MAX_MON_MOVES {
                             SetMonData(
                                 party.at(i),
                                 MON_DATA_MOVE1 + j,
@@ -2323,19 +2225,31 @@ pub(crate) unsafe extern "C" fn CreateNPCTrainerParty(
                             SetMonData(
                                 party.at(i),
                                 MON_DATA_PP1 + j,
-                                (&raw const gBattleMoves[(*partyData.at(i)).moves[j]].pp).cast_mut()
-                                    as *mut c_void,
+                                (&raw const (*(&raw const crate::data::pokemon::gBattleMoves)
+                                    .cast::<CArray<BattleMove, 0>>())[(*partyData.at(i)).moves[j]]
+                                    .pp)
+                                    .cast_mut() as *mut c_void,
                             );
-                            j += 1;
                         }
                         break 'l3;
                     }
                     F_TRAINER_PARTY_HELD_ITEM => {
-                        let mut partyData: *mut TrainerMonItemDefaultMoves =
-                            gTrainers[trainerNum].party.ItemDefaultMoves;
+                        let partyData: *mut TrainerMonItemDefaultMoves =
+                            (*(&raw const crate::data::data_tables::gTrainers)
+                                .cast::<CArray<Trainer, 0>>())[trainerNum]
+                                .party
+                                .ItemDefaultMoves;
                         j = 0;
-                        while gSpeciesNames[(*partyData.at(i)).species][j] != EOS {
-                            nameHash += gSpeciesNames[(*partyData.at(i)).species][j] as u32;
+                        while (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<
+                            CArray<u8, 11>,
+                            0,
+                        >>(
+                        ))[(*partyData.at(i)).species][j]
+                            != EOS
+                        {
+                            nameHash += (*(&raw const crate::data::data_tables::gSpeciesNames)
+                                .cast::<CArray<CArray<u8, 11>, 0>>())[(*partyData.at(i)).species][j]
+                                as u32;
                             j += 1;
                         }
                         personalityValue += nameHash << 8;
@@ -2359,11 +2273,22 @@ pub(crate) unsafe extern "C" fn CreateNPCTrainerParty(
                         break 'l3;
                     }
                     3 => {
-                        let mut partyData: *mut TrainerMonItemCustomMoves =
-                            gTrainers[trainerNum].party.ItemCustomMoves;
+                        let partyData: *mut TrainerMonItemCustomMoves =
+                            (*(&raw const crate::data::data_tables::gTrainers)
+                                .cast::<CArray<Trainer, 0>>())[trainerNum]
+                                .party
+                                .ItemCustomMoves;
                         j = 0;
-                        while gSpeciesNames[(*partyData.at(i)).species][j] != EOS {
-                            nameHash += gSpeciesNames[(*partyData.at(i)).species][j] as u32;
+                        while (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<
+                            CArray<u8, 11>,
+                            0,
+                        >>(
+                        ))[(*partyData.at(i)).species][j]
+                            != EOS
+                        {
+                            nameHash += (*(&raw const crate::data::data_tables::gSpeciesNames)
+                                .cast::<CArray<CArray<u8, 11>, 0>>())[(*partyData.at(i)).species][j]
+                                as u32;
                             j += 1;
                         }
                         personalityValue += nameHash << 8;
@@ -2384,8 +2309,7 @@ pub(crate) unsafe extern "C" fn CreateNPCTrainerParty(
                             MON_DATA_HELD_ITEM,
                             &raw mut (*partyData.at(i)).heldItem as *mut c_void,
                         );
-                        j = 0;
-                        while j < MAX_MON_MOVES {
+                        for j in 0..MAX_MON_MOVES {
                             SetMonData(
                                 party.at(i),
                                 MON_DATA_MOVE1 + j,
@@ -2394,31 +2318,34 @@ pub(crate) unsafe extern "C" fn CreateNPCTrainerParty(
                             SetMonData(
                                 party.at(i),
                                 MON_DATA_PP1 + j,
-                                (&raw const gBattleMoves[(*partyData.at(i)).moves[j]].pp).cast_mut()
-                                    as *mut c_void,
+                                (&raw const (*(&raw const crate::data::pokemon::gBattleMoves)
+                                    .cast::<CArray<BattleMove, 0>>())[(*partyData.at(i)).moves[j]]
+                                    .pp)
+                                    .cast_mut() as *mut c_void,
                             );
-                            j += 1;
                         }
                         break 'l3;
                     }
                     _ => {}
                 }
             }
-            i += 1;
         }
-        gBattleTypeFlags |= gTrainers[trainerNum].doubleBattle as u32;
+        gBattleTypeFlags |= (*(&raw const crate::data::data_tables::gTrainers)
+            .cast::<CArray<Trainer, 0>>())[trainerNum]
+            .doubleBattle as u32;
     }
-    return gTrainers[trainerNum].partySize;
+    (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())[trainerNum]
+        .partySize
 }
-pub(crate) unsafe extern "C" fn HBlankCB_Battle() {
-    if (67108870 as usize as *mut u16).read_volatile() < DISPLAY_HEIGHT
-        && (67108870 as usize as *mut u16).read_volatile() >= 111
+unsafe fn HBlankCB_Battle() {
+    if (67108870_usize as *mut u16).read_volatile() < DISPLAY_HEIGHT
+        && (67108870_usize as *mut u16).read_volatile() >= 111
     {
         SetGpuReg(REG_OFFSET_BG0CNT, 38912);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn VBlankCB_Battle() {
+pub unsafe fn VBlankCB_Battle() {
     if gBattleTypeFlags & 0x13f0102 == 0 {
         Random();
     }
@@ -2439,9 +2366,8 @@ pub unsafe extern "C" fn VBlankCB_Battle() {
     TransferPlttBuffer();
     ScanlineEffect_InitHBlankDmaTransfer();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_VsLetterDummy(sprite: *mut Sprite) {}
-pub(crate) unsafe extern "C" fn SpriteCB_VsLetter(sprite: *mut Sprite) {
+pub fn SpriteCB_VsLetterDummy(sprite: *mut Sprite) {}
+pub(crate) unsafe fn SpriteCB_VsLetter(sprite: *mut Sprite) {
     if (*sprite).data[0] != 0 {
         (*sprite).x = (*sprite).data[1] + (((*sprite).data[2] as i32 & 0xFF00) >> 8) as i16;
     } else {
@@ -2455,18 +2381,15 @@ pub(crate) unsafe extern "C" fn SpriteCB_VsLetter(sprite: *mut Sprite) {
         DestroySprite(sprite);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_VsLetterInit(sprite: *mut Sprite) {
+pub unsafe fn SpriteCB_VsLetterInit(sprite: *mut Sprite) {
     StartSpriteAffineAnim(sprite, 1);
     (*sprite).callback = Some(SpriteCB_VsLetter);
     PlaySE(SE_MUGSHOT);
 }
-pub(crate) unsafe extern "C" fn BufferPartyVsScreenHealth_AtEnd(taskId: u8) {
+unsafe fn BufferPartyVsScreenHealth_AtEnd(taskId: u8) {
     let mut party1: *mut Pokemon = null_mut();
     let mut party2: *mut Pokemon = null_mut();
-    let mut multiplayerId: u8 = gBattleScripting.multiplayerId;
-    let mut flags: u32 = 0;
-    let mut i: i32 = 0;
+    let multiplayerId: u8 = gBattleScripting.multiplayerId;
     if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
         match gLinkPlayers[multiplayerId].id {
             0 | 2 => {
@@ -2483,13 +2406,12 @@ pub(crate) unsafe extern "C" fn BufferPartyVsScreenHealth_AtEnd(taskId: u8) {
         party1 = gPlayerParty.as_mut_ptr();
         party2 = gEnemyParty.as_mut_ptr();
     }
-    flags = 0;
-    i = 0;
-    while i < 6 {
+    let mut flags: u32 = 0;
+    for i in 0..6i32 {
         'l2: {
-            let mut species: u16 = GetMonData2(party1.at(i), MON_DATA_SPECIES_OR_EGG) as u16;
-            let mut hp: u16 = GetMonData2(party1.at(i), MON_DATA_HP) as u16;
-            let mut status: u32 = GetMonData2(party1.at(i), MON_DATA_STATUS);
+            let species: u16 = GetMonData2(party1.at(i), MON_DATA_SPECIES_OR_EGG) as u16;
+            let hp: u16 = GetMonData2(party1.at(i), MON_DATA_HP) as u16;
+            let status: u32 = GetMonData2(party1.at(i), MON_DATA_STATUS);
             if species == 0 {
                 break 'l2;
             }
@@ -2509,16 +2431,14 @@ pub(crate) unsafe extern "C" fn BufferPartyVsScreenHealth_AtEnd(taskId: u8) {
                 flags |= shl_i32(3, i as u32 * 2) as u32;
             }
         }
-        i += 1;
     }
-    gTasks[taskId].data[3] = flags as i16;
+    task_set(taskId, 3, flags as i16);
     flags = 0;
-    i = 0;
-    while i < 6 {
+    for i in 0..6i32 {
         'l4: {
-            let mut species: u16 = GetMonData2(party2.at(i), MON_DATA_SPECIES_OR_EGG) as u16;
-            let mut hp: u16 = GetMonData2(party2.at(i), MON_DATA_HP) as u16;
-            let mut status: u32 = GetMonData2(party2.at(i), MON_DATA_STATUS);
+            let species: u16 = GetMonData2(party2.at(i), MON_DATA_SPECIES_OR_EGG) as u16;
+            let hp: u16 = GetMonData2(party2.at(i), MON_DATA_HP) as u16;
+            let status: u32 = GetMonData2(party2.at(i), MON_DATA_STATUS);
             if species == 0 {
                 break 'l4;
             }
@@ -2538,12 +2458,10 @@ pub(crate) unsafe extern "C" fn BufferPartyVsScreenHealth_AtEnd(taskId: u8) {
                 flags |= shl_i32(3, i as u32 * 2) as u32;
             }
         }
-        i += 1;
     }
-    gTasks[taskId].data[4] = flags as i16;
+    task_set(taskId, 4, flags as i16);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_InitEndLinkBattle() {
+pub unsafe fn CB2_InitEndLinkBattle() {
     let mut i: i32 = 0;
     let mut taskId: u8 = 0;
     SetHBlankCallback(None);
@@ -2576,13 +2494,21 @@ pub unsafe extern "C" fn CB2_InitEndLinkBattle() {
         ScanlineEffect_Clear();
         i = 0;
         while i < 80 {
-            gScanlineEffectRegBuffers[0][i] = 0xF0;
-            gScanlineEffectRegBuffers[1][i] = 0xF0;
+            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[0][i] = 0xF0;
+            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[1][i] = 0xF0;
             i += 1;
         }
         while i < 160 {
-            gScanlineEffectRegBuffers[0][i] = 0xFF10;
-            gScanlineEffectRegBuffers[1][i] = 0xFF10;
+            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[0][i] = 0xFF10;
+            (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[1][i] = 0xFF10;
             i += 1;
         }
         ResetPaletteFade();
@@ -2595,7 +2521,13 @@ pub unsafe extern "C" fn CB2_InitEndLinkBattle() {
         gBattle_BG3_X = 0;
         gBattle_BG3_Y = 0;
         InitBattleBgsVideo();
-        LoadCompressedPalette(gBattleTextboxPalette.as_ptr().cast_mut(), 0, 64);
+        LoadCompressedPalette(
+            (*(&raw const crate::data::graphics::gBattleTextboxPalette).cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            0,
+            64,
+        );
         LoadBattleMenuWindowGfx();
         ResetSpriteData();
         ResetTasks();
@@ -2605,15 +2537,15 @@ pub unsafe extern "C" fn CB2_InitEndLinkBattle() {
         gReservedSpritePaletteCount = MAX_BATTLERS_COUNT;
         SetVBlankCallback(Some(VBlankCB_Battle));
         taskId = CreateTask(Some(InitLinkBattleVsScreen), 0);
-        gTasks[taskId].data[1] = 0x10E;
-        gTasks[taskId].data[2] = 0x5A;
-        gTasks[taskId].data[5] = 1;
+        task_set(taskId, 1, 0x10E);
+        task_set(taskId, 2, 0x5A);
+        task_set(taskId, 5, 1);
         BufferPartyVsScreenHealth_AtEnd(taskId);
         SetMainCallback2(Some(CB2_EndLinkBattle));
         gBattleCommunication[0] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn CB2_EndLinkBattle() {
+pub(crate) unsafe fn CB2_EndLinkBattle() {
     EndLinkBattleInSteps();
     AnimateSprites();
     BuildOamBuffer();
@@ -2621,7 +2553,7 @@ pub(crate) unsafe extern "C" fn CB2_EndLinkBattle() {
     UpdatePaletteFade();
     RunTasks();
 }
-pub(crate) unsafe extern "C" fn EndLinkBattleInSteps() {
+unsafe fn EndLinkBattleInSteps() {
     let mut i: i32 = 0;
     match gBattleCommunication[0] {
         0 => {
@@ -2692,10 +2624,8 @@ pub(crate) unsafe extern "C" fn EndLinkBattleInSteps() {
                     );
                 }
             }
-            i = 0;
-            while i < 2 {
+            for i in 0..2i32 {
                 LoadChosenBattleElement(i as u8);
-                i += 1;
             }
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
             gBattleCommunication[0] += 1;
@@ -2713,15 +2643,18 @@ pub(crate) unsafe extern "C" fn EndLinkBattleInSteps() {
         6 => {
             if IsLinkTaskFinished() == TRUE {
                 SetLinkStandbyCallback();
-                BattlePutTextOnWindow(gText_LinkStandby3.as_ptr().cast_mut(), B_WIN_MSG);
+                BattlePutTextOnWindow(
+                    (*crate::asmdata::gText_LinkStandby3.cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                    B_WIN_MSG,
+                );
                 gBattleCommunication[0] += 1;
             }
         }
         7 => {
-            if IsTextPrinterActive(B_WIN_MSG) == 0 {
-                if IsLinkTaskFinished() == TRUE {
-                    gBattleCommunication[0] += 1;
-                }
+            if IsTextPrinterActive(B_WIN_MSG) == 0 && IsLinkTaskFinished() == TRUE {
+                gBattleCommunication[0] += 1;
             }
         }
         8 => {
@@ -2730,52 +2663,62 @@ pub(crate) unsafe extern "C" fn EndLinkBattleInSteps() {
             }
             gBattleCommunication[0] += 1;
         }
-        9 => {
-            if gMain.anyLinkBattlerHasFrontierPass() == 0
-                || gWirelessCommType != 0
-                || gReceivedRemoteLinkPlayers != 1
-            {
-                gMain.set_anyLinkBattlerHasFrontierPass(FALSE);
-                SetMainCallback2(gMain.savedCallback);
-                FreeBattleResources();
-                FreeBattleSpritesData();
-                FreeMonSpritesGfx();
-            }
+        9 if (gMain.anyLinkBattlerHasFrontierPass() == 0
+            || gWirelessCommType != 0
+            || gReceivedRemoteLinkPlayers != 1) =>
+        {
+            gMain.set_anyLinkBattlerHasFrontierPass(FALSE);
+            SetMainCallback2(gMain.savedCallback);
+            FreeBattleResources();
+            FreeBattleSpritesData();
+            FreeMonSpritesGfx();
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBattleBgTemplateData(arrayId: u8, caseId: u8) -> u32 {
+pub unsafe fn GetBattleBgTemplateData(arrayId: u8, caseId: u8) -> u32 {
     let mut ret: u32 = 0;
     match caseId {
         0 => {
-            ret = gBattleBgTemplates[arrayId].bg() as u32;
+            ret = (*(&raw const crate::data::battle_bg::gBattleBgTemplates)
+                .cast::<CArray<BgTemplate, 0>>())[arrayId]
+                .bg() as u32;
         }
         1 => {
-            ret = gBattleBgTemplates[arrayId].charBaseIndex() as u32;
+            ret = (*(&raw const crate::data::battle_bg::gBattleBgTemplates)
+                .cast::<CArray<BgTemplate, 0>>())[arrayId]
+                .charBaseIndex() as u32;
         }
         2 => {
-            ret = gBattleBgTemplates[arrayId].mapBaseIndex() as u32;
+            ret = (*(&raw const crate::data::battle_bg::gBattleBgTemplates)
+                .cast::<CArray<BgTemplate, 0>>())[arrayId]
+                .mapBaseIndex() as u32;
         }
         3 => {
-            ret = gBattleBgTemplates[arrayId].screenSize() as u32;
+            ret = (*(&raw const crate::data::battle_bg::gBattleBgTemplates)
+                .cast::<CArray<BgTemplate, 0>>())[arrayId]
+                .screenSize() as u32;
         }
         4 => {
-            ret = gBattleBgTemplates[arrayId].paletteMode() as u32;
+            ret = (*(&raw const crate::data::battle_bg::gBattleBgTemplates)
+                .cast::<CArray<BgTemplate, 0>>())[arrayId]
+                .paletteMode() as u32;
         }
         5 => {
-            ret = gBattleBgTemplates[arrayId].priority() as u32;
+            ret = (*(&raw const crate::data::battle_bg::gBattleBgTemplates)
+                .cast::<CArray<BgTemplate, 0>>())[arrayId]
+                .priority() as u32;
         }
         6 => {
-            ret = gBattleBgTemplates[arrayId].baseTile() as u32;
+            ret = (*(&raw const crate::data::battle_bg::gBattleBgTemplates)
+                .cast::<CArray<BgTemplate, 0>>())[arrayId]
+                .baseTile() as u32;
         }
         _ => {}
     }
-    return ret;
+    ret
 }
-pub(crate) unsafe extern "C" fn CB2_InitAskRecordBattle() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn CB2_InitAskRecordBattle() {
     SetHBlankCallback(None);
     SetVBlankCallback(None);
     {
@@ -2801,10 +2744,8 @@ pub(crate) unsafe extern "C" fn CB2_InitAskRecordBattle() {
     InitBattleBgsVideo();
     SetGpuReg(REG_OFFSET_DISPCNT, 4160);
     LoadBattleMenuWindowGfx();
-    i = 0;
-    while i < 2 {
+    for i in 0..2i32 {
         LoadChosenBattleElement(i as u8);
-        i += 1;
     }
     ResetSpriteData();
     ResetTasks();
@@ -2815,7 +2756,7 @@ pub(crate) unsafe extern "C" fn CB2_InitAskRecordBattle() {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
     gBattleCommunication[0] = 0;
 }
-pub(crate) unsafe extern "C" fn CB2_AskRecordBattle() {
+pub(crate) unsafe fn CB2_AskRecordBattle() {
     AskRecordBattle();
     AnimateSprites();
     BuildOamBuffer();
@@ -2823,7 +2764,7 @@ pub(crate) unsafe extern "C" fn CB2_AskRecordBattle() {
     UpdatePaletteFade();
     RunTasks();
 }
-pub(crate) unsafe extern "C" fn AskRecordBattle() {
+unsafe fn AskRecordBattle() {
     match gBattleCommunication[0] {
         STATE_INIT => {
             ShowBg(0);
@@ -2844,14 +2785,26 @@ pub(crate) unsafe extern "C" fn AskRecordBattle() {
         }
         STATE_ASK_RECORD => {
             if gPaletteFade.active() == 0 {
-                BattlePutTextOnWindow(gText_RecordBattleToPass.as_ptr().cast_mut(), B_WIN_MSG);
+                BattlePutTextOnWindow(
+                    (*(&raw const crate::data::battle_message::gText_RecordBattleToPass)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    B_WIN_MSG,
+                );
                 gBattleCommunication[0] += 1;
             }
         }
         STATE_PRINT_YES_NO => {
             if IsTextPrinterActive(B_WIN_MSG) == 0 {
                 HandleBattleWindow(24, 8, 29, 13, 0);
-                BattlePutTextOnWindow(gText_BattleYesNoChoice.as_ptr().cast_mut(), B_WIN_YESNO);
+                BattlePutTextOnWindow(
+                    (*(&raw const crate::data::battle_message::gText_BattleYesNoChoice)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    B_WIN_YESNO,
+                );
                 gBattleCommunication[1] = 1;
                 BattleCreateYesNoCursorAt(1);
                 gBattleCommunication[0] += 1;
@@ -2891,7 +2844,12 @@ pub(crate) unsafe extern "C" fn AskRecordBattle() {
                 HandleBattleWindow(24, 8, 29, 13, WINDOW_CLEAR);
                 if gMain.anyLinkBattlerHasFrontierPass() != 0 {
                     SetLinkStandbyCallback();
-                    BattlePutTextOnWindow(gText_LinkStandby3.as_ptr().cast_mut(), B_WIN_MSG);
+                    BattlePutTextOnWindow(
+                        (*crate::asmdata::gText_LinkStandby3.cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
+                        B_WIN_MSG,
+                    );
                 }
                 gBattleCommunication[0] += 1;
             }
@@ -2926,14 +2884,17 @@ pub(crate) unsafe extern "C" fn AskRecordBattle() {
             if gBattleCommunication[1] == 1 {
                 PlaySE(SE_SAVE);
                 BattleStringExpandPlaceholdersToDisplayedString(
-                    gText_BattleRecordedOnPass.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::battle_message::gText_BattleRecordedOnPass)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
                 gBattleCommunication[1] = 128;
                 gBattleCommunication[0] += 1;
             } else {
                 BattleStringExpandPlaceholdersToDisplayedString(
-                    BattleFrontier_BattleTowerBattleRoom_Text_RecordCouldntBeSaved
+                    (*crate::asmdata::BattleFrontier_BattleTowerBattleRoom_Text_RecordCouldntBeSaved.cast::<CArray<u8, 0>>())
                         .as_ptr()
                         .cast_mut(),
                 );
@@ -2952,30 +2913,33 @@ pub(crate) unsafe extern "C" fn AskRecordBattle() {
             {
                 if gMain.anyLinkBattlerHasFrontierPass() != 0 {
                     SetLinkStandbyCallback();
-                    BattlePutTextOnWindow(gText_LinkStandby3.as_ptr().cast_mut(), B_WIN_MSG);
+                    BattlePutTextOnWindow(
+                        (*crate::asmdata::gText_LinkStandby3.cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
+                        B_WIN_MSG,
+                    );
                 }
                 gBattleCommunication[0] += 1;
             }
         }
-        STATE_END_RECORD_YES | STATE_END_RECORD_NO => {
-            if IsTextPrinterActive(B_WIN_MSG) == 0 {
-                if gMain.anyLinkBattlerHasFrontierPass() != 0 {
-                    if IsLinkTaskFinished() == TRUE {
-                        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-                        gBattleCommunication[1] = 32;
-                        gBattleCommunication[0] = STATE_WAIT_END;
-                    }
-                } else {
+        STATE_END_RECORD_YES | STATE_END_RECORD_NO if IsTextPrinterActive(B_WIN_MSG) == 0 => {
+            if gMain.anyLinkBattlerHasFrontierPass() != 0 {
+                if IsLinkTaskFinished() == TRUE {
                     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
                     gBattleCommunication[1] = 32;
                     gBattleCommunication[0] = STATE_WAIT_END;
                 }
+            } else {
+                BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+                gBattleCommunication[1] = 32;
+                gBattleCommunication[0] = STATE_WAIT_END;
             }
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn TryCorrectShedinjaLanguage(mon: *mut Pokemon) {
+unsafe fn TryCorrectShedinjaLanguage(mon: *mut Pokemon) {
     let mut nickname: CArray<u8, 11> = zeroed();
     let mut language: u8 = LANGUAGE_JAPANESE;
     if GetMonData2(mon, MON_DATA_SPECIES) == SPECIES_SHEDINJA as u32
@@ -2991,17 +2955,19 @@ pub(crate) unsafe extern "C" fn TryCorrectShedinjaLanguage(mon: *mut Pokemon) {
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBattleWindowTemplatePixelWidth(windowsType: u32, tableId: u32) -> u32 {
-    return (*gBattleWindowTemplates[windowsType].at(tableId)).width as u32 * 8;
+pub unsafe fn GetBattleWindowTemplatePixelWidth(windowsType: u32, tableId: u32) -> u32 {
+    (*(*(&raw const crate::data::battle_bg::gBattleWindowTemplates)
+        .cast::<CArray<*mut WindowTemplate, 0>>())[windowsType]
+        .at(tableId))
+    .width as u32
+        * 8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_WildMon(sprite: *mut Sprite) {
+pub unsafe fn SpriteCB_WildMon(sprite: *mut Sprite) {
     (*sprite).callback = Some(SpriteCB_MoveWildMonToRight);
     StartSpriteAnimIfDifferent(sprite, 0);
     BeginNormalPaletteFade(0x20000, 0, 10, 10, 8456);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_MoveWildMonToRight(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_MoveWildMonToRight(sprite: *mut Sprite) {
     if gIntroSlideFlags as i32 & 1 == 0 {
         (*sprite).x2 += 2;
         if (*sprite).x2 == 0 {
@@ -3009,63 +2975,61 @@ pub(crate) unsafe extern "C" fn SpriteCB_MoveWildMonToRight(sprite: *mut Sprite)
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_WildMonShowHealthbox(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_WildMonShowHealthbox(sprite: *mut Sprite) {
     if (*sprite).animEnded() != 0 {
-        StartHealthboxSlideIn((*sprite).data[0] as u8);
-        SetHealthboxSpriteVisible(gHealthboxSpriteIds[(*sprite).data[0]]);
+        StartHealthboxSlideIn((*sprite).data[sBattler] as u8);
+        SetHealthboxSpriteVisible(gHealthboxSpriteIds[(*sprite).data[sBattler]]);
         (*sprite).callback = Some(SpriteCB_WildMonAnimate);
         StartSpriteAnimIfDifferent(sprite, 0);
         BeginNormalPaletteFade(0x20000, 0, 10, 0, 8456);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_WildMonAnimate(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_WildMonAnimate(sprite: *mut Sprite) {
     if gPaletteFade.active() == 0 {
-        BattleAnimateFrontSprite(sprite, (*sprite).data[2] as u16, FALSE, 1);
+        BattleAnimateFrontSprite(sprite, (*sprite).data[sSpeciesId] as u16, FALSE, 1);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCallbackDummy_2(sprite: *mut Sprite) {}
-pub(crate) unsafe extern "C" fn SpriteCB_InitFlicker(sprite: *mut Sprite) {
-    (*sprite).data[3] = 6;
-    (*sprite).data[4] = 1;
+pub unsafe fn SpriteCallbackDummy_2(sprite: *mut Sprite) {}
+unsafe fn SpriteCB_InitFlicker(sprite: *mut Sprite) {
+    (*sprite).data[sNumFlickers] = 6;
+    (*sprite).data[sDelay] = 1;
     (*sprite).callback = Some(SpriteCB_Flicker);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Flicker(sprite: *mut Sprite) {
-    (*sprite).data[4] -= 1;
-    if (*sprite).data[4] == 0 {
-        (*sprite).data[4] = 8;
+pub(crate) unsafe fn SpriteCB_Flicker(sprite: *mut Sprite) {
+    (*sprite).data[sDelay] -= 1;
+    if (*sprite).data[sDelay] == 0 {
+        (*sprite).data[sDelay] = 8;
         (*sprite).set_invisible((*sprite).invisible() ^ 1);
-        (*sprite).data[3] -= 1;
-        if (*sprite).data[3] == 0 {
+        (*sprite).data[sNumFlickers] -= 1;
+        if (*sprite).data[sNumFlickers] == 0 {
             (*sprite).set_invisible(FALSE as u16);
             (*sprite).callback = Some(SpriteCallbackDummy_2);
             sFlickerArray[0] = 0;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_FaintOpponentMon(sprite: *mut Sprite) {
-    let mut battler: u8 = (*sprite).data[0] as u8;
+pub unsafe fn SpriteCB_FaintOpponentMon(sprite: *mut Sprite) {
+    let battler: u8 = (*sprite).data[sBattler] as u8;
     let mut species: u16 = 0;
     let mut yOffset: u8 = 0;
     if (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies != 0 {
         species = (*(*gBattleSpritesDataPtr).battlerData.at(battler)).transformSpecies;
     } else {
-        species = (*sprite).data[2] as u16;
+        species = (*sprite).data[sSpeciesId] as u16;
     }
     GetMonData2(
         &raw mut gEnemyParty[gBattlerPartyIndexes[battler]],
         MON_DATA_PERSONALITY,
     );
     if species == SPECIES_UNOWN {
-        let mut personalityValue: u32 = GetMonData2(
+        let personalityValue: u32 = GetMonData2(
             &raw mut gEnemyParty[gBattlerPartyIndexes[battler]],
             MON_DATA_PERSONALITY,
         );
-        let mut unownForm: u16 = (((personalityValue & 0x03000000) >> 18
+        let unownForm: u16 = (((personalityValue & 0x03000000) >> 18
             | (personalityValue & 0x00030000) >> 12
             | (personalityValue & 0x00000300) >> 6
-            | (personalityValue & 0x00000003) >> 0)
+            | (personalityValue & 0x00000003))
             % 28) as u16;
         let mut unownSpecies: u16 = 0;
         if unownForm == 0 {
@@ -3073,20 +3037,27 @@ pub unsafe extern "C" fn SpriteCB_FaintOpponentMon(sprite: *mut Sprite) {
         } else {
             unownSpecies = NUM_SPECIES + unownForm;
         }
-        yOffset = gMonFrontPicCoords[unownSpecies].y_offset;
+        yOffset = (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
+            .cast::<CArray<MonCoords, 0>>())[unownSpecies]
+            .y_offset;
     } else if species == SPECIES_CASTFORM {
-        yOffset = gCastformFrontSpriteCoords[gBattleMonForms[battler]].y_offset;
+        yOffset = (*(&raw const crate::data::battle_anim_mons::gCastformFrontSpriteCoords)
+            .cast::<CArray<MonCoords, 0>>())[gBattleMonForms[battler]]
+            .y_offset;
     } else if species > NUM_SPECIES {
-        yOffset = gMonFrontPicCoords[0].y_offset;
+        yOffset = (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
+            .cast::<CArray<MonCoords, 0>>())[0]
+            .y_offset;
     } else {
-        yOffset = gMonFrontPicCoords[species].y_offset;
+        yOffset = (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
+            .cast::<CArray<MonCoords, 0>>())[species]
+            .y_offset;
     }
     (*sprite).data[3] = 8 - (yOffset as i32 / 8) as i16;
     (*sprite).data[4] = 1;
     (*sprite).callback = Some(SpriteCB_AnimFaintOpponent);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_AnimFaintOpponent(sprite: *mut Sprite) {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn SpriteCB_AnimFaintOpponent(sprite: *mut Sprite) {
     if ({
         (*sprite).data[4] -= 1;
         (*sprite).data[4]
@@ -3103,29 +3074,26 @@ pub(crate) unsafe extern "C" fn SpriteCB_AnimFaintOpponent(sprite: *mut Sprite) 
             DestroySprite(sprite);
         } else {
             let mut dst: *mut u8 = (*gMonSpritesGfxPtr).sprites.byte
-                [GetBattlerPosition((*sprite).data[0] as u8)]
-            .at((gBattleMonForms[(*sprite).data[0]] as i32) << 11)
+                [GetBattlerPosition((*sprite).data[sBattler] as u8)]
+            .at((gBattleMonForms[(*sprite).data[sBattler]] as i32) << 11)
             .at(((*sprite).data[3] as i32) << 8);
-            i = 0;
-            while i < 0x100 {
+            for i in 0..0x100 {
                 *({
                     let t3 = dst;
                     dst = dst.at(1);
                     t3
                 }) = 0;
-                i += 1;
             }
-            StartSpriteAnim(sprite, gBattleMonForms[(*sprite).data[0]]);
+            StartSpriteAnim(sprite, gBattleMonForms[(*sprite).data[sBattler]]);
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_ShowAsMoveTarget(sprite: *mut Sprite) {
+pub unsafe fn SpriteCB_ShowAsMoveTarget(sprite: *mut Sprite) {
     (*sprite).data[3] = 8;
     (*sprite).data[4] = (*sprite).invisible() as i16;
     (*sprite).callback = Some(SpriteCB_BlinkVisible);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_BlinkVisible(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_BlinkVisible(sprite: *mut Sprite) {
     if ({
         (*sprite).data[3] -= 1;
         (*sprite).data[3]
@@ -3135,28 +3103,25 @@ pub(crate) unsafe extern "C" fn SpriteCB_BlinkVisible(sprite: *mut Sprite) {
         (*sprite).data[3] = 8;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_HideAsMoveTarget(sprite: *mut Sprite) {
+pub unsafe fn SpriteCB_HideAsMoveTarget(sprite: *mut Sprite) {
     (*sprite).set_invisible((*sprite).data[4] as u16);
     (*sprite).data[4] = FALSE as i16;
     (*sprite).callback = Some(SpriteCallbackDummy_2);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_OpponentMonFromBall(sprite: *mut Sprite) {
+pub unsafe fn SpriteCB_OpponentMonFromBall(sprite: *mut Sprite) {
     if (*sprite).affineAnimEnded() != 0 {
-        if gHitMarker & HITMARKER_NO_ANIMATIONS == 0 || gBattleTypeFlags & 0x2000002 != 0 {
-            if HasTwoFramesAnimation((*sprite).data[2] as u16) != 0 {
-                StartSpriteAnim(sprite, 1);
-            }
+        if (gHitMarker & HITMARKER_NO_ANIMATIONS == 0 || gBattleTypeFlags & 0x2000002 != 0)
+            && HasTwoFramesAnimation((*sprite).data[sSpeciesId] as u16) != 0
+        {
+            StartSpriteAnim(sprite, 1);
         }
-        BattleAnimateFrontSprite(sprite, (*sprite).data[2] as u16, 1, 1);
+        BattleAnimateFrontSprite(sprite, (*sprite).data[sSpeciesId] as u16, 1, 1);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_BattleSpriteStartSlideLeft(sprite: *mut Sprite) {
+pub unsafe fn SpriteCB_BattleSpriteStartSlideLeft(sprite: *mut Sprite) {
     (*sprite).callback = Some(SpriteCB_BattleSpriteSlideLeft);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_BattleSpriteSlideLeft(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_BattleSpriteSlideLeft(sprite: *mut Sprite) {
     if gIntroSlideFlags as i32 & 1 == 0 {
         (*sprite).x2 -= 2;
         if (*sprite).x2 == 0 {
@@ -3165,20 +3130,17 @@ pub(crate) unsafe extern "C" fn SpriteCB_BattleSpriteSlideLeft(sprite: *mut Spri
         }
     }
 }
-pub(crate) unsafe extern "C" fn SetIdleSpriteCallback(sprite: *mut Sprite) {
+unsafe fn SetIdleSpriteCallback(sprite: *mut Sprite) {
     (*sprite).callback = Some(SpriteCB_Idle);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Idle(sprite: *mut Sprite) {}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_FaintSlideAnim(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_Idle(sprite: *mut Sprite) {}
+pub unsafe fn SpriteCB_FaintSlideAnim(sprite: *mut Sprite) {
     if gIntroSlideFlags as i32 & 1 == 0 {
-        (*sprite).x2 += (*sprite).data[1];
-        (*sprite).y2 += (*sprite).data[2];
+        (*sprite).x2 += (*sprite).data[sSpeedX];
+        (*sprite).y2 += (*sprite).data[sSpeedY];
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoBounceEffect(battler: u8, which: u8, delta: i8, amplitude: i8) {
-    let mut invisibleSpriteId: u8 = 0;
+pub unsafe fn DoBounceEffect(battler: u8, which: u8, delta: i8, amplitude: i8) {
     let mut bouncerSpriteId: u8 = 0;
     match which {
         BOUNCE_MON => {
@@ -3192,29 +3154,28 @@ pub unsafe extern "C" fn DoBounceEffect(battler: u8, which: u8, delta: i8, ampli
             }
         }
     }
-    invisibleSpriteId = CreateInvisibleSpriteWithCallback(Some(SpriteCB_BounceEffect));
+    let invisibleSpriteId: u8 = CreateInvisibleSpriteWithCallback(Some(SpriteCB_BounceEffect));
     if which == BOUNCE_HEALTHBOX {
         bouncerSpriteId = gHealthboxSpriteIds[battler];
         (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).healthboxBounceSpriteId =
             invisibleSpriteId;
         (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).set_healthboxIsBouncing(1);
-        gSprites[invisibleSpriteId].data[0] = 128;
+        gSprites[invisibleSpriteId].data[sSinIndex] = 128;
     } else {
         bouncerSpriteId = gBattlerSpriteIds[battler];
         (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).battlerBounceSpriteId =
             invisibleSpriteId;
         (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).set_battlerIsBouncing(1);
-        gSprites[invisibleSpriteId].data[0] = 192;
+        gSprites[invisibleSpriteId].data[sSinIndex] = 192;
     }
-    gSprites[invisibleSpriteId].data[1] = delta as i16;
-    gSprites[invisibleSpriteId].data[2] = amplitude as i16;
-    gSprites[invisibleSpriteId].data[3] = bouncerSpriteId as i16;
-    gSprites[invisibleSpriteId].data[4] = which as i16;
+    gSprites[invisibleSpriteId].data[sDelta] = delta as i16;
+    gSprites[invisibleSpriteId].data[sAmplitude] = amplitude as i16;
+    gSprites[invisibleSpriteId].data[sBouncerSpriteId] = bouncerSpriteId as i16;
+    gSprites[invisibleSpriteId].data[sWhich] = which as i16;
     gSprites[bouncerSpriteId].x2 = 0;
     gSprites[bouncerSpriteId].y2 = 0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn EndBounceEffect(battler: u8, which: u8) {
+pub unsafe fn EndBounceEffect(battler: u8, which: u8) {
     let mut bouncerSpriteId: u8 = 0;
     if which == BOUNCE_HEALTHBOX {
         if (*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).healthboxIsBouncing() == 0 {
@@ -3222,7 +3183,7 @@ pub unsafe extern "C" fn EndBounceEffect(battler: u8, which: u8) {
         }
         bouncerSpriteId = gSprites
             [(*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).healthboxBounceSpriteId]
-            .data[3] as u8;
+            .data[sBouncerSpriteId] as u8;
         DestroySprite(
             &raw mut gSprites
                 [(*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).healthboxBounceSpriteId],
@@ -3234,7 +3195,7 @@ pub unsafe extern "C" fn EndBounceEffect(battler: u8, which: u8) {
         }
         bouncerSpriteId = gSprites
             [(*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).battlerBounceSpriteId]
-            .data[3] as u8;
+            .data[sBouncerSpriteId] as u8;
         DestroySprite(
             &raw mut gSprites
                 [(*(*gBattleSpritesDataPtr).healthBoxesData.at(battler)).battlerBounceSpriteId],
@@ -3244,49 +3205,45 @@ pub unsafe extern "C" fn EndBounceEffect(battler: u8, which: u8) {
     gSprites[bouncerSpriteId].x2 = 0;
     gSprites[bouncerSpriteId].y2 = 0;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_BounceEffect(sprite: *mut Sprite) {
-    let mut bouncerSpriteId: u8 = (*sprite).data[3] as u8;
+pub(crate) unsafe fn SpriteCB_BounceEffect(sprite: *mut Sprite) {
+    let bouncerSpriteId: u8 = (*sprite).data[sBouncerSpriteId] as u8;
     let mut index: i32 = 0;
-    if (*sprite).data[4] == BOUNCE_HEALTHBOX as i16 {
-        index = (*sprite).data[0] as i32;
+    if (*sprite).data[sWhich] == BOUNCE_HEALTHBOX as i16 {
+        index = (*sprite).data[sSinIndex] as i32;
     } else {
-        index = (*sprite).data[0] as i32;
+        index = (*sprite).data[sSinIndex] as i32;
     }
-    gSprites[bouncerSpriteId].y2 = Sin(index as i16, (*sprite).data[2]) + (*sprite).data[2];
-    (*sprite).data[0] = (*sprite).data[0] + (*sprite).data[1] & 0xFF;
+    gSprites[bouncerSpriteId].y2 =
+        Sin(index as i16, (*sprite).data[sAmplitude]) + (*sprite).data[sAmplitude];
+    (*sprite).data[sSinIndex] = ((*sprite).data[sSinIndex] + (*sprite).data[sDelta]) & 0xFF;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_PlayerMonFromBall(sprite: *mut Sprite) {
+pub unsafe fn SpriteCB_PlayerMonFromBall(sprite: *mut Sprite) {
     if (*sprite).affineAnimEnded() != 0 {
-        BattleAnimateBackSprite(sprite, (*sprite).data[2] as u16);
+        BattleAnimateBackSprite(sprite, (*sprite).data[sSpeciesId] as u16);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_TrainerThrowObject_Main(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_TrainerThrowObject_Main(sprite: *mut Sprite) {
     AnimSetCenterToCornerVecX(sprite);
     if (*sprite).animEnded() != 0 {
         (*sprite).callback = Some(SpriteCB_Idle);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_TrainerThrowObject(sprite: *mut Sprite) {
+pub unsafe fn SpriteCB_TrainerThrowObject(sprite: *mut Sprite) {
     StartSpriteAnim(sprite, 1);
     (*sprite).callback = Some(SpriteCB_TrainerThrowObject_Main);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AnimSetCenterToCornerVecX(sprite: *mut Sprite) {
+pub unsafe fn AnimSetCenterToCornerVecX(sprite: *mut Sprite) {
     if (*sprite).animDelayCounter() == 0 {
         (*sprite).centerToCornerVecX = sCenterToCornerVecXs[(*sprite).animCmdIndex];
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BeginBattleIntroDummy() {}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BeginBattleIntro() {
+pub unsafe fn BeginBattleIntroDummy() {}
+pub unsafe fn BeginBattleIntro() {
     BattleStartClearSetData();
     gBattleCommunication[1] = 0;
     gBattleMainFunc = Some(BattleIntroGetMonsData);
 }
-pub(crate) unsafe extern "C" fn BattleMainCB1() {
+pub(crate) unsafe fn BattleMainCB1() {
     gBattleMainFunc.unwrap_unchecked()();
     gActiveBattler = 0;
     while gActiveBattler < gBattlersCount {
@@ -3294,20 +3251,15 @@ pub(crate) unsafe extern "C" fn BattleMainCB1() {
         gActiveBattler += 1;
     }
 }
-pub(crate) unsafe extern "C" fn BattleStartClearSetData() {
-    let mut i: i32 = 0;
-    let mut j: u32 = 0;
+unsafe fn BattleStartClearSetData() {
     let mut dataPtr: *mut u8 = null_mut();
     TurnValuesCleanUp(FALSE);
     SpecialStatusesClear();
-    i = 0;
-    while i < MAX_BATTLERS_COUNT as i32 {
+    for i in 0..(MAX_BATTLERS_COUNT as i32) {
         gStatuses3[i] = 0;
         dataPtr = &raw mut gDisableStructs[i] as *mut u8;
-        j = 0;
-        while j < 28 {
+        for j in 0..28u32 {
             *dataPtr.at(j) = 0;
-            j += 1;
         }
         gDisableStructs[i].isFirstTurn = 2;
         sUnusedBattlersArray[i] = 0;
@@ -3320,16 +3272,13 @@ pub(crate) unsafe extern "C" fn BattleStartClearSetData() {
         gLastPrintedMoves[i] = MOVE_NONE;
         (*(*gBattleResources).flags).flags[i] = 0;
         gPalaceSelectionBattleScripts[i] = null_mut();
-        i += 1;
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i < 2 {
         gSideStatuses[i] = 0;
         dataPtr = &raw mut gSideTimers[i] as *mut u8;
-        j = 0;
-        while j < 12 {
+        for j in 0..12u32 {
             *dataPtr.at(j) = 0;
-            j += 1;
         }
         i += 1;
     }
@@ -3337,10 +3286,8 @@ pub(crate) unsafe extern "C" fn BattleStartClearSetData() {
     gBattlerTarget = 0;
     gBattleWeather = 0;
     dataPtr = &raw mut gWishFutureKnock as *mut u8;
-    i = 0;
-    while i < 44 {
+    for i in 0..44i32 {
         *dataPtr.at(i) = 0;
-        i += 1;
     }
     gHitMarker = 0;
     if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
@@ -3359,10 +3306,8 @@ pub(crate) unsafe extern "C" fn BattleStartClearSetData() {
     gPaydayMoney = 0;
     (*(*gBattleResources).battleScriptsStack).size = 0;
     (*(*gBattleResources).battleCallbackStack).size = 0;
-    i = 0;
-    while i < BATTLE_COMMUNICATION_ENTRIES_COUNT {
+    for i in 0..BATTLE_COMMUNICATION_ENTRIES_COUNT {
         gBattleCommunication[i] = 0;
-        i += 1;
     }
     gPauseCounterBattle = 0;
     gBattleMoveDamage = 0;
@@ -3374,57 +3319,50 @@ pub(crate) unsafe extern "C" fn BattleStartClearSetData() {
     (*gBattleStruct).runTries = 0;
     (*gBattleStruct).safariGoNearCounter = 0;
     (*gBattleStruct).safariPkblThrowCounter = 0;
-    *(&raw mut (*gBattleStruct).safariCatchFactor) =
-        (gSpeciesInfo[GetMonData2(&raw mut gEnemyParty[0], MON_DATA_SPECIES)].catchRate as i32
-            * 100
-            / 1275) as u8;
+    (*gBattleStruct).safariCatchFactor = ((*(&raw const crate::data::pokemon::gSpeciesInfo)
+        .cast::<CArray<SpeciesInfo, 0>>())[GetMonData2(&raw mut gEnemyParty[0], MON_DATA_SPECIES)]
+    .catchRate as i32
+        * 100
+        / 1275) as u8;
     (*gBattleStruct).safariEscapeFactor = 3;
     (*gBattleStruct).wildVictorySong = 0;
     (*gBattleStruct).moneyMultiplier = 1;
-    i = 0;
-    while i < 8 {
+    for i in 0..8i32 {
         *(*gBattleStruct).lastTakenMove.as_mut_ptr().at(i) = MOVE_NONE as u8;
         *((*gBattleStruct).usedHeldItems.as_mut_ptr() as *mut u8).at(i) = ITEM_NONE as u8;
         *((*gBattleStruct).choicedMove.as_mut_ptr() as *mut u8).at(i) = MOVE_NONE as u8;
         *((*gBattleStruct).changedItems.as_mut_ptr() as *mut u8).at(i) = ITEM_NONE as u8;
-        *(*gBattleStruct).lastTakenMoveFrom.as_mut_ptr().at(i + 0) = 0;
+        *(*gBattleStruct).lastTakenMoveFrom.as_mut_ptr().at(i) = 0;
         *(*gBattleStruct).lastTakenMoveFrom.as_mut_ptr().at(i + 8) = 0;
         *(*gBattleStruct).lastTakenMoveFrom.as_mut_ptr().at(i + 16) = 0;
         *(*gBattleStruct).lastTakenMoveFrom.as_mut_ptr().at(i + 24) = 0;
-        i += 1;
     }
-    i = 0;
-    while i < MAX_BATTLERS_COUNT as i32 {
+    for i in 0..(MAX_BATTLERS_COUNT as i32) {
         *(*gBattleStruct).AI_monToSwitchIntoId.as_mut_ptr().at(i) = PARTY_SIZE as u8;
-        i += 1;
     }
     (*gBattleStruct).givenExpMons = 0;
     (*gBattleStruct).palaceFlags = 0;
-    gRandomTurnNumber = Random();
+    gRandomTurnNumber.set(Random());
     dataPtr = &raw mut gBattleResults as *mut u8;
-    i = 0;
-    while i < 68 {
+    for i in 0..68i32 {
         *dataPtr.at(i) = 0;
-        i += 1;
     }
     gBattleResults.set_shinyWildMon(IsMonShiny(&raw mut gEnemyParty[0]));
     (*gBattleStruct).arenaLostPlayerMons = 0;
     (*gBattleStruct).arenaLostOpponentMons = 0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SwitchInClearSetData() {
-    let mut disableStructCopy: DisableStruct = zeroed();
-    disableStructCopy = gDisableStructs[gActiveBattler];
+pub unsafe fn SwitchInClearSetData() {
+    let disableStructCopy: DisableStruct = gDisableStructs[gActiveBattler];
     let mut i: i32 = 0;
-    let mut ptr: *mut u8 = null_mut();
-    if gBattleMoves[gCurrentMove].effect != EFFECT_BATON_PASS {
-        i = 0;
-        while i < NUM_BATTLE_STATS {
+    if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [gCurrentMove]
+        .effect
+        != EFFECT_BATON_PASS
+    {
+        for i in 0..NUM_BATTLE_STATS {
             gBattleMons[gActiveBattler].statStages[i] = DEFAULT_STAT_STAGE;
-            i += 1;
         }
-        i = 0;
-        while i < gBattlersCount as i32 {
+        for i in 0..(gBattlersCount as i32) {
             if gBattleMons[i].status2 & STATUS2_ESCAPE_PREVENTION != 0
                 && gDisableStructs[i].battlerPreventingEscape == gActiveBattler
             {
@@ -3436,10 +3374,13 @@ pub unsafe extern "C" fn SwitchInClearSetData() {
                 gStatuses3[i] &= 0xffffffe7;
                 gDisableStructs[i].battlerWithSureHit = 0;
             }
-            i += 1;
         }
     }
-    if gBattleMoves[gCurrentMove].effect == EFFECT_BATON_PASS {
+    if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [gCurrentMove]
+        .effect
+        == EFFECT_BATON_PASS
+    {
         gBattleMons[gActiveBattler].status2 &= 0x15100007;
         gStatuses3[gActiveBattler] &= 0x3043f;
         i = 0;
@@ -3459,7 +3400,10 @@ pub unsafe extern "C" fn SwitchInClearSetData() {
     }
     i = 0;
     while i < gBattlersCount as i32 {
-        if gBattleMons[i].status2 & gBitTable[gActiveBattler] << 16 != 0 {
+        if gBattleMons[i].status2
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gActiveBattler] << 16
+            != 0
+        {
             gBattleMons[i].status2 &= !(gBitTable[gActiveBattler] << 16);
         }
         if gBattleMons[i].status2 & STATUS2_WRAPPED != 0
@@ -3471,13 +3415,15 @@ pub unsafe extern "C" fn SwitchInClearSetData() {
     }
     gActionSelectionCursor[gActiveBattler] = 0;
     gMoveSelectionCursor[gActiveBattler] = 0;
-    ptr = &raw mut gDisableStructs[gActiveBattler] as *mut u8;
-    i = 0;
-    while i < 28 {
+    let ptr: *mut u8 = &raw mut gDisableStructs[gActiveBattler] as *mut u8;
+    for i in 0..28i32 {
         *ptr.at(i) = 0;
-        i += 1;
     }
-    if gBattleMoves[gCurrentMove].effect == EFFECT_BATON_PASS {
+    if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [gCurrentMove]
+        .effect
+        == EFFECT_BATON_PASS
+    {
         gDisableStructs[gActiveBattler].substituteHP = disableStructCopy.substituteHP;
         gDisableStructs[gActiveBattler].battlerWithSureHit = disableStructCopy.battlerWithSureHit;
         gDisableStructs[gActiveBattler].set_perishSongTimer(disableStructCopy.perishSongTimer());
@@ -3507,11 +3453,11 @@ pub unsafe extern "C" fn SwitchInClearSetData() {
     *(*gBattleStruct)
         .lastTakenMoveFrom
         .as_mut_ptr()
-        .at(0 + gActiveBattler as i32 * 8) = 0;
+        .at(gActiveBattler as i32 * 8) = 0;
     *(*gBattleStruct)
         .lastTakenMoveFrom
         .as_mut_ptr()
-        .at(0 + gActiveBattler as i32 * 8)
+        .at(gActiveBattler as i32 * 8)
         .at(1) = 0;
     *(*gBattleStruct)
         .lastTakenMoveFrom
@@ -3566,25 +3512,23 @@ pub unsafe extern "C" fn SwitchInClearSetData() {
     ClearBattlerMoveHistory(gActiveBattler);
     ClearBattlerAbilityHistory(gActiveBattler);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FaintClearSetData() {
-    let mut i: i32 = 0;
-    let mut ptr: *mut u8 = null_mut();
-    i = 0;
-    while i < NUM_BATTLE_STATS {
+pub unsafe fn FaintClearSetData() {
+    for i in 0..NUM_BATTLE_STATS {
         gBattleMons[gActiveBattler].statStages[i] = DEFAULT_STAT_STAGE;
-        i += 1;
     }
     gBattleMons[gActiveBattler].status2 = 0;
     gStatuses3[gActiveBattler] = 0;
-    i = 0;
+    let mut i: i32 = 0;
     while i < gBattlersCount as i32 {
         if gBattleMons[i].status2 & STATUS2_ESCAPE_PREVENTION != 0
             && gDisableStructs[i].battlerPreventingEscape == gActiveBattler
         {
             gBattleMons[i].status2 &= 0xfbffffff;
         }
-        if gBattleMons[i].status2 & gBitTable[gActiveBattler] << 16 != 0 {
+        if gBattleMons[i].status2
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gActiveBattler] << 16
+            != 0
+        {
             gBattleMons[i].status2 &= !(gBitTable[gActiveBattler] << 16);
         }
         if gBattleMons[i].status2 & STATUS2_WRAPPED != 0
@@ -3596,11 +3540,9 @@ pub unsafe extern "C" fn FaintClearSetData() {
     }
     gActionSelectionCursor[gActiveBattler] = 0;
     gMoveSelectionCursor[gActiveBattler] = 0;
-    ptr = &raw mut gDisableStructs[gActiveBattler] as *mut u8;
-    i = 0;
-    while i < 28 {
+    let ptr: *mut u8 = &raw mut gDisableStructs[gActiveBattler] as *mut u8;
+    for i in 0..28i32 {
         *ptr.at(i) = 0;
-        i += 1;
     }
     gProtectStructs[gActiveBattler].set_protected(FALSE as u32);
     gProtectStructs[gActiveBattler].set_endured(FALSE as u32);
@@ -3642,11 +3584,11 @@ pub unsafe extern "C" fn FaintClearSetData() {
     *(*gBattleStruct)
         .lastTakenMoveFrom
         .as_mut_ptr()
-        .at(0 + gActiveBattler as i32 * 8) = 0;
+        .at(gActiveBattler as i32 * 8) = 0;
     *(*gBattleStruct)
         .lastTakenMoveFrom
         .as_mut_ptr()
-        .at(0 + gActiveBattler as i32 * 8)
+        .at(gActiveBattler as i32 * 8)
         .at(1) = 0;
     *(*gBattleStruct)
         .lastTakenMoveFrom
@@ -3694,14 +3636,16 @@ pub unsafe extern "C" fn FaintClearSetData() {
         i += 1;
     }
     (*(*gBattleResources).flags).flags[gActiveBattler] = 0;
-    gBattleMons[gActiveBattler].types[0] =
-        gSpeciesInfo[gBattleMons[gActiveBattler].species].types[0];
-    gBattleMons[gActiveBattler].types[1] =
-        gSpeciesInfo[gBattleMons[gActiveBattler].species].types[1];
+    gBattleMons[gActiveBattler].types[0] = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+        .cast::<CArray<SpeciesInfo, 0>>())[gBattleMons[gActiveBattler].species]
+        .types[0];
+    gBattleMons[gActiveBattler].types[1] = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+        .cast::<CArray<SpeciesInfo, 0>>())[gBattleMons[gActiveBattler].species]
+        .types[1];
     ClearBattlerMoveHistory(gActiveBattler);
     ClearBattlerAbilityHistory(gActiveBattler);
 }
-pub(crate) unsafe extern "C" fn BattleIntroGetMonsData() {
+pub(crate) unsafe fn BattleIntroGetMonsData() {
     match gBattleCommunication[0] {
         0 => {
             gActiveBattler = gBattleCommunication[1];
@@ -3709,20 +3653,18 @@ pub(crate) unsafe extern "C" fn BattleIntroGetMonsData() {
             MarkBattlerForControllerExec(gActiveBattler);
             gBattleCommunication[0] += 1;
         }
-        1 => {
-            if gBattleControllerExecFlags == 0 {
-                gBattleCommunication[1] += 1;
-                if gBattleCommunication[1] == gBattlersCount {
-                    gBattleMainFunc = Some(BattleIntroPrepareBackgroundSlide);
-                } else {
-                    gBattleCommunication[0] = 0;
-                }
+        1 if gBattleControllerExecFlags == 0 => {
+            gBattleCommunication[1] += 1;
+            if gBattleCommunication[1] == gBattlersCount {
+                gBattleMainFunc = Some(BattleIntroPrepareBackgroundSlide);
+            } else {
+                gBattleCommunication[0] = 0;
             }
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn BattleIntroPrepareBackgroundSlide() {
+pub(crate) unsafe fn BattleIntroPrepareBackgroundSlide() {
     if gBattleControllerExecFlags == 0 {
         gActiveBattler = GetBattlerAtPosition(0);
         BtlController_EmitIntroSlide(B_COMM_TO_CONTROLLER, gBattleEnvironment);
@@ -3732,7 +3674,7 @@ pub(crate) unsafe extern "C" fn BattleIntroPrepareBackgroundSlide() {
         gBattleCommunication[1] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn BattleIntroDrawTrainersOrMonsSprites() {
+pub(crate) unsafe fn BattleIntroDrawTrainersOrMonsSprites() {
     let mut ptr: *mut u8 = null_mut();
     let mut i: i32 = 0;
     if gBattleControllerExecFlags != 0 {
@@ -3744,10 +3686,8 @@ pub(crate) unsafe extern "C" fn BattleIntroDrawTrainersOrMonsSprites() {
             && GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER
         {
             ptr = &raw mut gBattleMons[gActiveBattler] as *mut u8;
-            i = 0;
-            while i < 88 {
+            for i in 0..88i32 {
                 *ptr.at(i) = 0;
-                i += 1;
             }
         } else {
             let mut hpOnSwitchout: *mut u16 = null_mut();
@@ -3758,19 +3698,21 @@ pub(crate) unsafe extern "C" fn BattleIntroDrawTrainersOrMonsSprites() {
                 i += 1;
             }
             gBattleMons[gActiveBattler].types[0] =
-                gSpeciesInfo[gBattleMons[gActiveBattler].species].types[0];
+                (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+                    [gBattleMons[gActiveBattler].species]
+                    .types[0];
             gBattleMons[gActiveBattler].types[1] =
-                gSpeciesInfo[gBattleMons[gActiveBattler].species].types[1];
+                (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+                    [gBattleMons[gActiveBattler].species]
+                    .types[1];
             gBattleMons[gActiveBattler].ability = GetAbilityBySpecies(
                 gBattleMons[gActiveBattler].species,
                 gBattleMons[gActiveBattler].abilityNum() as u8,
             );
             hpOnSwitchout = &raw mut (*gBattleStruct).hpOnSwitchout[GetBattlerSide(gActiveBattler)];
             *hpOnSwitchout = gBattleMons[gActiveBattler].hp;
-            i = 0;
-            while i < NUM_BATTLE_STATS {
+            for i in 0..NUM_BATTLE_STATS {
                 gBattleMons[gActiveBattler].statStages[i] = DEFAULT_STAT_STAGE;
-                i += 1;
             }
             gBattleMons[gActiveBattler].status2 = 0;
         }
@@ -3810,13 +3752,12 @@ pub(crate) unsafe extern "C" fn BattleIntroDrawTrainersOrMonsSprites() {
                 ) as u16;
             }
         }
-        if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
-            if GetBattlerPosition(gActiveBattler) == B_POSITION_PLAYER_RIGHT
-                || GetBattlerPosition(gActiveBattler) == B_POSITION_OPPONENT_RIGHT
-            {
-                BtlController_EmitDrawTrainerPic(B_COMM_TO_CONTROLLER);
-                MarkBattlerForControllerExec(gActiveBattler);
-            }
+        if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0
+            && (GetBattlerPosition(gActiveBattler) == B_POSITION_PLAYER_RIGHT
+                || GetBattlerPosition(gActiveBattler) == B_POSITION_OPPONENT_RIGHT)
+        {
+            BtlController_EmitDrawTrainerPic(B_COMM_TO_CONTROLLER);
+            MarkBattlerForControllerExec(gActiveBattler);
         }
         if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0
             && GetBattlerPosition(gActiveBattler) == B_POSITION_OPPONENT_RIGHT
@@ -3831,7 +3772,7 @@ pub(crate) unsafe extern "C" fn BattleIntroDrawTrainersOrMonsSprites() {
     }
     gBattleMainFunc = Some(BattleIntroDrawPartySummaryScreens);
 }
-pub(crate) unsafe extern "C" fn BattleIntroDrawPartySummaryScreens() {
+pub(crate) unsafe fn BattleIntroDrawPartySummaryScreens() {
     let mut i: i32 = 0;
     let mut hpStatus: CArray<HpAndStatus, 6> = zeroed();
     if gBattleControllerExecFlags != 0 {
@@ -3858,8 +3799,7 @@ pub(crate) unsafe extern "C" fn BattleIntroDrawPartySummaryScreens() {
             PARTY_SUMM_SKIP_DRAW_DELAY,
         );
         MarkBattlerForControllerExec(gActiveBattler);
-        i = 0;
-        while i < PARTY_SIZE {
+        for i in 0..PARTY_SIZE {
             if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) == SPECIES_NONE as u32
                 || GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) == SPECIES_EGG
             {
@@ -3869,7 +3809,6 @@ pub(crate) unsafe extern "C" fn BattleIntroDrawPartySummaryScreens() {
                 hpStatus[i].hp = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HP) as u16;
                 hpStatus[i].status = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_STATUS);
             }
-            i += 1;
         }
         gActiveBattler = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
         BtlController_EmitDrawPartyStatusSummary(
@@ -3880,8 +3819,7 @@ pub(crate) unsafe extern "C" fn BattleIntroDrawPartySummaryScreens() {
         MarkBattlerForControllerExec(gActiveBattler);
         gBattleMainFunc = Some(BattleIntroPrintTrainerWantsToBattle);
     } else {
-        i = 0;
-        while i < PARTY_SIZE {
+        for i in 0..PARTY_SIZE {
             if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) == SPECIES_NONE as u32
                 || GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) == SPECIES_EGG
             {
@@ -3891,25 +3829,24 @@ pub(crate) unsafe extern "C" fn BattleIntroDrawPartySummaryScreens() {
                 hpStatus[i].hp = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HP) as u16;
                 hpStatus[i].status = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_STATUS);
             }
-            i += 1;
         }
         gBattleMainFunc = Some(BattleIntroPrintWildMonAttacked);
     }
 }
-pub(crate) unsafe extern "C" fn BattleIntroPrintTrainerWantsToBattle() {
+pub(crate) unsafe fn BattleIntroPrintTrainerWantsToBattle() {
     if gBattleControllerExecFlags == 0 {
         gActiveBattler = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
         PrepareStringBattle(STRINGID_INTROMSG, gActiveBattler);
         gBattleMainFunc = Some(BattleIntroPrintOpponentSendsOut);
     }
 }
-pub(crate) unsafe extern "C" fn BattleIntroPrintWildMonAttacked() {
+pub(crate) unsafe fn BattleIntroPrintWildMonAttacked() {
     if gBattleControllerExecFlags == 0 {
         gBattleMainFunc = Some(BattleIntroPrintPlayerSendsOut);
         PrepareStringBattle(0, 0);
     }
 }
-pub(crate) unsafe extern "C" fn BattleIntroPrintOpponentSendsOut() {
+pub(crate) unsafe fn BattleIntroPrintOpponentSendsOut() {
     let mut position: u32 = 0;
     if gBattleControllerExecFlags != 0 {
         return;
@@ -3928,7 +3865,7 @@ pub(crate) unsafe extern "C" fn BattleIntroPrintOpponentSendsOut() {
     PrepareStringBattle(STRINGID_INTROSENDOUT, GetBattlerAtPosition(position as u8));
     gBattleMainFunc = Some(BattleIntroOpponent1SendsOutMonAnimation);
 }
-pub(crate) unsafe extern "C" fn BattleIntroOpponent2SendsOutMonAnimation() {
+pub(crate) unsafe fn BattleIntroOpponent2SendsOutMonAnimation() {
     let mut position: u32 = 0;
     if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
         position = B_POSITION_OPPONENT_RIGHT as u32;
@@ -3951,7 +3888,7 @@ pub(crate) unsafe extern "C" fn BattleIntroOpponent2SendsOutMonAnimation() {
     }
     gBattleMainFunc = Some(BattleIntroRecordMonsToDex);
 }
-pub(crate) unsafe extern "C" fn BattleIntroOpponent1SendsOutMonAnimation() {
+pub(crate) unsafe fn BattleIntroOpponent1SendsOutMonAnimation() {
     let mut position: u32 = 0;
     if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
         if gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK != 0 {
@@ -3983,7 +3920,7 @@ pub(crate) unsafe extern "C" fn BattleIntroOpponent1SendsOutMonAnimation() {
     }
     gBattleMainFunc = Some(BattleIntroRecordMonsToDex);
 }
-pub(crate) unsafe extern "C" fn BattleIntroRecordMonsToDex() {
+pub(crate) unsafe fn BattleIntroRecordMonsToDex() {
     if gBattleControllerExecFlags == 0 {
         gActiveBattler = 0;
         while gActiveBattler < gBattlersCount {
@@ -4001,12 +3938,12 @@ pub(crate) unsafe extern "C" fn BattleIntroRecordMonsToDex() {
         gBattleMainFunc = Some(BattleIntroPrintPlayerSendsOut);
     }
 }
-pub(crate) unsafe extern "C" fn BattleIntroSkipRecordMonsToDex() {
+unsafe fn BattleIntroSkipRecordMonsToDex() {
     if gBattleControllerExecFlags == 0 {
         gBattleMainFunc = Some(BattleIntroPrintPlayerSendsOut);
     }
 }
-pub(crate) unsafe extern "C" fn BattleIntroPrintPlayerSendsOut() {
+pub(crate) unsafe fn BattleIntroPrintPlayerSendsOut() {
     if gBattleControllerExecFlags == 0 {
         let mut position: u8 = 0;
         if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
@@ -4026,7 +3963,7 @@ pub(crate) unsafe extern "C" fn BattleIntroPrintPlayerSendsOut() {
         gBattleMainFunc = Some(BattleIntroPlayer1SendsOutMonAnimation);
     }
 }
-pub(crate) unsafe extern "C" fn BattleIntroPlayer2SendsOutMonAnimation() {
+pub(crate) unsafe fn BattleIntroPlayer2SendsOutMonAnimation() {
     let mut position: u32 = 0;
     if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
         position = B_POSITION_PLAYER_RIGHT as u32;
@@ -4052,7 +3989,7 @@ pub(crate) unsafe extern "C" fn BattleIntroPlayer2SendsOutMonAnimation() {
     (*gBattleStruct).overworldWeatherDone = FALSE;
     gBattleMainFunc = Some(TryDoEventsBeforeFirstTurn);
 }
-pub(crate) unsafe extern "C" fn BattleIntroPlayer1SendsOutMonAnimation() {
+pub(crate) unsafe fn BattleIntroPlayer1SendsOutMonAnimation() {
     let mut position: u32 = 0;
     if gBattleTypeFlags & BATTLE_TYPE_RECORDED == 0 {
         position = B_POSITION_PLAYER_LEFT as u32;
@@ -4085,7 +4022,7 @@ pub(crate) unsafe extern "C" fn BattleIntroPlayer1SendsOutMonAnimation() {
     (*gBattleStruct).overworldWeatherDone = FALSE;
     gBattleMainFunc = Some(TryDoEventsBeforeFirstTurn);
 }
-pub(crate) unsafe extern "C" fn BattleIntroSwitchInPlayerMons() {
+unsafe fn BattleIntroSwitchInPlayerMons() {
     if gBattleControllerExecFlags == 0 {
         gActiveBattler = 0;
         while gActiveBattler < gBattlersCount {
@@ -4105,7 +4042,7 @@ pub(crate) unsafe extern "C" fn BattleIntroSwitchInPlayerMons() {
         gBattleMainFunc = Some(TryDoEventsBeforeFirstTurn);
     }
 }
-pub(crate) unsafe extern "C" fn TryDoEventsBeforeFirstTurn() {
+pub(crate) unsafe fn TryDoEventsBeforeFirstTurn() {
     let mut i: i32 = 0;
     let mut j: i32 = 0;
     let mut effect: u8 = 0;
@@ -4113,10 +4050,8 @@ pub(crate) unsafe extern "C" fn TryDoEventsBeforeFirstTurn() {
         return;
     }
     if (*gBattleStruct).switchInAbilitiesCounter == 0 {
-        i = 0;
-        while i < gBattlersCount as i32 {
+        for i in 0..(gBattlersCount as i32) {
             gBattlerByTurnOrder[i] = i as u8;
-            i += 1;
         }
         i = 0;
         while i < gBattlersCount as i32 - 1 {
@@ -4172,51 +4107,52 @@ pub(crate) unsafe extern "C" fn TryDoEventsBeforeFirstTurn() {
             return;
         }
     }
-    i = 0;
-    while i < MAX_BATTLERS_COUNT as i32 {
+    for i in 0..(MAX_BATTLERS_COUNT as i32) {
         *(*gBattleStruct).monToSwitchIntoId.as_mut_ptr().at(i) = PARTY_SIZE as u8;
         gChosenActionByBattler[i] = B_ACTION_NONE;
         gChosenMoveByBattler[i] = MOVE_NONE;
-        i += 1;
     }
     TurnValuesCleanUp(FALSE);
     SpecialStatusesClear();
-    *(&raw mut (*gBattleStruct).absentBattlerFlags) = gAbsentBattlerFlags;
-    BattlePutTextOnWindow(gText_EmptyString3.as_ptr().cast_mut(), B_WIN_MSG);
+    (*gBattleStruct).absentBattlerFlags = gAbsentBattlerFlags;
+    BattlePutTextOnWindow(
+        (*(&raw const crate::data::battle_message::gText_EmptyString3).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        B_WIN_MSG,
+    );
     gBattleMainFunc = Some(HandleTurnActionSelectionState);
     ResetSentPokesToOpponentValue();
-    i = 0;
-    while i < BATTLE_COMMUNICATION_ENTRIES_COUNT {
+    for i in 0..BATTLE_COMMUNICATION_ENTRIES_COUNT {
         gBattleCommunication[i] = 0;
-        i += 1;
     }
-    i = 0;
-    while i < gBattlersCount as i32 {
+    for i in 0..(gBattlersCount as i32) {
         gBattleMons[i].status2 &= 0xfffffff7;
-        i += 1;
     }
-    *(&raw mut (*gBattleStruct).turnEffectsTracker) = 0;
-    *(&raw mut (*gBattleStruct).turnEffectsBattlerId) = 0;
-    *(&raw mut (*gBattleStruct).wishPerishSongState) = 0;
-    *(&raw mut (*gBattleStruct).wishPerishSongBattlerId) = 0;
+    (*gBattleStruct).turnEffectsTracker = 0;
+    (*gBattleStruct).turnEffectsBattlerId = 0;
+    (*gBattleStruct).wishPerishSongState = 0;
+    (*gBattleStruct).wishPerishSongBattlerId = 0;
     gBattleScripting.moveendState = 0;
     (*gBattleStruct).faintedActionsState = 0;
     (*gBattleStruct).turnCountersTracker = 0;
     gMoveResultFlags = 0;
-    gRandomTurnNumber = Random();
+    gRandomTurnNumber.set(Random());
     if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0 {
         StopCryAndClearCrySongs();
-        BattleScriptExecute(BattleScript_ArenaTurnBeginning.as_ptr().cast_mut());
+        BattleScriptExecute(
+            (*crate::asmdata::BattleScript_ArenaTurnBeginning.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
     }
 }
-pub(crate) unsafe extern "C" fn HandleEndTurn_ContinueBattle() {
+pub(crate) unsafe fn HandleEndTurn_ContinueBattle() {
     let mut i: i32 = 0;
     if gBattleControllerExecFlags == 0 {
         gBattleMainFunc = Some(BattleTurnPassed);
-        i = 0;
-        while i < BATTLE_COMMUNICATION_ENTRIES_COUNT {
+        for i in 0..BATTLE_COMMUNICATION_ENTRIES_COUNT {
             gBattleCommunication[i] = 0;
-            i += 1;
         }
         i = 0;
         while i < gBattlersCount as i32 {
@@ -4236,9 +4172,7 @@ pub(crate) unsafe extern "C" fn HandleEndTurn_ContinueBattle() {
         gMoveResultFlags = 0;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleTurnPassed() {
-    let mut i: i32 = 0;
+pub unsafe fn BattleTurnPassed() {
     TurnValuesCleanUp(TRUE);
     if gBattleOutcome == 0 {
         if DoFieldEndTurnEffects() != 0 {
@@ -4265,10 +4199,8 @@ pub unsafe extern "C" fn BattleTurnPassed() {
     gBattleScripting.moveendState = 0;
     gBattleMoveDamage = 0;
     gMoveResultFlags = 0;
-    i = 0;
-    while i < 5 {
+    for i in 0..5i32 {
         gBattleCommunication[i] = 0;
-        i += 1;
     }
     if gBattleOutcome != 0 {
         gCurrentActionFuncId = B_ACTION_FINISHED;
@@ -4279,32 +4211,40 @@ pub unsafe extern "C" fn BattleTurnPassed() {
         gBattleResults.battleTurnCounter += 1;
         (*gBattleStruct).arenaTurnCounter += 1;
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i < gBattlersCount as i32 {
         gChosenActionByBattler[i] = B_ACTION_NONE;
         gChosenMoveByBattler[i] = MOVE_NONE;
         i += 1;
     }
-    i = 0;
-    while i < MAX_BATTLERS_COUNT as i32 {
+    for i in 0..(MAX_BATTLERS_COUNT as i32) {
         *(*gBattleStruct).monToSwitchIntoId.as_mut_ptr().at(i) = PARTY_SIZE as u8;
-        i += 1;
     }
-    *(&raw mut (*gBattleStruct).absentBattlerFlags) = gAbsentBattlerFlags;
-    BattlePutTextOnWindow(gText_EmptyString3.as_ptr().cast_mut(), B_WIN_MSG);
+    (*gBattleStruct).absentBattlerFlags = gAbsentBattlerFlags;
+    BattlePutTextOnWindow(
+        (*(&raw const crate::data::battle_message::gText_EmptyString3).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        B_WIN_MSG,
+    );
     gBattleMainFunc = Some(HandleTurnActionSelectionState);
-    gRandomTurnNumber = Random();
+    gRandomTurnNumber.set(Random());
     if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
-        BattleScriptExecute(BattleScript_PalacePrintFlavorText.as_ptr().cast_mut());
+        BattleScriptExecute(
+            (*crate::asmdata::BattleScript_PalacePrintFlavorText.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
     } else if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0 && (*gBattleStruct).arenaTurnCounter == 0 {
-        BattleScriptExecute(BattleScript_ArenaTurnBeginning.as_ptr().cast_mut());
+        BattleScriptExecute(
+            (*crate::asmdata::BattleScript_ArenaTurnBeginning.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsRunningFromBattleImpossible() -> u8 {
+pub unsafe fn IsRunningFromBattleImpossible() -> u8 {
     let mut holdEffect: u8 = 0;
-    let mut side: u8 = 0;
-    let mut i: i32 = 0;
     if gBattleMons[gActiveBattler].item == ITEM_ENIGMA_BERRY {
         holdEffect = gEnigmaBerries[gActiveBattler].holdEffect;
     } else {
@@ -4320,8 +4260,8 @@ pub unsafe extern "C" fn IsRunningFromBattleImpossible() -> u8 {
     if gBattleMons[gActiveBattler].ability == ABILITY_RUN_AWAY {
         return BATTLE_RUN_SUCCESS;
     }
-    side = GetBattlerSide(gActiveBattler);
-    i = 0;
+    let side: u8 = GetBattlerSide(gActiveBattler);
+    let mut i: i32 = 0;
     while i < gBattlersCount as i32 {
         if side != GetBattlerSide(i as u8) && gBattleMons[i].ability == ABILITY_SHADOW_TAG {
             gBattleScripting.battler = i as u8;
@@ -4368,48 +4308,40 @@ pub unsafe extern "C" fn IsRunningFromBattleImpossible() -> u8 {
         gBattleCommunication[5] = B_MSG_DONT_LEAVE_BIRCH;
         return BATTLE_RUN_FORBIDDEN;
     }
-    return BATTLE_RUN_SUCCESS;
+    BATTLE_RUN_SUCCESS
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SwitchPartyOrder(battler: u8) {
+pub unsafe fn SwitchPartyOrder(battler: u8) {
     let mut i: i32 = 0;
-    let mut partyId1: u8 = 0;
-    let mut partyId2: u8 = 0;
-    i = 0;
     while i < 3 {
         gBattlePartyCurrentOrder[i] = *((*gBattleStruct).battlerPartyOrders.as_mut_ptr()
             as *mut u8)
             .at(battler as i32 * 3 + i);
         i += 1;
     }
-    partyId1 = GetPartyIdFromBattlePartyId(gBattlerPartyIndexes[battler] as u8);
-    partyId2 =
+    let partyId1: u8 = GetPartyIdFromBattlePartyId(gBattlerPartyIndexes[battler] as u8);
+    let partyId2: u8 =
         GetPartyIdFromBattlePartyId(*(*gBattleStruct).monToSwitchIntoId.as_mut_ptr().at(battler));
     SwitchPartyMonSlots(partyId1, partyId2);
     if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
-        i = 0;
-        while i < 3 {
+        for i in 0..3i32 {
             *((*gBattleStruct).battlerPartyOrders.as_mut_ptr() as *mut u8)
                 .at(battler as i32 * 3 + i) = gBattlePartyCurrentOrder[i];
             *((*gBattleStruct).battlerPartyOrders.as_mut_ptr() as *mut u8)
                 .at((battler as i32 ^ 2) * 3 + i) = gBattlePartyCurrentOrder[i];
-            i += 1;
         }
     } else {
-        i = 0;
-        while i < 3 {
+        for i in 0..3i32 {
             *((*gBattleStruct).battlerPartyOrders.as_mut_ptr() as *mut u8)
                 .at(battler as i32 * 3 + i) = gBattlePartyCurrentOrder[i];
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
+pub(crate) unsafe fn HandleTurnActionSelectionState() {
     let mut i: i32 = 0;
     gBattleCommunication[4] = 0;
     gActiveBattler = 0;
     while gActiveBattler < gBattlersCount {
-        let mut position: u8 = GetBattlerPosition(gActiveBattler);
+        let position: u8 = GetBattlerPosition(gActiveBattler);
         match gBattleCommunication[gActiveBattler] {
             STATE_TURN_START_RECORD => {
                 RecordedBattle_CopyBattlerMoves();
@@ -4423,12 +4355,17 @@ pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
                 if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0
                     || position as i32 & BIT_FLANK as i32 == B_FLANK_LEFT
                     || (*gBattleStruct).absentBattlerFlags as u32
-                        & gBitTable[GetBattlerAtPosition(position ^ 2)]
+                        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                            [GetBattlerAtPosition(position ^ 2)]
                         != 0
                     || gBattleCommunication[GetBattlerAtPosition(position ^ 2)]
                         == STATE_WAIT_ACTION_CONFIRMED
                 {
-                    if (*gBattleStruct).absentBattlerFlags as u32 & gBitTable[gActiveBattler] != 0 {
+                    if (*gBattleStruct).absentBattlerFlags as u32
+                        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                            [gActiveBattler]
+                        != 0
+                    {
                         gChosenActionByBattler[gActiveBattler] = B_ACTION_NOTHING_FAINTED;
                         if gBattleTypeFlags & BATTLE_TYPE_MULTI == 0 {
                             gBattleCommunication[gActiveBattler] = STATE_WAIT_ACTION_CONFIRMED;
@@ -4500,8 +4437,7 @@ pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
                                 moveInfo.species = gBattleMons[gActiveBattler].species;
                                 moveInfo.monTypes[0] = gBattleMons[gActiveBattler].types[0];
                                 moveInfo.monTypes[1] = gBattleMons[gActiveBattler].types[1];
-                                i = 0;
-                                while i < MAX_MON_MOVES {
+                                for i in 0..MAX_MON_MOVES {
                                     moveInfo.moves[i] = gBattleMons[gActiveBattler].moves[i];
                                     moveInfo.currentPP[i] = gBattleMons[gActiveBattler].pp[i];
                                     moveInfo.maxPP[i] = CalculatePPWithBonus(
@@ -4509,7 +4445,6 @@ pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
                                         gBattleMons[gActiveBattler].ppBonuses,
                                         i as u8,
                                     );
-                                    i += 1;
                                 }
                                 BtlController_EmitChooseMove(
                                     B_COMM_TO_CONTROLLER,
@@ -4524,9 +4459,10 @@ pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
                             if gBattleTypeFlags & 0x21f0902 != 0 {
                                 RecordedBattle_ClearBattlerAction(gActiveBattler, 1);
                                 gSelectionBattleScripts[gActiveBattler] =
-                                    BattleScript_ActionSelectionItemsCantBeUsed
-                                        .as_ptr()
-                                        .cast_mut();
+                                    (*crate::asmdata::BattleScript_ActionSelectionItemsCantBeUsed
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut();
                                 gBattleCommunication[gActiveBattler] = STATE_SELECTION_SCRIPT;
                                 *(*gBattleStruct)
                                     .selectionScriptFinished
@@ -4601,7 +4537,7 @@ pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
                             {
                                 BtlController_EmitChoosePokemon(
                                     B_COMM_TO_CONTROLLER,
-                                    i as u8 - 1 << 4 | 4,
+                                    (i as u8 - 1) << 4 | 4,
                                     PARTY_SIZE as u8,
                                     gLastUsedAbility,
                                     (*gBattleStruct).battlerPartyOrders[gActiveBattler]
@@ -4644,7 +4580,10 @@ pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
                         B_ACTION_SAFARI_BALL => {
                             if IsPlayerPartyAndPokemonStorageFull() != 0 {
                                 gSelectionBattleScripts[gActiveBattler] =
-                                    BattleScript_PrintFullBox.as_ptr().cast_mut();
+                                    (*crate::asmdata::BattleScript_PrintFullBox
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut();
                                 gBattleCommunication[gActiveBattler] = STATE_SELECTION_SCRIPT;
                                 *(*gBattleStruct)
                                     .selectionScriptFinished
@@ -4722,7 +4661,8 @@ pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
                                     [GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2)]
                                     == B_ACTION_USE_MOVE
                             {
-                                gRngValue = gBattlePalaceMoveSelectionRngValue;
+                                (*crate::random::gRngValue.as_ptr().cast::<u32>()) =
+                                    gBattlePalaceMoveSelectionRngValue;
                                 RecordedBattle_ClearBattlerAction(
                                     GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2),
                                     1,
@@ -4744,7 +4684,10 @@ pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
                         && gBattleBufferB[gActiveBattler][1] == B_ACTION_RUN
                     {
                         gSelectionBattleScripts[gActiveBattler] =
-                            BattleScript_AskIfWantsToForfeitMatch.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_AskIfWantsToForfeitMatch
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                         gBattleCommunication[gActiveBattler] = STATE_SELECTION_SCRIPT_MAY_RUN;
                         *(*gBattleStruct)
                             .selectionScriptFinished
@@ -4760,14 +4703,20 @@ pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
                         && gBattleBufferB[gActiveBattler][1] == B_ACTION_RUN
                     {
                         BattleScriptExecute(
-                            BattleScript_PrintCantRunFromTrainer.as_ptr().cast_mut(),
+                            (*crate::asmdata::BattleScript_PrintCantRunFromTrainer
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
                         );
                         gBattleCommunication[gActiveBattler] = STATE_BEFORE_ACTION_CHOSEN;
                     } else if IsRunningFromBattleImpossible() != BATTLE_RUN_SUCCESS
                         && gBattleBufferB[gActiveBattler][1] == B_ACTION_RUN
                     {
                         gSelectionBattleScripts[gActiveBattler] =
-                            BattleScript_PrintCantEscapeFromBattle.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_PrintCantEscapeFromBattle
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                         gBattleCommunication[gActiveBattler] = STATE_SELECTION_SCRIPT;
                         *(*gBattleStruct)
                             .selectionScriptFinished
@@ -4794,7 +4743,7 @@ pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
                 {
                     match gChosenActionByBattler[gActiveBattler] {
                         B_ACTION_USE_MOVE => match gBattleBufferB[gActiveBattler][1] {
-                            3 | 4 | 5 | 6 | 7 | 8 | 9 => {
+                            3..=9 => {
                                 gChosenActionByBattler[gActiveBattler] =
                                     gBattleBufferB[gActiveBattler][1];
                                 return;
@@ -4924,8 +4873,9 @@ pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
                     if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0
                         || gBattleTypeFlags & BATTLE_TYPE_DOUBLE == 0
                         || position as i32 & BIT_FLANK as i32 != B_FLANK_LEFT
-                        || *(&raw mut (*gBattleStruct).absentBattlerFlags) as u32
-                            & gBitTable[GetBattlerAtPosition(position ^ 2)]
+                        || (*gBattleStruct).absentBattlerFlags as u32
+                            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                                [GetBattlerAtPosition(position ^ 2)]
                             != 0
                     {
                         BtlController_EmitLinkStandbyMsg(
@@ -4978,7 +4928,7 @@ pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
                             | gBitTable[gActiveBattler] << 12)
                         == 0
                     {
-                        gBattleScriptingCommandsTable[*gBattlescriptCurrInstr].unwrap_unchecked()();
+                        (*(&raw const crate::data::battle_script_commands::gBattleScriptingCommandsTable).cast::<CArray<Option<unsafe fn()>, 0>>())[*gBattlescriptCurrInstr].unwrap_unchecked()();
                     }
                     gSelectionBattleScripts[gActiveBattler] = gBattlescriptCurrInstr;
                 }
@@ -5024,7 +4974,7 @@ pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
                             | gBitTable[gActiveBattler] << 12)
                         == 0
                     {
-                        gBattleScriptingCommandsTable[*gBattlescriptCurrInstr].unwrap_unchecked()();
+                        (*(&raw const crate::data::battle_script_commands::gBattleScriptingCommandsTable).cast::<CArray<Option<unsafe fn()>, 0>>())[*gBattlescriptCurrInstr].unwrap_unchecked()();
                     }
                     gSelectionBattleScripts[gActiveBattler] = gBattlescriptCurrInstr;
                 }
@@ -5050,16 +5000,12 @@ pub(crate) unsafe extern "C" fn HandleTurnActionSelectionState() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn AllAtActionConfirmed() -> u8 {
-    let mut i: i32 = 0;
+unsafe fn AllAtActionConfirmed() -> u8 {
     let mut count: i32 = 0;
-    count = 0;
-    i = 0;
-    while i < gBattlersCount as i32 {
+    for i in 0..(gBattlersCount as i32) {
         if gBattleCommunication[i] == STATE_WAIT_ACTION_CONFIRMED {
             count += 1;
         }
-        i += 1;
     }
     if count + 1 == gBattlersCount as i32 {
         return TRUE;
@@ -5068,10 +5014,10 @@ pub(crate) unsafe extern "C" fn AllAtActionConfirmed() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn UpdateBattlerPartyOrdersOnSwitch() {
+unsafe fn UpdateBattlerPartyOrdersOnSwitch() {
     *(*gBattleStruct)
         .monToSwitchIntoId
         .as_mut_ptr()
@@ -5095,27 +5041,18 @@ pub(crate) unsafe extern "C" fn UpdateBattlerPartyOrdersOnSwitch() {
             .at(2) = gBattleBufferB[gActiveBattler][3];
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SwapTurnOrder(id1: u8, id2: u8) {
-    let mut temp: u32 = 0;
-    temp = gActionsByTurnOrder[id1] as u32;
+pub unsafe fn SwapTurnOrder(id1: u8, id2: u8) {
+    let mut temp: u32 = gActionsByTurnOrder[id1] as u32;
     gActionsByTurnOrder[id1] = gActionsByTurnOrder[id2];
     gActionsByTurnOrder[id2] = temp as u8;
     temp = gBattlerByTurnOrder[id1] as u32;
     gBattlerByTurnOrder[id1] = gBattlerByTurnOrder[id2];
     gBattlerByTurnOrder[id2] = temp as u8;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetWhoStrikesFirst(
-    battler1: u8,
-    battler2: u8,
-    ignoreChosenMoves: u8,
-) -> u8 {
+pub unsafe fn GetWhoStrikesFirst(battler1: u8, battler2: u8, ignoreChosenMoves: u8) -> u8 {
     let mut strikesFirst: u8 = 0;
     let mut speedMultiplierBattler1: u8 = 0;
     let mut speedMultiplierBattler2: u8 = 0;
-    let mut speedBattler1: u32 = 0;
-    let mut speedBattler2: u32 = 0;
     let mut holdEffect: u8 = 0;
     let mut holdEffectParam: u8 = 0;
     let mut moveBattler1: u16 = 0;
@@ -5143,11 +5080,14 @@ pub unsafe extern "C" fn GetWhoStrikesFirst(
         speedMultiplierBattler1 = 1;
         speedMultiplierBattler2 = 1;
     }
-    speedBattler1 = div_i32(
+    let mut speedBattler1: u32 = div_i32(
         gBattleMons[battler1].speed as i32
             * speedMultiplierBattler1 as i32
-            * gStatStageRatios[gBattleMons[battler1].statStages[3]][0] as i32,
-        gStatStageRatios[gBattleMons[battler1].statStages[3]][1] as i32,
+            * (*(&raw const crate::data::pokemon::gStatStageRatios)
+                .cast::<CArray<CArray<u8, 2>, 13>>())[gBattleMons[battler1].statStages[3]][0]
+                as i32,
+        (*(&raw const crate::data::pokemon::gStatStageRatios).cast::<CArray<CArray<u8, 2>, 13>>())
+            [gBattleMons[battler1].statStages[3]][1] as i32,
     ) as u32;
     if gBattleMons[battler1].item == ITEM_ENIGMA_BERRY {
         holdEffect = gEnigmaBerries[battler1].holdEffect;
@@ -5163,21 +5103,24 @@ pub unsafe extern "C" fn GetWhoStrikesFirst(
         speedBattler1 = speedBattler1 * 110 / 100;
     }
     if holdEffect == HOLD_EFFECT_MACHO_BRACE {
-        speedBattler1 = speedBattler1 / 2;
+        speedBattler1 /= 2;
     }
     if gBattleMons[battler1].status1 & STATUS1_PARALYSIS != 0 {
-        speedBattler1 = speedBattler1 / 4;
+        speedBattler1 /= 4;
     }
     if holdEffect == HOLD_EFFECT_QUICK_CLAW
-        && (gRandomTurnNumber as i32) < 0xFFFF * holdEffectParam as i32 / 100
+        && (gRandomTurnNumber.get() as i32) < 0xFFFF * holdEffectParam as i32 / 100
     {
         speedBattler1 = 0xffffffff;
     }
-    speedBattler2 = div_i32(
+    let mut speedBattler2: u32 = div_i32(
         gBattleMons[battler2].speed as i32
             * speedMultiplierBattler2 as i32
-            * gStatStageRatios[gBattleMons[battler2].statStages[3]][0] as i32,
-        gStatStageRatios[gBattleMons[battler2].statStages[3]][1] as i32,
+            * (*(&raw const crate::data::pokemon::gStatStageRatios)
+                .cast::<CArray<CArray<u8, 2>, 13>>())[gBattleMons[battler2].statStages[3]][0]
+                as i32,
+        (*(&raw const crate::data::pokemon::gStatStageRatios).cast::<CArray<CArray<u8, 2>, 13>>())
+            [gBattleMons[battler2].statStages[3]][1] as i32,
     ) as u32;
     if gBattleMons[battler2].item == ITEM_ENIGMA_BERRY {
         holdEffect = gEnigmaBerries[battler2].holdEffect;
@@ -5193,13 +5136,13 @@ pub unsafe extern "C" fn GetWhoStrikesFirst(
         speedBattler2 = speedBattler2 * 110 / 100;
     }
     if holdEffect == HOLD_EFFECT_MACHO_BRACE {
-        speedBattler2 = speedBattler2 / 2;
+        speedBattler2 /= 2;
     }
     if gBattleMons[battler2].status1 & STATUS1_PARALYSIS != 0 {
-        speedBattler2 = speedBattler2 / 4;
+        speedBattler2 /= 4;
     }
     if holdEffect == HOLD_EFFECT_QUICK_CLAW
-        && (gRandomTurnNumber as i32) < 0xFFFF * holdEffectParam as i32 / 100
+        && (gRandomTurnNumber.get() as i32) < 0xFFFF * holdEffectParam as i32 / 100
     {
         speedBattler2 = 0xffffffff;
     }
@@ -5232,14 +5175,34 @@ pub unsafe extern "C" fn GetWhoStrikesFirst(
             moveBattler2 = MOVE_NONE;
         }
     }
-    if gBattleMoves[moveBattler1].priority != 0 || gBattleMoves[moveBattler2].priority != 0 {
-        if gBattleMoves[moveBattler1].priority == gBattleMoves[moveBattler2].priority {
+    if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [moveBattler1]
+        .priority
+        != 0
+        || (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+            [moveBattler2]
+            .priority
+            != 0
+    {
+        if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+            [moveBattler1]
+            .priority
+            == (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                [moveBattler2]
+                .priority
+        {
             if speedBattler1 == speedBattler2 && Random() as i32 & 1 != 0 {
                 strikesFirst = 2;
             } else if speedBattler1 < speedBattler2 {
                 strikesFirst = 1;
             }
-        } else if gBattleMoves[moveBattler1].priority < gBattleMoves[moveBattler2].priority {
+        } else if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+            [moveBattler1]
+            .priority
+            < (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                [moveBattler2]
+                .priority
+        {
             strikesFirst = 1;
         }
     } else {
@@ -5249,9 +5212,9 @@ pub unsafe extern "C" fn GetWhoStrikesFirst(
             strikesFirst = 1;
         }
     }
-    return strikesFirst;
+    strikesFirst
 }
-pub(crate) unsafe extern "C" fn SetActionsAndBattlersTurnOrder() {
+pub(crate) unsafe fn SetActionsAndBattlersTurnOrder() {
     let mut turnOrderId: i32 = 0;
     let mut i: i32 = 0;
     let mut j: i32 = 0;
@@ -5287,14 +5250,12 @@ pub(crate) unsafe extern "C" fn SetActionsAndBattlersTurnOrder() {
             gActionsByTurnOrder[0] = gChosenActionByBattler[gActiveBattler];
             gBattlerByTurnOrder[0] = gActiveBattler;
             turnOrderId = 1;
-            i = 0;
-            while i < gBattlersCount as i32 {
+            for i in 0..(gBattlersCount as i32) {
                 if i != gActiveBattler as i32 {
                     gActionsByTurnOrder[turnOrderId] = gChosenActionByBattler[i];
                     gBattlerByTurnOrder[turnOrderId] = i as u8;
                     turnOrderId += 1;
                 }
-                i += 1;
             }
             gBattleMainFunc = Some(CheckFocusPunch_ClearVarsBeforeTurnStarts);
             (*gBattleStruct).focusPunchBattlerId = 0;
@@ -5326,16 +5287,15 @@ pub(crate) unsafe extern "C" fn SetActionsAndBattlersTurnOrder() {
             while i < gBattlersCount as i32 - 1 {
                 j = i + 1;
                 while j < gBattlersCount as i32 {
-                    let mut battler1: u8 = gBattlerByTurnOrder[i];
-                    let mut battler2: u8 = gBattlerByTurnOrder[j];
+                    let battler1: u8 = gBattlerByTurnOrder[i];
+                    let battler2: u8 = gBattlerByTurnOrder[j];
                     if gActionsByTurnOrder[i] != B_ACTION_USE_ITEM
                         && gActionsByTurnOrder[j] != B_ACTION_USE_ITEM
                         && gActionsByTurnOrder[i] != B_ACTION_SWITCH
                         && gActionsByTurnOrder[j] != B_ACTION_SWITCH
+                        && GetWhoStrikesFirst(battler1, battler2, FALSE) != 0
                     {
-                        if GetWhoStrikesFirst(battler1, battler2, FALSE) != 0 {
-                            SwapTurnOrder(i as u8, j as u8);
-                        }
+                        SwapTurnOrder(i as u8, j as u8);
                     }
                     j += 1;
                 }
@@ -5346,8 +5306,7 @@ pub(crate) unsafe extern "C" fn SetActionsAndBattlersTurnOrder() {
     gBattleMainFunc = Some(CheckFocusPunch_ClearVarsBeforeTurnStarts);
     (*gBattleStruct).focusPunchBattlerId = 0;
 }
-pub(crate) unsafe extern "C" fn TurnValuesCleanUp(var0: u8) {
-    let mut i: i32 = 0;
+unsafe fn TurnValuesCleanUp(var0: u8) {
     let mut dataPtr: *mut u8 = null_mut();
     gActiveBattler = 0;
     while gActiveBattler < gBattlersCount {
@@ -5356,10 +5315,8 @@ pub(crate) unsafe extern "C" fn TurnValuesCleanUp(var0: u8) {
             gProtectStructs[gActiveBattler].set_endured(0);
         } else {
             dataPtr = &raw mut gProtectStructs[gActiveBattler] as *mut u8;
-            i = 0;
-            while i < 16 {
+            for i in 0..16i32 {
                 *dataPtr.at(i) = 0;
-                i += 1;
             }
             if gDisableStructs[gActiveBattler].isFirstTurn != 0 {
                 gDisableStructs[gActiveBattler].isFirstTurn -= 1;
@@ -5379,21 +5336,17 @@ pub(crate) unsafe extern "C" fn TurnValuesCleanUp(var0: u8) {
     gSideTimers[0].followmeTimer = 0;
     gSideTimers[1].followmeTimer = 0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpecialStatusesClear() {
+pub unsafe fn SpecialStatusesClear() {
     gActiveBattler = 0;
     while gActiveBattler < gBattlersCount {
-        let mut i: i32 = 0;
-        let mut dataPtr: *mut u8 = &raw mut gSpecialStatuses[gActiveBattler] as *mut u8;
-        i = 0;
-        while i < 20 {
+        let dataPtr: *mut u8 = &raw mut gSpecialStatuses[gActiveBattler] as *mut u8;
+        for i in 0..20i32 {
             *dataPtr.at(i) = 0;
-            i += 1;
         }
         gActiveBattler += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CheckFocusPunch_ClearVarsBeforeTurnStarts() {
+pub(crate) unsafe fn CheckFocusPunch_ClearVarsBeforeTurnStarts() {
     if gHitMarker & HITMARKER_RUN == 0 {
         while (*gBattleStruct).focusPunchBattlerId < gBattlersCount {
             gActiveBattler = {
@@ -5406,7 +5359,11 @@ pub(crate) unsafe extern "C" fn CheckFocusPunch_ClearVarsBeforeTurnStarts() {
                 && gDisableStructs[gBattlerAttacker].truantCounter() == 0
                 && gProtectStructs[gActiveBattler].noValidMoves() == 0
             {
-                BattleScriptExecute(BattleScript_FocusPunchSetUp.as_ptr().cast_mut());
+                BattleScriptExecute(
+                    (*crate::asmdata::BattleScript_FocusPunchSetUp.cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                );
                 return;
             }
         }
@@ -5422,11 +5379,11 @@ pub(crate) unsafe extern "C" fn CheckFocusPunch_ClearVarsBeforeTurnStarts() {
     gBattleScripting.multihitMoveEffect = 0;
     (*(*gBattleResources).battleScriptsStack).size = 0;
 }
-pub(crate) unsafe extern "C" fn RunTurnActionsFunctions() {
+pub(crate) unsafe fn RunTurnActionsFunctions() {
     if gBattleOutcome != 0 {
         gCurrentActionFuncId = B_ACTION_FINISHED;
     }
-    *(&raw mut (*gBattleStruct).savedTurnActionNumber) = gCurrentTurnActionNumber;
+    (*gBattleStruct).savedTurnActionNumber = gCurrentTurnActionNumber;
     sTurnActionsFuncsTable[gCurrentActionFuncId].unwrap_unchecked()();
     if gCurrentTurnActionNumber >= gBattlersCount {
         gHitMarker &= 0xffefffff;
@@ -5438,17 +5395,23 @@ pub(crate) unsafe extern "C" fn RunTurnActionsFunctions() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn HandleEndTurn_BattleWon() {
+pub(crate) unsafe fn HandleEndTurn_BattleWon() {
     gCurrentActionFuncId = 0;
     if gBattleTypeFlags & 0x2000002 != 0 {
         gSpecialVar_Result = gBattleOutcome as u16;
         gBattleTextBuff1[0] = gBattleOutcome;
         gBattlerAttacker = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
-        gBattlescriptCurrInstr = BattleScript_LinkBattleWonOrLost.as_ptr().cast_mut();
+        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_LinkBattleWonOrLost
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
         gBattleOutcome &= 127;
     } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 && gBattleTypeFlags & 0x43f0900 != 0 {
         BattleStopLowHpSound();
-        gBattlescriptCurrInstr = BattleScript_FrontierTrainerBattleWon.as_ptr().cast_mut();
+        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_FrontierTrainerBattleWon
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
         if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
             PlayBGM(MUS_VICTORY_GYM_LEADER);
         } else {
@@ -5458,8 +5421,14 @@ pub(crate) unsafe extern "C" fn HandleEndTurn_BattleWon() {
         && gBattleTypeFlags & BATTLE_TYPE_LINK == 0
     {
         BattleStopLowHpSound();
-        gBattlescriptCurrInstr = BattleScript_LocalTrainerBattleWon.as_ptr().cast_mut();
-        match gTrainers[gTrainerBattleOpponent_A].trainerClass {
+        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_LocalTrainerBattleWon
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
+        match (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
+            [gTrainerBattleOpponent_A]
+            .trainerClass
+        {
             TRAINER_CLASS_ELITE_FOUR | TRAINER_CLASS_CHAMPION => {
                 PlayBGM(MUS_VICTORY_LEAGUE);
             }
@@ -5479,70 +5448,101 @@ pub(crate) unsafe extern "C" fn HandleEndTurn_BattleWon() {
             }
         }
     } else {
-        gBattlescriptCurrInstr = BattleScript_PayDayMoneyAndPickUpItems.as_ptr().cast_mut();
+        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_PayDayMoneyAndPickUpItems
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     }
     gBattleMainFunc = Some(HandleEndTurn_FinishBattle);
 }
-pub(crate) unsafe extern "C" fn HandleEndTurn_BattleLost() {
+pub(crate) unsafe fn HandleEndTurn_BattleLost() {
     gCurrentActionFuncId = 0;
     if gBattleTypeFlags & 0x2000002 != 0 {
         if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
             if gBattleOutcome as i32 & B_OUTCOME_LINK_BATTLE_RAN != 0 {
-                gBattlescriptCurrInstr = BattleScript_PrintPlayerForfeitedLinkBattle
+                gBattlescriptCurrInstr =
+                    (*crate::asmdata::BattleScript_PrintPlayerForfeitedLinkBattle
+                        .cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut();
                 gBattleOutcome &= 127;
                 (*gSaveBlock2Ptr).frontier.set_disableRecordBattle(TRUE);
             } else {
-                gBattlescriptCurrInstr = BattleScript_FrontierLinkBattleLost.as_ptr().cast_mut();
+                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_FrontierLinkBattleLost
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
                 gBattleOutcome &= 127;
             }
         } else {
             gBattleTextBuff1[0] = gBattleOutcome;
             gBattlerAttacker = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
-            gBattlescriptCurrInstr = BattleScript_LinkBattleWonOrLost.as_ptr().cast_mut();
+            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_LinkBattleWonOrLost
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
             gBattleOutcome &= 127;
         }
     } else {
-        gBattlescriptCurrInstr = BattleScript_LocalBattleLost.as_ptr().cast_mut();
+        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_LocalBattleLost
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     }
     gBattleMainFunc = Some(HandleEndTurn_FinishBattle);
 }
-pub(crate) unsafe extern "C" fn HandleEndTurn_RanFromBattle() {
+pub(crate) unsafe fn HandleEndTurn_RanFromBattle() {
     gCurrentActionFuncId = 0;
     if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 && gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
-        gBattlescriptCurrInstr = BattleScript_PrintPlayerForfeited.as_ptr().cast_mut();
+        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_PrintPlayerForfeited
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
         gBattleOutcome = B_OUTCOME_FORFEITED;
         (*gSaveBlock2Ptr).frontier.set_disableRecordBattle(TRUE);
     } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
-        gBattlescriptCurrInstr = BattleScript_PrintPlayerForfeited.as_ptr().cast_mut();
+        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_PrintPlayerForfeited
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
         gBattleOutcome = B_OUTCOME_FORFEITED;
     } else {
         match gProtectStructs[gBattlerAttacker].fleeType() {
             FLEE_ITEM => {
-                gBattlescriptCurrInstr = BattleScript_SmokeBallEscape.as_ptr().cast_mut();
+                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_SmokeBallEscape
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
             }
             FLEE_ABILITY => {
-                gBattlescriptCurrInstr = BattleScript_RanAwayUsingMonAbility.as_ptr().cast_mut();
+                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_RanAwayUsingMonAbility
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
             }
             _ => {
-                gBattlescriptCurrInstr = BattleScript_GotAwaySafely.as_ptr().cast_mut();
+                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_GotAwaySafely
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
             }
         }
     }
     gBattleMainFunc = Some(HandleEndTurn_FinishBattle);
 }
-pub(crate) unsafe extern "C" fn HandleEndTurn_MonFled() {
+pub(crate) unsafe fn HandleEndTurn_MonFled() {
     gCurrentActionFuncId = 0;
     gBattleTextBuff1[0] = 0xFD;
     gBattleTextBuff1[1] = 7;
     gBattleTextBuff1[2] = gBattlerAttacker;
     gBattleTextBuff1[3] = gBattlerPartyIndexes[gBattlerAttacker] as u8;
     gBattleTextBuff1[4] = 0xFF;
-    gBattlescriptCurrInstr = BattleScript_WildMonFled.as_ptr().cast_mut();
+    gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_WildMonFled.cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     gBattleMainFunc = Some(HandleEndTurn_FinishBattle);
 }
-pub(crate) unsafe extern "C" fn HandleEndTurn_FinishBattle() {
+pub(crate) unsafe fn HandleEndTurn_FinishBattle() {
     if gCurrentActionFuncId == B_ACTION_TRY_FINISH || gCurrentActionFuncId == B_ACTION_FINISHED {
         if gBattleTypeFlags & 0x23f0b92 == 0 {
             gActiveBattler = 0;
@@ -5586,11 +5586,13 @@ pub(crate) unsafe extern "C" fn HandleEndTurn_FinishBattle() {
         gCB2_AfterEvolution = Some(BattleMainCB2);
     } else {
         if gBattleControllerExecFlags == 0 {
-            gBattleScriptingCommandsTable[*gBattlescriptCurrInstr].unwrap_unchecked()();
+            (*(&raw const crate::data::battle_script_commands::gBattleScriptingCommandsTable)
+                .cast::<CArray<Option<unsafe fn()>, 0>>())[*gBattlescriptCurrInstr]
+                .unwrap_unchecked()();
         }
     }
 }
-pub(crate) unsafe extern "C" fn FreeResetData_ReturnToOvOrDoEvolutions() {
+pub(crate) unsafe fn FreeResetData_ReturnToOvOrDoEvolutions() {
     if gPaletteFade.active() == 0 {
         ResetSpriteData();
         if gLeveledUpInBattle == 0 || gBattleOutcome != B_OUTCOME_WON {
@@ -5607,17 +5609,17 @@ pub(crate) unsafe extern "C" fn FreeResetData_ReturnToOvOrDoEvolutions() {
         FreeBattleSpritesData();
     }
 }
-pub(crate) unsafe extern "C" fn TryEvolvePokemon() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn TryEvolvePokemon() {
     while gLeveledUpInBattle != 0 {
-        i = 0;
-        while i < PARTY_SIZE {
-            if gLeveledUpInBattle as u32 & gBitTable[i] != 0 {
-                let mut species: u16 = 0;
+        for i in 0..PARTY_SIZE {
+            if gLeveledUpInBattle as u32
+                & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[i]
+                != 0
+            {
                 let mut levelUpBits: u8 = gLeveledUpInBattle;
                 levelUpBits &= !(gBitTable[i] as u8);
                 gLeveledUpInBattle = levelUpBits;
-                species = GetEvolutionTargetSpecies(
+                let species: u16 = GetEvolutionTargetSpecies(
                     &raw mut gPlayerParty[i],
                     EVO_MODE_NORMAL,
                     levelUpBits as u16,
@@ -5629,17 +5631,16 @@ pub(crate) unsafe extern "C" fn TryEvolvePokemon() {
                     return;
                 }
             }
-            i += 1;
         }
     }
     gBattleMainFunc = Some(ReturnFromBattleToOverworld);
 }
-pub(crate) unsafe extern "C" fn WaitForEvoSceneToFinish() {
-    if gMain.callback2 == Some(BattleMainCB2 as unsafe extern "C" fn()) {
+pub(crate) unsafe fn WaitForEvoSceneToFinish() {
+    if gMain.callback2 == Some(BattleMainCB2 as unsafe fn()) {
         gBattleMainFunc = Some(TryEvolvePokemon);
     }
 }
-pub(crate) unsafe extern "C" fn ReturnFromBattleToOverworld() {
+pub(crate) unsafe fn ReturnFromBattleToOverworld() {
     if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
         RandomlyGivePartyPokerus(gPlayerParty.as_mut_ptr());
         PartySpreadPokerus(gPlayerParty.as_mut_ptr());
@@ -5659,8 +5660,7 @@ pub(crate) unsafe extern "C" fn ReturnFromBattleToOverworld() {
     m4aSongNumStop(SE_LOW_HEALTH);
     SetMainCallback2(gMain.savedCallback);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunBattleScriptCommands_PopCallbacksStack() {
+pub unsafe fn RunBattleScriptCommands_PopCallbacksStack() {
     if gCurrentActionFuncId == B_ACTION_TRY_FINISH || gCurrentActionFuncId == B_ACTION_FINISHED {
         if (*(*gBattleResources).battleCallbackStack).size != 0 {
             (*(*gBattleResources).battleCallbackStack).size -= 1;
@@ -5669,13 +5669,16 @@ pub unsafe extern "C" fn RunBattleScriptCommands_PopCallbacksStack() {
             [(*(*gBattleResources).battleCallbackStack).size];
     } else {
         if gBattleControllerExecFlags == 0 {
-            gBattleScriptingCommandsTable[*gBattlescriptCurrInstr].unwrap_unchecked()();
+            (*(&raw const crate::data::battle_script_commands::gBattleScriptingCommandsTable)
+                .cast::<CArray<Option<unsafe fn()>, 0>>())[*gBattlescriptCurrInstr]
+                .unwrap_unchecked()();
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunBattleScriptCommands() {
+pub unsafe fn RunBattleScriptCommands() {
     if gBattleControllerExecFlags == 0 {
-        gBattleScriptingCommandsTable[*gBattlescriptCurrInstr].unwrap_unchecked()();
+        (*(&raw const crate::data::battle_script_commands::gBattleScriptingCommandsTable)
+            .cast::<CArray<Option<unsafe fn()>, 0>>())[*gBattlescriptCurrInstr]
+            .unwrap_unchecked()();
     }
 }

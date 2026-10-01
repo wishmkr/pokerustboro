@@ -3,37 +3,356 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::too_many_arguments,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::AgbRfu_LinkManager::lman;
+use crate::agb_main::gMain;
+use crate::agb_main::{SetVBlankCallback, gSoftResetDisabled};
+use crate::battle_anim_mons::{StoreSpriteCallbackInData6, Trade_MoveSelectedMonToTarget};
+use crate::battle_gfx_sfx_util::{AllocateMonSpritesGfx, FreeMonSpritesGfx};
+use crate::battle_interface::GetHPBarLevel;
+use crate::battle_main::gMonSpritesGfxPtr;
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect,
+    FillBgTilemapBufferRect_Palette0, ResetBgsAndClearDma3BusyFlags, ShowBg,
+};
 #[allow(unused_imports)]
 use crate::c::*;
+use crate::cable_club::Task_WaitForLinkPlayerConnection;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::daycare::NameHasGenderSymbol;
+use crate::event_data::{FlagSet, IsNationalPokedexEnabled};
+use crate::evolution_scene::{TradeEvolutionScene, gCB2_AfterEvolution};
+use crate::ffi::{gSpecialVar_0x8004, gSpecialVar_0x8005};
+use crate::field_screen_effect::FieldCB_ContinueScriptHandleMusic;
+use crate::gpu_regs::{ClearGpuRegBits, GetGpuReg, SetGpuReg, SetGpuRegBits};
+use crate::international_string_util::PadNameString;
+use crate::librfu_rfu::{gRfuSlotStatusNI, rfu_NI_setSendData, rfu_clearSlot};
+use crate::link::{
+    BitmaskAllOtherLinkPlayers, CB2_LinkError, CheckShouldAdvanceLinkState, CloseLink,
+    GetBlockReceivedStatus, GetLinkPlayerCount, GetLinkPlayerCount_2, GetMultiplayerId,
+    GetSavedPlayerCount, HasLinkErrorOccurred, IsLinkMaster, IsLinkPlayerDataExchangeComplete,
+    IsLinkTaskFinished, OpenLink, ResetBlockReceivedFlag, ResetBlockReceivedFlags, SendBlock,
+    SendBlockRequest, SetCloseLinkCallback, SetCloseLinkCallbackAndType, SetLinkStandbyCallback,
+    SetWirelessCommType1, gLinkPlayers, gLinkType, gReceivedRemoteLinkPlayers, gWirelessCommType,
+};
+use crate::link::{gBlockRecvBuffer, gBlockSendBuffer};
+use crate::link_rfu_2::{
+    CreateTask_RfuIdle, DestroyTask_RfuIdle, IsLinkRfuTaskFinished, Rfu_GetIndexOfNewestChild,
+    Rfu_SetLinkRecovery,
+};
+use crate::link_rfu_3::{
+    CreateWirelessStatusIndicatorSprite, DestroyWirelessStatusIndicatorSprite,
+    LoadWirelessStatusIndicatorSpriteGfx,
+};
+use crate::load_save::{ClearContinueGameWarpStatus2, SetContinueGameWarpStatusToDynamicWarp};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::mail_data::ItemIsMail;
+use crate::menu::{
+    AddTextPrinterParameterized3, AddTextPrinterParameterized4, CreateYesNoMenu,
+    DecompressAndLoadBgGfxUsingHeap, InitMenuInUpperLeftCornerNormal, Menu_ProcessInputNoWrap,
+    Menu_ProcessInputNoWrapClearOnChoose, PrintMenuTable, RunTextPrintersAndIsPrinter0Active,
+};
+use crate::mystery_gift::MysteryGift_TryIncrementStat;
+use crate::overworld::{
+    CB2_ReturnToField, CB2_ReturnToFieldFromMultiplayer, IncrementGameStat, gFieldCallback,
+};
+use crate::palette::{
+    BeginNormalPaletteFade, BlendPalettes, LoadCompressedPalette, LoadPalette, ResetPaletteFade,
+    TransferPlttBuffer, UpdatePaletteFade, gPaletteFade,
+};
+use crate::party_menu::{DrawHeldItemIconsForTrade, LoadHeldItemIcons};
+use crate::pokeball::{CreatePokeballSpriteToReleaseMon, CreateTradePokeballSprite};
+use crate::pokedex::GetSetPokedexFlag;
+use crate::pokemon::{
+    CalculateEnemyPartyCount, CalculateMonStats, CalculatePlayerPartyCount, CreateMon,
+    GetEvolutionTargetSpecies, GetMonData2, GetMonData3, GetMonGender, GetMonSpritePalStruct,
+    HandleSetPokedexFlag, IsMonSpriteNotFlipped, IsSpeciesInHoennDex, SetMonData,
+    SetMultiuseSpriteTemplateToPokemon, SpeciesToNationalPokedexNum, gEnemyParty, gEnemyPartyCount,
+    gMultiuseSpriteTemplate, gPlayerParty, gPlayerPartyCount,
+};
+use crate::pokemon_icon::{
+    CreateMonIcon, LoadMonIconPalettes, SetPartyHPBarSprite, SpriteCB_MonIcon,
+};
+use crate::pokemon_storage_system::DrawTextWindowAndBufferTiles;
+use crate::pokemon_summary_screen::{ShowPokemonSummaryScreen, gLastViewedMonIndex};
+use crate::random::Random;
+use crate::save::{
+    LinkFullSave_Init, LinkFullSave_ReplaceLastSector, LinkFullSave_SetLastSectorSignature,
+    LinkFullSave_WriteSector,
+};
+use crate::script::LockPlayerFieldControls;
+use crate::sound::{
+    FadeOutBGM, GetCurrentMapMusic, IsBGMStopped, IsCryFinished, PlayBGM, PlayCry_Normal,
+    PlayFanfare, PlayNewMapMusic, PlaySE,
+};
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData,
+};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar3, gStringVar4};
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::task::{gTasks, task_set};
+use crate::text::{DeactivateAllTextPrinters, GetFontAttribute, RunTextPrinters};
+use crate::text_window::{
+    DrawTextBorderOuter, LoadUserWindowBorderGfx, LoadUserWindowBorderGfx_, rbox_fill_rectangle,
+};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::union_room::{InUnionRoom, gPlayerCurrActivity};
+use crate::window::{
+    ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers,
+    PutWindowTilemap,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CalcCenterToCornerVec` with this module's view of its types.
+#[inline]
+unsafe fn CalcCenterToCornerVec(a0: *mut Sprite, a1: u8, a2: u8, a3: u8) {
+    unsafe {
+        crate::sprite::CalcCenterToCornerVec(a0 as _, a1, a2, a3);
+    }
+}
+/// `ClearMail` with this module's view of its types.
+#[inline]
+unsafe fn ClearMail(a0: *mut Mail) {
+    unsafe {
+        crate::mail_data::ClearMail(a0 as _);
+    }
+}
+/// `CopyToBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBuffer(a0, a1 as _, a2, a3);
+    }
+}
+/// `CopyToBgTilemapBufferRect_ChangePalette` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBufferRect_ChangePalette(
+    a0: u8,
+    a1: *mut c_void,
+    a2: u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: u8,
+) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBufferRect_ChangePalette(a0, a1 as _, a2, a3, a4, a5, a6);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `DoBgAffineSet` with this module's view of its types.
+#[inline]
+unsafe fn DoBgAffineSet(
+    a0: *mut BgAffineDstData,
+    a1: u32,
+    a2: u32,
+    a3: i16,
+    a4: i16,
+    a5: i16,
+    a6: i16,
+    a7: u16,
+) {
+    unsafe {
+        crate::util::DoBgAffineSet(a0 as _, a1, a2, a3, a4, a5, a6, a7);
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `FreeSpriteOamMatrix` with this module's view of its types.
+#[inline]
+unsafe fn FreeSpriteOamMatrix(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::FreeSpriteOamMatrix(a0 as _);
+    }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `GetStringCenterAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringCenterAlignXOffset(a0, a1 as _, a2) }
+}
+/// `GetStringWidth` with this module's view of its types.
+#[inline]
+unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
+    unsafe { crate::text::GetStringWidth(a0, a1 as _, a2) }
+}
+/// `GiveMailToMon` with this module's view of its types.
+#[inline]
+unsafe fn GiveMailToMon(a0: *mut Pokemon, a1: *mut Mail) -> u8 {
+    unsafe { crate::mail_data::GiveMailToMon(a0 as _, a1 as _) }
+}
+/// `HandleLoadSpecialPokePic_2` with this module's view of its types.
+#[inline]
+unsafe fn HandleLoadSpecialPokePic_2(
+    a0: *mut CompressedSpriteSheet,
+    a1: *mut c_void,
+    a2: i32,
+    a3: u32,
+) {
+    unsafe {
+        crate::decompress::HandleLoadSpecialPokePic_2(a0 as _, a1 as _, a2, a3);
+    }
+}
+/// `HandleLoadSpecialPokePic_DontHandleDeoxys` with this module's view of its types.
+#[inline]
+unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
+    a0: *mut CompressedSpriteSheet,
+    a1: *mut c_void,
+    a2: i32,
+    a3: u32,
+) {
+    unsafe {
+        crate::decompress::HandleLoadSpecialPokePic_DontHandleDeoxys(a0 as _, a1 as _, a2, a3);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LZDecompressWram` with this module's view of its types.
+#[inline]
+unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::decompress::LZDecompressWram(a0 as _, a1 as _);
+    }
+}
+/// `LoadBgTilemap` with this module's view of its types.
+#[inline]
+unsafe fn LoadBgTilemap(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
+    unsafe { crate::bg::LoadBgTilemap(a0, a1 as _, a2, a3) }
+}
+/// `LoadBgTiles` with this module's view of its types.
+#[inline]
+unsafe fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
+    unsafe { crate::bg::LoadBgTiles(a0, a1 as _, a2, a3) }
+}
+/// `LoadCompressedSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+    unsafe {
+        crate::decompress::LoadCompressedSpritePalette(a0 as _);
+    }
+}
+/// `LoadSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
+    unsafe { crate::sprite::LoadSpritePalette(a0 as _) }
+}
+/// `LoadSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
+    unsafe { crate::sprite::LoadSpriteSheet(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAffineAnim(a0 as _, a1);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StringAppend` with this module's view of its types.
+#[inline]
+unsafe fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringAppend(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringCompareWithoutExtCtrlCodes` with this module's view of its types.
+#[inline]
+unsafe fn StringCompareWithoutExtCtrlCodes(a0: *mut u8, a1: *mut u8) -> i32 {
+    unsafe { crate::string_util::StringCompareWithoutExtCtrlCodes(a0 as _, a1 as _) }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringCopy_Nickname` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy_Nickname(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy_Nickname(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringExpandPlaceholders(a0 as _, a1 as _) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const tSignalComingBack: usize = 2;
 // Data tables (translate with cdata.py): sUnusedStructSizes sTradeMovesBoxTilemap sTradePartyBoxTilemap sTradeStripesBG2Tilemap sTradeStripesBG3Tilemap sText_EmptyString sText_UnusedTextFormat gText_MaleSymbol4 gText_FemaleSymbol4 gText_GenderlessSymbol sText_SpaceMove sText_NewLine sText_Slash sText_Lv sText_ThreeDashes sText_FourQuestionMarks sText_UnusedEmpty sText_IsThisTradeOkay sText_Cancel sText_ChooseAPkmn sText_Summary sText_Trade sText_CancelTrade sJPText_PressBButtonToQuit sText_Summary2 sText_Trade2 sText_CommunicationStandby sText_TheTradeHasBeenCanceled sText_OnlyPkmnForBattle sText_WaitingForYourFriend sText_YourFriendWantsToTrade sOamData_MenuText sOamData_Cursor sAnim_Cursor_Normal sAnim_Cursor_OnCancel sAnims_Cursor sCursor_SpriteSheet sCursor_SpritePalette sAnim_MenuText_0 sAnim_MenuText_1 sAnim_MenuText_2 sAnim_MenuText_3 sAnim_MenuText_4 sAnim_MenuText_5 sAnims_MenuText sSpriteTemplate_Cursor sSpriteTemplate_MenuText sMenuText_Pal sSpritePalette_MenuText sCursorMoveDestinations sTradeMonSpriteCoords sTradeMonLevelCoords sTradeMonBoxCoords sUnusedCoords sActionTexts sSelectTradeMonActions sMessages sTradeTextColors sBgTemplates sWindowTemplates sTradeYesNoWindowTemplate sText_ShedinjaJP sSelectedMonLevelGenderCoords sPokeball_Pal sPokeball_Gfx sPokeballSymbol_Gfx sCableCloseup_Map sPokeballSymbol_Map sUnusedPal1 sGba_Pal sUnusedPal2 sWirelessSignalNone_Pal_Unused sLinkMon_Pal sLinkMonGlow_Gfx sLinkMonShadow_Gfx sCableEnd_Gfx sGbaScreen_Gfx gTradePlatform_Tilemap sGbaAffine_Gfx sEmptyGfx sGbaAffineMapCable sGbaAffineMapWireless sGbaMapWireless sGbaMapCable sWirelessCloseup_Map sWirelessSignalSend_Pal sWirelessSignalRecv_Pal sWirelessSignalNone_Pal sWirelessSignal_Gfx sWirelessSignal_Tilemap sOamData_Pokeball sAnim_Pokeball_SpinOnce sAnim_Pokeball_SpinTwice sAnims_Pokeball sAffineAnim_Pokeball_Normal sAffineAnim_Pokeball_Squish sAffineAnim_Pokeball_Unsquish sAffineAnims_Pokeball sPokeBallSpriteSheet sPokeBallSpritePalette sSpriteTemplate_Pokeball sOamData_LinkMonGlow sAnim_LinkMonGlow sAnims_LinkMonGlow sAffineAnim_LinkMonGlow sAffineAnims_LinkMonGlow sSpriteSheet_LinkMonGlow sSpritePalette_LinkMon sSpritePalette_Gba sSpriteTemplate_LinkMonGlow sOamData_LinkMonShadow sAnim_LinkMonShadow_Big sAnim_LinkMonShadow_Small sAnims_LinkMonShadow sSpriteSheet_LinkMonShadow sSpriteTemplate_LinkMonShadow sOamData_CableEnd sAnim_CableEnd sAnims_CableEnd sSpriteSheet_CableEnd sSpriteTemplate_CableEnd sOamData_GbaScreen sAnim_GbaScreen_Long sAnim_GbaScreen_Short sAnims_GbaScreen_Long sAnims_GbaScreen_Short sSpriteSheet_GbaScreen sSpriteTemplate_GbaScreenFlash_Long sSpriteTemplate_GbaScreenFlash_Short sLinkMonShadow_Pal sAffineAnim_CrossingMonPic sAffineAnims_CrossingMonPics sIngameTrades sIngameTradeMail sTradeSequenceWindowTemplates gTradeEvolutionSceneYesNoWindowTemplate sTradeSequenceBgTemplates sTradeBallVerticalVelocityTable sWirelessSignalAnimParams
 
 /// `__typeof__(*((__typeof__(sTradeMenu))0))`
@@ -511,7 +830,6 @@ static sWirelessSignal_Tilemap: Table<CArray<u32, 445>> =
 pub(crate) static mut sMenuTextTileBuffer: *mut u8 = null_mut();
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sMenuTextTileBuffers: CArray<*mut u8, 14> = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gTradeMail: CArray<Mail, 6> = unsafe { zeroed() };
 #[unsafe(no_mangle)]
@@ -520,330 +838,60 @@ pub static mut gSelectedTradeMonPositions: Aligned<CArray<u8, 2>> = Aligned(unsa
 pub(crate) static mut sTradeMenu: *mut typeof___sTradeMenu_0_t = null_mut();
 pub(crate) static mut sTradeAnim: *mut typeof___sTradeAnim_0_t = null_mut();
 
-unsafe extern "C" {
-    static gBattleTextboxPalette: CArray<u32, 0>;
-    static gBattleTextboxTilemap: CArray<u32, 0>;
-    static gBattleTextboxTiles: CArray<u32, 0>;
-    static mut gBlockRecvBuffer: CArray<CArray<u16, 128>, 5>;
-    static mut gBlockSendBuffer: CArray<u8, 256>;
-    static mut gCB2_AfterEvolution: Option<unsafe extern "C" fn()>;
-    static mut gDecompressionBuffer: CArray<u8, 16384>;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static mut gEnemyPartyCount: u8;
-    static mut gFieldCallback: Option<unsafe extern "C" fn()>;
-    static mut gLastViewedMonIndex: u8;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gLinkType: u16;
-    static mut gMain: Main;
-    static gMonFrontPicCoords: CArray<MonCoords, 0>;
-    static gMonFrontPicTable: CArray<CompressedSpriteSheet, 0>;
-    static mut gMonSpritesGfxPtr: *mut MonSpritesGfx;
-    static gMoveNames: CArray<CArray<u8, 13>, 355>;
-    static mut gMultiuseSpriteTemplate: SpriteTemplate;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlayerCurrActivity: u8;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gPlayerPartyCount: u8;
-    static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gRfuSlotStatusNI: CArray<*mut RfuSlotStatusNI, 4>;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSoftResetDisabled: u8;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_0x8005: u16;
-    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static gStandardMenuPalette: CArray<u16, 0>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar3: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_ByeByeVar1: CArray<u8, 0>;
-    static gText_CommunicationStandby5: CArray<u8, 0>;
-    static gText_SavingDontTurnOffPower: CArray<u8, 0>;
-    static gText_TakeGoodCareOfX: CArray<u8, 0>;
-    static gText_XSentOverY: CArray<u8, 0>;
-    static gText_XWillBeSentToY: CArray<u8, 0>;
-    static gTradeGba2_Pal: CArray<u16, 0>;
-    static gTradeGba_Gfx: CArray<u8, 0>;
-    static gTradeMenuMonBox_Tilemap: CArray<u16, 0>;
-    static gTradeMenu_Gfx: CArray<u8, 0>;
-    static gTradeMenu_Pal: CArray<u16, 0>;
-    static gTradeMenu_Tilemap: CArray<u16, 0>;
-    static mut gWirelessCommType: u8;
-    static mut lman: linkManagerTag;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddTextPrinterParameterized3(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: *mut u8,
-        a5: i8,
-        a6: *mut u8,
-    );
-    fn AddTextPrinterParameterized4(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: i8,
-        a8: *mut u8,
-    );
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AllocateMonSpritesGfx();
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BitmaskAllOtherLinkPlayers() -> u8;
-    fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn BuildOamBuffer();
-    fn CB2_LinkError();
-    fn CB2_ReturnToField();
-    fn CB2_ReturnToFieldFromMultiplayer();
-    fn CalcCenterToCornerVec(a0: *mut Sprite, a1: u8, a2: u8, a3: u8);
-    fn CalculateEnemyPartyCount() -> u8;
-    fn CalculateMonStats(a0: *mut Pokemon);
-    fn CalculatePlayerPartyCount() -> u8;
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CheckShouldAdvanceLinkState();
-    fn ClearContinueGameWarpStatus2();
-    fn ClearGpuRegBits(a0: u8, a1: u16);
-    fn ClearMail(a0: *mut Mail);
-    fn ClearWindowTilemap(a0: u8);
-    fn CloseLink();
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn CopyToBgTilemapBufferRect_ChangePalette(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-    );
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateMon(a0: *mut Pokemon, a1: u16, a2: u8, a3: u8, a4: u8, a5: u32, a6: u8, a7: u32);
-    fn CreateMonIcon(
-        a0: u16,
-        a1: Option<unsafe extern "C" fn(*mut Sprite)>,
-        a2: i16,
-        a3: i16,
-        a4: u8,
-        a5: u32,
-        a6: u32,
-    ) -> u8;
-    fn CreatePokeballSpriteToReleaseMon(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-        a7: u32,
-        a8: u16,
-    );
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateTask_RfuIdle();
-    fn CreateTradePokeballSprite(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-        a7: u32,
-    ) -> u8;
-    fn CreateWirelessStatusIndicatorSprite(a0: u8, a1: u8);
-    fn CreateYesNoMenu(a0: *mut WindowTemplate, a1: u16, a2: u8, a3: u8);
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut c_void, a2: u32, a3: u16, a4: u8);
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DestroyTask_RfuIdle();
-    fn DestroyWirelessStatusIndicatorSprite();
-    fn DoBgAffineSet(
-        a0: *mut BgAffineDstData,
-        a1: u32,
-        a2: u32,
-        a3: i16,
-        a4: i16,
-        a5: i16,
-        a6: i16,
-        a7: u16,
-    );
-    fn DrawHeldItemIconsForTrade(a0: *mut u8, a1: *mut u8, a2: u8);
-    fn DrawTextBorderOuter(a0: u8, a1: u16, a2: u8);
-    fn DrawTextWindowAndBufferTiles(a0: *mut u8, a1: *mut c_void, a2: u8, a3: u8, a4: i32);
-    fn FadeOutBGM(a0: u8);
-    fn FieldCB_ContinueScriptHandleMusic();
-    fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FlagSet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeMonSpritesGfx();
-    fn FreeSpriteOamMatrix(a0: *mut Sprite);
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
-    fn GetBlockReceivedStatus() -> u8;
-    fn GetCurrentMapMusic() -> u16;
-    fn GetEvolutionTargetSpecies(a0: *mut Pokemon, a1: u8, a2: u16) -> u16;
-    fn GetFontAttribute(a0: u8, a1: u8) -> u8;
-    fn GetGpuReg(a0: u8) -> u16;
-    fn GetHPBarLevel(a0: i16, a1: i16) -> u8;
-    fn GetLinkPlayerCount() -> u8;
-    fn GetLinkPlayerCount_2() -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetMonGender(a0: *mut Pokemon) -> u8;
-    fn GetMonSpritePalStruct(a0: *mut Pokemon) -> *mut CompressedSpritePalette;
-    fn GetMultiplayerId() -> u8;
-    fn GetSavedPlayerCount() -> u8;
-    fn GetSetPokedexFlag(a0: u16, a1: u8) -> i8;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32;
-    fn GiveMailToMon(a0: *mut Pokemon, a1: *mut Mail) -> u8;
-    fn HandleLoadSpecialPokePic_2(
-        a0: *mut CompressedSpriteSheet,
-        a1: *mut c_void,
-        a2: i32,
-        a3: u32,
-    );
-    fn HandleLoadSpecialPokePic_DontHandleDeoxys(
-        a0: *mut CompressedSpriteSheet,
-        a1: *mut c_void,
-        a2: i32,
-        a3: u32,
-    );
-    fn HandleSetPokedexFlag(a0: u16, a1: u8, a2: u32);
-    fn HasLinkErrorOccurred() -> u8;
-    fn InUnionRoom() -> u32;
-    fn IncrementGameStat(a0: u8);
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitMenuInUpperLeftCornerNormal(a0: u8, a1: u8, a2: u8) -> u8;
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsBGMStopped() -> u8;
-    fn IsCryFinished() -> u8;
-    fn IsLinkMaster() -> u8;
-    fn IsLinkPlayerDataExchangeComplete() -> u8;
-    fn IsLinkRfuTaskFinished() -> u8;
-    fn IsLinkTaskFinished() -> u8;
-    fn IsMonSpriteNotFlipped(a0: u16) -> u8;
-    fn IsNationalPokedexEnabled() -> u32;
-    fn IsSpeciesInHoennDex(a0: u16) -> u32;
-    fn ItemIsMail(a0: u16) -> u8;
-    fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void);
-    fn LZDecompressWram(a0: *mut u32, a1: *mut c_void);
-    fn LinkFullSave_Init() -> u8;
-    fn LinkFullSave_ReplaceLastSector() -> u8;
-    fn LinkFullSave_SetLastSectorSignature() -> u8;
-    fn LinkFullSave_WriteSector() -> u8;
-    fn LoadBgTilemap(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette);
-    fn LoadHeldItemIcons();
-    fn LoadMonIconPalettes();
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
-    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn LoadUserWindowBorderGfx_(a0: u8, a1: u16, a2: u8);
-    fn LoadWirelessStatusIndicatorSpriteGfx();
-    fn LockPlayerFieldControls();
-    fn Menu_ProcessInputNoWrap() -> i8;
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn MysteryGift_TryIncrementStat(a0: u32, a1: u32);
-    fn NameHasGenderSymbol(a0: *mut u8, a1: u8) -> u8;
-    fn OpenLink();
-    fn PadNameString(a0: *mut u8, a1: u8);
-    fn PlayBGM(a0: u16);
-    fn PlayCry_Normal(a0: u16, a1: i8);
-    fn PlayFanfare(a0: u16);
-    fn PlayNewMapMusic(a0: u16);
-    fn PlaySE(a0: u16);
-    fn PrintMenuTable(a0: u8, a1: u8, a2: *mut MenuAction);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn Random() -> u16;
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetBlockReceivedFlag(a0: u8);
-    fn ResetBlockReceivedFlags();
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn Rfu_GetIndexOfNewestChild(a0: u8) -> i32;
-    fn Rfu_SetLinkRecovery(a0: u32) -> u8;
-    fn RunTasks();
-    fn RunTextPrinters();
-    fn RunTextPrintersAndIsPrinter0Active() -> u16;
-    fn SendBlock(a0: u8, a1: *mut c_void, a2: u16) -> u8;
-    fn SendBlockRequest(a0: u8) -> u8;
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetCloseLinkCallback();
-    fn SetCloseLinkCallbackAndType(a0: u16);
-    fn SetContinueGameWarpStatusToDynamicWarp();
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetGpuRegBits(a0: u8, a1: u16);
-    fn SetLinkStandbyCallback();
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
-    fn SetMultiuseSpriteTemplateToPokemon(a0: u16, a1: u8);
-    fn SetPartyHPBarSprite(a0: *mut Sprite, a1: u8);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetWirelessCommType1();
-    fn ShowBg(a0: u8);
-    fn ShowPokemonSummaryScreen(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u8,
-        a3: u8,
-        a4: Option<unsafe extern "C" fn()>,
-    );
-    fn SpeciesToNationalPokedexNum(a0: u16) -> u16;
-    fn SpriteCB_MonIcon(a0: *mut Sprite);
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StoreSpriteCallbackInData6(a0: *mut Sprite, a1: Option<unsafe extern "C" fn(*mut Sprite)>);
-    fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCompareWithoutExtCtrlCodes(a0: *mut u8, a1: *mut u8) -> i32;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy_Nickname(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn Task_WaitForLinkPlayerConnection(a0: u8);
-    fn TradeEvolutionScene(a0: *mut Pokemon, a1: u16, a2: u8, a3: u8);
-    fn Trade_MoveSelectedMonToTarget(a0: *mut Sprite);
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
-    fn rbox_fill_rectangle(a0: u8);
-    fn rfu_NI_setSendData(a0: u8, a1: u8, a2: *mut c_void, a3: u32) -> u16;
-    fn rfu_clearSlot(a0: u8, a1: u8) -> u16;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `GetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
+    unsafe { crate::bg::GetBgTilemapBuffer(a0) as *mut c_void }
+}
+/// `LZ77UnCompVram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn SendLinkData(linkData: *mut c_void, size: u32) -> u8 {
+unsafe fn SendLinkData(linkData: *mut c_void, size: u32) -> u8 {
     if gPlayerCurrActivity == ACTIVITY_29 {
         rfu_NI_setSendData(lman.acceptSlot_flag, 84, linkData, size);
         return TRUE;
@@ -852,13 +900,13 @@ pub(crate) unsafe extern "C" fn SendLinkData(linkData: *mut c_void, size: u32) -
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn RequestLinkData(r#type: u8) {
+unsafe fn RequestLinkData(r#type: u8) {
     SendBlockRequest(r#type);
 }
-pub(crate) unsafe extern "C" fn IsLinkTradeTaskFinished() -> u32 {
+unsafe fn IsLinkTradeTaskFinished() -> u32 {
     if gPlayerCurrActivity == ACTIVITY_29 {
         if (*gRfuSlotStatusNI[Rfu_GetIndexOfNewestChild(lman.acceptSlot_flag)])
             .send
@@ -874,27 +922,27 @@ pub(crate) unsafe extern "C" fn IsLinkTradeTaskFinished() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn _GetBlockReceivedStatus() -> u32 {
-    return GetBlockReceivedStatus() as u32;
+unsafe fn _GetBlockReceivedStatus() -> u32 {
+    GetBlockReceivedStatus() as u32
 }
-pub(crate) unsafe extern "C" fn TradeResetReceivedFlags() {
+unsafe fn TradeResetReceivedFlags() {
     if IsWirelessTrade() != 0 {
         rfu_clearSlot(12, lman.acceptSlot_flag);
     } else {
         ResetBlockReceivedFlags();
     }
 }
-pub(crate) unsafe extern "C" fn TradeResetReceivedFlag(who: u32) {
+unsafe fn TradeResetReceivedFlag(who: u32) {
     if IsWirelessTrade() != 0 {
         rfu_clearSlot(12, lman.acceptSlot_flag);
     } else {
         ResetBlockReceivedFlag(who as u8);
     }
 }
-pub(crate) unsafe extern "C" fn IsWirelessTrade() -> u32 {
+unsafe fn IsWirelessTrade() -> u32 {
     if gWirelessCommType != 0 && gPlayerCurrActivity == ACTIVITY_29 {
         return TRUE as u32;
     } else {
@@ -902,16 +950,16 @@ pub(crate) unsafe extern "C" fn IsWirelessTrade() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn SetTradeLinkStandbyCallback(unused: u8) {
+unsafe fn SetTradeLinkStandbyCallback(unused: u8) {
     SetLinkStandbyCallback();
 }
-pub(crate) unsafe extern "C" fn _IsLinkTaskFinished() -> u32 {
-    return IsLinkTaskFinished() as u32;
+unsafe fn _IsLinkTaskFinished() -> u32 {
+    IsLinkTaskFinished() as u32
 }
-pub(crate) unsafe extern "C" fn InitTradeMenu() {
+unsafe fn InitTradeMenu() {
     ResetSpriteData();
     FreeAllSpritePalettes();
     ResetTasks();
@@ -919,12 +967,16 @@ pub(crate) unsafe extern "C" fn InitTradeMenu() {
     gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
     SetVBlankCallback(Some(VBlankCB_TradeMenu));
     LoadPalette(
-        gStandardMenuPalette.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::menu::gStandardMenuPalette).cast::<CArray<u16, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         240,
         20,
     );
     LoadPalette(
-        gStandardMenuPalette.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::menu::gStandardMenuPalette).cast::<CArray<u16, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         208,
         20,
     );
@@ -932,13 +984,10 @@ pub(crate) unsafe extern "C" fn InitTradeMenu() {
     InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 4);
     SetBgTilemapBuffer(1, (*sTradeMenu).tilemapBuffer.as_mut_ptr() as *mut c_void);
     if InitWindows(sWindowTemplates.as_ptr().cast_mut()) != 0 {
-        let mut i: u32 = 0;
         DeactivateAllTextPrinters();
-        i = 0;
-        while i < 18 {
+        for i in 0..18u32 {
             ClearWindowTilemap(i as u8);
             FillWindowPixelBuffer(i as u8, 0);
-            i += 1;
         }
         FillBgTilemapBufferRect(0, 0, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT, 15);
         LoadUserWindowBorderGfx_(0, 20, 192);
@@ -954,13 +1003,12 @@ pub(crate) unsafe extern "C" fn InitTradeMenu() {
         (*sTradeMenu).timer = 0;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_StartCreateTradeMenu() {
+pub unsafe fn CB2_StartCreateTradeMenu() {
     SetMainCallback2(Some(CB2_CreateTradeMenu));
     gMain.callback1 = None;
     gEnemyPartyCount = 0;
 }
-pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
+pub(crate) unsafe fn CB2_CreateTradeMenu() {
     let mut i: i32 = 0;
     let mut temp: SpriteTemplate = zeroed();
     let mut id: u8 = 0;
@@ -969,25 +1017,19 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
         let sw1: u8 = gMain.state;
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             sTradeMenu = AllocZeroed(4336) as *mut typeof___sTradeMenu_0_t;
             InitTradeMenu();
             sMenuTextTileBuffer = AllocZeroed(3584) as *mut u8;
-            i = 0;
-            while i < NUM_MENU_TEXT_SPRITES as i32 {
+            for i in 0..(NUM_MENU_TEXT_SPRITES as i32) {
                 sMenuTextTileBuffers[i] = sMenuTextTileBuffer.at(i * 256);
-                i += 1;
             }
             gMain.state += 1;
             break 'l1;
         }
         if sw1 == 1 {
-            fall = true;
             gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
-            i = 0;
-            while i < PARTY_SIZE {
+            for i in 0..PARTY_SIZE {
                 CreateMon(&raw mut gEnemyParty[i], 0, 0, USE_RANDOM_IVS, 0, 0, 0, 0);
-                i += 1;
             }
             PrintTradeMessage(MSG_STANDBY);
             ShowBg(0);
@@ -1009,7 +1051,6 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             (*sTradeMenu).timer += 1;
             if (*sTradeMenu).timer > 11 {
                 (*sTradeMenu).timer = 0;
@@ -1018,7 +1059,6 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
             break 'l1;
         }
         if sw1 == 3 {
-            fall = true;
             if GetLinkPlayerCount_2() >= GetSavedPlayerCount() {
                 if IsLinkMaster() != 0 {
                     if ({
@@ -1036,7 +1076,6 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
             break 'l1;
         }
         if sw1 == 4 {
-            fall = true;
             if gReceivedRemoteLinkPlayers == TRUE && IsLinkPlayerDataExchangeComplete() == TRUE {
                 DestroyTask_RfuIdle();
                 CalculatePlayerPartyCount();
@@ -1050,7 +1089,6 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
             break 'l1;
         }
         if sw1 == 5 {
-            fall = true;
             if gWirelessCommType != 0 {
                 if IsLinkRfuTaskFinished() != 0 {
                     gMain.state += 1;
@@ -1063,7 +1101,6 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
             break 'l1;
         }
         if sw1 == 6 {
-            fall = true;
             if BufferTradeParties() != 0 {
                 SaveTradeGiftRibbons();
                 gMain.state += 1;
@@ -1071,7 +1108,6 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
             break 'l1;
         }
         if sw1 == 7 {
-            fall = true;
             CalculateEnemyPartyCount();
             SetGpuReg(0x0, 0);
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
@@ -1079,7 +1115,7 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
             (*sTradeMenu).partyCounts[1] = gEnemyPartyCount;
             i = 0;
             while i < (*sTradeMenu).partyCounts[0] as i32 {
-                let mut mon: *mut Pokemon = &raw mut gPlayerParty[i];
+                let mon: *mut Pokemon = &raw mut gPlayerParty[i];
                 (*sTradeMenu).partySpriteIds[0][i] = CreateMonIcon(
                     GetMonData2(mon, MON_DATA_SPECIES_OR_EGG) as u16,
                     Some(SpriteCB_MonIcon),
@@ -1093,7 +1129,7 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
             }
             i = 0;
             while i < (*sTradeMenu).partyCounts[1] as i32 {
-                let mut mon: *mut Pokemon = &raw mut gEnemyParty[i];
+                let mon: *mut Pokemon = &raw mut gEnemyParty[i];
                 (*sTradeMenu).partySpriteIds[1][i] = CreateMonIcon(
                     GetMonData3(mon, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16,
                     Some(SpriteCB_MonIcon),
@@ -1109,7 +1145,6 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
             break 'l1;
         }
         if sw1 == 8 {
-            fall = true;
             LoadHeldItemIcons();
             DrawHeldItemIconsForTrade(
                 &raw mut (*sTradeMenu).partyCounts[0],
@@ -1120,7 +1155,6 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
             break 'l1;
         }
         if sw1 == 9 {
-            fall = true;
             DrawHeldItemIconsForTrade(
                 &raw mut (*sTradeMenu).partyCounts[0],
                 (*sTradeMenu).partySpriteIds[0].as_mut_ptr(),
@@ -1130,7 +1164,6 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
             break 'l1;
         }
         if sw1 == 10 {
-            fall = true;
             DrawTextWindowAndBufferTiles(
                 (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
                 sMenuTextTileBuffers[0] as *mut c_void,
@@ -1159,25 +1192,21 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
             break 'l1;
         }
         if sw1 == 11 {
-            fall = true;
             if LoadUISpriteGfx() != 0 {
                 gMain.state += 1;
             }
             break 'l1;
         }
         if sw1 == 12 {
-            fall = true;
             xPos = GetStringCenterAlignXOffset(
                 FONT_NORMAL as i32,
                 (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
                 120,
             ) as u32;
-            i = 0;
-            while i < 3 {
+            for i in 0..3i32 {
                 temp = *sSpriteTemplate_MenuText;
                 temp.tileTag += i as u16 + GFXTAG_PLAYER_NAME_L;
                 CreateSprite(&raw mut temp, xPos as i16 + i as i16 * 32 + 16, 10, 1);
-                i += 1;
             }
             xPos = GetStringCenterAlignXOffset(
                 FONT_NORMAL as i32,
@@ -1186,30 +1215,25 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
                     .as_mut_ptr(),
                 120,
             ) as u32;
-            i = 0;
-            while i < 3 {
+            for i in 0..3i32 {
                 temp = *sSpriteTemplate_MenuText;
                 temp.tileTag += i as u16 + GFXTAG_PARTNER_NAME_L;
                 CreateSprite(&raw mut temp, xPos as i16 + i as i16 * 32 + 136, 10, 1);
-                i += 1;
             }
             gMain.state += 1;
             break 'l1;
         }
         if sw1 == 13 {
-            fall = true;
             temp = *sSpriteTemplate_MenuText;
             temp.tileTag += GFXTAG_CANCEL_L;
             CreateSprite(&raw mut temp, 215, 152, 1);
             temp = *sSpriteTemplate_MenuText;
             temp.tileTag += GFXTAG_CANCEL_R;
             CreateSprite(&raw mut temp, 247, 152, 1);
-            i = 0;
-            while i < 6 {
+            for i in 0..6i32 {
                 temp = *sSpriteTemplate_MenuText;
                 temp.tileTag += i as u16 + GFXTAG_CHOOSE_PKMN_L;
                 CreateSprite(&raw mut temp, i as i16 * 32 + 24, 150, 1);
-                i += 1;
             }
             (*sTradeMenu).cursorSpriteId = CreateSprite(
                 (&raw const *sSpriteTemplate_Cursor).cast_mut(),
@@ -1223,7 +1247,6 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
             break 'l1;
         }
         if sw1 == 14 {
-            fall = true;
             ComputePartyTradeableFlags(TRADE_PLAYER);
             PrintPartyNicknames(TRADE_PLAYER);
             (*sTradeMenu).bg2hofs = 0;
@@ -1240,45 +1263,38 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
             gMain.state += 1;
         }
         if fall || sw1 == 16 {
-            fall = true;
             LoadTradeBgGfx(0);
             gMain.state += 1;
             break 'l1;
         }
         if sw1 == 17 {
-            fall = true;
             LoadTradeBgGfx(1);
             gMain.state += 1;
             break 'l1;
         }
         if sw1 == 18 {
-            fall = true;
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
             gMain.state += 1;
             break 'l1;
         }
         if sw1 == 19 {
-            fall = true;
             SetGpuReg(REG_OFFSET_DISPCNT, 4160);
             LoadTradeBgGfx(2);
             gMain.state += 1;
             break 'l1;
         }
         if sw1 == 20 {
-            fall = true;
             ComputePartyHPBarLevels(TRADE_PLAYER);
             gMain.state += 1;
             break 'l1;
         }
         if sw1 == 21 {
-            fall = true;
             ComputePartyHPBarLevels(TRADE_PARTNER);
             SetTradePartyHPBarSprites();
             gMain.state += 1;
             break 'l1;
         }
         if sw1 == 22 {
-            fall = true;
             if gPaletteFade.active() == 0 {
                 gMain.callback1 = Some(CB1_UpdateLink);
                 SetMainCallback2(Some(CB2_TradeMenu));
@@ -1292,7 +1308,7 @@ pub(crate) unsafe extern "C" fn CB2_CreateTradeMenu() {
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn CB2_ReturnToTradeMenu() {
+pub(crate) unsafe fn CB2_ReturnToTradeMenu() {
     let mut i: i32 = 0;
     let mut temp: SpriteTemplate = zeroed();
     let mut id: u8 = 0;
@@ -1335,7 +1351,7 @@ pub(crate) unsafe extern "C" fn CB2_ReturnToTradeMenu() {
             PrintPartyNicknames(TRADE_PARTNER);
             i = 0;
             while i < (*sTradeMenu).partyCounts[0] as i32 {
-                let mut mon: *mut Pokemon = &raw mut gPlayerParty[i];
+                let mon: *mut Pokemon = &raw mut gPlayerParty[i];
                 (*sTradeMenu).partySpriteIds[0][i] = CreateMonIcon(
                     GetMonData3(mon, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16,
                     Some(SpriteCB_MonIcon),
@@ -1349,7 +1365,7 @@ pub(crate) unsafe extern "C" fn CB2_ReturnToTradeMenu() {
             }
             i = 0;
             while i < (*sTradeMenu).partyCounts[1] as i32 {
-                let mut mon: *mut Pokemon = &raw mut gEnemyParty[i];
+                let mon: *mut Pokemon = &raw mut gEnemyParty[i];
                 (*sTradeMenu).partySpriteIds[1][i] = CreateMonIcon(
                     GetMonData3(mon, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16,
                     Some(SpriteCB_MonIcon),
@@ -1418,12 +1434,10 @@ pub(crate) unsafe extern "C" fn CB2_ReturnToTradeMenu() {
                 (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
                 120,
             ) as u32;
-            i = 0;
-            while i < 3 {
+            for i in 0..3i32 {
                 temp = *sSpriteTemplate_MenuText;
                 temp.tileTag += i as u16 + GFXTAG_PLAYER_NAME_L;
                 CreateSprite(&raw mut temp, xPos as i16 + i as i16 * 32 + 16, 10, 1);
-                i += 1;
             }
             xPos = GetStringCenterAlignXOffset(
                 FONT_NORMAL as i32,
@@ -1432,12 +1446,10 @@ pub(crate) unsafe extern "C" fn CB2_ReturnToTradeMenu() {
                     .as_mut_ptr(),
                 120,
             ) as u32;
-            i = 0;
-            while i < 3 {
+            for i in 0..3i32 {
                 temp = *sSpriteTemplate_MenuText;
                 temp.tileTag += i as u16 + GFXTAG_PARTNER_NAME_L;
                 CreateSprite(&raw mut temp, xPos as i16 + i as i16 * 32 + 136, 10, 1);
-                i += 1;
             }
             gMain.state += 1;
         }
@@ -1448,12 +1460,10 @@ pub(crate) unsafe extern "C" fn CB2_ReturnToTradeMenu() {
             temp = *sSpriteTemplate_MenuText;
             temp.tileTag += GFXTAG_CANCEL_R;
             CreateSprite(&raw mut temp, 247, 152, 1);
-            i = 0;
-            while i < 6 {
+            for i in 0..6i32 {
                 temp = *sSpriteTemplate_MenuText;
                 temp.tileTag += i as u16 + GFXTAG_CHOOSE_PKMN_L;
                 CreateSprite(&raw mut temp, i as i16 * 32 + 24, 150, 1);
-                i += 1;
             }
             if (*sTradeMenu).cursorPosition < PARTY_SIZE as u8 {
                 (*sTradeMenu).cursorPosition = gLastViewedMonIndex;
@@ -1497,10 +1507,8 @@ pub(crate) unsafe extern "C" fn CB2_ReturnToTradeMenu() {
             SetTradePartyHPBarSprites();
             gMain.state += 1;
         }
-        22 => {
-            if gPaletteFade.active() == 0 {
-                SetMainCallback2(Some(CB2_TradeMenu));
-            }
+        22 if gPaletteFade.active() == 0 => {
+            SetMainCallback2(Some(CB2_TradeMenu));
         }
         _ => {}
     }
@@ -1509,12 +1517,12 @@ pub(crate) unsafe extern "C" fn CB2_ReturnToTradeMenu() {
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn VBlankCB_TradeMenu() {
+pub(crate) unsafe fn VBlankCB_TradeMenu() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn CB_FadeToStartTrade() {
+unsafe fn CB_FadeToStartTrade() {
     if ({
         (*sTradeMenu).timer += 1;
         (*sTradeMenu).timer
@@ -1524,7 +1532,7 @@ pub(crate) unsafe extern "C" fn CB_FadeToStartTrade() {
         (*sTradeMenu).callbackId = CB_WAIT_TO_START_TRADE;
     }
 }
-pub(crate) unsafe extern "C" fn CB_WaitToStartTrade() {
+unsafe fn CB_WaitToStartTrade() {
     if gPaletteFade.active() == 0 {
         gSelectedTradeMonPositions[0] = (*sTradeMenu).cursorPosition;
         gSelectedTradeMonPositions[1] = (*sTradeMenu).partnerCursorPosition;
@@ -1536,7 +1544,7 @@ pub(crate) unsafe extern "C" fn CB_WaitToStartTrade() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn CB_StartLinkTrade() {
+unsafe fn CB_StartLinkTrade() {
     gMain.savedCallback = Some(CB2_StartCreateTradeMenu);
     if gWirelessCommType != 0 {
         if IsLinkRfuTaskFinished() != 0 {
@@ -1557,7 +1565,7 @@ pub(crate) unsafe extern "C" fn CB_StartLinkTrade() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn CB2_TradeMenu() {
+pub(crate) unsafe fn CB2_TradeMenu() {
     RunTradeMenuCallback();
     DoQueuedActions();
     DrawSelectedMonScreen(TRADE_PLAYER);
@@ -1584,20 +1592,29 @@ pub(crate) unsafe extern "C" fn CB2_TradeMenu() {
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn LoadTradeBgGfx(state: u8) {
-    let mut i: i32 = 0;
+unsafe fn LoadTradeBgGfx(state: u8) {
     match state {
         0 => {
-            LoadPalette(gTradeMenu_Pal.as_ptr().cast_mut() as *mut c_void, 0, 96);
+            LoadPalette(
+                (*(&raw const crate::data::graphics::gTradeMenu_Pal).cast::<CArray<u16, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
+                0,
+                96,
+            );
             LoadBgTiles(
                 1,
-                gTradeMenu_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gTradeMenu_Gfx).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0x1280,
                 0,
             );
             CopyToBgTilemapBufferRect_ChangePalette(
                 1,
-                gTradeMenu_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gTradeMenu_Tilemap).cast::<CArray<u16, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0,
                 0,
                 32,
@@ -1623,10 +1640,8 @@ pub(crate) unsafe extern "C" fn LoadTradeBgGfx(state: u8) {
             CopyBgTilemapBufferToVram(1);
         }
         2 => {
-            i = 0;
-            while i < 4 {
+            for i in 0..4i32 {
                 SetGpuReg(REG_OFFSET_BG0HOFS + i as u8 * 2, 0);
-                i += 1;
             }
             ShowBg(0);
             ShowBg(1);
@@ -1636,10 +1651,8 @@ pub(crate) unsafe extern "C" fn LoadTradeBgGfx(state: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SetActiveMenuOptions() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < PARTY_SIZE {
+unsafe fn SetActiveMenuOptions() {
+    for i in 0..PARTY_SIZE {
         if i < (*sTradeMenu).partyCounts[0] as i32 {
             gSprites[(*sTradeMenu).partySpriteIds[0][i]].set_invisible(0);
             (*sTradeMenu).optionsActive[i] = TRUE;
@@ -1652,23 +1665,18 @@ pub(crate) unsafe extern "C" fn SetActiveMenuOptions() {
         } else {
             (*sTradeMenu).optionsActive[i + PARTY_SIZE] = FALSE;
         }
-        i += 1;
     }
     (*sTradeMenu).optionsActive[12] = TRUE;
 }
-pub(crate) unsafe extern "C" fn Trade_Memcpy(dest: *mut c_void, src: *mut c_void, size: u32) {
+unsafe fn Trade_Memcpy(dest: *mut c_void, src: *mut c_void, size: u32) {
     let mut _dest: *mut u8 = dest as *mut u8;
     let mut _src: *mut u8 = src as *mut u8;
-    let mut i: u32 = 0;
-    i = 0;
-    while i < size {
+    for i in 0..size {
         *_dest.at(i) = *_src.at(i);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn BufferTradeParties() -> u8 {
-    let mut id: u8 = GetMultiplayerId();
-    let mut i: i32 = 0;
+unsafe fn BufferTradeParties() -> u8 {
+    let id: u8 = GetMultiplayerId();
     let mut mon: *mut Pokemon = null_mut();
     match (*sTradeMenu).bufferPartyState {
         0 => {
@@ -1808,31 +1816,34 @@ pub(crate) unsafe extern "C" fn BufferTradeParties() -> u8 {
             }
         }
         21 => {
-            i = 0;
             mon = gEnemyParty.as_mut_ptr();
-            while i < PARTY_SIZE {
+            for i in 0..PARTY_SIZE {
                 let mut name: CArray<u8, 11> = zeroed();
-                let mut species: u16 = GetMonData2(mon, MON_DATA_SPECIES) as u16;
-                if species != SPECIES_NONE {
-                    if species == SPECIES_SHEDINJA
-                        && GetMonData2(mon, MON_DATA_LANGUAGE) != LANGUAGE_JAPANESE as u32
+                let species: u16 = GetMonData2(mon, MON_DATA_SPECIES) as u16;
+                if species != SPECIES_NONE
+                    && species == SPECIES_SHEDINJA
+                    && GetMonData2(mon, MON_DATA_LANGUAGE) != LANGUAGE_JAPANESE as u32
+                {
+                    GetMonData3(mon, MON_DATA_NICKNAME, name.as_mut_ptr());
+                    if StringCompareWithoutExtCtrlCodes(
+                        name.as_mut_ptr(),
+                        sText_ShedinjaJP.as_ptr().cast_mut(),
+                    ) == 0
                     {
-                        GetMonData3(mon, MON_DATA_NICKNAME, name.as_mut_ptr());
-                        if StringCompareWithoutExtCtrlCodes(
-                            name.as_mut_ptr(),
-                            sText_ShedinjaJP.as_ptr().cast_mut(),
-                        ) == 0
-                        {
-                            SetMonData(
-                                mon,
-                                MON_DATA_NICKNAME,
-                                gSpeciesNames[303].as_ptr().cast_mut() as *mut c_void,
-                            );
-                        }
+                        SetMonData(
+                            mon,
+                            MON_DATA_NICKNAME,
+                            (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<
+                                CArray<u8, 11>,
+                                0,
+                            >>(
+                            ))[303]
+                                .as_ptr()
+                                .cast_mut() as *mut c_void,
+                        );
                     }
                 }
                 mon = mon.at(1);
-                i += 1;
             }
             return TRUE;
         }
@@ -1845,9 +1856,9 @@ pub(crate) unsafe extern "C" fn BufferTradeParties() -> u8 {
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn PrintIsThisTradeOkay() {
+unsafe fn PrintIsThisTradeOkay() {
     DrawBottomRowText(
         sText_IsThisTradeOkay.as_ptr().cast_mut(),
         (OBJ_VRAM0 + (*sTradeMenu).bottomTextTileStart as i32 * 32) as usize as *mut c_void
@@ -1855,7 +1866,7 @@ pub(crate) unsafe extern "C" fn PrintIsThisTradeOkay() {
         24,
     );
 }
-pub(crate) unsafe extern "C" fn Leader_ReadLinkBuffer(mpId: u8, status: u8) {
+unsafe fn Leader_ReadLinkBuffer(mpId: u8, status: u8) {
     if status as i32 & 1 != 0 {
         match gBlockRecvBuffer[0][0] {
             LINKCMD_REQUEST_CANCEL => {
@@ -1895,7 +1906,7 @@ pub(crate) unsafe extern "C" fn Leader_ReadLinkBuffer(mpId: u8, status: u8) {
         TradeResetReceivedFlag(1);
     }
 }
-pub(crate) unsafe extern "C" fn Follower_ReadLinkBuffer(mpId: u8, status: u8) {
+unsafe fn Follower_ReadLinkBuffer(mpId: u8, status: u8) {
     if status as i32 & 1 != 0 {
         match gBlockRecvBuffer[0][0] {
             LINKCMD_BOTH_CANCEL_TRADE => {
@@ -1931,7 +1942,7 @@ pub(crate) unsafe extern "C" fn Follower_ReadLinkBuffer(mpId: u8, status: u8) {
         TradeResetReceivedFlag(1);
     }
 }
-pub(crate) unsafe extern "C" fn Leader_HandleCommunication() {
+unsafe fn Leader_HandleCommunication() {
     if (*sTradeMenu).playerSelectStatus != STATUS_NONE
         && (*sTradeMenu).partnerSelectStatus != STATUS_NONE
     {
@@ -2018,20 +2029,16 @@ pub(crate) unsafe extern "C" fn Leader_HandleCommunication() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn _SetLinkData(
-    mut linkData: *mut u16,
-    linkCmd: u16,
-    cursorPosition: u16,
-) {
+unsafe fn _SetLinkData(linkData: *mut u16, linkCmd: u16, cursorPosition: u16) {
     *linkData = linkCmd;
     *linkData.at(1) = cursorPosition;
     QueueAction(QUEUE_DELAY_DATA, QUEUE_SEND_DATA);
 }
-pub(crate) unsafe extern "C" fn SetLinkData(linkCmd: u16, cursorPosition: u16) {
+unsafe fn SetLinkData(linkCmd: u16, cursorPosition: u16) {
     _SetLinkData((*sTradeMenu).linkData.as_mut_ptr(), linkCmd, cursorPosition);
 }
-pub(crate) unsafe extern "C" fn CB1_UpdateLink() {
-    let mut mpId: u8 = GetMultiplayerId();
+pub(crate) unsafe fn CB1_UpdateLink() {
+    let mpId: u8 = GetMultiplayerId();
     let mut status: u8 = 0;
     if ({
         status = _GetBlockReceivedStatus() as u8;
@@ -2048,21 +2055,18 @@ pub(crate) unsafe extern "C" fn CB1_UpdateLink() {
         Leader_HandleCommunication();
     }
 }
-pub(crate) unsafe extern "C" fn GetNewCursorPosition(oldPosition: u8, direction: u8) -> u8 {
-    let mut i: i32 = 0;
+unsafe fn GetNewCursorPosition(oldPosition: u8, direction: u8) -> u8 {
     let mut newPosition: u8 = 0;
-    i = 0;
-    while i < PARTY_SIZE {
+    for i in 0..PARTY_SIZE {
         if (*sTradeMenu).optionsActive[sCursorMoveDestinations[oldPosition][direction][i]] == TRUE {
             newPosition = sCursorMoveDestinations[oldPosition][direction][i];
             break;
         }
-        i += 1;
     }
-    return newPosition;
+    newPosition
 }
-pub(crate) unsafe extern "C" fn TradeMenuMoveCursor(cursorPosition: *mut u8, direction: u8) {
-    let mut newPosition: u8 = GetNewCursorPosition(*cursorPosition, direction);
+unsafe fn TradeMenuMoveCursor(cursorPosition: *mut u8, direction: u8) {
+    let newPosition: u8 = GetNewCursorPosition(*cursorPosition, direction);
     if newPosition == 12 {
         StartSpriteAnim(
             &raw mut gSprites[(*sTradeMenu).cursorSpriteId],
@@ -2084,7 +2088,7 @@ pub(crate) unsafe extern "C" fn TradeMenuMoveCursor(cursorPosition: *mut u8, dir
     }
     *cursorPosition = newPosition;
 }
-pub(crate) unsafe extern "C" fn SetReadyToTrade() {
+unsafe fn SetReadyToTrade() {
     PrintTradeMessage(MSG_STANDBY);
     (*sTradeMenu).callbackId = CB_IDLE;
     if GetMultiplayerId() == 1 {
@@ -2093,7 +2097,7 @@ pub(crate) unsafe extern "C" fn SetReadyToTrade() {
         (*sTradeMenu).playerSelectStatus = STATUS_READY;
     }
 }
-pub(crate) unsafe extern "C" fn CB_ProcessMenuInput() {
+unsafe fn CB_ProcessMenuInput() {
     if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
         TradeMenuMoveCursor(&raw mut (*sTradeMenu).cursorPosition, 0);
     } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
@@ -2128,7 +2132,7 @@ pub(crate) unsafe extern "C" fn CB_ProcessMenuInput() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn RedrawChooseAPokemonWindow() {
+unsafe fn RedrawChooseAPokemonWindow() {
     PrintTradePartnerPartyNicknames();
     (*sTradeMenu).callbackId = CB_MAIN_MENU;
     gSprites[(*sTradeMenu).cursorSpriteId].set_invisible(FALSE as u16);
@@ -2139,7 +2143,7 @@ pub(crate) unsafe extern "C" fn RedrawChooseAPokemonWindow() {
         24,
     );
 }
-pub(crate) unsafe extern "C" fn CB_ProcessSelectedMonInput() {
+unsafe fn CB_ProcessSelectedMonInput() {
     match Menu_ProcessInputNoWrap() {
         MENU_B_PRESSED => {
             PlaySE(SE_SELECT);
@@ -2178,13 +2182,13 @@ pub(crate) unsafe extern "C" fn CB_ProcessSelectedMonInput() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CB_ChooseMonAfterButtonPress() {
+unsafe fn CB_ChooseMonAfterButtonPress() {
     if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
         PlaySE(SE_SELECT);
         RedrawChooseAPokemonWindow();
     }
 }
-pub(crate) unsafe extern "C" fn CB_ShowTradeMonSummaryScreen() {
+unsafe fn CB_ShowTradeMonSummaryScreen() {
     if gPaletteFade.active() == 0 {
         if (*sTradeMenu).cursorPosition < PARTY_SIZE as u8 {
             ShowPokemonSummaryScreen(
@@ -2206,50 +2210,43 @@ pub(crate) unsafe extern "C" fn CB_ShowTradeMonSummaryScreen() {
         FreeAllWindowBuffers();
     }
 }
-pub(crate) unsafe extern "C" fn CheckValidityOfTradeMons(
+unsafe fn CheckValidityOfTradeMons(
     aliveMons: *mut u8,
     playerPartyCount: u8,
     playerMonIdx: u8,
     mut partnerMonIdx: u8,
 ) -> u8 {
-    let mut i: i32 = 0;
-    let mut partnerSpecies: u16 = 0;
     let mut hasLiveMon: u8 = 0;
-    i = 0;
-    while i < playerPartyCount as i32 {
+    for i in 0..(playerPartyCount as i32) {
         if playerMonIdx as i32 != i {
             hasLiveMon += *aliveMons.at(i);
         }
-        i += 1;
     }
     partnerMonIdx = (partnerMonIdx as i32 % 6) as u8;
-    partnerSpecies = GetMonData2(&raw mut gEnemyParty[partnerMonIdx], MON_DATA_SPECIES) as u16;
-    if partnerSpecies == SPECIES_DEOXYS as u16 || partnerSpecies == SPECIES_MEW as u16 {
-        if GetMonData2(
+    let partnerSpecies: u16 =
+        GetMonData2(&raw mut gEnemyParty[partnerMonIdx], MON_DATA_SPECIES) as u16;
+    if (partnerSpecies == SPECIES_DEOXYS as u16 || partnerSpecies == SPECIES_MEW as u16)
+        && GetMonData2(
             &raw mut gEnemyParty[partnerMonIdx],
             MON_DATA_MODERN_FATEFUL_ENCOUNTER,
         ) == 0
-        {
-            return PARTNER_MON_INVALID;
-        }
+    {
+        return PARTNER_MON_INVALID;
     }
-    if IsNationalPokedexEnabled() == 0 {
-        if (*sTradeMenu).isEgg[1][partnerMonIdx] != 0 || IsSpeciesInHoennDex(partnerSpecies) == 0 {
-            return PARTNER_MON_INVALID;
-        }
+    if IsNationalPokedexEnabled() == 0
+        && ((*sTradeMenu).isEgg[1][partnerMonIdx] != 0 || IsSpeciesInHoennDex(partnerSpecies) == 0)
+    {
+        return PARTNER_MON_INVALID;
     }
     if hasLiveMon != 0 {
         hasLiveMon = BOTH_MONS_VALID;
     }
-    return hasLiveMon;
+    hasLiveMon
 }
-pub(crate) unsafe extern "C" fn CheckMonsBeforeTrade() -> u32 {
-    let mut i: i32 = 0;
+unsafe fn CheckMonsBeforeTrade() -> u32 {
     let mut aliveMons: CArray<u8, 12> = zeroed();
-    i = 0;
-    while i < (*sTradeMenu).partyCounts[0] as i32 {
+    for i in 0..((*sTradeMenu).partyCounts[0] as i32) {
         aliveMons[i] = (*sTradeMenu).isLiveMon[0][i];
-        i += 1;
     }
     match CheckValidityOfTradeMons(
         aliveMons.as_mut_ptr(),
@@ -2271,9 +2268,9 @@ pub(crate) unsafe extern "C" fn CheckMonsBeforeTrade() -> u32 {
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn CB_ProcessConfirmTradeInput() {
+unsafe fn CB_ProcessConfirmTradeInput() {
     match Menu_ProcessInputNoWrapClearOnChoose() {
         0 => {
             if CheckMonsBeforeTrade() == 0 {
@@ -2294,16 +2291,15 @@ pub(crate) unsafe extern "C" fn CB_ProcessConfirmTradeInput() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn RestoreNicknamesCoveredByYesNo() {
+unsafe fn RestoreNicknamesCoveredByYesNo() {
     let mut i: i32 = 0;
-    i = 0;
     while i < (*sTradeMenu).partyCounts[1] as i32 - 4 {
         PutWindowTilemap(i as u8 + 12);
         CopyWindowToVram(i as u8 + 12, COPYWIN_MAP);
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CB_ProcessCancelTradeInput() {
+unsafe fn CB_ProcessCancelTradeInput() {
     match Menu_ProcessInputNoWrapClearOnChoose() {
         0 => {
             PrintTradeMessage(MSG_WAITING_FOR_FRIEND);
@@ -2319,7 +2315,7 @@ pub(crate) unsafe extern "C" fn CB_ProcessCancelTradeInput() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CB_SetSelectedMons() {
+unsafe fn CB_SetSelectedMons() {
     if GetMultiplayerId() == 0 {
         rbox_fill_rectangle(0);
         SetSelectedMon((*sTradeMenu).cursorPosition);
@@ -2327,7 +2323,7 @@ pub(crate) unsafe extern "C" fn CB_SetSelectedMons() {
     }
     (*sTradeMenu).callbackId = CB_PRINT_IS_THIS_OKAY;
 }
-pub(crate) unsafe extern "C" fn CB_PrintIsThisTradeOkay() {
+unsafe fn CB_PrintIsThisTradeOkay() {
     if (*sTradeMenu).drawSelectedMonState[0] == DRAW_SELECTED_FINISH
         && (*sTradeMenu).drawSelectedMonState[1] == DRAW_SELECTED_FINISH
     {
@@ -2335,7 +2331,7 @@ pub(crate) unsafe extern "C" fn CB_PrintIsThisTradeOkay() {
         (*sTradeMenu).callbackId = CB_INIT_CONFIRM_TRADE_PROMPT;
     }
 }
-pub(crate) unsafe extern "C" fn CB_InitConfirmTradePrompt() {
+unsafe fn CB_InitConfirmTradePrompt() {
     (*sTradeMenu).timer += 1;
     if (*sTradeMenu).timer > 120 {
         CreateYesNoMenu((&raw const *sTradeYesNoWindowTemplate).cast_mut(), 1, 14, 0);
@@ -2343,17 +2339,14 @@ pub(crate) unsafe extern "C" fn CB_InitConfirmTradePrompt() {
         (*sTradeMenu).callbackId = CB_CONFIRM_TRADE_PROMPT;
     }
 }
-pub(crate) unsafe extern "C" fn CB_HandleTradeCanceled() {
-    let mut i: i32 = 0;
+unsafe fn CB_HandleTradeCanceled() {
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
         rbox_fill_rectangle(0);
         rbox_fill_rectangle(1);
-        i = 0;
-        while i < 4 {
+        for i in 0..4i32 {
             FillWindowPixelBuffer(i as u8 + 14, 0);
             rbox_fill_rectangle(i as u8 + 14);
-            i += 1;
         }
         RedrawPartyWindow(TRADE_PLAYER);
         RedrawPartyWindow(TRADE_PARTNER);
@@ -2361,7 +2354,7 @@ pub(crate) unsafe extern "C" fn CB_HandleTradeCanceled() {
         gSprites[(*sTradeMenu).cursorSpriteId].set_invisible(FALSE as u16);
     }
 }
-pub(crate) unsafe extern "C" fn CB_InitExitCanceledTrade() {
+unsafe fn CB_InitExitCanceledTrade() {
     if gPaletteFade.active() == 0 {
         if gWirelessCommType != 0 {
             SetLinkStandbyCallback();
@@ -2371,7 +2364,7 @@ pub(crate) unsafe extern "C" fn CB_InitExitCanceledTrade() {
         (*sTradeMenu).callbackId = CB_EXIT_CANCELED_TRADE;
     }
 }
-pub(crate) unsafe extern "C" fn CB_ExitCanceledTrade() {
+unsafe fn CB_ExitCanceledTrade() {
     if gWirelessCommType != 0 {
         if IsLinkTradeTaskFinished() != 0 && GetNumQueuedActions() == 0 {
             Free(sMenuTextTileBuffer as *mut c_void);
@@ -2389,19 +2382,19 @@ pub(crate) unsafe extern "C" fn CB_ExitCanceledTrade() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn CB_WaitToStartRfuTrade() {
+unsafe fn CB_WaitToStartRfuTrade() {
     if Rfu_SetLinkRecovery(0) == 0 && GetNumQueuedActions() == 0 {
         SetLinkStandbyCallback();
         (*sTradeMenu).callbackId = CB_START_LINK_TRADE;
     }
 }
-pub(crate) unsafe extern "C" fn CB_PartnersMonWasInvalid() {
+unsafe fn CB_PartnersMonWasInvalid() {
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         SetLinkData(LINKCMD_READY_CANCEL_TRADE, 0);
         (*sTradeMenu).callbackId = CB_IDLE;
     }
 }
-pub(crate) unsafe extern "C" fn RunTradeMenuCallback() {
+unsafe fn RunTradeMenuCallback() {
     match (*sTradeMenu).callbackId {
         CB_MAIN_MENU => {
             CB_ProcessMenuInput();
@@ -2457,27 +2450,24 @@ pub(crate) unsafe extern "C" fn RunTradeMenuCallback() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SetSelectedMon(cursorPosition: u8) {
-    let mut whichParty: u8 = (cursorPosition as i32 / 6) as u8;
+unsafe fn SetSelectedMon(cursorPosition: u8) {
+    let whichParty: u8 = (cursorPosition as i32 / 6) as u8;
     if (*sTradeMenu).drawSelectedMonState[whichParty] == 0 {
         (*sTradeMenu).drawSelectedMonState[whichParty] = 1;
         (*sTradeMenu).selectedMonIdx[whichParty] = cursorPosition;
     }
 }
-pub(crate) unsafe extern "C" fn DrawSelectedMonScreen(whichParty: u8) {
-    let mut nameStringWidth: i8 = 0;
+unsafe fn DrawSelectedMonScreen(whichParty: u8) {
     let mut nickname: CArray<u8, 20> = zeroed();
     let mut movesString: CArray<u8, 56> = zeroed();
     let mut i: u8 = 0;
-    let mut partyIdx: u8 = 0;
-    let mut selectedMonParty: u8 = 0;
-    let mut selectedMonIdx: u8 = (*sTradeMenu).selectedMonIdx[whichParty];
-    selectedMonParty = TRADE_PARTNER;
+    let selectedMonIdx: u8 = (*sTradeMenu).selectedMonIdx[whichParty];
+    let mut selectedMonParty: u8 = TRADE_PARTNER;
     if (*sTradeMenu).selectedMonIdx[whichParty] < PARTY_SIZE as u8 {
         selectedMonParty = TRADE_PLAYER;
     }
-    partyIdx = (selectedMonIdx as i32 % 6) as u8;
-    nameStringWidth = 0;
+    let partyIdx: u8 = (selectedMonIdx as i32 % 6) as u8;
+    let mut nameStringWidth: i8 = 0;
     match (*sTradeMenu).drawSelectedMonState[whichParty] {
         1 => {
             i = 0;
@@ -2486,10 +2476,8 @@ pub(crate) unsafe extern "C" fn DrawSelectedMonScreen(whichParty: u8) {
                     .set_invisible(TRUE as u16);
                 i += 1;
             }
-            i = 0;
-            while i < PARTY_SIZE as u8 {
+            for i in 0..(PARTY_SIZE as u8) {
                 ClearWindowTilemap(i + (whichParty * PARTY_SIZE as u8 + 2));
-                i += 1;
             }
             gSprites[(*sTradeMenu).partySpriteIds[selectedMonParty][partyIdx]]
                 .set_invisible(FALSE as u16);
@@ -2527,7 +2515,7 @@ pub(crate) unsafe extern "C" fn DrawSelectedMonScreen(whichParty: u8) {
         }
         2 => {
             if gSprites[(*sTradeMenu).partySpriteIds[selectedMonParty][partyIdx]].callback
-                == Some(SpriteCB_MonIcon as unsafe extern "C" fn(*mut Sprite))
+                == Some(SpriteCB_MonIcon as unsafe fn(*mut Sprite))
             {
                 (*sTradeMenu).drawSelectedMonState[whichParty] = 3;
             }
@@ -2596,11 +2584,7 @@ pub(crate) unsafe extern "C" fn DrawSelectedMonScreen(whichParty: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn GetMonNicknameWidth(
-    str: *mut u8,
-    whichParty: u8,
-    partyIdx: u8,
-) -> u8 {
+unsafe fn GetMonNicknameWidth(str: *mut u8, whichParty: u8, partyIdx: u8) -> u8 {
     let mut nickname: CArray<u8, 11> = zeroed();
     if whichParty == TRADE_PLAYER {
         GetMonData3(
@@ -2616,13 +2600,13 @@ pub(crate) unsafe extern "C" fn GetMonNicknameWidth(
         );
     }
     StringCopy_Nickname(str, nickname.as_mut_ptr());
-    return GetStringWidth(
+    GetStringWidth(
         FONT_SMALL,
         str,
         GetFontAttribute(FONT_SMALL, FONTATTR_LETTER_SPACING) as i16,
-    ) as u8;
+    ) as u8
 }
-pub(crate) unsafe extern "C" fn BufferMovesString(str: *mut u8, whichParty: u8, partyIdx: u8) {
+unsafe fn BufferMovesString(str: *mut u8, whichParty: u8, partyIdx: u8) {
     let mut moves: CArray<u16, 4> = zeroed();
     let mut i: u16 = 0;
     if (*sTradeMenu).isEgg[whichParty][partyIdx] == 0 {
@@ -2644,27 +2628,26 @@ pub(crate) unsafe extern "C" fn BufferMovesString(str: *mut u8, whichParty: u8, 
             i += 1;
         }
         StringCopy(str, sText_EmptyString.as_ptr().cast_mut());
-        i = 0;
-        while i < MAX_MON_MOVES as u16 {
+        for i in 0..(MAX_MON_MOVES as u16) {
             if moves[i] != MOVE_NONE {
-                StringAppend(str, gMoveNames[moves[i]].as_ptr().cast_mut());
+                StringAppend(
+                    str,
+                    (*(&raw const crate::data::data_tables::gMoveNames)
+                        .cast::<CArray<CArray<u8, 13>, 355>>())[moves[i]]
+                        .as_ptr()
+                        .cast_mut(),
+                );
             }
             StringAppend(str, sText_NewLine.as_ptr().cast_mut());
-            i += 1;
         }
     } else {
         StringCopy(str, sText_EmptyString.as_ptr().cast_mut());
         StringAppend(str, sText_FourQuestionMarks.as_ptr().cast_mut());
     }
 }
-pub(crate) unsafe extern "C" fn PrintPartyMonNickname(
-    whichParty: u8,
-    mut windowId: u8,
-    nickname: *mut u8,
-) {
-    let mut xPos: u8 = 0;
+unsafe fn PrintPartyMonNickname(whichParty: u8, mut windowId: u8, nickname: *mut u8) {
     windowId += whichParty * PARTY_SIZE as u8 + 2;
-    xPos = GetStringCenterAlignXOffset(FONT_SMALL as i32, nickname, 64) as u8;
+    let xPos: u8 = GetStringCenterAlignXOffset(FONT_SMALL as i32, nickname, 64) as u8;
     AddTextPrinterParameterized3(
         windowId,
         FONT_SMALL,
@@ -2677,16 +2660,15 @@ pub(crate) unsafe extern "C" fn PrintPartyMonNickname(
     PutWindowTilemap(windowId);
     CopyWindowToVram(windowId, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn PrintPartyNicknames(whichParty: u8) {
-    let mut i: u8 = 0;
+unsafe fn PrintPartyNicknames(whichParty: u8) {
     let mut nickname: CArray<u8, 20> = zeroed();
     let mut str: CArray<u8, 32> = zeroed();
-    let mut party: *mut Pokemon = if whichParty == TRADE_PLAYER {
+    let party: *mut Pokemon = if whichParty == TRADE_PLAYER {
         gPlayerParty.as_mut_ptr()
     } else {
         gEnemyParty.as_mut_ptr()
     };
-    i = 0;
+    let mut i: u8 = 0;
     while i < (*sTradeMenu).partyCounts[whichParty] {
         GetMonData3(party.at(i), MON_DATA_NICKNAME, nickname.as_mut_ptr());
         StringCopy_Nickname(str.as_mut_ptr(), nickname.as_mut_ptr());
@@ -2694,21 +2676,16 @@ pub(crate) unsafe extern "C" fn PrintPartyNicknames(whichParty: u8) {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn PrintLevelAndGender(
-    whichParty: u8,
-    monIdx: u8,
-    x: u8,
-    y: u8,
-    width: u8,
-    height: u8,
-) {
+unsafe fn PrintLevelAndGender(whichParty: u8, monIdx: u8, x: u8, y: u8, width: u8, height: u8) {
     let mut level: u8 = 0;
     let mut symbolTile: u32 = 0;
     let mut gender: u8 = 0;
     let mut nickname: CArray<u8, 11> = zeroed();
     CopyToBgTilemapBufferRect_ChangePalette(
         1,
-        gTradeMenuMonBox_Tilemap.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gTradeMenuMonBox_Tilemap).cast::<CArray<u16, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         width,
         height,
         6,
@@ -2774,11 +2751,10 @@ pub(crate) unsafe extern "C" fn PrintLevelAndGender(
     }
     (*sTradeMenu).tilemapBuffer[(y as i32 - 1) * 32 + x as i32 + 1] = symbolTile as u16;
 }
-pub(crate) unsafe extern "C" fn PrintPartyLevelsAndGenders(whichParty: u8) {
+unsafe fn PrintPartyLevelsAndGenders(whichParty: u8) {
     let mut i: i32 = 0;
-    i = 0;
     while i < (*sTradeMenu).partyCounts[whichParty] as i32 {
-        let mut j: i32 = i + PARTY_SIZE * whichParty as i32;
+        let j: i32 = i + PARTY_SIZE * whichParty as i32;
         PrintLevelAndGender(
             whichParty,
             i as u8,
@@ -2790,9 +2766,8 @@ pub(crate) unsafe extern "C" fn PrintPartyLevelsAndGenders(whichParty: u8) {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ShowTradePartyMonIcons(whichParty: u8) {
+unsafe fn ShowTradePartyMonIcons(whichParty: u8) {
     let mut i: i32 = 0;
-    i = 0;
     while i < (*sTradeMenu).partyCounts[whichParty] as i32 {
         gSprites[(*sTradeMenu).partySpriteIds[whichParty][i]].set_invisible(FALSE as u16);
         gSprites[(*sTradeMenu).partySpriteIds[whichParty][i]].x =
@@ -2804,11 +2779,11 @@ pub(crate) unsafe extern "C" fn ShowTradePartyMonIcons(whichParty: u8) {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn PrintTradePartnerPartyNicknames() {
+unsafe fn PrintTradePartnerPartyNicknames() {
     rbox_fill_rectangle(1);
     PrintPartyNicknames(TRADE_PARTNER);
 }
-pub(crate) unsafe extern "C" fn RedrawPartyWindow(whichParty: u8) {
+unsafe fn RedrawPartyWindow(whichParty: u8) {
     CopyToBgTilemapBufferRect_ChangePalette(
         1,
         sTradePartyBoxTilemap.as_ptr().cast_mut() as *mut c_void,
@@ -2830,41 +2805,33 @@ pub(crate) unsafe extern "C" fn RedrawPartyWindow(whichParty: u8) {
     );
     (*sTradeMenu).drawSelectedMonState[whichParty] = 0;
 }
-pub(crate) unsafe extern "C" fn Task_DrawSelectionSummary(taskId: u8) {
+pub(crate) unsafe fn Task_DrawSelectionSummary(taskId: u8) {
     FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT);
     CopyBgTilemapBufferToVram(0);
 }
-pub(crate) unsafe extern "C" fn Task_DrawSelectionTrade(taskId: u8) {
+pub(crate) unsafe fn Task_DrawSelectionTrade(taskId: u8) {
     FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT);
     CopyBgTilemapBufferToVram(0);
 }
-pub(crate) unsafe extern "C" fn QueueAction(delay: u16, actionId: u8) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 4 {
+unsafe fn QueueAction(delay: u16, actionId: u8) {
+    for i in 0..4i32 {
         if (*sTradeMenu).queuedActions[i].active == 0 {
             (*sTradeMenu).queuedActions[i].delay = delay;
             (*sTradeMenu).queuedActions[i].actionId = actionId;
             (*sTradeMenu).queuedActions[i].active = TRUE;
             break;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn GetNumQueuedActions() -> u32 {
+unsafe fn GetNumQueuedActions() -> u32 {
     let mut numActions: u32 = 0;
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 4 {
+    for i in 0..4i32 {
         numActions += (*sTradeMenu).queuedActions[i].active as u32;
-        i += 1;
     }
-    return numActions;
+    numActions
 }
-pub(crate) unsafe extern "C" fn DoQueuedActions() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 4 {
+unsafe fn DoQueuedActions() {
+    for i in 0..4i32 {
         if (*sTradeMenu).queuedActions[i].active != 0 {
             if (*sTradeMenu).queuedActions[i].delay != 0 {
                 (*sTradeMenu).queuedActions[i].delay -= 1;
@@ -2896,10 +2863,9 @@ pub(crate) unsafe extern "C" fn DoQueuedActions() {
                 (*sTradeMenu).queuedActions[i].active = FALSE;
             }
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn PrintTradeMessage(messageId: u8) {
+unsafe fn PrintTradeMessage(messageId: u8) {
     FillWindowPixelBuffer(0, 17);
     AddTextPrinterParameterized(
         0,
@@ -2914,7 +2880,7 @@ pub(crate) unsafe extern "C" fn PrintTradeMessage(messageId: u8) {
     PutWindowTilemap(0);
     CopyWindowToVram(0, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn LoadUISpriteGfx() -> u8 {
+unsafe fn LoadUISpriteGfx() -> u8 {
     let mut sheet: SpriteSheet = zeroed();
     if (*sTradeMenu).timer < NUM_MENU_TEXT_SPRITES {
         sheet.data = sMenuTextTileBuffers[(*sTradeMenu).timer] as *mut c_void;
@@ -2963,12 +2929,12 @@ pub(crate) unsafe extern "C" fn LoadUISpriteGfx() -> u8 {
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DrawBottomRowText(str: *mut u8, dest: *mut u8, unused: u8) {
+unsafe fn DrawBottomRowText(str: *mut u8, dest: *mut u8, unused: u8) {
     DrawTextWindowAndBufferTiles(str, dest as *mut c_void, 0, 0, 6);
 }
-pub(crate) unsafe extern "C" fn ComputePartyTradeableFlags(whichParty: u8) {
+unsafe fn ComputePartyTradeableFlags(whichParty: u8) {
     let mut i: i32 = 0;
     match whichParty {
         TRADE_PLAYER => {
@@ -3006,7 +2972,7 @@ pub(crate) unsafe extern "C" fn ComputePartyTradeableFlags(whichParty: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn ComputePartyHPBarLevels(whichParty: u8) {
+unsafe fn ComputePartyHPBarLevels(whichParty: u8) {
     let mut i: u16 = 0;
     let mut curHp: u16 = 0;
     let mut maxHp: u16 = 0;
@@ -3032,11 +2998,9 @@ pub(crate) unsafe extern "C" fn ComputePartyHPBarLevels(whichParty: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SetTradePartyHPBarSprites() {
-    let mut i: i32 = 0;
+unsafe fn SetTradePartyHPBarSprites() {
     let mut j: i32 = 0;
-    i = 0;
-    while i < 2 {
+    for i in 0..2i32 {
         j = 0;
         while j < (*sTradeMenu).partyCounts[i] as i32 {
             SetPartyHPBarSprite(
@@ -3045,36 +3009,24 @@ pub(crate) unsafe extern "C" fn SetTradePartyHPBarSprites() {
             );
             j += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SaveTradeGiftRibbons() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 11 {
-        if (*gSaveBlock1Ptr).giftRibbons[i] == 0 && (*sTradeMenu).giftRibbons[i] != 0 {
-            if (*sTradeMenu).giftRibbons[i] < MAX_GIFT_RIBBON {
-                (*gSaveBlock1Ptr).giftRibbons[i] = (*sTradeMenu).giftRibbons[i];
-            }
+unsafe fn SaveTradeGiftRibbons() {
+    for i in 0..11i32 {
+        if (*gSaveBlock1Ptr).giftRibbons[i] == 0
+            && (*sTradeMenu).giftRibbons[i] != 0
+            && (*sTradeMenu).giftRibbons[i] < MAX_GIFT_RIBBON
+        {
+            (*gSaveBlock1Ptr).giftRibbons[i] = (*sTradeMenu).giftRibbons[i];
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CanTradeSelectedMon(
-    mut playerParty: *mut Pokemon,
-    partyCount: i32,
-    monIdx: i32,
-) -> u32 {
-    let mut i: i32 = 0;
-    let mut numMonsLeft: i32 = 0;
-    let mut partner: *mut LinkPlayer = null_mut();
+unsafe fn CanTradeSelectedMon(playerParty: *mut Pokemon, partyCount: i32, monIdx: i32) -> u32 {
     let mut species: CArray<u32, 6> = zeroed();
     let mut species2: CArray<u32, 6> = zeroed();
-    i = 0;
-    while i < partyCount {
+    for i in 0..partyCount {
         species2[i] = GetMonData2(playerParty.at(i), MON_DATA_SPECIES_OR_EGG);
         species[i] = GetMonData2(playerParty.at(i), MON_DATA_SPECIES);
-        i += 1;
     }
     if IsNationalPokedexEnabled() == 0 {
         if species2[monIdx] == SPECIES_EGG {
@@ -3084,38 +3036,35 @@ pub(crate) unsafe extern "C" fn CanTradeSelectedMon(
             return CANT_TRADE_NATIONAL as u32;
         }
     }
-    partner = &raw mut gLinkPlayers[GetMultiplayerId() as i32 ^ 1];
+    let partner: *mut LinkPlayer = &raw mut gLinkPlayers[GetMultiplayerId() as i32 ^ 1];
     if (*partner).version as i32 & 0xFF != VERSION_RUBY
         && (*partner).version as i32 & 0xFF != VERSION_SAPPHIRE
+        && (*partner).progressFlagsCopy as i32 & 0xF == 0
     {
-        if (*partner).progressFlagsCopy as i32 & 0xF == 0 {
-            if species2[monIdx] == SPECIES_EGG {
-                return CANT_TRADE_PARTNER_EGG_YET;
-            }
-            if IsSpeciesInHoennDex(species2[monIdx] as u16) == 0 {
-                return CANT_TRADE_INVALID_MON;
-            }
+        if species2[monIdx] == SPECIES_EGG {
+            return CANT_TRADE_PARTNER_EGG_YET;
         }
-    }
-    if species[monIdx] == SPECIES_DEOXYS || species[monIdx] == SPECIES_MEW {
-        if GetMonData2(playerParty.at(monIdx), MON_DATA_MODERN_FATEFUL_ENCOUNTER) == 0 {
+        if IsSpeciesInHoennDex(species2[monIdx] as u16) == 0 {
             return CANT_TRADE_INVALID_MON;
         }
     }
-    i = 0;
+    if (species[monIdx] == SPECIES_DEOXYS || species[monIdx] == SPECIES_MEW)
+        && GetMonData2(playerParty.at(monIdx), MON_DATA_MODERN_FATEFUL_ENCOUNTER) == 0
+    {
+        return CANT_TRADE_INVALID_MON;
+    }
+    let mut i: i32 = 0;
     while i < partyCount {
         if species2[i] == SPECIES_EGG {
             species2[i] = SPECIES_NONE as u32;
         }
         i += 1;
     }
-    numMonsLeft = 0;
-    i = 0;
-    while i < partyCount {
+    let mut numMonsLeft: i32 = 0;
+    for i in 0..partyCount {
         if i != monIdx {
             numMonsLeft += species2[i] as i32;
         }
-        i += 1;
     }
     if numMonsLeft != 0 {
         return CAN_TRADE_MON;
@@ -3124,11 +3073,10 @@ pub(crate) unsafe extern "C" fn CanTradeSelectedMon(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetGameProgressForLinkTrade() -> i32 {
+pub unsafe fn GetGameProgressForLinkTrade() -> i32 {
     let mut versionId: i32 = 0;
     let mut version: u16 = 0;
     if gReceivedRemoteLinkPlayers != 0 {
@@ -3158,34 +3106,30 @@ pub unsafe extern "C" fn GetGameProgressForLinkTrade() -> i32 {
             }
         }
     }
-    return TRADE_BOTH_PLAYERS_READY;
+    TRADE_BOTH_PLAYERS_READY
 }
-pub(crate) unsafe extern "C" fn IsDeoxysOrMewUntradable(
-    species: u16,
-    isModernFatefulEncounter: u8,
-) -> u32 {
-    if species == SPECIES_DEOXYS as u16 || species == SPECIES_MEW as u16 {
-        if isModernFatefulEncounter == 0 {
-            return TRUE as u32;
-        }
+fn IsDeoxysOrMewUntradable(species: u16, isModernFatefulEncounter: u8) -> u32 {
+    if (species == SPECIES_DEOXYS as u16 || species == SPECIES_MEW as u16)
+        && isModernFatefulEncounter == 0
+    {
+        return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetUnionRoomTradeMessageId(
-    mut player: RfuGameCompatibilityData,
-    mut partner: RfuGameCompatibilityData,
+pub unsafe fn GetUnionRoomTradeMessageId(
+    player: RfuGameCompatibilityData,
+    partner: RfuGameCompatibilityData,
     playerSpecies2: u16,
     partnerSpecies: u16,
     requestedType: u8,
     playerSpecies: u16,
     isModernFatefulEncounter: u8,
 ) -> i32 {
-    let mut playerHasNationalDex: u8 = player.hasNationalDex() as u8;
-    let mut playerCanLinkNationally: u8 = player.canLinkNationally() as u8;
-    let mut partnerHasNationalDex: u8 = partner.hasNationalDex() as u8;
-    let mut partnerCanLinkNationally: u8 = partner.canLinkNationally() as u8;
-    let mut partnerVersion: u8 = partner.version() as u8;
+    let playerHasNationalDex: u8 = player.hasNationalDex() as u8;
+    let playerCanLinkNationally: u8 = player.canLinkNationally() as u8;
+    let partnerHasNationalDex: u8 = partner.hasNationalDex() as u8;
+    let partnerCanLinkNationally: u8 = partner.canLinkNationally() as u8;
+    let partnerVersion: u8 = partner.version() as u8;
     if partnerVersion != VERSION_EMERALD {
         if playerCanLinkNationally == 0 {
             return UR_TRADE_MSG_CANT_TRADE_WITH_PARTNER_1;
@@ -3201,8 +3145,14 @@ pub unsafe extern "C" fn GetUnionRoomTradeMessageId(
             return UR_TRADE_MSG_NOT_EGG;
         }
     } else {
-        if gSpeciesInfo[playerSpecies2].types[0] != requestedType
-            && gSpeciesInfo[playerSpecies2].types[1] != requestedType
+        if (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+            [playerSpecies2]
+            .types[0]
+            != requestedType
+            && (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+                [playerSpecies2]
+                .types[1]
+                != requestedType
         {
             return UR_TRADE_MSG_NOT_MON_PARTNER_WANTS;
         }
@@ -3224,16 +3174,15 @@ pub unsafe extern "C" fn GetUnionRoomTradeMessageId(
     if partnerHasNationalDex == 0 && IsSpeciesInHoennDex(playerSpecies2) == 0 {
         return UR_TRADE_MSG_PARTNER_CANT_ACCEPT_MON;
     }
-    return UR_TRADE_MSG_NONE as i32;
+    UR_TRADE_MSG_NONE as i32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CanRegisterMonForTradingBoard(
-    mut player: RfuGameCompatibilityData,
+pub unsafe fn CanRegisterMonForTradingBoard(
+    player: RfuGameCompatibilityData,
     species2: u16,
     species: u16,
     isModernFatefulEncounter: u8,
 ) -> i32 {
-    let mut hasNationalDex: u8 = player.hasNationalDex() as u8;
+    let hasNationalDex: u8 = player.hasNationalDex() as u8;
     if IsDeoxysOrMewUntradable(species, isModernFatefulEncounter) != 0 {
         return CANT_REGISTER_MON;
     }
@@ -3246,17 +3195,12 @@ pub unsafe extern "C" fn CanRegisterMonForTradingBoard(
     if IsSpeciesInHoennDex(species2) != 0 {
         return CAN_REGISTER_MON;
     }
-    return CANT_REGISTER_MON;
+    CANT_REGISTER_MON
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CanSpinTradeMon(mut mon: *mut Pokemon, monIdx: u16) -> i32 {
-    let mut i: i32 = 0;
+pub unsafe fn CanSpinTradeMon(mon: *mut Pokemon, monIdx: u16) -> i32 {
     let mut version: i32 = 0;
-    let mut versions: i32 = 0;
-    let mut canTradeAnyMon: i32 = 0;
-    let mut numMonsLeft: i32 = 0;
     let mut speciesArray: CArray<i32, 6> = zeroed();
-    i = 0;
+    let mut i: i32 = 0;
     while i < gPlayerPartyCount as i32 {
         speciesArray[i] = GetMonData2(mon.at(i), MON_DATA_SPECIES_OR_EGG) as i32;
         if speciesArray[i] == SPECIES_EGG as i32 {
@@ -3264,8 +3208,8 @@ pub unsafe extern "C" fn CanSpinTradeMon(mut mon: *mut Pokemon, monIdx: u16) -> 
         }
         i += 1;
     }
-    versions = 0;
-    canTradeAnyMon = TRUE as i32;
+    let mut versions: i32 = 0;
+    let mut canTradeAnyMon: i32 = TRUE as i32;
     i = 0;
     while i < GetLinkPlayerCount() as i32 {
         version = gLinkPlayers[i].version as i32 & 0xFF;
@@ -3278,7 +3222,7 @@ pub unsafe extern "C" fn CanSpinTradeMon(mut mon: *mut Pokemon, monIdx: u16) -> 
     }
     i = 0;
     while i < GetLinkPlayerCount() as i32 {
-        let mut player: *mut LinkPlayer = &raw mut gLinkPlayers[i];
+        let player: *mut LinkPlayer = &raw mut gLinkPlayers[i];
         if (*player).progressFlags as i32 & 0xF == 0 {
             canTradeAnyMon = FALSE as i32;
         }
@@ -3295,13 +3239,11 @@ pub unsafe extern "C" fn CanSpinTradeMon(mut mon: *mut Pokemon, monIdx: u16) -> 
             return CANT_TRADE_EGG_YET;
         }
     }
-    numMonsLeft = 0;
-    i = 0;
-    while i < gPlayerPartyCount as i32 {
+    let mut numMonsLeft: i32 = 0;
+    for i in 0..(gPlayerPartyCount as i32) {
         if monIdx as i32 != i {
             numMonsLeft += speciesArray[i];
         }
-        i += 1;
     }
     if numMonsLeft == 0 {
         return CANT_TRADE_LAST_MON;
@@ -3310,10 +3252,10 @@ pub unsafe extern "C" fn CanSpinTradeMon(mut mon: *mut Pokemon, monIdx: u16) -> 
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_LinkMonGlow(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_LinkMonGlow(sprite: *mut Sprite) {
     if ({
         (*sprite).data[0] += 1;
         (*sprite).data[0]
@@ -3323,7 +3265,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_LinkMonGlow(sprite: *mut Sprite) {
         (*sprite).data[0] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_LinkMonGlowWireless(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_LinkMonGlowWireless(sprite: *mut Sprite) {
     if (*sprite).invisible() == 0
         && ({
             (*sprite).data[0] += 1;
@@ -3334,7 +3276,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_LinkMonGlowWireless(sprite: *mut Sprite
         (*sprite).data[0] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_LinkMonShadow(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_LinkMonShadow(sprite: *mut Sprite) {
     if (*sprite).data[1] == 0 {
         if ({
             (*sprite).data[0] += 1;
@@ -3350,21 +3292,21 @@ pub(crate) unsafe extern "C" fn SpriteCB_LinkMonShadow(sprite: *mut Sprite) {
         );
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_CableEndSending(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_CableEndSending(sprite: *mut Sprite) {
     (*sprite).data[0] += 1;
     (*sprite).y2 += 1;
     if (*sprite).data[0] == 10 {
         DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_CableEndReceiving(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_CableEndReceiving(sprite: *mut Sprite) {
     (*sprite).data[0] += 1;
     (*sprite).y2 -= 1;
     if (*sprite).data[0] == 10 {
         DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_GbaScreen(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_GbaScreen(sprite: *mut Sprite) {
     if ({
         (*sprite).data[0] += 1;
         (*sprite).data[0]
@@ -3374,7 +3316,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_GbaScreen(sprite: *mut Sprite) {
         (*sprite).data[0] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn SetTradeBGAffine() {
+unsafe fn SetTradeBGAffine() {
     let mut affine: BgAffineDstData = zeroed();
     DoBgAffineSet(
         &raw mut affine,
@@ -3395,11 +3337,10 @@ pub(crate) unsafe extern "C" fn SetTradeBGAffine() {
     SetGpuReg(REG_OFFSET_BG2Y_L, affine.dy as u16);
     SetGpuReg(REG_OFFSET_BG2Y_H, (affine.dy >> 16) as u16);
 }
-pub(crate) unsafe extern "C" fn SetTradeGpuRegs() {
-    let mut dispcnt: u16 = 0;
+unsafe fn SetTradeGpuRegs() {
     SetGpuReg(REG_OFFSET_BG1VOFS, (*sTradeAnim).bg1vofs as u16);
     SetGpuReg(REG_OFFSET_BG1HOFS, (*sTradeAnim).bg1hofs as u16);
-    dispcnt = GetGpuReg(REG_OFFSET_DISPCNT);
+    let dispcnt: u16 = GetGpuReg(REG_OFFSET_DISPCNT);
     if dispcnt as i32 & 7 == DISPCNT_MODE_0 {
         SetGpuReg(REG_OFFSET_BG2VOFS, (*sTradeAnim).bg2vofs as u16);
         SetGpuReg(REG_OFFSET_BG2HOFS, (*sTradeAnim).bg2hofs as u16);
@@ -3407,18 +3348,18 @@ pub(crate) unsafe extern "C" fn SetTradeGpuRegs() {
         SetTradeBGAffine();
     }
 }
-pub(crate) unsafe extern "C" fn VBlankCB_TradeAnim() {
+pub(crate) unsafe fn VBlankCB_TradeAnim() {
     SetTradeGpuRegs();
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn ClearLinkTimeoutTimer() {
+unsafe fn ClearLinkTimeoutTimer() {
     (*sTradeAnim).linkTimeoutTimer = 0;
     (*sTradeAnim).linkTimeoutZero1 = 0;
     (*sTradeAnim).linkTimeoutZero2 = 0;
 }
-pub(crate) unsafe extern "C" fn CheckForLinkTimeout() {
+unsafe fn CheckForLinkTimeout() {
     if (*sTradeAnim).linkTimeoutZero1 == (*sTradeAnim).linkTimeoutZero2 {
         (*sTradeAnim).linkTimeoutTimer += 1;
     } else {
@@ -3433,13 +3374,13 @@ pub(crate) unsafe extern "C" fn CheckForLinkTimeout() {
     }
     (*sTradeAnim).linkTimeoutZero2 = (*sTradeAnim).linkTimeoutZero1;
 }
-pub(crate) unsafe extern "C" fn TradeGetMultiplayerId() -> u32 {
+unsafe fn TradeGetMultiplayerId() -> u32 {
     if gReceivedRemoteLinkPlayers != 0 {
         return GetMultiplayerId() as u32;
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn LoadTradeMonPic(whichParty: u8, state: u8) {
+unsafe fn LoadTradeMonPic(whichParty: u8, state: u8) {
     let mut pos: i32 = 0;
     let mut mon: *mut Pokemon = null_mut();
     let mut species: u16 = 0;
@@ -3458,14 +3399,18 @@ pub(crate) unsafe extern "C" fn LoadTradeMonPic(whichParty: u8, state: u8) {
             personality = GetMonData2(mon, MON_DATA_PERSONALITY);
             if whichParty == TRADE_PLAYER {
                 HandleLoadSpecialPokePic_2(
-                    (&raw const gMonFrontPicTable[species]).cast_mut(),
+                    (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+                        .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
+                        .cast_mut(),
                     (*gMonSpritesGfxPtr).sprites.ptr[1],
                     species as i32,
                     personality,
                 );
             } else {
                 HandleLoadSpecialPokePic_DontHandleDeoxys(
-                    (&raw const gMonFrontPicTable[species]).cast_mut(),
+                    (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+                        .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
+                        .cast_mut(),
                     (*gMonSpritesGfxPtr).sprites.ptr
                         [whichParty as i32 * 2 + B_POSITION_OPPONENT_LEFT as i32],
                     species as i32,
@@ -3486,8 +3431,7 @@ pub(crate) unsafe extern "C" fn LoadTradeMonPic(whichParty: u8, state: u8) {
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_LinkTrade() {
+pub unsafe fn CB2_LinkTrade() {
     match gMain.state {
         0 => {
             if gReceivedRemoteLinkPlayers == 0 {
@@ -3595,14 +3539,12 @@ pub unsafe extern "C" fn CB2_LinkTrade() {
             BufferTradeSceneStrings();
             gMain.state += 1;
         }
-        12 => {
-            if gPaletteFade.active() == 0 {
-                if gWirelessCommType != 0 {
-                    LoadWirelessStatusIndicatorSpriteGfx();
-                    CreateWirelessStatusIndicatorSprite(0, 0);
-                }
-                SetMainCallback2(Some(CB2_UpdateLinkTrade));
+        12 if gPaletteFade.active() == 0 => {
+            if gWirelessCommType != 0 {
+                LoadWirelessStatusIndicatorSpriteGfx();
+                CreateWirelessStatusIndicatorSprite(0, 0);
             }
+            SetMainCallback2(Some(CB2_UpdateLinkTrade));
         }
         _ => {}
     }
@@ -3612,18 +3554,16 @@ pub unsafe extern "C" fn CB2_LinkTrade() {
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTradeSequenceBgGpuRegs() {
+pub unsafe fn InitTradeSequenceBgGpuRegs() {
     SetTradeSequenceBgGpuRegs(5);
     SetTradeSequenceBgGpuRegs(0);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LinkTradeDrawWindow() {
+pub unsafe fn LinkTradeDrawWindow() {
     FillWindowPixelBuffer(0, 255);
     PutWindowTilemap(0);
     CopyWindowToVram(0, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn TradeAnimInit_LoadGfx() {
+unsafe fn TradeAnimInit_LoadGfx() {
     SetGpuReg(0x0, 0);
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sTradeSequenceBgTemplates.as_ptr().cast_mut(), 4);
@@ -3635,43 +3575,75 @@ pub(crate) unsafe extern "C" fn TradeAnimInit_LoadGfx() {
     DeactivateAllTextPrinters();
     DecompressAndLoadBgGfxUsingHeap(
         0,
-        gBattleTextboxTiles.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gBattleTextboxTiles).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         0,
         0,
         0,
     );
     LZDecompressWram(
-        gBattleTextboxTilemap.as_ptr().cast_mut(),
-        gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+        (*(&raw const crate::data::graphics::gBattleTextboxTilemap).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())
+        .as_mut_ptr() as *mut c_void,
     );
     CopyToBgTilemapBuffer(
         0,
-        gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+        (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())
+        .as_mut_ptr() as *mut c_void,
         BG_SCREEN_SIZE as u16,
         0,
     );
-    LoadCompressedPalette(gBattleTextboxPalette.as_ptr().cast_mut(), 0, 32);
+    LoadCompressedPalette(
+        (*(&raw const crate::data::graphics::gBattleTextboxPalette).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0,
+        32,
+    );
     InitWindows(sTradeSequenceWindowTemplates.as_ptr().cast_mut());
     DecompressAndLoadBgGfxUsingHeap(
         0,
-        gBattleTextboxTiles.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gBattleTextboxTiles).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         0,
         0,
         0,
     );
     LZDecompressWram(
-        gBattleTextboxTilemap.as_ptr().cast_mut(),
-        gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+        (*(&raw const crate::data::graphics::gBattleTextboxTilemap).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())
+        .as_mut_ptr() as *mut c_void,
     );
     CopyToBgTilemapBuffer(
         0,
-        gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+        (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())
+        .as_mut_ptr() as *mut c_void,
         BG_SCREEN_SIZE as u16,
         0,
     );
-    LoadCompressedPalette(gBattleTextboxPalette.as_ptr().cast_mut(), 0, 32);
+    LoadCompressedPalette(
+        (*(&raw const crate::data::graphics::gBattleTextboxPalette).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0,
+        32,
+    );
 }
-pub(crate) unsafe extern "C" fn CB2_InitInGameTrade() {
+pub(crate) unsafe fn CB2_InitInGameTrade() {
     let mut otName: CArray<u8, 11> = zeroed();
     match gMain.state {
         0 => {
@@ -3758,32 +3730,31 @@ pub(crate) unsafe extern "C" fn CB2_InitInGameTrade() {
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn UpdatePokedexForReceivedMon(partyIdx: u8) {
-    let mut mon: *mut Pokemon = &raw mut gPlayerParty[partyIdx];
+unsafe fn UpdatePokedexForReceivedMon(partyIdx: u8) {
+    let mon: *mut Pokemon = &raw mut gPlayerParty[partyIdx];
     if GetMonData2(mon, MON_DATA_IS_EGG) == 0 {
         let mut species: u16 = GetMonData3(mon, MON_DATA_SPECIES, null_mut()) as u16;
-        let mut personality: u32 = GetMonData3(mon, MON_DATA_PERSONALITY, null_mut());
+        let personality: u32 = GetMonData3(mon, MON_DATA_PERSONALITY, null_mut());
         species = SpeciesToNationalPokedexNum(species);
         GetSetPokedexFlag(species, FLAG_SET_SEEN);
         HandleSetPokedexFlag(species, FLAG_SET_CAUGHT, personality);
     }
 }
-pub(crate) unsafe extern "C" fn TryEnableNationalDexFromLinkPartner() {
-    let mut mpId: u8 = GetMultiplayerId();
+unsafe fn TryEnableNationalDexFromLinkPartner() {
+    let mpId: u8 = GetMultiplayerId();
 }
-pub(crate) unsafe extern "C" fn TradeMons(playerPartyIdx: u8, partnerPartyIdx: u8) {
-    let mut friendship: u8 = 0;
-    let mut playerMon: *mut Pokemon = &raw mut gPlayerParty[playerPartyIdx];
-    let mut playerMail: u16 = GetMonData2(playerMon, MON_DATA_MAIL) as u16;
-    let mut partnerMon: *mut Pokemon = &raw mut gEnemyParty[partnerPartyIdx];
-    let mut partnerMail: u16 = GetMonData2(partnerMon, MON_DATA_MAIL) as u16;
+unsafe fn TradeMons(playerPartyIdx: u8, partnerPartyIdx: u8) {
+    let playerMon: *mut Pokemon = &raw mut gPlayerParty[playerPartyIdx];
+    let playerMail: u16 = GetMonData2(playerMon, MON_DATA_MAIL) as u16;
+    let partnerMon: *mut Pokemon = &raw mut gEnemyParty[partnerPartyIdx];
+    let partnerMail: u16 = GetMonData2(partnerMon, MON_DATA_MAIL) as u16;
     if playerMail != MAIL_NONE as u16 {
         ClearMail(&raw mut (*gSaveBlock1Ptr).mail[playerMail]);
     }
     (*sTradeAnim).tempMon = *playerMon;
     *playerMon = *partnerMon;
     *partnerMon = (*sTradeAnim).tempMon;
-    friendship = 70;
+    let mut friendship: u8 = 70;
     if GetMonData2(playerMon, MON_DATA_IS_EGG) == 0 {
         SetMonData(
             playerMon,
@@ -3799,7 +3770,7 @@ pub(crate) unsafe extern "C" fn TradeMons(playerPartyIdx: u8, partnerPartyIdx: u
         TryEnableNationalDexFromLinkPartner();
     }
 }
-pub(crate) unsafe extern "C" fn HandleLinkDataSend() {
+unsafe fn HandleLinkDataSend() {
     'l1: {
         let sw1: u8 = (*sTradeAnim).scheduleLinkTransfer;
         let mut fall = false;
@@ -3815,13 +3786,12 @@ pub(crate) unsafe extern "C" fn HandleLinkDataSend() {
             }
         }
         if fall || sw1 == 2 {
-            fall = true;
             (*sTradeAnim).scheduleLinkTransfer = 0;
             break 'l1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn CB2_InGameTrade() {
+pub(crate) unsafe fn CB2_InGameTrade() {
     DoTradeAnim();
     RunTasks();
     RunTextPrinters();
@@ -3829,27 +3799,36 @@ pub(crate) unsafe extern "C" fn CB2_InGameTrade() {
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
+unsafe fn SetTradeSequenceBgGpuRegs(state: u8) {
     match state {
         0 => {
             (*sTradeAnim).bg2vofs = 0;
             (*sTradeAnim).bg2hofs = 180;
             SetGpuReg(0x0, 5440);
             SetGpuReg(REG_OFFSET_BG2CNT, 20998);
-            LoadPalette(gTradeGba2_Pal.as_ptr().cast_mut() as *mut c_void, 16, 96);
+            LoadPalette(
+                (*(&raw const crate::data::graphics::gTradeGba2_Pal).cast::<CArray<u16, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
+                16,
+                96,
+            );
             {
-                let mut _src: *mut c_void = gTradeGba_Gfx.as_ptr().cast_mut() as *mut c_void;
-                let mut _dest: *mut c_void = 0x6004000 as usize as *mut c_void;
+                let mut _src: *mut c_void = (*(&raw const crate::data::graphics::gTradeGba_Gfx)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void;
+                let mut _dest: *mut c_void = 0x6004000_usize as *mut c_void;
                 let mut _size: u32 = 0x1420;
                 loop {
                     if _size <= 0x1000 {
                         {
                             {
                                 {
-                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                     volatile_write(dmaRegs, _src as usize as u32);
                                     volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                    volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                                    volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                                     let _ = (dmaRegs.at(2)).read_volatile();
                                 }
                             }
@@ -3859,7 +3838,7 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
                     {
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, _src as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
                                 volatile_write(dmaRegs.at(2), 0x80000800);
@@ -3875,15 +3854,15 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
             {
                 let mut _src: *mut c_void =
                     gTradePlatform_Tilemap.as_ptr().cast_mut() as *mut c_void;
-                let mut _dest: *mut c_void = 0x6009000 as usize as *mut c_void;
+                let mut _dest: *mut c_void = 0x6009000_usize as *mut c_void;
                 let mut _size: u32 = 0x1000;
                 {
                     {
                         {
-                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                             volatile_write(dmaRegs, _src as usize as u32);
                             volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                            volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                            volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                             let _ = (dmaRegs.at(2)).read_volatile();
                         }
                     }
@@ -3899,15 +3878,15 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
             if (*sTradeAnim).isCableTrade != 0 {
                 {
                     let mut _src: *mut c_void = sGbaMapCable.as_ptr().cast_mut() as *mut c_void;
-                    let mut _dest: *mut c_void = 0x6002800 as usize as *mut c_void;
+                    let mut _dest: *mut c_void = 0x6002800_usize as *mut c_void;
                     let mut _size: u32 = 0x1000;
                     {
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, _src as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                                volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                                 let _ = (dmaRegs.at(2)).read_volatile();
                             }
                         }
@@ -3916,15 +3895,15 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
             } else {
                 {
                     let mut _src: *mut c_void = sGbaMapWireless.as_ptr().cast_mut() as *mut c_void;
-                    let mut _dest: *mut c_void = 0x6002800 as usize as *mut c_void;
+                    let mut _dest: *mut c_void = 0x6002800_usize as *mut c_void;
                     let mut _size: u32 = 0x1000;
                     {
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, _src as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                                volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                                 let _ = (dmaRegs.at(2)).read_volatile();
                             }
                         }
@@ -3932,18 +3911,21 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
                 }
             }
             {
-                let mut _src: *mut c_void = gTradeGba_Gfx.as_ptr().cast_mut() as *mut c_void;
-                let mut _dest: *mut c_void = 0x6000000 as usize as *mut c_void;
+                let mut _src: *mut c_void = (*(&raw const crate::data::graphics::gTradeGba_Gfx)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void;
+                let mut _dest: *mut c_void = 0x6000000_usize as *mut c_void;
                 let mut _size: u32 = 0x1420;
                 loop {
                     if _size <= 0x1000 {
                         {
                             {
                                 {
-                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                     volatile_write(dmaRegs, _src as usize as u32);
                                     volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                    volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                                    volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                                     let _ = (dmaRegs.at(2)).read_volatile();
                                 }
                             }
@@ -3953,7 +3935,7 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
                     {
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, _src as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
                                 volatile_write(dmaRegs.at(2), 0x80000800);
@@ -3975,7 +3957,7 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
                 SetGpuReg(REG_OFFSET_DISPCNT, 4673);
                 LZ77UnCompVram(
                     sWirelessCloseup_Map.as_ptr().cast_mut(),
-                    0x6002800 as usize as *mut c_void,
+                    0x6002800_usize as *mut c_void,
                 );
                 BlendPalettes(0x8, 16, 0);
             } else {
@@ -3983,15 +3965,15 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
                 {
                     let mut _src: *mut c_void =
                         sCableCloseup_Map.as_ptr().cast_mut() as *mut c_void;
-                    let mut _dest: *mut c_void = 0x6002800 as usize as *mut c_void;
+                    let mut _dest: *mut c_void = 0x6002800_usize as *mut c_void;
                     let mut _size: u32 = 0x800;
                     {
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, _src as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                                volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                                 let _ = (dmaRegs.at(2)).read_volatile();
                             }
                         }
@@ -4008,11 +3990,11 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
             );
             LZ77UnCompVram(
                 sWirelessSignal_Gfx.as_ptr().cast_mut(),
-                0x6004000 as usize as *mut c_void,
+                0x6004000_usize as *mut c_void,
             );
             LZ77UnCompVram(
                 sWirelessSignal_Tilemap.as_ptr().cast_mut(),
-                0x6009000 as usize as *mut c_void,
+                0x6009000_usize as *mut c_void,
             );
             (*sTradeAnim).bg2vofs = 80;
             SetGpuReg(0x0, 5696);
@@ -4027,17 +4009,17 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
             (*sTradeAnim).alpha = 0;
             {
                 let mut _src: *mut c_void = sGbaAffine_Gfx.as_ptr().cast_mut() as *mut c_void;
-                let mut _dest: *mut c_void = 0x6004000 as usize as *mut c_void;
+                let mut _dest: *mut c_void = 0x6004000_usize as *mut c_void;
                 let mut _size: u32 = 0x2840;
                 loop {
                     if _size <= 0x1000 {
                         {
                             {
                                 {
-                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                     volatile_write(dmaRegs, _src as usize as u32);
                                     volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                    volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                                    volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                                     let _ = (dmaRegs.at(2)).read_volatile();
                                 }
                             }
@@ -4047,7 +4029,7 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
                     {
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, _src as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
                                 volatile_write(dmaRegs.at(2), 0x80000800);
@@ -4064,15 +4046,15 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
                 {
                     let mut _src: *mut c_void =
                         sGbaAffineMapCable.as_ptr().cast_mut() as *mut c_void;
-                    let mut _dest: *mut c_void = 0x6009000 as usize as *mut c_void;
+                    let mut _dest: *mut c_void = 0x6009000_usize as *mut c_void;
                     let mut _size: u32 = 0x100;
                     {
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, _src as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                                volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                                 let _ = (dmaRegs.at(2)).read_volatile();
                             }
                         }
@@ -4082,15 +4064,15 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
                 {
                     let mut _src: *mut c_void =
                         sGbaAffineMapWireless.as_ptr().cast_mut() as *mut c_void;
-                    let mut _dest: *mut c_void = 0x6009000 as usize as *mut c_void;
+                    let mut _dest: *mut c_void = 0x6009000_usize as *mut c_void;
                     let mut _size: u32 = 0x100;
                     {
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, _src as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                                volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                                 let _ = (dmaRegs.at(2)).read_volatile();
                             }
                         }
@@ -4114,17 +4096,17 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
             (*sTradeAnim).alpha = 0;
             {
                 let mut _src: *mut c_void = sGbaAffine_Gfx.as_ptr().cast_mut() as *mut c_void;
-                let mut _dest: *mut c_void = 0x6004000 as usize as *mut c_void;
+                let mut _dest: *mut c_void = 0x6004000_usize as *mut c_void;
                 let mut _size: u32 = 0x2840;
                 loop {
                     if _size <= 0x1000 {
                         {
                             {
                                 {
-                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                     volatile_write(dmaRegs, _src as usize as u32);
                                     volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                    volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                                    volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                                     let _ = (dmaRegs.at(2)).read_volatile();
                                 }
                             }
@@ -4134,7 +4116,7 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
                     {
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, _src as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
                                 volatile_write(dmaRegs.at(2), 0x80000800);
@@ -4151,15 +4133,15 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
                 {
                     let mut _src: *mut c_void =
                         sGbaAffineMapCable.as_ptr().cast_mut() as *mut c_void;
-                    let mut _dest: *mut c_void = 0x6009000 as usize as *mut c_void;
+                    let mut _dest: *mut c_void = 0x6009000_usize as *mut c_void;
                     let mut _size: u32 = 0x100;
                     {
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, _src as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                                volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                                 let _ = (dmaRegs.at(2)).read_volatile();
                             }
                         }
@@ -4169,15 +4151,15 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
                 {
                     let mut _src: *mut c_void =
                         sGbaAffineMapWireless.as_ptr().cast_mut() as *mut c_void;
-                    let mut _dest: *mut c_void = 0x6009000 as usize as *mut c_void;
+                    let mut _dest: *mut c_void = 0x6009000_usize as *mut c_void;
                     let mut _size: u32 = 0x100;
                     {
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, _src as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                                volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                                 let _ = (dmaRegs.at(2)).read_volatile();
                             }
                         }
@@ -4190,20 +4172,29 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
             (*sTradeAnim).bg2hofs = 0;
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
             SetGpuReg(REG_OFFSET_BG2CNT, 20998);
-            LoadPalette(gTradeGba2_Pal.as_ptr().cast_mut() as *mut c_void, 16, 96);
+            LoadPalette(
+                (*(&raw const crate::data::graphics::gTradeGba2_Pal).cast::<CArray<u16, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
+                16,
+                96,
+            );
             {
-                let mut _src: *mut c_void = gTradeGba_Gfx.as_ptr().cast_mut() as *mut c_void;
-                let mut _dest: *mut c_void = 0x6004000 as usize as *mut c_void;
+                let mut _src: *mut c_void = (*(&raw const crate::data::graphics::gTradeGba_Gfx)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void;
+                let mut _dest: *mut c_void = 0x6004000_usize as *mut c_void;
                 let mut _size: u32 = 0x1420;
                 loop {
                     if _size <= 0x1000 {
                         {
                             {
                                 {
-                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                     volatile_write(dmaRegs, _src as usize as u32);
                                     volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                    volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                                    volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                                     let _ = (dmaRegs.at(2)).read_volatile();
                                 }
                             }
@@ -4213,7 +4204,7 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
                     {
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, _src as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
                                 volatile_write(dmaRegs.at(2), 0x80000800);
@@ -4229,15 +4220,15 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
             {
                 let mut _src: *mut c_void =
                     gTradePlatform_Tilemap.as_ptr().cast_mut() as *mut c_void;
-                let mut _dest: *mut c_void = 0x6009000 as usize as *mut c_void;
+                let mut _dest: *mut c_void = 0x6009000_usize as *mut c_void;
                 let mut _size: u32 = 0x1000;
                 {
                     {
                         {
-                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                             volatile_write(dmaRegs, _src as usize as u32);
                             volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                            volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                            volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                             let _ = (dmaRegs.at(2)).read_volatile();
                         }
                     }
@@ -4247,7 +4238,7 @@ pub(crate) unsafe extern "C" fn SetTradeSequenceBgGpuRegs(state: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn LoadTradeSequenceSpriteSheetsAndPalettes() {
+unsafe fn LoadTradeSequenceSpriteSheetsAndPalettes() {
     LoadSpriteSheet((&raw const *sSpriteSheet_LinkMonGlow).cast_mut());
     LoadSpriteSheet((&raw const *sSpriteSheet_LinkMonShadow).cast_mut());
     LoadSpriteSheet((&raw const *sSpriteSheet_CableEnd).cast_mut());
@@ -4255,7 +4246,7 @@ pub(crate) unsafe extern "C" fn LoadTradeSequenceSpriteSheetsAndPalettes() {
     LoadSpritePalette((&raw const *sSpritePalette_LinkMon).cast_mut());
     LoadSpritePalette((&raw const *sSpritePalette_Gba).cast_mut());
 }
-pub(crate) unsafe extern "C" fn BufferTradeSceneStrings() {
+unsafe fn BufferTradeSceneStrings() {
     let mut mpId: u8 = 0;
     let mut name: CArray<u8, 20> = zeroed();
     let mut ingameTrade: *mut InGameTrade = null_mut();
@@ -4278,21 +4269,26 @@ pub(crate) unsafe extern "C" fn BufferTradeSceneStrings() {
         );
         StringCopy_Nickname(gStringVar2.as_mut_ptr(), name.as_mut_ptr());
     } else {
-        ingameTrade = (&raw const sIngameTrades[gSpecialVar_0x8004]).cast_mut();
+        ingameTrade = (&raw const sIngameTrades[*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()])
+            .cast_mut();
         StringCopy(gStringVar1.as_mut_ptr(), (*ingameTrade).otName.as_mut_ptr());
         StringCopy_Nickname(
             gStringVar3.as_mut_ptr(),
             (*ingameTrade).nickname.as_mut_ptr(),
         );
         GetMonData3(
-            &raw mut gPlayerParty[gSpecialVar_0x8005],
+            &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8005)
+                .cast::<u16>()
+                .cast_mut()],
             MON_DATA_NICKNAME,
             name.as_mut_ptr(),
         );
         StringCopy_Nickname(gStringVar2.as_mut_ptr(), name.as_mut_ptr());
     }
 }
-pub(crate) unsafe extern "C" fn DoTradeAnim() -> u8 {
+unsafe fn DoTradeAnim() -> u8 {
     if (*sTradeAnim).isCableTrade != 0 {
         return DoTradeAnim_Cable();
     } else {
@@ -4300,17 +4296,19 @@ pub(crate) unsafe extern "C" fn DoTradeAnim() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn DoTradeAnim_Cable() -> u8 {
+unsafe fn DoTradeAnim_Cable() -> u8 {
     let mut evoTarget: u16 = 0;
     match (*sTradeAnim).state {
         STATE_START => {
             gSprites[(*sTradeAnim).monSpriteIds[0]].set_invisible(0);
             gSprites[(*sTradeAnim).monSpriteIds[0]].x2 = -180;
             gSprites[(*sTradeAnim).monSpriteIds[0]].y2 =
-                gMonFrontPicCoords[(*sTradeAnim).monSpecies[0]].y_offset as i16;
+                (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
+                    .cast::<CArray<MonCoords, 0>>())[(*sTradeAnim).monSpecies[0]]
+                    .y_offset as i16;
             (*sTradeAnim).state += 1;
             (*sTradeAnim).cachedMapMusic = GetCurrentMapMusic();
             PlayNewMapMusic(MUS_EVOLUTION);
@@ -4328,7 +4326,9 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Cable() -> u8 {
         STATE_SEND_MSG => {
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
-                gText_XWillBeSentToY.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_XWillBeSentToY).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
             );
             DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
             if (*sTradeAnim).monSpecies[0] != SPECIES_EGG as u16 {
@@ -4356,14 +4356,16 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Cable() -> u8 {
                 (*sTradeAnim).state += 1;
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
-                    gText_ByeByeVar1.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_ByeByeVar1).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                 );
                 DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
             }
         }
         STATE_POKEBALL_DEPART => {
             if gSprites[(*sTradeAnim).releasePokeballSpriteId].callback
-                == Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
+                == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
             {
                 (*sTradeAnim).bouncingPokeballSpriteId = CreateSprite(
                     (&raw const *sSpriteTemplate_Pokeball).cast_mut(),
@@ -4776,10 +4778,12 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Cable() -> u8 {
         }
         STATE_POKEBALL_ARRIVE_WAIT => {
             if gSprites[(*sTradeAnim).bouncingPokeballSpriteId].callback
-                == Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
+                == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
             {
                 HandleLoadSpecialPokePic_2(
-                    (&raw const gMonFrontPicTable[(*sTradeAnim).monSpecies[1]]).cast_mut(),
+                    (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+                        .cast::<CArray<CompressedSpriteSheet, 0>>())[(*sTradeAnim).monSpecies[1]])
+                        .cast_mut(),
                     (*gMonSpritesGfxPtr).sprites.ptr[3],
                     (*sTradeAnim).monSpecies[1] as i32,
                     (*sTradeAnim).monPersonalities[1],
@@ -4790,7 +4794,10 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Cable() -> u8 {
         STATE_SHOW_NEW_MON => {
             gSprites[(*sTradeAnim).monSpriteIds[1]].x = 120;
             gSprites[(*sTradeAnim).monSpriteIds[1]].y =
-                gMonFrontPicCoords[(*sTradeAnim).monSpecies[1]].y_offset as i16 + 60;
+                (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
+                    .cast::<CArray<MonCoords, 0>>())[(*sTradeAnim).monSpecies[1]]
+                    .y_offset as i16
+                    + 60;
             gSprites[(*sTradeAnim).monSpriteIds[1]].x2 = 0;
             gSprites[(*sTradeAnim).monSpriteIds[1]].y2 = 0;
             StartSpriteAnim(&raw mut gSprites[(*sTradeAnim).monSpriteIds[1]], 0);
@@ -4813,7 +4820,9 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Cable() -> u8 {
             SetGpuReg(0x0, 5440);
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
-                gText_XSentOverY.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_XSentOverY).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
             );
             DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
             (*sTradeAnim).state = STATE_DELAY_FOR_MON_ANIM;
@@ -4846,7 +4855,10 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Cable() -> u8 {
                 (*sTradeAnim).state += 1;
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
-                    gText_TakeGoodCareOfX.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_TakeGoodCareOfX)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
                 (*sTradeAnim).timer = 0;
@@ -4894,34 +4906,34 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Cable() -> u8 {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
             (*sTradeAnim).state += 1;
         }
-        STATE_WAIT_FADE_OUT_END => {
-            if gPaletteFade.active() == 0 {
-                PlayNewMapMusic((*sTradeAnim).cachedMapMusic);
-                if !sTradeAnim.is_null() {
-                    FreeAllWindowBuffers();
-                    Free(GetBgTilemapBuffer(3));
-                    Free(GetBgTilemapBuffer(1));
-                    Free(GetBgTilemapBuffer(0));
-                    FreeMonSpritesGfx();
-                    Free(sTradeAnim as *mut c_void);
-                    sTradeAnim = null_mut();
-                }
-                SetMainCallback2(Some(CB2_ReturnToField));
-                BufferInGameTradeMonName();
+        STATE_WAIT_FADE_OUT_END if gPaletteFade.active() == 0 => {
+            PlayNewMapMusic((*sTradeAnim).cachedMapMusic);
+            if !sTradeAnim.is_null() {
+                FreeAllWindowBuffers();
+                Free(GetBgTilemapBuffer(3));
+                Free(GetBgTilemapBuffer(1));
+                Free(GetBgTilemapBuffer(0));
+                FreeMonSpritesGfx();
+                Free(sTradeAnim as *mut c_void);
+                sTradeAnim = null_mut();
             }
+            SetMainCallback2(Some(CB2_ReturnToField));
+            BufferInGameTradeMonName();
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DoTradeAnim_Wireless() -> u8 {
+unsafe fn DoTradeAnim_Wireless() -> u8 {
     let mut evoTarget: u16 = 0;
     match (*sTradeAnim).state {
         STATE_START => {
             gSprites[(*sTradeAnim).monSpriteIds[0]].set_invisible(0);
             gSprites[(*sTradeAnim).monSpriteIds[0]].x2 = -180;
             gSprites[(*sTradeAnim).monSpriteIds[0]].y2 =
-                gMonFrontPicCoords[(*sTradeAnim).monSpecies[0]].y_offset as i16;
+                (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
+                    .cast::<CArray<MonCoords, 0>>())[(*sTradeAnim).monSpecies[0]]
+                    .y_offset as i16;
             (*sTradeAnim).state += 1;
             (*sTradeAnim).cachedMapMusic = GetCurrentMapMusic();
             PlayNewMapMusic(MUS_EVOLUTION);
@@ -4939,7 +4951,9 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Wireless() -> u8 {
         STATE_SEND_MSG => {
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
-                gText_XWillBeSentToY.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_XWillBeSentToY).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
             );
             DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
             if (*sTradeAnim).monSpecies[0] != SPECIES_EGG as u16 {
@@ -4967,14 +4981,16 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Wireless() -> u8 {
                 (*sTradeAnim).state += 1;
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
-                    gText_ByeByeVar1.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_ByeByeVar1).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                 );
                 DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
             }
         }
         STATE_POKEBALL_DEPART => {
             if gSprites[(*sTradeAnim).releasePokeballSpriteId].callback
-                == Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
+                == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
             {
                 (*sTradeAnim).bouncingPokeballSpriteId = CreateSprite(
                     (&raw const *sSpriteTemplate_Pokeball).cast_mut(),
@@ -5266,8 +5282,8 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Wireless() -> u8 {
                 (*sTradeAnim).timer
             }) == 10
             {
-                let mut taskId: u8 = CreateTask(Some(Task_AnimateWirelessSignal), 5);
-                gTasks[taskId].data[2] = TRUE as i16;
+                let taskId: u8 = CreateTask(Some(Task_AnimateWirelessSignal), 5);
+                task_set(taskId, tSignalComingBack, TRUE as i16);
             }
             if (*sTradeAnim).bg1vofs > 316 {
                 (*sTradeAnim).bg1vofs = 316;
@@ -5396,10 +5412,12 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Wireless() -> u8 {
         }
         STATE_POKEBALL_ARRIVE_WAIT => {
             if gSprites[(*sTradeAnim).bouncingPokeballSpriteId].callback
-                == Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
+                == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
             {
                 HandleLoadSpecialPokePic_2(
-                    (&raw const gMonFrontPicTable[(*sTradeAnim).monSpecies[1]]).cast_mut(),
+                    (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+                        .cast::<CArray<CompressedSpriteSheet, 0>>())[(*sTradeAnim).monSpecies[1]])
+                        .cast_mut(),
                     (*gMonSpritesGfxPtr).sprites.ptr[3],
                     (*sTradeAnim).monSpecies[1] as i32,
                     (*sTradeAnim).monPersonalities[1],
@@ -5410,7 +5428,10 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Wireless() -> u8 {
         STATE_SHOW_NEW_MON => {
             gSprites[(*sTradeAnim).monSpriteIds[1]].x = 120;
             gSprites[(*sTradeAnim).monSpriteIds[1]].y =
-                gMonFrontPicCoords[(*sTradeAnim).monSpecies[1]].y_offset as i16 + 60;
+                (*(&raw const crate::data::data_tables::gMonFrontPicCoords)
+                    .cast::<CArray<MonCoords, 0>>())[(*sTradeAnim).monSpecies[1]]
+                    .y_offset as i16
+                    + 60;
             gSprites[(*sTradeAnim).monSpriteIds[1]].x2 = 0;
             gSprites[(*sTradeAnim).monSpriteIds[1]].y2 = 0;
             StartSpriteAnim(&raw mut gSprites[(*sTradeAnim).monSpriteIds[1]], 0);
@@ -5433,7 +5454,9 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Wireless() -> u8 {
             SetGpuReg(0x0, 5440);
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
-                gText_XSentOverY.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_XSentOverY).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
             );
             DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
             (*sTradeAnim).state = STATE_DELAY_FOR_MON_ANIM;
@@ -5466,7 +5489,10 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Wireless() -> u8 {
                 (*sTradeAnim).state += 1;
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
-                    gText_TakeGoodCareOfX.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_TakeGoodCareOfX)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
                 (*sTradeAnim).timer = 0;
@@ -5514,27 +5540,25 @@ pub(crate) unsafe extern "C" fn DoTradeAnim_Wireless() -> u8 {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
             (*sTradeAnim).state += 1;
         }
-        STATE_WAIT_FADE_OUT_END => {
-            if gPaletteFade.active() == 0 {
-                PlayNewMapMusic((*sTradeAnim).cachedMapMusic);
-                if !sTradeAnim.is_null() {
-                    FreeAllWindowBuffers();
-                    Free(GetBgTilemapBuffer(3));
-                    Free(GetBgTilemapBuffer(1));
-                    Free(GetBgTilemapBuffer(0));
-                    FreeMonSpritesGfx();
-                    Free(sTradeAnim as *mut c_void);
-                    sTradeAnim = null_mut();
-                }
-                SetMainCallback2(Some(CB2_ReturnToField));
-                BufferInGameTradeMonName();
+        STATE_WAIT_FADE_OUT_END if gPaletteFade.active() == 0 => {
+            PlayNewMapMusic((*sTradeAnim).cachedMapMusic);
+            if !sTradeAnim.is_null() {
+                FreeAllWindowBuffers();
+                Free(GetBgTilemapBuffer(3));
+                Free(GetBgTilemapBuffer(1));
+                Free(GetBgTilemapBuffer(0));
+                FreeMonSpritesGfx();
+                Free(sTradeAnim as *mut c_void);
+                sTradeAnim = null_mut();
             }
+            SetMainCallback2(Some(CB2_ReturnToField));
+            BufferInGameTradeMonName();
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn CB2_TryLinkTradeEvolution() {
+pub(crate) unsafe fn CB2_TryLinkTradeEvolution() {
     let mut evoTarget: u16 = 0;
     match gMain.state {
         0 => {
@@ -5571,10 +5595,9 @@ pub(crate) unsafe extern "C" fn CB2_TryLinkTradeEvolution() {
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn HandleLinkDataReceive() {
-    let mut recvStatus: u8 = 0;
+unsafe fn HandleLinkDataReceive() {
     TradeGetMultiplayerId();
-    recvStatus = GetBlockReceivedStatus();
+    let recvStatus: u8 = GetBlockReceivedStatus();
     if recvStatus as i32 & 1 != 0 {
         if gBlockRecvBuffer[0][0] == LINKCMD_CONFIRM_FINISH_TRADE {
             SetMainCallback2(Some(CB2_TryLinkTradeEvolution));
@@ -5591,7 +5614,7 @@ pub(crate) unsafe extern "C" fn HandleLinkDataReceive() {
         ResetBlockReceivedFlag(1);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_BouncingPokeball(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_BouncingPokeball(sprite: *mut Sprite) {
     (*sprite).y += (*sprite).data[0] / 10;
     (*sprite).data[5] += (*sprite).data[1];
     (*sprite).x = (*sprite).data[5] / 10;
@@ -5609,7 +5632,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_BouncingPokeball(sprite: *mut Sprite) {
         (*sprite).callback = Some(SpriteCallbackDummy);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_BouncingPokeballDepart(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_BouncingPokeballDepart(sprite: *mut Sprite) {
     (*sprite).y2 += sTradeBallVerticalVelocityTable[(*sprite).data[0]] as i16;
     if (*sprite).data[0] == 22 {
         PlaySE(SE_BALL_BOUNCE_1);
@@ -5631,7 +5654,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_BouncingPokeballDepart(sprite: *mut Spr
         );
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_BouncingPokeballDepartEnd(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_BouncingPokeballDepartEnd(sprite: *mut Sprite) {
     if (*sprite).data[1] == 20 {
         StartSpriteAffineAnim(sprite, 1);
     }
@@ -5651,7 +5674,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_BouncingPokeballDepartEnd(sprite: *mut 
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_BouncingPokeballArrive(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_BouncingPokeballArrive(sprite: *mut Sprite) {
     if (*sprite).data[2] == 0 {
         if ({
             (*sprite).y += 4;
@@ -5683,46 +5706,57 @@ pub(crate) unsafe extern "C" fn SpriteCB_BouncingPokeballArrive(sprite: *mut Spr
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetInGameTradeSpeciesInfo() -> u16 {
-    let mut inGameTrade: *mut InGameTrade =
-        (&raw const sIngameTrades[gSpecialVar_0x8004]).cast_mut();
+pub unsafe fn GetInGameTradeSpeciesInfo() -> u16 {
+    let inGameTrade: *mut InGameTrade = (&raw const sIngameTrades
+        [*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()])
+        .cast_mut();
     StringCopy(
         gStringVar1.as_mut_ptr(),
-        gSpeciesNames[(*inGameTrade).requestedSpecies]
+        (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<CArray<u8, 11>, 0>>())
+            [(*inGameTrade).requestedSpecies]
             .as_ptr()
             .cast_mut(),
     );
     StringCopy(
         gStringVar2.as_mut_ptr(),
-        gSpeciesNames[(*inGameTrade).species].as_ptr().cast_mut(),
+        (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<CArray<u8, 11>, 0>>())
+            [(*inGameTrade).species]
+            .as_ptr()
+            .cast_mut(),
     );
-    return (*inGameTrade).requestedSpecies;
+    (*inGameTrade).requestedSpecies
 }
-pub(crate) unsafe extern "C" fn BufferInGameTradeMonName() {
+unsafe fn BufferInGameTradeMonName() {
     let mut nickname: CArray<u8, 32> = zeroed();
-    let mut inGameTrade: *mut InGameTrade =
-        (&raw const sIngameTrades[gSpecialVar_0x8004]).cast_mut();
+    let inGameTrade: *mut InGameTrade = (&raw const sIngameTrades
+        [*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()])
+        .cast_mut();
     GetMonData3(
-        &raw mut gPlayerParty[gSpecialVar_0x8005],
+        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8005)
+            .cast::<u16>()
+            .cast_mut()],
         MON_DATA_NICKNAME,
         nickname.as_mut_ptr(),
     );
     StringCopy_Nickname(gStringVar1.as_mut_ptr(), nickname.as_mut_ptr());
     StringCopy(
         gStringVar2.as_mut_ptr(),
-        gSpeciesNames[(*inGameTrade).species].as_ptr().cast_mut(),
+        (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<CArray<u8, 11>, 0>>())
+            [(*inGameTrade).species]
+            .as_ptr()
+            .cast_mut(),
     );
 }
-pub(crate) unsafe extern "C" fn CreateInGameTradePokemonInternal(
-    whichPlayerMon: u8,
-    whichInGameTrade: u8,
-) {
-    let mut inGameTrade: *mut InGameTrade = (&raw const sIngameTrades[whichInGameTrade]).cast_mut();
-    let mut level: u8 = GetMonData2(&raw mut gPlayerParty[whichPlayerMon], MON_DATA_LEVEL) as u8;
+unsafe fn CreateInGameTradePokemonInternal(whichPlayerMon: u8, whichInGameTrade: u8) {
+    let inGameTrade: *mut InGameTrade = (&raw const sIngameTrades[whichInGameTrade]).cast_mut();
+    let level: u8 = GetMonData2(&raw mut gPlayerParty[whichPlayerMon], MON_DATA_LEVEL) as u8;
     let mut mail: Mail = zeroed();
     let mut metLocation: u8 = METLOC_IN_GAME_TRADE;
-    let mut mailNum: u8 = 0;
-    let mut pokemon: *mut Pokemon = &raw mut gEnemyParty[0];
+    let pokemon: *mut Pokemon = &raw mut gEnemyParty[0];
     CreateMon(
         pokemon,
         (*inGameTrade).species,
@@ -5818,7 +5852,7 @@ pub(crate) unsafe extern "C" fn CreateInGameTradePokemonInternal(
         MON_DATA_MET_LOCATION,
         &raw mut metLocation as *mut c_void,
     );
-    mailNum = 0;
+    let mut mailNum: u8 = 0;
     if (*inGameTrade).heldItem != ITEM_NONE {
         if ItemIsMail((*inGameTrade).heldItem) != 0 {
             GetInGameTradeMail(&raw mut mail, inGameTrade);
@@ -5839,12 +5873,9 @@ pub(crate) unsafe extern "C" fn CreateInGameTradePokemonInternal(
     }
     CalculateMonStats(&raw mut gEnemyParty[0]);
 }
-pub(crate) unsafe extern "C" fn GetInGameTradeMail(mail: *mut Mail, trade: *mut InGameTrade) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < MAIL_WORDS_COUNT as i32 {
+unsafe fn GetInGameTradeMail(mail: *mut Mail, trade: *mut InGameTrade) {
+    for i in 0..(MAIL_WORDS_COUNT as i32) {
         (*mail).words[i] = sIngameTradeMail[(*trade).mailNum][i];
-        i += 1;
     }
     StringCopy(
         (*mail).playerName.as_mut_ptr(),
@@ -5859,17 +5890,28 @@ pub(crate) unsafe extern "C" fn GetInGameTradeMail(mail: *mut Mail, trade: *mut 
     (*mail).itemId = (*trade).heldItem;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetTradeSpecies() -> u16 {
-    if GetMonData2(&raw mut gPlayerParty[gSpecialVar_0x8005], MON_DATA_IS_EGG) != 0 {
+pub unsafe fn GetTradeSpecies() -> u16 {
+    if GetMonData2(
+        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8005)
+            .cast::<u16>()
+            .cast_mut()],
+        MON_DATA_IS_EGG,
+    ) != 0
+    {
         return SPECIES_NONE;
     }
-    return GetMonData2(&raw mut gPlayerParty[gSpecialVar_0x8005], MON_DATA_SPECIES) as u16;
+    GetMonData2(
+        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8005)
+            .cast::<u16>()
+            .cast_mut()],
+        MON_DATA_SPECIES,
+    ) as u16
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateInGameTradePokemon() {
+pub unsafe fn CreateInGameTradePokemon() {
     CreateInGameTradePokemonInternal(gSpecialVar_0x8005 as u8, gSpecialVar_0x8004 as u8);
 }
-pub(crate) unsafe extern "C" fn CB2_UpdateLinkTrade() {
+pub(crate) unsafe fn CB2_UpdateLinkTrade() {
     if DoTradeAnim() == TRUE {
         DestroySprite(&raw mut gSprites[(*sTradeAnim).monSpriteIds[0]]);
         FreeSpriteOamMatrix(&raw mut gSprites[(*sTradeAnim).monSpriteIds[1]]);
@@ -5891,8 +5933,8 @@ pub(crate) unsafe extern "C" fn CB2_UpdateLinkTrade() {
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn CB2_WaitTradeComplete() {
-    let mut mpId: u8 = TradeGetMultiplayerId() as u8;
+pub(crate) unsafe fn CB2_WaitTradeComplete() {
+    let mpId: u8 = TradeGetMultiplayerId() as u8;
     if IsWirelessTrade() != 0 {
         SetMainCallback2(Some(CB2_TryLinkTradeEvolution));
     } else {
@@ -5916,13 +5958,16 @@ pub(crate) unsafe extern "C" fn CB2_WaitTradeComplete() {
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn CB2_SaveAndEndTrade() {
+pub(crate) unsafe fn CB2_SaveAndEndTrade() {
     match gMain.state {
         0 => {
             gMain.state += 1;
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
-                gText_CommunicationStandby5.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_CommunicationStandby5)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
             DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
         }
@@ -5953,7 +5998,9 @@ pub(crate) unsafe extern "C" fn CB2_SaveAndEndTrade() {
             gMain.state = 50;
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
-                gText_SavingDontTurnOffPower.as_ptr().cast_mut(),
+                (*crate::asmdata::gText_SavingDontTurnOffPower.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
             );
             DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
         }
@@ -6048,8 +6095,7 @@ pub(crate) unsafe extern "C" fn CB2_SaveAndEndTrade() {
         8 => {
             if IsBGMStopped() == TRUE {
                 if gWirelessCommType != 0
-                    && gMain.savedCallback
-                        == Some(CB2_StartCreateTradeMenu as unsafe extern "C" fn())
+                    && gMain.savedCallback == Some(CB2_StartCreateTradeMenu as unsafe fn())
                 {
                     SetTradeLinkStandbyCallback(3);
                 } else {
@@ -6060,7 +6106,7 @@ pub(crate) unsafe extern "C" fn CB2_SaveAndEndTrade() {
         }
         9 => {
             if gWirelessCommType != 0
-                && gMain.savedCallback == Some(CB2_StartCreateTradeMenu as unsafe extern "C" fn())
+                && gMain.savedCallback == Some(CB2_StartCreateTradeMenu as unsafe fn())
             {
                 if _IsLinkTaskFinished() != 0 {
                     gSoftResetDisabled = FALSE;
@@ -6080,7 +6126,7 @@ pub(crate) unsafe extern "C" fn CB2_SaveAndEndTrade() {
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn CB2_FreeTradeAnim() {
+pub(crate) unsafe fn CB2_FreeTradeAnim() {
     if gPaletteFade.active() == 0 {
         FreeAllWindowBuffers();
         Free(GetBgTilemapBuffer(3));
@@ -6100,39 +6146,34 @@ pub(crate) unsafe extern "C" fn CB2_FreeTradeAnim() {
     UpdatePaletteFade();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoInGameTradeScene() {
+pub unsafe fn DoInGameTradeScene() {
     LockPlayerFieldControls();
     CreateTask(Some(Task_InGameTrade), 10);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
 }
-pub(crate) unsafe extern "C" fn Task_InGameTrade(taskId: u8) {
+pub(crate) unsafe fn Task_InGameTrade(taskId: u8) {
     if gPaletteFade.active() == 0 {
         SetMainCallback2(Some(CB2_InitInGameTrade));
         gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic);
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn CheckPartnersMonForRibbons() {
-    let mut i: u8 = 0;
+unsafe fn CheckPartnersMonForRibbons() {
     let mut numRibbons: u8 = 0;
-    i = 0;
-    while i < 12 {
+    for i in 0..12u8 {
         numRibbons += GetMonData2(
             &raw mut gEnemyParty[gSelectedTradeMonPositions[1] as i32 % 6],
             MON_DATA_CHAMPION_RIBBON + i as i32,
         ) as u8;
-        i += 1;
     }
     if numRibbons != 0 {
         FlagSet(FLAG_SYS_RIBBON_GET);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadTradeAnimGfx() {
+pub unsafe fn LoadTradeAnimGfx() {
     TradeAnimInit_LoadGfx();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawTextOnTradeWindow(windowId: u8, str: *mut u8, speed: u8) {
+pub unsafe fn DrawTextOnTradeWindow(windowId: u8, str: *mut u8, speed: u8) {
     FillWindowPixelBuffer(windowId, 255);
     (*sTradeAnim).textColors[0] = TEXT_DYNAMIC_COLOR_6;
     (*sTradeAnim).textColors[1] = 0x1;
@@ -6150,9 +6191,9 @@ pub unsafe extern "C" fn DrawTextOnTradeWindow(windowId: u8, str: *mut u8, speed
     );
     CopyWindowToVram(windowId, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn Task_AnimateWirelessSignal(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut paletteIdx: u16 = sWirelessSignalAnimParams[*data][0] as u16 * 16;
+pub(crate) unsafe fn Task_AnimateWirelessSignal(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let paletteIdx: u16 = sWirelessSignalAnimParams[*data][0] as u16 * 16;
     if *data.at(2) == 0 {
         if paletteIdx == 256 {
             LoadPalette(
@@ -6195,8 +6236,8 @@ pub(crate) unsafe extern "C" fn Task_AnimateWirelessSignal(taskId: u8) {
         *data.at(1) += 1;
     }
 }
-pub(crate) unsafe extern "C" fn Task_OpenCenterWhiteColumn(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_OpenCenterWhiteColumn(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data == 0 {
         (*sTradeAnim).wirelessWinLeft = {
             (*sTradeAnim).wirelessWinRight = 120;
@@ -6223,8 +6264,8 @@ pub(crate) unsafe extern "C" fn Task_OpenCenterWhiteColumn(taskId: u8) {
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_CloseCenterWhiteColumn(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_CloseCenterWhiteColumn(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data == 0 {
         (*sTradeAnim).wirelessWinLeft = 80;
         (*sTradeAnim).wirelessWinRight = 160;
@@ -6251,13 +6292,16 @@ pub(crate) unsafe extern "C" fn Task_CloseCenterWhiteColumn(taskId: u8) {
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn CB2_SaveAndEndWirelessTrade() {
+pub(crate) unsafe fn CB2_SaveAndEndWirelessTrade() {
     match gMain.state {
         0 => {
             gMain.state = 1;
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
-                gText_CommunicationStandby5.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_CommunicationStandby5)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
             DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
         }
@@ -6271,7 +6315,9 @@ pub(crate) unsafe extern "C" fn CB2_SaveAndEndWirelessTrade() {
                 gMain.state = 3;
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
-                    gText_SavingDontTurnOffPower.as_ptr().cast_mut(),
+                    (*crate::asmdata::gText_SavingDontTurnOffPower.cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                 );
                 DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 0);
                 IncrementGameStat(GAME_STAT_POKEMON_TRADES);
@@ -6352,11 +6398,9 @@ pub(crate) unsafe extern "C" fn CB2_SaveAndEndWirelessTrade() {
                 gMain.state = 12;
             }
         }
-        12 => {
-            if _IsLinkTaskFinished() != 0 {
-                gSoftResetDisabled = FALSE;
-                SetMainCallback2(Some(CB2_FreeTradeAnim));
-            }
+        12 if _IsLinkTaskFinished() != 0 => {
+            gSoftResetDisabled = FALSE;
+            SetMainCallback2(Some(CB2_FreeTradeAnim));
         }
         _ => {}
     }

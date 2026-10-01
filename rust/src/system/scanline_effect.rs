@@ -2,6 +2,10 @@
 //! from a double-buffered table into a video register. Also the "wave" task
 //! that ripples a background horizontally or vertically.
 
+use crate::battle_main::{
+    gBattle_BG0_X, gBattle_BG0_Y, gBattle_BG1_X, gBattle_BG1_Y, gBattle_BG2_X, gBattle_BG2_Y,
+    gBattle_BG3_X, gBattle_BG3_Y,
+};
 use crate::ffi::{Align4, CreateTask, DestroyTask, TASK_NONE, set_task_data, task_data};
 use crate::trig::gSineTable;
 
@@ -38,7 +42,7 @@ pub struct ScanlineEffect {
     pub dma_src_buffers: [*mut u8; 2],
     pub dma_dest: *mut u8,
     pub dma_control: u32,
-    pub set_first_scanline_reg: Option<unsafe extern "C" fn()>,
+    pub set_first_scanline_reg: Option<unsafe fn()>,
     pub src_buffer: u8,
     pub state: u8,
     pub unused16: u8,
@@ -71,18 +75,7 @@ pub static mut gScanlineEffect: ScanlineEffect = ScanlineEffect {
 };
 
 #[unsafe(link_section = "ewram_data")]
-static mut SHOULD_STOP_WAVE_TASK: u8 = 0;
-
-unsafe extern "C" {
-    static gBattle_BG0_X: u16;
-    static gBattle_BG0_Y: u16;
-    static gBattle_BG1_X: u16;
-    static gBattle_BG1_Y: u16;
-    static gBattle_BG2_X: u16;
-    static gBattle_BG2_Y: u16;
-    static gBattle_BG3_X: u16;
-    static gBattle_BG3_Y: u16;
-}
+static SHOULD_STOP_WAVE_TASK: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[inline]
 fn effect() -> *mut ScanlineEffect {
@@ -117,7 +110,7 @@ unsafe fn dma0_set(src: *const u8, dest: *mut u8, control: u32) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScanlineEffect_Stop() {
+pub unsafe fn ScanlineEffect_Stop() {
     let e = effect();
     unsafe { (*e).state = 0 };
     unsafe { dma0_stop() };
@@ -129,7 +122,7 @@ pub unsafe extern "C" fn ScanlineEffect_Stop() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScanlineEffect_Clear() {
+pub unsafe fn ScanlineEffect_Clear() {
     unsafe { buffer(0).write_bytes(0, 2 * LINES) };
     let e = effect();
     unsafe {
@@ -145,7 +138,7 @@ pub unsafe extern "C" fn ScanlineEffect_Clear() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScanlineEffect_SetParams(params: ScanlineEffectParams) {
+pub unsafe fn ScanlineEffect_SetParams(params: ScanlineEffectParams) {
     let e = effect();
     // The DMA source starts at the *second* line's value: the first transfer
     // happens in the HBlank after line 0 is drawn.
@@ -173,14 +166,14 @@ pub unsafe extern "C" fn ScanlineEffect_SetParams(params: ScanlineEffectParams) 
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScanlineEffect_InitHBlankDmaTransfer() {
+pub unsafe fn ScanlineEffect_InitHBlankDmaTransfer() {
     let e = effect();
     match unsafe { (*e).state } {
         0 => {}
         3 => {
             unsafe { (*e).state = 0 };
             unsafe { dma0_stop() };
-            unsafe { (&raw mut SHOULD_STOP_WAVE_TASK).write(1) };
+            unsafe { (SHOULD_STOP_WAVE_TASK.as_ptr()).write(1) };
         }
         _ => {
             unsafe { dma0_stop() };
@@ -194,14 +187,14 @@ pub unsafe extern "C" fn ScanlineEffect_InitHBlankDmaTransfer() {
     }
 }
 
-unsafe extern "C" fn copy_value_16bit() {
+unsafe fn copy_value_16bit() {
     let e = effect();
     let src = buffer(usize::from(unsafe { (*e).src_buffer }));
     let dest = unsafe { (*e).dma_dest }.cast::<u16>();
     unsafe { dest.write_volatile(src.read_volatile()) };
 }
 
-unsafe extern "C" fn copy_value_32bit() {
+unsafe fn copy_value_32bit() {
     let e = effect();
     let src = buffer(usize::from(unsafe { (*e).src_buffer })).cast::<u32>();
     let dest = unsafe { (*e).dma_dest }.cast::<u32>();
@@ -218,8 +211,8 @@ const T_DELAY_INTERVAL: usize = 5;
 const T_REG_OFFSET: usize = 6;
 const T_APPLY_BATTLE_BG_OFFSETS: usize = 7;
 
-unsafe extern "C" fn task_update_wave_per_frame(task_id: u8) {
-    if unsafe { (&raw const SHOULD_STOP_WAVE_TASK).read() } != 0 {
+unsafe fn task_update_wave_per_frame(task_id: u8) {
+    if unsafe { (SHOULD_STOP_WAVE_TASK.as_ptr().cast_const()).read() } != 0 {
         unsafe { DestroyTask(task_id) };
         unsafe { (*effect()).wave_task_id = TASK_NONE };
         return;
@@ -289,7 +282,7 @@ unsafe fn generate_wave(buffer: *mut u16, frequency: u8, amplitude: u8) {
 /// `REG_ADDR_BG0HOFS + reg_offset`. The wave moves up one line every
 /// `delay_interval + 1` frames.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScanlineEffect_InitWave(
+pub unsafe fn ScanlineEffect_InitWave(
     start_line: u8,
     end_line: u8,
     frequency: u8,
@@ -333,7 +326,7 @@ pub unsafe extern "C" fn ScanlineEffect_InitWave(
     }
 
     unsafe { (*effect()).wave_task_id = task_id };
-    unsafe { (&raw mut SHOULD_STOP_WAVE_TASK).write(0) };
+    unsafe { (SHOULD_STOP_WAVE_TASK.as_ptr()).write(0) };
 
     unsafe { generate_wave(buffer(0).add(WAVE_OFFSET), frequency, amplitude) };
     let mut offset = WAVE_OFFSET;

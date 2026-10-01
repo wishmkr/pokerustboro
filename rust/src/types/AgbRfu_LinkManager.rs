@@ -75,8 +75,8 @@ pub struct linkManagerTag {
     pub nameAcceptTimer: VblankTimerTag,
     pub linkRecoveryTimer: VblankTimerTag,
     pub init_param: *mut InitializeParametersTag,
-    pub LMAN_callback: Option<unsafe extern "C" fn(u8, u8)>,
-    pub MSC_callback: Option<unsafe extern "C" fn(u16)>,
+    pub LMAN_callback: Option<unsafe fn(u8, u8)>,
+    pub MSC_callback: Option<unsafe fn(u16)>,
 }
 
 unsafe impl Sync for linkManagerTag {}

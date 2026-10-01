@@ -1,10 +1,10 @@
 #[unsafe(no_mangle)]
-pub extern "C" fn MathUtil_Mul16(x: i16, y: i16) -> i16 {
+pub fn MathUtil_Mul16(x: i16, y: i16) -> i16 {
     ((i32::from(x) * i32::from(y)) / 256) as i16
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn MathUtil_Mul16Shift(shift: u8, x: i16, y: i16) -> i16 {
+pub fn MathUtil_Mul16Shift(shift: u8, x: i16, y: i16) -> i16 {
     let divisor = 1_i32.checked_shl(u32::from(shift)).unwrap_or(0);
     if divisor == 0 {
         return 0;
@@ -13,12 +13,12 @@ pub extern "C" fn MathUtil_Mul16Shift(shift: u8, x: i16, y: i16) -> i16 {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn MathUtil_Mul32(x: i32, y: i32) -> i32 {
+pub fn MathUtil_Mul32(x: i32, y: i32) -> i32 {
     ((i64::from(x) * i64::from(y)) / 256) as i32
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn MathUtil_Div16(x: i16, y: i16) -> i16 {
+pub fn MathUtil_Div16(x: i16, y: i16) -> i16 {
     if y == 0 {
         return 0;
     }
@@ -26,7 +26,7 @@ pub extern "C" fn MathUtil_Div16(x: i16, y: i16) -> i16 {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn MathUtil_Div16Shift(shift: u8, x: i16, y: i16) -> i16 {
+pub fn MathUtil_Div16Shift(shift: u8, x: i16, y: i16) -> i16 {
     if y == 0 || shift >= 31 {
         return 0;
     }
@@ -35,7 +35,7 @@ pub extern "C" fn MathUtil_Div16Shift(shift: u8, x: i16, y: i16) -> i16 {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn MathUtil_Div32(x: i32, y: i32) -> i32 {
+pub fn MathUtil_Div32(x: i32, y: i32) -> i32 {
     if y == 0 {
         return 0;
     }
@@ -43,7 +43,7 @@ pub extern "C" fn MathUtil_Div32(x: i32, y: i32) -> i32 {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn MathUtil_Inv16(y: i16) -> i16 {
+pub fn MathUtil_Inv16(y: i16) -> i16 {
     if y == 0 {
         return 0;
     }
@@ -51,7 +51,7 @@ pub extern "C" fn MathUtil_Inv16(y: i16) -> i16 {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn MathUtil_Inv16Shift(shift: u8, y: i16) -> i16 {
+pub fn MathUtil_Inv16Shift(shift: u8, y: i16) -> i16 {
     if y == 0 || shift >= 23 {
         return 0;
     }
@@ -60,7 +60,7 @@ pub extern "C" fn MathUtil_Inv16Shift(shift: u8, y: i16) -> i16 {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn MathUtil_Inv32(y: i32) -> i32 {
+pub fn MathUtil_Inv32(y: i32) -> i32 {
     if y == 0 {
         return 0;
     }

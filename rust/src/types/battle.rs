@@ -523,7 +523,7 @@ unsafe impl Sync for BattleScriptsStack {}
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct BattleCallbacksStack {
-    pub function: CArray<Option<unsafe extern "C" fn()>, 8>,
+    pub function: CArray<Option<unsafe fn()>, 8>,
     pub size: u8,
 }
 
@@ -1245,7 +1245,7 @@ pub struct BattleStruct {
     pub hpScale: u8,
     pub synchronizeMoveEffect: u8,
     pub anyMonHasTransformed: u8,
-    pub savedCallback: Option<unsafe extern "C" fn()>,
+    pub savedCallback: Option<unsafe fn()>,
     pub usedHeldItems: CArray<u16, 4>,
     pub chosenItem: CArray<u8, 4>,
     pub AI_itemType: CArray<u8, 2>,

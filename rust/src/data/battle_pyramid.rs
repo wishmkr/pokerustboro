@@ -4,134 +4,6 @@
 
 use crate::ffi::{RomBytes, RomPtr};
 
-unsafe extern "C" {
-    static BattlePyramid_Text_EightItemsRemaining1: u8;
-    static BattlePyramid_Text_EightItemsRemaining2: u8;
-    static BattlePyramid_Text_EightItemsRemaining3: u8;
-    static BattlePyramid_Text_EightItemsRemaining4: u8;
-    static BattlePyramid_Text_EightItemsRemaining5: u8;
-    static BattlePyramid_Text_EightItemsRemaining6: u8;
-    static BattlePyramid_Text_ExitHintDown1: u8;
-    static BattlePyramid_Text_ExitHintDown2: u8;
-    static BattlePyramid_Text_ExitHintDown3: u8;
-    static BattlePyramid_Text_ExitHintDown4: u8;
-    static BattlePyramid_Text_ExitHintDown5: u8;
-    static BattlePyramid_Text_ExitHintDown6: u8;
-    static BattlePyramid_Text_ExitHintLeft1: u8;
-    static BattlePyramid_Text_ExitHintLeft2: u8;
-    static BattlePyramid_Text_ExitHintLeft3: u8;
-    static BattlePyramid_Text_ExitHintLeft4: u8;
-    static BattlePyramid_Text_ExitHintLeft5: u8;
-    static BattlePyramid_Text_ExitHintLeft6: u8;
-    static BattlePyramid_Text_ExitHintRight1: u8;
-    static BattlePyramid_Text_ExitHintRight2: u8;
-    static BattlePyramid_Text_ExitHintRight3: u8;
-    static BattlePyramid_Text_ExitHintRight4: u8;
-    static BattlePyramid_Text_ExitHintRight5: u8;
-    static BattlePyramid_Text_ExitHintRight6: u8;
-    static BattlePyramid_Text_ExitHintUp1: u8;
-    static BattlePyramid_Text_ExitHintUp2: u8;
-    static BattlePyramid_Text_ExitHintUp3: u8;
-    static BattlePyramid_Text_ExitHintUp4: u8;
-    static BattlePyramid_Text_ExitHintUp5: u8;
-    static BattlePyramid_Text_ExitHintUp6: u8;
-    static BattlePyramid_Text_FiveItemsRemaining1: u8;
-    static BattlePyramid_Text_FiveItemsRemaining2: u8;
-    static BattlePyramid_Text_FiveItemsRemaining3: u8;
-    static BattlePyramid_Text_FiveItemsRemaining4: u8;
-    static BattlePyramid_Text_FiveItemsRemaining5: u8;
-    static BattlePyramid_Text_FiveItemsRemaining6: u8;
-    static BattlePyramid_Text_FiveTrainersRemaining1: u8;
-    static BattlePyramid_Text_FiveTrainersRemaining2: u8;
-    static BattlePyramid_Text_FiveTrainersRemaining3: u8;
-    static BattlePyramid_Text_FiveTrainersRemaining4: u8;
-    static BattlePyramid_Text_FiveTrainersRemaining5: u8;
-    static BattlePyramid_Text_FiveTrainersRemaining6: u8;
-    static BattlePyramid_Text_FourItemsRemaining1: u8;
-    static BattlePyramid_Text_FourItemsRemaining2: u8;
-    static BattlePyramid_Text_FourItemsRemaining3: u8;
-    static BattlePyramid_Text_FourItemsRemaining4: u8;
-    static BattlePyramid_Text_FourItemsRemaining5: u8;
-    static BattlePyramid_Text_FourItemsRemaining6: u8;
-    static BattlePyramid_Text_FourTrainersRemaining1: u8;
-    static BattlePyramid_Text_FourTrainersRemaining2: u8;
-    static BattlePyramid_Text_FourTrainersRemaining3: u8;
-    static BattlePyramid_Text_FourTrainersRemaining4: u8;
-    static BattlePyramid_Text_FourTrainersRemaining5: u8;
-    static BattlePyramid_Text_FourTrainersRemaining6: u8;
-    static BattlePyramid_Text_OneItemRemaining1: u8;
-    static BattlePyramid_Text_OneItemRemaining2: u8;
-    static BattlePyramid_Text_OneItemRemaining3: u8;
-    static BattlePyramid_Text_OneItemRemaining4: u8;
-    static BattlePyramid_Text_OneItemRemaining5: u8;
-    static BattlePyramid_Text_OneItemRemaining6: u8;
-    static BattlePyramid_Text_OneTrainersRemaining1: u8;
-    static BattlePyramid_Text_OneTrainersRemaining2: u8;
-    static BattlePyramid_Text_OneTrainersRemaining3: u8;
-    static BattlePyramid_Text_OneTrainersRemaining4: u8;
-    static BattlePyramid_Text_OneTrainersRemaining5: u8;
-    static BattlePyramid_Text_OneTrainersRemaining6: u8;
-    static BattlePyramid_Text_SevenItemsRemaining1: u8;
-    static BattlePyramid_Text_SevenItemsRemaining2: u8;
-    static BattlePyramid_Text_SevenItemsRemaining3: u8;
-    static BattlePyramid_Text_SevenItemsRemaining4: u8;
-    static BattlePyramid_Text_SevenItemsRemaining5: u8;
-    static BattlePyramid_Text_SevenItemsRemaining6: u8;
-    static BattlePyramid_Text_SevenTrainersRemaining1: u8;
-    static BattlePyramid_Text_SevenTrainersRemaining2: u8;
-    static BattlePyramid_Text_SevenTrainersRemaining3: u8;
-    static BattlePyramid_Text_SevenTrainersRemaining4: u8;
-    static BattlePyramid_Text_SevenTrainersRemaining5: u8;
-    static BattlePyramid_Text_SevenTrainersRemaining6: u8;
-    static BattlePyramid_Text_SixItemsRemaining1: u8;
-    static BattlePyramid_Text_SixItemsRemaining2: u8;
-    static BattlePyramid_Text_SixItemsRemaining3: u8;
-    static BattlePyramid_Text_SixItemsRemaining4: u8;
-    static BattlePyramid_Text_SixItemsRemaining5: u8;
-    static BattlePyramid_Text_SixItemsRemaining6: u8;
-    static BattlePyramid_Text_SixTrainersRemaining1: u8;
-    static BattlePyramid_Text_SixTrainersRemaining2: u8;
-    static BattlePyramid_Text_SixTrainersRemaining3: u8;
-    static BattlePyramid_Text_SixTrainersRemaining4: u8;
-    static BattlePyramid_Text_SixTrainersRemaining5: u8;
-    static BattlePyramid_Text_SixTrainersRemaining6: u8;
-    static BattlePyramid_Text_ThreeItemsRemaining1: u8;
-    static BattlePyramid_Text_ThreeItemsRemaining2: u8;
-    static BattlePyramid_Text_ThreeItemsRemaining3: u8;
-    static BattlePyramid_Text_ThreeItemsRemaining4: u8;
-    static BattlePyramid_Text_ThreeItemsRemaining5: u8;
-    static BattlePyramid_Text_ThreeItemsRemaining6: u8;
-    static BattlePyramid_Text_ThreeTrainersRemaining1: u8;
-    static BattlePyramid_Text_ThreeTrainersRemaining2: u8;
-    static BattlePyramid_Text_ThreeTrainersRemaining3: u8;
-    static BattlePyramid_Text_ThreeTrainersRemaining4: u8;
-    static BattlePyramid_Text_ThreeTrainersRemaining5: u8;
-    static BattlePyramid_Text_ThreeTrainersRemaining6: u8;
-    static BattlePyramid_Text_TwoItemsRemaining1: u8;
-    static BattlePyramid_Text_TwoItemsRemaining2: u8;
-    static BattlePyramid_Text_TwoItemsRemaining3: u8;
-    static BattlePyramid_Text_TwoItemsRemaining4: u8;
-    static BattlePyramid_Text_TwoItemsRemaining5: u8;
-    static BattlePyramid_Text_TwoItemsRemaining6: u8;
-    static BattlePyramid_Text_TwoTrainersRemaining1: u8;
-    static BattlePyramid_Text_TwoTrainersRemaining2: u8;
-    static BattlePyramid_Text_TwoTrainersRemaining3: u8;
-    static BattlePyramid_Text_TwoTrainersRemaining4: u8;
-    static BattlePyramid_Text_TwoTrainersRemaining5: u8;
-    static BattlePyramid_Text_TwoTrainersRemaining6: u8;
-    static BattlePyramid_Text_ZeroItemsRemaining1: u8;
-    static BattlePyramid_Text_ZeroItemsRemaining2: u8;
-    static BattlePyramid_Text_ZeroItemsRemaining3: u8;
-    static BattlePyramid_Text_ZeroItemsRemaining4: u8;
-    static BattlePyramid_Text_ZeroItemsRemaining5: u8;
-    static BattlePyramid_Text_ZeroItemsRemaining6: u8;
-    static BattlePyramid_Text_ZeroTrainersRemaining1: u8;
-    static BattlePyramid_Text_ZeroTrainersRemaining2: u8;
-    static BattlePyramid_Text_ZeroTrainersRemaining3: u8;
-    static BattlePyramid_Text_ZeroTrainersRemaining4: u8;
-    static BattlePyramid_Text_ZeroTrainersRemaining5: u8;
-    static BattlePyramid_Text_ZeroTrainersRemaining6: u8;
-}
 
 pub(crate) static sLevel50WildMons_Round1: RomBytes<96> = RomBytes([97, 1, 35, 2, 86, 0, 209, 0, 227, 0, 0, 0, 98, 1, 35, 2, 86, 0, 85, 0, 98, 0, 0, 0, 25, 0, 37, 2, 86, 0, 85, 0, 21, 0, 0, 0, 125, 0, 37, 2, 9, 0, 129, 0, 103, 0, 0, 0, 45, 0, 39, 2, 78, 0, 202, 0, 182, 0, 0, 0, 82, 1, 39, 2, 86, 0, 87, 0, 98, 0, 0, 0, 51, 1, 40, 2, 78, 0, 8, 1, 202, 0, 183, 0, 135, 0, 40, 2, 86, 0, 87, 0, 42, 0, 98, 0]);
 
@@ -278,183 +150,183 @@ pub(crate) static sTrainerClassEncounterMusic: RomBytes<216> = RomBytes([3, 6, 0
 pub(crate) static sTrainerTextGroups: RomBytes<100> = RomBytes([13, 3, 14, 4, 16, 1, 17, 0, 3, 2, 18, 3, 12, 3, 19, 3, 20, 3, 21, 2, 23, 2, 7, 2, 10, 4, 25, 2, 26, 2, 27, 0, 29, 2, 30, 2, 31, 3, 32, 4, 38, 0, 39, 1, 41, 4, 42, 5, 9, 4, 22, 5, 43, 0, 45, 4, 46, 2, 48, 2, 50, 2, 49, 3, 47, 3, 51, 3, 52, 2, 4, 2, 53, 0, 54, 3, 55, 3, 56, 3, 28, 1, 58, 2, 5, 2, 66, 2, 2, 3, 68, 2, 69, 3, 71, 3, 67, 0, 0, 4]);
 
 pub(crate) static sExitDirectionHintTexts1: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const BattlePyramid_Text_ExitHintUp1)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintLeft1)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintRight1)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintDown1)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintUp1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintLeft1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintRight1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintDown1.cast::<u8>()))),
 ];
 
 pub(crate) static sRemainingItemsHintTexts1: [RomPtr<u8>; 9] = [
-    RomPtr((&raw const BattlePyramid_Text_ZeroItemsRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_OneItemRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_TwoItemsRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_ThreeItemsRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_FourItemsRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_FiveItemsRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_SixItemsRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_SevenItemsRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_EightItemsRemaining1)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ZeroItemsRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_OneItemRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_TwoItemsRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ThreeItemsRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FourItemsRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FiveItemsRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SixItemsRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SevenItemsRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_EightItemsRemaining1.cast::<u8>()))),
 ];
 
 pub(crate) static sRemainingTrainersHintTexts1: [RomPtr<u8>; 8] = [
-    RomPtr((&raw const BattlePyramid_Text_ZeroTrainersRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_OneTrainersRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_TwoTrainersRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_ThreeTrainersRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_FourTrainersRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_FiveTrainersRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_SixTrainersRemaining1)),
-    RomPtr((&raw const BattlePyramid_Text_SevenTrainersRemaining1)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ZeroTrainersRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_OneTrainersRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_TwoTrainersRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ThreeTrainersRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FourTrainersRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FiveTrainersRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SixTrainersRemaining1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SevenTrainersRemaining1.cast::<u8>()))),
 ];
 
 pub(crate) static sExitDirectionHintTexts2: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const BattlePyramid_Text_ExitHintUp2)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintLeft2)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintRight2)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintDown2)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintUp2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintLeft2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintRight2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintDown2.cast::<u8>()))),
 ];
 
 pub(crate) static sRemainingItemsHintTexts2: [RomPtr<u8>; 9] = [
-    RomPtr((&raw const BattlePyramid_Text_ZeroItemsRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_OneItemRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_TwoItemsRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_ThreeItemsRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_FourItemsRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_FiveItemsRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_SixItemsRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_SevenItemsRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_EightItemsRemaining2)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ZeroItemsRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_OneItemRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_TwoItemsRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ThreeItemsRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FourItemsRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FiveItemsRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SixItemsRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SevenItemsRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_EightItemsRemaining2.cast::<u8>()))),
 ];
 
 pub(crate) static sRemainingTrainersHintTexts2: [RomPtr<u8>; 8] = [
-    RomPtr((&raw const BattlePyramid_Text_ZeroTrainersRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_OneTrainersRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_TwoTrainersRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_ThreeTrainersRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_FourTrainersRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_FiveTrainersRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_SixTrainersRemaining2)),
-    RomPtr((&raw const BattlePyramid_Text_SevenTrainersRemaining2)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ZeroTrainersRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_OneTrainersRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_TwoTrainersRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ThreeTrainersRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FourTrainersRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FiveTrainersRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SixTrainersRemaining2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SevenTrainersRemaining2.cast::<u8>()))),
 ];
 
 pub(crate) static sExitDirectionHintTexts3: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const BattlePyramid_Text_ExitHintUp3)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintLeft3)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintRight3)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintDown3)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintUp3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintLeft3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintRight3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintDown3.cast::<u8>()))),
 ];
 
 pub(crate) static sRemainingItemsHintTexts3: [RomPtr<u8>; 9] = [
-    RomPtr((&raw const BattlePyramid_Text_ZeroItemsRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_OneItemRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_TwoItemsRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_ThreeItemsRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_FourItemsRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_FiveItemsRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_SixItemsRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_SevenItemsRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_EightItemsRemaining3)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ZeroItemsRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_OneItemRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_TwoItemsRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ThreeItemsRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FourItemsRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FiveItemsRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SixItemsRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SevenItemsRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_EightItemsRemaining3.cast::<u8>()))),
 ];
 
 pub(crate) static sRemainingTrainersHintTexts3: [RomPtr<u8>; 8] = [
-    RomPtr((&raw const BattlePyramid_Text_ZeroTrainersRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_OneTrainersRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_TwoTrainersRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_ThreeTrainersRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_FourTrainersRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_FiveTrainersRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_SixTrainersRemaining3)),
-    RomPtr((&raw const BattlePyramid_Text_SevenTrainersRemaining3)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ZeroTrainersRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_OneTrainersRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_TwoTrainersRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ThreeTrainersRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FourTrainersRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FiveTrainersRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SixTrainersRemaining3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SevenTrainersRemaining3.cast::<u8>()))),
 ];
 
 pub(crate) static sExitDirectionHintTexts4: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const BattlePyramid_Text_ExitHintUp4)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintLeft4)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintRight4)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintDown4)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintUp4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintLeft4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintRight4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintDown4.cast::<u8>()))),
 ];
 
 pub(crate) static sRemainingItemsHintTexts4: [RomPtr<u8>; 9] = [
-    RomPtr((&raw const BattlePyramid_Text_ZeroItemsRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_OneItemRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_TwoItemsRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_ThreeItemsRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_FourItemsRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_FiveItemsRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_SixItemsRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_SevenItemsRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_EightItemsRemaining4)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ZeroItemsRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_OneItemRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_TwoItemsRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ThreeItemsRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FourItemsRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FiveItemsRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SixItemsRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SevenItemsRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_EightItemsRemaining4.cast::<u8>()))),
 ];
 
 pub(crate) static sRemainingTrainersHintTexts4: [RomPtr<u8>; 8] = [
-    RomPtr((&raw const BattlePyramid_Text_ZeroTrainersRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_OneTrainersRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_TwoTrainersRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_ThreeTrainersRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_FourTrainersRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_FiveTrainersRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_SixTrainersRemaining4)),
-    RomPtr((&raw const BattlePyramid_Text_SevenTrainersRemaining4)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ZeroTrainersRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_OneTrainersRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_TwoTrainersRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ThreeTrainersRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FourTrainersRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FiveTrainersRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SixTrainersRemaining4.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SevenTrainersRemaining4.cast::<u8>()))),
 ];
 
 pub(crate) static sExitDirectionHintTexts5: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const BattlePyramid_Text_ExitHintUp5)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintLeft5)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintRight5)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintDown5)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintUp5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintLeft5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintRight5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintDown5.cast::<u8>()))),
 ];
 
 pub(crate) static sRemainingItemsHintTexts5: [RomPtr<u8>; 9] = [
-    RomPtr((&raw const BattlePyramid_Text_ZeroItemsRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_OneItemRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_TwoItemsRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_ThreeItemsRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_FourItemsRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_FiveItemsRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_SixItemsRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_SevenItemsRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_EightItemsRemaining5)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ZeroItemsRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_OneItemRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_TwoItemsRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ThreeItemsRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FourItemsRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FiveItemsRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SixItemsRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SevenItemsRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_EightItemsRemaining5.cast::<u8>()))),
 ];
 
 pub(crate) static sRemainingTrainersHintTexts5: [RomPtr<u8>; 8] = [
-    RomPtr((&raw const BattlePyramid_Text_ZeroTrainersRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_OneTrainersRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_TwoTrainersRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_ThreeTrainersRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_FourTrainersRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_FiveTrainersRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_SixTrainersRemaining5)),
-    RomPtr((&raw const BattlePyramid_Text_SevenTrainersRemaining5)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ZeroTrainersRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_OneTrainersRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_TwoTrainersRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ThreeTrainersRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FourTrainersRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FiveTrainersRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SixTrainersRemaining5.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SevenTrainersRemaining5.cast::<u8>()))),
 ];
 
 pub(crate) static sExitDirectionHintTexts6: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const BattlePyramid_Text_ExitHintUp6)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintLeft6)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintRight6)),
-    RomPtr((&raw const BattlePyramid_Text_ExitHintDown6)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintUp6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintLeft6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintRight6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ExitHintDown6.cast::<u8>()))),
 ];
 
 pub(crate) static sRemainingItemsHintTexts6: [RomPtr<u8>; 9] = [
-    RomPtr((&raw const BattlePyramid_Text_ZeroItemsRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_OneItemRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_TwoItemsRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_ThreeItemsRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_FourItemsRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_FiveItemsRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_SixItemsRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_SevenItemsRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_EightItemsRemaining6)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ZeroItemsRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_OneItemRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_TwoItemsRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ThreeItemsRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FourItemsRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FiveItemsRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SixItemsRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SevenItemsRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_EightItemsRemaining6.cast::<u8>()))),
 ];
 
 pub(crate) static sRemainingTrainersHintTexts6: [RomPtr<u8>; 8] = [
-    RomPtr((&raw const BattlePyramid_Text_ZeroTrainersRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_OneTrainersRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_TwoTrainersRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_ThreeTrainersRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_FourTrainersRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_FiveTrainersRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_SixTrainersRemaining6)),
-    RomPtr((&raw const BattlePyramid_Text_SevenTrainersRemaining6)),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ZeroTrainersRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_OneTrainersRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_TwoTrainersRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_ThreeTrainersRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FourTrainersRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_FiveTrainersRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SixTrainersRemaining6.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattlePyramid_Text_SevenTrainersRemaining6.cast::<u8>()))),
 ];
 
 pub(crate) static sPostBattleHintTexts1: [RomPtr<u8>; 3] = [

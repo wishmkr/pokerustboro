@@ -4,12 +4,6 @@
 
 use crate::ffi::{RomBytes, RomPtr};
 
-unsafe extern "C" {
-    static gText_PkmnTransferredLanettesPC: u8;
-    static gText_PkmnTransferredLanettesPCBoxFull: u8;
-    static gText_PkmnTransferredSomeonesPC: u8;
-    static gText_PkmnTransferredSomeonesPCBoxFull: u8;
-}
 
 pub(crate) static sText_Trainer1LoseText: RomBytes<3> = RomBytes([253, 36, 255]);
 
@@ -1371,10 +1365,10 @@ pub static gBattleStringsTable: [RomPtr<u8>; 369] = [
     RomPtr(sText_TiedOpponentByReferee.as_ptr().cast::<u8>()),
     RomPtr(sText_QuestionForfeitMatch.as_ptr().cast::<u8>()),
     RomPtr(sText_ForfeitedMatch.as_ptr().cast::<u8>()),
-    RomPtr((&raw const gText_PkmnTransferredSomeonesPC)),
-    RomPtr((&raw const gText_PkmnTransferredLanettesPC)),
-    RomPtr((&raw const gText_PkmnTransferredSomeonesPCBoxFull)),
-    RomPtr((&raw const gText_PkmnTransferredLanettesPCBoxFull)),
+    RomPtr((&raw const (*crate::asmdata::gText_PkmnTransferredSomeonesPC.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_PkmnTransferredLanettesPC.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_PkmnTransferredSomeonesPCBoxFull.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_PkmnTransferredLanettesPCBoxFull.cast::<u8>()))),
     RomPtr(sText_Trainer1WinText.as_ptr().cast::<u8>()),
     RomPtr(sText_Trainer2WinText.as_ptr().cast::<u8>()),
 ];

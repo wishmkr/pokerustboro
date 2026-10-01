@@ -3,45 +3,264 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::agb_main::{SetHBlankCallback, SetVBlankCallback};
+use crate::berry_powder::{GetBerryPowder, GiveBerryPowder};
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect_Palette0, HideBg,
+    ResetBgsAndClearDma3BusyFlags, ShowBg, UnsetBgTilemapBuffer,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::digit_obj_util::{
+    DigitObjUtil_CreatePrinter, DigitObjUtil_DeletePrinter, DigitObjUtil_Free,
+    DigitObjUtil_HideOrShow, DigitObjUtil_Init, DigitObjUtil_PrintNumOn,
+};
+use crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_Reset;
+use crate::gpu_regs::{ClearGpuRegBits, SetGpuReg, SetGpuRegBits};
+use crate::item::{HasAtLeastOneBerry, RemoveBagItem};
+use crate::item_menu::{ChooseBerryForMachine, gSpecialVar_ItemId};
+use crate::link::{
+    GetBlockReceivedStatus, GetLinkPlayerCount, GetMultiplayerId, IsLinkTaskFinished,
+    ResetBlockReceivedFlags, SendBlock, SetCloseLinkCallback, gLinkPlayers,
+    gReceivedRemoteLinkPlayers, gWirelessCommType,
+};
+use crate::link::{gBlockRecvBuffer, gRecvCmds};
+use crate::link_rfu_2::{ClearRecvCommands, Rfu_SendPacket, Rfu_SetLinkStandbyCallback, gRfu};
+use crate::link_rfu_3::{
+    CreateWirelessStatusIndicatorSprite, DestroyWirelessStatusIndicatorSprite,
+    LoadWirelessStatusIndicatorSpriteGfx,
+};
+use crate::load_save::gSaveBlock2Ptr;
+use crate::math_util::{
+    MathUtil_Div16Shift, MathUtil_Div32, MathUtil_Mul16, MathUtil_Mul16Shift, MathUtil_Mul32,
+};
+use crate::menu::{
+    AddTextPrinterParameterized2, AddTextPrinterParameterized3, AddTextPrinterParameterized4,
+    ClearDialogWindowAndFrame, ClearStdWindowAndFrameToTransparent,
+    DecompressAndCopyTileDataToVram, DisplayYesNoMenuDefaultYes, DrawDialogueFrame,
+    DrawStdFrameWithCustomTileAndPalette, FreeTempTileDataBuffersIfPossible,
+    InitStandardTextBoxWindows, InitTextBoxGfxAndPrinters, Menu_ProcessInputNoWrapClearOnChoose,
+    ResetTempTileDataBuffers,
+};
+use crate::minigame_countdown::{IsMinigameCountdownRunning, StartMinigameCountdown};
+use crate::overworld::{CB1_Overworld, CB2_ReturnToField, IncrementGameStat, SetMainCallback1};
+use crate::palette::{
+    BeginNormalPaletteFade, BlendPalettes, LoadPalette, ResetPaletteFade, TransferPlttBuffer,
+    UpdatePaletteFade, gPaletteFade,
+};
+use crate::random::Random;
+use crate::save::Task_LinkFullSave;
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::script::{LockPlayerFieldControls, ScriptContext_Enable, UnlockPlayerFieldControls};
+use crate::sound::{PlayNewMapMusic, PlaySE};
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, FreeSpritePaletteByTag,
+    FreeSpriteTilesByTag, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData,
+    gReservedSpritePaletteCount, gSpriteCoordOffsetX, gSpriteCoordOffsetY,
+};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar3, gStringVar4};
+use crate::task::{DestroyTask, RunTasks};
+use crate::task::{gTasks, task_set};
+use crate::text::{IsTextPrinterActive, RunTextPrinters};
+use crate::text_window::LoadUserWindowBorderGfx_;
+use crate::trig::Sin;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers,
+    GetWindowAttribute, PutWindowTilemap, RemoveWindow,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddCustomItemIconSprite` with this module's view of its types.
+#[inline]
+unsafe fn AddCustomItemIconSprite(a0: *mut SpriteTemplate, a1: u16, a2: u16, a3: u16) -> u8 {
+    unsafe { crate::item_icon::AddCustomItemIconSprite(a0 as _, a1, a2, a3) }
+}
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `CopyToBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBuffer(a0, a1 as _, a2, a3);
+    }
+}
+/// `CopyToBgTilemapBufferRect` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut c_void, a2: u8, a3: u8, a4: u8, a5: u8) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBufferRect(a0, a1 as _, a2, a3, a4, a5);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `DynamicPlaceholderTextUtil_ExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn DynamicPlaceholderTextUtil_ExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe {
+        crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_ExpandPlaceholders(
+            a0 as _, a1 as _,
+        ) as *mut u8
+    }
+}
+/// `DynamicPlaceholderTextUtil_SetPlaceholderPtr` with this module's view of its types.
+#[inline]
+unsafe fn DynamicPlaceholderTextUtil_SetPlaceholderPtr(a0: u8, a1: *mut u8) {
+    unsafe {
+        crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_SetPlaceholderPtr(
+            a0, a1 as _,
+        );
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `FreeSpriteOamMatrix` with this module's view of its types.
+#[inline]
+unsafe fn FreeSpriteOamMatrix(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::FreeSpriteOamMatrix(a0 as _);
+    }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `GetStringRightAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringRightAlignXOffset(a0, a1 as _, a2) }
+}
+/// `GetStringWidth` with this module's view of its types.
+#[inline]
+unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
+    unsafe { crate::text::GetStringWidth(a0, a1 as _, a2) }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `LoadSpritePalettes` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+    unsafe {
+        crate::sprite::LoadSpritePalettes(a0 as _);
+    }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAffineAnim(a0 as _, a1);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StringAppend` with this module's view of its types.
+#[inline]
+unsafe fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringAppend(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringExpandPlaceholders(a0 as _, a1 as _) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const sX: usize = 0;
 // Data tables (translate with cdata.py): sBitTable sSyncPressBonus sIntroOutroVibrationData sVibrationData sMessages sBgTemplates sTextColorTable sWindowTemplate_Rankings sWindowTemplates_PlayerNames sWindowTemplates_Results sResultsWindowHeights sPressingSpeedConversionTable sCrusherBase_Pal sEffects_Pal sTimerDigits_Pal sCrusherBase_Gfx sImpact_Gfx sSparkle_Gfx sTimerDigits_Gfx sCrusherTop_Tilemap sContainerCap_Tilemap sBg_Tilemap sPlayerIdToPosId sPlayerCoords sImpactCoords sSparkleCoords sPlayerBerrySpriteTags sSpriteSheets sSpritePals sAnim_CrusherBase sAnim_Impact_Small sAnim_Impact_Big sAnim_Sparkle_Small sAnim_Sparkle_Big sAnim_Timer sAnim_PlayerBerry sAffineAnim_PlayerBerry_0 sAffineAnim_PlayerBerry_1 sAnims_CrusherBase sAnims_Impact sAnims_Sparkle sAnims_Timer sAnims_PlayerBerry sAffineAnims_PlayerBerry sSpriteTemplate_CrusherBase sSpriteTemplate_Impact sSpriteTemplate_Sparkle sSpriteTemplate_Timer sSpriteTemplate_PlayerBerry sDigitObjTemplates sResultsTexts sBerryCrushCommands sSparkleThresholds sBigSparkleThresholds sReceivedPlayerBitmasks
 
 /// `struct BerryCrushGame`
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct BerryCrushGame {
-    pub exitCallback: Option<unsafe extern "C" fn()>,
-    pub cmdCallback: Option<unsafe extern "C" fn(*mut BerryCrushGame, *mut u8) -> u32>,
+    pub exitCallback: Option<unsafe fn()>,
+    pub cmdCallback: Option<unsafe fn(*mut BerryCrushGame, *mut u8) -> u32>,
     pub localId: u8,
     pub playerCount: u8,
     pub taskId: u8,
@@ -80,11 +299,11 @@ pub struct BerryCrushGame {
 impl BerryCrushGame {
     #[inline(always)]
     pub fn noRoomForPowder(&self) -> u8 {
-        ((self.bits_37 as u32 >> 0) & 0x1) as u8
+        ((self.bits_37 as u32) & 0x1) as u8
     }
     #[inline(always)]
     pub fn set_noRoomForPowder(&mut self, v: u8) {
-        self.bits_37 = (self.bits_37 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+        self.bits_37 = (self.bits_37 & !(0x1 << 0)) | (v & 0x1);
     }
     #[inline(always)]
     pub fn newRecord(&self) -> u8 {
@@ -92,7 +311,7 @@ impl BerryCrushGame {
     }
     #[inline(always)]
     pub fn set_newRecord(&mut self, v: u8) {
-        self.bits_37 = (self.bits_37 & !(0x1 << 1)) | ((v as u8 & 0x1) << 1);
+        self.bits_37 = (self.bits_37 & !(0x1 << 1)) | ((v & 0x1) << 1);
     }
     #[inline(always)]
     pub fn playedSound(&self) -> u8 {
@@ -100,7 +319,7 @@ impl BerryCrushGame {
     }
     #[inline(always)]
     pub fn set_playedSound(&mut self, v: u8) {
-        self.bits_37 = (self.bits_37 & !(0x1 << 2)) | ((v as u8 & 0x1) << 2);
+        self.bits_37 = (self.bits_37 & !(0x1 << 2)) | ((v & 0x1) << 2);
     }
     #[inline(always)]
     pub fn endGame(&self) -> u8 {
@@ -108,7 +327,7 @@ impl BerryCrushGame {
     }
     #[inline(always)]
     pub fn set_endGame(&mut self, v: u8) {
-        self.bits_37 = (self.bits_37 & !(0x1 << 3)) | ((v as u8 & 0x1) << 3);
+        self.bits_37 = (self.bits_37 & !(0x1 << 3)) | ((v & 0x1) << 3);
     }
     #[inline(always)]
     pub fn bigSparkle(&self) -> u8 {
@@ -116,7 +335,7 @@ impl BerryCrushGame {
     }
     #[inline(always)]
     pub fn set_bigSparkle(&mut self, v: u8) {
-        self.bits_37 = (self.bits_37 & !(0x1 << 4)) | ((v as u8 & 0x1) << 4);
+        self.bits_37 = (self.bits_37 & !(0x1 << 4)) | ((v & 0x1) << 4);
     }
     #[inline(always)]
     pub fn sparkleAmount(&self) -> u8 {
@@ -124,7 +343,7 @@ impl BerryCrushGame {
     }
     #[inline(always)]
     pub fn set_sparkleAmount(&mut self, v: u8) {
-        self.bits_37 = (self.bits_37 & !(0x7 << 5)) | ((v as u8 & 0x7) << 5);
+        self.bits_37 = (self.bits_37 & !(0x7 << 5)) | ((v & 0x7) << 5);
     }
 }
 
@@ -173,11 +392,11 @@ pub struct BerryCrushGame_LinkState {
 impl BerryCrushGame_LinkState {
     #[inline(always)]
     pub fn endGame(&self) -> u8 {
-        ((self.bits_4 as u32 >> 0) & 0x1) as u8
+        ((self.bits_4 as u32) & 0x1) as u8
     }
     #[inline(always)]
     pub fn set_endGame(&mut self, v: u8) {
-        self.bits_4 = (self.bits_4 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+        self.bits_4 = (self.bits_4 & !(0x1 << 0)) | (v & 0x1);
     }
     #[inline(always)]
     pub fn bigSparkle(&self) -> u8 {
@@ -185,7 +404,7 @@ impl BerryCrushGame_LinkState {
     }
     #[inline(always)]
     pub fn set_bigSparkle(&mut self, v: u8) {
-        self.bits_4 = (self.bits_4 & !(0x1 << 1)) | ((v as u8 & 0x1) << 1);
+        self.bits_4 = (self.bits_4 & !(0x1 << 1)) | ((v & 0x1) << 1);
     }
     #[inline(always)]
     pub fn pushedAButton(&self) -> u8 {
@@ -193,7 +412,7 @@ impl BerryCrushGame_LinkState {
     }
     #[inline(always)]
     pub fn set_pushedAButton(&mut self, v: u8) {
-        self.bits_4 = (self.bits_4 & !(0x1 << 2)) | ((v as u8 & 0x1) << 2);
+        self.bits_4 = (self.bits_4 & !(0x1 << 2)) | ((v & 0x1) << 2);
     }
     #[inline(always)]
     pub fn playerPressedAFlags(&self) -> u8 {
@@ -201,7 +420,7 @@ impl BerryCrushGame_LinkState {
     }
     #[inline(always)]
     pub fn set_playerPressedAFlags(&mut self, v: u8) {
-        self.bits_4 = (self.bits_4 & !(0x1f << 3)) | ((v as u8 & 0x1f) << 3);
+        self.bits_4 = (self.bits_4 & !(0x1f << 3)) | ((v & 0x1f) << 3);
     }
 }
 
@@ -253,11 +472,11 @@ pub struct BerryCrushGame_LocalState {
 impl BerryCrushGame_LocalState {
     #[inline(always)]
     pub fn endGame(&self) -> u8 {
-        ((self.bits_2 as u32 >> 0) & 0x1) as u8
+        ((self.bits_2 as u32) & 0x1) as u8
     }
     #[inline(always)]
     pub fn set_endGame(&mut self, v: u8) {
-        self.bits_2 = (self.bits_2 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+        self.bits_2 = (self.bits_2 & !(0x1 << 0)) | (v & 0x1);
     }
     #[inline(always)]
     pub fn bigSparkle(&self) -> u8 {
@@ -265,7 +484,7 @@ impl BerryCrushGame_LocalState {
     }
     #[inline(always)]
     pub fn set_bigSparkle(&mut self, v: u8) {
-        self.bits_2 = (self.bits_2 & !(0x1 << 1)) | ((v as u8 & 0x1) << 1);
+        self.bits_2 = (self.bits_2 & !(0x1 << 1)) | ((v & 0x1) << 1);
     }
     #[inline(always)]
     pub fn pushedAButton(&self) -> u8 {
@@ -273,7 +492,7 @@ impl BerryCrushGame_LocalState {
     }
     #[inline(always)]
     pub fn set_pushedAButton(&mut self, v: u8) {
-        self.bits_2 = (self.bits_2 & !(0x1 << 2)) | ((v as u8 & 0x1) << 2);
+        self.bits_2 = (self.bits_2 & !(0x1 << 2)) | ((v & 0x1) << 2);
     }
     #[inline(always)]
     pub fn playerPressedAFlags(&self) -> u8 {
@@ -281,7 +500,7 @@ impl BerryCrushGame_LocalState {
     }
     #[inline(always)]
     pub fn set_playerPressedAFlags(&mut self, v: u8) {
-        self.bits_2 = (self.bits_2 & !(0x1f << 3)) | ((v as u8 & 0x1f) << 3);
+        self.bits_2 = (self.bits_2 & !(0x1f << 3)) | ((v & 0x1f) << 3);
     }
 }
 
@@ -501,7 +720,7 @@ const TAG_CRUSHER_BASE: u16 = 1;
 const TAG_TIMER_DIGITS: u16 = 4;
 
 static sBerryCrushCommands: Table<
-    CArray<Option<unsafe extern "C" fn(*mut BerryCrushGame, *mut u8) -> u32>, 26>,
+    CArray<Option<unsafe fn(*mut BerryCrushGame, *mut u8) -> u32>, 26>,
 > = Table((&raw const crate::data::berry_crush::sBerryCrushCommands).cast());
 static sBgTemplates: Table<CArray<BgTemplate, 4>> =
     Table((&raw const crate::data::berry_crush::sBgTemplates).cast());
@@ -571,219 +790,37 @@ static sWindowTemplates_Results: Table<CArray<WindowTemplate, 4>> =
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sGame: *mut BerryCrushGame = null_mut();
 
-unsafe extern "C" {
-    static gBerries: CArray<Berry, 0>;
-    static gBerryCrush_BerryData: CArray<BerryCrushBerryData, 0>;
-    static gBerryCrush_Crusher_Gfx: CArray<u32, 0>;
-    static gBerryCrush_Crusher_Pal: CArray<u16, 0>;
-    static gBerryCrush_TextWindows_Tilemap: CArray<u32, 0>;
-    static mut gBlockRecvBuffer: CArray<CArray<u16, 128>, 5>;
-    static mut gDecompressionBuffer: CArray<u8, 16384>;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gMain: Main;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gRecvCmds: CArray<CArray<u16, 8>, 5>;
-    static mut gReservedSpritePaletteCount: u8;
-    static mut gRfu: RfuManager;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSpecialVar_ItemId: u16;
-    static mut gSpriteCoordOffsetX: i16;
-    static mut gSpriteCoordOffsetY: i16;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar3: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static mut gTextFlags: TextFlags;
-    static gText_1DotBlueF700: CArray<u8, 0>;
-    static gText_1DotF700: CArray<u8, 0>;
-    static gText_BerryCrush2: CArray<u8, 0>;
-    static gText_CrushingResults: CArray<u8, 0>;
-    static gText_PressesRankings: CArray<u8, 0>;
-    static gText_PressingSpeed: CArray<u8, 0>;
-    static gText_PressingSpeedRankings: CArray<u8, 0>;
-    static gText_SavingDontTurnOffPower: CArray<u8, 0>;
-    static gText_Silkiness: CArray<u8, 0>;
-    static gText_SpaceMin: CArray<u8, 0>;
-    static gText_SpaceSec: CArray<u8, 0>;
-    static gText_StrVar1: CArray<u8, 0>;
-    static gText_TimeColon: CArray<u8, 0>;
-    static gText_TimesPerSec: CArray<u8, 0>;
-    static gText_Var1Percent: CArray<u8, 0>;
-    static gText_Var1Players: CArray<u8, 0>;
-    static gText_XDotY2: CArray<u8, 0>;
-    static gText_XDotY3: CArray<u8, 0>;
-    static mut gWirelessCommType: u8;
-    fn AddCustomItemIconSprite(a0: *mut SpriteTemplate, a1: u16, a2: u16, a3: u16) -> u8;
-    fn AddTextPrinterParameterized2(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-        a5: u8,
-        a6: u8,
-        a7: u8,
-    ) -> u16;
-    fn AddTextPrinterParameterized3(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: *mut u8,
-        a5: i8,
-        a6: *mut u8,
-    );
-    fn AddTextPrinterParameterized4(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: i8,
-        a8: *mut u8,
-    );
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn BuildOamBuffer();
-    fn CB1_Overworld();
-    fn CB2_ReturnToField();
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChooseBerryForMachine(a0: Option<unsafe extern "C" fn()>);
-    fn ClearDialogWindowAndFrame(a0: u8, a1: u8);
-    fn ClearGpuRegBits(a0: u8, a1: u16);
-    fn ClearRecvCommands();
-    fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8);
-    fn ClearWindowTilemap(a0: u8);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut c_void, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateWirelessStatusIndicatorSprite(a0: u8, a1: u8);
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DestroyWirelessStatusIndicatorSprite();
-    fn DigitObjUtil_CreatePrinter(a0: u32, a1: i32, a2: *mut DigitObjUtilTemplate) -> u32;
-    fn DigitObjUtil_DeletePrinter(a0: u32);
-    fn DigitObjUtil_Free();
-    fn DigitObjUtil_HideOrShow(a0: u32, a1: u32);
-    fn DigitObjUtil_Init(a0: u32) -> u32;
-    fn DigitObjUtil_PrintNumOn(a0: u32, a1: i32);
-    fn DisplayYesNoMenuDefaultYes();
-    fn DrawDialogueFrame(a0: u8, a1: u8);
-    fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
-    fn DynamicPlaceholderTextUtil_ExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn DynamicPlaceholderTextUtil_Reset();
-    fn DynamicPlaceholderTextUtil_SetPlaceholderPtr(a0: u8, a1: *mut u8);
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeSpriteOamMatrix(a0: *mut Sprite);
-    fn FreeSpritePaletteByTag(a0: u16);
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetBerryPowder() -> u32;
-    fn GetBlockReceivedStatus() -> u8;
-    fn GetLinkPlayerCount() -> u8;
-    fn GetMultiplayerId() -> u8;
-    fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32;
-    fn GetWindowAttribute(a0: u8, a1: u8) -> u32;
-    fn GiveBerryPowder(a0: u32) -> u8;
-    fn HasAtLeastOneBerry() -> u8;
-    fn HideBg(a0: u8);
-    fn IncrementGameStat(a0: u8);
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitStandardTextBoxWindows();
-    fn InitTextBoxGfxAndPrinters();
-    fn IsLinkTaskFinished() -> u8;
-    fn IsMinigameCountdownRunning() -> u32;
-    fn IsTextPrinterActive(a0: u8) -> u16;
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpritePalettes(a0: *mut SpritePalette);
-    fn LoadUserWindowBorderGfx_(a0: u8, a1: u16, a2: u8);
-    fn LoadWirelessStatusIndicatorSpriteGfx();
-    fn LockPlayerFieldControls();
-    fn MathUtil_Div16Shift(a0: u8, a1: i16, a2: i16) -> i16;
-    fn MathUtil_Div32(a0: i32, a1: i32) -> i32;
-    fn MathUtil_Mul16(a0: i16, a1: i16) -> i16;
-    fn MathUtil_Mul16Shift(a0: u8, a1: i16, a2: i16) -> i16;
-    fn MathUtil_Mul32(a0: i32, a1: i32) -> i32;
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn PlayNewMapMusic(a0: u16);
-    fn PlaySE(a0: u16);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn Random() -> u16;
-    fn RemoveBagItem(a0: u16, a1: u16) -> u8;
-    fn RemoveWindow(a0: u8);
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetBlockReceivedFlags();
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTempTileDataBuffers();
-    fn Rfu_SendPacket(a0: *mut c_void);
-    fn Rfu_SetLinkStandbyCallback();
-    fn RunTasks();
-    fn RunTextPrinters();
-    fn ScanlineEffect_Stop();
-    fn ScriptContext_Enable();
-    fn SendBlock(a0: u8, a1: *mut c_void, a2: u16) -> u8;
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetCloseLinkCallback();
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetGpuRegBits(a0: u8, a1: u16);
-    fn SetHBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetMainCallback1(a0: Option<unsafe extern "C" fn()>);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn Sin(a0: i16, a1: i16) -> i16;
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartMinigameCountdown(a0: u16, a1: u16, a2: i16, a3: i16, a4: u8);
-    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn Task_LinkFullSave(a0: u8);
-    fn TransferPlttBuffer();
-    fn UnlockPlayerFieldControls();
-    fn UnsetBgTilemapBuffer(a0: u8);
-    fn UpdatePaletteFade() -> u8;
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `LZ77UnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn GetBerryCrushGame() -> *mut BerryCrushGame {
-    return sGame;
+unsafe fn GetBerryCrushGame() -> *mut BerryCrushGame {
+    sGame
 }
-pub(crate) unsafe extern "C" fn QuitBerryCrush(
-    mut exitCallback: Option<unsafe extern "C" fn()>,
-) -> u32 {
+unsafe fn QuitBerryCrush(mut exitCallback: Option<unsafe fn()>) -> u32 {
     if sGame.is_null() {
         return 2;
     }
@@ -794,17 +831,17 @@ pub(crate) unsafe extern "C" fn QuitBerryCrush(
     Free(sGame as *mut c_void);
     sGame = null_mut();
     SetMainCallback2(exitCallback);
-    if exitCallback == Some(CB2_ReturnToField as unsafe extern "C" fn()) {
-        gTextFlags.set_autoScroll(TRUE);
+    if exitCallback == Some(CB2_ReturnToField as unsafe fn()) {
+        (*(&raw const crate::text::gTextFlags)
+            .cast::<TextFlags>()
+            .cast_mut())
+        .set_autoScroll(TRUE);
         PlayNewMapMusic(MUS_POKE_CENTER);
         SetMainCallback1(Some(CB1_Overworld));
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartBerryCrush(exitCallback: Option<unsafe extern "C" fn()>) {
-    let mut playerCount: u8 = 0;
-    let mut multiplayerId: u8 = 0;
+pub unsafe fn StartBerryCrush(exitCallback: Option<unsafe fn()>) {
     if gReceivedRemoteLinkPlayers == 0 || gWirelessCommType == 0 {
         SetMainCallback2(exitCallback);
         gRfu.errorParam0 = 0;
@@ -812,8 +849,8 @@ pub unsafe extern "C" fn StartBerryCrush(exitCallback: Option<unsafe extern "C" 
         volatile_write(&raw mut gRfu.errorState, RFU_ERROR_STATE_OCCURRED);
         return;
     }
-    playerCount = GetLinkPlayerCount();
-    multiplayerId = GetMultiplayerId();
+    let playerCount: u8 = GetLinkPlayerCount();
+    let multiplayerId: u8 = GetMultiplayerId();
     if playerCount < 2 || multiplayerId >= playerCount {
         SetMainCallback2(exitCallback);
         gRfu.errorParam0 = 0;
@@ -848,9 +885,12 @@ pub unsafe extern "C" fn StartBerryCrush(exitCallback: Option<unsafe extern "C" 
     RunOrScheduleCommand(CMD_SHOW_GAME, 1, (*sGame).commandArgs.as_mut_ptr());
     SetMainCallback2(Some(MainCB));
     (*sGame).taskId = CreateTask(Some(MainTask), 8);
-    gTextFlags.set_autoScroll(FALSE);
+    (*(&raw const crate::text::gTextFlags)
+        .cast::<TextFlags>()
+        .cast_mut())
+    .set_autoScroll(FALSE);
 }
-pub(crate) unsafe extern "C" fn GetBerryFromBag() {
+pub(crate) unsafe fn GetBerryFromBag() {
     if gSpecialVar_ItemId < ITEM_CHERI_BERRY || gSpecialVar_ItemId > 176 {
         gSpecialVar_ItemId = ITEM_CHERI_BERRY;
     } else {
@@ -872,23 +912,22 @@ pub(crate) unsafe extern "C" fn GetBerryFromBag() {
     (*sGame).taskId = CreateTask(Some(MainTask), 8);
     SetMainCallback2(Some(MainCB));
 }
-pub(crate) unsafe extern "C" fn ChooseBerry() {
+pub(crate) unsafe fn ChooseBerry() {
     DestroyTask((*sGame).taskId);
     ChooseBerryForMachine(Some(GetBerryFromBag));
 }
-pub(crate) unsafe extern "C" fn BerryCrush_SetVBlankCB() {
+unsafe fn BerryCrush_SetVBlankCB() {
     SetVBlankCallback(Some(VBlankCB));
 }
-pub(crate) unsafe extern "C" fn BerryCrush_InitVBlankCB() {
+unsafe fn BerryCrush_InitVBlankCB() {
     SetVBlankCallback(None);
 }
-pub(crate) unsafe extern "C" fn SaveResults() {
+unsafe fn SaveResults() {
     let mut time: u32 = 0;
-    let mut presses: u32 = 0;
     time = (*sGame).results.time as u32;
     time = (time as i32 as u32) << 8;
     time = MathUtil_Div32(time as i32, 15360) as u32;
-    presses = (*sGame).results.totalAPresses as u32;
+    let mut presses: u32 = (*sGame).results.totalAPresses as u32;
     presses = (presses as i32 as u32) << 8;
     presses = MathUtil_Div32(presses as i32, time as i32) as u32 & 0xFFFF;
     (*sGame).pressingSpeed = presses as u16;
@@ -911,11 +950,9 @@ pub(crate) unsafe extern "C" fn SaveResults() {
                 (*gSaveBlock2Ptr).berryCrush.pressingSpeeds[2] = (*sGame).pressingSpeed;
             }
         }
-        5 => {
-            if (*sGame).pressingSpeed > (*gSaveBlock2Ptr).berryCrush.pressingSpeeds[3] {
-                (*sGame).set_newRecord(TRUE);
-                (*gSaveBlock2Ptr).berryCrush.pressingSpeeds[3] = (*sGame).pressingSpeed;
-            }
+        5 if (*sGame).pressingSpeed > (*gSaveBlock2Ptr).berryCrush.pressingSpeeds[3] => {
+            (*sGame).set_newRecord(TRUE);
+            (*gSaveBlock2Ptr).berryCrush.pressingSpeeds[3] = (*sGame).pressingSpeed;
         }
         _ => {}
     }
@@ -925,26 +962,25 @@ pub(crate) unsafe extern "C" fn SaveResults() {
     }
     (*sGame).set_noRoomForPowder(TRUE);
 }
-pub(crate) unsafe extern "C" fn VBlankCB() {
+pub(crate) unsafe fn VBlankCB() {
     TransferPlttBuffer();
     LoadOam();
     ProcessSpriteCopyRequests();
 }
-pub(crate) unsafe extern "C" fn MainCB() {
+pub(crate) unsafe fn MainCB() {
     RunTasks();
     RunTextPrinters();
     AnimateSprites();
     BuildOamBuffer();
 }
-pub(crate) unsafe extern "C" fn MainTask(taskId: u8) {
+pub(crate) unsafe fn MainTask(taskId: u8) {
     if (*sGame).cmdCallback.is_some() {
         (*sGame).cmdCallback.unwrap_unchecked()(sGame, (*sGame).commandArgs.as_mut_ptr());
     }
     UpdateGame(sGame);
 }
-pub(crate) unsafe extern "C" fn SetNamesAndTextSpeed(game: *mut BerryCrushGame) {
+unsafe fn SetNamesAndTextSpeed(game: *mut BerryCrushGame) {
     let mut i: u8 = 0;
-    i = 0;
     while i < (*game).playerCount {
         StringCopy(
             (*game).players[i].name.as_mut_ptr(),
@@ -974,8 +1010,8 @@ pub(crate) unsafe extern "C" fn SetNamesAndTextSpeed(game: *mut BerryCrushGame) 
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn ShowGameDisplay() -> i32 {
-    let mut game: *mut BerryCrushGame = GetBerryCrushGame();
+unsafe fn ShowGameDisplay() -> i32 {
+    let game: *mut BerryCrushGame = GetBerryCrushGame();
     if game.is_null() {
         return -1;
     }
@@ -1035,7 +1071,10 @@ pub(crate) unsafe extern "C" fn ShowGameDisplay() -> i32 {
             CopyBgTilemapBufferToVram(3);
             DecompressAndCopyTileDataToVram(
                 1,
-                gBerryCrush_Crusher_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gBerryCrush_Crusher_Gfx)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0,
                 0,
                 0,
@@ -1053,7 +1092,10 @@ pub(crate) unsafe extern "C" fn ShowGameDisplay() -> i32 {
         }
         7 => {
             LoadPalette(
-                gBerryCrush_Crusher_Pal.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gBerryCrush_Crusher_Pal)
+                    .cast::<CArray<u16, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0,
                 384,
             );
@@ -1101,10 +1143,10 @@ pub(crate) unsafe extern "C" fn ShowGameDisplay() -> i32 {
         _ => {}
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn HideGameDisplay() -> i32 {
-    let mut game: *mut BerryCrushGame = GetBerryCrushGame();
+unsafe fn HideGameDisplay() -> i32 {
+    let game: *mut BerryCrushGame = GetBerryCrushGame();
     if game.is_null() {
         return -1;
     }
@@ -1112,7 +1154,6 @@ pub(crate) unsafe extern "C" fn HideGameDisplay() -> i32 {
         let sw1: u8 = (*game).cmdState;
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             Rfu_SetLinkStandbyCallback();
             break 'l1;
         }
@@ -1123,20 +1164,17 @@ pub(crate) unsafe extern "C" fn HideGameDisplay() -> i32 {
             }
         }
         if fall || sw1 == 2 {
-            fall = true;
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
             UpdatePaletteFade();
             break 'l1;
         }
         if sw1 == 3 {
-            fall = true;
             if UpdatePaletteFade() != 0 {
                 return 0;
             }
             break 'l1;
         }
         if sw1 == 4 {
-            fall = true;
             FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, 32, 32);
             FillBgTilemapBufferRect_Palette0(1, 0, 0, 0, 32, 32);
             FillBgTilemapBufferRect_Palette0(2, 0, 0, 0, 32, 32);
@@ -1148,7 +1186,6 @@ pub(crate) unsafe extern "C" fn HideGameDisplay() -> i32 {
             break 'l1;
         }
         if sw1 == 5 {
-            fall = true;
             FreeAllWindowBuffers();
             HideBg(0);
             UnsetBgTilemapBuffer(0);
@@ -1162,22 +1199,20 @@ pub(crate) unsafe extern "C" fn HideGameDisplay() -> i32 {
             break 'l1;
         }
         if sw1 == 6 {
-            fall = true;
             DestroyWirelessStatusIndicatorSprite();
             DestroyGameSprites(game);
             DigitObjUtil_Free();
             break 'l1;
         }
         if sw1 == 7 {
-            fall = true;
             (*game).cmdState = 0;
             return 1;
         }
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn UpdateGame(game: *mut BerryCrushGame) -> i32 {
+pub(crate) unsafe fn UpdateGame(game: *mut BerryCrushGame) -> i32 {
     gSpriteCoordOffsetY = (*game).depth + (*game).vibration;
     SetGpuReg(
         REG_OFFSET_BG1VOFS,
@@ -1186,26 +1221,22 @@ pub(crate) unsafe extern "C" fn UpdateGame(game: *mut BerryCrushGame) -> i32 {
     if (*game).gameState == STATE_PLAYING {
         PrintTimer(&raw mut (*game).gfx, (*game).timer);
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn ResetCrusherPos(game: *mut BerryCrushGame) {
+unsafe fn ResetCrusherPos(game: *mut BerryCrushGame) {
     (*game).depth = CRUSHER_START_Y;
     (*game).vibration = 0;
     gSpriteCoordOffsetX = 0;
     gSpriteCoordOffsetY = CRUSHER_START_Y;
 }
-pub(crate) unsafe extern "C" fn CreateBerrySprites(
-    game: *mut BerryCrushGame,
-    gfx: *mut BerryCrushGame_Gfx,
-) {
-    let mut i: u8 = 0;
+pub(crate) unsafe fn CreateBerrySprites(game: *mut BerryCrushGame, gfx: *mut BerryCrushGame_Gfx) {
     let mut spriteId: u8 = 0;
     let mut distance: i16 = 0;
     let mut var1: i16 = 0;
     let mut data: *mut i16 = null_mut();
     let mut speed: i16 = 0;
     let mut var2: u32 = 0;
-    i = 0;
+    let mut i: u8 = 0;
     while i < (*game).playerCount {
         spriteId = AddCustomItemIconSprite(
             (&raw const *sSpriteTemplate_PlayerBerry).cast_mut(),
@@ -1227,13 +1258,13 @@ pub(crate) unsafe extern "C" fn CreateBerrySprites(
         *data.at(6) = distance / 4;
         distance *= 128;
         var2 = speed as u32 + 32;
-        var2 = var2 / 2;
-        var1 = MathUtil_Div16Shift(7, (63.5f32 as f32 * 256 as f32) as i16, var2 as i16);
+        var2 /= 2;
+        var1 = MathUtil_Div16Shift(7, (63_f32 * 256_f32) as i16, var2 as i16);
         *data = (*(*gfx).berrySprites[i]).x as u16 as i16 * 128;
         *data.at(3) = MathUtil_Div16Shift(7, distance, var1);
         var1 = MathUtil_Mul16Shift(7, var1, 85);
         *data.at(4) = 0;
-        *data.at(5) = MathUtil_Div16Shift(7, (63.5f32 as f32 * 256 as f32) as i16, var1);
+        *data.at(5) = MathUtil_Div16Shift(7, (63_f32 * 256_f32) as i16, var1);
         *data.at(7) |= F_MOVE_HORIZ as i16;
         if (*(*gfx).playerCoords[i]).berryXOffset < 0 {
             StartSpriteAffineAnim((*gfx).berrySprites[i], 1);
@@ -1241,12 +1272,12 @@ pub(crate) unsafe extern "C" fn CreateBerrySprites(
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DropBerryIntoCrusher(sprite: *mut Sprite) {
-    let mut data: *mut i16 = (*sprite).data.as_mut_ptr();
+pub(crate) unsafe fn SpriteCB_DropBerryIntoCrusher(sprite: *mut Sprite) {
+    let data: *mut i16 = (*sprite).data.as_mut_ptr();
     *data.at(1) += *data.at(2);
     (*sprite).y2 += *data.at(1) >> 8;
     if *data.at(7) as i32 & F_MOVE_HORIZ != 0 {
-        (*sprite).data[0] += *data.at(3);
+        (*sprite).data[sX] += *data.at(3);
         *data.at(4) += *data.at(5);
         (*sprite).x2 = Sin(*data.at(4) >> 7, *data.at(6));
         if *data.at(7) as i32 & F_MOVE_HORIZ != 0 && *data.at(4) >> 7 > 126 {
@@ -1261,30 +1292,21 @@ pub(crate) unsafe extern "C" fn SpriteCB_DropBerryIntoCrusher(sprite: *mut Sprit
         DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn BerryCrushFreeBerrySpriteGfx(
-    game: *mut BerryCrushGame,
-    gfx: *mut BerryCrushGame_Gfx,
-) {
+unsafe fn BerryCrushFreeBerrySpriteGfx(game: *mut BerryCrushGame, gfx: *mut BerryCrushGame_Gfx) {
     let mut i: u8 = 0;
-    i = 0;
     while i < (*game).playerCount {
         FreeSpritePaletteByTag(sPlayerBerrySpriteTags[i]);
         FreeSpriteTilesByTag(sPlayerBerrySpriteTags[i]);
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateInputEffects(
-    game: *mut BerryCrushGame,
-    gfx: *mut BerryCrushGame_Gfx,
-) {
-    let mut numPlayersPressed: u8 = 0;
-    let mut linkState: *mut BerryCrushGame_LinkState = null_mut();
-    let mut i: u8 = 0;
+unsafe fn UpdateInputEffects(game: *mut BerryCrushGame, gfx: *mut BerryCrushGame_Gfx) {
     let mut temp1: u16 = 0;
     let mut xModifier: u16 = 0;
-    numPlayersPressed = 0;
-    linkState = (*game).recvCmd.as_mut_ptr() as *mut BerryCrushGame_LinkState;
-    i = 0;
+    let mut numPlayersPressed: u8 = 0;
+    let linkState: *mut BerryCrushGame_LinkState =
+        (*game).recvCmd.as_mut_ptr() as *mut BerryCrushGame_LinkState;
+    let mut i: u8 = 0;
     while i < (*game).playerCount {
         temp1 = shr_i32(
             (*linkState).inputFlags as i32,
@@ -1344,52 +1366,37 @@ pub(crate) unsafe extern "C" fn UpdateInputEffects(
         }
     }
 }
-pub(crate) unsafe extern "C" fn AreEffectsFinished(
-    game: *mut BerryCrushGame,
-    gfx: *mut BerryCrushGame_Gfx,
-) -> u32 {
+unsafe fn AreEffectsFinished(game: *mut BerryCrushGame, gfx: *mut BerryCrushGame_Gfx) -> u32 {
     let mut i: u8 = 0;
-    i = 0;
     while i < (*game).playerCount {
         if (*(*gfx).impactSprites[i]).invisible() == 0 {
             return FALSE as u32;
         }
         i += 1;
     }
-    i = 0;
-    while i < 11 {
+    for i in 0..11u8 {
         if (*(*gfx).sparkleSprites[i]).invisible() == 0 {
             return FALSE as u32;
         }
-        i += 1;
     }
     if (*game).vibration != 0 {
         (*game).vibration = 0;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn FramesToMinSec(gfx: *mut BerryCrushGame_Gfx, frames: u16) {
-    let mut i: u8 = 0;
+unsafe fn FramesToMinSec(gfx: *mut BerryCrushGame_Gfx, frames: u16) {
     let mut fractionalFrames: u32 = 0;
-    let mut r3: i16 = 0;
     (*gfx).minutes = (frames as i32 / 3600) as i16;
     (*gfx).secondsInt = (frames as i32 % 3600 / 60) as i16;
-    r3 = MathUtil_Mul16((frames as i32 % 60) as i16 * 256, 4);
-    i = 0;
-    while i < 8 {
+    let r3: i16 = MathUtil_Mul16((frames as i32 % 60) as i16 * 256, 4);
+    for i in 0..8u8 {
         if shr_i32(r3 as i32, 7 - i as u32) & 1 != 0 {
             fractionalFrames += sPressingSpeedConversionTable[i];
         }
-        i += 1;
     }
     (*gfx).secondsFrac = (fractionalFrames / 0xf4240) as i16;
 }
-pub(crate) unsafe extern "C" fn PrintTextCentered(
-    windowId: u8,
-    mut left: u8,
-    colorId: u8,
-    string: *mut u8,
-) {
+unsafe fn PrintTextCentered(windowId: u8, mut left: u8, colorId: u8, string: *mut u8) {
     left = left * 4 - (GetStringWidth(FONT_SHORT, string, -1) / 2) as u8;
     AddTextPrinterParameterized3(
         windowId,
@@ -1401,32 +1408,25 @@ pub(crate) unsafe extern "C" fn PrintTextCentered(
         string,
     );
 }
-pub(crate) unsafe extern "C" fn PrintResultsText(
-    game: *mut BerryCrushGame,
-    page: u8,
-    sp14: u8,
-    mut baseY: u8,
-) {
-    let mut i: u8 = 0;
+unsafe fn PrintResultsText(game: *mut BerryCrushGame, page: u8, sp14: u8, mut baseY: u8) {
     let mut j: u8 = 0;
     let mut playerId: u8 = 0;
     let mut ranking: u8 = 0;
     let mut x: i32 = 0;
     let mut stat: u8 = 0;
-    let mut results: *mut BerryCrushGame_Results = &raw mut (*game).results;
+    let results: *mut BerryCrushGame_Results = &raw mut (*game).results;
     let mut xOffset: u32 = 0;
-    let mut y: i32 = 0;
     baseY -= 16;
     if page == RESULTS_PAGE_CRUSHING {
         baseY -= 42;
     }
-    y = baseY as i32 - 14 * (*game).playerCount as i32;
+    let mut y: i32 = baseY as i32 - 14 * (*game).playerCount as i32;
     if y > 0 {
         y = y / 2 + 16;
     } else {
         y = 16;
     }
-    i = 0;
+    let mut i: u8 = 0;
     while i < (*game).playerCount {
         DynamicPlaceholderTextUtil_Reset();
         match page {
@@ -1456,12 +1456,10 @@ pub(crate) unsafe extern "C" fn PrintResultsText(
                 );
                 xOffset = 0;
                 stat = (*results).stats[page][i] as u8 & 15;
-                j = 0;
-                while j < 4 {
+                for j in 0..4u8 {
                     if shr_i32(stat as i32, 3 - j as u32) & 1 != 0 {
                         xOffset += sPressingSpeedConversionTable[j];
                     }
-                    j += 1;
                 }
                 stat = (xOffset / 0xf4240) as u8;
                 ConvertIntToDecimalStringN(
@@ -1481,7 +1479,10 @@ pub(crate) unsafe extern "C" fn PrintResultsText(
                 }
                 StringCopy(
                     gStringVar1.as_mut_ptr(),
-                    gBerries[j].name.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::berry::gBerries).cast::<CArray<Berry, 0>>())[j]
+                        .name
+                        .as_ptr()
+                        .cast_mut(),
                 );
                 StringExpandPlaceholders(gStringVar4.as_mut_ptr(), sResultsTexts[page]);
             }
@@ -1504,10 +1505,17 @@ pub(crate) unsafe extern "C" fn PrintResultsText(
         if playerId == (*game).localId {
             StringCopy(
                 gStringVar3.as_mut_ptr(),
-                gText_1DotBlueF700.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_1DotBlueF700).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
             );
         } else {
-            StringCopy(gStringVar3.as_mut_ptr(), gText_1DotF700.as_ptr().cast_mut());
+            StringCopy(
+                gStringVar3.as_mut_ptr(),
+                (*(&raw const crate::data::strings::gText_1DotF700).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
         }
         gStringVar3[0] = ranking + CHAR_1;
         DynamicPlaceholderTextUtil_SetPlaceholderPtr(
@@ -1531,11 +1539,10 @@ pub(crate) unsafe extern "C" fn PrintResultsText(
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn PrintCrushingResults(game: *mut BerryCrushGame) {
-    let mut i: u8 = 0;
+unsafe fn PrintCrushingResults(game: *mut BerryCrushGame) {
     let mut x: u8 = 0;
     let mut pressingSpeedFrac: u32 = 0;
-    let mut results: *mut BerryCrushGame_Results = &raw mut (*game).results;
+    let results: *mut BerryCrushGame_Results = &raw mut (*game).results;
     let mut y: u8 = GetWindowAttribute((*game).gfx.resultsWindowId, WINDOW_HEIGHT) as u8 * 8 - 42;
     FramesToMinSec(&raw mut (*game).gfx, (*results).time);
     AddTextPrinterParameterized3(
@@ -1545,9 +1552,18 @@ pub(crate) unsafe extern "C" fn PrintCrushingResults(game: *mut BerryCrushGame) 
         y,
         sTextColorTable[0].as_ptr().cast_mut(),
         0,
-        gText_TimeColon.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_TimeColon).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
-    x = 176 - GetStringWidth(FONT_SHORT, gText_SpaceSec.as_ptr().cast_mut(), -1) as u8;
+    x = 176
+        - GetStringWidth(
+            FONT_SHORT,
+            (*(&raw const crate::data::strings::gText_SpaceSec).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            -1,
+        ) as u8;
     AddTextPrinterParameterized3(
         (*game).gfx.resultsWindowId,
         FONT_SHORT,
@@ -1555,7 +1571,9 @@ pub(crate) unsafe extern "C" fn PrintCrushingResults(game: *mut BerryCrushGame) 
         y,
         sTextColorTable[0].as_ptr().cast_mut(),
         0,
-        gText_SpaceSec.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_SpaceSec).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
@@ -1569,7 +1587,12 @@ pub(crate) unsafe extern "C" fn PrintCrushingResults(game: *mut BerryCrushGame) 
         STR_CONV_MODE_LEADING_ZEROS,
         2,
     );
-    StringExpandPlaceholders(gStringVar4.as_mut_ptr(), gText_XDotY2.as_ptr().cast_mut());
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        (*(&raw const crate::data::strings::gText_XDotY2).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
     x -= GetStringWidth(FONT_SHORT, gStringVar4.as_mut_ptr(), -1) as u8;
     AddTextPrinterParameterized3(
         (*game).gfx.resultsWindowId,
@@ -1580,7 +1603,13 @@ pub(crate) unsafe extern "C" fn PrintCrushingResults(game: *mut BerryCrushGame) 
         0,
         gStringVar4.as_mut_ptr(),
     );
-    x -= GetStringWidth(FONT_SHORT, gText_SpaceMin.as_ptr().cast_mut(), -1) as u8;
+    x -= GetStringWidth(
+        FONT_SHORT,
+        (*(&raw const crate::data::strings::gText_SpaceMin).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        -1,
+    ) as u8;
     AddTextPrinterParameterized3(
         (*game).gfx.resultsWindowId,
         FONT_SHORT,
@@ -1588,7 +1617,9 @@ pub(crate) unsafe extern "C" fn PrintCrushingResults(game: *mut BerryCrushGame) 
         y,
         sTextColorTable[0].as_ptr().cast_mut(),
         0,
-        gText_SpaceMin.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_SpaceMin).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
@@ -1596,7 +1627,12 @@ pub(crate) unsafe extern "C" fn PrintCrushingResults(game: *mut BerryCrushGame) 
         STR_CONV_MODE_LEADING_ZEROS,
         1,
     );
-    StringExpandPlaceholders(gStringVar4.as_mut_ptr(), gText_StrVar1.as_ptr().cast_mut());
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        (*(&raw const crate::data::strings::gText_StrVar1).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
     x -= GetStringWidth(FONT_SHORT, gStringVar4.as_mut_ptr(), -1) as u8;
     AddTextPrinterParameterized3(
         (*game).gfx.resultsWindowId,
@@ -1615,9 +1651,18 @@ pub(crate) unsafe extern "C" fn PrintCrushingResults(game: *mut BerryCrushGame) 
         y,
         sTextColorTable[0].as_ptr().cast_mut(),
         0,
-        gText_PressingSpeed.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_PressingSpeed).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
-    x = 176 - GetStringWidth(FONT_SHORT, gText_TimesPerSec.as_ptr().cast_mut(), -1) as u8;
+    x = 176
+        - GetStringWidth(
+            FONT_SHORT,
+            (*(&raw const crate::data::strings::gText_TimesPerSec).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            -1,
+        ) as u8;
     AddTextPrinterParameterized3(
         (*game).gfx.resultsWindowId,
         FONT_SHORT,
@@ -1625,14 +1670,14 @@ pub(crate) unsafe extern "C" fn PrintCrushingResults(game: *mut BerryCrushGame) 
         y,
         sTextColorTable[0].as_ptr().cast_mut(),
         0,
-        gText_TimesPerSec.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_TimesPerSec).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
-    i = 0;
-    while i < 8 {
+    for i in 0..8u8 {
         if shr_i32((*game).pressingSpeed as u8 as i32, 7 - i as u32) & 1 != 0 {
             pressingSpeedFrac += *sPressingSpeedConversionTable.as_ptr().cast_mut().at(i);
         }
-        i += 1;
     }
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
@@ -1646,7 +1691,12 @@ pub(crate) unsafe extern "C" fn PrintCrushingResults(game: *mut BerryCrushGame) 
         STR_CONV_MODE_LEADING_ZEROS,
         2,
     );
-    StringExpandPlaceholders(gStringVar4.as_mut_ptr(), gText_XDotY3.as_ptr().cast_mut());
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        (*(&raw const crate::data::strings::gText_XDotY3).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
     x -= GetStringWidth(FONT_SHORT, gStringVar4.as_mut_ptr(), -1) as u8;
     if (*game).newRecord() != 0 {
         AddTextPrinterParameterized3(
@@ -1677,7 +1727,9 @@ pub(crate) unsafe extern "C" fn PrintCrushingResults(game: *mut BerryCrushGame) 
         y,
         sTextColorTable[0].as_ptr().cast_mut(),
         0,
-        gText_Silkiness.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Silkiness).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
@@ -1687,7 +1739,9 @@ pub(crate) unsafe extern "C" fn PrintCrushingResults(game: *mut BerryCrushGame) 
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_Var1Percent.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Var1Percent).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     x = 176 - GetStringWidth(FONT_SHORT, gStringVar4.as_mut_ptr(), -1) as u8;
     AddTextPrinterParameterized3(
@@ -1700,10 +1754,7 @@ pub(crate) unsafe extern "C" fn PrintCrushingResults(game: *mut BerryCrushGame) 
         gStringVar4.as_mut_ptr(),
     );
 }
-pub(crate) unsafe extern "C" fn OpenResultsWindow(
-    game: *mut BerryCrushGame,
-    gfx: *mut BerryCrushGame_Gfx,
-) -> u32 {
+unsafe fn OpenResultsWindow(game: *mut BerryCrushGame, gfx: *mut BerryCrushGame_Gfx) -> u32 {
     let mut playerCountIdx: u8 = 0;
     let mut template: WindowTemplate = zeroed();
     match (*gfx).resultsState {
@@ -1740,7 +1791,10 @@ pub(crate) unsafe extern "C" fn OpenResultsWindow(
                         (*gfx).resultsWindowId,
                         20,
                         COLORID_BLUE,
-                        gText_PressesRankings.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::strings::gText_PressesRankings)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     );
                     PrintResultsText(
                         game,
@@ -1773,7 +1827,10 @@ pub(crate) unsafe extern "C" fn OpenResultsWindow(
                         (*gfx).resultsWindowId,
                         22,
                         COLORID_BLUE,
-                        gText_CrushingResults.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::strings::gText_CrushingResults)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     );
                     PrintResultsText(
                         game,
@@ -1796,25 +1853,22 @@ pub(crate) unsafe extern "C" fn OpenResultsWindow(
         _ => {}
     }
     (*gfx).resultsState += 1;
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn CloseResultsWindow(game: *mut BerryCrushGame) {
+unsafe fn CloseResultsWindow(game: *mut BerryCrushGame) {
     ClearStdWindowAndFrameToTransparent((*game).gfx.resultsWindowId, TRUE);
     RemoveWindow((*game).gfx.resultsWindowId);
     DrawPlayerNameWindows(game);
 }
-pub(crate) unsafe extern "C" fn Task_ShowRankings(taskId: u8) {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
+pub(crate) unsafe fn Task_ShowRankings(taskId: u8) {
     let mut xPos: u8 = 0;
     let mut yPos: u8 = 0;
     let mut score: u32 = 0;
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     'l1: {
         let sw1: i16 = *data;
-        let mut fall = false;
+        let fall = false;
         if sw1 == 0 {
-            fall = true;
             *data.at(1) = AddWindow((&raw const *sWindowTemplate_Rankings).cast_mut()) as i16;
             PutWindowTilemap(*data.at(1) as u8);
             FillWindowPixelBuffer(*data.at(1) as u8, 0);
@@ -1823,10 +1877,14 @@ pub(crate) unsafe extern "C" fn Task_ShowRankings(taskId: u8) {
             break 'l1;
         }
         if sw1 == 1 {
-            fall = true;
             xPos = 96
-                - (GetStringWidth(FONT_NORMAL, gText_BerryCrush2.as_ptr().cast_mut(), -1) / 2)
-                    as u8;
+                - (GetStringWidth(
+                    FONT_NORMAL,
+                    (*(&raw const crate::data::strings::gText_BerryCrush2).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                    -1,
+                ) / 2) as u8;
             AddTextPrinterParameterized3(
                 *data.at(1) as u8,
                 FONT_NORMAL,
@@ -1834,12 +1892,17 @@ pub(crate) unsafe extern "C" fn Task_ShowRankings(taskId: u8) {
                 1,
                 sTextColorTable[3].as_ptr().cast_mut(),
                 0,
-                gText_BerryCrush2.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_BerryCrush2).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
             );
             xPos = 96
                 - (GetStringWidth(
                     FONT_NORMAL,
-                    gText_PressingSpeedRankings.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_PressingSpeedRankings)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     -1,
                 ) / 2) as u8;
             AddTextPrinterParameterized3(
@@ -1849,11 +1912,13 @@ pub(crate) unsafe extern "C" fn Task_ShowRankings(taskId: u8) {
                 17,
                 sTextColorTable[3].as_ptr().cast_mut(),
                 0,
-                gText_PressingSpeedRankings.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_PressingSpeedRankings)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
             yPos = 41;
-            i = 0;
-            while i < 4 {
+            for i in 0..4u8 {
                 ConvertIntToDecimalStringN(
                     gStringVar1.as_mut_ptr(),
                     i as i32 + 2,
@@ -1862,7 +1927,9 @@ pub(crate) unsafe extern "C" fn Task_ShowRankings(taskId: u8) {
                 );
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
-                    gText_Var1Players.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_Var1Players).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                 );
                 AddTextPrinterParameterized3(
                     *data.at(1) as u8,
@@ -1874,7 +1941,14 @@ pub(crate) unsafe extern "C" fn Task_ShowRankings(taskId: u8) {
                     gStringVar4.as_mut_ptr(),
                 );
                 xPos = 192
-                    - GetStringWidth(FONT_NORMAL, gText_TimesPerSec.as_ptr().cast_mut(), -1) as u8;
+                    - GetStringWidth(
+                        FONT_NORMAL,
+                        (*(&raw const crate::data::strings::gText_TimesPerSec)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        -1,
+                    ) as u8;
                 AddTextPrinterParameterized3(
                     *data.at(1) as u8,
                     FONT_NORMAL,
@@ -1882,14 +1956,14 @@ pub(crate) unsafe extern "C" fn Task_ShowRankings(taskId: u8) {
                     yPos,
                     sTextColorTable[0].as_ptr().cast_mut(),
                     0,
-                    gText_TimesPerSec.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_TimesPerSec).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                 );
-                j = 0;
-                while j < 8 {
+                for j in 0..8u8 {
                     if shr_i32(*data.at(2 + i as i32) as i32 & 0xFF, 7 - j as u32) & 1 != 0 {
                         score += sPressingSpeedConversionTable[j];
                     }
-                    j += 1;
                 }
                 ConvertIntToDecimalStringN(
                     gStringVar1.as_mut_ptr(),
@@ -1905,7 +1979,9 @@ pub(crate) unsafe extern "C" fn Task_ShowRankings(taskId: u8) {
                 );
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
-                    gText_XDotY3.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_XDotY3).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                 );
                 xPos -= GetStringWidth(FONT_NORMAL, gStringVar4.as_mut_ptr(), -1) as u8;
                 AddTextPrinterParameterized3(
@@ -1919,13 +1995,11 @@ pub(crate) unsafe extern "C" fn Task_ShowRankings(taskId: u8) {
                 );
                 yPos += 16;
                 score = 0;
-                i += 1;
             }
             CopyWindowToVram(*data.at(1) as u8, COPYWIN_FULL);
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             if gMain.newKeys as i32 & 3 != 0 {
                 break 'l1;
             } else {
@@ -1933,7 +2007,6 @@ pub(crate) unsafe extern "C" fn Task_ShowRankings(taskId: u8) {
             }
         }
         if fall || sw1 == 3 {
-            fall = true;
             ClearStdWindowAndFrameToTransparent(*data.at(1) as u8, TRUE);
             ClearWindowTilemap(*data.at(1) as u8);
             RemoveWindow(*data.at(1) as u8);
@@ -1947,31 +2020,45 @@ pub(crate) unsafe extern "C" fn Task_ShowRankings(taskId: u8) {
     *data += 1;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowBerryCrushRankings() {
-    let mut taskId: u8 = 0;
+pub unsafe fn ShowBerryCrushRankings() {
     LockPlayerFieldControls();
-    taskId = CreateTask(Some(Task_ShowRankings), 0);
-    gTasks[taskId].data[2] = (*gSaveBlock2Ptr).berryCrush.pressingSpeeds[0] as i16;
-    gTasks[taskId].data[3] = (*gSaveBlock2Ptr).berryCrush.pressingSpeeds[1] as i16;
-    gTasks[taskId].data[4] = (*gSaveBlock2Ptr).berryCrush.pressingSpeeds[2] as i16;
-    gTasks[taskId].data[5] = (*gSaveBlock2Ptr).berryCrush.pressingSpeeds[3] as i16;
+    let taskId: u8 = CreateTask(Some(Task_ShowRankings), 0);
+    task_set(
+        taskId,
+        2,
+        (*gSaveBlock2Ptr).berryCrush.pressingSpeeds[0] as i16,
+    );
+    task_set(
+        taskId,
+        3,
+        (*gSaveBlock2Ptr).berryCrush.pressingSpeeds[1] as i16,
+    );
+    task_set(
+        taskId,
+        4,
+        (*gSaveBlock2Ptr).berryCrush.pressingSpeeds[2] as i16,
+    );
+    task_set(
+        taskId,
+        5,
+        (*gSaveBlock2Ptr).berryCrush.pressingSpeeds[3] as i16,
+    );
 }
-pub(crate) unsafe extern "C" fn PrintTimer(gfx: *mut BerryCrushGame_Gfx, timer: u16) {
+unsafe fn PrintTimer(gfx: *mut BerryCrushGame_Gfx, timer: u16) {
     FramesToMinSec(gfx, timer);
     DigitObjUtil_PrintNumOn(0, (*gfx).minutes as i32);
     DigitObjUtil_PrintNumOn(1, (*gfx).secondsInt as i32);
     DigitObjUtil_PrintNumOn(2, (*gfx).secondsFrac as i32);
 }
-pub(crate) unsafe extern "C" fn HideTimer(gfx: *mut BerryCrushGame_Gfx) {
+unsafe fn HideTimer(gfx: *mut BerryCrushGame_Gfx) {
     (*(*gfx).timerSprites[0]).set_invisible(TRUE as u16);
     (*(*gfx).timerSprites[1]).set_invisible(1);
     DigitObjUtil_HideOrShow(2, TRUE as u32);
     DigitObjUtil_HideOrShow(1, 1);
     DigitObjUtil_HideOrShow(0, TRUE as u32);
 }
-pub(crate) unsafe extern "C" fn CreatePlayerNameWindows(game: *mut BerryCrushGame) {
+unsafe fn CreatePlayerNameWindows(game: *mut BerryCrushGame) {
     let mut i: u8 = 0;
-    i = 0;
     while i < (*game).playerCount {
         (*game).gfx.playerCoords[i] = (&raw const sPlayerCoords
             [sPlayerIdToPosId[(*game).playerCount as i32 - 2][i]])
@@ -1985,9 +2072,8 @@ pub(crate) unsafe extern "C" fn CreatePlayerNameWindows(game: *mut BerryCrushGam
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn DrawPlayerNameWindows(game: *mut BerryCrushGame) {
+pub(crate) unsafe fn DrawPlayerNameWindows(game: *mut BerryCrushGame) {
     let mut i: u8 = 0;
-    i = 0;
     while i < (*game).playerCount {
         PutWindowTilemap((*game).gfx.nameWindowIds[i]);
         if i == (*game).localId {
@@ -2022,14 +2108,22 @@ pub(crate) unsafe extern "C" fn DrawPlayerNameWindows(game: *mut BerryCrushGame)
     }
     CopyBgTilemapBufferToVram(0);
 }
-pub(crate) unsafe extern "C" fn CopyPlayerNameWindowGfxToBg(game: *mut BerryCrushGame) {
+unsafe fn CopyPlayerNameWindowGfxToBg(game: *mut BerryCrushGame) {
     let mut i: u8 = 0;
-    let mut windowGfx: *mut u8 = null_mut();
     LZ77UnCompWram(
-        gBerryCrush_TextWindows_Tilemap.as_ptr().cast_mut(),
-        gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+        (*(&raw const crate::data::graphics::gBerryCrush_TextWindows_Tilemap)
+            .cast::<CArray<u32, 0>>())
+        .as_ptr()
+        .cast_mut(),
+        (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())
+        .as_mut_ptr() as *mut c_void,
     );
-    windowGfx = gDecompressionBuffer.as_mut_ptr();
+    let windowGfx: *mut u8 = (*(&raw const crate::decompress::gDecompressionBuffer)
+        .cast::<CArray<u8, 16384>>()
+        .cast_mut())
+    .as_mut_ptr();
     while i < (*game).playerCount {
         CopyToBgTilemapBufferRect(
             3,
@@ -2043,20 +2137,16 @@ pub(crate) unsafe extern "C" fn CopyPlayerNameWindowGfxToBg(game: *mut BerryCrus
     }
     CopyBgTilemapBufferToVram(3);
 }
-pub(crate) unsafe extern "C" fn CreateGameSprites(game: *mut BerryCrushGame) {
-    let mut i: u8 = 0;
-    let mut spriteId: u8 = 0;
+unsafe fn CreateGameSprites(game: *mut BerryCrushGame) {
     (*game).depth = CRUSHER_START_Y;
     (*game).vibration = 0;
     gSpriteCoordOffsetX = 0;
     gSpriteCoordOffsetY = CRUSHER_START_Y;
-    i = 0;
-    while i < 4 {
+    for i in 0..4u8 {
         LoadCompressedSpriteSheet((&raw const sSpriteSheets[i]).cast_mut());
-        i += 1;
     }
     LoadSpritePalettes(sSpritePals.as_ptr().cast_mut());
-    spriteId = CreateSprite(
+    let mut spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_CrusherBase).cast_mut(),
         120,
         88,
@@ -2066,7 +2156,7 @@ pub(crate) unsafe extern "C" fn CreateGameSprites(game: *mut BerryCrushGame) {
     (*(*game).gfx.coreSprite).oam.set_priority(3);
     (*(*game).gfx.coreSprite).set_coordOffsetEnabled(TRUE as u16);
     (*(*game).gfx.coreSprite).set_animPaused(TRUE);
-    i = 0;
+    let mut i: u8 = 0;
     while i < (*game).playerCount {
         spriteId = CreateSprite(
             (&raw const *sSpriteTemplate_Impact).cast_mut(),
@@ -2081,8 +2171,7 @@ pub(crate) unsafe extern "C" fn CreateGameSprites(game: *mut BerryCrushGame) {
         (*(*game).gfx.impactSprites[i]).set_animPaused(TRUE);
         i += 1;
     }
-    i = 0;
-    while i < 11 {
+    for i in 0..11u8 {
         spriteId = CreateSprite(
             (&raw const *sSpriteTemplate_Sparkle).cast_mut(),
             sSparkleCoords[i][0] as i16 + 120,
@@ -2094,10 +2183,8 @@ pub(crate) unsafe extern "C" fn CreateGameSprites(game: *mut BerryCrushGame) {
         (*(*game).gfx.sparkleSprites[i]).set_invisible(TRUE as u16);
         (*(*game).gfx.sparkleSprites[i]).set_animPaused(TRUE);
         (*(*game).gfx.sparkleSprites[i]).data[0] = i as i16;
-        i += 1;
     }
-    i = 0;
-    while i < 2 {
+    for i in 0..2u8 {
         spriteId = CreateSprite(
             (&raw const *sSpriteTemplate_Timer).cast_mut(),
             24 * i as i16 + 176,
@@ -2108,7 +2195,6 @@ pub(crate) unsafe extern "C" fn CreateGameSprites(game: *mut BerryCrushGame) {
         (*(*game).gfx.timerSprites[i]).oam.set_priority(0);
         (*(*game).gfx.timerSprites[i]).set_invisible(FALSE as u16);
         (*(*game).gfx.timerSprites[i]).set_animPaused(FALSE);
-        i += 1;
     }
     DigitObjUtil_CreatePrinter(0, 0, (&raw const sDigitObjTemplates[0]).cast_mut());
     DigitObjUtil_CreatePrinter(1, 0, (&raw const sDigitObjTemplates[1]).cast_mut());
@@ -2117,8 +2203,7 @@ pub(crate) unsafe extern "C" fn CreateGameSprites(game: *mut BerryCrushGame) {
         HideTimer(&raw mut (*game).gfx);
     }
 }
-pub(crate) unsafe extern "C" fn DestroyGameSprites(game: *mut BerryCrushGame) {
-    let mut i: u8 = 0;
+unsafe fn DestroyGameSprites(game: *mut BerryCrushGame) {
     FreeSpriteTilesByTag(TAG_TIMER_DIGITS);
     FreeSpriteTilesByTag(GFXTAG_SPARKLE);
     FreeSpriteTilesByTag(GFXTAG_IMPACT);
@@ -2126,20 +2211,16 @@ pub(crate) unsafe extern "C" fn DestroyGameSprites(game: *mut BerryCrushGame) {
     FreeSpritePaletteByTag(TAG_TIMER_DIGITS);
     FreeSpritePaletteByTag(PALTAG_EFFECT);
     FreeSpritePaletteByTag(TAG_CRUSHER_BASE);
-    i = 0;
-    while i < 2 {
+    for i in 0..2u8 {
         DestroySprite((*game).gfx.timerSprites[i]);
-        i += 1;
     }
     DigitObjUtil_DeletePrinter(2);
     DigitObjUtil_DeletePrinter(1);
     DigitObjUtil_DeletePrinter(0);
-    i = 0;
-    while i < 11 {
+    for i in 0..11u8 {
         DestroySprite((*game).gfx.sparkleSprites[i]);
-        i += 1;
     }
-    i = 0;
+    let mut i: u8 = 0;
     while i < (*game).playerCount {
         DestroySprite((*game).gfx.impactSprites[i]);
         i += 1;
@@ -2148,18 +2229,15 @@ pub(crate) unsafe extern "C" fn DestroyGameSprites(game: *mut BerryCrushGame) {
         DestroySprite((*game).gfx.coreSprite);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Impact(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_Impact(sprite: *mut Sprite) {
     if (*sprite).animEnded() != 0 {
         (*sprite).set_invisible(TRUE as u16);
         (*sprite).set_animPaused(TRUE);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Sparkle_End(sprite: *mut Sprite) {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 8 {
+pub(crate) unsafe fn SpriteCB_Sparkle_End(sprite: *mut Sprite) {
+    for i in 0..8u8 {
         (*sprite).data[i] = 0;
-        i += 1;
     }
     (*sprite).x2 = 0;
     (*sprite).y2 = 0;
@@ -2167,12 +2245,12 @@ pub(crate) unsafe extern "C" fn SpriteCB_Sparkle_End(sprite: *mut Sprite) {
     (*sprite).set_animPaused(TRUE);
     (*sprite).callback = Some(SpriteCallbackDummy);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Sparkle(sprite: *mut Sprite) {
-    let mut data: *mut i16 = (*sprite).data.as_mut_ptr();
+pub(crate) unsafe fn SpriteCB_Sparkle(sprite: *mut Sprite) {
+    let data: *mut i16 = (*sprite).data.as_mut_ptr();
     *data.at(1) += *data.at(2);
     (*sprite).y2 += *data.at(1) >> 8;
     if *data.at(7) as i32 & F_MOVE_HORIZ != 0 {
-        (*sprite).data[0] += *data.at(3);
+        (*sprite).data[sX] += *data.at(3);
         *data.at(4) += *data.at(5);
         (*sprite).x2 = Sin(*data.at(4) >> 7, *data.at(6));
         if *data.at(7) as i32 & F_MOVE_HORIZ != 0 && *data.at(4) >> 7 > 126 {
@@ -2185,23 +2263,20 @@ pub(crate) unsafe extern "C" fn SpriteCB_Sparkle(sprite: *mut Sprite) {
         (*sprite).callback = Some(SpriteCB_Sparkle_End);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Sparkle_Init(sprite: *mut Sprite) {
-    let mut data: *mut i16 = (*sprite).data.as_mut_ptr();
-    let mut xMult: i16 = 0;
-    let mut xDiv: i16 = 0;
-    let mut var: i32 = 0;
-    let mut zero: u32 = 0;
-    var = 640;
+pub(crate) unsafe fn SpriteCB_Sparkle_Init(sprite: *mut Sprite) {
+    let data: *mut i16 = (*sprite).data.as_mut_ptr();
+    let zero: u32 = 0;
+    let mut var: i32 = 640;
     *data.at(1) = var as i16;
     *data.at(2) = 32;
     *data.at(7) = 168;
-    xMult = (*sprite).x2 * 128;
-    xDiv = MathUtil_Div16Shift(7, 168 - (*sprite).y << 7, (var + 32 >> 1) as i16);
-    (*sprite).data[0] = (*sprite).x << 7;
+    let xMult: i16 = (*sprite).x2 * 128;
+    let xDiv: i16 = MathUtil_Div16Shift(7, (168 - (*sprite).y) << 7, ((var + 32) >> 1) as i16);
+    (*sprite).data[sX] = (*sprite).x << 7;
     *data.at(3) = MathUtil_Div16Shift(7, xMult, xDiv);
     var = MathUtil_Mul16Shift(7, xDiv, 85) as i32;
     *data.at(4) = zero as i16;
-    *data.at(5) = MathUtil_Div16Shift(7, (63.5f32 as f32 * 256 as f32) as i16, var as i16);
+    *data.at(5) = MathUtil_Div16Shift(7, (63_f32 * 256_f32) as i16, var as i16);
     *data.at(6) = (*sprite).x2 / 4;
     *data.at(7) |= F_MOVE_HORIZ as i16;
     (*sprite).y2 = zero as i16;
@@ -2210,8 +2285,8 @@ pub(crate) unsafe extern "C" fn SpriteCB_Sparkle_Init(sprite: *mut Sprite) {
     (*sprite).set_animPaused(FALSE);
     (*sprite).set_invisible(FALSE as u16);
 }
-pub(crate) unsafe extern "C" fn RunOrScheduleCommand(mut cmdId: u16, mode: u8, args: *mut u8) {
-    let mut game: *mut BerryCrushGame = GetBerryCrushGame();
+unsafe fn RunOrScheduleCommand(mut cmdId: u16, mode: u8, args: *mut u8) {
+    let game: *mut BerryCrushGame = GetBerryCrushGame();
     if cmdId >= 26 {
         cmdId = CMD_NONE;
     }
@@ -2231,11 +2306,7 @@ pub(crate) unsafe extern "C" fn RunOrScheduleCommand(mut cmdId: u16, mode: u8, a
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_BeginNormalPaletteFade(
-    game: *mut BerryCrushGame,
-    mut args: *mut u8,
-) -> u32 {
-    let mut color: u16 = 0;
+pub(crate) unsafe fn Cmd_BeginNormalPaletteFade(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     let mut selectedPals: CArray<u32, 2> = zeroed();
     selectedPals[0] = *args as u32;
     selectedPals[1] = *args.at(1) as u32;
@@ -2248,7 +2319,7 @@ pub(crate) unsafe extern "C" fn Cmd_BeginNormalPaletteFade(
     selectedPals[1] <<= 24;
     selectedPals[0] |= selectedPals[1];
     *args = *args.at(9);
-    color = *args.at(8) as u16;
+    let mut color: u16 = *args.at(8) as u16;
     color <<= 8;
     color |= *args.at(7) as u16;
     gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
@@ -2261,12 +2332,9 @@ pub(crate) unsafe extern "C" fn Cmd_BeginNormalPaletteFade(
     );
     UpdatePaletteFade();
     (*game).nextCmd = CMD_WAIT_FADE;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_WaitPaletteFade(
-    game: *mut BerryCrushGame,
-    args: *mut u8,
-) -> u32 {
+pub(crate) unsafe fn Cmd_WaitPaletteFade(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     match (*game).cmdState {
         0 => {
             if UpdatePaletteFade() != 0 {
@@ -2303,10 +2371,10 @@ pub(crate) unsafe extern "C" fn Cmd_WaitPaletteFade(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_PrintMessage(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
+pub(crate) unsafe fn Cmd_PrintMessage(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     let mut keys: u16 = *args.at(3) as u16;
     keys <<= 8;
     keys |= *args.at(2) as u16;
@@ -2366,12 +2434,9 @@ pub(crate) unsafe extern "C" fn Cmd_PrintMessage(game: *mut BerryCrushGame, args
         }
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_ShowGameDisplay(
-    game: *mut BerryCrushGame,
-    args: *mut u8,
-) -> u32 {
+pub(crate) unsafe fn Cmd_ShowGameDisplay(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     if ShowGameDisplay() != 0 {
         RunOrScheduleCommand(
             (*game).nextCmd as u16,
@@ -2379,12 +2444,9 @@ pub(crate) unsafe extern "C" fn Cmd_ShowGameDisplay(
             (*game).commandArgs.as_mut_ptr(),
         );
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_HideGameDisplay(
-    game: *mut BerryCrushGame,
-    args: *mut u8,
-) -> u32 {
+pub(crate) unsafe fn Cmd_HideGameDisplay(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     if HideGameDisplay() != 0 {
         RunOrScheduleCommand(
             (*game).nextCmd as u16,
@@ -2392,12 +2454,9 @@ pub(crate) unsafe extern "C" fn Cmd_HideGameDisplay(
             (*game).commandArgs.as_mut_ptr(),
         );
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_SignalReadyToBegin(
-    game: *mut BerryCrushGame,
-    args: *mut u8,
-) -> u32 {
+pub(crate) unsafe fn Cmd_SignalReadyToBegin(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     match (*game).cmdState {
         0 => {
             Rfu_SetLinkStandbyCallback();
@@ -2414,9 +2473,9 @@ pub(crate) unsafe extern "C" fn Cmd_SignalReadyToBegin(
         _ => {}
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_AskPickBerry(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
+pub(crate) unsafe fn Cmd_AskPickBerry(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     match (*game).cmdState {
         0 => {
             ResetGame(game);
@@ -2433,17 +2492,14 @@ pub(crate) unsafe extern "C" fn Cmd_AskPickBerry(game: *mut BerryCrushGame, args
             (*game).cmdState += 1;
         }
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_GoToBerryPouch(
-    game: *mut BerryCrushGame,
-    args: *mut u8,
-) -> u32 {
+pub(crate) unsafe fn Cmd_GoToBerryPouch(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     (*game).cmdCallback = None;
     SetMainCallback2(Some(ChooseBerry));
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_WaitForOthersToPickBerries(
+pub(crate) unsafe fn Cmd_WaitForOthersToPickBerries(
     game: *mut BerryCrushGame,
     args: *mut u8,
 ) -> u32 {
@@ -2482,9 +2538,12 @@ pub(crate) unsafe extern "C" fn Cmd_WaitForOthersToPickBerries(
                 if (*game).players[i].berryId > 176 {
                     (*game).players[i].berryId = 0;
                 }
-                (*game).targetAPresses +=
-                    gBerryCrush_BerryData[(*game).players[i].berryId].difficulty as i16;
-                (*game).powder += gBerryCrush_BerryData[(*game).players[i].berryId].powder as i32;
+                (*game).targetAPresses += (*(&raw const crate::data::berry::gBerryCrush_BerryData)
+                    .cast::<CArray<BerryCrushBerryData, 0>>())[(*game).players[i].berryId]
+                    .difficulty as i16;
+                (*game).powder += (*(&raw const crate::data::berry::gBerryCrush_BerryData)
+                    .cast::<CArray<BerryCrushBerryData, 0>>())[(*game).players[i].berryId]
+                    .powder as i32;
                 i += 1;
             }
             (*game).cmdTimer = 0;
@@ -2501,12 +2560,9 @@ pub(crate) unsafe extern "C" fn Cmd_WaitForOthersToPickBerries(
         _ => {}
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_DropBerriesIntoCrusher(
-    game: *mut BerryCrushGame,
-    args: *mut u8,
-) -> u32 {
+pub(crate) unsafe fn Cmd_DropBerriesIntoCrusher(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     match (*game).cmdState {
         0 => {
             CreateBerrySprites(game, &raw mut (*game).gfx);
@@ -2529,7 +2585,7 @@ pub(crate) unsafe extern "C" fn Cmd_DropBerriesIntoCrusher(
         }
         3 => {
             if (*(*game).gfx.berrySprites[(*game).gfx.counter]).callback
-                == Some(SpriteCB_DropBerryIntoCrusher as unsafe extern "C" fn(*mut Sprite))
+                == Some(SpriteCB_DropBerryIntoCrusher as unsafe fn(*mut Sprite))
             {
                 return 0;
             }
@@ -2564,9 +2620,9 @@ pub(crate) unsafe extern "C" fn Cmd_DropBerriesIntoCrusher(
         _ => {}
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_DropLid(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
+pub(crate) unsafe fn Cmd_DropLid(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     'l1: {
         match (*game).cmdState {
             0 => {
@@ -2629,14 +2685,13 @@ pub(crate) unsafe extern "C" fn Cmd_DropLid(game: *mut BerryCrushGame, args: *mu
         }
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_Countdown(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
+pub(crate) unsafe fn Cmd_Countdown(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     'l1: {
         let sw1: u8 = (*game).cmdState;
         let mut fall = false;
         if sw1 == 1 {
-            fall = true;
             if IsLinkTaskFinished() == 0 {
                 return 0;
             }
@@ -2650,12 +2705,10 @@ pub(crate) unsafe extern "C" fn Cmd_Countdown(game: *mut BerryCrushGame, args: *
             }
         }
         if fall || sw1 == 0 {
-            fall = true;
             Rfu_SetLinkStandbyCallback();
             break 'l1;
         }
         if sw1 == 3 {
-            fall = true;
             if IsLinkTaskFinished() == 0 {
                 return 0;
             }
@@ -2675,15 +2728,14 @@ pub(crate) unsafe extern "C" fn Cmd_Countdown(game: *mut BerryCrushGame, args: *
         }
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn HandlePartnerInput(game: *mut BerryCrushGame) {
+unsafe fn HandlePartnerInput(game: *mut BerryCrushGame) {
     let mut numPlayersPressed: u8 = 0;
-    let mut i: u8 = 0;
     let mut timeDiff: u16 = 0;
     let mut temp: i32 = 0;
     let mut linkState: *mut BerryCrushGame_LinkState = null_mut();
-    i = 0;
+    let mut i: u8 = 0;
     while i < (*game).playerCount {
         'l1: {
             linkState = gRecvCmds[i].as_mut_ptr() as *mut BerryCrushGame_LinkState;
@@ -2746,21 +2798,19 @@ pub(crate) unsafe extern "C" fn HandlePartnerInput(game: *mut BerryCrushGame) {
     (*game).totalAPresses += numPlayersPressed as i16;
     if (*game).targetAPresses as i32 - (*game).totalAPresses as i32 > 0 {
         temp = (*game).totalAPresses as i32;
-        temp = temp << 8;
+        temp <<= 8;
         temp = MathUtil_Div32(temp, (*game).targetDepth);
-        temp = temp >> 8;
+        temp >>= 8;
         (*game).newDepth = temp as u8;
         return;
     }
     (*game).newDepth = 32;
     (*game).localState.set_endGame(TRUE);
 }
-pub(crate) unsafe extern "C" fn UpdateLeaderGameState(game: *mut BerryCrushGame) {
+unsafe fn UpdateLeaderGameState(game: *mut BerryCrushGame) {
     let mut numPlayersPressed: u8 = 0;
     let mut flags: u16 = 0;
-    let mut temp: u16 = 0;
     let mut i: u8 = 0;
-    i = 0;
     while i < (*game).playerCount {
         if (*game).players[i].inputState != INPUT_STATE_NONE {
             numPlayersPressed += 1;
@@ -2773,7 +2823,7 @@ pub(crate) unsafe extern "C" fn UpdateLeaderGameState(game: *mut BerryCrushGame)
         }
         i += 1;
     }
-    temp = (*game).newDepth as u16;
+    let mut temp: u16 = (*game).newDepth as u16;
     (*game).localState.depth = temp;
     if numPlayersPressed == 0 {
         if (*game).gfx.vibrating != 0 {
@@ -2808,14 +2858,14 @@ pub(crate) unsafe extern "C" fn UpdateLeaderGameState(game: *mut BerryCrushGame)
     }
     (*game).localState.timer = (*game).leaderTimer;
 }
-pub(crate) unsafe extern "C" fn HandlePlayerInput(game: *mut BerryCrushGame) {
+pub(crate) unsafe fn HandlePlayerInput(game: *mut BerryCrushGame) {
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         (*game).localState.set_pushedAButton(TRUE);
     }
-    if gMain.heldKeys as i32 & A_BUTTON != 0 {
-        if (*game).players[(*game).localId].timePressingA < (*game).timer {
-            (*game).players[(*game).localId].timePressingA += 1;
-        }
+    if gMain.heldKeys as i32 & A_BUTTON != 0
+        && (*game).players[(*game).localId].timePressingA < (*game).timer
+    {
+        (*game).players[(*game).localId].timePressingA += 1;
     }
     if (*game).localId != 0 && (*game).localState.pushedAButton() == 0 {
         return;
@@ -2875,10 +2925,8 @@ pub(crate) unsafe extern "C" fn HandlePlayerInput(game: *mut BerryCrushGame) {
     );
     Rfu_SendPacket((*game).sendCmd.as_mut_ptr() as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn RecvLinkData(game: *mut BerryCrushGame) {
+unsafe fn RecvLinkData(game: *mut BerryCrushGame) {
     let mut i: u8 = 0;
-    let mut linkState: *mut BerryCrushGame_LinkState = null_mut();
-    i = 0;
     while i < (*game).playerCount {
         (*game).players[i].inputState = INPUT_STATE_NONE;
         i += 1;
@@ -2896,7 +2944,8 @@ pub(crate) unsafe extern "C" fn RecvLinkData(game: *mut BerryCrushGame) {
         gRecvCmds[0].as_mut_ptr() as *mut u8,
         14,
     );
-    linkState = &raw mut (*game).recvCmd as *mut BerryCrushGame_LinkState;
+    let linkState: *mut BerryCrushGame_LinkState =
+        &raw mut (*game).recvCmd as *mut BerryCrushGame_LinkState;
     (*game).depth = (*linkState).depth as i16;
     (*game).vibration = (*linkState).vibration as i16;
     (*game).timer = (*linkState).timer;
@@ -2905,10 +2954,7 @@ pub(crate) unsafe extern "C" fn RecvLinkData(game: *mut BerryCrushGame) {
         (*game).set_endGame(TRUE);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_PlayGame_Leader(
-    game: *mut BerryCrushGame,
-    args: *mut u8,
-) -> u32 {
+pub(crate) unsafe fn Cmd_PlayGame_Leader(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     memset(&raw mut (*game).localState as *mut u8, 0, 12);
     memset(&raw mut (*game).recvCmd as *mut u8, 0, 14);
     RecvLinkData(game);
@@ -2943,13 +2989,10 @@ pub(crate) unsafe extern "C" fn Cmd_PlayGame_Leader(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_PlayGame_Member(
-    game: *mut BerryCrushGame,
-    args: *mut u8,
-) -> u32 {
+pub(crate) unsafe fn Cmd_PlayGame_Member(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     memset(&raw mut (*game).localState as *mut u8, 0, 12);
     memset(&raw mut (*game).recvCmd as *mut u8, 0, 14);
     RecvLinkData(game);
@@ -2981,10 +3024,10 @@ pub(crate) unsafe extern "C" fn Cmd_PlayGame_Member(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_FinishGame(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
+pub(crate) unsafe fn Cmd_FinishGame(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     match (*game).cmdState {
         0 => {
             (*game).gameState = STATE_FINISHED;
@@ -3060,9 +3103,9 @@ pub(crate) unsafe extern "C" fn Cmd_FinishGame(game: *mut BerryCrushGame, args: 
         _ => {}
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_HandleTimeUp(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
+pub(crate) unsafe fn Cmd_HandleTimeUp(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     match (*game).cmdState {
         0 => {
             (*game).gameState = STATE_TIMES_UP;
@@ -3111,12 +3154,9 @@ pub(crate) unsafe extern "C" fn Cmd_HandleTimeUp(game: *mut BerryCrushGame, args
         _ => {}
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_TabulateResults(
-    game: *mut BerryCrushGame,
-    args: *mut u8,
-) -> u32 {
+pub(crate) unsafe fn Cmd_TabulateResults(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     let mut i: u8 = 0;
     let mut j: u8 = 0;
     let mut tempPlayerId: u8 = 0;
@@ -3164,9 +3204,9 @@ pub(crate) unsafe extern "C" fn Cmd_TabulateResults(
                 div_i32((*game).targetAPresses as i32, (*game).timer as i32 / 60) as u16;
             temp1 = MathUtil_Mul32(((*game).numBigSparkles as i32) << 8, 12800);
             temp1 = MathUtil_Div32(temp1, ((*game).numBigSparkleChecks as i32) << 8) + 12800;
-            temp1 = temp1 >> 8;
+            temp1 >>= 8;
             (*game).results.silkiness = temp1 as u16 & 0x7F;
-            temp1 = temp1 << 8;
+            temp1 <<= 8;
             temp1 = MathUtil_Div32(temp1, 25600);
             temp2 = ((*game).powder * (*game).playerCount as i32) << 8;
             temp2 = MathUtil_Mul32(temp2, temp1);
@@ -3182,10 +3222,10 @@ pub(crate) unsafe extern "C" fn Cmd_TabulateResults(
                     RESULTS_PAGE_NEATNESS => {
                         if (*game).players[i].numAPresses != 0 {
                             temp1 = (*game).players[i].maxNeatInputStreak as i32;
-                            temp1 = temp1 << 8;
+                            temp1 <<= 8;
                             temp1 = MathUtil_Mul32(temp1, 25600);
                             temp2 = (*game).players[i].numAPresses as i32;
-                            temp2 = temp2 << 8;
+                            temp2 <<= 8;
                             temp2 = MathUtil_Div32(temp1, temp2);
                         } else {
                             temp2 = 0;
@@ -3194,10 +3234,10 @@ pub(crate) unsafe extern "C" fn Cmd_TabulateResults(
                     RESULTS_PAGE_COOPERATIVE => {
                         if (*game).players[i].numAPresses != 0 {
                             temp1 = (*game).players[i].numSyncedAPresses as i32;
-                            temp1 = temp1 << 8;
+                            temp1 <<= 8;
                             temp1 = MathUtil_Mul32(temp1, 25600);
                             temp2 = (*game).players[i].numAPresses as i32;
-                            temp2 = temp2 << 8;
+                            temp2 <<= 8;
                             temp2 = MathUtil_Div32(temp1, temp2);
                         } else {
                             temp2 = 0;
@@ -3210,10 +3250,10 @@ pub(crate) unsafe extern "C" fn Cmd_TabulateResults(
                             temp2 = 25600;
                         } else {
                             temp1 = (*game).players[i].timePressingA as i32;
-                            temp1 = temp1 << 8;
+                            temp1 <<= 8;
                             temp1 = MathUtil_Mul32(temp1, 25600);
                             temp2 = (*game).timer as i32;
-                            temp2 = temp2 << 8;
+                            temp2 <<= 8;
                             temp2 = MathUtil_Div32(temp1, temp2);
                         }
                     }
@@ -3283,9 +3323,9 @@ pub(crate) unsafe extern "C" fn Cmd_TabulateResults(
         _ => {}
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_ShowResults(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
+pub(crate) unsafe fn Cmd_ShowResults(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     match (*game).cmdState {
         0 => {
             if OpenResultsWindow(game, &raw mut (*game).gfx) == 0 {
@@ -3336,9 +3376,9 @@ pub(crate) unsafe extern "C" fn Cmd_ShowResults(game: *mut BerryCrushGame, args:
         _ => {}
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_SaveGame(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
+pub(crate) unsafe fn Cmd_SaveGame(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     match (*game).cmdState {
         0 => {
             if (*game).timer >= MAX_TIME {
@@ -3361,7 +3401,9 @@ pub(crate) unsafe extern "C" fn Cmd_SaveGame(game: *mut BerryCrushGame, args: *m
             AddTextPrinterParameterized2(
                 0,
                 FONT_NORMAL,
-                gText_SavingDontTurnOffPower.as_ptr().cast_mut(),
+                (*crate::asmdata::gText_SavingDontTurnOffPower.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 0,
                 None,
                 TEXT_COLOR_DARK_GRAY,
@@ -3385,9 +3427,9 @@ pub(crate) unsafe extern "C" fn Cmd_SaveGame(game: *mut BerryCrushGame, args: *m
         _ => {}
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_AskPlayAgain(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
+pub(crate) unsafe fn Cmd_AskPlayAgain(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     let mut input: i8 = 0;
     match (*game).cmdState {
         0 => {
@@ -3424,9 +3466,9 @@ pub(crate) unsafe extern "C" fn Cmd_AskPlayAgain(game: *mut BerryCrushGame, args
         _ => {}
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_CommunicatePlayAgainResponses(
+pub(crate) unsafe fn Cmd_CommunicatePlayAgainResponses(
     game: *mut BerryCrushGame,
     args: *mut u8,
 ) -> u32 {
@@ -3473,9 +3515,9 @@ pub(crate) unsafe extern "C" fn Cmd_CommunicatePlayAgainResponses(
         _ => {}
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_PlayAgain(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
+pub(crate) unsafe fn Cmd_PlayAgain(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     match (*game).cmdState {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 1, 0, 16, 0);
@@ -3504,9 +3546,9 @@ pub(crate) unsafe extern "C" fn Cmd_PlayAgain(game: *mut BerryCrushGame, args: *
         _ => {}
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_StopGame(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
+pub(crate) unsafe fn Cmd_StopGame(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     match (*game).cmdState {
         0 => {
             DrawDialogueFrame(0, 0);
@@ -3553,9 +3595,9 @@ pub(crate) unsafe extern "C" fn Cmd_StopGame(game: *mut BerryCrushGame, args: *m
         _ => {}
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_CloseLink(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
+pub(crate) unsafe fn Cmd_CloseLink(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     match (*game).cmdState {
         0 => {
             Rfu_SetLinkStandbyCallback();
@@ -3578,14 +3620,13 @@ pub(crate) unsafe extern "C" fn Cmd_CloseLink(game: *mut BerryCrushGame, args: *
         _ => {}
     }
     (*game).cmdState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Cmd_Quit(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
+pub(crate) unsafe fn Cmd_Quit(game: *mut BerryCrushGame, args: *mut u8) -> u32 {
     QuitBerryCrush(None);
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn ResetGame(game: *mut BerryCrushGame) {
-    let mut i: u8 = 0;
+pub(crate) unsafe fn ResetGame(game: *mut BerryCrushGame) {
     IncrementGameStat(GAME_STAT_PLAYED_BERRY_CRUSH);
     (*game).unused = 0;
     (*game).cmdTimer = 0;
@@ -3608,8 +3649,7 @@ pub(crate) unsafe extern "C" fn ResetGame(game: *mut BerryCrushGame) {
     (*game).numBigSparkleChecks = -1;
     (*game).numBigSparkles = 0;
     (*game).sparkleCounter = 0;
-    i = 0;
-    while i < MAX_RFU_PLAYERS as u8 {
+    for i in 0..(MAX_RFU_PLAYERS as u8) {
         (*game).players[i].berryId = 65535;
         (*game).players[i].inputTime = 0;
         (*game).players[i].neatInputStreak = 0;
@@ -3620,11 +3660,10 @@ pub(crate) unsafe extern "C" fn ResetGame(game: *mut BerryCrushGame) {
         (*game).players[i].timePressingA = 0;
         (*game).players[i].inputFlags = 0;
         (*game).players[i].inputState = INPUT_STATE_NONE;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetPaletteFadeArgs(
-    mut args: *mut u8,
+unsafe fn SetPaletteFadeArgs(
+    args: *mut u8,
     communicateAfter: u8,
     mut selectedPals: u32,
     delay: i8,
@@ -3643,8 +3682,8 @@ pub(crate) unsafe extern "C" fn SetPaletteFadeArgs(
     *args.at(8) = *(&raw mut palette as *mut u8).at(1);
     *args.at(9) = communicateAfter;
 }
-pub(crate) unsafe extern "C" fn SetPrintMessageArgs(
-    mut args: *mut u8,
+unsafe fn SetPrintMessageArgs(
+    args: *mut u8,
     msgId: u8,
     flags: u8,
     mut waitKeys: u16,

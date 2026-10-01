@@ -50,8 +50,8 @@ pub struct PokenavListTemplate {
     pub maxShowed: u8,
     pub fillValue: u8,
     pub fontId: u8,
-    pub bufferItemFunc: Option<unsafe extern "C" fn(*mut PokenavListItem, *mut u8)>,
-    pub iconDrawFunc: Option<unsafe extern "C" fn(u16, u32, u32)>,
+    pub bufferItemFunc: Option<unsafe fn(*mut PokenavListItem, *mut u8)>,
+    pub iconDrawFunc: Option<unsafe fn(u16, u32, u32)>,
 }
 
 unsafe impl Sync for PokenavListTemplate {}

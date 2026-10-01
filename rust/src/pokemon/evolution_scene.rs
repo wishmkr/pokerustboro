@@ -3,37 +3,159 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::agb_main::{SetHBlankCallback, SetVBlankCallback};
+use crate::battle_bg::{InitBattleBgsVideo, LoadBattleTextboxAndBackground};
+use crate::battle_gfx_sfx_util::{AllocateMonSpritesGfx, FreeMonSpritesGfx};
+use crate::battle_main::{
+    GetBattleBgTemplateData, SpriteCallbackDummy_2, gBattle_BG0_X, gBattle_BG0_Y, gBattle_BG1_X,
+    gBattle_BG1_Y, gBattle_BG2_X, gBattle_BG2_Y, gBattle_BG3_X, gBattle_BG3_Y, gBattleEnvironment,
+    gMonSpritesGfxPtr, gMoveToLearn,
+};
+use crate::battle_main::{
+    gBattleCommunication, gBattleTextBuff1, gBattleTextBuff2, gDisplayedStringBattle,
+};
+use crate::battle_message::{
+    BattlePutTextOnWindow, BattleStringExpandPlaceholdersToDisplayedString,
+};
+use crate::battle_script_commands::{
+    BattleCreateYesNoCursorAt, BattleDestroyYesNoCursorAt, BufferMoveToLearnIntoBattleTextBuff2,
+    HandleBattleWindow,
+};
+use crate::bg::CopyToBgTilemapBuffer;
+use crate::bg::{CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, SetBgAttribute, ShowBg};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::evolution_graphics::{
+    CycleEvolutionMonSprite, EvolutionSparkles_ArcDown, EvolutionSparkles_CircleInward,
+    EvolutionSparkles_SpiralUpward, EvolutionSparkles_SprayAndFlash,
+    EvolutionSparkles_SprayAndFlash_Trade, LoadEvoSparkleSpriteAndPal,
+};
+use crate::gpu_regs::SetGpuReg;
+use crate::link::gWirelessCommType;
+use crate::link_rfu_3::{
+    CreateWirelessStatusIndicatorSprite, DestroyWirelessStatusIndicatorSprite,
+    LoadWirelessStatusIndicatorSpriteGfx,
+};
+use crate::m4a::{m4aMPlayAllStop, m4aSongNumStop};
+use crate::menu::{
+    CreateYesNoMenu, DecompressAndLoadBgGfxUsingHeap, Menu_ProcessInputNoWrapClearOnChoose,
+};
+use crate::overworld::{IncrementGameStat, Overworld_PlaySpecialMapMusic};
+use crate::palette::gPlttBufferUnfaded;
+use crate::palette::{
+    BeginNormalPaletteFade, BlendPalettes, FillPalette, LoadCompressedPalette, LoadPalette,
+    ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade, gPaletteFade,
+};
+use crate::pokedex::GetSetPokedexFlag;
+use crate::pokemon::{
+    CalculateMonStats, CalculatePlayerPartyCount, CopyMon, DoMonFrontSpriteAnimation,
+    EvolutionRenameMon, GetMonData2, GetMonData3, GetMonSpritePalStructFromOtIdPersonality,
+    IsHMMove2, MonTryLearningNewMove, RemoveMonPPBonus, SetMonData, SetMonMoveSlot,
+    SetMultiuseSpriteTemplateToPokemon, SpeciesToNationalPokedexNum, gMultiuseSpriteTemplate,
+    gPlayerParty, gPlayerPartyCount,
+};
+use crate::pokemon_summary_screen::{GetMoveSlotToReplace, ShowSelectMovePokemonSummaryScreen};
+use crate::scanline_effect::{ScanlineEffect_InitHBlankDmaTransfer, ScanlineEffect_Stop};
+use crate::sound::{
+    IsCryFinished, IsFanfareTaskInactive, IsSEPlaying, PlayBGM, PlayCry_Normal, PlayFanfare,
+    PlayNewMapMusic, PlaySE, StopMapMusic,
+};
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData, gAffineAnimsDisabled, gReservedSpritePaletteCount,
+};
+use crate::string_util::{StringCopy, StringCopy_Nickname, StringExpandPlaceholders};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar4};
+use crate::task::gTasks;
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::task::{task_data_ptr, task_get, task_set};
+use crate::text::{IsTextPrinterActive, RunTextPrinters};
+use crate::text_window::LoadUserWindowBorderGfx;
+use crate::trade::{
+    DrawTextOnTradeWindow, InitTradeSequenceBgGpuRegs, LinkTradeDrawWindow, LoadTradeAnimGfx,
+};
+use crate::trig::{Cos, Sin};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::FreeAllWindowBuffers;
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DecompressPicFromTable_2` with this module's view of its types.
+#[inline]
+unsafe fn DecompressPicFromTable_2(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32) {
+    unsafe {
+        crate::decompress::DecompressPicFromTable_2(a0 as _, a1 as _, a2);
+    }
+}
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+unsafe fn FindTaskIdByFunc(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+// The C's names for task and sprite data slots.
+const tState: usize = 0;
+const tPreEvoSpecies: usize = 1;
+const tIsLink: usize = 2;
+const tPostEvoSpecies: usize = 2;
+const tBits: usize = 3;
+const tCanStop: usize = 3;
+const tLearnsFirstMove: usize = 4;
+const tLearnMoveState: usize = 6;
+const tPaused: usize = 6;
+const tLearnMoveYesState: usize = 7;
+const tLearnMoveNoState: usize = 8;
+const tEvoWasStopped: usize = 9;
+const tPartyId: usize = 10;
 // Data tables (translate with cdata.py): sUnusedPal1 sBgAnim_Gfx sBgAnim_Inner_Tilemap sBgAnim_Outer_Tilemap sBgAnim_Intro_Pal sUnusedPal2 sUnusedPal3 sUnusedPal4 sBgAnim_Pal sText_ShedinjaJapaneseName sBgAnim_PaletteControl sBgAnim_PalIndexes
 
 /// `struct EvoInfo`
@@ -154,225 +276,71 @@ static sText_ShedinjaJapaneseName: Table<CArray<u8, 5>> =
 pub(crate) static mut sEvoStructPtr: *mut EvoInfo = null_mut();
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sBgAnimPal: *mut u16 = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gCB2_AfterEvolution: Option<unsafe extern "C" fn()> = None;
+pub static mut gCB2_AfterEvolution: Option<unsafe fn()> = None;
 
-unsafe extern "C" {
-    static mut gAffineAnimsDisabled: u8;
-    static mut gBattleCommunication: CArray<u8, 8>;
-    static mut gBattleEnvironment: u8;
-    static gBattleStringsTable: CArray<*mut u8, 0>;
-    static mut gBattleTextBuff1: CArray<u8, 16>;
-    static mut gBattleTextBuff2: CArray<u8, 16>;
-    static mut gBattle_BG0_X: u16;
-    static mut gBattle_BG0_Y: u16;
-    static mut gBattle_BG1_X: u16;
-    static mut gBattle_BG1_Y: u16;
-    static mut gBattle_BG2_X: u16;
-    static mut gBattle_BG2_Y: u16;
-    static mut gBattle_BG3_X: u16;
-    static mut gBattle_BG3_Y: u16;
-    static mut gDisplayedStringBattle: CArray<u8, 300>;
-    static gDummySpriteAffineAnimTable: CArray<*mut AffineAnimCmd, 0>;
-    static mut gEvolutionTable: CArray<CArray<Evolution, 5>, 0>;
-    static mut gMain: Main;
-    static gMonFrontPicTable: CArray<CompressedSpriteSheet, 0>;
-    static mut gMonSpritesGfxPtr: *mut MonSpritesGfx;
-    static mut gMoveToLearn: u16;
-    static mut gMultiuseSpriteTemplate: SpriteTemplate;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gPlayerPartyCount: u8;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static mut gReservedSpritePaletteCount: u8;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static mut gTextFlags: TextFlags;
-    static gText_BattleYesNoChoice: CArray<u8, 0>;
-    static gText_CommunicationStandby5: CArray<u8, 0>;
-    static gText_CongratsPkmnEvolved: CArray<u8, 0>;
-    static gText_EllipsisQuestionMark: CArray<u8, 0>;
-    static gText_PkmnIsEvolving: CArray<u8, 0>;
-    static gText_PkmnStoppedEvolving: CArray<u8, 0>;
-    static gTradeEvolutionSceneYesNoWindowTemplate: WindowTemplate;
-    static mut gWirelessCommType: u8;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AllocateMonSpritesGfx();
-    fn AnimateSprites();
-    fn BattleCreateYesNoCursorAt(a0: u8);
-    fn BattleDestroyYesNoCursorAt(a0: u8);
-    fn BattlePutTextOnWindow(a0: *mut u8, a1: u8);
-    fn BattleStringExpandPlaceholdersToDisplayedString(a0: *mut u8) -> u32;
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn BufferMoveToLearnIntoBattleTextBuff2();
-    fn BuildOamBuffer();
-    fn CalculateMonStats(a0: *mut Pokemon);
-    fn CalculatePlayerPartyCount() -> u8;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyMon(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn Cos(a0: i16, a1: i16) -> i16;
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateWirelessStatusIndicatorSprite(a0: u8, a1: u8);
-    fn CreateYesNoMenu(a0: *mut WindowTemplate, a1: u16, a2: u8, a3: u8);
-    fn CycleEvolutionMonSprite(a0: u8, a1: u8) -> u8;
-    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut c_void, a2: u32, a3: u16, a4: u8);
-    fn DecompressPicFromTable_2(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32);
-    fn DestroyTask(a0: u8);
-    fn DestroyWirelessStatusIndicatorSprite();
-    fn DoMonFrontSpriteAnimation(a0: *mut Sprite, a1: u16, a2: u8, a3: u8);
-    fn DrawTextOnTradeWindow(a0: u8, a1: *mut u8, a2: u8);
-    fn EvolutionRenameMon(a0: *mut Pokemon, a1: u16, a2: u16);
-    fn EvolutionSparkles_ArcDown() -> u8;
-    fn EvolutionSparkles_CircleInward() -> u8;
-    fn EvolutionSparkles_SpiralUpward(a0: u16) -> u8;
-    fn EvolutionSparkles_SprayAndFlash(a0: u16) -> u8;
-    fn EvolutionSparkles_SprayAndFlash_Trade(a0: u16) -> u8;
-    fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
-    fn FillPalette(a0: u16, a1: u16, a2: u16);
-    fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeMonSpritesGfx();
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetBattleBgTemplateData(a0: u8, a1: u8) -> u32;
-    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetMonSpritePalStructFromOtIdPersonality(
-        a0: u16,
-        a1: u32,
-        a2: u32,
-    ) -> *mut CompressedSpritePalette;
-    fn GetMoveSlotToReplace() -> u8;
-    fn GetSetPokedexFlag(a0: u16, a1: u8) -> i8;
-    fn HandleBattleWindow(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8);
-    fn IncrementGameStat(a0: u8);
-    fn InitBattleBgsVideo();
-    fn InitTradeSequenceBgGpuRegs();
-    fn IsCryFinished() -> u8;
-    fn IsFanfareTaskInactive() -> u8;
-    fn IsHMMove2(a0: u16) -> u32;
-    fn IsSEPlaying() -> u8;
-    fn IsTextPrinterActive(a0: u8) -> u16;
-    fn LinkTradeDrawWindow();
-    fn LoadBattleTextboxAndBackground();
-    fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadEvoSparkleSpriteAndPal();
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadTradeAnimGfx();
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn LoadWirelessStatusIndicatorSpriteGfx();
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn MonTryLearningNewMove(a0: *mut Pokemon, a1: u8) -> u16;
-    fn Overworld_PlaySpecialMapMusic();
-    fn PlayBGM(a0: u16);
-    fn PlayCry_Normal(a0: u16, a1: i8);
-    fn PlayFanfare(a0: u16);
-    fn PlayNewMapMusic(a0: u16);
-    fn PlaySE(a0: u16);
-    fn ProcessSpriteCopyRequests();
-    fn RemoveMonPPBonus(a0: *mut Pokemon, a1: u8);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn RunTasks();
-    fn RunTextPrinters();
-    fn ScanlineEffect_InitHBlankDmaTransfer();
-    fn ScanlineEffect_Stop();
-    fn SetBgAttribute(a0: u8, a1: u8, a2: u8);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetHBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
-    fn SetMonMoveSlot(a0: *mut Pokemon, a1: u16, a2: u8);
-    fn SetMultiuseSpriteTemplateToPokemon(a0: u16, a1: u8);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn ShowSelectMovePokemonSummaryScreen(
-        a0: *mut Pokemon,
-        a1: u8,
-        a2: u8,
-        a3: Option<unsafe extern "C" fn()>,
-        a4: u16,
-    );
-    fn Sin(a0: i16, a1: i16) -> i16;
-    fn SpeciesToNationalPokedexNum(a0: u16) -> u16;
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn SpriteCallbackDummy_2(a0: *mut Sprite);
-    fn StopMapMusic();
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy_Nickname(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
-    fn m4aMPlayAllStop();
-    fn m4aSongNumStop(a0: u16);
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `GetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
+    unsafe { crate::bg::GetBgTilemapBuffer(a0) as *mut c_void }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn CB2_BeginEvolutionScene() {
+pub(crate) unsafe fn CB2_BeginEvolutionScene() {
     UpdatePaletteFade();
     RunTasks();
 }
-pub(crate) unsafe extern "C" fn Task_BeginEvolutionScene(taskId: u8) {
+pub(crate) unsafe fn Task_BeginEvolutionScene(taskId: u8) {
     let mut mon: *mut Pokemon = null_mut();
-    match gTasks[taskId].data[0] {
+    match task_get(taskId, tState) {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
-        1 => {
-            if gPaletteFade.active() == 0 {
-                let mut postEvoSpecies: u16 = 0;
-                let mut canStopEvo: u8 = 0;
-                let mut partyId: u8 = 0;
-                mon = &raw mut gPlayerParty[gTasks[taskId].data[10]];
-                postEvoSpecies = gTasks[taskId].data[2] as u16;
-                canStopEvo = gTasks[taskId].data[3] as u8;
-                partyId = gTasks[taskId].data[10] as u8;
-                DestroyTask(taskId);
-                EvolutionScene(mon, postEvoSpecies, canStopEvo, partyId);
-            }
+        1 if gPaletteFade.active() == 0 => {
+            mon = &raw mut gPlayerParty[task_get(taskId, tPartyId)];
+            let postEvoSpecies: u16 = task_get(taskId, tPostEvoSpecies) as u16;
+            let canStopEvo: u8 = task_get(taskId, tCanStop) as u8;
+            let partyId: u8 = task_get(taskId, tPartyId) as u8;
+            DestroyTask(taskId);
+            EvolutionScene(mon, postEvoSpecies, canStopEvo, partyId);
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BeginEvolutionScene(
+pub unsafe fn BeginEvolutionScene(
     mon: *mut Pokemon,
     postEvoSpecies: u16,
     canStopEvo: u8,
     partyId: u8,
 ) {
-    let mut taskId: u8 = CreateTask(Some(Task_BeginEvolutionScene), 0);
-    gTasks[taskId].data[0] = 0;
-    gTasks[taskId].data[2] = postEvoSpecies as i16;
-    gTasks[taskId].data[3] = canStopEvo as i16;
-    gTasks[taskId].data[10] = partyId as i16;
+    let taskId: u8 = CreateTask(Some(Task_BeginEvolutionScene), 0);
+    task_set(taskId, tState, 0);
+    task_set(taskId, tPostEvoSpecies, postEvoSpecies as i16);
+    task_set(taskId, tCanStop, canStopEvo as i16);
+    task_set(taskId, tPartyId, partyId as i16);
     SetMainCallback2(Some(CB2_BeginEvolutionScene));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn EvolutionScene(
-    mon: *mut Pokemon,
-    postEvoSpecies: u16,
-    canStopEvo: u8,
-    partyId: u8,
-) {
+pub unsafe fn EvolutionScene(mon: *mut Pokemon, postEvoSpecies: u16, canStopEvo: u8, partyId: u8) {
     let mut name: CArray<u8, 20> = zeroed();
-    let mut currSpecies: u16 = 0;
-    let mut trainerId: u32 = 0;
-    let mut personality: u32 = 0;
-    let mut pokePal: *mut CompressedSpritePalette = null_mut();
     let mut id: u8 = 0;
     SetHBlankCallback(None);
     SetVBlankCallback(None);
@@ -417,20 +385,30 @@ pub unsafe extern "C" fn EvolutionScene(
     StringCopy_Nickname(gStringVar1.as_mut_ptr(), name.as_mut_ptr());
     StringCopy(
         gStringVar2.as_mut_ptr(),
-        gSpeciesNames[postEvoSpecies].as_ptr().cast_mut(),
+        (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<CArray<u8, 11>, 0>>())
+            [postEvoSpecies]
+            .as_ptr()
+            .cast_mut(),
     );
-    currSpecies = GetMonData2(mon, MON_DATA_SPECIES) as u16;
-    trainerId = GetMonData2(mon, MON_DATA_OT_ID);
-    personality = GetMonData2(mon, MON_DATA_PERSONALITY);
+    let currSpecies: u16 = GetMonData2(mon, MON_DATA_SPECIES) as u16;
+    let trainerId: u32 = GetMonData2(mon, MON_DATA_OT_ID);
+    let personality: u32 = GetMonData2(mon, MON_DATA_PERSONALITY);
     DecompressPicFromTable_2(
-        (&raw const gMonFrontPicTable[currSpecies]).cast_mut(),
+        (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+            .cast::<CArray<CompressedSpriteSheet, 0>>())[currSpecies])
+            .cast_mut(),
         (*gMonSpritesGfxPtr).sprites.ptr[1],
         currSpecies as i32,
     );
-    pokePal = GetMonSpritePalStructFromOtIdPersonality(currSpecies, trainerId, personality);
+    let mut pokePal: *mut CompressedSpritePalette =
+        GetMonSpritePalStructFromOtIdPersonality(currSpecies, trainerId, personality);
     LoadCompressedPalette((*pokePal).data, 272, 32);
     SetMultiuseSpriteTemplateToPokemon(currSpecies, B_POSITION_OPPONENT_LEFT);
-    gMultiuseSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    gMultiuseSpriteTemplate.affineAnims =
+        (*(&raw const crate::sprite::gDummySpriteAffineAnimTable)
+            .cast::<CArray<*mut AffineAnimCmd, 0>>())
+        .as_ptr()
+        .cast_mut();
     (*sEvoStructPtr).preEvoSpriteId = {
         id = CreateSprite(&raw mut gMultiuseSpriteTemplate, 120, 64, 30);
         id
@@ -439,14 +417,20 @@ pub unsafe extern "C" fn EvolutionScene(
     gSprites[id].oam.set_paletteNum(1);
     gSprites[id].set_invisible(TRUE as u16);
     DecompressPicFromTable_2(
-        (&raw const gMonFrontPicTable[postEvoSpecies]).cast_mut(),
+        (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+            .cast::<CArray<CompressedSpriteSheet, 0>>())[postEvoSpecies])
+            .cast_mut(),
         (*gMonSpritesGfxPtr).sprites.ptr[3],
         postEvoSpecies as i32,
     );
     pokePal = GetMonSpritePalStructFromOtIdPersonality(postEvoSpecies, trainerId, personality);
     LoadCompressedPalette((*pokePal).data, 288, 32);
     SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, B_POSITION_OPPONENT_RIGHT);
-    gMultiuseSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    gMultiuseSpriteTemplate.affineAnims =
+        (*(&raw const crate::sprite::gDummySpriteAffineAnimTable)
+            .cast::<CArray<*mut AffineAnimCmd, 0>>())
+        .as_ptr()
+        .cast_mut();
     (*sEvoStructPtr).postEvoSpriteId = {
         id = CreateSprite(&raw mut gMultiuseSpriteTemplate, 120, 64, 30);
         id
@@ -459,13 +443,13 @@ pub unsafe extern "C" fn EvolutionScene(
         id = CreateTask(Some(Task_EvolutionScene), 0);
         id
     };
-    gTasks[id].data[0] = 0;
-    gTasks[id].data[1] = currSpecies as i16;
-    gTasks[id].data[2] = postEvoSpecies as i16;
-    gTasks[id].data[3] = canStopEvo as i16;
-    gTasks[id].data[4] = TRUE as i16;
-    gTasks[id].data[9] = FALSE as i16;
-    gTasks[id].data[10] = partyId as i16;
+    task_set(id, tState, 0);
+    task_set(id, tPreEvoSpecies, currSpecies as i16);
+    task_set(id, tPostEvoSpecies, postEvoSpecies as i16);
+    task_set(id, tCanStop, canStopEvo as i16);
+    task_set(id, tLearnsFirstMove, TRUE as i16);
+    task_set(id, tEvoWasStopped, FALSE as i16);
+    task_set(id, tPartyId, partyId as i16);
     memcpy(
         &raw mut (*sEvoStructPtr).savedPalette as *mut u8,
         &raw mut gPlttBufferUnfaded[32] as *mut u8,
@@ -477,16 +461,12 @@ pub unsafe extern "C" fn EvolutionScene(
     m4aMPlayAllStop();
     SetMainCallback2(Some(CB2_EvolutionSceneUpdate));
 }
-pub(crate) unsafe extern "C" fn CB2_EvolutionSceneLoadGraphics() {
+pub(crate) unsafe fn CB2_EvolutionSceneLoadGraphics() {
     let mut id: u8 = 0;
-    let mut pokePal: *mut CompressedSpritePalette = null_mut();
-    let mut postEvoSpecies: u16 = 0;
-    let mut trainerId: u32 = 0;
-    let mut personality: u32 = 0;
-    let mut mon: *mut Pokemon = &raw mut gPlayerParty[gTasks[(*sEvoStructPtr).evoTaskId].data[10]];
-    postEvoSpecies = gTasks[(*sEvoStructPtr).evoTaskId].data[2] as u16;
-    trainerId = GetMonData2(mon, MON_DATA_OT_ID);
-    personality = GetMonData2(mon, MON_DATA_PERSONALITY);
+    let mon: *mut Pokemon = &raw mut gPlayerParty[task_get((*sEvoStructPtr).evoTaskId, tPartyId)];
+    let postEvoSpecies: u16 = task_get((*sEvoStructPtr).evoTaskId, tPostEvoSpecies) as u16;
+    let trainerId: u32 = GetMonData2(mon, MON_DATA_OT_ID);
+    let personality: u32 = GetMonData2(mon, MON_DATA_PERSONALITY);
     SetHBlankCallback(None);
     SetVBlankCallback(None);
     {
@@ -523,14 +503,21 @@ pub(crate) unsafe extern "C" fn CB2_EvolutionSceneLoadGraphics() {
     FreeAllSpritePalettes();
     gReservedSpritePaletteCount = 4;
     DecompressPicFromTable_2(
-        (&raw const gMonFrontPicTable[postEvoSpecies]).cast_mut(),
+        (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+            .cast::<CArray<CompressedSpriteSheet, 0>>())[postEvoSpecies])
+            .cast_mut(),
         (*gMonSpritesGfxPtr).sprites.ptr[3],
         postEvoSpecies as i32,
     );
-    pokePal = GetMonSpritePalStructFromOtIdPersonality(postEvoSpecies, trainerId, personality);
+    let pokePal: *mut CompressedSpritePalette =
+        GetMonSpritePalStructFromOtIdPersonality(postEvoSpecies, trainerId, personality);
     LoadCompressedPalette((*pokePal).data, 288, 32);
     SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, B_POSITION_OPPONENT_RIGHT);
-    gMultiuseSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    gMultiuseSpriteTemplate.affineAnims =
+        (*(&raw const crate::sprite::gDummySpriteAffineAnimTable)
+            .cast::<CArray<*mut AffineAnimCmd, 0>>())
+        .as_ptr()
+        .cast_mut();
     (*sEvoStructPtr).postEvoSpriteId = {
         id = CreateSprite(&raw mut gMultiuseSpriteTemplate, 120, 64, 30);
         id
@@ -547,9 +534,9 @@ pub(crate) unsafe extern "C" fn CB2_EvolutionSceneLoadGraphics() {
     ShowBg(2);
     ShowBg(3);
 }
-pub(crate) unsafe extern "C" fn CB2_TradeEvolutionSceneLoadGraphics() {
-    let mut mon: *mut Pokemon = &raw mut gPlayerParty[gTasks[(*sEvoStructPtr).evoTaskId].data[10]];
-    let mut postEvoSpecies: u16 = gTasks[(*sEvoStructPtr).evoTaskId].data[2] as u16;
+pub(crate) unsafe fn CB2_TradeEvolutionSceneLoadGraphics() {
+    let mon: *mut Pokemon = &raw mut gPlayerParty[task_get((*sEvoStructPtr).evoTaskId, tPartyId)];
+    let postEvoSpecies: u16 = task_get((*sEvoStructPtr).evoTaskId, tPostEvoSpecies) as u16;
     match gMain.state {
         0 => {
             SetGpuReg(0x0, 0);
@@ -584,15 +571,16 @@ pub(crate) unsafe extern "C" fn CB2_TradeEvolutionSceneLoadGraphics() {
             gMain.state += 1;
         }
         4 => {
-            let mut pokePal: *mut CompressedSpritePalette = null_mut();
-            let mut trainerId: u32 = GetMonData2(mon, MON_DATA_OT_ID);
-            let mut personality: u32 = GetMonData2(mon, MON_DATA_PERSONALITY);
+            let trainerId: u32 = GetMonData2(mon, MON_DATA_OT_ID);
+            let personality: u32 = GetMonData2(mon, MON_DATA_PERSONALITY);
             DecompressPicFromTable_2(
-                (&raw const gMonFrontPicTable[postEvoSpecies]).cast_mut(),
+                (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+                    .cast::<CArray<CompressedSpriteSheet, 0>>())[postEvoSpecies])
+                    .cast_mut(),
                 (*gMonSpritesGfxPtr).sprites.ptr[3],
                 postEvoSpecies as i32,
             );
-            pokePal =
+            let pokePal: *mut CompressedSpritePalette =
                 GetMonSpritePalStructFromOtIdPersonality(postEvoSpecies, trainerId, personality);
             LoadCompressedPalette((*pokePal).data, 288, 32);
             gMain.state += 1;
@@ -600,7 +588,11 @@ pub(crate) unsafe extern "C" fn CB2_TradeEvolutionSceneLoadGraphics() {
         5 => {
             let mut id: u8 = 0;
             SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, B_POSITION_OPPONENT_LEFT);
-            gMultiuseSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+            gMultiuseSpriteTemplate.affineAnims =
+                (*(&raw const crate::sprite::gDummySpriteAffineAnimTable)
+                    .cast::<CArray<*mut AffineAnimCmd, 0>>())
+                .as_ptr()
+                .cast_mut();
             (*sEvoStructPtr).postEvoSpriteId = {
                 id = CreateSprite(&raw mut gMultiuseSpriteTemplate, 120, 64, 30);
                 id
@@ -629,40 +621,45 @@ pub(crate) unsafe extern "C" fn CB2_TradeEvolutionSceneLoadGraphics() {
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TradeEvolutionScene(
+pub unsafe fn TradeEvolutionScene(
     mon: *mut Pokemon,
     postEvoSpecies: u16,
     preEvoSpriteId: u8,
     partyId: u8,
 ) {
     let mut name: CArray<u8, 20> = zeroed();
-    let mut currSpecies: u16 = 0;
-    let mut trainerId: u32 = 0;
-    let mut personality: u32 = 0;
-    let mut pokePal: *mut CompressedSpritePalette = null_mut();
     let mut id: u8 = 0;
     GetMonData3(mon, MON_DATA_NICKNAME, name.as_mut_ptr());
     StringCopy_Nickname(gStringVar1.as_mut_ptr(), name.as_mut_ptr());
     StringCopy(
         gStringVar2.as_mut_ptr(),
-        gSpeciesNames[postEvoSpecies].as_ptr().cast_mut(),
+        (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<CArray<u8, 11>, 0>>())
+            [postEvoSpecies]
+            .as_ptr()
+            .cast_mut(),
     );
     gAffineAnimsDisabled = TRUE;
-    currSpecies = GetMonData2(mon, MON_DATA_SPECIES) as u16;
-    personality = GetMonData2(mon, MON_DATA_PERSONALITY);
-    trainerId = GetMonData2(mon, MON_DATA_OT_ID);
+    let currSpecies: u16 = GetMonData2(mon, MON_DATA_SPECIES) as u16;
+    let personality: u32 = GetMonData2(mon, MON_DATA_PERSONALITY);
+    let trainerId: u32 = GetMonData2(mon, MON_DATA_OT_ID);
     sEvoStructPtr = AllocZeroed(100) as *mut EvoInfo;
     (*sEvoStructPtr).preEvoSpriteId = preEvoSpriteId;
     DecompressPicFromTable_2(
-        (&raw const gMonFrontPicTable[postEvoSpecies]).cast_mut(),
+        (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+            .cast::<CArray<CompressedSpriteSheet, 0>>())[postEvoSpecies])
+            .cast_mut(),
         (*gMonSpritesGfxPtr).sprites.ptr[1],
         postEvoSpecies as i32,
     );
-    pokePal = GetMonSpritePalStructFromOtIdPersonality(postEvoSpecies, trainerId, personality);
+    let pokePal: *mut CompressedSpritePalette =
+        GetMonSpritePalStructFromOtIdPersonality(postEvoSpecies, trainerId, personality);
     LoadCompressedPalette((*pokePal).data, 288, 32);
     SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, B_POSITION_OPPONENT_LEFT);
-    gMultiuseSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    gMultiuseSpriteTemplate.affineAnims =
+        (*(&raw const crate::sprite::gDummySpriteAffineAnimTable)
+            .cast::<CArray<*mut AffineAnimCmd, 0>>())
+        .as_ptr()
+        .cast_mut();
     (*sEvoStructPtr).postEvoSpriteId = {
         id = CreateSprite(&raw mut gMultiuseSpriteTemplate, 120, 64, 30);
         id
@@ -675,12 +672,12 @@ pub unsafe extern "C" fn TradeEvolutionScene(
         id = CreateTask(Some(Task_TradeEvolutionScene), 0);
         id
     };
-    gTasks[id].data[0] = 0;
-    gTasks[id].data[1] = currSpecies as i16;
-    gTasks[id].data[2] = postEvoSpecies as i16;
-    gTasks[id].data[4] = TRUE as i16;
-    gTasks[id].data[9] = FALSE as i16;
-    gTasks[id].data[10] = partyId as i16;
+    task_set(id, tState, 0);
+    task_set(id, tPreEvoSpecies, currSpecies as i16);
+    task_set(id, tPostEvoSpecies, postEvoSpecies as i16);
+    task_set(id, tLearnsFirstMove, TRUE as i16);
+    task_set(id, tEvoWasStopped, FALSE as i16);
+    task_set(id, tPartyId, partyId as i16);
     gBattle_BG0_X = 0;
     gBattle_BG0_Y = 0;
     gBattle_BG1_X = 0;
@@ -689,31 +686,37 @@ pub unsafe extern "C" fn TradeEvolutionScene(
     gBattle_BG2_Y = 0;
     gBattle_BG3_X = 256;
     gBattle_BG3_Y = 0;
-    gTextFlags.set_useAlternateDownArrow(TRUE);
+    (*(&raw const crate::text::gTextFlags)
+        .cast::<TextFlags>()
+        .cast_mut())
+    .set_useAlternateDownArrow(TRUE);
     SetVBlankCallback(Some(VBlankCB_TradeEvolutionScene));
     SetMainCallback2(Some(CB2_TradeEvolutionSceneUpdate));
 }
-pub(crate) unsafe extern "C" fn CB2_EvolutionSceneUpdate() {
+pub(crate) unsafe fn CB2_EvolutionSceneUpdate() {
     AnimateSprites();
     BuildOamBuffer();
     RunTextPrinters();
     UpdatePaletteFade();
     RunTasks();
 }
-pub(crate) unsafe extern "C" fn CB2_TradeEvolutionSceneUpdate() {
+pub(crate) unsafe fn CB2_TradeEvolutionSceneUpdate() {
     AnimateSprites();
     BuildOamBuffer();
     RunTextPrinters();
     UpdatePaletteFade();
     RunTasks();
 }
-pub(crate) unsafe extern "C" fn CreateShedinja(preEvoSpecies: u16, mon: *mut Pokemon) {
+unsafe fn CreateShedinja(preEvoSpecies: u16, mon: *mut Pokemon) {
     let mut data: u32 = 0;
-    if gEvolutionTable[preEvoSpecies][0].method == EVO_LEVEL_NINJASK
+    if (*(&raw const crate::data::pokemon::gEvolutionTable)
+        .cast::<CArray<CArray<Evolution, 5>, 0>>()
+        .cast_mut())[preEvoSpecies][0]
+        .method
+        == EVO_LEVEL_NINJASK
         && gPlayerPartyCount < PARTY_SIZE as u8
     {
-        let mut i: i32 = 0;
-        let mut shedinja: *mut Pokemon = &raw mut gPlayerParty[gPlayerPartyCount];
+        let shedinja: *mut Pokemon = &raw mut gPlayerParty[gPlayerPartyCount];
         CopyMon(
             &raw mut gPlayerParty[gPlayerPartyCount] as *mut c_void,
             mon as *mut c_void,
@@ -722,12 +725,20 @@ pub(crate) unsafe extern "C" fn CreateShedinja(preEvoSpecies: u16, mon: *mut Pok
         SetMonData(
             &raw mut gPlayerParty[gPlayerPartyCount],
             MON_DATA_SPECIES,
-            &raw mut gEvolutionTable[preEvoSpecies][1].targetSpecies as *mut c_void,
+            &raw mut (*(&raw const crate::data::pokemon::gEvolutionTable)
+                .cast::<CArray<CArray<Evolution, 5>, 0>>()
+                .cast_mut())[preEvoSpecies][1]
+                .targetSpecies as *mut c_void,
         );
         SetMonData(
             &raw mut gPlayerParty[gPlayerPartyCount],
             MON_DATA_NICKNAME,
-            gSpeciesNames[gEvolutionTable[preEvoSpecies][1].targetSpecies]
+            (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())
+                [(*(&raw const crate::data::pokemon::gEvolutionTable)
+                    .cast::<CArray<CArray<Evolution, 5>, 0>>()
+                    .cast_mut())[preEvoSpecies][1]
+                    .targetSpecies]
                 .as_ptr()
                 .cast_mut() as *mut c_void,
         );
@@ -746,16 +757,14 @@ pub(crate) unsafe extern "C" fn CreateShedinja(preEvoSpecies: u16, mon: *mut Pok
             MON_DATA_ENCRYPT_SEPARATOR,
             &raw mut data as *mut c_void,
         );
-        i = MON_DATA_COOL_RIBBON;
-        while i < 55 {
+        for i in MON_DATA_COOL_RIBBON..55 {
             SetMonData(
                 &raw mut gPlayerParty[gPlayerPartyCount],
                 i,
                 &raw mut data as *mut c_void,
             );
-            i += 1;
         }
-        i = MON_DATA_CHAMPION_RIBBON;
+        let mut i: i32 = MON_DATA_CHAMPION_RIBBON;
         while i <= MON_DATA_UNUSED_RIBBONS {
             SetMonData(
                 &raw mut gPlayerParty[gPlayerPartyCount],
@@ -778,11 +787,21 @@ pub(crate) unsafe extern "C" fn CreateShedinja(preEvoSpecies: u16, mon: *mut Pok
         CalculateMonStats(&raw mut gPlayerParty[gPlayerPartyCount]);
         CalculatePlayerPartyCount();
         GetSetPokedexFlag(
-            SpeciesToNationalPokedexNum(gEvolutionTable[preEvoSpecies][1].targetSpecies),
+            SpeciesToNationalPokedexNum(
+                (*(&raw const crate::data::pokemon::gEvolutionTable)
+                    .cast::<CArray<CArray<Evolution, 5>, 0>>()
+                    .cast_mut())[preEvoSpecies][1]
+                    .targetSpecies,
+            ),
             FLAG_SET_SEEN,
         );
         GetSetPokedexFlag(
-            SpeciesToNationalPokedexNum(gEvolutionTable[preEvoSpecies][1].targetSpecies),
+            SpeciesToNationalPokedexNum(
+                (*(&raw const crate::data::pokemon::gEvolutionTable)
+                    .cast::<CArray<CArray<Evolution, 5>, 0>>()
+                    .cast_mut())[preEvoSpecies][1]
+                    .targetSpecies,
+            ),
             FLAG_SET_CAUGHT,
         );
         if GetMonData2(shedinja, MON_DATA_SPECIES) == SPECIES_SHEDINJA as u32
@@ -797,25 +816,25 @@ pub(crate) unsafe extern "C" fn CreateShedinja(preEvoSpecies: u16, mon: *mut Pok
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_EvolutionScene(taskId: u8) {
+pub(crate) unsafe fn Task_EvolutionScene(taskId: u8) {
     let mut var: u32 = 0;
-    let mut mon: *mut Pokemon = &raw mut gPlayerParty[gTasks[taskId].data[10]];
+    let mon: *mut Pokemon = &raw mut gPlayerParty[task_get(taskId, tPartyId)];
     if gMain.heldKeys == B_BUTTON as u16
-        && gTasks[taskId].data[0] == EVOSTATE_WAIT_CYCLE_MON_SPRITE
-        && gTasks[gBattleCommunication[2]].isActive != 0
-        && gTasks[taskId].data[3] as i32 & TASK_BIT_CAN_STOP != 0
+        && task_get(taskId, tState) == EVOSTATE_WAIT_CYCLE_MON_SPRITE
+        && (*gTasks.as_ptr())[gBattleCommunication[2]].isActive != 0
+        && task_get(taskId, tBits) as i32 & TASK_BIT_CAN_STOP != 0
     {
-        gTasks[taskId].data[0] = EVOSTATE_CANCEL;
-        gTasks[gBattleCommunication[2]].data[8] = TRUE as i16;
+        task_set(taskId, tState, EVOSTATE_CANCEL);
+        task_set(gBattleCommunication[2], 8, TRUE as i16);
         StopBgAnimation();
         return;
     }
     'l1: {
-        match gTasks[taskId].data[0] {
+        match task_get(taskId, tState) {
             EVOSTATE_FADE_IN => {
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
                 gSprites[(*sEvoStructPtr).preEvoSpriteId].set_invisible(FALSE as u16);
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
                 ShowBg(0);
                 ShowBg(1);
                 ShowBg(2);
@@ -825,31 +844,34 @@ pub(crate) unsafe extern "C" fn Task_EvolutionScene(taskId: u8) {
                 if gPaletteFade.active() == 0 {
                     StringExpandPlaceholders(
                         gStringVar4.as_mut_ptr(),
-                        gText_PkmnIsEvolving.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::battle_message::gText_PkmnIsEvolving)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     );
                     BattlePutTextOnWindow(gStringVar4.as_mut_ptr(), B_WIN_MSG);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             EVOSTATE_INTRO_MON_ANIM => {
                 if IsTextPrinterActive(0) == 0 {
                     EvoScene_DoMonAnimAndCry(
                         (*sEvoStructPtr).preEvoSpriteId,
-                        gTasks[taskId].data[1] as u16,
+                        task_get(taskId, tPreEvoSpecies) as u16,
                     );
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             EVOSTATE_INTRO_SOUND => {
                 if EvoScene_IsMonAnimFinished((*sEvoStructPtr).preEvoSpriteId) != 0 {
                     PlaySE(MUS_EVOLUTION_INTRO);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             EVOSTATE_START_MUSIC => {
                 if IsSEPlaying() == 0 {
                     PlayNewMapMusic(MUS_EVOLUTION);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                     BeginNormalPaletteFade(0x1C, 4, 0, 0x10, 0);
                 }
             }
@@ -857,23 +879,23 @@ pub(crate) unsafe extern "C" fn Task_EvolutionScene(taskId: u8) {
                 if gPaletteFade.active() == 0 {
                     StartBgAnimation(FALSE);
                     gBattleCommunication[2] = EvolutionSparkles_SpiralUpward(17);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             EVOSTATE_SPARKLE_ARC => {
-                if gTasks[gBattleCommunication[2]].isActive == 0 {
-                    gTasks[taskId].data[0] += 1;
+                if (*gTasks.as_ptr())[gBattleCommunication[2]].isActive == 0 {
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                     (*sEvoStructPtr).delayTimer = 1;
                     gBattleCommunication[2] = EvolutionSparkles_ArcDown();
                 }
             }
             EVOSTATE_CYCLE_MON_SPRITE => {
-                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                if (*gTasks.as_ptr())[gBattleCommunication[2]].isActive == 0 {
                     gBattleCommunication[2] = CycleEvolutionMonSprite(
                         (*sEvoStructPtr).preEvoSpriteId,
                         (*sEvoStructPtr).postEvoSpriteId,
                     );
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             EVOSTATE_WAIT_CYCLE_MON_SPRITE => {
@@ -883,26 +905,26 @@ pub(crate) unsafe extern "C" fn Task_EvolutionScene(taskId: u8) {
                 }) == 0
                 {
                     (*sEvoStructPtr).delayTimer = 3;
-                    if gTasks[gBattleCommunication[2]].isActive == 0 {
-                        gTasks[taskId].data[0] += 1;
+                    if (*gTasks.as_ptr())[gBattleCommunication[2]].isActive == 0 {
+                        task_set(taskId, tState, task_get(taskId, tState) + 1);
                     }
                 }
             }
             EVOSTATE_SPARKLE_CIRCLE => {
                 gBattleCommunication[2] = EvolutionSparkles_CircleInward();
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
             EVOSTATE_SPARKLE_SPRAY => {
-                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                if (*gTasks.as_ptr())[gBattleCommunication[2]].isActive == 0 {
                     gBattleCommunication[2] =
-                        EvolutionSparkles_SprayAndFlash(gTasks[taskId].data[2] as u16);
-                    gTasks[taskId].data[0] += 1;
+                        EvolutionSparkles_SprayAndFlash(task_get(taskId, tPostEvoSpecies) as u16);
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             EVOSTATE_EVO_SOUND => {
-                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                if (*gTasks.as_ptr())[gBattleCommunication[2]].isActive == 0 {
                     PlaySE(SE_EXP);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             EVOSTATE_RESTORE_SCREEN => {
@@ -915,44 +937,47 @@ pub(crate) unsafe extern "C" fn Task_EvolutionScene(taskId: u8) {
                     );
                     RestoreBgAfterAnim();
                     BeginNormalPaletteFade(0x1C, 0, 0x10, 0, 0);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             EVOSTATE_EVO_MON_ANIM => {
                 if gPaletteFade.active() == 0 {
                     EvoScene_DoMonAnimAndCry(
                         (*sEvoStructPtr).postEvoSpriteId,
-                        gTasks[taskId].data[2] as u16,
+                        task_get(taskId, tPostEvoSpecies) as u16,
                     );
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             EVOSTATE_SET_MON_EVOLVED => {
                 if IsCryFinished() != 0 {
                     StringExpandPlaceholders(
                         gStringVar4.as_mut_ptr(),
-                        gText_CongratsPkmnEvolved.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::battle_message::gText_CongratsPkmnEvolved)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     );
                     BattlePutTextOnWindow(gStringVar4.as_mut_ptr(), B_WIN_MSG);
                     PlayBGM(MUS_EVOLVED);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                     SetMonData(
                         mon,
                         MON_DATA_SPECIES,
-                        &raw mut gTasks[taskId].data[2] as *mut c_void,
+                        task_data_ptr(taskId, tPostEvoSpecies) as *mut c_void,
                     );
                     CalculateMonStats(mon);
                     EvolutionRenameMon(
                         mon,
-                        gTasks[taskId].data[1] as u16,
-                        gTasks[taskId].data[2] as u16,
+                        task_get(taskId, tPreEvoSpecies) as u16,
+                        task_get(taskId, tPostEvoSpecies) as u16,
                     );
                     GetSetPokedexFlag(
-                        SpeciesToNationalPokedexNum(gTasks[taskId].data[2] as u16),
+                        SpeciesToNationalPokedexNum(task_get(taskId, tPostEvoSpecies) as u16),
                         FLAG_SET_SEEN,
                     );
                     GetSetPokedexFlag(
-                        SpeciesToNationalPokedexNum(gTasks[taskId].data[2] as u16),
+                        SpeciesToNationalPokedexNum(task_get(taskId, tPostEvoSpecies) as u16),
                         FLAG_SET_CAUGHT,
                     );
                     IncrementGameStat(GAME_STAT_EVOLVED_POKEMON);
@@ -960,39 +985,44 @@ pub(crate) unsafe extern "C" fn Task_EvolutionScene(taskId: u8) {
             }
             EVOSTATE_TRY_LEARN_MOVE => {
                 if IsTextPrinterActive(0) == 0 {
-                    var = MonTryLearningNewMove(mon, gTasks[taskId].data[4] as u8) as u32;
-                    if var != MOVE_NONE as u32 && gTasks[taskId].data[9] == 0 {
+                    var =
+                        MonTryLearningNewMove(mon, task_get(taskId, tLearnsFirstMove) as u8) as u32;
+                    if var != MOVE_NONE as u32 && task_get(taskId, tEvoWasStopped) == 0 {
                         let mut nickname: CArray<u8, 20> = zeroed();
-                        if gTasks[taskId].data[3] as i32 & TASK_BIT_LEARN_MOVE == 0 {
+                        if task_get(taskId, tBits) as i32 & TASK_BIT_LEARN_MOVE == 0 {
                             StopMapMusic();
                             Overworld_PlaySpecialMapMusic();
                         }
-                        gTasks[taskId].data[3] |= TASK_BIT_LEARN_MOVE as i16;
-                        gTasks[taskId].data[4] = FALSE as i16;
-                        gTasks[taskId].data[6] = MVSTATE_INTRO_MSG_1;
+                        task_set(
+                            taskId,
+                            tBits,
+                            task_get(taskId, tBits) | (TASK_BIT_LEARN_MOVE as i16),
+                        );
+                        task_set(taskId, tLearnsFirstMove, FALSE as i16);
+                        task_set(taskId, tLearnMoveState, MVSTATE_INTRO_MSG_1);
                         GetMonData3(mon, MON_DATA_NICKNAME, nickname.as_mut_ptr());
                         StringCopy_Nickname(gBattleTextBuff1.as_mut_ptr(), nickname.as_mut_ptr());
                         if var == MON_HAS_MAX_MOVES as u32 {
-                            gTasks[taskId].data[0] = EVOSTATE_REPLACE_MOVE;
+                            task_set(taskId, tState, EVOSTATE_REPLACE_MOVE);
                         } else if var == MON_ALREADY_KNOWS_MOVE as u32 {
                             break 'l1;
                         } else {
-                            gTasks[taskId].data[0] = EVOSTATE_LEARNED_MOVE;
+                            task_set(taskId, tState, EVOSTATE_LEARNED_MOVE);
                         }
                     } else {
                         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-                        gTasks[taskId].data[0] += 1;
+                        task_set(taskId, tState, task_get(taskId, tState) + 1);
                     }
                 }
             }
             EVOSTATE_END => {
                 if gPaletteFade.active() == 0 {
-                    if gTasks[taskId].data[3] as i32 & TASK_BIT_LEARN_MOVE == 0 {
+                    if task_get(taskId, tBits) as i32 & TASK_BIT_LEARN_MOVE == 0 {
                         StopMapMusic();
                         Overworld_PlaySpecialMapMusic();
                     }
-                    if gTasks[taskId].data[9] == 0 {
-                        CreateShedinja(gTasks[taskId].data[1] as u16, mon);
+                    if task_get(taskId, tEvoWasStopped) == 0 {
+                        CreateShedinja(task_get(taskId, tPreEvoSpecies) as u16, mon);
                     }
                     DestroyTask(taskId);
                     FreeMonSpritesGfx();
@@ -1003,108 +1033,145 @@ pub(crate) unsafe extern "C" fn Task_EvolutionScene(taskId: u8) {
                 }
             }
             EVOSTATE_CANCEL => {
-                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                if (*gTasks.as_ptr())[gBattleCommunication[2]].isActive == 0 {
                     m4aMPlayAllStop();
                     BeginNormalPaletteFade(0x6001C, 0, 0x10, 0, 32767);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             EVOSTATE_CANCEL_MON_ANIM => {
                 if gPaletteFade.active() == 0 {
                     EvoScene_DoMonAnimAndCry(
                         (*sEvoStructPtr).preEvoSpriteId,
-                        gTasks[taskId].data[1] as u16,
+                        task_get(taskId, tPreEvoSpecies) as u16,
                     );
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             EVOSTATE_CANCEL_MSG => {
                 if EvoScene_IsMonAnimFinished((*sEvoStructPtr).preEvoSpriteId) != 0 {
-                    if gTasks[taskId].data[9] != 0 {
+                    if task_get(taskId, tEvoWasStopped) != 0 {
                         StringExpandPlaceholders(
                             gStringVar4.as_mut_ptr(),
-                            gText_EllipsisQuestionMark.as_ptr().cast_mut(),
+                            (*(&raw const crate::data::battle_message::gText_EllipsisQuestionMark)
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
                         );
                     } else {
                         StringExpandPlaceholders(
                             gStringVar4.as_mut_ptr(),
-                            gText_PkmnStoppedEvolving.as_ptr().cast_mut(),
+                            (*(&raw const crate::data::battle_message::gText_PkmnStoppedEvolving)
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
                         );
                     }
                     BattlePutTextOnWindow(gStringVar4.as_mut_ptr(), B_WIN_MSG);
-                    gTasks[taskId].data[9] = TRUE as i16;
-                    gTasks[taskId].data[0] = EVOSTATE_TRY_LEARN_MOVE;
+                    task_set(taskId, tEvoWasStopped, TRUE as i16);
+                    task_set(taskId, tState, EVOSTATE_TRY_LEARN_MOVE);
                 }
             }
             EVOSTATE_LEARNED_MOVE => {
                 if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
                     BufferMoveToLearnIntoBattleTextBuff2();
                     PlayFanfare(MUS_LEVEL_UP);
-                    BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[3]);
+                    BattleStringExpandPlaceholdersToDisplayedString(
+                        (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                            .cast::<CArray<*mut u8, 0>>())[3],
+                    );
                     BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
-                    gTasks[taskId].data[4] = 0x40;
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tLearnsFirstMove, 0x40);
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             EVOSTATE_TRY_LEARN_ANOTHER_MOVE => {
                 if IsTextPrinterActive(0) == 0
                     && IsSEPlaying() == 0
                     && ({
-                        gTasks[taskId].data[4] -= 1;
-                        gTasks[taskId].data[4]
+                        task_set(
+                            taskId,
+                            tLearnsFirstMove,
+                            task_get(taskId, tLearnsFirstMove) - 1,
+                        );
+                        task_get(taskId, tLearnsFirstMove)
                     }) == 0
                 {
-                    gTasks[taskId].data[0] = EVOSTATE_TRY_LEARN_MOVE;
+                    task_set(taskId, tState, EVOSTATE_TRY_LEARN_MOVE);
                 }
             }
             EVOSTATE_REPLACE_MOVE => 'l2: {
-                let sw3: i16 = gTasks[taskId].data[6];
+                let sw3: i16 = task_get(taskId, tLearnMoveState);
                 let mut fall = false;
                 if sw3 == MVSTATE_INTRO_MSG_1 {
-                    fall = true;
                     if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
                         BufferMoveToLearnIntoBattleTextBuff2();
-                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[4]);
+                        BattleStringExpandPlaceholdersToDisplayedString(
+                            (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                                .cast::<CArray<*mut u8, 0>>())[4],
+                        );
                         BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
-                        gTasks[taskId].data[6] += 1;
+                        task_set(
+                            taskId,
+                            tLearnMoveState,
+                            task_get(taskId, tLearnMoveState) + 1,
+                        );
                     }
                     break 'l2;
                 }
                 if sw3 == MVSTATE_INTRO_MSG_2 {
-                    fall = true;
                     if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
-                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[5]);
+                        BattleStringExpandPlaceholdersToDisplayedString(
+                            (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                                .cast::<CArray<*mut u8, 0>>())[5],
+                        );
                         BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
-                        gTasks[taskId].data[6] += 1;
+                        task_set(
+                            taskId,
+                            tLearnMoveState,
+                            task_get(taskId, tLearnMoveState) + 1,
+                        );
                     }
                     break 'l2;
                 }
                 if sw3 == MVSTATE_INTRO_MSG_3 {
                     fall = true;
                     if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
-                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[6]);
+                        BattleStringExpandPlaceholdersToDisplayedString(
+                            (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                                .cast::<CArray<*mut u8, 0>>())[6],
+                        );
                         BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
-                        gTasks[taskId].data[7] = MVSTATE_SHOW_MOVE_SELECT;
-                        gTasks[taskId].data[8] = MVSTATE_ASK_CANCEL;
-                        gTasks[taskId].data[6] += 1;
+                        task_set(taskId, tLearnMoveYesState, MVSTATE_SHOW_MOVE_SELECT);
+                        task_set(taskId, 8, MVSTATE_ASK_CANCEL);
+                        task_set(
+                            taskId,
+                            tLearnMoveState,
+                            task_get(taskId, tLearnMoveState) + 1,
+                        );
                     }
                 }
                 if fall || sw3 == MVSTATE_PRINT_YES_NO {
-                    fall = true;
                     if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
                         HandleBattleWindow(24, 8, 29, 13, 0);
                         BattlePutTextOnWindow(
-                            gText_BattleYesNoChoice.as_ptr().cast_mut(),
+                            (*(&raw const crate::data::battle_message::gText_BattleYesNoChoice)
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
                             B_WIN_YESNO,
                         );
-                        gTasks[taskId].data[6] += 1;
+                        task_set(
+                            taskId,
+                            tLearnMoveState,
+                            task_get(taskId, tLearnMoveState) + 1,
+                        );
                         gBattleCommunication[1] = 0;
                         BattleCreateYesNoCursorAt(0);
                     }
                     break 'l2;
                 }
                 if sw3 == MVSTATE_HANDLE_YES_NO {
-                    fall = true;
                     if gMain.newKeys as i32 & DPAD_UP != 0 && gBattleCommunication[1] != 0 {
                         PlaySE(SE_SELECT);
                         BattleDestroyYesNoCursorAt(gBattleCommunication[1]);
@@ -1121,10 +1188,14 @@ pub(crate) unsafe extern "C" fn Task_EvolutionScene(taskId: u8) {
                         HandleBattleWindow(24, 8, 29, 13, WINDOW_CLEAR);
                         PlaySE(SE_SELECT);
                         if gBattleCommunication[1] != 0 {
-                            gTasks[taskId].data[6] = gTasks[taskId].data[8];
+                            task_set(taskId, tLearnMoveState, task_get(taskId, 8));
                         } else {
-                            gTasks[taskId].data[6] = gTasks[taskId].data[7];
-                            if gTasks[taskId].data[6] == MVSTATE_SHOW_MOVE_SELECT {
+                            task_set(
+                                taskId,
+                                tLearnMoveState,
+                                task_get(taskId, tLearnMoveYesState),
+                            );
+                            if task_get(taskId, tLearnMoveState) == MVSTATE_SHOW_MOVE_SELECT {
                                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
                             }
                         }
@@ -1132,105 +1203,126 @@ pub(crate) unsafe extern "C" fn Task_EvolutionScene(taskId: u8) {
                     if gMain.newKeys as i32 & B_BUTTON != 0 {
                         HandleBattleWindow(24, 8, 29, 13, WINDOW_CLEAR);
                         PlaySE(SE_SELECT);
-                        gTasks[taskId].data[6] = gTasks[taskId].data[8];
+                        task_set(taskId, tLearnMoveState, task_get(taskId, 8));
                     }
                     break 'l2;
                 }
                 if sw3 == MVSTATE_SHOW_MOVE_SELECT {
-                    fall = true;
                     if gPaletteFade.active() == 0 {
                         FreeAllWindowBuffers();
                         ShowSelectMovePokemonSummaryScreen(
                             gPlayerParty.as_mut_ptr(),
-                            gTasks[taskId].data[10] as u8,
+                            task_get(taskId, tPartyId) as u8,
                             gPlayerPartyCount - 1,
                             Some(CB2_EvolutionSceneLoadGraphics),
                             gMoveToLearn,
                         );
-                        gTasks[taskId].data[6] += 1;
+                        task_set(
+                            taskId,
+                            tLearnMoveState,
+                            task_get(taskId, tLearnMoveState) + 1,
+                        );
                     }
                     break 'l2;
                 }
                 if sw3 == MVSTATE_HANDLE_MOVE_SELECT {
-                    fall = true;
                     if gPaletteFade.active() == 0
-                        && gMain.callback2
-                            == Some(CB2_EvolutionSceneUpdate as unsafe extern "C" fn())
+                        && gMain.callback2 == Some(CB2_EvolutionSceneUpdate as unsafe fn())
                     {
                         var = GetMoveSlotToReplace() as u32;
                         if var == MAX_MON_MOVES as u32 {
-                            gTasks[taskId].data[6] = MVSTATE_ASK_CANCEL;
+                            task_set(taskId, tLearnMoveState, MVSTATE_ASK_CANCEL);
                         } else {
-                            let mut r#move: u16 =
-                                GetMonData2(mon, var as i32 + MON_DATA_MOVE1) as u16;
+                            let r#move: u16 = GetMonData2(mon, var as i32 + MON_DATA_MOVE1) as u16;
                             if IsHMMove2(r#move) != 0 {
                                 BattleStringExpandPlaceholdersToDisplayedString(
-                                    gBattleStringsTable[307],
+                                    (*(&raw const crate::data::battle_message::gBattleStringsTable).cast::<CArray<*mut u8, 0>>())[307],
                                 );
                                 BattlePutTextOnWindow(
                                     gDisplayedStringBattle.as_mut_ptr(),
                                     B_WIN_MSG,
                                 );
-                                gTasks[taskId].data[6] = MVSTATE_RETRY_AFTER_HM;
+                                task_set(taskId, tLearnMoveState, MVSTATE_RETRY_AFTER_HM);
                             } else {
                                 gBattleTextBuff2[0] = 0xFD;
                                 gBattleTextBuff2[1] = 2;
-                                gBattleTextBuff2[2] = r#move as u8 & 0xFF;
+                                gBattleTextBuff2[2] = r#move as u8;
                                 gBattleTextBuff2[3] = ((r#move as i32 & 0xFF00) >> 8) as u8;
                                 gBattleTextBuff2[4] = 0xFF;
                                 RemoveMonPPBonus(mon, var as u8);
                                 SetMonMoveSlot(mon, gMoveToLearn, var as u8);
-                                gTasks[taskId].data[6] += 1;
+                                task_set(
+                                    taskId,
+                                    tLearnMoveState,
+                                    task_get(taskId, tLearnMoveState) + 1,
+                                );
                             }
                         }
                     }
                     break 'l2;
                 }
                 if sw3 == MVSTATE_FORGET_MSG_1 {
-                    fall = true;
-                    BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[207]);
+                    BattleStringExpandPlaceholdersToDisplayedString(
+                        (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                            .cast::<CArray<*mut u8, 0>>())[207],
+                    );
                     BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
-                    gTasks[taskId].data[6] += 1;
+                    task_set(
+                        taskId,
+                        tLearnMoveState,
+                        task_get(taskId, tLearnMoveState) + 1,
+                    );
                     break 'l2;
                 }
                 if sw3 == MVSTATE_FORGET_MSG_2 {
-                    fall = true;
                     if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
-                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[7]);
+                        BattleStringExpandPlaceholdersToDisplayedString(
+                            (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                                .cast::<CArray<*mut u8, 0>>())[7],
+                        );
                         BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
-                        gTasks[taskId].data[6] += 1;
+                        task_set(
+                            taskId,
+                            tLearnMoveState,
+                            task_get(taskId, tLearnMoveState) + 1,
+                        );
                     }
                     break 'l2;
                 }
                 if sw3 == MVSTATE_LEARNED_MOVE {
-                    fall = true;
                     if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
-                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[208]);
+                        BattleStringExpandPlaceholdersToDisplayedString(
+                            (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                                .cast::<CArray<*mut u8, 0>>())[208],
+                        );
                         BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
-                        gTasks[taskId].data[0] = EVOSTATE_LEARNED_MOVE;
+                        task_set(taskId, tState, EVOSTATE_LEARNED_MOVE);
                     }
                     break 'l2;
                 }
                 if sw3 == MVSTATE_ASK_CANCEL {
-                    fall = true;
-                    BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[8]);
+                    BattleStringExpandPlaceholdersToDisplayedString(
+                        (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                            .cast::<CArray<*mut u8, 0>>())[8],
+                    );
                     BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
-                    gTasks[taskId].data[7] = MVSTATE_CANCEL;
-                    gTasks[taskId].data[8] = MVSTATE_INTRO_MSG_1;
-                    gTasks[taskId].data[6] = MVSTATE_PRINT_YES_NO;
+                    task_set(taskId, tLearnMoveYesState, MVSTATE_CANCEL);
+                    task_set(taskId, 8, MVSTATE_INTRO_MSG_1);
+                    task_set(taskId, tLearnMoveState, MVSTATE_PRINT_YES_NO);
                     break 'l2;
                 }
                 if sw3 == MVSTATE_CANCEL {
-                    fall = true;
-                    BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[9]);
+                    BattleStringExpandPlaceholdersToDisplayedString(
+                        (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                            .cast::<CArray<*mut u8, 0>>())[9],
+                    );
                     BattlePutTextOnWindow(gDisplayedStringBattle.as_mut_ptr(), B_WIN_MSG);
-                    gTasks[taskId].data[0] = EVOSTATE_TRY_LEARN_MOVE;
+                    task_set(taskId, tState, EVOSTATE_TRY_LEARN_MOVE);
                     break 'l2;
                 }
                 if sw3 == MVSTATE_RETRY_AFTER_HM {
-                    fall = true;
                     if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
-                        gTasks[taskId].data[6] = MVSTATE_SHOW_MOVE_SELECT;
+                        task_set(taskId, tLearnMoveState, MVSTATE_SHOW_MOVE_SELECT);
                     }
                     break 'l2;
                 }
@@ -1239,36 +1331,39 @@ pub(crate) unsafe extern "C" fn Task_EvolutionScene(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_TradeEvolutionScene(taskId: u8) {
+pub(crate) unsafe fn Task_TradeEvolutionScene(taskId: u8) {
     let mut var: u32 = 0;
-    let mut mon: *mut Pokemon = &raw mut gPlayerParty[gTasks[taskId].data[10]];
+    let mon: *mut Pokemon = &raw mut gPlayerParty[task_get(taskId, tPartyId)];
     'l1: {
-        match gTasks[taskId].data[0] {
+        match task_get(taskId, tState) {
             T_EVOSTATE_INTRO_MSG => {
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
-                    gText_PkmnIsEvolving.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::battle_message::gText_PkmnIsEvolving)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 1);
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
             T_EVOSTATE_INTRO_CRY => {
                 if IsTextPrinterActive(0) == 0 {
-                    PlayCry_Normal(gTasks[taskId].data[1] as u16, 0);
-                    gTasks[taskId].data[0] += 1;
+                    PlayCry_Normal(task_get(taskId, tPreEvoSpecies) as u16, 0);
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             T_EVOSTATE_INTRO_SOUND => {
                 if IsCryFinished() != 0 {
                     m4aSongNumStop(MUS_EVOLUTION);
                     PlaySE(MUS_EVOLUTION_INTRO);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             T_EVOSTATE_START_MUSIC => {
                 if IsSEPlaying() == 0 {
                     PlayBGM(MUS_EVOLUTION);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                     BeginNormalPaletteFade(0x1C, 4, 0, 0x10, 0);
                 }
             }
@@ -1277,24 +1372,24 @@ pub(crate) unsafe extern "C" fn Task_TradeEvolutionScene(taskId: u8) {
                     StartBgAnimation(TRUE);
                     var = gSprites[(*sEvoStructPtr).preEvoSpriteId].oam.paletteNum() as u32 + 16;
                     gBattleCommunication[2] = EvolutionSparkles_SpiralUpward(var as u16);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                     SetGpuReg(REG_OFFSET_BG3CNT, 1539);
                 }
             }
             T_EVOSTATE_SPARKLE_ARC => {
-                if gTasks[gBattleCommunication[2]].isActive == 0 {
-                    gTasks[taskId].data[0] += 1;
+                if (*gTasks.as_ptr())[gBattleCommunication[2]].isActive == 0 {
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                     (*sEvoStructPtr).delayTimer = 1;
                     gBattleCommunication[2] = EvolutionSparkles_ArcDown();
                 }
             }
             T_EVOSTATE_CYCLE_MON_SPRITE => {
-                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                if (*gTasks.as_ptr())[gBattleCommunication[2]].isActive == 0 {
                     gBattleCommunication[2] = CycleEvolutionMonSprite(
                         (*sEvoStructPtr).preEvoSpriteId,
                         (*sEvoStructPtr).postEvoSpriteId,
                     );
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             T_EVOSTATE_WAIT_CYCLE_MON_SPRITE => {
@@ -1304,26 +1399,28 @@ pub(crate) unsafe extern "C" fn Task_TradeEvolutionScene(taskId: u8) {
                 }) == 0
                 {
                     (*sEvoStructPtr).delayTimer = 3;
-                    if gTasks[gBattleCommunication[2]].isActive == 0 {
-                        gTasks[taskId].data[0] += 1;
+                    if (*gTasks.as_ptr())[gBattleCommunication[2]].isActive == 0 {
+                        task_set(taskId, tState, task_get(taskId, tState) + 1);
                     }
                 }
             }
             T_EVOSTATE_SPARKLE_CIRCLE => {
                 gBattleCommunication[2] = EvolutionSparkles_CircleInward();
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
             T_EVOSTATE_SPARKLE_SPRAY => {
-                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                if (*gTasks.as_ptr())[gBattleCommunication[2]].isActive == 0 {
                     gBattleCommunication[2] =
-                        EvolutionSparkles_SprayAndFlash_Trade(gTasks[taskId].data[2] as u16);
-                    gTasks[taskId].data[0] += 1;
+                        EvolutionSparkles_SprayAndFlash_Trade(
+                            task_get(taskId, tPostEvoSpecies) as u16
+                        );
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             T_EVOSTATE_EVO_SOUND => {
-                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                if (*gTasks.as_ptr())[gBattleCommunication[2]].isActive == 0 {
                     PlaySE(SE_EXP);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             T_EVOSTATE_EVO_MON_ANIM => {
@@ -1331,42 +1428,45 @@ pub(crate) unsafe extern "C" fn Task_TradeEvolutionScene(taskId: u8) {
                     Free(sBgAnimPal as *mut c_void);
                     EvoScene_DoMonAnimAndCry(
                         (*sEvoStructPtr).postEvoSpriteId,
-                        gTasks[taskId].data[2] as u16,
+                        task_get(taskId, tPostEvoSpecies) as u16,
                     );
                     memcpy(
                         &raw mut gPlttBufferUnfaded[32] as *mut u8,
                         (*sEvoStructPtr).savedPalette.as_mut_ptr() as *mut u8,
                         96,
                     );
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             T_EVOSTATE_SET_MON_EVOLVED => {
                 if IsCryFinished() != 0 {
                     StringExpandPlaceholders(
                         gStringVar4.as_mut_ptr(),
-                        gText_CongratsPkmnEvolved.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::battle_message::gText_CongratsPkmnEvolved)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     );
                     DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 1);
                     PlayFanfare(MUS_EVOLVED);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                     SetMonData(
                         mon,
                         MON_DATA_SPECIES,
-                        &raw mut gTasks[taskId].data[2] as *mut c_void,
+                        task_data_ptr(taskId, tPostEvoSpecies) as *mut c_void,
                     );
                     CalculateMonStats(mon);
                     EvolutionRenameMon(
                         mon,
-                        gTasks[taskId].data[1] as u16,
-                        gTasks[taskId].data[2] as u16,
+                        task_get(taskId, tPreEvoSpecies) as u16,
+                        task_get(taskId, tPostEvoSpecies) as u16,
                     );
                     GetSetPokedexFlag(
-                        SpeciesToNationalPokedexNum(gTasks[taskId].data[2] as u16),
+                        SpeciesToNationalPokedexNum(task_get(taskId, tPostEvoSpecies) as u16),
                         FLAG_SET_SEEN,
                     );
                     GetSetPokedexFlag(
-                        SpeciesToNationalPokedexNum(gTasks[taskId].data[2] as u16),
+                        SpeciesToNationalPokedexNum(task_get(taskId, tPostEvoSpecies) as u16),
                         FLAG_SET_CAUGHT,
                     );
                     IncrementGameStat(GAME_STAT_EVOLVED_POKEMON);
@@ -1374,29 +1474,37 @@ pub(crate) unsafe extern "C" fn Task_TradeEvolutionScene(taskId: u8) {
             }
             T_EVOSTATE_TRY_LEARN_MOVE => {
                 if IsTextPrinterActive(0) == 0 && IsFanfareTaskInactive() == TRUE {
-                    var = MonTryLearningNewMove(mon, gTasks[taskId].data[4] as u8) as u32;
-                    if var != MOVE_NONE as u32 && gTasks[taskId].data[9] == 0 {
+                    var =
+                        MonTryLearningNewMove(mon, task_get(taskId, tLearnsFirstMove) as u8) as u32;
+                    if var != MOVE_NONE as u32 && task_get(taskId, tEvoWasStopped) == 0 {
                         let mut nickname: CArray<u8, 20> = zeroed();
-                        gTasks[taskId].data[3] |= TASK_BIT_LEARN_MOVE as i16;
-                        gTasks[taskId].data[4] = FALSE as i16;
-                        gTasks[taskId].data[6] = 0;
+                        task_set(
+                            taskId,
+                            tBits,
+                            task_get(taskId, tBits) | (TASK_BIT_LEARN_MOVE as i16),
+                        );
+                        task_set(taskId, tLearnsFirstMove, FALSE as i16);
+                        task_set(taskId, tLearnMoveState, 0);
                         GetMonData3(mon, MON_DATA_NICKNAME, nickname.as_mut_ptr());
                         StringCopy_Nickname(gBattleTextBuff1.as_mut_ptr(), nickname.as_mut_ptr());
                         if var == MON_HAS_MAX_MOVES as u32 {
-                            gTasks[taskId].data[0] = T_EVOSTATE_REPLACE_MOVE;
+                            task_set(taskId, tState, T_EVOSTATE_REPLACE_MOVE);
                         } else if var == MON_ALREADY_KNOWS_MOVE as u32 {
                             break 'l1;
                         } else {
-                            gTasks[taskId].data[0] = T_EVOSTATE_LEARNED_MOVE;
+                            task_set(taskId, tState, T_EVOSTATE_LEARNED_MOVE);
                         }
                     } else {
                         PlayBGM(MUS_EVOLUTION);
                         DrawTextOnTradeWindow(
                             0,
-                            gText_CommunicationStandby5.as_ptr().cast_mut(),
+                            (*(&raw const crate::data::strings::gText_CommunicationStandby5)
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
                             1,
                         );
-                        gTasks[taskId].data[0] += 1;
+                        task_set(taskId, tState, task_get(taskId, tState) + 1);
                     }
                 }
             }
@@ -1405,12 +1513,15 @@ pub(crate) unsafe extern "C" fn Task_TradeEvolutionScene(taskId: u8) {
                     DestroyTask(taskId);
                     Free(sEvoStructPtr as *mut c_void);
                     sEvoStructPtr = null_mut();
-                    gTextFlags.set_useAlternateDownArrow(FALSE);
+                    (*(&raw const crate::text::gTextFlags)
+                        .cast::<TextFlags>()
+                        .cast_mut())
+                    .set_useAlternateDownArrow(FALSE);
                     SetMainCallback2(gCB2_AfterEvolution);
                 }
             }
             T_EVOSTATE_CANCEL => {
-                if gTasks[gBattleCommunication[2]].isActive == 0 {
+                if (*gTasks.as_ptr())[gBattleCommunication[2]].isActive == 0 {
                     m4aMPlayAllStop();
                     BeginNormalPaletteFade(
                         shl_i32(
@@ -1423,126 +1534,162 @@ pub(crate) unsafe extern "C" fn Task_TradeEvolutionScene(taskId: u8) {
                         0,
                         32767,
                     );
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             T_EVOSTATE_CANCEL_MON_ANIM => {
                 if gPaletteFade.active() == 0 {
                     EvoScene_DoMonAnimAndCry(
                         (*sEvoStructPtr).preEvoSpriteId,
-                        gTasks[taskId].data[1] as u16,
+                        task_get(taskId, tPreEvoSpecies) as u16,
                     );
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             T_EVOSTATE_CANCEL_MSG => {
                 if EvoScene_IsMonAnimFinished((*sEvoStructPtr).preEvoSpriteId) != 0 {
                     StringExpandPlaceholders(
                         gStringVar4.as_mut_ptr(),
-                        gText_EllipsisQuestionMark.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::battle_message::gText_EllipsisQuestionMark)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     );
                     DrawTextOnTradeWindow(0, gStringVar4.as_mut_ptr(), 1);
-                    gTasks[taskId].data[9] = TRUE as i16;
-                    gTasks[taskId].data[0] = T_EVOSTATE_TRY_LEARN_MOVE;
+                    task_set(taskId, tEvoWasStopped, TRUE as i16);
+                    task_set(taskId, tState, T_EVOSTATE_TRY_LEARN_MOVE);
                 }
             }
             T_EVOSTATE_LEARNED_MOVE => {
                 if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
                     BufferMoveToLearnIntoBattleTextBuff2();
                     PlayFanfare(MUS_LEVEL_UP);
-                    BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[3]);
+                    BattleStringExpandPlaceholdersToDisplayedString(
+                        (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                            .cast::<CArray<*mut u8, 0>>())[3],
+                    );
                     DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
-                    gTasks[taskId].data[4] = 0x40;
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tLearnsFirstMove, 0x40);
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
             T_EVOSTATE_TRY_LEARN_ANOTHER_MOVE => {
                 if IsTextPrinterActive(0) == 0
                     && IsFanfareTaskInactive() == TRUE
                     && ({
-                        gTasks[taskId].data[4] -= 1;
-                        gTasks[taskId].data[4]
+                        task_set(
+                            taskId,
+                            tLearnsFirstMove,
+                            task_get(taskId, tLearnsFirstMove) - 1,
+                        );
+                        task_get(taskId, tLearnsFirstMove)
                     }) == 0
                 {
-                    gTasks[taskId].data[0] = T_EVOSTATE_TRY_LEARN_MOVE;
+                    task_set(taskId, tState, T_EVOSTATE_TRY_LEARN_MOVE);
                 }
             }
             T_EVOSTATE_REPLACE_MOVE => 'l2: {
-                let sw3: i16 = gTasks[taskId].data[6];
+                let sw3: i16 = task_get(taskId, tLearnMoveState);
                 let mut fall = false;
                 if sw3 == T_MVSTATE_INTRO_MSG_1 {
-                    fall = true;
                     if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
                         BufferMoveToLearnIntoBattleTextBuff2();
-                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[4]);
+                        BattleStringExpandPlaceholdersToDisplayedString(
+                            (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                                .cast::<CArray<*mut u8, 0>>())[4],
+                        );
                         DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
-                        gTasks[taskId].data[6] += 1;
+                        task_set(
+                            taskId,
+                            tLearnMoveState,
+                            task_get(taskId, tLearnMoveState) + 1,
+                        );
                     }
                     break 'l2;
                 }
                 if sw3 == T_MVSTATE_INTRO_MSG_2 {
-                    fall = true;
                     if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
-                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[5]);
+                        BattleStringExpandPlaceholdersToDisplayedString(
+                            (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                                .cast::<CArray<*mut u8, 0>>())[5],
+                        );
                         DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
-                        gTasks[taskId].data[6] += 1;
+                        task_set(
+                            taskId,
+                            tLearnMoveState,
+                            task_get(taskId, tLearnMoveState) + 1,
+                        );
                     }
                     break 'l2;
                 }
                 if sw3 == T_MVSTATE_INTRO_MSG_3 {
                     fall = true;
                     if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
-                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[6]);
+                        BattleStringExpandPlaceholdersToDisplayedString(
+                            (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                                .cast::<CArray<*mut u8, 0>>())[6],
+                        );
                         DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
-                        gTasks[taskId].data[7] = T_MVSTATE_SHOW_MOVE_SELECT;
-                        gTasks[taskId].data[8] = T_MVSTATE_ASK_CANCEL;
-                        gTasks[taskId].data[6] += 1;
+                        task_set(taskId, tLearnMoveYesState, T_MVSTATE_SHOW_MOVE_SELECT);
+                        task_set(taskId, tLearnMoveNoState, T_MVSTATE_ASK_CANCEL);
+                        task_set(
+                            taskId,
+                            tLearnMoveState,
+                            task_get(taskId, tLearnMoveState) + 1,
+                        );
                     }
                 }
                 if fall || sw3 == T_MVSTATE_PRINT_YES_NO {
-                    fall = true;
                     if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
                         LoadUserWindowBorderGfx(0, 0xA8, 224);
                         CreateYesNoMenu(
-                            (&raw const gTradeEvolutionSceneYesNoWindowTemplate).cast_mut(),
+                            (&raw const (*(&raw const crate::data::trade::gTradeEvolutionSceneYesNoWindowTemplate).cast::<WindowTemplate>())).cast_mut(),
                             0xA8,
                             0xE,
                             0,
                         );
                         gBattleCommunication[1] = 0;
-                        gTasks[taskId].data[6] += 1;
+                        task_set(
+                            taskId,
+                            tLearnMoveState,
+                            task_get(taskId, tLearnMoveState) + 1,
+                        );
                         gBattleCommunication[1] = 0;
                     }
                     break 'l2;
                 }
                 if sw3 == T_MVSTATE_HANDLE_YES_NO {
-                    fall = true;
                     match Menu_ProcessInputNoWrapClearOnChoose() {
                         0 => {
                             gBattleCommunication[1] = 0;
                             BattleStringExpandPlaceholdersToDisplayedString(
-                                gBattleStringsTable[292],
+                                (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                                    .cast::<CArray<*mut u8, 0>>())[292],
                             );
                             DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
-                            gTasks[taskId].data[6] = gTasks[taskId].data[7];
-                            if gTasks[taskId].data[6] == T_MVSTATE_SHOW_MOVE_SELECT {
+                            task_set(
+                                taskId,
+                                tLearnMoveState,
+                                task_get(taskId, tLearnMoveYesState),
+                            );
+                            if task_get(taskId, tLearnMoveState) == T_MVSTATE_SHOW_MOVE_SELECT {
                                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
                             }
                         }
                         1 | MENU_B_PRESSED => {
                             gBattleCommunication[1] = 1;
                             BattleStringExpandPlaceholdersToDisplayedString(
-                                gBattleStringsTable[292],
+                                (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                                    .cast::<CArray<*mut u8, 0>>())[292],
                             );
                             DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
-                            gTasks[taskId].data[6] = gTasks[taskId].data[8];
+                            task_set(taskId, tLearnMoveState, task_get(taskId, tLearnMoveNoState));
                         }
                         _ => {}
                     }
                     break 'l2;
                 }
                 if sw3 == T_MVSTATE_SHOW_MOVE_SELECT {
-                    fall = true;
                     if gPaletteFade.active() == 0 {
                         if gWirelessCommType != 0 {
                             DestroyWirelessStatusIndicatorSprite();
@@ -1553,89 +1700,105 @@ pub(crate) unsafe extern "C" fn Task_TradeEvolutionScene(taskId: u8) {
                         FreeAllWindowBuffers();
                         ShowSelectMovePokemonSummaryScreen(
                             gPlayerParty.as_mut_ptr(),
-                            gTasks[taskId].data[10] as u8,
+                            task_get(taskId, tPartyId) as u8,
                             gPlayerPartyCount - 1,
                             Some(CB2_TradeEvolutionSceneLoadGraphics),
                             gMoveToLearn,
                         );
-                        gTasks[taskId].data[6] += 1;
+                        task_set(
+                            taskId,
+                            tLearnMoveState,
+                            task_get(taskId, tLearnMoveState) + 1,
+                        );
                     }
                     break 'l2;
                 }
                 if sw3 == T_MVSTATE_HANDLE_MOVE_SELECT {
-                    fall = true;
                     if gPaletteFade.active() == 0
-                        && gMain.callback2
-                            == Some(CB2_TradeEvolutionSceneUpdate as unsafe extern "C" fn())
+                        && gMain.callback2 == Some(CB2_TradeEvolutionSceneUpdate as unsafe fn())
                     {
                         var = GetMoveSlotToReplace() as u32;
                         if var == MAX_MON_MOVES as u32 {
-                            gTasks[taskId].data[6] = T_MVSTATE_ASK_CANCEL;
+                            task_set(taskId, tLearnMoveState, T_MVSTATE_ASK_CANCEL);
                         } else {
-                            let mut r#move: u16 =
-                                GetMonData2(mon, var as i32 + MON_DATA_MOVE1) as u16;
+                            let r#move: u16 = GetMonData2(mon, var as i32 + MON_DATA_MOVE1) as u16;
                             if IsHMMove2(r#move) != 0 {
                                 BattleStringExpandPlaceholdersToDisplayedString(
-                                    gBattleStringsTable[307],
+                                    (*(&raw const crate::data::battle_message::gBattleStringsTable).cast::<CArray<*mut u8, 0>>())[307],
                                 );
                                 DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
-                                gTasks[taskId].data[6] = T_MVSTATE_RETRY_AFTER_HM;
+                                task_set(taskId, tLearnMoveState, T_MVSTATE_RETRY_AFTER_HM);
                             } else {
                                 gBattleTextBuff2[0] = 0xFD;
                                 gBattleTextBuff2[1] = 2;
-                                gBattleTextBuff2[2] = r#move as u8 & 0xFF;
+                                gBattleTextBuff2[2] = r#move as u8;
                                 gBattleTextBuff2[3] = ((r#move as i32 & 0xFF00) >> 8) as u8;
                                 gBattleTextBuff2[4] = 0xFF;
                                 RemoveMonPPBonus(mon, var as u8);
                                 SetMonMoveSlot(mon, gMoveToLearn, var as u8);
                                 BattleStringExpandPlaceholdersToDisplayedString(
-                                    gBattleStringsTable[207],
+                                    (*(&raw const crate::data::battle_message::gBattleStringsTable).cast::<CArray<*mut u8, 0>>())[207],
                                 );
                                 DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
-                                gTasks[taskId].data[6] += 1;
+                                task_set(
+                                    taskId,
+                                    tLearnMoveState,
+                                    task_get(taskId, tLearnMoveState) + 1,
+                                );
                             }
                         }
                     }
                     break 'l2;
                 }
                 if sw3 == T_MVSTATE_FORGET_MSG {
-                    fall = true;
                     if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
-                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[7]);
+                        BattleStringExpandPlaceholdersToDisplayedString(
+                            (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                                .cast::<CArray<*mut u8, 0>>())[7],
+                        );
                         DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
-                        gTasks[taskId].data[6] += 1;
+                        task_set(
+                            taskId,
+                            tLearnMoveState,
+                            task_get(taskId, tLearnMoveState) + 1,
+                        );
                     }
                     break 'l2;
                 }
                 if sw3 == T_MVSTATE_LEARNED_MOVE {
-                    fall = true;
                     if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
-                        BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[208]);
+                        BattleStringExpandPlaceholdersToDisplayedString(
+                            (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                                .cast::<CArray<*mut u8, 0>>())[208],
+                        );
                         DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
-                        gTasks[taskId].data[0] = T_EVOSTATE_LEARNED_MOVE;
+                        task_set(taskId, tState, T_EVOSTATE_LEARNED_MOVE);
                     }
                     break 'l2;
                 }
                 if sw3 == T_MVSTATE_ASK_CANCEL {
-                    fall = true;
-                    BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[8]);
+                    BattleStringExpandPlaceholdersToDisplayedString(
+                        (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                            .cast::<CArray<*mut u8, 0>>())[8],
+                    );
                     DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
-                    gTasks[taskId].data[7] = T_MVSTATE_CANCEL;
-                    gTasks[taskId].data[8] = T_MVSTATE_INTRO_MSG_1;
-                    gTasks[taskId].data[6] = T_MVSTATE_PRINT_YES_NO;
+                    task_set(taskId, tLearnMoveYesState, T_MVSTATE_CANCEL);
+                    task_set(taskId, tLearnMoveNoState, T_MVSTATE_INTRO_MSG_1);
+                    task_set(taskId, tLearnMoveState, T_MVSTATE_PRINT_YES_NO);
                     break 'l2;
                 }
                 if sw3 == T_MVSTATE_CANCEL {
-                    fall = true;
-                    BattleStringExpandPlaceholdersToDisplayedString(gBattleStringsTable[9]);
+                    BattleStringExpandPlaceholdersToDisplayedString(
+                        (*(&raw const crate::data::battle_message::gBattleStringsTable)
+                            .cast::<CArray<*mut u8, 0>>())[9],
+                    );
                     DrawTextOnTradeWindow(0, gDisplayedStringBattle.as_mut_ptr(), 1);
-                    gTasks[taskId].data[0] = T_EVOSTATE_TRY_LEARN_MOVE;
+                    task_set(taskId, tState, T_EVOSTATE_TRY_LEARN_MOVE);
                     break 'l2;
                 }
                 if sw3 == T_MVSTATE_RETRY_AFTER_HM {
-                    fall = true;
                     if IsTextPrinterActive(0) == 0 && IsSEPlaying() == 0 {
-                        gTasks[taskId].data[6] = T_MVSTATE_SHOW_MOVE_SELECT;
+                        task_set(taskId, tLearnMoveState, T_MVSTATE_SHOW_MOVE_SELECT);
                     }
                     break 'l2;
                 }
@@ -1644,8 +1807,8 @@ pub(crate) unsafe extern "C" fn Task_TradeEvolutionScene(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn EvoDummyFunc() {}
-pub(crate) unsafe extern "C" fn VBlankCB_EvolutionScene() {
+pub(crate) unsafe fn EvoDummyFunc() {}
+pub(crate) unsafe fn VBlankCB_EvolutionScene() {
     SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_X);
     SetGpuReg(REG_OFFSET_BG0VOFS, gBattle_BG0_Y);
     SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X);
@@ -1659,7 +1822,7 @@ pub(crate) unsafe extern "C" fn VBlankCB_EvolutionScene() {
     TransferPlttBuffer();
     ScanlineEffect_InitHBlankDmaTransfer();
 }
-pub(crate) unsafe extern "C" fn VBlankCB_TradeEvolutionScene() {
+pub(crate) unsafe fn VBlankCB_TradeEvolutionScene() {
     SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_X);
     SetGpuReg(REG_OFFSET_BG0VOFS, gBattle_BG0_Y);
     SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X);
@@ -1673,8 +1836,8 @@ pub(crate) unsafe extern "C" fn VBlankCB_TradeEvolutionScene() {
     TransferPlttBuffer();
     ScanlineEffect_InitHBlankDmaTransfer();
 }
-pub(crate) unsafe extern "C" fn Task_UpdateBgPalette(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_UpdateBgPalette(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data.at(6) != 0 {
         return;
     }
@@ -1713,32 +1876,32 @@ pub(crate) unsafe extern "C" fn Task_UpdateBgPalette(taskId: u8) {
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn CreateBgAnimTask(isLink: u8) {
-    let mut taskId: u8 = CreateTask(Some(Task_AnimateBg), 7);
+unsafe fn CreateBgAnimTask(isLink: u8) {
+    let taskId: u8 = CreateTask(Some(Task_AnimateBg), 7);
     if isLink == 0 {
-        gTasks[taskId].data[2] = FALSE as i16;
+        task_set(taskId, tIsLink, FALSE as i16);
     } else {
-        gTasks[taskId].data[2] = TRUE as i16;
+        task_set(taskId, tIsLink, TRUE as i16);
     }
 }
-pub(crate) unsafe extern "C" fn Task_AnimateBg(taskId: u8) {
+pub(crate) unsafe fn Task_AnimateBg(taskId: u8) {
     let mut outer_X: *mut u16 = null_mut();
     let mut outer_Y: *mut u16 = null_mut();
-    let mut inner_X: *mut u16 = &raw mut gBattle_BG1_X;
-    let mut inner_Y: *mut u16 = &raw mut gBattle_BG1_Y;
-    if gTasks[taskId].data[2] == 0 {
+    let inner_X: *mut u16 = &raw mut gBattle_BG1_X;
+    let inner_Y: *mut u16 = &raw mut gBattle_BG1_Y;
+    if task_get(taskId, tIsLink) == 0 {
         outer_X = &raw mut gBattle_BG2_X;
         outer_Y = &raw mut gBattle_BG2_Y;
     } else {
         outer_X = &raw mut gBattle_BG3_X;
         outer_Y = &raw mut gBattle_BG3_Y;
     }
-    gTasks[taskId].data[0] = gTasks[taskId].data[0] + 5 & 0xFF;
-    gTasks[taskId].data[1] = gTasks[taskId].data[0] + 0x80 & 0xFF;
-    *inner_X = Cos(gTasks[taskId].data[0], 4) as u16 + 8;
-    *inner_Y = Sin(gTasks[taskId].data[0], 4) as u16 + 16;
-    *outer_X = Cos(gTasks[taskId].data[1], 4) as u16 + 8;
-    *outer_Y = Sin(gTasks[taskId].data[1], 4) as u16 + 16;
+    task_set(taskId, 0, (task_get(taskId, 0) + 5) & 0xFF);
+    task_set(taskId, 1, (task_get(taskId, 0) + 0x80) & 0xFF);
+    *inner_X = Cos(task_get(taskId, 0), 4) as u16 + 8;
+    *inner_Y = Sin(task_get(taskId, 0), 4) as u16 + 16;
+    *outer_X = Cos(task_get(taskId, 1), 4) as u16 + 8;
+    *outer_Y = Sin(task_get(taskId, 1), 4) as u16 + 16;
     if FuncIsActiveTask(Some(Task_UpdateBgPalette)) == 0 {
         DestroyTask(taskId);
         *inner_X = 0;
@@ -1747,20 +1910,14 @@ pub(crate) unsafe extern "C" fn Task_AnimateBg(taskId: u8) {
         *outer_Y = 0;
     }
 }
-pub(crate) unsafe extern "C" fn InitMovingBgPalette(mut palette: *mut u16) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    i = 0;
-    while i < 50 {
-        j = 0;
-        while j < 16 {
+unsafe fn InitMovingBgPalette(palette: *mut u16) {
+    for i in 0..50i32 {
+        for j in 0..16i32 {
             *palette.at(i * 16 + j) = sBgAnim_Pal[sBgAnim_PalIndexes[i][j]];
-            j += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn StartBgAnimation(isLink: u8) {
+unsafe fn StartBgAnimation(isLink: u8) {
     let mut innerBgId: u8 = 0;
     let mut outerBgId: u8 = 0;
     sBgAnimPal = AllocZeroed(0x640) as *mut u16;
@@ -1808,14 +1965,14 @@ pub(crate) unsafe extern "C" fn StartBgAnimation(isLink: u8) {
     CreateTask(Some(Task_UpdateBgPalette), 5);
     CreateBgAnimTask(isLink);
 }
-pub(crate) unsafe extern "C" fn PauseBgPaletteAnim() {
-    let mut taskId: u8 = FindTaskIdByFunc(Some(Task_UpdateBgPalette));
+unsafe fn PauseBgPaletteAnim() {
+    let taskId: u8 = FindTaskIdByFunc(Some(Task_UpdateBgPalette));
     if taskId != TASK_NONE {
-        gTasks[taskId].data[6] = TRUE as i16;
+        task_set(taskId, tPaused, TRUE as i16);
     }
     FillPalette(0, 160, 32);
 }
-pub(crate) unsafe extern "C" fn StopBgAnimation() {
+unsafe fn StopBgAnimation() {
     let mut taskId: u8 = 0;
     if ({
         taskId = FindTaskIdByFunc(Some(Task_UpdateBgPalette));
@@ -1834,7 +1991,7 @@ pub(crate) unsafe extern "C" fn StopBgAnimation() {
     FillPalette(0, 160, 32);
     RestoreBgAfterAnim();
 }
-pub(crate) unsafe extern "C" fn RestoreBgAfterAnim() {
+unsafe fn RestoreBgAfterAnim() {
     SetGpuReg(REG_OFFSET_BLDCNT, 0);
     gBattle_BG1_X = 0;
     gBattle_BG1_Y = 0;
@@ -1844,14 +2001,12 @@ pub(crate) unsafe extern "C" fn RestoreBgAfterAnim() {
     SetGpuReg(REG_OFFSET_DISPCNT, 6464);
     Free(sBgAnimPal as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn EvoScene_DoMonAnimAndCry(monSpriteId: u8, speciesId: u16) {
+unsafe fn EvoScene_DoMonAnimAndCry(monSpriteId: u8, speciesId: u16) {
     DoMonFrontSpriteAnimation(&raw mut gSprites[monSpriteId], speciesId, 0, 0);
 }
-pub(crate) unsafe extern "C" fn EvoScene_IsMonAnimFinished(monSpriteId: u8) -> u32 {
-    if gSprites[monSpriteId].callback
-        == Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
-    {
+unsafe fn EvoScene_IsMonAnimFinished(monSpriteId: u8) -> u32 {
+    if gSprites[monSpriteId].callback == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite)) {
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }

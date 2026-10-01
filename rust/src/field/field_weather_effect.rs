@@ -3,29 +3,41 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    dead_code,
+    unused_assignments,
+    unused_labels
 )]
 
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_object_movement::SetSpritePosToMapCoords;
+use crate::field_weather::{
+    ApplyWeatherColorMapIfIdle, ApplyWeatherColorMapIfIdle_Gradual, DroughtStateInit,
+    DroughtStateRun, LoadCustomWeatherSpritePalette, LoadDroughtWeatherPalettes,
+    ResetDroughtWeatherPaletteLoading, SetCurrentAndNextWeather, SetNextWeather,
+    SetRainStrengthFromSoundEffect, Weather_SetBlendCoeffs, Weather_SetTargetBlendCoeffs,
+    Weather_UpdateBlend,
+};
+use crate::fieldmap::gMapHeader;
+use crate::gpu_regs::SetGpuReg;
+use crate::load_save::gSaveBlock1Ptr;
+use crate::overworld::IncrementGameStat;
+use crate::random::Random;
+use crate::script::ScriptContext_Enable;
+use crate::sound::{IsSEPlaying, PlaySE};
+use crate::sprite::gSprites;
+use crate::sprite::{FreeSpriteTilesByTag, gSpriteCoordOffsetX, gSpriteCoordOffsetY};
+use crate::task::DestroyTask;
+use crate::task::gTasks;
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,6 +46,78 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CalcCenterToCornerVec` with this module's view of its types.
+#[inline]
+unsafe fn CalcCenterToCornerVec(a0: *mut Sprite, a1: u8, a2: u8, a3: u8) {
+    unsafe {
+        crate::sprite::CalcCenterToCornerVec(a0 as _, a1, a2, a3);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateSpriteAtEnd` with this module's view of its types.
+#[inline]
+unsafe fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSpriteAtEnd(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+unsafe fn FindTaskIdByFunc(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `LoadSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
+    unsafe { crate::sprite::LoadSpriteSheet(a0 as _) }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+// The C's names for task and sprite data slots.
+const tOffsetY: usize = 0;
+const tRadius: usize = 0;
+const tScrollXCounter: usize = 0;
+const tBlendY: usize = 1;
+const tCounterY: usize = 1;
+const tDeltaY: usize = 1;
+const tRandom: usize = 1;
+const tScrollXDir: usize = 1;
+const tBlendDelay: usize = 2;
+const tPosX: usize = 2;
+const tRadiusCounter: usize = 2;
+const tWaveDelta: usize = 2;
+const tEntranceDelay: usize = 3;
+const tWinRange: usize = 3;
+const tSnowflakeId: usize = 4;
+const tActive: usize = 5;
+const tFallCounter: usize = 5;
+const tFallDuration: usize = 6;
+const tWaiting: usize = 6;
+const tDeltaY2: usize = 7;
 // Data tables (translate with cdata.py): gCloudsWeatherPalette gSandstormWeatherPalette gWeatherFogDiagonalTiles gWeatherFogHorizontalTiles gWeatherCloudTiles gWeatherSnow1Tiles gWeatherSnow2Tiles gWeatherBubbleTiles gWeatherAshTiles gWeatherRainTiles gWeatherSandstormTiles sCloudSpriteMapCoords sCloudSpriteSheet sCloudSpriteOamData sCloudSpriteAnimCmd sCloudSpriteAnimCmds sCloudSpriteTemplate sRainSpriteCoords sRainSpriteOamData sRainSpriteFallAnimCmd sRainSpriteSplashAnimCmd sRainSpriteHeavySplashAnimCmd sRainSpriteAnimCmds sRainSpriteTemplate sRainSpriteMovement sRainSpriteFallingDurations sRainSpriteSheet sSnowflakeSpriteOamData sSnowflakeSpriteImages sSnowflakeAnimCmd0 sSnowflakeAnimCmd1 sSnowflakeAnimCmds sSnowflakeSpriteTemplate sUnusedData sOamData_FogH sAnim_FogH_0 sAnim_FogH_1 sAnim_FogH_2 sAnim_FogH_3 sAnim_FogH_4 sAnim_FogH_5 sAnims_FogH sAffineAnim_FogH sAffineAnims_FogH sFogHorizontalSpriteTemplate sAshSpriteSheet sAshSpriteOamData sAshSpriteAnimCmd0 sAshSpriteAnimCmds sAshSpriteTemplate sFogDiagonalSpriteSheet sFogDiagonalSpriteOamData sFogDiagonalSpriteAnimCmd0 sFogDiagonalSpriteAnimCmds sFogDiagonalSpriteTemplate sSandstormSpriteOamData sSandstormSpriteAnimCmd0 sSandstormSpriteAnimCmd1 sSandstormSpriteAnimCmds sSandstormSpriteTemplate sSandstormSpriteSheet sSwirlEntranceDelays sBubbleStartDelays sWeatherBubbleSpriteSheet sBubbleStartCoords sBubbleSpriteAnimCmd0 sBubbleSpriteAnimCmds sBubbleSpriteTemplate sWeatherCycleRoute119 sWeatherCycleRoute123
 
 const MIN_SANDSTORM_WAVE_INDEX: u16 = 32;
@@ -108,138 +192,116 @@ static sWeatherCycleRoute123: Table<CArray<u8, 4>> =
     Table((&raw const crate::data::field_weather_effect::sWeatherCycleRoute123).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCurrentAbnormalWeather: u8 = 0;
+pub(crate) static sCurrentAbnormalWeather: crate::global::Global<u8> =
+    crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sUnusedWeatherRelated: u16 = 0;
+pub(crate) static sUnusedWeatherRelated: crate::global::Global<u16> = crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static mut gMapHeader: MapHeader;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static gSineTable: CArray<i16, 0>;
-    static mut gSpriteCoordOffsetX: i16;
-    static mut gSpriteCoordOffsetY: i16;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTasks: CArray<Task, 0>;
-    static gWeatherPtr: *mut Weather;
-    fn ApplyWeatherColorMapIfIdle(a0: i8);
-    fn ApplyWeatherColorMapIfIdle_Gradual(a0: u8, a1: u8, a2: u8);
-    fn CalcCenterToCornerVec(a0: *mut Sprite, a1: u8, a2: u8, a3: u8);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateSpriteAtEnd(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DroughtStateInit();
-    fn DroughtStateRun();
-    fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn IncrementGameStat(a0: u8);
-    fn IsSEPlaying() -> u8;
-    fn LoadCustomWeatherSpritePalette(a0: *mut u16);
-    fn LoadDroughtWeatherPalettes() -> u8;
-    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
-    fn PlaySE(a0: u16);
-    fn Random() -> u16;
-    fn ResetDroughtWeatherPaletteLoading();
-    fn ScriptContext_Enable();
-    fn SetCurrentAndNextWeather(a0: u8);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetNextWeather(a0: u8);
-    fn SetRainStrengthFromSoundEffect(a0: u16);
-    fn SetSpritePosToMapCoords(a0: i16, a1: i16, a2: *mut i16, a3: *mut i16);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn Weather_SetBlendCoeffs(a0: u8, a1: u8);
-    fn Weather_SetTargetBlendCoeffs(a0: u8, a1: u8, a2: i32);
-    fn Weather_UpdateBlend() -> u8;
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Clouds_InitVars() {
-    (*gWeatherPtr).targetColorMapIndex = 0;
-    (*gWeatherPtr).colorMapStepDelay = 20;
-    (*gWeatherPtr).weatherGfxLoaded = FALSE;
-    (*gWeatherPtr).initStep = 0;
-    if (*gWeatherPtr).cloudSpritesCreated == FALSE {
+pub unsafe fn Clouds_InitVars() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetColorMapIndex = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .colorMapStepDelay = 20;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded = FALSE;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep = 0;
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .cloudSpritesCreated
+        == FALSE
+    {
         Weather_SetBlendCoeffs(0, 16);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Clouds_InitAll() {
+pub unsafe fn Clouds_InitAll() {
     Clouds_InitVars();
-    while (*gWeatherPtr).weatherGfxLoaded == FALSE {
+    while (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded
+        == FALSE
+    {
         Clouds_Main();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Clouds_Main() {
-    match (*gWeatherPtr).initStep {
+pub unsafe fn Clouds_Main() {
+    match (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep
+    {
         0 => {
             CreateCloudSprites();
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
         1 => {
             Weather_SetTargetBlendCoeffs(12, 8, 1);
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
-        2 => {
-            if Weather_UpdateBlend() != 0 {
-                (*gWeatherPtr).weatherGfxLoaded = TRUE;
-                (*gWeatherPtr).initStep += 1;
-            }
+        2 if Weather_UpdateBlend() != 0 => {
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .weatherGfxLoaded = TRUE;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Clouds_Finish() -> u8 {
-    match (*gWeatherPtr).finishStep {
+pub unsafe fn Clouds_Finish() -> u8 {
+    match (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .finishStep
+    {
         0 => {
             Weather_SetTargetBlendCoeffs(0, 16, 1);
-            (*gWeatherPtr).finishStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .finishStep += 1;
             return TRUE;
         }
         1 => {
             if Weather_UpdateBlend() != 0 {
                 DestroyCloudSprites();
-                (*gWeatherPtr).finishStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .finishStep += 1;
             }
             return TRUE;
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Sunny_InitVars() {
-    (*gWeatherPtr).targetColorMapIndex = 0;
-    (*gWeatherPtr).colorMapStepDelay = 20;
+pub unsafe fn Sunny_InitVars() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetColorMapIndex = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .colorMapStepDelay = 20;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Sunny_InitAll() {
+pub unsafe fn Sunny_InitAll() {
     Sunny_InitVars();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Sunny_Main() {}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Sunny_Finish() -> u8 {
-    return FALSE;
+pub fn Sunny_Main() {}
+pub fn Sunny_Finish() -> u8 {
+    FALSE
 }
-pub(crate) unsafe extern "C" fn CreateCloudSprites() {
-    let mut i: u16 = 0;
+pub(crate) unsafe fn CreateCloudSprites() {
     let mut spriteId: u8 = 0;
     let mut sprite: *mut Sprite = null_mut();
-    if (*gWeatherPtr).cloudSpritesCreated == TRUE {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .cloudSpritesCreated
+        == TRUE
+    {
         return;
     }
     LoadSpriteSheet((&raw const *sCloudSpriteSheet).cast_mut());
     LoadCustomWeatherSpritePalette(gCloudsWeatherPalette.as_ptr().cast_mut());
-    i = 0;
-    while i < NUM_CLOUD_SPRITES {
+    for i in 0..NUM_CLOUD_SPRITES {
         spriteId = CreateSprite((&raw const *sCloudSpriteTemplate).cast_mut(), 0, 0, 0xFF);
         if spriteId != MAX_SPRITES {
-            (*gWeatherPtr).sprites.s1.cloudSprites[i] = &raw mut gSprites[spriteId];
-            sprite = (*gWeatherPtr).sprites.s1.cloudSprites[i];
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sprites
+                .s1
+                .cloudSprites[i] = &raw mut gSprites[spriteId];
+            sprite = (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                .cast::<*mut Weather>()))
+            .sprites
+            .s1
+            .cloudSprites[i];
             SetSpritePosToMapCoords(
                 sCloudSpriteMapCoords[i].x + MAP_OFFSET as i16,
                 sCloudSpriteMapCoords[i].y + MAP_OFFSET as i16,
@@ -248,73 +310,106 @@ pub(crate) unsafe extern "C" fn CreateCloudSprites() {
             );
             (*sprite).set_coordOffsetEnabled(TRUE as u16);
         } else {
-            (*gWeatherPtr).sprites.s1.cloudSprites[i] = null_mut();
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sprites
+                .s1
+                .cloudSprites[i] = null_mut();
         }
-        i += 1;
     }
-    (*gWeatherPtr).cloudSpritesCreated = TRUE;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .cloudSpritesCreated = TRUE;
 }
-pub(crate) unsafe extern "C" fn DestroyCloudSprites() {
-    let mut i: u16 = 0;
-    if (*gWeatherPtr).cloudSpritesCreated == 0 {
+unsafe fn DestroyCloudSprites() {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .cloudSpritesCreated
+        == 0
+    {
         return;
     }
-    i = 0;
-    while i < NUM_CLOUD_SPRITES {
-        if !(*gWeatherPtr).sprites.s1.cloudSprites[i].is_null() {
-            DestroySprite((*gWeatherPtr).sprites.s1.cloudSprites[i]);
+    for i in 0..NUM_CLOUD_SPRITES {
+        if !(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sprites
+            .s1
+            .cloudSprites[i]
+            .is_null()
+        {
+            DestroySprite(
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .sprites
+                    .s1
+                    .cloudSprites[i],
+            );
         }
-        i += 1;
     }
     FreeSpriteTilesByTag(GFXTAG_CLOUD);
-    (*gWeatherPtr).cloudSpritesCreated = FALSE;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .cloudSpritesCreated = FALSE;
 }
-pub(crate) unsafe extern "C" fn UpdateCloudSprite(sprite: *mut Sprite) {
-    (*sprite).data[0] = (*sprite).data[0] + 1 & 1;
+pub(crate) unsafe fn UpdateCloudSprite(sprite: *mut Sprite) {
+    (*sprite).data[0] = ((*sprite).data[0] + 1) & 1;
     if (*sprite).data[0] != 0 {
         (*sprite).x -= 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Drought_InitVars() {
-    (*gWeatherPtr).initStep = 0;
-    (*gWeatherPtr).weatherGfxLoaded = FALSE;
-    (*gWeatherPtr).targetColorMapIndex = 0;
-    (*gWeatherPtr).colorMapStepDelay = 0;
+pub unsafe fn Drought_InitVars() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded = FALSE;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetColorMapIndex = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .colorMapStepDelay = 0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Drought_InitAll() {
+pub unsafe fn Drought_InitAll() {
     Drought_InitVars();
-    while (*gWeatherPtr).weatherGfxLoaded == FALSE {
+    while (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded
+        == FALSE
+    {
         Drought_Main();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Drought_Main() {
-    match (*gWeatherPtr).initStep {
+pub unsafe fn Drought_Main() {
+    match (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep
+    {
         0 => {
-            if (*gWeatherPtr).palProcessingState != WEATHER_PAL_STATE_CHANGING_WEATHER {
-                (*gWeatherPtr).initStep += 1;
+            if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .palProcessingState
+                != WEATHER_PAL_STATE_CHANGING_WEATHER
+            {
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .initStep += 1;
             }
         }
         1 => {
             ResetDroughtWeatherPaletteLoading();
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
         2 => {
             if LoadDroughtWeatherPalettes() == FALSE {
-                (*gWeatherPtr).initStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .initStep += 1;
             }
         }
         3 => {
             DroughtStateInit();
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
         4 => {
             DroughtStateRun();
-            if (*gWeatherPtr).droughtBrightnessStage == 6 {
-                (*gWeatherPtr).weatherGfxLoaded = TRUE;
-                (*gWeatherPtr).initStep += 1;
+            if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .droughtBrightnessStage
+                == 6
+            {
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .weatherGfxLoaded = TRUE;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .initStep += 1;
             }
         }
         _ => {
@@ -322,176 +417,200 @@ pub unsafe extern "C" fn Drought_Main() {
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Drought_Finish() -> u8 {
-    return FALSE;
+pub fn Drought_Finish() -> u8 {
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartDroughtWeatherBlend() {
+pub unsafe fn StartDroughtWeatherBlend() {
     CreateTask(Some(UpdateDroughtBlend), 80);
 }
-pub(crate) unsafe extern "C" fn UpdateDroughtBlend(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
+pub(crate) unsafe fn UpdateDroughtBlend(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
     'l1: {
         let sw1: i16 = (*task).data[0];
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
-            (*task).data[1] = 0;
-            (*task).data[2] = 0;
-            (*task).data[3] = (67108936 as usize as *mut u16).read_volatile() as i16;
+            (*task).data[tBlendY] = 0;
+            (*task).data[tBlendDelay] = 0;
+            (*task).data[tWinRange] = (67108936_usize as *mut u16).read_volatile() as i16;
             SetGpuReg(REG_OFFSET_WININ, 16191);
             SetGpuReg(REG_OFFSET_BLDCNT, 158);
             SetGpuReg(REG_OFFSET_BLDY, 0);
             (*task).data[0] += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
-            (*task).data[1] += 3;
-            if (*task).data[1] > 16 {
-                (*task).data[1] = 16;
+            (*task).data[tBlendY] += 3;
+            if (*task).data[tBlendY] > 16 {
+                (*task).data[tBlendY] = 16;
             }
-            SetGpuReg(REG_OFFSET_BLDY, (*task).data[1] as u16);
-            if (*task).data[1] >= 16 {
+            SetGpuReg(REG_OFFSET_BLDY, (*task).data[tBlendY] as u16);
+            if (*task).data[tBlendY] >= 16 {
                 (*task).data[0] += 1;
             }
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
-            (*task).data[2] += 1;
-            if (*task).data[2] > 9 {
-                (*task).data[2] = 0;
-                (*task).data[1] -= 1;
-                if (*task).data[1] <= 0 {
-                    (*task).data[1] = 0;
+            (*task).data[tBlendDelay] += 1;
+            if (*task).data[tBlendDelay] > 9 {
+                (*task).data[tBlendDelay] = 0;
+                (*task).data[tBlendY] -= 1;
+                if (*task).data[tBlendY] <= 0 {
+                    (*task).data[tBlendY] = 0;
                     (*task).data[0] += 1;
                 }
-                SetGpuReg(REG_OFFSET_BLDY, (*task).data[1] as u16);
+                SetGpuReg(REG_OFFSET_BLDY, (*task).data[tBlendY] as u16);
             }
             break 'l1;
         }
         if sw1 == 3 {
-            fall = true;
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
             SetGpuReg(REG_OFFSET_BLDY, 0);
-            SetGpuReg(REG_OFFSET_WININ, (*task).data[3] as u16);
+            SetGpuReg(REG_OFFSET_WININ, (*task).data[tWinRange] as u16);
             (*task).data[0] += 1;
             break 'l1;
         }
         if sw1 == 4 {
-            fall = true;
             ScriptContext_Enable();
             DestroyTask(taskId);
             break 'l1;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rain_InitVars() {
-    (*gWeatherPtr).initStep = 0;
-    (*gWeatherPtr).weatherGfxLoaded = FALSE;
-    (*gWeatherPtr).rainSpriteVisibleCounter = 0;
-    (*gWeatherPtr).rainSpriteVisibleDelay = 8;
-    (*gWeatherPtr).isDownpour = FALSE;
-    (*gWeatherPtr).targetRainSpriteCount = 10;
-    (*gWeatherPtr).targetColorMapIndex = 3;
-    (*gWeatherPtr).colorMapStepDelay = 20;
+pub unsafe fn Rain_InitVars() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded = FALSE;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .rainSpriteVisibleCounter = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .rainSpriteVisibleDelay = 8;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).isDownpour =
+        FALSE;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetRainSpriteCount = 10;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetColorMapIndex = 3;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .colorMapStepDelay = 20;
     SetRainStrengthFromSoundEffect(SE_RAIN);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rain_InitAll() {
+pub unsafe fn Rain_InitAll() {
     Rain_InitVars();
-    while (*gWeatherPtr).weatherGfxLoaded == 0 {
+    while (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded
+        == 0
+    {
         Rain_Main();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rain_Main() {
-    match (*gWeatherPtr).initStep {
+pub unsafe fn Rain_Main() {
+    match (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep
+    {
         0 => {
             LoadRainSpriteSheet();
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
         1 => {
             if CreateRainSprite() == 0 {
-                (*gWeatherPtr).initStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .initStep += 1;
             }
         }
-        2 => {
-            if UpdateVisibleRainSprites() == 0 {
-                (*gWeatherPtr).weatherGfxLoaded = TRUE;
-                (*gWeatherPtr).initStep += 1;
-            }
+        2 if UpdateVisibleRainSprites() == 0 => {
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .weatherGfxLoaded = TRUE;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rain_Finish() -> u8 {
+pub unsafe fn Rain_Finish() -> u8 {
     'l1: {
-        let sw1: u16 = (*gWeatherPtr).finishStep;
+        let sw1: u16 = (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+            .cast::<*mut Weather>()))
+        .finishStep;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
-            if (*gWeatherPtr).nextWeather == WEATHER_RAIN
-                || (*gWeatherPtr).nextWeather == WEATHER_RAIN_THUNDERSTORM
-                || (*gWeatherPtr).nextWeather == WEATHER_DOWNPOUR
+            if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .nextWeather
+                == WEATHER_RAIN
+                || (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .nextWeather
+                    == WEATHER_RAIN_THUNDERSTORM
+                || (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .nextWeather
+                    == WEATHER_DOWNPOUR
             {
-                (*gWeatherPtr).finishStep = 0xFF;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .finishStep = 0xFF;
                 return FALSE;
             } else {
-                (*gWeatherPtr).targetRainSpriteCount = 0;
-                (*gWeatherPtr).finishStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .targetRainSpriteCount = 0;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .finishStep += 1;
             }
         }
         if fall || sw1 == 1 {
-            fall = true;
             if UpdateVisibleRainSprites() == 0 {
                 DestroyRainSprites();
-                (*gWeatherPtr).finishStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .finishStep += 1;
                 return FALSE;
             }
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn StartRainSpriteFall(sprite: *mut Sprite) {
-    let mut rand: u32 = 0;
-    let mut numFallingFrames: u16 = 0;
-    let mut tileX: i32 = 0;
-    let mut tileY: i32 = 0;
-    if (*sprite).data[1] == 0 {
-        (*sprite).data[1] = 361;
+unsafe fn StartRainSpriteFall(sprite: *mut Sprite) {
+    if (*sprite).data[tRandom] == 0 {
+        (*sprite).data[tRandom] = 361;
     }
-    rand = 0x41c64e6d * (*sprite).data[1] as u32 + 12345;
-    (*sprite).data[1] = (((rand & 0x7FFF0000) >> 16) % 600) as i16;
-    numFallingFrames = sRainSpriteFallingDurations[(*gWeatherPtr).isDownpour][0];
-    tileX = ((*sprite).data[1] % 30) as i32;
-    (*sprite).data[2] = tileX as i16 * 8;
-    tileY = ((*sprite).data[1] / 30) as i32;
+    let rand: u32 = 0x41c64e6d * (*sprite).data[tRandom] as u32 + 12345;
+    (*sprite).data[tRandom] = (((rand & 0x7FFF0000) >> 16) % 600) as i16;
+    let numFallingFrames: u16 = sRainSpriteFallingDurations
+        [(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .isDownpour][0];
+    let tileX: i32 = ((*sprite).data[tRandom] % 30) as i32;
+    (*sprite).data[tPosX] = tileX as i16 * 8;
+    let tileY: i32 = ((*sprite).data[tRandom] / 30) as i32;
     (*sprite).data[3] = tileY as i16 * 8;
-    (*sprite).data[2] = tileX as i16;
-    (*sprite).data[2] <<= 7;
+    (*sprite).data[tPosX] = tileX as i16;
+    (*sprite).data[tPosX] <<= 7;
     (*sprite).data[3] = tileY as i16;
     (*sprite).data[3] <<= 7;
-    (*sprite).data[2] -=
-        sRainSpriteMovement[(*gWeatherPtr).isDownpour][0] * numFallingFrames as i16;
-    (*sprite).data[3] -=
-        sRainSpriteMovement[(*gWeatherPtr).isDownpour][1] * numFallingFrames as i16;
+    (*sprite).data[tPosX] -= sRainSpriteMovement
+        [(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .isDownpour][0]
+        * numFallingFrames as i16;
+    (*sprite).data[3] -= sRainSpriteMovement
+        [(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .isDownpour][1]
+        * numFallingFrames as i16;
     StartSpriteAnim(sprite, 0);
     (*sprite).data[4] = 0;
     (*sprite).set_coordOffsetEnabled(FALSE as u16);
     (*sprite).data[0] = numFallingFrames as i16;
 }
-pub(crate) unsafe extern "C" fn UpdateRainSprite(sprite: *mut Sprite) {
+pub(crate) unsafe fn UpdateRainSprite(sprite: *mut Sprite) {
     if (*sprite).data[4] == 0 {
-        (*sprite).data[2] += sRainSpriteMovement[(*gWeatherPtr).isDownpour][0];
-        (*sprite).data[3] += sRainSpriteMovement[(*gWeatherPtr).isDownpour][1];
-        (*sprite).x = (*sprite).data[2] >> 4;
+        (*sprite).data[tPosX] += sRainSpriteMovement
+            [(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .isDownpour][0];
+        (*sprite).data[3] += sRainSpriteMovement
+            [(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .isDownpour][1];
+        (*sprite).x = (*sprite).data[tPosX] >> 4;
         (*sprite).y = (*sprite).data[3] >> 4;
-        if (*sprite).data[5] != 0
+        if (*sprite).data[tActive] != 0
             && ((*sprite).x >= -8 && (*sprite).x <= 248)
             && (*sprite).y >= -16
             && (*sprite).y <= 176
@@ -505,7 +624,12 @@ pub(crate) unsafe extern "C" fn UpdateRainSprite(sprite: *mut Sprite) {
             (*sprite).data[0]
         }) == 0
         {
-            StartSpriteAnim(sprite, (*gWeatherPtr).isDownpour + 1);
+            StartSpriteAnim(
+                sprite,
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .isDownpour
+                    + 1,
+            );
             (*sprite).data[4] = 1;
             (*sprite).x -= gSpriteCoordOffsetX;
             (*sprite).y -= gSpriteCoordOffsetY;
@@ -516,7 +640,7 @@ pub(crate) unsafe extern "C" fn UpdateRainSprite(sprite: *mut Sprite) {
         StartRainSpriteFall(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn WaitRainSprite(sprite: *mut Sprite) {
+pub(crate) unsafe fn WaitRainSprite(sprite: *mut Sprite) {
     if (*sprite).data[0] == 0 {
         StartRainSpriteFall(sprite);
         (*sprite).callback = Some(UpdateRainSprite);
@@ -524,15 +648,23 @@ pub(crate) unsafe extern "C" fn WaitRainSprite(sprite: *mut Sprite) {
         (*sprite).data[0] -= 1;
     }
 }
-pub(crate) unsafe extern "C" fn InitRainSpriteMovement(sprite: *mut Sprite, val: u16) {
-    let mut numFallingFrames: u16 = sRainSpriteFallingDurations[(*gWeatherPtr).isDownpour][0];
+unsafe fn InitRainSpriteMovement(sprite: *mut Sprite, val: u16) {
+    let numFallingFrames: u16 = sRainSpriteFallingDurations
+        [(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .isDownpour][0];
     let mut numAdvanceRng: u16 = div_i32(
         val as i32,
-        sRainSpriteFallingDurations[(*gWeatherPtr).isDownpour][1] as i32 + numFallingFrames as i32,
+        sRainSpriteFallingDurations[(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+            .cast::<*mut Weather>()))
+        .isDownpour][1] as i32
+            + numFallingFrames as i32,
     ) as u16;
     let mut frameVal: u16 = rem_i32(
         val as i32,
-        sRainSpriteFallingDurations[(*gWeatherPtr).isDownpour][1] as i32 + numFallingFrames as i32,
+        sRainSpriteFallingDurations[(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+            .cast::<*mut Weather>()))
+        .isDownpour][1] as i32
+            + numFallingFrames as i32,
     ) as u16;
     while ({
         numAdvanceRng -= 1;
@@ -549,234 +681,364 @@ pub(crate) unsafe extern "C" fn InitRainSpriteMovement(sprite: *mut Sprite, val:
         {
             UpdateRainSprite(sprite);
         }
-        (*sprite).data[6] = 0;
+        (*sprite).data[tWaiting] = 0;
     } else {
         (*sprite).data[0] = frameVal as i16 - numFallingFrames as i16;
         (*sprite).set_invisible(TRUE as u16);
-        (*sprite).data[6] = 1;
+        (*sprite).data[tWaiting] = 1;
     }
 }
-pub(crate) unsafe extern "C" fn LoadRainSpriteSheet() {
+unsafe fn LoadRainSpriteSheet() {
     LoadSpriteSheet((&raw const *sRainSpriteSheet).cast_mut());
 }
-pub(crate) unsafe extern "C" fn CreateRainSprite() -> u8 {
-    let mut spriteIndex: u8 = 0;
-    let mut spriteId: u8 = 0;
-    if (*gWeatherPtr).rainSpriteCount == MAX_RAIN_SPRITES {
+unsafe fn CreateRainSprite() -> u8 {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .rainSpriteCount
+        == MAX_RAIN_SPRITES
+    {
         return FALSE;
     }
-    spriteIndex = (*gWeatherPtr).rainSpriteCount;
-    spriteId = CreateSpriteAtEnd(
+    let spriteIndex: u8 = (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+        .cast::<*mut Weather>()))
+    .rainSpriteCount;
+    let spriteId: u8 = CreateSpriteAtEnd(
         (&raw const *sRainSpriteTemplate).cast_mut(),
         sRainSpriteCoords[spriteIndex].x,
         sRainSpriteCoords[spriteIndex].y,
         78,
     );
     if spriteId != MAX_SPRITES {
-        gSprites[spriteId].data[5] = FALSE as i16;
-        gSprites[spriteId].data[1] = spriteIndex as i16 * 145;
-        while gSprites[spriteId].data[1] >= 600 {
-            gSprites[spriteId].data[1] -= 600;
+        gSprites[spriteId].data[tActive] = FALSE as i16;
+        gSprites[spriteId].data[tRandom] = spriteIndex as i16 * 145;
+        while gSprites[spriteId].data[tRandom] >= 600 {
+            gSprites[spriteId].data[tRandom] -= 600;
         }
         StartRainSpriteFall(&raw mut gSprites[spriteId]);
         InitRainSpriteMovement(&raw mut gSprites[spriteId], spriteIndex as u16 * 9);
         gSprites[spriteId].set_invisible(TRUE as u16);
-        (*gWeatherPtr).sprites.s1.rainSprites[spriteIndex] = &raw mut gSprites[spriteId];
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sprites
+            .s1
+            .rainSprites[spriteIndex] = &raw mut gSprites[spriteId];
     } else {
-        (*gWeatherPtr).sprites.s1.rainSprites[spriteIndex] = null_mut();
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sprites
+            .s1
+            .rainSprites[spriteIndex] = null_mut();
     }
     if ({
-        (*gWeatherPtr).rainSpriteCount += 1;
-        (*gWeatherPtr).rainSpriteCount
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .rainSpriteCount += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .rainSpriteCount
     }) == MAX_RAIN_SPRITES
     {
-        let mut i: u16 = 0;
-        i = 0;
-        while i < MAX_RAIN_SPRITES as u16 {
-            if !(*gWeatherPtr).sprites.s1.rainSprites[i].is_null() {
-                if (*(*gWeatherPtr).sprites.s1.rainSprites[i]).data[6] == 0 {
-                    (*(*gWeatherPtr).sprites.s1.rainSprites[i]).callback = Some(UpdateRainSprite);
+        for i in 0..(MAX_RAIN_SPRITES as u16) {
+            if !(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sprites
+                .s1
+                .rainSprites[i]
+                .is_null()
+            {
+                if (*(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .sprites
+                .s1
+                .rainSprites[i])
+                    .data[tWaiting]
+                    == 0
+                {
+                    (*(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .sprites
+                    .s1
+                    .rainSprites[i])
+                        .callback = Some(UpdateRainSprite);
                 } else {
-                    (*(*gWeatherPtr).sprites.s1.rainSprites[i]).callback = Some(WaitRainSprite);
+                    (*(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .sprites
+                    .s1
+                    .rainSprites[i])
+                        .callback = Some(WaitRainSprite);
                 }
             }
-            i += 1;
         }
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn UpdateVisibleRainSprites() -> u8 {
-    if (*gWeatherPtr).curRainSpriteIndex == (*gWeatherPtr).targetRainSpriteCount {
+unsafe fn UpdateVisibleRainSprites() -> u8 {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .curRainSpriteIndex
+        == (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .targetRainSpriteCount
+    {
         return FALSE;
     }
     if ({
-        (*gWeatherPtr).rainSpriteVisibleCounter += 1;
-        (*gWeatherPtr).rainSpriteVisibleCounter
-    }) > (*gWeatherPtr).rainSpriteVisibleDelay as u16
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .rainSpriteVisibleCounter += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .rainSpriteVisibleCounter
+    }) > (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .rainSpriteVisibleDelay as u16
     {
-        (*gWeatherPtr).rainSpriteVisibleCounter = 0;
-        if (*gWeatherPtr).curRainSpriteIndex < (*gWeatherPtr).targetRainSpriteCount {
-            (*(*gWeatherPtr).sprites.s1.rainSprites[{
-                let t2 = (*gWeatherPtr).curRainSpriteIndex;
-                (*gWeatherPtr).curRainSpriteIndex += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .rainSpriteVisibleCounter = 0;
+        if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .curRainSpriteIndex
+            < (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .targetRainSpriteCount
+        {
+            (*(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sprites
+                .s1
+                .rainSprites[{
+                let t2 = (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .curRainSpriteIndex;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .curRainSpriteIndex += 1;
                 t2
             }])
-            .data[5] = TRUE as i16;
+            .data[tActive] = TRUE as i16;
         } else {
-            (*gWeatherPtr).curRainSpriteIndex -= 1;
-            (*(*gWeatherPtr).sprites.s1.rainSprites[(*gWeatherPtr).curRainSpriteIndex]).data[5] =
-                FALSE as i16;
-            (*(*gWeatherPtr).sprites.s1.rainSprites[(*gWeatherPtr).curRainSpriteIndex])
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .curRainSpriteIndex -= 1;
+            (*(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sprites
+                .s1
+                .rainSprites[(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                .cast::<*mut Weather>()))
+            .curRainSpriteIndex])
+                .data[tActive] = FALSE as i16;
+            (*(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sprites
+                .s1
+                .rainSprites[(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                .cast::<*mut Weather>()))
+            .curRainSpriteIndex])
                 .set_invisible(TRUE as u16);
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn DestroyRainSprites() {
+unsafe fn DestroyRainSprites() {
     let mut i: u16 = 0;
-    i = 0;
-    while i < (*gWeatherPtr).rainSpriteCount as u16 {
-        if !(*gWeatherPtr).sprites.s1.rainSprites[i].is_null() {
-            DestroySprite((*gWeatherPtr).sprites.s1.rainSprites[i]);
+    while i
+        < (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .rainSpriteCount as u16
+    {
+        if !(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sprites
+            .s1
+            .rainSprites[i]
+            .is_null()
+        {
+            DestroySprite(
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .sprites
+                    .s1
+                    .rainSprites[i],
+            );
         }
         i += 1;
     }
-    (*gWeatherPtr).rainSpriteCount = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .rainSpriteCount = 0;
     FreeSpriteTilesByTag(GFXTAG_RAIN);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Snow_InitVars() {
-    (*gWeatherPtr).initStep = 0;
-    (*gWeatherPtr).weatherGfxLoaded = FALSE;
-    (*gWeatherPtr).targetColorMapIndex = 3;
-    (*gWeatherPtr).colorMapStepDelay = 20;
-    (*gWeatherPtr).targetSnowflakeSpriteCount = NUM_SNOWFLAKE_SPRITES;
-    (*gWeatherPtr).snowflakeVisibleCounter = 0;
+pub unsafe fn Snow_InitVars() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded = FALSE;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetColorMapIndex = 3;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .colorMapStepDelay = 20;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetSnowflakeSpriteCount = NUM_SNOWFLAKE_SPRITES;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .snowflakeVisibleCounter = 0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Snow_InitAll() {
+pub unsafe fn Snow_InitAll() {
     let mut i: u16 = 0;
     Snow_InitVars();
-    while (*gWeatherPtr).weatherGfxLoaded == FALSE {
+    while (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded
+        == FALSE
+    {
         Snow_Main();
         i = 0;
-        while i < (*gWeatherPtr).snowflakeSpriteCount as u16 {
-            UpdateSnowflakeSprite((*gWeatherPtr).sprites.s1.snowflakeSprites[i]);
+        while i
+            < (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .snowflakeSpriteCount as u16
+        {
+            UpdateSnowflakeSprite(
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .sprites
+                    .s1
+                    .snowflakeSprites[i],
+            );
             i += 1;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Snow_Main() {
-    if (*gWeatherPtr).initStep == 0 && UpdateVisibleSnowflakeSprites() == 0 {
-        (*gWeatherPtr).weatherGfxLoaded = TRUE;
-        (*gWeatherPtr).initStep += 1;
+pub unsafe fn Snow_Main() {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep
+        == 0
+        && UpdateVisibleSnowflakeSprites() == 0
+    {
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .weatherGfxLoaded = TRUE;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .initStep += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Snow_Finish() -> u8 {
+pub unsafe fn Snow_Finish() -> u8 {
     'l1: {
-        let sw1: u16 = (*gWeatherPtr).finishStep;
+        let sw1: u16 = (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+            .cast::<*mut Weather>()))
+        .finishStep;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
-            (*gWeatherPtr).targetSnowflakeSpriteCount = 0;
-            (*gWeatherPtr).snowflakeVisibleCounter = 0;
-            (*gWeatherPtr).finishStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .targetSnowflakeSpriteCount = 0;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .snowflakeVisibleCounter = 0;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .finishStep += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             if UpdateVisibleSnowflakeSprites() == 0 {
-                (*gWeatherPtr).finishStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .finishStep += 1;
                 return FALSE;
             }
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn UpdateVisibleSnowflakeSprites() -> u8 {
-    if (*gWeatherPtr).snowflakeSpriteCount == (*gWeatherPtr).targetSnowflakeSpriteCount {
+unsafe fn UpdateVisibleSnowflakeSprites() -> u8 {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .snowflakeSpriteCount
+        == (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .targetSnowflakeSpriteCount
+    {
         return FALSE;
     }
     if ({
-        (*gWeatherPtr).snowflakeVisibleCounter += 1;
-        (*gWeatherPtr).snowflakeVisibleCounter
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .snowflakeVisibleCounter += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .snowflakeVisibleCounter
     }) > 36
     {
-        (*gWeatherPtr).snowflakeVisibleCounter = 0;
-        if (*gWeatherPtr).snowflakeSpriteCount < (*gWeatherPtr).targetSnowflakeSpriteCount {
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .snowflakeVisibleCounter = 0;
+        if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .snowflakeSpriteCount
+            < (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .targetSnowflakeSpriteCount
+        {
             CreateSnowflakeSprite();
         } else {
             DestroySnowflakeSprite();
         }
     }
-    return ((*gWeatherPtr).snowflakeSpriteCount != (*gWeatherPtr).targetSnowflakeSpriteCount)
-        as u8;
+    ((*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .snowflakeSpriteCount
+        != (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .targetSnowflakeSpriteCount) as u8
 }
-pub(crate) unsafe extern "C" fn CreateSnowflakeSprite() -> u8 {
-    let mut spriteId: u8 =
+unsafe fn CreateSnowflakeSprite() -> u8 {
+    let spriteId: u8 =
         CreateSpriteAtEnd((&raw const *sSnowflakeSpriteTemplate).cast_mut(), 0, 0, 78);
     if spriteId == MAX_SPRITES {
         return FALSE;
     }
-    gSprites[spriteId].data[4] = (*gWeatherPtr).snowflakeSpriteCount as i16;
+    gSprites[spriteId].data[tSnowflakeId] =
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .snowflakeSpriteCount as i16;
     InitSnowflakeSpriteMovement(&raw mut gSprites[spriteId]);
     gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
-    (*gWeatherPtr).sprites.s1.snowflakeSprites[{
-        let t1 = (*gWeatherPtr).snowflakeSpriteCount;
-        (*gWeatherPtr).snowflakeSpriteCount += 1;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .sprites
+        .s1
+        .snowflakeSprites[{
+        let t1 = (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .snowflakeSpriteCount;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .snowflakeSpriteCount += 1;
         t1
     }] = &raw mut gSprites[spriteId];
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn DestroySnowflakeSprite() -> u8 {
-    if (*gWeatherPtr).snowflakeSpriteCount != 0 {
+unsafe fn DestroySnowflakeSprite() -> u8 {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .snowflakeSpriteCount
+        != 0
+    {
         DestroySprite(
-            (*gWeatherPtr).sprites.s1.snowflakeSprites[{
-                (*gWeatherPtr).snowflakeSpriteCount -= 1;
-                (*gWeatherPtr).snowflakeSpriteCount
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sprites
+                .s1
+                .snowflakeSprites[{
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .snowflakeSpriteCount -= 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .snowflakeSpriteCount
             }],
         );
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn InitSnowflakeSpriteMovement(sprite: *mut Sprite) {
-    let mut rand: u16 = 0;
-    let mut x: u16 = ((*sprite).data[4] as u16 * 5 & 7) * 30 + (Random() as i32 % 30) as u16;
+unsafe fn InitSnowflakeSpriteMovement(sprite: *mut Sprite) {
+    let x: u16 =
+        (((*sprite).data[tSnowflakeId] as u16 * 5) & 7) * 30 + (Random() as i32 % 30) as u16;
     (*sprite).y = -3 - (gSpriteCoordOffsetY + (*sprite).centerToCornerVecY as i16);
     (*sprite).x = x as i16 - (gSpriteCoordOffsetX + (*sprite).centerToCornerVecX as i16);
     (*sprite).data[0] = (*sprite).y * 128;
     (*sprite).x2 = 0;
-    rand = Random();
-    (*sprite).data[1] = (rand as i16 & 3) * 5 + 64;
-    (*sprite).data[7] = (*sprite).data[1];
+    let rand: u16 = Random();
+    (*sprite).data[tDeltaY] = (rand as i16 & 3) * 5 + 64;
+    (*sprite).data[tDeltaY2] = (*sprite).data[tDeltaY];
     StartSpriteAnim(sprite, (if rand as i32 & 1 != 0 { 0 } else { 1 }) as u8);
     (*sprite).data[3] = 0;
-    (*sprite).data[2] = (if rand as i32 & 3 == 0 { 2 } else { 1 }) as i16;
-    (*sprite).data[6] = (rand as i16 & 0x1F) + 210;
-    (*sprite).data[5] = 0;
+    (*sprite).data[tWaveDelta] = (if rand as i32 & 3 == 0 { 2 } else { 1 }) as i16;
+    (*sprite).data[tFallDuration] = (rand as i16 & 0x1F) + 210;
+    (*sprite).data[tFallCounter] = 0;
 }
-pub(crate) unsafe extern "C" fn WaitSnowflakeSprite(sprite: *mut Sprite) {
-    if (*gWeatherPtr).snowflakeTimer > 18 {
+pub(crate) unsafe fn WaitSnowflakeSprite(sprite: *mut Sprite) {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .snowflakeTimer
+        > 18
+    {
         (*sprite).set_invisible(FALSE as u16);
         (*sprite).callback = Some(UpdateSnowflakeSprite);
         (*sprite).y = 250 - (gSpriteCoordOffsetY + (*sprite).centerToCornerVecY as i16);
         (*sprite).data[0] = (*sprite).y * 128;
-        (*gWeatherPtr).snowflakeTimer = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .snowflakeTimer = 0;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateSnowflakeSprite(sprite: *mut Sprite) {
+pub(crate) unsafe fn UpdateSnowflakeSprite(sprite: *mut Sprite) {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
-    (*sprite).data[0] += (*sprite).data[1];
+    (*sprite).data[0] += (*sprite).data[tDeltaY];
     (*sprite).y = (*sprite).data[0] >> 7;
-    (*sprite).data[3] += (*sprite).data[2];
+    (*sprite).data[3] += (*sprite).data[tWaveDelta];
     (*sprite).data[3] &= 0xFF;
-    (*sprite).x2 = gSineTable[(*sprite).data[3]] / 64;
-    x = (*sprite).x + (*sprite).centerToCornerVecX as i16 + gSpriteCoordOffsetX & 0x1FF;
+    (*sprite).x2 =
+        (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[(*sprite).data[3]] / 64;
+    x = ((*sprite).x + (*sprite).centerToCornerVecX as i16 + gSpriteCoordOffsetX) & 0x1FF;
     if x as i32 & 0x100 != 0 {
         x |= -256;
     }
@@ -785,24 +1047,24 @@ pub(crate) unsafe extern "C" fn UpdateSnowflakeSprite(sprite: *mut Sprite) {
     } else if x > 242 {
         (*sprite).x = -3 - (gSpriteCoordOffsetX + (*sprite).centerToCornerVecX as i16);
     }
-    y = (*sprite).y + (*sprite).centerToCornerVecY as i16 + gSpriteCoordOffsetY & 0xFF;
+    y = ((*sprite).y + (*sprite).centerToCornerVecY as i16 + gSpriteCoordOffsetY) & 0xFF;
     if y > 163 && y < 171 {
         (*sprite).y = 250 - (gSpriteCoordOffsetY + (*sprite).centerToCornerVecY as i16);
         (*sprite).data[0] = (*sprite).y * 128;
-        (*sprite).data[5] = 0;
-        (*sprite).data[6] = 220;
+        (*sprite).data[tFallCounter] = 0;
+        (*sprite).data[tFallDuration] = 220;
     } else if y > 242 && y < 250 {
         (*sprite).y = 163;
         (*sprite).data[0] = (*sprite).y * 128;
-        (*sprite).data[5] = 0;
-        (*sprite).data[6] = 220;
+        (*sprite).data[tFallCounter] = 0;
+        (*sprite).data[tFallDuration] = 220;
         (*sprite).set_invisible(TRUE as u16);
         (*sprite).callback = Some(WaitSnowflakeSprite);
     }
     if ({
-        (*sprite).data[5] += 1;
-        (*sprite).data[5]
-    }) == (*sprite).data[6]
+        (*sprite).data[tFallCounter] += 1;
+        (*sprite).data[tFallCounter]
+    }) == (*sprite).data[tFallDuration]
     {
         InitSnowflakeSpriteMovement(sprite);
         (*sprite).y = 250;
@@ -810,249 +1072,359 @@ pub(crate) unsafe extern "C" fn UpdateSnowflakeSprite(sprite: *mut Sprite) {
         (*sprite).callback = Some(WaitSnowflakeSprite);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Thunderstorm_InitVars() {
-    (*gWeatherPtr).initStep = THUNDER_STATE_LOAD_RAIN;
-    (*gWeatherPtr).weatherGfxLoaded = FALSE;
-    (*gWeatherPtr).rainSpriteVisibleCounter = 0;
-    (*gWeatherPtr).rainSpriteVisibleDelay = 4;
-    (*gWeatherPtr).isDownpour = FALSE;
-    (*gWeatherPtr).targetRainSpriteCount = 16;
-    (*gWeatherPtr).targetColorMapIndex = 3;
-    (*gWeatherPtr).colorMapStepDelay = 20;
-    (*gWeatherPtr).weatherGfxLoaded = FALSE;
-    (*gWeatherPtr).thunderEnqueued = FALSE;
+pub unsafe fn Thunderstorm_InitVars() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep =
+        THUNDER_STATE_LOAD_RAIN;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded = FALSE;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .rainSpriteVisibleCounter = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .rainSpriteVisibleDelay = 4;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).isDownpour =
+        FALSE;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetRainSpriteCount = 16;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetColorMapIndex = 3;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .colorMapStepDelay = 20;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded = FALSE;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .thunderEnqueued = FALSE;
     SetRainStrengthFromSoundEffect(SE_THUNDERSTORM);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Thunderstorm_InitAll() {
+pub unsafe fn Thunderstorm_InitAll() {
     Thunderstorm_InitVars();
-    while (*gWeatherPtr).weatherGfxLoaded == FALSE {
+    while (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded
+        == FALSE
+    {
         Thunderstorm_Main();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Downpour_InitVars() {
-    (*gWeatherPtr).initStep = THUNDER_STATE_LOAD_RAIN;
-    (*gWeatherPtr).weatherGfxLoaded = FALSE;
-    (*gWeatherPtr).rainSpriteVisibleCounter = 0;
-    (*gWeatherPtr).rainSpriteVisibleDelay = 4;
-    (*gWeatherPtr).isDownpour = TRUE;
-    (*gWeatherPtr).targetRainSpriteCount = 24;
-    (*gWeatherPtr).targetColorMapIndex = 3;
-    (*gWeatherPtr).colorMapStepDelay = 20;
-    (*gWeatherPtr).weatherGfxLoaded = FALSE;
+pub unsafe fn Downpour_InitVars() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep =
+        THUNDER_STATE_LOAD_RAIN;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded = FALSE;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .rainSpriteVisibleCounter = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .rainSpriteVisibleDelay = 4;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).isDownpour =
+        TRUE;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetRainSpriteCount = 24;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetColorMapIndex = 3;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .colorMapStepDelay = 20;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded = FALSE;
     SetRainStrengthFromSoundEffect(SE_DOWNPOUR);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Downpour_InitAll() {
+pub unsafe fn Downpour_InitAll() {
     Downpour_InitVars();
-    while (*gWeatherPtr).weatherGfxLoaded == FALSE {
+    while (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded
+        == FALSE
+    {
         Thunderstorm_Main();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Thunderstorm_Main() {
+pub unsafe fn Thunderstorm_Main() {
     UpdateThunderSound();
     'l1: {
-        let sw1: u16 = (*gWeatherPtr).initStep;
+        let sw1: u16 = (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+            .cast::<*mut Weather>()))
+        .initStep;
         let mut fall = false;
         if sw1 == THUNDER_STATE_LOAD_RAIN {
-            fall = true;
             LoadRainSpriteSheet();
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
             break 'l1;
         }
         if sw1 == THUNDER_STATE_CREATE_RAIN {
-            fall = true;
             if CreateRainSprite() == 0 {
-                (*gWeatherPtr).initStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .initStep += 1;
             }
             break 'l1;
         }
         if sw1 == THUNDER_STATE_INIT_RAIN {
-            fall = true;
             if UpdateVisibleRainSprites() == 0 {
-                (*gWeatherPtr).weatherGfxLoaded = TRUE;
-                (*gWeatherPtr).initStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .weatherGfxLoaded = TRUE;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .initStep += 1;
             }
             break 'l1;
         }
         if sw1 == THUNDER_STATE_WAIT_CHANGE {
-            fall = true;
-            if (*gWeatherPtr).palProcessingState != WEATHER_PAL_STATE_CHANGING_WEATHER {
-                (*gWeatherPtr).initStep = THUNDER_STATE_INIT_CYCLE_1;
+            if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .palProcessingState
+                != WEATHER_PAL_STATE_CHANGING_WEATHER
+            {
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .initStep = THUNDER_STATE_INIT_CYCLE_1;
             }
             break 'l1;
         }
         if sw1 == THUNDER_STATE_NEW_CYCLE {
             fall = true;
-            (*gWeatherPtr).thunderAllowEnd = TRUE;
-            (*gWeatherPtr).thunderTimer = (Random() as i32 % 360) as u16 + 360;
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .thunderAllowEnd = TRUE;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .thunderTimer = (Random() as i32 % 360) as u16 + 360;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
         if fall || sw1 == THUNDER_STATE_NEW_CYCLE_WAIT {
-            fall = true;
             if ({
-                (*gWeatherPtr).thunderTimer -= 1;
-                (*gWeatherPtr).thunderTimer
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .thunderTimer -= 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .thunderTimer
             }) == 0
             {
-                (*gWeatherPtr).initStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .initStep += 1;
             }
             break 'l1;
         }
         if sw1 == THUNDER_STATE_INIT_CYCLE_1 {
-            fall = true;
-            (*gWeatherPtr).thunderAllowEnd = TRUE;
-            (*gWeatherPtr).thunderLongBolt = (Random() as i32 % 2) as u8;
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .thunderAllowEnd = TRUE;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .thunderLongBolt = (Random() as i32 % 2) as u8;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
             break 'l1;
         }
         if sw1 == THUNDER_STATE_INIT_CYCLE_2 {
             fall = true;
-            (*gWeatherPtr).thunderShortBolts = (Random() as u8 & 1) + 1;
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .thunderShortBolts = (Random() as u8 & 1) + 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
         if fall || sw1 == THUNDER_STATE_SHORT_BOLT {
-            fall = true;
             ApplyWeatherColorMapIfIdle(19);
-            if (*gWeatherPtr).thunderLongBolt == 0 && (*gWeatherPtr).thunderShortBolts == 1 {
+            if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .thunderLongBolt
+                == 0
+                && (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .thunderShortBolts
+                    == 1
+            {
                 EnqueueThunder(20);
             }
-            (*gWeatherPtr).thunderTimer = (Random() as i32 % 3) as u16 + 6;
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .thunderTimer = (Random() as i32 % 3) as u16 + 6;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
             break 'l1;
         }
         if sw1 == THUNDER_STATE_TRY_NEW_BOLT {
-            fall = true;
             if ({
-                (*gWeatherPtr).thunderTimer -= 1;
-                (*gWeatherPtr).thunderTimer
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .thunderTimer -= 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .thunderTimer
             }) == 0
             {
                 ApplyWeatherColorMapIfIdle(3);
-                (*gWeatherPtr).thunderAllowEnd = TRUE;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .thunderAllowEnd = TRUE;
                 if ({
-                    (*gWeatherPtr).thunderShortBolts -= 1;
-                    (*gWeatherPtr).thunderShortBolts
+                    (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .thunderShortBolts -= 1;
+                    (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .thunderShortBolts
                 }) != 0
                 {
-                    (*gWeatherPtr).thunderTimer = (Random() as i32 % 16) as u16 + 60;
-                    (*gWeatherPtr).initStep = THUNDER_STATE_WAIT_BOLT_SHORT;
-                } else if (*gWeatherPtr).thunderLongBolt == 0 {
-                    (*gWeatherPtr).initStep = THUNDER_STATE_NEW_CYCLE;
+                    (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .thunderTimer = (Random() as i32 % 16) as u16 + 60;
+                    (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .initStep = THUNDER_STATE_WAIT_BOLT_SHORT;
+                } else if (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .thunderLongBolt
+                    == 0
+                {
+                    (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .initStep = THUNDER_STATE_NEW_CYCLE;
                 } else {
-                    (*gWeatherPtr).initStep = THUNDER_STATE_INIT_BOLT_LONG;
+                    (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .initStep = THUNDER_STATE_INIT_BOLT_LONG;
                 }
             }
             break 'l1;
         }
         if sw1 == THUNDER_STATE_WAIT_BOLT_SHORT {
-            fall = true;
             if ({
-                (*gWeatherPtr).thunderTimer -= 1;
-                (*gWeatherPtr).thunderTimer
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .thunderTimer -= 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .thunderTimer
             }) == 0
             {
-                (*gWeatherPtr).initStep = THUNDER_STATE_SHORT_BOLT;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .initStep = THUNDER_STATE_SHORT_BOLT;
             }
             break 'l1;
         }
         if sw1 == THUNDER_STATE_INIT_BOLT_LONG {
-            fall = true;
-            (*gWeatherPtr).thunderTimer = (Random() as i32 % 16) as u16 + 60;
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .thunderTimer = (Random() as i32 % 16) as u16 + 60;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
             break 'l1;
         }
         if sw1 == THUNDER_STATE_WAIT_BOLT_LONG {
-            fall = true;
             if ({
-                (*gWeatherPtr).thunderTimer -= 1;
-                (*gWeatherPtr).thunderTimer
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .thunderTimer -= 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .thunderTimer
             }) == 0
             {
                 EnqueueThunder(100);
                 ApplyWeatherColorMapIfIdle(19);
-                (*gWeatherPtr).thunderTimer = (Random() & 0xF) + 30;
-                (*gWeatherPtr).initStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .thunderTimer = (Random() & 0xF) + 30;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .initStep += 1;
             }
             break 'l1;
         }
         if sw1 == THUNDER_STATE_FADE_BOLT_LONG {
-            fall = true;
             if ({
-                (*gWeatherPtr).thunderTimer -= 1;
-                (*gWeatherPtr).thunderTimer
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .thunderTimer -= 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .thunderTimer
             }) == 0
             {
                 ApplyWeatherColorMapIfIdle_Gradual(19, 3, 5);
-                (*gWeatherPtr).initStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .initStep += 1;
             }
             break 'l1;
         }
         if sw1 == THUNDER_STATE_END_BOLT_LONG {
-            fall = true;
-            if (*gWeatherPtr).palProcessingState == WEATHER_PAL_STATE_IDLE {
-                (*gWeatherPtr).thunderAllowEnd = TRUE;
-                (*gWeatherPtr).initStep = THUNDER_STATE_NEW_CYCLE;
+            if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .palProcessingState
+                == WEATHER_PAL_STATE_IDLE
+            {
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .thunderAllowEnd = TRUE;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .initStep = THUNDER_STATE_NEW_CYCLE;
             }
             break 'l1;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Thunderstorm_Finish() -> u8 {
+pub unsafe fn Thunderstorm_Finish() -> u8 {
     'l1: {
-        let sw1: u16 = (*gWeatherPtr).finishStep;
+        let sw1: u16 = (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+            .cast::<*mut Weather>()))
+        .finishStep;
         let matched = sw1 == 0 || sw1 == 1 || sw1 == 2;
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
-            (*gWeatherPtr).thunderAllowEnd = FALSE;
-            (*gWeatherPtr).finishStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .thunderAllowEnd = FALSE;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .finishStep += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             Thunderstorm_Main();
-            if (*gWeatherPtr).thunderAllowEnd != 0 {
-                if (*gWeatherPtr).nextWeather == WEATHER_RAIN
-                    || (*gWeatherPtr).nextWeather == WEATHER_RAIN_THUNDERSTORM
-                    || (*gWeatherPtr).nextWeather == WEATHER_DOWNPOUR
+            if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .thunderAllowEnd
+                != 0
+            {
+                if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .nextWeather
+                    == WEATHER_RAIN
+                    || (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .nextWeather
+                        == WEATHER_RAIN_THUNDERSTORM
+                    || (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .nextWeather
+                        == WEATHER_DOWNPOUR
                 {
                     return FALSE;
                 }
-                (*gWeatherPtr).targetRainSpriteCount = 0;
-                (*gWeatherPtr).finishStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .targetRainSpriteCount = 0;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .finishStep += 1;
             }
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             if UpdateVisibleRainSprites() == 0 {
                 DestroyRainSprites();
-                (*gWeatherPtr).thunderEnqueued = FALSE;
-                (*gWeatherPtr).finishStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .thunderEnqueued = FALSE;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .finishStep += 1;
                 return FALSE;
             }
             break 'l1;
         }
         if !matched {
-            fall = true;
             return FALSE;
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn EnqueueThunder(waitFrames: u16) {
-    if (*gWeatherPtr).thunderEnqueued == 0 {
-        (*gWeatherPtr).thunderSETimer = rem_i32(Random() as i32, waitFrames as i32) as u16;
-        (*gWeatherPtr).thunderEnqueued = TRUE;
+unsafe fn EnqueueThunder(waitFrames: u16) {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .thunderEnqueued
+        == 0
+    {
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .thunderSETimer = rem_i32(Random() as i32, waitFrames as i32) as u16;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .thunderEnqueued = TRUE;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateThunderSound() {
-    if (*gWeatherPtr).thunderEnqueued == TRUE {
-        if (*gWeatherPtr).thunderSETimer == 0 {
+unsafe fn UpdateThunderSound() {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .thunderEnqueued
+        == TRUE
+    {
+        if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .thunderSETimer
+            == 0
+        {
             if IsSEPlaying() != 0 {
                 return;
             }
@@ -1061,116 +1433,158 @@ pub(crate) unsafe extern "C" fn UpdateThunderSound() {
             } else {
                 PlaySE(SE_THUNDER2);
             }
-            (*gWeatherPtr).thunderEnqueued = FALSE;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .thunderEnqueued = FALSE;
         } else {
-            (*gWeatherPtr).thunderSETimer -= 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .thunderSETimer -= 1;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FogHorizontal_InitVars() {
-    (*gWeatherPtr).initStep = 0;
-    (*gWeatherPtr).weatherGfxLoaded = FALSE;
-    (*gWeatherPtr).targetColorMapIndex = 0;
-    (*gWeatherPtr).colorMapStepDelay = 20;
-    if (*gWeatherPtr).fogHSpritesCreated == 0 {
-        (*gWeatherPtr).fogHScrollCounter = 0;
-        (*gWeatherPtr).fogHScrollOffset = 0;
-        (*gWeatherPtr).fogHScrollPosX = 0;
+pub unsafe fn FogHorizontal_InitVars() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded = FALSE;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetColorMapIndex = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .colorMapStepDelay = 20;
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .fogHSpritesCreated
+        == 0
+    {
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHScrollCounter = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHScrollOffset = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHScrollPosX = 0;
         Weather_SetBlendCoeffs(0, 16);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FogHorizontal_InitAll() {
+pub unsafe fn FogHorizontal_InitAll() {
     FogHorizontal_InitVars();
-    while (*gWeatherPtr).weatherGfxLoaded == FALSE {
+    while (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded
+        == FALSE
+    {
         FogHorizontal_Main();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FogHorizontal_Main() {
-    (*gWeatherPtr).fogHScrollPosX =
-        gSpriteCoordOffsetX as u16 - (*gWeatherPtr).fogHScrollOffset & 0xFF;
+pub unsafe fn FogHorizontal_Main() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .fogHScrollPosX = (gSpriteCoordOffsetX as u16
+        - (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHScrollOffset)
+        & 0xFF;
     if ({
-        (*gWeatherPtr).fogHScrollCounter += 1;
-        (*gWeatherPtr).fogHScrollCounter
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHScrollCounter += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHScrollCounter
     }) > 3
     {
-        (*gWeatherPtr).fogHScrollCounter = 0;
-        (*gWeatherPtr).fogHScrollOffset += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHScrollCounter = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHScrollOffset += 1;
     }
-    match (*gWeatherPtr).initStep {
+    match (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep
+    {
         0 => {
             CreateFogHorizontalSprites();
-            if (*gWeatherPtr).currWeather == WEATHER_FOG_HORIZONTAL {
+            if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .currWeather
+                == WEATHER_FOG_HORIZONTAL
+            {
                 Weather_SetTargetBlendCoeffs(12, 8, 3);
             } else {
                 Weather_SetTargetBlendCoeffs(4, 16, 0);
             }
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
-        1 => {
-            if Weather_UpdateBlend() != 0 {
-                (*gWeatherPtr).weatherGfxLoaded = TRUE;
-                (*gWeatherPtr).initStep += 1;
-            }
+        1 if Weather_UpdateBlend() != 0 => {
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .weatherGfxLoaded = TRUE;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FogHorizontal_Finish() -> u8 {
-    (*gWeatherPtr).fogHScrollPosX =
-        gSpriteCoordOffsetX as u16 - (*gWeatherPtr).fogHScrollOffset & 0xFF;
+pub unsafe fn FogHorizontal_Finish() -> u8 {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .fogHScrollPosX = (gSpriteCoordOffsetX as u16
+        - (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHScrollOffset)
+        & 0xFF;
     if ({
-        (*gWeatherPtr).fogHScrollCounter += 1;
-        (*gWeatherPtr).fogHScrollCounter
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHScrollCounter += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHScrollCounter
     }) > 3
     {
-        (*gWeatherPtr).fogHScrollCounter = 0;
-        (*gWeatherPtr).fogHScrollOffset += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHScrollCounter = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHScrollOffset += 1;
     }
-    match (*gWeatherPtr).finishStep {
+    match (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .finishStep
+    {
         0 => {
             Weather_SetTargetBlendCoeffs(0, 16, 3);
-            (*gWeatherPtr).finishStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .finishStep += 1;
         }
         1 => {
             if Weather_UpdateBlend() != 0 {
-                (*gWeatherPtr).finishStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .finishStep += 1;
             }
         }
         2 => {
             DestroyFogHorizontalSprites();
-            (*gWeatherPtr).finishStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .finishStep += 1;
         }
         _ => {
             return FALSE;
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn FogHorizontalSpriteCallback(sprite: *mut Sprite) {
+pub(crate) unsafe fn FogHorizontalSpriteCallback(sprite: *mut Sprite) {
     (*sprite).y2 = gSpriteCoordOffsetY as u8 as i16;
-    (*sprite).x = (*gWeatherPtr).fogHScrollPosX as i16 + 32 + (*sprite).data[0] * 64;
+    (*sprite).x = (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .fogHScrollPosX as i16
+        + 32
+        + (*sprite).data[0] * 64;
     if (*sprite).x >= 272 {
-        (*sprite).x = 480 + (*gWeatherPtr).fogHScrollPosX as i16 - (4 - (*sprite).data[0]) * 64;
+        (*sprite).x = 480
+            + (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .fogHScrollPosX as i16
+            - (4 - (*sprite).data[0]) * 64;
         (*sprite).x &= 0x1FF;
     }
 }
-pub(crate) unsafe extern "C" fn CreateFogHorizontalSprites() {
-    let mut i: u16 = 0;
+unsafe fn CreateFogHorizontalSprites() {
     let mut spriteId: u8 = 0;
     let mut sprite: *mut Sprite = null_mut();
-    if (*gWeatherPtr).fogHSpritesCreated == 0 {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .fogHSpritesCreated
+        == 0
+    {
         let mut fogHorizontalSpriteSheet: SpriteSheet = zeroed();
         fogHorizontalSpriteSheet.data =
             gWeatherFogHorizontalTiles.as_ptr().cast_mut() as *mut c_void;
         fogHorizontalSpriteSheet.size = 2048;
         fogHorizontalSpriteSheet.tag = GFXTAG_FOG_H;
         LoadSpriteSheet(&raw mut fogHorizontalSpriteSheet);
-        i = 0;
-        while i < NUM_FOG_HORIZONTAL_SPRITES {
+        for i in 0..NUM_FOG_HORIZONTAL_SPRITES {
             spriteId = CreateSpriteAtEnd(
                 (&raw const *sFogHorizontalSpriteTemplate).cast_mut(),
                 0,
@@ -1182,70 +1596,109 @@ pub(crate) unsafe extern "C" fn CreateFogHorizontalSprites() {
                 (*sprite).data[0] = (i as i32 % 5) as i16;
                 (*sprite).x = (i as i32 % 5) as i16 * 64 + 32;
                 (*sprite).y = (i as i32 / 5) as i16 * 64 + 32;
-                (*gWeatherPtr).sprites.s2.fogHSprites[i] = sprite;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .fogHSprites[i] = sprite;
             } else {
-                (*gWeatherPtr).sprites.s2.fogHSprites[i] = null_mut();
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .fogHSprites[i] = null_mut();
             }
-            i += 1;
         }
-        (*gWeatherPtr).fogHSpritesCreated = TRUE;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHSpritesCreated = TRUE;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyFogHorizontalSprites() {
-    let mut i: u16 = 0;
-    if (*gWeatherPtr).fogHSpritesCreated != 0 {
-        i = 0;
-        while i < NUM_FOG_HORIZONTAL_SPRITES {
-            if !(*gWeatherPtr).sprites.s2.fogHSprites[i].is_null() {
-                DestroySprite((*gWeatherPtr).sprites.s2.fogHSprites[i]);
+unsafe fn DestroyFogHorizontalSprites() {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .fogHSpritesCreated
+        != 0
+    {
+        for i in 0..NUM_FOG_HORIZONTAL_SPRITES {
+            if !(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sprites
+                .s2
+                .fogHSprites[i]
+                .is_null()
+            {
+                DestroySprite(
+                    (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .fogHSprites[i],
+                );
             }
-            i += 1;
         }
         FreeSpriteTilesByTag(GFXTAG_FOG_H);
-        (*gWeatherPtr).fogHSpritesCreated = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogHSpritesCreated = 0;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Ash_InitVars() {
-    (*gWeatherPtr).initStep = 0;
-    (*gWeatherPtr).weatherGfxLoaded = FALSE;
-    (*gWeatherPtr).targetColorMapIndex = 0;
-    (*gWeatherPtr).colorMapStepDelay = 20;
-    (*gWeatherPtr).ashUnused = 20;
-    if (*gWeatherPtr).ashSpritesCreated == 0 {
+pub unsafe fn Ash_InitVars() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded = FALSE;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetColorMapIndex = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .colorMapStepDelay = 20;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).ashUnused =
+        20;
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .ashSpritesCreated
+        == 0
+    {
         Weather_SetBlendCoeffs(0, 16);
         SetGpuReg(REG_OFFSET_BLDALPHA, 16192);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Ash_InitAll() {
+pub unsafe fn Ash_InitAll() {
     Ash_InitVars();
-    while (*gWeatherPtr).weatherGfxLoaded == FALSE {
+    while (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded
+        == FALSE
+    {
         Ash_Main();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Ash_Main() {
-    (*gWeatherPtr).ashBaseSpritesX = gSpriteCoordOffsetX as u16 & 0x1FF;
-    while (*gWeatherPtr).ashBaseSpritesX >= DISPLAY_WIDTH {
-        (*gWeatherPtr).ashBaseSpritesX -= DISPLAY_WIDTH;
+pub unsafe fn Ash_Main() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .ashBaseSpritesX = gSpriteCoordOffsetX as u16 & 0x1FF;
+    while (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .ashBaseSpritesX
+        >= DISPLAY_WIDTH
+    {
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .ashBaseSpritesX -= DISPLAY_WIDTH;
     }
-    match (*gWeatherPtr).initStep {
+    match (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep
+    {
         0 => {
             LoadAshSpriteSheet();
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
         1 => {
-            if (*gWeatherPtr).ashSpritesCreated == 0 {
+            if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .ashSpritesCreated
+                == 0
+            {
                 CreateAshSprites();
             }
             Weather_SetTargetBlendCoeffs(16, 0, 1);
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
         2 => {
             if Weather_UpdateBlend() != 0 {
-                (*gWeatherPtr).weatherGfxLoaded = TRUE;
-                (*gWeatherPtr).initStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .weatherGfxLoaded = TRUE;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .initStep += 1;
             }
         }
         _ => {
@@ -1253,192 +1706,268 @@ pub unsafe extern "C" fn Ash_Main() {
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Ash_Finish() -> u8 {
-    match (*gWeatherPtr).finishStep {
+pub unsafe fn Ash_Finish() -> u8 {
+    match (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .finishStep
+    {
         0 => {
             Weather_SetTargetBlendCoeffs(0, 16, 1);
-            (*gWeatherPtr).finishStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .finishStep += 1;
         }
         1 => {
             if Weather_UpdateBlend() != 0 {
                 DestroyAshSprites();
-                (*gWeatherPtr).finishStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .finishStep += 1;
             }
         }
         2 => {
             SetGpuReg(REG_OFFSET_BLDALPHA, 0);
-            (*gWeatherPtr).finishStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .finishStep += 1;
             return FALSE;
         }
         _ => {
             return FALSE;
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn LoadAshSpriteSheet() {
+unsafe fn LoadAshSpriteSheet() {
     LoadSpriteSheet((&raw const *sAshSpriteSheet).cast_mut());
 }
-pub(crate) unsafe extern "C" fn CreateAshSprites() {
-    let mut i: u8 = 0;
+unsafe fn CreateAshSprites() {
     let mut spriteId: u8 = 0;
     let mut sprite: *mut Sprite = null_mut();
-    if (*gWeatherPtr).ashSpritesCreated == 0 {
-        i = 0;
-        while i < NUM_ASH_SPRITES {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .ashSpritesCreated
+        == 0
+    {
+        for i in 0..NUM_ASH_SPRITES {
             spriteId = CreateSpriteAtEnd((&raw const *sAshSpriteTemplate).cast_mut(), 0, 0, 0x4E);
             if spriteId != MAX_SPRITES {
                 sprite = &raw mut gSprites[spriteId];
-                (*sprite).data[1] = 0;
+                (*sprite).data[tCounterY] = 0;
                 (*sprite).data[2] = (i as i32 % 5) as u8 as i16;
                 (*sprite).data[3] = (i as i32 / 5) as u8 as i16;
-                (*sprite).data[0] = (*sprite).data[3] * 64 + 32;
-                (*gWeatherPtr).sprites.s2.ashSprites[i] = sprite;
+                (*sprite).data[tOffsetY] = (*sprite).data[3] * 64 + 32;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .ashSprites[i] = sprite;
             } else {
-                (*gWeatherPtr).sprites.s2.ashSprites[i] = null_mut();
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .ashSprites[i] = null_mut();
             }
-            i += 1;
         }
-        (*gWeatherPtr).ashSpritesCreated = TRUE;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .ashSpritesCreated = TRUE;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyAshSprites() {
-    let mut i: u16 = 0;
-    if (*gWeatherPtr).ashSpritesCreated != 0 {
-        i = 0;
-        while i < NUM_ASH_SPRITES as u16 {
-            if !(*gWeatherPtr).sprites.s2.ashSprites[i].is_null() {
-                DestroySprite((*gWeatherPtr).sprites.s2.ashSprites[i]);
+unsafe fn DestroyAshSprites() {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .ashSpritesCreated
+        != 0
+    {
+        for i in 0..(NUM_ASH_SPRITES as u16) {
+            if !(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sprites
+                .s2
+                .ashSprites[i]
+                .is_null()
+            {
+                DestroySprite(
+                    (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .ashSprites[i],
+                );
             }
-            i += 1;
         }
         FreeSpriteTilesByTag(GFXTAG_ASH);
-        (*gWeatherPtr).ashSpritesCreated = FALSE;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .ashSpritesCreated = FALSE;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateAshSprite(sprite: *mut Sprite) {
+pub(crate) unsafe fn UpdateAshSprite(sprite: *mut Sprite) {
     if ({
-        (*sprite).data[1] += 1;
-        (*sprite).data[1]
+        (*sprite).data[tCounterY] += 1;
+        (*sprite).data[tCounterY]
     }) > 5
     {
-        (*sprite).data[1] = 0;
-        (*sprite).data[0] += 1;
+        (*sprite).data[tCounterY] = 0;
+        (*sprite).data[tOffsetY] += 1;
     }
-    (*sprite).y = gSpriteCoordOffsetY + (*sprite).data[0];
-    (*sprite).x = (*gWeatherPtr).ashBaseSpritesX as i16 + 32 + (*sprite).data[2] * 64;
+    (*sprite).y = gSpriteCoordOffsetY + (*sprite).data[tOffsetY];
+    (*sprite).x = (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .ashBaseSpritesX as i16
+        + 32
+        + (*sprite).data[2] * 64;
     if (*sprite).x >= 272 {
-        (*sprite).x = (*gWeatherPtr).ashBaseSpritesX as i16 + 480 - (4 - (*sprite).data[2]) * 64;
+        (*sprite).x = (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+            .cast::<*mut Weather>()))
+        .ashBaseSpritesX as i16
+            + 480
+            - (4 - (*sprite).data[2]) * 64;
         (*sprite).x &= 0x1FF;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FogDiagonal_InitVars() {
-    (*gWeatherPtr).initStep = 0;
-    (*gWeatherPtr).weatherGfxLoaded = 0;
-    (*gWeatherPtr).targetColorMapIndex = 0;
-    (*gWeatherPtr).colorMapStepDelay = 20;
-    (*gWeatherPtr).fogHScrollCounter = 0;
-    (*gWeatherPtr).fogHScrollOffset = 1;
-    if (*gWeatherPtr).fogDSpritesCreated == 0 {
-        (*gWeatherPtr).fogDScrollXCounter = 0;
-        (*gWeatherPtr).fogDScrollYCounter = 0;
-        (*gWeatherPtr).fogDXOffset = 0;
-        (*gWeatherPtr).fogDYOffset = 0;
-        (*gWeatherPtr).fogDBaseSpritesX = 0;
-        (*gWeatherPtr).fogDPosY = 0;
+pub unsafe fn FogDiagonal_InitVars() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetColorMapIndex = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .colorMapStepDelay = 20;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .fogHScrollCounter = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .fogHScrollOffset = 1;
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .fogDSpritesCreated
+        == 0
+    {
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDScrollXCounter = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDScrollYCounter = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDXOffset = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDYOffset = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDBaseSpritesX = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDPosY = 0;
         Weather_SetBlendCoeffs(0, 16);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FogDiagonal_InitAll() {
+pub unsafe fn FogDiagonal_InitAll() {
     FogDiagonal_InitVars();
-    while (*gWeatherPtr).weatherGfxLoaded == FALSE {
+    while (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded
+        == FALSE
+    {
         FogDiagonal_Main();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FogDiagonal_Main() {
+pub unsafe fn FogDiagonal_Main() {
     UpdateFogDiagonalMovement();
     'l1: {
-        match (*gWeatherPtr).initStep {
+        match (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .initStep
+        {
             0 => {
                 CreateFogDiagonalSprites();
-                (*gWeatherPtr).initStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .initStep += 1;
             }
             1 => {
                 Weather_SetTargetBlendCoeffs(12, 8, 8);
-                (*gWeatherPtr).initStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .initStep += 1;
             }
             2 => {
                 if Weather_UpdateBlend() == 0 {
                     break 'l1;
                 }
-                (*gWeatherPtr).weatherGfxLoaded = TRUE;
-                (*gWeatherPtr).initStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .weatherGfxLoaded = TRUE;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .initStep += 1;
             }
             _ => {}
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FogDiagonal_Finish() -> u8 {
+pub unsafe fn FogDiagonal_Finish() -> u8 {
     UpdateFogDiagonalMovement();
     'l1: {
-        match (*gWeatherPtr).finishStep {
+        match (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .finishStep
+        {
             0 => {
                 Weather_SetTargetBlendCoeffs(0, 16, 1);
-                (*gWeatherPtr).finishStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .finishStep += 1;
             }
             1 => {
                 if Weather_UpdateBlend() == 0 {
                     break 'l1;
                 }
-                (*gWeatherPtr).finishStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .finishStep += 1;
             }
             2 => {
                 DestroyFogDiagonalSprites();
-                (*gWeatherPtr).finishStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .finishStep += 1;
             }
             _ => {
                 return FALSE;
             }
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn UpdateFogDiagonalMovement() {
+unsafe fn UpdateFogDiagonalMovement() {
     if ({
-        (*gWeatherPtr).fogDScrollXCounter += 1;
-        (*gWeatherPtr).fogDScrollXCounter
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDScrollXCounter += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDScrollXCounter
     }) > 2
     {
-        (*gWeatherPtr).fogDXOffset += 1;
-        (*gWeatherPtr).fogDScrollXCounter = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDXOffset += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDScrollXCounter = 0;
     }
     if ({
-        (*gWeatherPtr).fogDScrollYCounter += 1;
-        (*gWeatherPtr).fogDScrollYCounter
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDScrollYCounter += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDScrollYCounter
     }) > 4
     {
-        (*gWeatherPtr).fogDYOffset += 1;
-        (*gWeatherPtr).fogDScrollYCounter = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDYOffset += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDScrollYCounter = 0;
     }
-    (*gWeatherPtr).fogDBaseSpritesX =
-        gSpriteCoordOffsetX as u16 - (*gWeatherPtr).fogDXOffset & 0xFF;
-    (*gWeatherPtr).fogDPosY = gSpriteCoordOffsetY as u16 + (*gWeatherPtr).fogDYOffset;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .fogDBaseSpritesX = (gSpriteCoordOffsetX as u16
+        - (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDXOffset)
+        & 0xFF;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).fogDPosY =
+        gSpriteCoordOffsetY as u16
+            + (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .fogDYOffset;
 }
-pub(crate) unsafe extern "C" fn CreateFogDiagonalSprites() {
-    let mut i: u16 = 0;
+unsafe fn CreateFogDiagonalSprites() {
     let mut fogDiagonalSpriteSheet: SpriteSheet = zeroed();
     let mut spriteId: u8 = 0;
     let mut sprite: *mut Sprite = null_mut();
-    if (*gWeatherPtr).fogDSpritesCreated == 0 {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .fogDSpritesCreated
+        == 0
+    {
         fogDiagonalSpriteSheet = *sFogDiagonalSpriteSheet;
         LoadSpriteSheet(&raw mut fogDiagonalSpriteSheet);
-        i = 0;
-        while i < NUM_FOG_DIAGONAL_SPRITES {
+        for i in 0..NUM_FOG_DIAGONAL_SPRITES {
             spriteId = CreateSpriteAtEnd(
                 (&raw const *sFogDiagonalSpriteTemplate).cast_mut(),
                 0,
@@ -1449,164 +1978,263 @@ pub(crate) unsafe extern "C" fn CreateFogDiagonalSprites() {
                 sprite = &raw mut gSprites[spriteId];
                 (*sprite).data[0] = (i as i32 % 5) as i16;
                 (*sprite).data[1] = (i as i32 / 5) as i16;
-                (*gWeatherPtr).sprites.s2.fogDSprites[i] = sprite;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .fogDSprites[i] = sprite;
             } else {
-                (*gWeatherPtr).sprites.s2.fogDSprites[i] = null_mut();
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .fogDSprites[i] = null_mut();
             }
-            i += 1;
         }
-        (*gWeatherPtr).fogDSpritesCreated = TRUE;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDSpritesCreated = TRUE;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyFogDiagonalSprites() {
-    let mut i: u16 = 0;
-    if (*gWeatherPtr).fogDSpritesCreated != 0 {
-        i = 0;
-        while i < NUM_FOG_DIAGONAL_SPRITES {
-            if !(*gWeatherPtr).sprites.s2.fogDSprites[i].is_null() {
-                DestroySprite((*gWeatherPtr).sprites.s2.fogDSprites[i]);
+unsafe fn DestroyFogDiagonalSprites() {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .fogDSpritesCreated
+        != 0
+    {
+        for i in 0..NUM_FOG_DIAGONAL_SPRITES {
+            if !(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sprites
+                .s2
+                .fogDSprites[i]
+                .is_null()
+            {
+                DestroySprite(
+                    (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .fogDSprites[i],
+                );
             }
-            i += 1;
         }
         FreeSpriteTilesByTag(GFXTAG_FOG_D);
-        (*gWeatherPtr).fogDSpritesCreated = FALSE;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .fogDSpritesCreated = FALSE;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateFogDiagonalSprite(sprite: *mut Sprite) {
-    (*sprite).y2 = (*gWeatherPtr).fogDPosY as i16;
-    (*sprite).x = (*gWeatherPtr).fogDBaseSpritesX as i16 + 32 + (*sprite).data[0] * 64;
+pub(crate) unsafe fn UpdateFogDiagonalSprite(sprite: *mut Sprite) {
+    (*sprite).y2 = (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .fogDPosY as i16;
+    (*sprite).x = (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .fogDBaseSpritesX as i16
+        + 32
+        + (*sprite).data[0] * 64;
     if (*sprite).x >= 272 {
-        (*sprite).x = (*gWeatherPtr).fogDBaseSpritesX as i16 + 480 - (4 - (*sprite).data[0]) * 64;
+        (*sprite).x = (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+            .cast::<*mut Weather>()))
+        .fogDBaseSpritesX as i16
+            + 480
+            - (4 - (*sprite).data[0]) * 64;
         (*sprite).x &= 0x1FF;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Sandstorm_InitVars() {
-    (*gWeatherPtr).initStep = 0;
-    (*gWeatherPtr).weatherGfxLoaded = 0;
-    (*gWeatherPtr).targetColorMapIndex = 0;
-    (*gWeatherPtr).colorMapStepDelay = 20;
-    if (*gWeatherPtr).sandstormSpritesCreated == 0 {
-        (*gWeatherPtr).sandstormXOffset = {
-            (*gWeatherPtr).sandstormYOffset = 0;
-            (*gWeatherPtr).sandstormYOffset
+pub unsafe fn Sandstorm_InitVars() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetColorMapIndex = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .colorMapStepDelay = 20;
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .sandstormSpritesCreated
+        == 0
+    {
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormXOffset = {
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sandstormYOffset = 0;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sandstormYOffset
         };
-        (*gWeatherPtr).sandstormWaveIndex = 8;
-        (*gWeatherPtr).sandstormWaveCounter = 0;
-        if (*gWeatherPtr).sandstormWaveIndex >= 96 {
-            (*gWeatherPtr).sandstormWaveIndex = 0x80 - (*gWeatherPtr).sandstormWaveIndex;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormWaveIndex = 8;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormWaveCounter = 0;
+        if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormWaveIndex
+            >= 96
+        {
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sandstormWaveIndex = 0x80
+                - (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .sandstormWaveIndex;
         }
         Weather_SetBlendCoeffs(0, 16);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Sandstorm_InitAll() {
+pub unsafe fn Sandstorm_InitAll() {
     Sandstorm_InitVars();
-    while (*gWeatherPtr).weatherGfxLoaded == 0 {
+    while (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded
+        == 0
+    {
         Sandstorm_Main();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Sandstorm_Main() {
+pub unsafe fn Sandstorm_Main() {
     UpdateSandstormMovement();
     UpdateSandstormWaveIndex();
-    if (*gWeatherPtr).sandstormWaveIndex >= 96 {
-        (*gWeatherPtr).sandstormWaveIndex = MIN_SANDSTORM_WAVE_INDEX;
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .sandstormWaveIndex
+        >= 96
+    {
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormWaveIndex = MIN_SANDSTORM_WAVE_INDEX;
     }
-    match (*gWeatherPtr).initStep {
+    match (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep
+    {
         0 => {
             CreateSandstormSprites();
             CreateSwirlSandstormSprites();
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
         1 => {
             Weather_SetTargetBlendCoeffs(16, 0, 0);
-            (*gWeatherPtr).initStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
-        2 => {
-            if Weather_UpdateBlend() != 0 {
-                (*gWeatherPtr).weatherGfxLoaded = TRUE;
-                (*gWeatherPtr).initStep += 1;
-            }
+        2 if Weather_UpdateBlend() != 0 => {
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .weatherGfxLoaded = TRUE;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .initStep += 1;
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Sandstorm_Finish() -> u8 {
+pub unsafe fn Sandstorm_Finish() -> u8 {
     UpdateSandstormMovement();
     UpdateSandstormWaveIndex();
-    match (*gWeatherPtr).finishStep {
+    match (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .finishStep
+    {
         0 => {
             Weather_SetTargetBlendCoeffs(0, 16, 0);
-            (*gWeatherPtr).finishStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .finishStep += 1;
         }
         1 => {
             if Weather_UpdateBlend() != 0 {
-                (*gWeatherPtr).finishStep += 1;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .finishStep += 1;
             }
         }
         2 => {
             DestroySandstormSprites();
-            (*gWeatherPtr).finishStep += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .finishStep += 1;
         }
         _ => {
             return FALSE;
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn UpdateSandstormWaveIndex() {
+unsafe fn UpdateSandstormWaveIndex() {
     if ({
-        let t1 = (*gWeatherPtr).sandstormWaveCounter;
-        (*gWeatherPtr).sandstormWaveCounter += 1;
+        let t1 = (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormWaveCounter;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormWaveCounter += 1;
         t1
     }) > 4
     {
-        (*gWeatherPtr).sandstormWaveIndex += 1;
-        (*gWeatherPtr).sandstormWaveCounter = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormWaveIndex += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormWaveCounter = 0;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateSandstormMovement() {
-    (*gWeatherPtr).sandstormXOffset -= gSineTable[(*gWeatherPtr).sandstormWaveIndex] as u32 * 4;
-    (*gWeatherPtr).sandstormYOffset -= gSineTable[(*gWeatherPtr).sandstormWaveIndex] as u32;
-    (*gWeatherPtr).sandstormBaseSpritesX =
-        gSpriteCoordOffsetX as u16 + ((*gWeatherPtr).sandstormXOffset >> 8) as u16 & 0xFF;
-    (*gWeatherPtr).sandstormPosY =
-        gSpriteCoordOffsetY as u16 + ((*gWeatherPtr).sandstormYOffset >> 8) as u16;
+unsafe fn UpdateSandstormMovement() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .sandstormXOffset -= (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+        [(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormWaveIndex] as u32
+        * 4;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .sandstormYOffset -= (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+        [(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormWaveIndex] as u32;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .sandstormBaseSpritesX = (gSpriteCoordOffsetX as u16
+        + ((*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormXOffset
+            >> 8) as u16)
+        & 0xFF;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .sandstormPosY = gSpriteCoordOffsetY as u16
+        + ((*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormYOffset
+            >> 8) as u16;
 }
-pub(crate) unsafe extern "C" fn DestroySandstormSprites() {
-    let mut i: u16 = 0;
-    if (*gWeatherPtr).sandstormSpritesCreated != 0 {
-        i = 0;
-        while i < NUM_SANDSTORM_SPRITES {
-            if !(*gWeatherPtr).sprites.s2.sandstormSprites1[i].is_null() {
-                DestroySprite((*gWeatherPtr).sprites.s2.sandstormSprites1[i]);
+unsafe fn DestroySandstormSprites() {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .sandstormSpritesCreated
+        != 0
+    {
+        for i in 0..NUM_SANDSTORM_SPRITES {
+            if !(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sprites
+                .s2
+                .sandstormSprites1[i]
+                .is_null()
+            {
+                DestroySprite(
+                    (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .sandstormSprites1[i],
+                );
             }
-            i += 1;
         }
-        (*gWeatherPtr).sandstormSpritesCreated = FALSE;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormSpritesCreated = FALSE;
         FreeSpriteTilesByTag(GFXTAG_SANDSTORM);
     }
-    if (*gWeatherPtr).sandstormSwirlSpritesCreated != 0 {
-        i = 0;
-        while i < NUM_SWIRL_SANDSTORM_SPRITES {
-            if !(*gWeatherPtr).sprites.s2.sandstormSprites2[i].is_null() {
-                DestroySprite((*gWeatherPtr).sprites.s2.sandstormSprites2[i]);
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .sandstormSwirlSpritesCreated
+        != 0
+    {
+        for i in 0..NUM_SWIRL_SANDSTORM_SPRITES {
+            if !(*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sprites
+                .s2
+                .sandstormSprites2[i]
+                .is_null()
+            {
+                DestroySprite(
+                    (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .sandstormSprites2[i],
+                );
             }
-            i += 1;
         }
-        (*gWeatherPtr).sandstormSwirlSpritesCreated = FALSE;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormSwirlSpritesCreated = FALSE;
     }
 }
-pub(crate) unsafe extern "C" fn CreateSandstormSprites() {
-    let mut i: u16 = 0;
+unsafe fn CreateSandstormSprites() {
     let mut spriteId: u8 = 0;
-    if (*gWeatherPtr).sandstormSpritesCreated == 0 {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .sandstormSpritesCreated
+        == 0
+    {
         LoadSpriteSheet((&raw const *sSandstormSpriteSheet).cast_mut());
         LoadCustomWeatherSpritePalette(gSandstormWeatherPalette.as_ptr().cast_mut());
-        i = 0;
-        while i < NUM_SANDSTORM_SPRITES {
+        for i in 0..NUM_SANDSTORM_SPRITES {
             spriteId = CreateSpriteAtEnd(
                 (&raw const *sSandstormSpriteTemplate).cast_mut(),
                 0,
@@ -1614,23 +2242,40 @@ pub(crate) unsafe extern "C" fn CreateSandstormSprites() {
                 1,
             );
             if spriteId != MAX_SPRITES {
-                (*gWeatherPtr).sprites.s2.sandstormSprites1[i] = &raw mut gSprites[spriteId];
-                (*(*gWeatherPtr).sprites.s2.sandstormSprites1[i]).data[0] = (i as i32 % 5) as i16;
-                (*(*gWeatherPtr).sprites.s2.sandstormSprites1[i]).data[1] = (i as i32 / 5) as i16;
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .sandstormSprites1[i] = &raw mut gSprites[spriteId];
+                (*(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .sprites
+                .s2
+                .sandstormSprites1[i])
+                    .data[0] = (i as i32 % 5) as i16;
+                (*(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .sprites
+                .s2
+                .sandstormSprites1[i])
+                    .data[1] = (i as i32 / 5) as i16;
             } else {
-                (*gWeatherPtr).sprites.s2.sandstormSprites1[i] = null_mut();
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .sandstormSprites1[i] = null_mut();
             }
-            i += 1;
         }
-        (*gWeatherPtr).sandstormSpritesCreated = TRUE;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .sandstormSpritesCreated = TRUE;
     }
 }
-pub(crate) unsafe extern "C" fn CreateSwirlSandstormSprites() {
-    let mut i: u16 = 0;
+unsafe fn CreateSwirlSandstormSprites() {
     let mut spriteId: u8 = 0;
-    if (*gWeatherPtr).sandstormSwirlSpritesCreated == 0 {
-        i = 0;
-        while i < NUM_SWIRL_SANDSTORM_SPRITES {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .sandstormSwirlSpritesCreated
+        == 0
+    {
+        for i in 0..NUM_SWIRL_SANDSTORM_SPRITES {
             spriteId = CreateSpriteAtEnd(
                 (&raw const *sSandstormSpriteTemplate).cast_mut(),
                 i as i16 * 48 + 24,
@@ -1638,53 +2283,108 @@ pub(crate) unsafe extern "C" fn CreateSwirlSandstormSprites() {
                 1,
             );
             if spriteId != MAX_SPRITES {
-                (*gWeatherPtr).sprites.s2.sandstormSprites2[i] = &raw mut gSprites[spriteId];
-                (*(*gWeatherPtr).sprites.s2.sandstormSprites2[i])
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .sandstormSprites2[i] = &raw mut gSprites[spriteId];
+                (*(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .sprites
+                .s2
+                .sandstormSprites2[i])
                     .oam
                     .set_size(ST_OAM_SIZE_2);
-                (*(*gWeatherPtr).sprites.s2.sandstormSprites2[i]).data[1] = i as i16 * 51;
-                (*(*gWeatherPtr).sprites.s2.sandstormSprites2[i]).data[0] = 8;
-                (*(*gWeatherPtr).sprites.s2.sandstormSprites2[i]).data[2] = 0;
-                (*(*gWeatherPtr).sprites.s2.sandstormSprites2[i]).data[4] = 0x6730;
-                (*(*gWeatherPtr).sprites.s2.sandstormSprites2[i]).data[3] =
-                    sSwirlEntranceDelays[i] as i16;
-                StartSpriteAnim((*gWeatherPtr).sprites.s2.sandstormSprites2[i], 1);
+                (*(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .sprites
+                .s2
+                .sandstormSprites2[i])
+                    .data[1] = i as i16 * 51;
+                (*(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .sprites
+                .s2
+                .sandstormSprites2[i])
+                    .data[tRadius] = 8;
+                (*(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .sprites
+                .s2
+                .sandstormSprites2[i])
+                    .data[tRadiusCounter] = 0;
+                (*(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .sprites
+                .s2
+                .sandstormSprites2[i])
+                    .data[4] = 0x6730;
+                (*(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .sprites
+                .s2
+                .sandstormSprites2[i])
+                    .data[tEntranceDelay] = sSwirlEntranceDelays[i] as i16;
+                StartSpriteAnim(
+                    (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .sandstormSprites2[i],
+                    1,
+                );
                 CalcCenterToCornerVec(
-                    (*gWeatherPtr).sprites.s2.sandstormSprites2[i],
+                    (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                        .cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .sandstormSprites2[i],
                     ST_OAM_AFFINE_OFF as u8,
                     2,
                     ST_OAM_AFFINE_OFF as u8,
                 );
-                (*(*gWeatherPtr).sprites.s2.sandstormSprites2[i]).callback =
-                    Some(WaitSandSwirlSpriteEntrance);
+                (*(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+                    .cast::<*mut Weather>()))
+                .sprites
+                .s2
+                .sandstormSprites2[i])
+                    .callback = Some(WaitSandSwirlSpriteEntrance);
             } else {
-                (*gWeatherPtr).sprites.s2.sandstormSprites2[i] = null_mut();
+                (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                    .sprites
+                    .s2
+                    .sandstormSprites2[i] = null_mut();
             }
-            (*gWeatherPtr).sandstormSwirlSpritesCreated = TRUE;
-            i += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .sandstormSwirlSpritesCreated = TRUE;
         }
     }
 }
-pub(crate) unsafe extern "C" fn UpdateSandstormSprite(sprite: *mut Sprite) {
-    (*sprite).y2 = (*gWeatherPtr).sandstormPosY as i16;
-    (*sprite).x = (*gWeatherPtr).sandstormBaseSpritesX as i16 + 32 + (*sprite).data[0] * 64;
+pub(crate) unsafe fn UpdateSandstormSprite(sprite: *mut Sprite) {
+    (*sprite).y2 = (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .sandstormPosY as i16;
+    (*sprite).x = (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .sandstormBaseSpritesX as i16
+        + 32
+        + (*sprite).data[0] * 64;
     if (*sprite).x >= 272 {
-        (*sprite).x =
-            (*gWeatherPtr).sandstormBaseSpritesX as i16 + 480 - (4 - (*sprite).data[0]) * 64;
+        (*sprite).x = (*(*(&raw const crate::data::field_weather::gWeatherPtr)
+            .cast::<*mut Weather>()))
+        .sandstormBaseSpritesX as i16
+            + 480
+            - (4 - (*sprite).data[0]) * 64;
         (*sprite).x &= 0x1FF;
     }
 }
-pub(crate) unsafe extern "C" fn WaitSandSwirlSpriteEntrance(sprite: *mut Sprite) {
+pub(crate) unsafe fn WaitSandSwirlSpriteEntrance(sprite: *mut Sprite) {
     if ({
-        (*sprite).data[3] -= 1;
-        (*sprite).data[3]
+        (*sprite).data[tEntranceDelay] -= 1;
+        (*sprite).data[tEntranceDelay]
     }) == -1
     {
         (*sprite).callback = Some(UpdateSandstormSwirlSprite);
     }
 }
-pub(crate) unsafe extern "C" fn UpdateSandstormSwirlSprite(sprite: *mut Sprite) {
-    let mut x: u32 = 0;
+pub(crate) unsafe fn UpdateSandstormSwirlSprite(sprite: *mut Sprite) {
     let mut y: u32 = 0;
     if ({
         (*sprite).y -= 1;
@@ -1692,133 +2392,156 @@ pub(crate) unsafe extern "C" fn UpdateSandstormSwirlSprite(sprite: *mut Sprite) 
     }) < -48
     {
         (*sprite).y = 208;
-        (*sprite).data[0] = 4;
+        (*sprite).data[tRadius] = 4;
     }
-    x = (*sprite).data[0] as u32 * gSineTable[(*sprite).data[1]] as u32;
-    y = (*sprite).data[0] as u32 * gSineTable[(*sprite).data[1] as i32 + 0x40] as u32;
+    let x: u32 = (*sprite).data[tRadius] as u32
+        * (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[(*sprite).data[1]]
+            as u32;
+    y = (*sprite).data[tRadius] as u32
+        * (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+            [(*sprite).data[1] as i32 + 0x40] as u32;
     (*sprite).x2 = (x >> 8) as i16;
     (*sprite).y2 = (y >> 8) as i16;
-    (*sprite).data[1] = (*sprite).data[1] + 10 & 0xFF;
+    (*sprite).data[1] = ((*sprite).data[1] + 10) & 0xFF;
     if ({
-        (*sprite).data[2] += 1;
-        (*sprite).data[2]
+        (*sprite).data[tRadiusCounter] += 1;
+        (*sprite).data[tRadiusCounter]
     }) > 8
     {
-        (*sprite).data[2] = 0;
-        (*sprite).data[0] += 1;
+        (*sprite).data[tRadiusCounter] = 0;
+        (*sprite).data[tRadius] += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Shade_InitVars() {
-    (*gWeatherPtr).initStep = 0;
-    (*gWeatherPtr).targetColorMapIndex = 3;
-    (*gWeatherPtr).colorMapStepDelay = 20;
+pub unsafe fn Shade_InitVars() {
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>())).initStep = 0;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .targetColorMapIndex = 3;
+    (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .colorMapStepDelay = 20;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Shade_InitAll() {
+pub unsafe fn Shade_InitAll() {
     Shade_InitVars();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Shade_Main() {}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Shade_Finish() -> u8 {
-    return FALSE;
+pub fn Shade_Main() {}
+pub fn Shade_Finish() -> u8 {
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Bubbles_InitVars() {
+pub unsafe fn Bubbles_InitVars() {
     FogHorizontal_InitVars();
-    if (*gWeatherPtr).bubblesSpritesCreated == 0 {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .bubblesSpritesCreated
+        == 0
+    {
         LoadSpriteSheet((&raw const *sWeatherBubbleSpriteSheet).cast_mut());
-        (*gWeatherPtr).bubblesDelayIndex = 0;
-        (*gWeatherPtr).bubblesDelayCounter = sBubbleStartDelays[0] as u16;
-        (*gWeatherPtr).bubblesCoordsIndex = 0;
-        (*gWeatherPtr).bubblesSpriteCount = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .bubblesDelayIndex = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .bubblesDelayCounter = sBubbleStartDelays[0] as u16;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .bubblesCoordsIndex = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .bubblesSpriteCount = 0;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Bubbles_InitAll() {
+pub unsafe fn Bubbles_InitAll() {
     Bubbles_InitVars();
-    while (*gWeatherPtr).weatherGfxLoaded == 0 {
+    while (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .weatherGfxLoaded
+        == 0
+    {
         Bubbles_Main();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Bubbles_Main() {
+pub unsafe fn Bubbles_Main() {
     FogHorizontal_Main();
     if ({
-        (*gWeatherPtr).bubblesDelayCounter += 1;
-        (*gWeatherPtr).bubblesDelayCounter
-    }) > sBubbleStartDelays[(*gWeatherPtr).bubblesDelayIndex] as u16
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .bubblesDelayCounter += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .bubblesDelayCounter
+    }) > sBubbleStartDelays[(*(*(&raw const crate::data::field_weather::gWeatherPtr)
+        .cast::<*mut Weather>()))
+    .bubblesDelayIndex] as u16
     {
-        (*gWeatherPtr).bubblesDelayCounter = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .bubblesDelayCounter = 0;
         if ({
-            (*gWeatherPtr).bubblesDelayIndex += 1;
-            (*gWeatherPtr).bubblesDelayIndex
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .bubblesDelayIndex += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .bubblesDelayIndex
         }) > 7
         {
-            (*gWeatherPtr).bubblesDelayIndex = 0;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .bubblesDelayIndex = 0;
         }
-        CreateBubbleSprite((*gWeatherPtr).bubblesCoordsIndex);
+        CreateBubbleSprite(
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .bubblesCoordsIndex,
+        );
         if ({
-            (*gWeatherPtr).bubblesCoordsIndex += 1;
-            (*gWeatherPtr).bubblesCoordsIndex
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .bubblesCoordsIndex += 1;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .bubblesCoordsIndex
         }) > 12
         {
-            (*gWeatherPtr).bubblesCoordsIndex = 0;
+            (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+                .bubblesCoordsIndex = 0;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Bubbles_Finish() -> u8 {
+pub unsafe fn Bubbles_Finish() -> u8 {
     if FogHorizontal_Finish() == 0 {
         DestroyBubbleSprites();
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn CreateBubbleSprite(coordsIndex: u16) {
-    let mut x: i16 = sBubbleStartCoords[coordsIndex][0];
-    let mut y: i16 = sBubbleStartCoords[coordsIndex][1] - gSpriteCoordOffsetY;
-    let mut spriteId: u8 =
-        CreateSpriteAtEnd((&raw const *sBubbleSpriteTemplate).cast_mut(), x, y, 0);
+unsafe fn CreateBubbleSprite(coordsIndex: u16) {
+    let x: i16 = sBubbleStartCoords[coordsIndex][0];
+    let y: i16 = sBubbleStartCoords[coordsIndex][1] - gSpriteCoordOffsetY;
+    let spriteId: u8 = CreateSpriteAtEnd((&raw const *sBubbleSpriteTemplate).cast_mut(), x, y, 0);
     if spriteId != MAX_SPRITES {
         gSprites[spriteId].oam.set_priority(1);
         gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
-        gSprites[spriteId].data[0] = 0;
-        gSprites[spriteId].data[1] = 0;
+        gSprites[spriteId].data[tScrollXCounter] = 0;
+        gSprites[spriteId].data[tScrollXDir] = 0;
         gSprites[spriteId].data[2] = 0;
-        (*gWeatherPtr).bubblesSpriteCount += 1;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .bubblesSpriteCount += 1;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyBubbleSprites() {
-    let mut i: u16 = 0;
-    if (*gWeatherPtr).bubblesSpriteCount != 0 {
-        i = 0;
-        while i < MAX_SPRITES as u16 {
+unsafe fn DestroyBubbleSprites() {
+    if (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+        .bubblesSpriteCount
+        != 0
+    {
+        for i in 0..(MAX_SPRITES as u16) {
             if gSprites[i].template == (&raw const *sBubbleSpriteTemplate).cast_mut() {
                 DestroySprite(&raw mut gSprites[i]);
             }
-            i += 1;
         }
         FreeSpriteTilesByTag(GFXTAG_BUBBLE);
-        (*gWeatherPtr).bubblesSpriteCount = 0;
+        (*(*(&raw const crate::data::field_weather::gWeatherPtr).cast::<*mut Weather>()))
+            .bubblesSpriteCount = 0;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateBubbleSprite(sprite: *mut Sprite) {
-    (*sprite).data[0] += 1;
+pub(crate) unsafe fn UpdateBubbleSprite(sprite: *mut Sprite) {
+    (*sprite).data[tScrollXCounter] += 1;
     if ({
-        (*sprite).data[0] += 1;
-        (*sprite).data[0]
+        (*sprite).data[tScrollXCounter] += 1;
+        (*sprite).data[tScrollXCounter]
     }) > 8
     {
-        (*sprite).data[0] = 0;
-        if (*sprite).data[1] == 0 {
+        (*sprite).data[tScrollXCounter] = 0;
+        if (*sprite).data[tScrollXDir] == 0 {
             if ({
                 (*sprite).x2 += 1;
                 (*sprite).x2
             }) > 4
             {
-                (*sprite).data[1] = 1;
+                (*sprite).data[tScrollXDir] = 1;
             }
         } else {
             if ({
@@ -1826,7 +2549,7 @@ pub(crate) unsafe extern "C" fn UpdateBubbleSprite(sprite: *mut Sprite) {
                 (*sprite).x2
             }) <= 0
             {
-                (*sprite).data[1] = 0;
+                (*sprite).data[tScrollXDir] = 0;
             }
         }
     }
@@ -1839,12 +2562,12 @@ pub(crate) unsafe extern "C" fn UpdateBubbleSprite(sprite: *mut Sprite) {
         DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn UnusedSetCurrentAbnormalWeather(weather: u32, unknown: u32) {
-    sCurrentAbnormalWeather = weather as u8;
-    sUnusedWeatherRelated = unknown as u16;
+fn UnusedSetCurrentAbnormalWeather(weather: u32, unknown: u32) {
+    sCurrentAbnormalWeather.set(weather as u8);
+    sUnusedWeatherRelated.set(unknown as u16);
 }
-pub(crate) unsafe extern "C" fn Task_DoAbnormalWeather(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_DoAbnormalWeather(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         0 => {
             if ({
@@ -1854,102 +2577,94 @@ pub(crate) unsafe extern "C" fn Task_DoAbnormalWeather(taskId: u8) {
             }) <= 0
             {
                 SetNextWeather(*data.at(1) as u8);
-                sCurrentAbnormalWeather = *data.at(1) as u8;
+                sCurrentAbnormalWeather.set(*data.at(1) as u8);
                 *data.at(15) = 600;
                 *data += 1;
             }
         }
-        1 => {
-            if ({
-                let t2 = *data.at(15);
-                *data.at(15) -= 1;
-                t2
-            }) <= 0
-            {
-                SetNextWeather(*data.at(2) as u8);
-                sCurrentAbnormalWeather = *data.at(2) as u8;
-                *data.at(15) = 600;
-                *data = 0;
-            }
+        1 if ({
+            let t2 = *data.at(15);
+            *data.at(15) -= 1;
+            t2
+        }) <= 0 =>
+        {
+            SetNextWeather(*data.at(2) as u8);
+            sCurrentAbnormalWeather.set(*data.at(2) as u8);
+            *data.at(15) = 600;
+            *data = 0;
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CreateAbnormalWeatherTask() {
-    let mut taskId: u8 = CreateTask(Some(Task_DoAbnormalWeather), 0);
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+unsafe fn CreateAbnormalWeatherTask() {
+    let taskId: u8 = CreateTask(Some(Task_DoAbnormalWeather), 0);
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(15) = 600;
-    if sCurrentAbnormalWeather == WEATHER_DOWNPOUR {
+    if sCurrentAbnormalWeather.get() == WEATHER_DOWNPOUR {
         *data.at(1) = WEATHER_DROUGHT as i16;
         *data.at(2) = WEATHER_DOWNPOUR as i16;
-    } else if sCurrentAbnormalWeather == WEATHER_DROUGHT {
+    } else if sCurrentAbnormalWeather.get() == WEATHER_DROUGHT {
         *data.at(1) = WEATHER_DOWNPOUR as i16;
         *data.at(2) = WEATHER_DROUGHT as i16;
     } else {
-        sCurrentAbnormalWeather = WEATHER_DOWNPOUR;
+        sCurrentAbnormalWeather.set(WEATHER_DOWNPOUR);
         *data.at(1) = WEATHER_DROUGHT as i16;
         *data.at(2) = WEATHER_DOWNPOUR as i16;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetSavedWeather(weather: u32) {
-    let mut oldWeather: u8 = (*gSaveBlock1Ptr).weather;
+pub unsafe fn SetSavedWeather(weather: u32) {
+    let oldWeather: u8 = (*gSaveBlock1Ptr).weather;
     (*gSaveBlock1Ptr).weather = TranslateWeatherNum(weather as u8);
     UpdateRainCounter((*gSaveBlock1Ptr).weather, oldWeather);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSavedWeather() -> u8 {
-    return (*gSaveBlock1Ptr).weather;
+pub unsafe fn GetSavedWeather() -> u8 {
+    (*gSaveBlock1Ptr).weather
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetSavedWeatherFromCurrMapHeader() {
-    let mut oldWeather: u8 = (*gSaveBlock1Ptr).weather;
+pub unsafe fn SetSavedWeatherFromCurrMapHeader() {
+    let oldWeather: u8 = (*gSaveBlock1Ptr).weather;
     (*gSaveBlock1Ptr).weather = TranslateWeatherNum(gMapHeader.weather);
     UpdateRainCounter((*gSaveBlock1Ptr).weather, oldWeather);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWeather(weather: u32) {
+pub unsafe fn SetWeather(weather: u32) {
     SetSavedWeather(weather);
     SetNextWeather(GetSavedWeather());
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWeather_Unused(weather: u32) {
+pub unsafe fn SetWeather_Unused(weather: u32) {
     SetSavedWeather(weather);
     SetCurrentAndNextWeather(GetSavedWeather());
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoCurrentWeather() {
+pub unsafe fn DoCurrentWeather() {
     let mut weather: u8 = GetSavedWeather();
     if weather == WEATHER_ABNORMAL {
         if FuncIsActiveTask(Some(Task_DoAbnormalWeather)) == 0 {
             CreateAbnormalWeatherTask();
         }
-        weather = sCurrentAbnormalWeather;
+        weather = sCurrentAbnormalWeather.get();
     } else {
         if FuncIsActiveTask(Some(Task_DoAbnormalWeather)) != 0 {
             DestroyTask(FindTaskIdByFunc(Some(Task_DoAbnormalWeather)));
         }
-        sCurrentAbnormalWeather = WEATHER_DOWNPOUR;
+        sCurrentAbnormalWeather.set(WEATHER_DOWNPOUR);
     }
     SetNextWeather(weather);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResumePausedWeather() {
+pub unsafe fn ResumePausedWeather() {
     let mut weather: u8 = GetSavedWeather();
     if weather == WEATHER_ABNORMAL {
         if FuncIsActiveTask(Some(Task_DoAbnormalWeather)) == 0 {
             CreateAbnormalWeatherTask();
         }
-        weather = sCurrentAbnormalWeather;
+        weather = sCurrentAbnormalWeather.get();
     } else {
         if FuncIsActiveTask(Some(Task_DoAbnormalWeather)) != 0 {
             DestroyTask(FindTaskIdByFunc(Some(Task_DoAbnormalWeather)));
         }
-        sCurrentAbnormalWeather = WEATHER_DOWNPOUR;
+        sCurrentAbnormalWeather.set(WEATHER_DOWNPOUR);
     }
     SetCurrentAndNextWeather(weather);
 }
-pub(crate) unsafe extern "C" fn TranslateWeatherNum(weather: u8) -> u8 {
+unsafe fn TranslateWeatherNum(weather: u8) -> u8 {
     match weather {
         WEATHER_NONE => {
             return WEATHER_NONE;
@@ -2011,16 +2726,16 @@ pub(crate) unsafe extern "C" fn TranslateWeatherNum(weather: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateWeatherPerDay(increment: u16) {
+pub unsafe fn UpdateWeatherPerDay(increment: u16) {
     let mut weatherStage: u16 = (*gSaveBlock1Ptr).weatherCycleStage as u16 + increment;
     weatherStage = (weatherStage as i32 % 4) as u16;
     (*gSaveBlock1Ptr).weatherCycleStage = weatherStage as u8;
 }
-pub(crate) unsafe extern "C" fn UpdateRainCounter(newWeather: u8, oldWeather: u8) {
+unsafe fn UpdateRainCounter(newWeather: u8, oldWeather: u8) {
     if newWeather != oldWeather
         && (newWeather == WEATHER_RAIN || newWeather == WEATHER_RAIN_THUNDERSTORM)
     {

@@ -3,25 +3,17 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals
 )]
 
+use crate::agb_flash::{
+    SetReadFlash1, SwitchFlashBank, WaitForFlashWrite, gFlash, gFlashNumRemainingBytes,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
@@ -36,40 +28,29 @@ use core::mem::zeroed;
 use core::ptr::null_mut;
 // Data tables (translate with cdata.py): mxMaxTime MX29L010 DefaultFlash
 
-unsafe extern "C" {
-    static mut WaitForFlashWrite: Option<unsafe extern "C" fn(u8, *mut u8, u8) -> u16>;
-    static mut gFlash: *mut FlashType;
-    static mut gFlashNumRemainingBytes: u16;
-    fn SetReadFlash1(a0: *mut u16);
-    fn SwitchFlashBank(a0: u8);
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn EraseFlashChip_MX() -> u16 {
-    let mut result: u16 = 0;
+pub unsafe fn EraseFlashChip_MX() -> u16 {
     let mut readFlash1Buffer: CArray<u16, 32> = zeroed();
     volatile_write(
-        67109380 as usize as *mut u16,
-        (67109380 as usize as *mut u16).read_volatile() & 65532 | (*gFlash).wait[0],
+        67109380_usize as *mut u16,
+        (67109380_usize as *mut u16).read_volatile() & 65532 | (*gFlash).wait[0],
     );
-    volatile_write((0xE000000 as usize as *mut u8).at(21845), 0xAA);
-    volatile_write((0xE000000 as usize as *mut u8).at(10922), 0x55);
-    volatile_write((0xE000000 as usize as *mut u8).at(21845), 0x80);
-    volatile_write((0xE000000 as usize as *mut u8).at(21845), 0xAA);
-    volatile_write((0xE000000 as usize as *mut u8).at(10922), 0x55);
-    volatile_write((0xE000000 as usize as *mut u8).at(21845), 0x10);
+    volatile_write((0xE000000_usize as *mut u8).at(21845), 0xAA);
+    volatile_write((0xE000000_usize as *mut u8).at(10922), 0x55);
+    volatile_write((0xE000000_usize as *mut u8).at(21845), 0x80);
+    volatile_write((0xE000000_usize as *mut u8).at(21845), 0xAA);
+    volatile_write((0xE000000_usize as *mut u8).at(10922), 0x55);
+    volatile_write((0xE000000_usize as *mut u8).at(21845), 0x10);
     SetReadFlash1(readFlash1Buffer.as_mut_ptr());
-    result = WaitForFlashWrite.unwrap_unchecked()(3, 0xE000000 as usize as *mut u8, 0xFF);
+    let result: u16 = WaitForFlashWrite.unwrap_unchecked()(3, 0xE000000_usize as *mut u8, 0xFF);
     volatile_write(
-        67109380 as usize as *mut u16,
-        (67109380 as usize as *mut u16).read_volatile() & 65532 | 3,
+        67109380_usize as *mut u16,
+        (67109380_usize as *mut u16).read_volatile() & 65532 | 3,
     );
-    return result;
+    result
 }
 // hand-written: tools/rustport/overrides/agb_flash_mx/EraseFlashSector_MX.rs
 // c2rs-uses: gFlash SwitchFlashBank SetReadFlash1 WaitForFlashWrite
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn EraseFlashSector_MX(sector_num: u16) -> u16 {
+pub fn EraseFlashSector_MX(sector_num: u16) -> u16 {
     const FLASH_BASE: usize = 0x0E00_0000;
     const REG_WAITCNT: *mut u16 = 0x0400_0204 as *mut u16;
     const WAITCNT_SRAM_MASK: u16 = 3;
@@ -107,7 +88,7 @@ pub unsafe extern "C" fn EraseFlashSector_MX(sector_num: u16) -> u16 {
             SetReadFlash1(read_flash1_buffer.0.as_mut_ptr());
 
             let wait_for_write = (&raw mut WaitForFlashWrite)
-                .cast::<Option<unsafe extern "C" fn(u8, *mut u8, u8) -> u16>>()
+                .cast::<Option<unsafe fn(u8, *mut u8, u8) -> u16>>()
                 .read();
             let result = wait_for_write.unwrap_unchecked()(2, addr, 0xFF);
 
@@ -123,45 +104,40 @@ pub unsafe extern "C" fn EraseFlashSector_MX(sector_num: u16) -> u16 {
     }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ProgramFlashByte_MX(mut sectorNum: u16, offset: u32, data: u8) -> u16 {
-    let mut addr: *mut u8 = null_mut();
+pub unsafe fn ProgramFlashByte_MX(mut sectorNum: u16, offset: u32, data: u8) -> u16 {
     let mut readFlash1Buffer: CArray<u16, 32> = zeroed();
     if offset >= (*gFlash).sector.size {
         return 0x8000;
     }
     SwitchFlashBank((sectorNum as i32 / 16) as u8);
     sectorNum = (sectorNum as i32 % 16) as u16;
-    addr = (0xE000000 as usize as *mut u8)
+    let addr: *mut u8 = (0xE000000_usize as *mut u8)
         .at(shl_i32(sectorNum as i32, (*gFlash).sector.shift as u32))
         .at(offset);
     SetReadFlash1(readFlash1Buffer.as_mut_ptr());
     volatile_write(
-        67109380 as usize as *mut u16,
-        (67109380 as usize as *mut u16).read_volatile() & 65532 | (*gFlash).wait[0],
+        67109380_usize as *mut u16,
+        (67109380_usize as *mut u16).read_volatile() & 65532 | (*gFlash).wait[0],
     );
-    volatile_write((0xE000000 as usize as *mut u8).at(21845), 0xAA);
-    volatile_write((0xE000000 as usize as *mut u8).at(10922), 0x55);
-    volatile_write((0xE000000 as usize as *mut u8).at(21845), 0xA0);
+    volatile_write((0xE000000_usize as *mut u8).at(21845), 0xAA);
+    volatile_write((0xE000000_usize as *mut u8).at(10922), 0x55);
+    volatile_write((0xE000000_usize as *mut u8).at(21845), 0xA0);
     *addr = data;
-    return WaitForFlashWrite.unwrap_unchecked()(1, addr, data);
+    WaitForFlashWrite.unwrap_unchecked()(1, addr, data)
 }
-pub(crate) unsafe extern "C" fn ProgramByte(src: *mut u8, dest: *mut u8) -> u16 {
-    volatile_write((0xE000000 as usize as *mut u8).at(21845), 0xAA);
-    volatile_write((0xE000000 as usize as *mut u8).at(10922), 0x55);
-    volatile_write((0xE000000 as usize as *mut u8).at(21845), 0xA0);
+unsafe fn ProgramByte(src: *mut u8, dest: *mut u8) -> u16 {
+    volatile_write((0xE000000_usize as *mut u8).at(21845), 0xAA);
+    volatile_write((0xE000000_usize as *mut u8).at(10922), 0x55);
+    volatile_write((0xE000000_usize as *mut u8).at(21845), 0xA0);
     *dest = *src;
-    return WaitForFlashWrite.unwrap_unchecked()(1, dest, *src);
+    WaitForFlashWrite.unwrap_unchecked()(1, dest, *src)
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ProgramFlashSector_MX(mut sectorNum: u16, mut src: *mut u8) -> u16 {
-    let mut result: u16 = 0;
-    let mut dest: *mut u8 = null_mut();
+pub unsafe fn ProgramFlashSector_MX(mut sectorNum: u16, mut src: *mut u8) -> u16 {
     let mut readFlash1Buffer: CArray<u16, 32> = zeroed();
     if sectorNum >= (*gFlash).sector.count {
         return 0x80FF;
     }
-    result = EraseFlashSector_MX(sectorNum);
+    let mut result: u16 = EraseFlashSector_MX(sectorNum);
     if result != 0 {
         return result;
     }
@@ -169,12 +145,12 @@ pub unsafe extern "C" fn ProgramFlashSector_MX(mut sectorNum: u16, mut src: *mut
     sectorNum = (sectorNum as i32 % 16) as u16;
     SetReadFlash1(readFlash1Buffer.as_mut_ptr());
     volatile_write(
-        67109380 as usize as *mut u16,
-        (67109380 as usize as *mut u16).read_volatile() & 65532 | (*gFlash).wait[0],
+        67109380_usize as *mut u16,
+        (67109380_usize as *mut u16).read_volatile() & 65532 | (*gFlash).wait[0],
     );
     gFlashNumRemainingBytes = (*gFlash).sector.size as u16;
-    dest = (0xE000000 as usize as *mut u8)
-        .at(shl_i32(sectorNum as i32, (*gFlash).sector.shift as u32));
+    let mut dest: *mut u8 =
+        (0xE000000_usize as *mut u8).at(shl_i32(sectorNum as i32, (*gFlash).sector.shift as u32));
     while gFlashNumRemainingBytes > 0 {
         result = ProgramByte(src, dest);
         if result != 0 {
@@ -184,5 +160,5 @@ pub unsafe extern "C" fn ProgramFlashSector_MX(mut sectorNum: u16, mut src: *mut
         src = src.at(1);
         dest = dest.at(1);
     }
-    return result;
+    result
 }

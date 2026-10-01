@@ -4,12 +4,6 @@
 
 use crate::ffi::{RomBytes, RomPtr};
 
-unsafe extern "C" {
-    static gText_PkmnTransferredLanettesPC: u8;
-    static gText_PkmnTransferredLanettesPCBoxFull: u8;
-    static gText_PkmnTransferredSomeonesPC: u8;
-    static gText_PkmnTransferredSomeonesPCBoxFull: u8;
-}
 
 pub(crate) static sPCIconOff_Gfx: RomBytes<192> = RomBytes(*include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../build/assets/graphics/naming_screen/pc_icon_off.png.4bpp")));
 
@@ -20,10 +14,10 @@ pub(crate) static sKeyboard_Pal: RomBytes<32> = RomBytes(*include_bytes!(concat!
 pub(crate) static sRival_Pal: RomBytes<32> = RomBytes(*include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../build/assets/graphics/naming_screen/rival.pal.gbapal")));
 
 pub(crate) static sTransferredToPCMessages: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const gText_PkmnTransferredSomeonesPC)),
-    RomPtr((&raw const gText_PkmnTransferredLanettesPC)),
-    RomPtr((&raw const gText_PkmnTransferredSomeonesPCBoxFull)),
-    RomPtr((&raw const gText_PkmnTransferredLanettesPCBoxFull)),
+    RomPtr((&raw const (*crate::asmdata::gText_PkmnTransferredSomeonesPC.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_PkmnTransferredLanettesPC.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_PkmnTransferredSomeonesPCBoxFull.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_PkmnTransferredLanettesPCBoxFull.cast::<u8>()))),
 ];
 
 pub(crate) static sText_AlphabetUpperLower: RomBytes<54> = RomBytes([187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 171, 255]);

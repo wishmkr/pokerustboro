@@ -3,7 +3,7 @@
 use core::ffi::c_void;
 
 use crate::bg::{ChangeBgX, ChangeBgY, SetBgAttribute, ShowBg};
-use crate::ffi::{CpuSet, gPlttBufferUnfaded};
+use crate::ffi::CpuSet;
 use crate::malloc::{Alloc, Free};
 
 const BG_ATTR_PALETTEMODE: u8 = 4;
@@ -39,16 +39,28 @@ crate::incbin!(
     "../../../build/assets/graphics/pokedex/region_map_affine.bin.lz"
 );
 
-unsafe extern "C" {
-    fn DecompressAndCopyTileDataToVram(
-        bg: u8,
-        src: *const c_void,
-        size: u32,
-        offset: u16,
-        mode: u8,
-    ) -> *mut c_void;
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn AddValToTilemapBuffer(ptr: *mut c_void, delta: i32, width: i32, height: i32, affine: u32);
+/// `DecompressAndCopyTileDataToVram` with this module's view of its types.
+#[inline]
+unsafe fn DecompressAndCopyTileDataToVram(
+    a0: u8,
+    a1: *const c_void,
+    a2: u32,
+    a3: u16,
+    a4: u8,
+) -> *mut c_void {
+    unsafe { crate::menu::DecompressAndCopyTileDataToVram(a0, a1 as _, a2, a3, a4) as *mut c_void }
+}
+/// `FreeTempTileDataBuffersIfPossible` with this module's view of its types.
+#[inline]
+unsafe fn FreeTempTileDataBuffersIfPossible() -> u8 {
+    unsafe { crate::menu::FreeTempTileDataBuffersIfPossible() }
+}
+/// `AddValToTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn AddValToTilemapBuffer(a0: *mut c_void, a1: i32, a2: i32, a3: i32, a4: u32) {
+    unsafe {
+        crate::menu::AddValToTilemapBuffer(a0 as _, a1, a2, a3, a4);
+    }
 }
 
 /// `struct PokedexAreaMapTemplate { u32 bg:2; u32 offset:8; u32 mode:2; ... }`
@@ -62,7 +74,7 @@ fn template_fields(bits: u32) -> (u8, u8, u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadPokedexAreaMapGfx(template: *const u32) {
+pub unsafe fn LoadPokedexAreaMapGfx(template: *const u32) {
     let (bg, offset, mode) = template_fields(unsafe { template.read() });
     // The C code allocates sizeof(u8 *) for what it uses as a u8.
     let bg_num = unsafe { Alloc(4) };
@@ -100,7 +112,9 @@ pub unsafe extern "C" fn LoadPokedexAreaMapGfx(template: *const u32) {
     unsafe { SetBgAttribute(bg, BG_ATTR_PALETTEMODE, 1) };
     let words = (sPokedexAreaMap_Pal.0.len() / 4) as u32;
     let dest = unsafe {
-        (&raw mut gPlttBufferUnfaded)
+        (&raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
+            .cast_mut()))
             .cast::<u16>()
             .add(MAP_PALETTE_INDEX)
     };
@@ -115,7 +129,7 @@ pub unsafe extern "C" fn LoadPokedexAreaMapGfx(template: *const u32) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryShowPokedexAreaMap() -> u32 {
+pub unsafe fn TryShowPokedexAreaMap() -> u32 {
     if unsafe { FreeTempTileDataBuffersIfPossible() } == 0 {
         let bg = unsafe { (&raw const BG_NUM).read().read() };
         unsafe { ShowBg(bg) };
@@ -126,7 +140,7 @@ pub unsafe extern "C" fn TryShowPokedexAreaMap() -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreePokedexAreaMapBgNum() {
+pub unsafe fn FreePokedexAreaMapBgNum() {
     let bg_num = unsafe { (&raw const BG_NUM).read() };
     if !bg_num.is_null() {
         unsafe { Free(bg_num) };
@@ -135,7 +149,7 @@ pub unsafe extern "C" fn FreePokedexAreaMapBgNum() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokedexAreaMapChangeBgY(move_: u32) {
+pub unsafe fn PokedexAreaMapChangeBgY(move_: u32) {
     let bg = unsafe { (&raw const BG_NUM).read().read() };
     unsafe { ChangeBgY(bg, move_.wrapping_mul(0x100) as i32, BG_COORD_SET) };
 }

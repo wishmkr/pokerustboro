@@ -3,37 +3,330 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    clippy::manual_swap,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::battle_anim_throw::ItemIdToBallId;
+use crate::battle_factory::InBattleFactory;
+use crate::battle_gfx_sfx_util::ShouldPlayNormalMonCry;
+use crate::battle_main::{gBattleTypeFlags, gMonSpritesGfxPtr};
+use crate::battle_message::GetCurrentPPToMaxPPState;
+use crate::battle_tent::InSlateportBattleTent;
+use crate::bg::{ChangeBgX, ResetBgsAndClearDma3BusyFlags, SetBgAttribute, ShowBg};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_Reset;
+use crate::ffi::gSpecialVar_0x8005;
+use crate::gpu_regs::SetGpuReg;
+use crate::item::CopyItemName;
+use crate::link::{GetMultiplayerId, gLinkPlayers};
+use crate::load_save::gSaveBlock2Ptr;
+use crate::m4a::{gMPlayInfo_BGM, m4aMPlayVolumeControl};
+use crate::menu::{
+    AddTextPrinterParameterized4, ClearScheduledBgCopiesToVram, DecompressAndCopyTileDataToVram,
+    DoScheduledBgTilemapCopiesToVram, FreeTempTileDataBuffersIfPossible, ResetTempTileDataBuffers,
+    ScheduleBgCopyTilemapToVram, SetBgTilemapPalette,
+};
+use crate::menu_helpers::{
+    GetLRKeysPressed, MenuHelpers_IsLinkActive, MenuHelpers_ShouldWaitForLinkRecv,
+    ResetAllBgsCoordinates, ResetVramOamAndBgCntRegs, SetVBlankHBlankCallbacksToNull,
+};
+use crate::mon_markings::CreateMonMarkingAllCombosSprite;
+use crate::palette::{
+    BeginNormalPaletteFade, BlendPalettes, LoadCompressedPalette, LoadPalette, ResetPaletteFade,
+    TransferPlttBuffer, UpdatePaletteFade, gPaletteFade,
+};
+use crate::palette::{gPlttBufferFaded, gPlttBufferUnfaded};
+use crate::party_menu::{GetMonAilment, GetMonNickname, IsMoveHm, IsMultiBattle};
+use crate::pokeball::LoadBallGfx;
+use crate::pokemon::{
+    BoxMonToMon, CalculatePPWithBonus, CheckPartyHasHadPokerus, CheckPartyPokerus,
+    CreateMonSpritesGfxManager, DestroyMonSpritesGfxManager, GetAbilityBySpecies, GetMonData2,
+    GetMonData3, GetMonGender, GetMonSpritePalStructFromOtIdPersonality, GetNature, IsMonShiny,
+    IsMonSpriteNotFlipped, MonSpritesGfxManager_GetSpritePtr, PokemonSummaryDoMonAnimation,
+    SetMonData, SetMultiuseSpriteTemplateToPokemon, ShouldIgnoreDeoxysForm, SpeciesToPokedexNum,
+    StopPokemonAnimationDelayTask, gEnemyParty, gMultiuseSpriteTemplate, gPlayerParty,
+};
+use crate::pokemon_storage_system::AdvanceStorageMonIndex;
+use crate::region_map::GetMapNameHandleAquaHideout;
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::sound::{PlayCry_ByMode, PlaySE, StopCryAndClearCrySongs};
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, FreeSpriteTilesByTag, LoadOam,
+    ProcessSpriteCopyRequests, ResetSpriteData,
+};
+use crate::string_util::ConvertInternationalString;
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar3, gStringVar4};
+use crate::task::{DestroyTask, RunTasks, SwitchTaskToFollowupFunc};
+use crate::task::{gTasks, task_func, task_set, task_set_func};
+use crate::text::DeactivateAllTextPrinters;
+use crate::tv::GetPlayerIDAsU32;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect,
+    FreeAllWindowBuffers, PutWindowTilemap, RemoveWindow,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `BlitBitmapToWindow` with this module's view of its types.
+#[inline]
+unsafe fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16) {
+    unsafe {
+        crate::window::BlitBitmapToWindow(a0, a1 as _, a2, a3, a4, a5);
+    }
+}
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `CopyToBgTilemapBufferRect_ChangePalette` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBufferRect_ChangePalette(
+    a0: u8,
+    a1: *mut c_void,
+    a2: u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: u8,
+) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBufferRect_ChangePalette(a0, a1 as _, a2, a3, a4, a5, a6);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `DestroySpriteAndFreeResources` with this module's view of its types.
+#[inline]
+unsafe fn DestroySpriteAndFreeResources(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySpriteAndFreeResources(a0 as _);
+    }
+}
+/// `DynamicPlaceholderTextUtil_ExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn DynamicPlaceholderTextUtil_ExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe {
+        crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_ExpandPlaceholders(
+            a0 as _, a1 as _,
+        ) as *mut u8
+    }
+}
+/// `DynamicPlaceholderTextUtil_SetPlaceholderPtr` with this module's view of its types.
+#[inline]
+unsafe fn DynamicPlaceholderTextUtil_SetPlaceholderPtr(a0: u8, a1: *mut u8) {
+    unsafe {
+        crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_SetPlaceholderPtr(
+            a0, a1 as _,
+        );
+    }
+}
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+unsafe fn FindTaskIdByFunc(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `FreeSpriteOamMatrix` with this module's view of its types.
+#[inline]
+unsafe fn FreeSpriteOamMatrix(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::FreeSpriteOamMatrix(a0 as _);
+    }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `GetStringCenterAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringCenterAlignXOffset(a0, a1 as _, a2) }
+}
+/// `GetStringRightAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringRightAlignXOffset(a0, a1 as _, a2) }
+}
+/// `GetStringWidth` with this module's view of its types.
+#[inline]
+unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
+    unsafe { crate::text::GetStringWidth(a0, a1 as _, a2) }
+}
+/// `HandleLoadSpecialPokePic_2` with this module's view of its types.
+#[inline]
+unsafe fn HandleLoadSpecialPokePic_2(
+    a0: *mut CompressedSpriteSheet,
+    a1: *mut c_void,
+    a2: i32,
+    a3: u32,
+) {
+    unsafe {
+        crate::decompress::HandleLoadSpecialPokePic_2(a0 as _, a1 as _, a2, a3);
+    }
+}
+/// `HandleLoadSpecialPokePic_DontHandleDeoxys` with this module's view of its types.
+#[inline]
+unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
+    a0: *mut CompressedSpriteSheet,
+    a1: *mut c_void,
+    a2: i32,
+    a3: u32,
+) {
+    unsafe {
+        crate::decompress::HandleLoadSpecialPokePic_DontHandleDeoxys(a0 as _, a1 as _, a2, a3);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LZDecompressWram` with this module's view of its types.
+#[inline]
+unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::decompress::LZDecompressWram(a0 as _, a1 as _);
+    }
+}
+/// `LoadCompressedSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+    unsafe {
+        crate::decompress::LoadCompressedSpritePalette(a0 as _);
+    }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SetBoxMonData` with this module's view of its types.
+#[inline]
+unsafe fn SetBoxMonData(a0: *mut BoxPokemon, a1: i32, a2: *mut c_void) {
+    unsafe {
+        crate::box_mon::SetBoxMonData(a0 as _, a1, a2 as _);
+    }
+}
+/// `SetTaskFuncWithFollowupFunc` with this module's view of its types.
+#[inline]
+unsafe fn SetTaskFuncWithFollowupFunc(
+    a0: u8,
+    a1: Option<unsafe fn(u8)>,
+    a2: Option<unsafe fn(u8)>,
+) {
+    unsafe {
+        crate::task::SetTaskFuncWithFollowupFunc(
+            a0,
+            core::mem::transmute(a1),
+            core::mem::transmute(a2),
+        );
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StringAppend` with this module's view of its types.
+#[inline]
+unsafe fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringAppend(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringCompareWithoutExtCtrlCodes` with this module's view of its types.
+#[inline]
+unsafe fn StringCompareWithoutExtCtrlCodes(a0: *mut u8, a1: *mut u8) -> i32 {
+    unsafe { crate::string_util::StringCompareWithoutExtCtrlCodes(a0 as _, a1 as _) }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringExpandPlaceholders(a0 as _, a1 as _) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const tScrollingSpeed: usize = 0;
+const tVisibleColumns: usize = 1;
+const tMove: usize = 2;
 // Data tables (translate with cdata.py): sNullDescription sPoundDescription sKarateChopDescription sDoubleSlapDescription sCometPunchDescription sMegaPunchDescription sPayDayDescription sFirePunchDescription sIcePunchDescription sThunderPunchDescription sScratchDescription sViceGripDescription sGuillotineDescription sRazorWindDescription sSwordsDanceDescription sCutDescription sGustDescription sWingAttackDescription sWhirlwindDescription sFlyDescription sBindDescription sSlamDescription sVineWhipDescription sStompDescription sDoubleKickDescription sMegaKickDescription sJumpKickDescription sRollingKickDescription sSandAttackDescription sHeadbuttDescription sHornAttackDescription sFuryAttackDescription sHornDrillDescription sTackleDescription sBodySlamDescription sWrapDescription sTakeDownDescription sThrashDescription sDoubleEdgeDescription sTailWhipDescription sPoisonStingDescription sTwineedleDescription sPinMissileDescription sLeerDescription sBiteDescription sGrowlDescription sRoarDescription sSingDescription sSupersonicDescription sSonicBoomDescription sDisableDescription sAcidDescription sEmberDescription sFlamethrowerDescription sMistDescription sWaterGunDescription sHydroPumpDescription sSurfDescription sIceBeamDescription sBlizzardDescription sPsybeamDescription sBubbleBeamDescription sAuroraBeamDescription sHyperBeamDescription sPeckDescription sDrillPeckDescription sSubmissionDescription sLowKickDescription sCounterDescription sSeismicTossDescription sStrengthDescription sAbsorbDescription sMegaDrainDescription sLeechSeedDescription sGrowthDescription sRazorLeafDescription sSolarBeamDescription sPoisonPowderDescription sStunSporeDescription sSleepPowderDescription sPetalDanceDescription sStringShotDescription sDragonRageDescription sFireSpinDescription sThunderShockDescription sThunderboltDescription sThunderWaveDescription sThunderDescription sRockThrowDescription sEarthquakeDescription sFissureDescription sDigDescription sToxicDescription sConfusionDescription sPsychicDescription sHypnosisDescription sMeditateDescription sAgilityDescription sQuickAttackDescription sRageDescription sTeleportDescription sNightShadeDescription sMimicDescription sScreechDescription sDoubleTeamDescription sRecoverDescription sHardenDescription sMinimizeDescription sSmokescreenDescription sConfuseRayDescription sWithdrawDescription sDefenseCurlDescription sBarrierDescription sLightScreenDescription sHazeDescription sReflectDescription sFocusEnergyDescription sBideDescription sMetronomeDescription sMirrorMoveDescription sSelfDestructDescription sEggBombDescription sLickDescription sSmogDescription sSludgeDescription sBoneClubDescription sFireBlastDescription sWaterfallDescription sClampDescription sSwiftDescription sSkullBashDescription sSpikeCannonDescription sConstrictDescription sAmnesiaDescription sKinesisDescription sSoftBoiledDescription sHiJumpKickDescription sGlareDescription sDreamEaterDescription sPoisonGasDescription sBarrageDescription sLeechLifeDescription sLovelyKissDescription sSkyAttackDescription sTransformDescription sBubbleDescription sDizzyPunchDescription sSporeDescription sFlashDescription sPsywaveDescription sSplashDescription sAcidArmorDescription sCrabhammerDescription sExplosionDescription sFurySwipesDescription sBonemerangDescription sRestDescription sRockSlideDescription sHyperFangDescription sSharpenDescription sConversionDescription sTriAttackDescription sSuperFangDescription sSlashDescription sSubstituteDescription sStruggleDescription sSketchDescription sTripleKickDescription sThiefDescription sSpiderWebDescription sMindReaderDescription sNightmareDescription sFlameWheelDescription sSnoreDescription sCurseDescription sFlailDescription sConversion2Description sAeroblastDescription sCottonSporeDescription sReversalDescription sSpiteDescription sPowderSnowDescription sProtectDescription sMachPunchDescription sScaryFaceDescription sFaintAttackDescription sSweetKissDescription sBellyDrumDescription sSludgeBombDescription sMudSlapDescription sOctazookaDescription sSpikesDescription sZapCannonDescription sForesightDescription sDestinyBondDescription sPerishSongDescription sIcyWindDescription sDetectDescription sBoneRushDescription sLockOnDescription sOutrageDescription sSandstormDescription sGigaDrainDescription sEndureDescription sCharmDescription sRolloutDescription sFalseSwipeDescription sSwaggerDescription sMilkDrinkDescription sSparkDescription sFuryCutterDescription sSteelWingDescription sMeanLookDescription sAttractDescription sSleepTalkDescription sHealBellDescription sReturnDescription sPresentDescription sFrustrationDescription sSafeguardDescription sPainSplitDescription sSacredFireDescription sMagnitudeDescription sDynamicPunchDescription sMegahornDescription sDragonBreathDescription sBatonPassDescription sEncoreDescription sPursuitDescription sRapidSpinDescription sSweetScentDescription sIronTailDescription sMetalClawDescription sVitalThrowDescription sMorningSunDescription sSynthesisDescription sMoonlightDescription sHiddenPowerDescription sCrossChopDescription sTwisterDescription sRainDanceDescription sSunnyDayDescription sCrunchDescription sMirrorCoatDescription sPsychUpDescription sExtremeSpeedDescription sAncientPowerDescription sShadowBallDescription sFutureSightDescription sRockSmashDescription sWhirlpoolDescription sBeatUpDescription sFakeOutDescription sUproarDescription sStockpileDescription sSpitUpDescription sSwallowDescription sHeatWaveDescription sHailDescription sTormentDescription sFlatterDescription sWillOWispDescription sMementoDescription sFacadeDescription sFocusPunchDescription sSmellingSaltDescription sFollowMeDescription sNaturePowerDescription sChargeDescription sTauntDescription sHelpingHandDescription sTrickDescription sRolePlayDescription sWishDescription sAssistDescription sIngrainDescription sSuperpowerDescription sMagicCoatDescription sRecycleDescription sRevengeDescription sBrickBreakDescription sYawnDescription sKnockOffDescription sEndeavorDescription sEruptionDescription sSkillSwapDescription sImprisonDescription sRefreshDescription sGrudgeDescription sSnatchDescription sSecretPowerDescription sDiveDescription sArmThrustDescription sCamouflageDescription sTailGlowDescription sLusterPurgeDescription sMistBallDescription sFeatherDanceDescription sTeeterDanceDescription sBlazeKickDescription sMudSportDescription sIceBallDescription sNeedleArmDescription sSlackOffDescription sHyperVoiceDescription sPoisonFangDescription sCrushClawDescription sBlastBurnDescription sHydroCannonDescription sMeteorMashDescription sAstonishDescription sWeatherBallDescription sAromatherapyDescription sFakeTearsDescription sAirCutterDescription sOverheatDescription sOdorSleuthDescription sRockTombDescription sSilverWindDescription sMetalSoundDescription sGrassWhistleDescription sTickleDescription sCosmicPowerDescription sWaterSpoutDescription sSignalBeamDescription sShadowPunchDescription sExtrasensoryDescription sSkyUppercutDescription sSandTombDescription sSheerColdDescription sMuddyWaterDescription sBulletSeedDescription sAerialAceDescription sIcicleSpearDescription sIronDefenseDescription sBlockDescription sHowlDescription sDragonClawDescription sFrenzyPlantDescription sBulkUpDescription sBounceDescription sMudShotDescription sPoisonTailDescription sCovetDescription sVoltTackleDescription sMagicalLeafDescription sWaterSportDescription sCalmMindDescription sLeafBladeDescription sDragonDanceDescription sRockBlastDescription sShockWaveDescription sWaterPulseDescription sDoomDesireDescription sPsychoBoostDescription gMoveDescriptionPointers sHardyNatureName sLonelyNatureName sBraveNatureName sAdamantNatureName sNaughtyNatureName sBoldNatureName sDocileNatureName sRelaxedNatureName sImpishNatureName sLaxNatureName sTimidNatureName sHastyNatureName sSeriousNatureName sJollyNatureName sNaiveNatureName sModestNatureName sMildNatureName sQuietNatureName sBashfulNatureName sRashNatureName sCalmNatureName sGentleNatureName sSassyNatureName sCarefulNatureName sQuirkyNatureName gNatureNamePointers sBgTemplates sStatusTilemap sStatusSlidingWindow1 sStatusSlidingWindow2 sPowerAccSlidingWindow sAppealJamSlidingWindow sMultiBattleOrder sSummaryTemplate sPageInfoTemplate sPageSkillsTemplate sPageMovesTemplate sTextColors sButtons_Gfx sTextPrinterFunctions sTextPrinterTasks sMemoNatureTextColor sMemoMiscTextColor sStatsLeftColumnLayout sStatsRightColumnLayout sMovesPPLayout sOamData_MoveTypes sSpriteAnim_TypeNormal sSpriteAnim_TypeFighting sSpriteAnim_TypeFlying sSpriteAnim_TypePoison sSpriteAnim_TypeGround sSpriteAnim_TypeRock sSpriteAnim_TypeBug sSpriteAnim_TypeGhost sSpriteAnim_TypeSteel sSpriteAnim_TypeMystery sSpriteAnim_TypeFire sSpriteAnim_TypeWater sSpriteAnim_TypeGrass sSpriteAnim_TypeElectric sSpriteAnim_TypePsychic sSpriteAnim_TypeIce sSpriteAnim_TypeDragon sSpriteAnim_TypeDark sSpriteAnim_CategoryCool sSpriteAnim_CategoryBeauty sSpriteAnim_CategoryCute sSpriteAnim_CategorySmart sSpriteAnim_CategoryTough sSpriteAnimTable_MoveTypes sSpriteSheet_MoveTypes sSpriteTemplate_MoveTypes sMoveTypeToOamPaletteNum sOamData_MoveSelector sSpriteAnim_MoveSelector0 sSpriteAnim_MoveSelector1 sSpriteAnim_MoveSelector2 sSpriteAnim_MoveSelector3 sSpriteAnim_MoveSelectorLeft sSpriteAnim_MoveSelectorRight sSpriteAnim_MoveSelectorMiddle sSpriteAnim_MoveSelector7 sSpriteAnim_MoveSelector8 sSpriteAnim_MoveSelector9 sSpriteAnimTable_MoveSelector sMoveSelectorSpriteSheet sMoveSelectorSpritePal sMoveSelectorSpriteTemplate sOamData_StatusCondition sSpriteAnim_StatusPoison sSpriteAnim_StatusParalyzed sSpriteAnim_StatusSleep sSpriteAnim_StatusFrozen sSpriteAnim_StatusBurn sSpriteAnim_StatusPokerus sSpriteAnim_StatusFaint sSpriteAnimTable_StatusCondition sStatusIconsSpriteSheet sStatusIconsSpritePalette sSpriteTemplate_StatusCondition sMarkings_Pal
 
 /// `struct PokemonSummaryScreenData`
@@ -41,7 +334,7 @@ use core::ptr::null_mut;
 #[derive(Clone, Copy)]
 pub struct PokemonSummaryScreenData {
     pub monList: PokemonSummaryScreenData_monList,
-    pub callback: Option<unsafe extern "C" fn()>,
+    pub callback: Option<unsafe fn()>,
     pub markingsSprite: *mut Sprite,
     pub currentMon: Pokemon,
     pub summary: PokeSummary,
@@ -305,296 +598,60 @@ static sSummaryTemplate: Table<CArray<WindowTemplate, 21>> =
     Table((&raw const crate::data::pokemon_summary_screen::sSummaryTemplate).cast());
 static sTextColors: Table<CArray<CArray<u8, 3>, 13>> =
     Table((&raw const crate::data::pokemon_summary_screen::sTextColors).cast());
-static sTextPrinterFunctions: Table<CArray<Option<unsafe extern "C" fn()>, 4>> =
+static sTextPrinterFunctions: Table<CArray<Option<unsafe fn()>, 4>> =
     Table((&raw const crate::data::pokemon_summary_screen::sTextPrinterFunctions).cast());
-static sTextPrinterTasks: Table<CArray<Option<unsafe extern "C" fn(u8)>, 4>> =
+static sTextPrinterTasks: Table<CArray<Option<unsafe fn(u8)>, 4>> =
     Table((&raw const crate::data::pokemon_summary_screen::sTextPrinterTasks).cast());
 
 pub(crate) static mut sMonSummaryScreen: *mut PokemonSummaryScreenData = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gLastViewedMonIndex: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMoveSlotToReplace: u8 = 0;
+pub(crate) static sMoveSlotToReplace: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sAnimDelayTaskId: u8 = 0;
+pub(crate) static sAnimDelayTaskId: crate::global::Global<u8> = crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static gAbilityDescriptionPointers: CArray<*mut u8, 0>;
-    static gAbilityNames: CArray<CArray<u8, 13>, 0>;
-    static gBallSpriteTemplates: CArray<SpriteTemplate, 0>;
-    static gBattleMoves: CArray<BattleMove, 0>;
-    static mut gBattleTypeFlags: u32;
-    static gContestEffectDescriptionPointers: CArray<*mut u8, 0>;
-    static gContestEffects: CArray<ContestEffect, 0>;
-    static gContestMoves: CArray<ContestMove, 0>;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static gExperienceTables: CArray<CArray<u32, 101>, 0>;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gMPlayInfo_BGM: MusicPlayerInfo;
-    static mut gMain: Main;
-    static gMonFrontPicTable: CArray<CompressedSpriteSheet, 0>;
-    static mut gMonSpritesGfxPtr: *mut MonSpritesGfx;
-    static gMoveNames: CArray<CArray<u8, 13>, 355>;
-    static gMoveTypes_Pal: CArray<u32, 0>;
-    static mut gMultiuseSpriteTemplate: SpriteTemplate;
-    static gPPTextPalette: CArray<u16, 0>;
-    static gPPUpGetMask: CArray<u8, 0>;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gPlttBufferFaded: CArray<u16, 512>;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSpecialVar_0x8005: u16;
-    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar3: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static gSummaryPage_BattleMoves_Tilemap: CArray<u32, 0>;
-    static gSummaryPage_ContestMoves_Tilemap: CArray<u32, 0>;
-    static gSummaryPage_InfoEgg_Tilemap: CArray<u32, 0>;
-    static gSummaryPage_Info_Tilemap: CArray<u32, 0>;
-    static gSummaryPage_Skills_Tilemap: CArray<u32, 0>;
-    static gSummaryScreen_Gfx: CArray<u32, 0>;
-    static gSummaryScreen_MoveEffect_Cancel_Tilemap: CArray<u16, 0>;
-    static gSummaryScreen_Pal: CArray<u32, 0>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_Accuracy2: CArray<u8, 0>;
-    static gText_Appeal: CArray<u8, 0>;
-    static gText_Attack3: CArray<u8, 0>;
-    static gText_BattleMoves: CArray<u8, 0>;
-    static gText_Cancel: CArray<u8, 0>;
-    static gText_Cancel2: CArray<u8, 0>;
-    static gText_ContestMoves: CArray<u8, 0>;
-    static gText_Defense3: CArray<u8, 0>;
-    static gText_EggAboutToHatch: CArray<u8, 0>;
-    static gText_EggFromHotSprings: CArray<u8, 0>;
-    static gText_EggFromTraveler: CArray<u8, 0>;
-    static gText_EggWillHatchSoon: CArray<u8, 0>;
-    static gText_EggWillTakeALongTime: CArray<u8, 0>;
-    static gText_EggWillTakeSomeTime: CArray<u8, 0>;
-    static gText_EmptyString5: CArray<u8, 0>;
-    static gText_ExpPoints: CArray<u8, 0>;
-    static gText_FemaleSymbol: CArray<u8, 0>;
-    static gText_FiveMarks: CArray<u8, 0>;
-    static gText_HMMovesCantBeForgotten2: CArray<u8, 0>;
-    static gText_HP4: CArray<u8, 0>;
-    static gText_IDNumber2: CArray<u8, 0>;
-    static gText_Info: CArray<u8, 0>;
-    static gText_Jam: CArray<u8, 0>;
-    static gText_LevelSymbol: CArray<u8, 0>;
-    static gText_MaleSymbol: CArray<u8, 0>;
-    static gText_NextLv: CArray<u8, 0>;
-    static gText_None: CArray<u8, 0>;
-    static gText_NumberClear01: CArray<u8, 0>;
-    static gText_OTSlash: CArray<u8, 0>;
-    static gText_OddEggFoundByCouple: CArray<u8, 0>;
-    static gText_OneDash: CArray<u8, 0>;
-    static gText_PeculiarEggNicePlace: CArray<u8, 0>;
-    static gText_PeculiarEggTrade: CArray<u8, 0>;
-    static gText_PkmnInfo: CArray<u8, 0>;
-    static gText_PkmnSkills: CArray<u8, 0>;
-    static gText_Power: CArray<u8, 0>;
-    static gText_RentalPkmn: CArray<u8, 0>;
-    static gText_RibbonsVar1: CArray<u8, 0>;
-    static gText_SpAtk4: CArray<u8, 0>;
-    static gText_SpDef4: CArray<u8, 0>;
-    static gText_Speed2: CArray<u8, 0>;
-    static gText_Status: CArray<u8, 0>;
-    static gText_Switch: CArray<u8, 0>;
-    static gText_ThreeDashes: CArray<u8, 0>;
-    static gText_TwoDashes: CArray<u8, 0>;
-    static gText_TypeSlash: CArray<u8, 0>;
-    static gText_XNature: CArray<u8, 0>;
-    static gText_XNatureFatefulEncounter: CArray<u8, 0>;
-    static gText_XNatureHatchedAtYZ: CArray<u8, 0>;
-    static gText_XNatureHatchedSomewhereAt: CArray<u8, 0>;
-    static gText_XNatureMetAtYZ: CArray<u8, 0>;
-    static gText_XNatureMetSomewhereAt: CArray<u8, 0>;
-    static gText_XNatureObtainedInTrade: CArray<u8, 0>;
-    static gText_XNatureProbablyMetAt: CArray<u8, 0>;
-    fn AddTextPrinterParameterized4(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: i8,
-        a8: *mut u8,
-    );
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AdvanceStorageMonIndex(a0: *mut BoxPokemon, a1: u8, a2: u8, a3: u8) -> i16;
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn BoxMonToMon(a0: *mut BoxPokemon, a1: *mut Pokemon);
-    fn BuildOamBuffer();
-    fn CalculatePPWithBonus(a0: u16, a1: u8, a2: u8) -> u8;
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CheckPartyHasHadPokerus(a0: *mut Pokemon, a1: u8) -> u8;
-    fn CheckPartyPokerus(a0: *mut Pokemon, a1: u8) -> u8;
-    fn ClearScheduledBgCopiesToVram();
-    fn ClearWindowTilemap(a0: u8);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn ConvertInternationalString(a0: *mut u8, a1: u8);
-    fn CopyItemName(a0: u16, a1: *mut u8);
-    fn CopyToBgTilemapBufferRect_ChangePalette(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-    );
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateMonMarkingAllCombosSprite(a0: u16, a1: u16, a2: *mut u16) -> *mut Sprite;
-    fn CreateMonSpritesGfxManager(a0: u8, a1: u8) -> *mut MonSpritesGfxManager;
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DestroyMonSpritesGfxManager(a0: u8);
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroySpriteAndFreeResources(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DoScheduledBgTilemapCopiesToVram();
-    fn DynamicPlaceholderTextUtil_ExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn DynamicPlaceholderTextUtil_Reset();
-    fn DynamicPlaceholderTextUtil_SetPlaceholderPtr(a0: u8, a1: *mut u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeSpriteOamMatrix(a0: *mut Sprite);
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetAbilityBySpecies(a0: u16, a1: u8) -> u8;
-    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
-    fn GetCurrentPPToMaxPPState(a0: u8, a1: u8) -> u8;
-    fn GetItemName(a0: u16) -> *mut u8;
-    fn GetLRKeysPressed() -> u8;
-    fn GetMapNameHandleAquaHideout(a0: *mut u8, a1: u16) -> *mut u8;
-    fn GetMonAilment(a0: *mut Pokemon) -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetMonGender(a0: *mut Pokemon) -> u8;
-    fn GetMonNickname(a0: *mut Pokemon, a1: *mut u8) -> *mut u8;
-    fn GetMonSpritePalStructFromOtIdPersonality(
-        a0: u16,
-        a1: u32,
-        a2: u32,
-    ) -> *mut CompressedSpritePalette;
-    fn GetMultiplayerId() -> u8;
-    fn GetNature(a0: *mut Pokemon) -> u8;
-    fn GetPlayerIDAsU32() -> u32;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32;
-    fn HandleLoadSpecialPokePic_2(
-        a0: *mut CompressedSpriteSheet,
-        a1: *mut c_void,
-        a2: i32,
-        a3: u32,
-    );
-    fn HandleLoadSpecialPokePic_DontHandleDeoxys(
-        a0: *mut CompressedSpriteSheet,
-        a1: *mut c_void,
-        a2: i32,
-        a3: u32,
-    );
-    fn InBattleFactory() -> u8;
-    fn InSlateportBattleTent() -> u8;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsMonShiny(a0: *mut Pokemon) -> u8;
-    fn IsMonSpriteNotFlipped(a0: u16) -> u8;
-    fn IsMoveHm(a0: u16) -> u8;
-    fn IsMultiBattle() -> u8;
-    fn ItemIdToBallId(a0: u16) -> u8;
-    fn LZDecompressWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadBallGfx(a0: u8);
-    fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette);
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn MenuHelpers_IsLinkActive() -> u8;
-    fn MenuHelpers_ShouldWaitForLinkRecv() -> u8;
-    fn MonSpritesGfxManager_GetSpritePtr(a0: u8, a1: u8) -> *mut u8;
-    fn PlayCry_ByMode(a0: u16, a1: i8, a2: u8);
-    fn PlaySE(a0: u16);
-    fn PokemonSummaryDoMonAnimation(a0: *mut Sprite, a1: u16, a2: u8);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveWindow(a0: u8);
-    fn ResetAllBgsCoordinates();
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTempTileDataBuffers();
-    fn ResetVramOamAndBgCntRegs();
-    fn RunTasks();
-    fn ScanlineEffect_Stop();
-    fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn SetBgAttribute(a0: u8, a1: u8, a2: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetBgTilemapPalette(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn SetBoxMonData(a0: *mut BoxPokemon, a1: i32, a2: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
-    fn SetMultiuseSpriteTemplateToPokemon(a0: u16, a1: u8);
-    fn SetTaskFuncWithFollowupFunc(
-        a0: u8,
-        a1: Option<unsafe extern "C" fn(u8)>,
-        a2: Option<unsafe extern "C" fn(u8)>,
-    );
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankHBlankCallbacksToNull();
-    fn ShouldIgnoreDeoxysForm(a0: u8, a1: u8) -> u8;
-    fn ShouldPlayNormalMonCry(a0: *mut Pokemon) -> u32;
-    fn ShowBg(a0: u8);
-    fn SpeciesToPokedexNum(a0: u16) -> u16;
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StopCryAndClearCrySongs();
-    fn StopPokemonAnimationDelayTask();
-    fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCompareWithoutExtCtrlCodes(a0: *mut u8, a1: *mut u8) -> i32;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn SwitchTaskToFollowupFunc(a0: u8);
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
-    fn m4aMPlayVolumeControl(a0: *mut MusicPlayerInfo, a1: u16, a2: u16);
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `GetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
+    unsafe { crate::bg::GetBgTilemapBuffer(a0) as *mut c_void }
+}
+/// `GetItemName` with this module's view of its types.
+#[inline]
+unsafe fn GetItemName(a0: u16) -> *mut u8 {
+    crate::item::GetItemName(a0) as *mut u8
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowPokemonSummaryScreen(
+pub unsafe fn ShowPokemonSummaryScreen(
     mode: u8,
     mons: *mut c_void,
     monIndex: u8,
     maxMonIndex: u8,
-    callback: Option<unsafe extern "C" fn()>,
+    callback: Option<unsafe fn()>,
 ) {
     sMonSummaryScreen = AllocZeroed(16632) as *mut PokemonSummaryScreenData;
     (*sMonSummaryScreen).mode = mode;
@@ -631,12 +688,11 @@ pub unsafe extern "C" fn ShowPokemonSummaryScreen(
     }
     SetMainCallback2(Some(CB2_InitSummaryScreen));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowSelectMovePokemonSummaryScreen(
+pub unsafe fn ShowSelectMovePokemonSummaryScreen(
     mons: *mut Pokemon,
     monIndex: u8,
     maxMonIndex: u8,
-    callback: Option<unsafe extern "C" fn()>,
+    callback: Option<unsafe fn()>,
     newMove: u16,
 ) {
     ShowPokemonSummaryScreen(
@@ -648,36 +704,35 @@ pub unsafe extern "C" fn ShowSelectMovePokemonSummaryScreen(
     );
     (*sMonSummaryScreen).newMove = newMove;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowPokemonSummaryScreenHandleDeoxys(
+pub unsafe fn ShowPokemonSummaryScreenHandleDeoxys(
     mode: u8,
     mons: *mut BoxPokemon,
     monIndex: u8,
     maxMonIndex: u8,
-    callback: Option<unsafe extern "C" fn()>,
+    callback: Option<unsafe fn()>,
 ) {
     ShowPokemonSummaryScreen(mode, mons as *mut c_void, monIndex, maxMonIndex, callback);
     (*sMonSummaryScreen).handleDeoxys = TRUE;
 }
-pub(crate) unsafe extern "C" fn MainCB2() {
+pub(crate) unsafe fn MainCB2() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
     DoScheduledBgTilemapCopiesToVram();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn VBlank() {
+pub(crate) unsafe fn VBlank() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn CB2_InitSummaryScreen() {
+pub(crate) unsafe fn CB2_InitSummaryScreen() {
     while MenuHelpers_ShouldWaitForLinkRecv() != TRUE
         && LoadGraphics() != TRUE
         && MenuHelpers_IsLinkActive() != TRUE
     {}
 }
-pub(crate) unsafe extern "C" fn LoadGraphics() -> u8 {
+unsafe fn LoadGraphics() -> u8 {
     match gMain.state {
         0 => {
             SetVBlankHBlankCallbacksToNull();
@@ -805,9 +860,9 @@ pub(crate) unsafe extern "C" fn LoadGraphics() -> u8 {
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn InitBGs() {
+unsafe fn InitBGs() {
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 4);
     SetBgTilemapBuffer(
@@ -833,13 +888,15 @@ pub(crate) unsafe extern "C" fn InitBGs() {
     ShowBg(2);
     ShowBg(3);
 }
-pub(crate) unsafe extern "C" fn DecompressGraphics() -> u8 {
+unsafe fn DecompressGraphics() -> u8 {
     match (*sMonSummaryScreen).switchCounter {
         0 => {
             ResetTempTileDataBuffers();
             DecompressAndCopyTileDataToVram(
                 1,
-                (&raw const gSummaryScreen_Gfx).cast_mut() as *mut c_void,
+                (&raw const (*(&raw const crate::data::graphics::gSummaryScreen_Gfx)
+                    .cast::<CArray<u32, 0>>()))
+                    .cast_mut() as *mut c_void,
                 0,
                 0,
                 0,
@@ -849,7 +906,10 @@ pub(crate) unsafe extern "C" fn DecompressGraphics() -> u8 {
         1 => {
             if FreeTempTileDataBuffersIfPossible() != 1 {
                 LZDecompressWram(
-                    gSummaryPage_Info_Tilemap.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gSummaryPage_Info_Tilemap)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     (*sMonSummaryScreen).bgTilemapBuffers[0][0].as_mut_ptr() as *mut c_void,
                 );
                 (*sMonSummaryScreen).switchCounter += 1;
@@ -857,36 +917,56 @@ pub(crate) unsafe extern "C" fn DecompressGraphics() -> u8 {
         }
         2 => {
             LZDecompressWram(
-                gSummaryPage_InfoEgg_Tilemap.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gSummaryPage_InfoEgg_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 (*sMonSummaryScreen).bgTilemapBuffers[0][1].as_mut_ptr() as *mut c_void,
             );
             (*sMonSummaryScreen).switchCounter += 1;
         }
         3 => {
             LZDecompressWram(
-                gSummaryPage_Skills_Tilemap.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gSummaryPage_Skills_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 (*sMonSummaryScreen).bgTilemapBuffers[1][1].as_mut_ptr() as *mut c_void,
             );
             (*sMonSummaryScreen).switchCounter += 1;
         }
         4 => {
             LZDecompressWram(
-                gSummaryPage_BattleMoves_Tilemap.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gSummaryPage_BattleMoves_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 (*sMonSummaryScreen).bgTilemapBuffers[2][1].as_mut_ptr() as *mut c_void,
             );
             (*sMonSummaryScreen).switchCounter += 1;
         }
         5 => {
             LZDecompressWram(
-                gSummaryPage_ContestMoves_Tilemap.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gSummaryPage_ContestMoves_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 (*sMonSummaryScreen).bgTilemapBuffers[3][1].as_mut_ptr() as *mut c_void,
             );
             (*sMonSummaryScreen).switchCounter += 1;
         }
         6 => {
-            LoadCompressedPalette(gSummaryScreen_Pal.as_ptr().cast_mut(), 0, 256);
+            LoadCompressedPalette(
+                (*(&raw const crate::data::graphics::gSummaryScreen_Pal).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                0,
+                256,
+            );
             LoadPalette(
-                (&raw const gPPTextPalette).cast_mut() as *mut c_void,
+                (&raw const (*(&raw const crate::data::graphics::gPPTextPalette)
+                    .cast::<CArray<u16, 0>>()))
+                    .cast_mut() as *mut c_void,
                 129,
                 30,
             );
@@ -913,26 +993,31 @@ pub(crate) unsafe extern "C" fn DecompressGraphics() -> u8 {
             (*sMonSummaryScreen).switchCounter += 1;
         }
         12 => {
-            LoadCompressedPalette(gMoveTypes_Pal.as_ptr().cast_mut(), 464, 96);
+            LoadCompressedPalette(
+                (*(&raw const crate::data::graphics::gMoveTypes_Pal).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                464,
+                96,
+            );
             (*sMonSummaryScreen).switchCounter = 0;
             return TRUE;
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn CopyMonToSummaryStruct(mon: *mut Pokemon) {
+unsafe fn CopyMonToSummaryStruct(mon: *mut Pokemon) {
     if (*sMonSummaryScreen).isBoxMon == 0 {
-        let mut partyMon: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
+        let partyMon: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
         *mon = *partyMon.at((*sMonSummaryScreen).curMonIndex);
     } else {
-        let mut boxMon: *mut BoxPokemon = (*sMonSummaryScreen).monList.boxMons;
+        let boxMon: *mut BoxPokemon = (*sMonSummaryScreen).monList.boxMons;
         BoxMonToMon(boxMon.at((*sMonSummaryScreen).curMonIndex), mon);
     }
 }
-pub(crate) unsafe extern "C" fn ExtractMonDataToSummaryStruct(mon: *mut Pokemon) -> u8 {
-    let mut i: u32 = 0;
-    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+unsafe fn ExtractMonDataToSummaryStruct(mon: *mut Pokemon) -> u8 {
+    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
     match (*sMonSummaryScreen).switchCounter {
         0 => {
             (*sum).species = GetMonData2(mon, MON_DATA_SPECIES) as u16;
@@ -950,11 +1035,9 @@ pub(crate) unsafe extern "C" fn ExtractMonDataToSummaryStruct(mon: *mut Pokemon)
             }
         }
         1 => {
-            i = 0;
-            while i < MAX_MON_MOVES as u32 {
+            for i in 0..(MAX_MON_MOVES as u32) {
                 (*sum).moves[i] = GetMonData2(mon, MON_DATA_MOVE1 + i as i32) as u16;
                 (*sum).pp[i] = GetMonData2(mon, MON_DATA_PP1 + i as i32) as u8;
-                i += 1;
             }
             (*sum).ppBonuses = GetMonData2(mon, MON_DATA_PP_BONUSES) as u8;
         }
@@ -1002,9 +1085,9 @@ pub(crate) unsafe extern "C" fn ExtractMonDataToSummaryStruct(mon: *mut Pokemon)
         }
     }
     (*sMonSummaryScreen).switchCounter += 1;
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SetDefaultTilemaps() {
+unsafe fn SetDefaultTilemaps() {
     if (*sMonSummaryScreen).currPageIndex != PSS_PAGE_BATTLE_MOVES
         && (*sMonSummaryScreen).currPageIndex != PSS_PAGE_CONTEST_MOVES
     {
@@ -1046,15 +1129,15 @@ pub(crate) unsafe extern "C" fn SetDefaultTilemaps() {
     LimitEggSummaryPageDisplay();
     DrawPokerusCuredSymbol(&raw mut (*sMonSummaryScreen).currentMon);
 }
-pub(crate) unsafe extern "C" fn FreeSummaryScreen() {
+unsafe fn FreeSummaryScreen() {
     FreeAllWindowBuffers();
     Free(sMonSummaryScreen as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn BeginCloseSummaryScreen(taskId: u8) {
+unsafe fn BeginCloseSummaryScreen(taskId: u8) {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-    gTasks[taskId].func = Some(CloseSummaryScreen);
+    task_set_func(taskId, Some(CloseSummaryScreen));
 }
-pub(crate) unsafe extern "C" fn CloseSummaryScreen(taskId: u8) {
+pub(crate) unsafe fn CloseSummaryScreen(taskId: u8) {
     if MenuHelpers_ShouldWaitForLinkRecv() != TRUE && gPaletteFade.active() == 0 {
         SetMainCallback2((*sMonSummaryScreen).callback);
         gLastViewedMonIndex = (*sMonSummaryScreen).curMonIndex;
@@ -1070,7 +1153,7 @@ pub(crate) unsafe extern "C" fn CloseSummaryScreen(taskId: u8) {
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandleInput(taskId: u8) {
     if MenuHelpers_ShouldWaitForLinkRecv() != TRUE && gPaletteFade.active() == 0 {
         if gMain.newKeys as i32 & DPAD_UP != 0 {
             ChangeSummaryPokemon(taskId, -1);
@@ -1098,7 +1181,7 @@ pub(crate) unsafe extern "C" fn Task_HandleInput(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn ChangeSummaryPokemon(taskId: u8, mut delta: i8) {
+unsafe fn ChangeSummaryPokemon(taskId: u8, mut delta: i8) {
     let mut monId: i8 = 0;
     if (*sMonSummaryScreen).lockMonFlag == 0 {
         if (*sMonSummaryScreen).isBoxMon == TRUE {
@@ -1135,13 +1218,13 @@ pub(crate) unsafe extern "C" fn ChangeSummaryPokemon(taskId: u8, mut delta: i8) 
                 PositionStatusSlidingWindow(0, 2);
             }
             (*sMonSummaryScreen).curMonIndex = monId as u8;
-            gTasks[taskId].data[0] = 0;
-            gTasks[taskId].func = Some(Task_ChangeSummaryMon);
+            task_set(taskId, 0, 0);
+            task_set_func(taskId, Some(Task_ChangeSummaryMon));
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_ChangeSummaryMon(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_ChangeSummaryMon(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         0 => {
             StopCryAndClearCrySongs();
@@ -1203,15 +1286,15 @@ pub(crate) unsafe extern "C" fn Task_ChangeSummaryMon(taskId: u8) {
                 && FuncIsActiveTask(Some(Task_SlideStatusWindow)) == 0
             {
                 *data = 0;
-                gTasks[taskId].func = Some(Task_HandleInput);
+                task_set_func(taskId, Some(Task_HandleInput));
             }
             return;
         }
     }
     *data += 1;
 }
-pub(crate) unsafe extern "C" fn AdvanceMonIndex(delta: i8) -> i8 {
-    let mut mon: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
+unsafe fn AdvanceMonIndex(delta: i8) -> i8 {
+    let mon: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
     if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_INFO {
         if delta == -1 && (*sMonSummaryScreen).curMonIndex == 0 {
             return -1;
@@ -1236,24 +1319,21 @@ pub(crate) unsafe extern "C" fn AdvanceMonIndex(delta: i8) -> i8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn AdvanceMultiBattleMonIndex(delta: i8) -> i8 {
-    let mut mons: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
+unsafe fn AdvanceMultiBattleMonIndex(delta: i8) -> i8 {
+    let mons: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
     let mut index: i8 = 0;
     let mut arrId: i8 = 0;
-    let mut i: u8 = 0;
-    i = 0;
-    while i < PARTY_SIZE as u8 {
+    for i in 0..(PARTY_SIZE as u8) {
         if sMultiBattleOrder[i] as i32 == (*sMonSummaryScreen).curMonIndex as i32 {
             arrId = i as i8;
             break;
         }
-        i += 1;
     }
     loop {
-        let mut order: *mut i8 = sMultiBattleOrder.as_ptr().cast_mut();
+        let order: *mut i8 = sMultiBattleOrder.as_ptr().cast_mut();
         arrId += delta;
         if arrId < 0 || arrId >= PARTY_SIZE as i8 {
             return -1;
@@ -1265,10 +1345,10 @@ pub(crate) unsafe extern "C" fn AdvanceMultiBattleMonIndex(delta: i8) -> i8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn IsValidToViewInMulti(mon: *mut Pokemon) -> u8 {
+unsafe fn IsValidToViewInMulti(mon: *mut Pokemon) -> u8 {
     if GetMonData2(mon, MON_DATA_SPECIES) == SPECIES_NONE as u32 {
         return FALSE;
     } else if (*sMonSummaryScreen).curMonIndex != 0 || GetMonData2(mon, MON_DATA_IS_EGG) == 0 {
@@ -1278,12 +1358,12 @@ pub(crate) unsafe extern "C" fn IsValidToViewInMulti(mon: *mut Pokemon) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ChangePage(taskId: u8, delta: i8) {
-    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+unsafe fn ChangePage(taskId: u8, delta: i8) {
+    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if (*summary).isEgg != 0 {
         return;
     } else if delta == -1 && (*sMonSummaryScreen).currPageIndex == (*sMonSummaryScreen).minPageIndex
@@ -1298,15 +1378,15 @@ pub(crate) unsafe extern "C" fn ChangePage(taskId: u8, delta: i8) {
     (*sMonSummaryScreen).currPageIndex += delta as u8;
     *data = 0;
     if delta == 1 {
-        SetTaskFuncWithFollowupFunc(taskId, Some(PssScrollRight), gTasks[taskId].func);
+        SetTaskFuncWithFollowupFunc(taskId, Some(PssScrollRight), task_func(taskId));
     } else {
-        SetTaskFuncWithFollowupFunc(taskId, Some(PssScrollLeft), gTasks[taskId].func);
+        SetTaskFuncWithFollowupFunc(taskId, Some(PssScrollLeft), task_func(taskId));
     }
     CreateTextPrinterTask((*sMonSummaryScreen).currPageIndex);
     HidePageSpecificSprites();
 }
-pub(crate) unsafe extern "C" fn PssScrollRight(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn PssScrollRight(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data == 0 {
         if (*sMonSummaryScreen).bgDisplayOrder == 0 {
             *data.at(1) = 1;
@@ -1331,11 +1411,11 @@ pub(crate) unsafe extern "C" fn PssScrollRight(taskId: u8) {
     ChangeBgX(*data.at(1) as u8, 0x2000, BG_COORD_ADD);
     *data += 32;
     if *data > 0xFF {
-        gTasks[taskId].func = Some(PssScrollRightEnd);
+        task_set_func(taskId, Some(PssScrollRightEnd));
     }
 }
-pub(crate) unsafe extern "C" fn PssScrollRightEnd(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn PssScrollRightEnd(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     (*sMonSummaryScreen).bgDisplayOrder ^= 1;
     *data.at(1) = 0;
     *data = 0;
@@ -1345,8 +1425,8 @@ pub(crate) unsafe extern "C" fn PssScrollRightEnd(taskId: u8) {
     TryDrawExperienceProgressBar();
     SwitchTaskToFollowupFunc(taskId);
 }
-pub(crate) unsafe extern "C" fn PssScrollLeft(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn PssScrollLeft(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data == 0 {
         if (*sMonSummaryScreen).bgDisplayOrder == 0 {
             *data.at(1) = 2;
@@ -1358,11 +1438,11 @@ pub(crate) unsafe extern "C" fn PssScrollLeft(taskId: u8) {
     ChangeBgX(*data.at(1) as u8, 0x2000, BG_COORD_SUB);
     *data += 32;
     if *data > 0xFF {
-        gTasks[taskId].func = Some(PssScrollLeftEnd);
+        task_set_func(taskId, Some(PssScrollLeftEnd));
     }
 }
-pub(crate) unsafe extern "C" fn PssScrollLeftEnd(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn PssScrollLeftEnd(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if (*sMonSummaryScreen).bgDisplayOrder == 0 {
         SetBgAttribute(1, BG_ATTR_PRIORITY, 1);
         SetBgAttribute(2, BG_ATTR_PRIORITY, 2);
@@ -1391,15 +1471,14 @@ pub(crate) unsafe extern "C" fn PssScrollLeftEnd(taskId: u8) {
     TryDrawExperienceProgressBar();
     SwitchTaskToFollowupFunc(taskId);
 }
-pub(crate) unsafe extern "C" fn TryDrawExperienceProgressBar() {
+unsafe fn TryDrawExperienceProgressBar() {
     if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_SKILLS {
         DrawExperienceProgressBar(&raw mut (*sMonSummaryScreen).currentMon);
     }
 }
-pub(crate) unsafe extern "C" fn SwitchToMoveSelection(taskId: u8) {
-    let mut r#move: u16 = 0;
+unsafe fn SwitchToMoveSelection(taskId: u8) {
     (*sMonSummaryScreen).firstMoveIndex = 0;
-    r#move = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
+    let r#move: u16 = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
     ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
     if gSprites[(*sMonSummaryScreen).spriteIds[2]].invisible() == 0 {
         ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
@@ -1427,10 +1506,10 @@ pub(crate) unsafe extern "C" fn SwitchToMoveSelection(taskId: u8) {
     ScheduleBgCopyTilemapToVram(1);
     ScheduleBgCopyTilemapToVram(2);
     CreateMoveSelectorSprites(SPRITE_ARR_ID_MOVE_SELECTOR1);
-    gTasks[taskId].func = Some(Task_HandleInput_MoveSelect);
+    task_set_func(taskId, Some(Task_HandleInput_MoveSelect));
 }
-pub(crate) unsafe extern "C" fn Task_HandleInput_MoveSelect(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_HandleInput_MoveSelect(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
         if gMain.newKeys as i32 & DPAD_UP != 0 {
             *data = 4;
@@ -1457,29 +1536,19 @@ pub(crate) unsafe extern "C" fn Task_HandleInput_MoveSelect(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn HasMoreThanOneMove() -> u8 {
-    let mut i: u8 = 0;
-    i = 1;
-    while i < MAX_MON_MOVES as u8 {
+unsafe fn HasMoreThanOneMove() -> u8 {
+    for i in 1..(MAX_MON_MOVES as u8) {
         if (*sMonSummaryScreen).summary.moves[i] != 0 {
             return TRUE;
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn ChangeSelectedMove(
-    taskData: *mut i16,
-    direction: i8,
-    moveIndexPtr: *mut u8,
-) {
-    let mut i: i8 = 0;
-    let mut newMoveIndex: i8 = 0;
+unsafe fn ChangeSelectedMove(taskData: *mut i16, direction: i8, moveIndexPtr: *mut u8) {
     let mut r#move: u16 = 0;
     PlaySE(SE_SELECT);
-    newMoveIndex = *moveIndexPtr as i8;
-    i = 0;
-    while i < MAX_MON_MOVES as i8 {
+    let mut newMoveIndex: i8 = *moveIndexPtr as i8;
+    for i in 0..(MAX_MON_MOVES as i8) {
         newMoveIndex += direction;
         if newMoveIndex as i16 > *taskData {
             newMoveIndex = 0;
@@ -1494,7 +1563,6 @@ pub(crate) unsafe extern "C" fn ChangeSelectedMove(
         if r#move != 0 {
             break;
         }
-        i += 1;
     }
     DrawContestMoveHearts(r#move);
     ScheduleBgCopyTilemapToVram(1);
@@ -1528,7 +1596,7 @@ pub(crate) unsafe extern "C" fn ChangeSelectedMove(
         KeepMoveSelectorVisible(SPRITE_ARR_ID_MOVE_SELECTOR2);
     }
 }
-pub(crate) unsafe extern "C" fn CloseMoveSelectMode(taskId: u8) {
+unsafe fn CloseMoveSelectMode(taskId: u8) {
     DestroyMoveSelectorSprites(SPRITE_ARR_ID_MOVE_SELECTOR1);
     ClearWindowTilemap(PSS_LABEL_WINDOW_PROMPT_SWITCH);
     PutWindowTilemap(PSS_LABEL_WINDOW_PROMPT_INFO);
@@ -1553,16 +1621,16 @@ pub(crate) unsafe extern "C" fn CloseMoveSelectMode(taskId: u8) {
     ScheduleBgCopyTilemapToVram(0);
     ScheduleBgCopyTilemapToVram(1);
     ScheduleBgCopyTilemapToVram(2);
-    gTasks[taskId].func = Some(Task_HandleInput);
+    task_set_func(taskId, Some(Task_HandleInput));
 }
-pub(crate) unsafe extern "C" fn SwitchToMovePositionSwitchMode(taskId: u8) {
+unsafe fn SwitchToMovePositionSwitchMode(taskId: u8) {
     (*sMonSummaryScreen).secondMoveIndex = (*sMonSummaryScreen).firstMoveIndex;
     SetMainMoveSelectorColor(1);
     CreateMoveSelectorSprites(SPRITE_ARR_ID_MOVE_SELECTOR2);
-    gTasks[taskId].func = Some(Task_HandleInput_MovePositionSwitch);
+    task_set_func(taskId, Some(Task_HandleInput_MovePositionSwitch));
 }
-pub(crate) unsafe extern "C" fn Task_HandleInput_MovePositionSwitch(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_HandleInput_MovePositionSwitch(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
         if gMain.newKeys as i32 & DPAD_UP != 0 {
             *data = 3;
@@ -1581,21 +1649,20 @@ pub(crate) unsafe extern "C" fn Task_HandleInput_MovePositionSwitch(taskId: u8) 
         }
     }
 }
-pub(crate) unsafe extern "C" fn ExitMovePositionSwitchMode(taskId: u8, swapMoves: u8) {
-    let mut r#move: u16 = 0;
+unsafe fn ExitMovePositionSwitchMode(taskId: u8, swapMoves: u8) {
     PlaySE(SE_SELECT);
     SetMainMoveSelectorColor(0);
     DestroyMoveSelectorSprites(SPRITE_ARR_ID_MOVE_SELECTOR2);
     if swapMoves == TRUE {
         if (*sMonSummaryScreen).isBoxMon == 0 {
-            let mut mon: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
+            let mon: *mut Pokemon = (*sMonSummaryScreen).monList.mons;
             SwapMonMoves(
                 mon.at((*sMonSummaryScreen).curMonIndex),
                 (*sMonSummaryScreen).firstMoveIndex,
                 (*sMonSummaryScreen).secondMoveIndex,
             );
         } else {
-            let mut boxMon: *mut BoxPokemon = (*sMonSummaryScreen).monList.boxMons;
+            let boxMon: *mut BoxPokemon = (*sMonSummaryScreen).monList.boxMons;
             SwapBoxMonMoves(
                 boxMon.at((*sMonSummaryScreen).curMonIndex),
                 (*sMonSummaryScreen).firstMoveIndex,
@@ -1613,25 +1680,27 @@ pub(crate) unsafe extern "C" fn ExitMovePositionSwitchMode(taskId: u8, swapMoves
         );
         (*sMonSummaryScreen).firstMoveIndex = (*sMonSummaryScreen).secondMoveIndex;
     }
-    r#move = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
+    let r#move: u16 = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
     PrintMoveDetails(r#move);
     DrawContestMoveHearts(r#move);
     ScheduleBgCopyTilemapToVram(1);
     ScheduleBgCopyTilemapToVram(2);
-    gTasks[taskId].func = Some(Task_HandleInput_MoveSelect);
+    task_set_func(taskId, Some(Task_HandleInput_MoveSelect));
 }
-pub(crate) unsafe extern "C" fn SwapMonMoves(mon: *mut Pokemon, moveIndex1: u8, moveIndex2: u8) {
-    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+unsafe fn SwapMonMoves(mon: *mut Pokemon, moveIndex1: u8, moveIndex2: u8) {
+    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
     let mut move1: u16 = (*summary).moves[moveIndex1];
     let mut move2: u16 = (*summary).moves[moveIndex2];
     let mut move1pp: u8 = (*summary).pp[moveIndex1];
     let mut move2pp: u8 = (*summary).pp[moveIndex2];
     let mut ppBonuses: u8 = (*summary).ppBonuses;
-    let mut ppUpMask1: u8 = gPPUpGetMask[moveIndex1];
-    let mut ppBonusMove1: u8 =
+    let ppUpMask1: u8 =
+        (*(&raw const crate::data::pokemon::gPPUpGetMask).cast::<CArray<u8, 0>>())[moveIndex1];
+    let ppBonusMove1: u8 =
         shr_i32(ppBonuses as i32 & ppUpMask1 as i32, moveIndex1 as u32 * 2) as u8;
-    let mut ppUpMask2: u8 = gPPUpGetMask[moveIndex2];
-    let mut ppBonusMove2: u8 =
+    let ppUpMask2: u8 =
+        (*(&raw const crate::data::pokemon::gPPUpGetMask).cast::<CArray<u8, 0>>())[moveIndex2];
+    let ppBonusMove2: u8 =
         shr_i32(ppBonuses as i32 & ppUpMask2 as i32, moveIndex2 as u32 * 2) as u8;
     ppBonuses &= !ppUpMask1;
     ppBonuses &= !ppUpMask2;
@@ -1664,22 +1733,20 @@ pub(crate) unsafe extern "C" fn SwapMonMoves(mon: *mut Pokemon, moveIndex1: u8, 
     (*summary).pp[moveIndex2] = move1pp;
     (*summary).ppBonuses = ppBonuses;
 }
-pub(crate) unsafe extern "C" fn SwapBoxMonMoves(
-    mon: *mut BoxPokemon,
-    moveIndex1: u8,
-    moveIndex2: u8,
-) {
-    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+unsafe fn SwapBoxMonMoves(mon: *mut BoxPokemon, moveIndex1: u8, moveIndex2: u8) {
+    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
     let mut move1: u16 = (*summary).moves[moveIndex1];
     let mut move2: u16 = (*summary).moves[moveIndex2];
     let mut move1pp: u8 = (*summary).pp[moveIndex1];
     let mut move2pp: u8 = (*summary).pp[moveIndex2];
     let mut ppBonuses: u8 = (*summary).ppBonuses;
-    let mut ppUpMask1: u8 = gPPUpGetMask[moveIndex1];
-    let mut ppBonusMove1: u8 =
+    let ppUpMask1: u8 =
+        (*(&raw const crate::data::pokemon::gPPUpGetMask).cast::<CArray<u8, 0>>())[moveIndex1];
+    let ppBonusMove1: u8 =
         shr_i32(ppBonuses as i32 & ppUpMask1 as i32, moveIndex1 as u32 * 2) as u8;
-    let mut ppUpMask2: u8 = gPPUpGetMask[moveIndex2];
-    let mut ppBonusMove2: u8 =
+    let ppUpMask2: u8 =
+        (*(&raw const crate::data::pokemon::gPPUpGetMask).cast::<CArray<u8, 0>>())[moveIndex2];
+    let ppBonusMove2: u8 =
         shr_i32(ppBonuses as i32 & ppUpMask2 as i32, moveIndex2 as u32 * 2) as u8;
     ppBonuses &= !ppUpMask1;
     ppBonuses &= !ppUpMask2;
@@ -1712,49 +1779,45 @@ pub(crate) unsafe extern "C" fn SwapBoxMonMoves(
     (*summary).pp[moveIndex2] = move1pp;
     (*summary).ppBonuses = ppBonuses;
 }
-pub(crate) unsafe extern "C" fn Task_SetHandleReplaceMoveInput(taskId: u8) {
+pub(crate) unsafe fn Task_SetHandleReplaceMoveInput(taskId: u8) {
     SetNewMoveTypeIcon();
     CreateMoveSelectorSprites(SPRITE_ARR_ID_MOVE_SELECTOR1);
-    gTasks[taskId].func = Some(Task_HandleReplaceMoveInput);
+    task_set_func(taskId, Some(Task_HandleReplaceMoveInput));
 }
-pub(crate) unsafe extern "C" fn Task_HandleReplaceMoveInput(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
-        if gPaletteFade.active() != TRUE as u16 {
-            if gMain.newKeys as i32 & DPAD_UP != 0 {
-                *data = 4;
-                ChangeSelectedMove(data, -1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
-            } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
-                *data = 4;
-                ChangeSelectedMove(data, 1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
-            } else if gMain.newKeys as i32 & DPAD_LEFT != 0 || GetLRKeysPressed() == MENU_L_PRESSED
-            {
-                ChangePage(taskId, -1);
-            } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 || GetLRKeysPressed() == MENU_R_PRESSED
-            {
-                ChangePage(taskId, 1);
-            } else if gMain.newKeys as i32 & A_BUTTON != 0 {
-                if CanReplaceMove() == TRUE {
-                    StopPokemonAnimations();
-                    PlaySE(SE_SELECT);
-                    sMoveSlotToReplace = (*sMonSummaryScreen).firstMoveIndex;
-                    gSpecialVar_0x8005 = sMoveSlotToReplace as u16;
-                    BeginCloseSummaryScreen(taskId);
-                } else {
-                    PlaySE(SE_FAILURE);
-                    ShowCantForgetHMsWindow(taskId);
-                }
-            } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+pub(crate) unsafe fn Task_HandleReplaceMoveInput(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    if MenuHelpers_ShouldWaitForLinkRecv() != TRUE && gPaletteFade.active() != TRUE as u16 {
+        if gMain.newKeys as i32 & DPAD_UP != 0 {
+            *data = 4;
+            ChangeSelectedMove(data, -1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
+        } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
+            *data = 4;
+            ChangeSelectedMove(data, 1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
+        } else if gMain.newKeys as i32 & DPAD_LEFT != 0 || GetLRKeysPressed() == MENU_L_PRESSED {
+            ChangePage(taskId, -1);
+        } else if gMain.newKeys as i32 & DPAD_RIGHT != 0 || GetLRKeysPressed() == MENU_R_PRESSED {
+            ChangePage(taskId, 1);
+        } else if gMain.newKeys as i32 & A_BUTTON != 0 {
+            if CanReplaceMove() == TRUE {
                 StopPokemonAnimations();
                 PlaySE(SE_SELECT);
-                sMoveSlotToReplace = MAX_MON_MOVES as u8;
-                gSpecialVar_0x8005 = MAX_MON_MOVES as u16;
+                sMoveSlotToReplace.set((*sMonSummaryScreen).firstMoveIndex);
+                gSpecialVar_0x8005 = sMoveSlotToReplace.get() as u16;
                 BeginCloseSummaryScreen(taskId);
+            } else {
+                PlaySE(SE_FAILURE);
+                ShowCantForgetHMsWindow(taskId);
             }
+        } else if gMain.newKeys as i32 & B_BUTTON != 0 {
+            StopPokemonAnimations();
+            PlaySE(SE_SELECT);
+            sMoveSlotToReplace.set(MAX_MON_MOVES as u8);
+            gSpecialVar_0x8005 = MAX_MON_MOVES as u16;
+            BeginCloseSummaryScreen(taskId);
         }
     }
 }
-pub(crate) unsafe extern "C" fn CanReplaceMove() -> u8 {
+unsafe fn CanReplaceMove() -> u8 {
     if (*sMonSummaryScreen).firstMoveIndex == MAX_MON_MOVES as u8
         || (*sMonSummaryScreen).newMove == MOVE_NONE
         || IsMoveHm((*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex]) != TRUE
@@ -1765,20 +1828,20 @@ pub(crate) unsafe extern "C" fn CanReplaceMove() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ShowCantForgetHMsWindow(taskId: u8) {
+unsafe fn ShowCantForgetHMsWindow(taskId: u8) {
     ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_POWER_ACC);
     ClearWindowTilemap(PSS_LABEL_WINDOW_MOVES_APPEAL_JAM);
     ScheduleBgCopyTilemapToVram(0);
     PositionPowerAccSlidingWindow(0, 3);
     PositionAppealJamSlidingWindow(0, 3, 0);
     PrintHMMovesCantBeForgotten();
-    gTasks[taskId].func = Some(Task_HandleInputCantForgetHMsMoves);
+    task_set_func(taskId, Some(Task_HandleInputCantForgetHMsMoves));
 }
-pub(crate) unsafe extern "C" fn Task_HandleInputCantForgetHMsMoves(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_HandleInputCantForgetHMsMoves(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     let mut r#move: u16 = 0;
     if FuncIsActiveTask(Some(Task_SlidePowerAccWindow)) != 1 {
         if gMain.newKeys as i32 & DPAD_UP != 0 {
@@ -1786,13 +1849,13 @@ pub(crate) unsafe extern "C" fn Task_HandleInputCantForgetHMsMoves(taskId: u8) {
             *data = 4;
             ChangeSelectedMove(data, -1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
             *data.at(1) = 0;
-            gTasks[taskId].func = Some(Task_HandleReplaceMoveInput);
+            task_set_func(taskId, Some(Task_HandleReplaceMoveInput));
         } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
             *data.at(1) = 1;
             *data = 4;
             ChangeSelectedMove(data, 1, &raw mut (*sMonSummaryScreen).firstMoveIndex);
             *data.at(1) = 0;
-            gTasks[taskId].func = Some(Task_HandleReplaceMoveInput);
+            task_set_func(taskId, Some(Task_HandleReplaceMoveInput));
         } else if gMain.newKeys as i32 & DPAD_LEFT != 0 || GetLRKeysPressed() == MENU_L_PRESSED {
             if (*sMonSummaryScreen).currPageIndex != PSS_PAGE_BATTLE_MOVES {
                 ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
@@ -1800,7 +1863,7 @@ pub(crate) unsafe extern "C" fn Task_HandleInputCantForgetHMsMoves(taskId: u8) {
                     ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
                 }
                 r#move = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
-                gTasks[taskId].func = Some(Task_HandleReplaceMoveInput);
+                task_set_func(taskId, Some(Task_HandleReplaceMoveInput));
                 ChangePage(taskId, -1);
                 PositionPowerAccSlidingWindow(9, -2);
                 PositionAppealJamSlidingWindow(9, -2, r#move);
@@ -1812,7 +1875,7 @@ pub(crate) unsafe extern "C" fn Task_HandleInputCantForgetHMsMoves(taskId: u8) {
                     ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS);
                 }
                 r#move = (*sMonSummaryScreen).summary.moves[(*sMonSummaryScreen).firstMoveIndex];
-                gTasks[taskId].func = Some(Task_HandleReplaceMoveInput);
+                task_set_func(taskId, Some(Task_HandleReplaceMoveInput));
                 ChangePage(taskId, 1);
                 PositionPowerAccSlidingWindow(9, -2);
                 PositionAppealJamSlidingWindow(9, -2, r#move);
@@ -1827,72 +1890,68 @@ pub(crate) unsafe extern "C" fn Task_HandleInputCantForgetHMsMoves(taskId: u8) {
             ScheduleBgCopyTilemapToVram(0);
             PositionPowerAccSlidingWindow(9, -3);
             PositionAppealJamSlidingWindow(9, -3, r#move);
-            gTasks[taskId].func = Some(Task_HandleReplaceMoveInput);
+            task_set_func(taskId, Some(Task_HandleReplaceMoveInput));
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMoveSlotToReplace() -> u8 {
-    return sMoveSlotToReplace;
+pub fn GetMoveSlotToReplace() -> u8 {
+    sMoveSlotToReplace.get()
 }
-pub(crate) unsafe extern "C" fn DrawPagination() {
-    let mut tilemap: *mut u16 = Alloc(32) as *mut u16;
-    let mut i: u8 = 0;
-    i = 0;
-    while i < PSS_PAGE_COUNT {
-        let mut j: u8 = i * 2;
+unsafe fn DrawPagination() {
+    let tilemap: *mut u16 = Alloc(32) as *mut u16;
+    for i in 0..PSS_PAGE_COUNT {
+        let j: u8 = i * 2;
         if i < (*sMonSummaryScreen).minPageIndex {
-            *tilemap.at(j as i32 + 0) = 0x40;
+            *tilemap.at(j as i32) = 0x40;
             *tilemap.at(j as i32 + 1) = 0x40;
             *tilemap.at(j as i32 + 8) = 0x50;
             *tilemap.at(j as i32 + 8 + 1) = 0x50;
         } else if i > (*sMonSummaryScreen).maxPageIndex {
-            *tilemap.at(j as i32 + 0) = 0x4A;
+            *tilemap.at(j as i32) = 0x4A;
             *tilemap.at(j as i32 + 1) = 0x4A;
             *tilemap.at(j as i32 + 8) = 0x5A;
             *tilemap.at(j as i32 + 8 + 1) = 0x5A;
         } else if i < (*sMonSummaryScreen).currPageIndex {
-            *tilemap.at(j as i32 + 0) = 0x46;
+            *tilemap.at(j as i32) = 0x46;
             *tilemap.at(j as i32 + 1) = 0x47;
             *tilemap.at(j as i32 + 8) = 0x56;
             *tilemap.at(j as i32 + 8 + 1) = 0x57;
         } else if i == (*sMonSummaryScreen).currPageIndex {
             if i != (*sMonSummaryScreen).maxPageIndex {
-                *tilemap.at(j as i32 + 0) = 0x41;
+                *tilemap.at(j as i32) = 0x41;
                 *tilemap.at(j as i32 + 1) = 0x42;
                 *tilemap.at(j as i32 + 8) = 0x51;
                 *tilemap.at(j as i32 + 8 + 1) = 0x52;
             } else {
-                *tilemap.at(j as i32 + 0) = 0x4B;
+                *tilemap.at(j as i32) = 0x4B;
                 *tilemap.at(j as i32 + 1) = 0x4C;
                 *tilemap.at(j as i32 + 8) = 0x5B;
                 *tilemap.at(j as i32 + 8 + 1) = 0x5C;
             }
         } else if i != (*sMonSummaryScreen).maxPageIndex {
-            *tilemap.at(j as i32 + 0) = 0x43;
+            *tilemap.at(j as i32) = 0x43;
             *tilemap.at(j as i32 + 1) = 0x44;
             *tilemap.at(j as i32 + 8) = 0x53;
             *tilemap.at(j as i32 + 8 + 1) = 0x54;
         } else {
-            *tilemap.at(j as i32 + 0) = 0x48;
+            *tilemap.at(j as i32) = 0x48;
             *tilemap.at(j as i32 + 1) = 0x49;
             *tilemap.at(j as i32 + 8) = 0x58;
             *tilemap.at(j as i32 + 8 + 1) = 0x59;
         }
-        i += 1;
     }
     CopyToBgTilemapBufferRect_ChangePalette(3, tilemap as *mut c_void, 11, 0, 8, 2, 16);
     ScheduleBgCopyTilemapToVram(3);
     Free(tilemap as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn CopyNColumnsToTilemap(
+unsafe fn CopyNColumnsToTilemap(
     slidingWindow: *mut SlidingWindow,
-    mut tilemapDest: *mut u16,
+    tilemapDest: *mut u16,
     visibleColumns: u8,
     isOpeningToTheLeft: u8,
 ) {
     let mut i: u16 = 0;
-    let mut alloced: *mut u16 =
+    let alloced: *mut u16 =
         Alloc((*slidingWindow).width as u32 * 2 * (*slidingWindow).height as u32) as *mut u16;
     {
         {
@@ -1918,9 +1977,8 @@ pub(crate) unsafe extern "C" fn CopyNColumnsToTilemap(
                         .at(visibleColumns as i32 + (*slidingWindow).width as i32 * i as i32)
                         as *mut c_void,
                     alloced.at((*slidingWindow).width as i32 * i as i32) as *mut c_void,
-                    0x00000000
-                        | (((*slidingWindow).width as i32 - visibleColumns as i32) * 2 / 2) as u32
-                            & 0x1FFFFF,
+                    (((*slidingWindow).width as i32 - visibleColumns as i32) * 2 / 2) as u32
+                        & 0x1FFFFF,
                 );
                 i += 1;
             }
@@ -1934,9 +1992,8 @@ pub(crate) unsafe extern "C" fn CopyNColumnsToTilemap(
                         as *mut c_void,
                     alloced.at(visibleColumns as i32 + (*slidingWindow).width as i32 * i as i32)
                         as *mut c_void,
-                    0x00000000
-                        | (((*slidingWindow).width as i32 - visibleColumns as i32) * 2 / 2) as u32
-                            & 0x1FFFFF,
+                    (((*slidingWindow).width as i32 - visibleColumns as i32) * 2 / 2) as u32
+                        & 0x1FFFFF,
                 );
                 i += 1;
             }
@@ -1949,13 +2006,13 @@ pub(crate) unsafe extern "C" fn CopyNColumnsToTilemap(
             tilemapDest
                 .at(((*slidingWindow).top as i32 + i as i32) * 32 + (*slidingWindow).left as i32)
                 as *mut c_void,
-            0x00000000 | ((*slidingWindow).width as i32 * 2 / 2) as u32 & 0x1FFFFF,
+            ((*slidingWindow).width as i32 * 2 / 2) as u32 & 0x1FFFFF,
         );
         i += 1;
     }
     Free(alloced as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn PositionPowerAccSlidingWindow(visibleColumns: u16, mut speed: i16) {
+unsafe fn PositionPowerAccSlidingWindow(visibleColumns: u16, mut speed: i16) {
     if speed > sPowerAccSlidingWindow.width as i16 {
         speed = sPowerAccSlidingWindow.width as i16;
     }
@@ -1971,12 +2028,12 @@ pub(crate) unsafe extern "C" fn PositionPowerAccSlidingWindow(visibleColumns: u1
         if taskId == TASK_NONE {
             taskId = CreateTask(Some(Task_SlidePowerAccWindow), 8);
         }
-        gTasks[taskId].data[0] = speed;
-        gTasks[taskId].data[1] = visibleColumns as i16;
+        task_set(taskId, tScrollingSpeed, speed);
+        task_set(taskId, tVisibleColumns, visibleColumns as i16);
     }
 }
-pub(crate) unsafe extern "C" fn Task_SlidePowerAccWindow(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_SlidePowerAccWindow(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(1) += *data;
     if *data.at(1) < 0 {
         *data.at(1) = 0;
@@ -2006,11 +2063,7 @@ pub(crate) unsafe extern "C" fn Task_SlidePowerAccWindow(taskId: u8) {
     ScheduleBgCopyTilemapToVram(1);
     ScheduleBgCopyTilemapToVram(2);
 }
-pub(crate) unsafe extern "C" fn PositionAppealJamSlidingWindow(
-    visibleColumns: u16,
-    mut speed: i16,
-    r#move: u16,
-) {
+unsafe fn PositionAppealJamSlidingWindow(visibleColumns: u16, mut speed: i16, r#move: u16) {
     if speed > sAppealJamSlidingWindow.width as i16 {
         speed = sAppealJamSlidingWindow.width as i16;
     }
@@ -2026,13 +2079,13 @@ pub(crate) unsafe extern "C" fn PositionAppealJamSlidingWindow(
         if taskId == TASK_NONE {
             taskId = CreateTask(Some(Task_SlideAppealJamWindow), 8);
         }
-        gTasks[taskId].data[0] = speed;
-        gTasks[taskId].data[1] = visibleColumns as i16;
-        gTasks[taskId].data[2] = r#move as i16;
+        task_set(taskId, tScrollingSpeed, speed);
+        task_set(taskId, tVisibleColumns, visibleColumns as i16);
+        task_set(taskId, tMove, r#move as i16);
     }
 }
-pub(crate) unsafe extern "C" fn Task_SlideAppealJamWindow(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_SlideAppealJamWindow(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(1) += *data;
     if *data.at(1) < 0 {
         *data.at(1) = 0;
@@ -2065,7 +2118,7 @@ pub(crate) unsafe extern "C" fn Task_SlideAppealJamWindow(taskId: u8) {
     ScheduleBgCopyTilemapToVram(1);
     ScheduleBgCopyTilemapToVram(2);
 }
-pub(crate) unsafe extern "C" fn PositionStatusSlidingWindow(visibleColumns: u16, mut speed: i16) {
+unsafe fn PositionStatusSlidingWindow(visibleColumns: u16, mut speed: i16) {
     if speed > sStatusSlidingWindow1.width as i16 {
         speed = sStatusSlidingWindow1.width as i16;
     }
@@ -2083,13 +2136,13 @@ pub(crate) unsafe extern "C" fn PositionStatusSlidingWindow(visibleColumns: u16,
             0,
         );
     } else {
-        let mut taskId: u8 = CreateTask(Some(Task_SlideStatusWindow), 8);
-        gTasks[taskId].data[0] = speed;
-        gTasks[taskId].data[1] = visibleColumns as i16;
+        let taskId: u8 = CreateTask(Some(Task_SlideStatusWindow), 8);
+        task_set(taskId, tScrollingSpeed, speed);
+        task_set(taskId, tVisibleColumns, visibleColumns as i16);
     }
 }
-pub(crate) unsafe extern "C" fn Task_SlideStatusWindow(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_SlideStatusWindow(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(1) += *data;
     if *data.at(1) < 0 {
         *data.at(1) = 0;
@@ -2118,39 +2171,42 @@ pub(crate) unsafe extern "C" fn Task_SlideStatusWindow(taskId: u8) {
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn TilemapFiveMovesDisplay(
-    mut dst: *mut u16,
-    mut palette: u16,
-    remove: u8,
-) {
-    let mut i: u16 = 0;
-    let mut id: u16 = 0;
+unsafe fn TilemapFiveMovesDisplay(dst: *mut u16, mut palette: u16, remove: u8) {
     palette *= 0x1000;
-    id = 0x56A;
+    let id: u16 = 0x56A;
     if remove == 0 {
-        i = 0;
-        while i < 20 {
-            *dst.at(id as i32 + i as i32) = gSummaryScreen_MoveEffect_Cancel_Tilemap[i] + palette;
+        for i in 0..20u16 {
+            *dst.at(id as i32 + i as i32) =
+                (*(&raw const crate::data::graphics::gSummaryScreen_MoveEffect_Cancel_Tilemap)
+                    .cast::<CArray<u16, 0>>())[i]
+                    + palette;
             *dst.at(id as i32 + i as i32 + 0x20) =
-                gSummaryScreen_MoveEffect_Cancel_Tilemap[i] + palette;
+                (*(&raw const crate::data::graphics::gSummaryScreen_MoveEffect_Cancel_Tilemap)
+                    .cast::<CArray<u16, 0>>())[i]
+                    + palette;
             *dst.at(id as i32 + i as i32 + 0x40) =
-                gSummaryScreen_MoveEffect_Cancel_Tilemap[i as i32 + 20] + palette;
-            i += 1;
+                (*(&raw const crate::data::graphics::gSummaryScreen_MoveEffect_Cancel_Tilemap)
+                    .cast::<CArray<u16, 0>>())[i as i32 + 20]
+                    + palette;
         }
     } else {
-        i = 0;
-        while i < 20 {
+        for i in 0..20u16 {
             *dst.at(id as i32 + i as i32) =
-                gSummaryScreen_MoveEffect_Cancel_Tilemap[i as i32 + 20] + palette;
+                (*(&raw const crate::data::graphics::gSummaryScreen_MoveEffect_Cancel_Tilemap)
+                    .cast::<CArray<u16, 0>>())[i as i32 + 20]
+                    + palette;
             *dst.at(id as i32 + i as i32 + 0x20) =
-                gSummaryScreen_MoveEffect_Cancel_Tilemap[i as i32 + 40] + palette;
+                (*(&raw const crate::data::graphics::gSummaryScreen_MoveEffect_Cancel_Tilemap)
+                    .cast::<CArray<u16, 0>>())[i as i32 + 40]
+                    + palette;
             *dst.at(id as i32 + i as i32 + 0x40) =
-                gSummaryScreen_MoveEffect_Cancel_Tilemap[i as i32 + 40] + palette;
-            i += 1;
+                (*(&raw const crate::data::graphics::gSummaryScreen_MoveEffect_Cancel_Tilemap)
+                    .cast::<CArray<u16, 0>>())[i as i32 + 40]
+                    + palette;
         }
     }
 }
-pub(crate) unsafe extern "C" fn DrawPokerusCuredSymbol(mon: *mut Pokemon) {
+unsafe fn DrawPokerusCuredSymbol(mon: *mut Pokemon) {
     if CheckPartyPokerus(mon, 0) == 0 && CheckPartyHasHadPokerus(mon, 0) != 0 {
         (*sMonSummaryScreen).bgTilemapBuffers[0][0][547] = 0x2C;
         (*sMonSummaryScreen).bgTilemapBuffers[0][1][547] = 0x2C;
@@ -2160,7 +2216,7 @@ pub(crate) unsafe extern "C" fn DrawPokerusCuredSymbol(mon: *mut Pokemon) {
     }
     ScheduleBgCopyTilemapToVram(3);
 }
-pub(crate) unsafe extern "C" fn SetMonPicBackgroundPalette(isMonShiny: u8) {
+unsafe fn SetMonPicBackgroundPalette(isMonShiny: u8) {
     if isMonShiny == 0 {
         SetBgTilemapPalette(3, 1, 4, 8, 8, 0);
     } else {
@@ -2168,17 +2224,26 @@ pub(crate) unsafe extern "C" fn SetMonPicBackgroundPalette(isMonShiny: u8) {
     }
     ScheduleBgCopyTilemapToVram(3);
 }
-pub(crate) unsafe extern "C" fn DrawExperienceProgressBar(unused: *mut Pokemon) {
+unsafe fn DrawExperienceProgressBar(unused: *mut Pokemon) {
     let mut numExpProgressBarTicks: i64 = 0;
-    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
-    let mut dst: *mut u16 = null_mut();
-    let mut i: u8 = 0;
+    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
     if (*summary).level < MAX_LEVEL as u8 {
-        let mut expBetweenLevels: u32 = gExperienceTables
-            [gSpeciesInfo[(*summary).species].growthRate][(*summary).level as i32 + 1]
-            - gExperienceTables[gSpeciesInfo[(*summary).species].growthRate][(*summary).level];
-        let mut expSinceLastLevel: u32 = (*summary).exp
-            - gExperienceTables[gSpeciesInfo[(*summary).species].growthRate][(*summary).level];
+        let expBetweenLevels: u32 = (*(&raw const crate::data::pokemon::gExperienceTables)
+            .cast::<CArray<CArray<u32, 101>, 0>>())
+            [(*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+                [(*summary).species]
+                .growthRate][(*summary).level as i32 + 1]
+            - (*(&raw const crate::data::pokemon::gExperienceTables)
+                .cast::<CArray<CArray<u32, 101>, 0>>())
+                [(*(&raw const crate::data::pokemon::gSpeciesInfo)
+                    .cast::<CArray<SpeciesInfo, 0>>())[(*summary).species]
+                    .growthRate][(*summary).level];
+        let expSinceLastLevel: u32 = (*summary).exp
+            - (*(&raw const crate::data::pokemon::gExperienceTables)
+                .cast::<CArray<CArray<u32, 101>, 0>>())
+                [(*(&raw const crate::data::pokemon::gSpeciesInfo)
+                    .cast::<CArray<SpeciesInfo, 0>>())[(*summary).species]
+                    .growthRate][(*summary).level];
         numExpProgressBarTicks = div_u32(expSinceLastLevel * 64, expBetweenLevels) as i64;
         if numExpProgressBarTicks == 0 && expSinceLastLevel != 0 {
             numExpProgressBarTicks = 1;
@@ -2186,9 +2251,8 @@ pub(crate) unsafe extern "C" fn DrawExperienceProgressBar(unused: *mut Pokemon) 
     } else {
         numExpProgressBarTicks = 0;
     }
-    dst = &raw mut (*sMonSummaryScreen).bgTilemapBuffers[1][1][597];
-    i = 0;
-    while i < 8 {
+    let dst: *mut u16 = &raw mut (*sMonSummaryScreen).bgTilemapBuffers[1][1][597];
+    for i in 0..8u8 {
         if numExpProgressBarTicks > 7 {
             *dst.at(i) = 0x206A;
         } else {
@@ -2198,21 +2262,26 @@ pub(crate) unsafe extern "C" fn DrawExperienceProgressBar(unused: *mut Pokemon) 
         if numExpProgressBarTicks < 0 {
             numExpProgressBarTicks = 0;
         }
-        i += 1;
     }
-    if (GetBgTilemapBuffer(1) as usize)
-        == ((*sMonSummaryScreen).bgTilemapBuffers[1][0].as_mut_ptr() as usize)
-    {
+    if core::ptr::addr_eq(
+        GetBgTilemapBuffer(1),
+        (*sMonSummaryScreen).bgTilemapBuffers[1][0].as_mut_ptr(),
+    ) {
         ScheduleBgCopyTilemapToVram(1);
     } else {
         ScheduleBgCopyTilemapToVram(2);
     }
 }
-pub(crate) unsafe extern "C" fn DrawContestMoveHearts(r#move: u16) {
-    let mut tilemap: *mut u16 = (*sMonSummaryScreen).bgTilemapBuffers[3][1].as_mut_ptr();
+unsafe fn DrawContestMoveHearts(r#move: u16) {
+    let tilemap: *mut u16 = (*sMonSummaryScreen).bgTilemapBuffers[3][1].as_mut_ptr();
     let mut i: u8 = 0;
     if r#move != MOVE_NONE {
-        let mut effectValue: u8 = gContestEffects[gContestMoves[r#move].effect].appeal;
+        let mut effectValue: u8 = (*(&raw const crate::data::contest_effect::gContestEffects)
+            .cast::<CArray<ContestEffect, 0>>())
+            [(*(&raw const crate::data::contest_effect::gContestMoves)
+                .cast::<CArray<ContestMove, 0>>())[r#move]
+                .effect]
+            .appeal;
         if effectValue != 0xFF {
             effectValue = (effectValue as i32 / 10) as u8;
         }
@@ -2225,44 +2294,42 @@ pub(crate) unsafe extern "C" fn DrawContestMoveHearts(r#move: u16) {
             }
             i += 1;
         }
-        effectValue = gContestEffects[gContestMoves[r#move].effect].jam;
+        effectValue = (*(&raw const crate::data::contest_effect::gContestEffects)
+            .cast::<CArray<ContestEffect, 0>>())
+            [(*(&raw const crate::data::contest_effect::gContestMoves)
+                .cast::<CArray<ContestMove, 0>>())[r#move]
+                .effect]
+            .jam;
         if effectValue != 0xFF {
             effectValue = (effectValue as i32 / 10) as u8;
         }
-        i = 0;
-        while i < MAX_CONTEST_MOVE_HEARTS {
+        for i in 0..MAX_CONTEST_MOVE_HEARTS {
             if effectValue != 0xFF && i < effectValue {
                 *tilemap.at(i as i32 / 4 * 32 + (i as i32 & 3) + 0x226) = TILE_FILLED_JAM_HEART;
             } else {
                 *tilemap.at(i as i32 / 4 * 32 + (i as i32 & 3) + 0x226) = TILE_EMPTY_JAM_HEART;
             }
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn LimitEggSummaryPageDisplay() {
+unsafe fn LimitEggSummaryPageDisplay() {
     if (*sMonSummaryScreen).summary.isEgg != 0 {
         ChangeBgX(3, 0x10000, BG_COORD_SET);
     } else {
         ChangeBgX(3, 0, BG_COORD_SET);
     }
 }
-pub(crate) unsafe extern "C" fn ResetWindows() {
-    let mut i: u8 = 0;
+unsafe fn ResetWindows() {
     InitWindows(sSummaryTemplate.as_ptr().cast_mut());
     DeactivateAllTextPrinters();
-    i = 0;
-    while i < PSS_LABEL_WINDOW_END {
+    for i in 0..PSS_LABEL_WINDOW_END {
         FillWindowPixelBuffer(i, 0);
-        i += 1;
     }
-    i = 0;
-    while i < 8 {
+    for i in 0..8u8 {
         (*sMonSummaryScreen).windowIds[i] = WINDOW_NONE;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn PrintTextOnWindow(
+unsafe fn PrintTextOnWindow(
     windowId: u8,
     string: *mut u8,
     x: u8,
@@ -2282,7 +2349,7 @@ pub(crate) unsafe extern "C" fn PrintTextOnWindow(
         string,
     );
 }
-pub(crate) unsafe extern "C" fn PrintMonInfo() {
+pub(crate) unsafe fn PrintMonInfo() {
     FillWindowPixelBuffer(PSS_LABEL_WINDOW_PORTRAIT_DEX_NUMBER, 0);
     FillWindowPixelBuffer(PSS_LABEL_WINDOW_PORTRAIT_NICKNAME, 0);
     FillWindowPixelBuffer(PSS_LABEL_WINDOW_PORTRAIT_SPECIES, 0);
@@ -2293,15 +2360,17 @@ pub(crate) unsafe extern "C" fn PrintMonInfo() {
     }
     ScheduleBgCopyTilemapToVram(0);
 }
-pub(crate) unsafe extern "C" fn PrintNotEggInfo() {
+unsafe fn PrintNotEggInfo() {
     let mut strArray: CArray<u8, 16> = zeroed();
-    let mut mon: *mut Pokemon = &raw mut (*sMonSummaryScreen).currentMon;
-    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
-    let mut dexNum: u16 = SpeciesToPokedexNum((*summary).species);
+    let mon: *mut Pokemon = &raw mut (*sMonSummaryScreen).currentMon;
+    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let dexNum: u16 = SpeciesToPokedexNum((*summary).species);
     if dexNum != 0xFFFF {
         StringCopy(
             gStringVar1.as_mut_ptr(),
-            (&raw const gText_NumberClear01[0]).cast_mut(),
+            (&raw const (*(&raw const crate::data::strings::gText_NumberClear01)
+                .cast::<CArray<u8, 0>>())[0])
+                .cast_mut(),
         );
         ConvertIntToDecimalStringN(
             gStringVar2.as_mut_ptr(),
@@ -2342,7 +2411,9 @@ pub(crate) unsafe extern "C" fn PrintNotEggInfo() {
     }
     StringCopy(
         gStringVar1.as_mut_ptr(),
-        gText_LevelSymbol.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_LevelSymbol).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     ConvertIntToDecimalStringN(
         gStringVar2.as_mut_ptr(),
@@ -2371,7 +2442,9 @@ pub(crate) unsafe extern "C" fn PrintNotEggInfo() {
     strArray[0] = CHAR_SLASH;
     StringCopy(
         &raw mut strArray[1],
-        (&raw const gSpeciesNames[(*summary).species2][0]).cast_mut(),
+        (&raw const (*(&raw const crate::data::data_tables::gSpeciesNames)
+            .cast::<CArray<CArray<u8, 11>, 0>>())[(*summary).species2][0])
+            .cast_mut(),
     );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_PORTRAIT_SPECIES,
@@ -2385,7 +2458,7 @@ pub(crate) unsafe extern "C" fn PrintNotEggInfo() {
     PutWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_NICKNAME);
     PutWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
 }
-pub(crate) unsafe extern "C" fn PrintEggInfo() {
+unsafe fn PrintEggInfo() {
     GetMonNickname(
         &raw mut (*sMonSummaryScreen).currentMon,
         gStringVar1.as_mut_ptr(),
@@ -2402,13 +2475,15 @@ pub(crate) unsafe extern "C" fn PrintEggInfo() {
     ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_DEX_NUMBER);
     ClearWindowTilemap(PSS_LABEL_WINDOW_PORTRAIT_SPECIES);
 }
-pub(crate) unsafe extern "C" fn PrintGenderSymbol(mon: *mut Pokemon, species: u16) {
+unsafe fn PrintGenderSymbol(mon: *mut Pokemon, species: u16) {
     if species != SPECIES_NIDORAN_M && species != SPECIES_NIDORAN_F {
         match GetMonGender(mon) {
             MON_MALE => {
                 PrintTextOnWindow(
                     PSS_LABEL_WINDOW_PORTRAIT_SPECIES,
-                    gText_MaleSymbol.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MaleSymbol).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     57,
                     17,
                     0,
@@ -2418,7 +2493,10 @@ pub(crate) unsafe extern "C" fn PrintGenderSymbol(mon: *mut Pokemon, species: u1
             MON_FEMALE => {
                 PrintTextOnWindow(
                     PSS_LABEL_WINDOW_PORTRAIT_SPECIES,
-                    gText_FemaleSymbol.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_FemaleSymbol)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     57,
                     17,
                     0,
@@ -2429,7 +2507,7 @@ pub(crate) unsafe extern "C" fn PrintGenderSymbol(mon: *mut Pokemon, species: u1
         }
     }
 }
-pub(crate) unsafe extern "C" fn PrintAOrBButtonIcon(windowId: u8, bButton: u8, x: u32) {
+unsafe fn PrintAOrBButtonIcon(windowId: u8, bButton: u8, x: u32) {
     let mut button: *mut u8 = null_mut();
     if bButton == 0 {
         button = sButtons_Gfx[0].as_ptr().cast_mut();
@@ -2438,37 +2516,76 @@ pub(crate) unsafe extern "C" fn PrintAOrBButtonIcon(windowId: u8, bButton: u8, x
     }
     BlitBitmapToWindow(windowId, button, x as u16, 0, 16, 16);
 }
-pub(crate) unsafe extern "C" fn PrintPageNamesAndStats() {
-    let mut stringXPos: i32 = 0;
-    let mut iconXPos: i32 = 0;
-    let mut statsXPos: i32 = 0;
-    PrintTextOnWindow(0, gText_PkmnInfo.as_ptr().cast_mut(), 2, 1, 0, 1);
-    PrintTextOnWindow(1, gText_PkmnSkills.as_ptr().cast_mut(), 2, 1, 0, 1);
-    PrintTextOnWindow(2, gText_BattleMoves.as_ptr().cast_mut(), 2, 1, 0, 1);
+unsafe fn PrintPageNamesAndStats() {
     PrintTextOnWindow(
-        PSS_LABEL_WINDOW_CONTEST_MOVES_TITLE,
-        gText_ContestMoves.as_ptr().cast_mut(),
+        0,
+        (*(&raw const crate::data::strings::gText_PkmnInfo).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         2,
         1,
         0,
         1,
     );
-    stringXPos =
-        GetStringRightAlignXOffset(FONT_NORMAL as i32, gText_Cancel2.as_ptr().cast_mut(), 62);
-    iconXPos = stringXPos - 16;
+    PrintTextOnWindow(
+        1,
+        (*(&raw const crate::data::strings::gText_PkmnSkills).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        2,
+        1,
+        0,
+        1,
+    );
+    PrintTextOnWindow(
+        2,
+        (*(&raw const crate::data::strings::gText_BattleMoves).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        2,
+        1,
+        0,
+        1,
+    );
+    PrintTextOnWindow(
+        PSS_LABEL_WINDOW_CONTEST_MOVES_TITLE,
+        (*(&raw const crate::data::strings::gText_ContestMoves).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        2,
+        1,
+        0,
+        1,
+    );
+    let mut stringXPos: i32 = GetStringRightAlignXOffset(
+        FONT_NORMAL as i32,
+        (*(&raw const crate::data::strings::gText_Cancel2).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        62,
+    );
+    let mut iconXPos: i32 = stringXPos - 16;
     if iconXPos < 0 {
         iconXPos = 0;
     }
     PrintAOrBButtonIcon(PSS_LABEL_WINDOW_PROMPT_CANCEL, FALSE, iconXPos as u32);
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_PROMPT_CANCEL,
-        gText_Cancel2.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Cancel2).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         stringXPos as u8,
         1,
         0,
         0,
     );
-    stringXPos = GetStringRightAlignXOffset(FONT_NORMAL as i32, gText_Info.as_ptr().cast_mut(), 62);
+    stringXPos = GetStringRightAlignXOffset(
+        FONT_NORMAL as i32,
+        (*(&raw const crate::data::strings::gText_Info).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        62,
+    );
     iconXPos = stringXPos - 16;
     if iconXPos < 0 {
         iconXPos = 0;
@@ -2476,14 +2593,21 @@ pub(crate) unsafe extern "C" fn PrintPageNamesAndStats() {
     PrintAOrBButtonIcon(PSS_LABEL_WINDOW_PROMPT_INFO, FALSE, iconXPos as u32);
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_PROMPT_INFO,
-        gText_Info.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Info).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         stringXPos as u8,
         1,
         0,
         0,
     );
-    stringXPos =
-        GetStringRightAlignXOffset(FONT_NORMAL as i32, gText_Switch.as_ptr().cast_mut(), 62);
+    stringXPos = GetStringRightAlignXOffset(
+        FONT_NORMAL as i32,
+        (*(&raw const crate::data::strings::gText_Switch).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        62,
+    );
     iconXPos = stringXPos - 16;
     if iconXPos < 0 {
         iconXPos = 0;
@@ -2491,7 +2615,9 @@ pub(crate) unsafe extern "C" fn PrintPageNamesAndStats() {
     PrintAOrBButtonIcon(PSS_LABEL_WINDOW_PROMPT_SWITCH, FALSE, iconXPos as u32);
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_PROMPT_SWITCH,
-        gText_Switch.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Switch).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         stringXPos as u8,
         1,
         0,
@@ -2499,7 +2625,9 @@ pub(crate) unsafe extern "C" fn PrintPageNamesAndStats() {
     );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_POKEMON_INFO_RENTAL,
-        gText_RentalPkmn.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_RentalPkmn).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         0,
@@ -2507,67 +2635,111 @@ pub(crate) unsafe extern "C" fn PrintPageNamesAndStats() {
     );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_POKEMON_INFO_TYPE,
-        gText_TypeSlash.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_TypeSlash).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         0,
         0,
     );
-    statsXPos =
-        6 + GetStringCenterAlignXOffset(FONT_NORMAL as i32, gText_HP4.as_ptr().cast_mut(), 42);
+    let mut statsXPos: i32 = 6 + GetStringCenterAlignXOffset(
+        FONT_NORMAL as i32,
+        (*(&raw const crate::data::strings::gText_HP4).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        42,
+    );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT,
-        gText_HP4.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_HP4).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         statsXPos as u8,
         1,
         0,
         1,
     );
-    statsXPos =
-        6 + GetStringCenterAlignXOffset(FONT_NORMAL as i32, gText_Attack3.as_ptr().cast_mut(), 42);
+    statsXPos = 6 + GetStringCenterAlignXOffset(
+        FONT_NORMAL as i32,
+        (*(&raw const crate::data::strings::gText_Attack3).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        42,
+    );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT,
-        gText_Attack3.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Attack3).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         statsXPos as u8,
         17,
         0,
         1,
     );
-    statsXPos =
-        6 + GetStringCenterAlignXOffset(FONT_NORMAL as i32, gText_Defense3.as_ptr().cast_mut(), 42);
+    statsXPos = 6 + GetStringCenterAlignXOffset(
+        FONT_NORMAL as i32,
+        (*(&raw const crate::data::strings::gText_Defense3).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        42,
+    );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT,
-        gText_Defense3.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Defense3).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         statsXPos as u8,
         33,
         0,
         1,
     );
-    statsXPos =
-        2 + GetStringCenterAlignXOffset(FONT_NORMAL as i32, gText_SpAtk4.as_ptr().cast_mut(), 36);
+    statsXPos = 2 + GetStringCenterAlignXOffset(
+        FONT_NORMAL as i32,
+        (*(&raw const crate::data::strings::gText_SpAtk4).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        36,
+    );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT,
-        gText_SpAtk4.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_SpAtk4).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         statsXPos as u8,
         1,
         0,
         1,
     );
-    statsXPos =
-        2 + GetStringCenterAlignXOffset(FONT_NORMAL as i32, gText_SpDef4.as_ptr().cast_mut(), 36);
+    statsXPos = 2 + GetStringCenterAlignXOffset(
+        FONT_NORMAL as i32,
+        (*(&raw const crate::data::strings::gText_SpDef4).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        36,
+    );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT,
-        gText_SpDef4.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_SpDef4).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         statsXPos as u8,
         17,
         0,
         1,
     );
-    statsXPos =
-        2 + GetStringCenterAlignXOffset(FONT_NORMAL as i32, gText_Speed2.as_ptr().cast_mut(), 36);
+    statsXPos = 2 + GetStringCenterAlignXOffset(
+        FONT_NORMAL as i32,
+        (*(&raw const crate::data::strings::gText_Speed2).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        36,
+    );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT,
-        gText_Speed2.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Speed2).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         statsXPos as u8,
         33,
         0,
@@ -2575,7 +2747,9 @@ pub(crate) unsafe extern "C" fn PrintPageNamesAndStats() {
     );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_POKEMON_SKILLS_EXP,
-        gText_ExpPoints.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_ExpPoints).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         6,
         1,
         0,
@@ -2583,7 +2757,9 @@ pub(crate) unsafe extern "C" fn PrintPageNamesAndStats() {
     );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_POKEMON_SKILLS_EXP,
-        gText_NextLv.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_NextLv).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         6,
         17,
         0,
@@ -2591,7 +2767,9 @@ pub(crate) unsafe extern "C" fn PrintPageNamesAndStats() {
     );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_POKEMON_SKILLS_STATUS,
-        gText_Status.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Status).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         2,
         1,
         0,
@@ -2599,7 +2777,9 @@ pub(crate) unsafe extern "C" fn PrintPageNamesAndStats() {
     );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_MOVES_POWER_ACC,
-        gText_Power.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Power).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         0,
@@ -2607,7 +2787,9 @@ pub(crate) unsafe extern "C" fn PrintPageNamesAndStats() {
     );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_MOVES_POWER_ACC,
-        gText_Accuracy2.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Accuracy2).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         17,
         0,
@@ -2615,7 +2797,9 @@ pub(crate) unsafe extern "C" fn PrintPageNamesAndStats() {
     );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_MOVES_APPEAL_JAM,
-        gText_Appeal.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Appeal).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         0,
@@ -2623,15 +2807,16 @@ pub(crate) unsafe extern "C" fn PrintPageNamesAndStats() {
     );
     PrintTextOnWindow(
         PSS_LABEL_WINDOW_MOVES_APPEAL_JAM,
-        gText_Jam.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Jam).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         17,
         0,
         1,
     );
 }
-pub(crate) unsafe extern "C" fn PutPageWindowTilemaps(page: u8) {
-    let mut i: u8 = 0;
+unsafe fn PutPageWindowTilemaps(page: u8) {
     ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_INFO_TITLE);
     ClearWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_TITLE);
     ClearWindowTilemap(PSS_LABEL_WINDOW_BATTLE_MOVES_TITLE);
@@ -2677,15 +2862,12 @@ pub(crate) unsafe extern "C" fn PutPageWindowTilemaps(page: u8) {
         }
         _ => {}
     }
-    i = 0;
-    while i < 8 {
+    for i in 0..8u8 {
         PutWindowTilemap((*sMonSummaryScreen).windowIds[i]);
-        i += 1;
     }
     ScheduleBgCopyTilemapToVram(0);
 }
-pub(crate) unsafe extern "C" fn ClearPageWindowTilemaps(page: u8) {
-    let mut i: u8 = 0;
+unsafe fn ClearPageWindowTilemaps(page: u8) {
     match page {
         PSS_PAGE_INFO => {
             ClearWindowTilemap(PSS_LABEL_WINDOW_PROMPT_CANCEL);
@@ -2723,47 +2905,39 @@ pub(crate) unsafe extern "C" fn ClearPageWindowTilemaps(page: u8) {
         }
         _ => {}
     }
-    i = 0;
-    while i < 8 {
+    for i in 0..8u8 {
         RemoveWindowByIndex(i);
-        i += 1;
     }
     ScheduleBgCopyTilemapToVram(0);
 }
-pub(crate) unsafe extern "C" fn AddWindowFromTemplateList(
-    mut template: *mut WindowTemplate,
-    templateId: u8,
-) -> u8 {
-    let mut windowIdPtr: *mut u8 = &raw mut (*sMonSummaryScreen).windowIds[templateId];
+unsafe fn AddWindowFromTemplateList(template: *mut WindowTemplate, templateId: u8) -> u8 {
+    let windowIdPtr: *mut u8 = &raw mut (*sMonSummaryScreen).windowIds[templateId];
     if *windowIdPtr == WINDOW_NONE {
         *windowIdPtr = AddWindow(template.at(templateId)) as u8;
         FillWindowPixelBuffer(*windowIdPtr, 0);
     }
-    return *windowIdPtr;
+    *windowIdPtr
 }
-pub(crate) unsafe extern "C" fn RemoveWindowByIndex(windowIndex: u8) {
-    let mut windowIdPtr: *mut u8 = &raw mut (*sMonSummaryScreen).windowIds[windowIndex];
+unsafe fn RemoveWindowByIndex(windowIndex: u8) {
+    let windowIdPtr: *mut u8 = &raw mut (*sMonSummaryScreen).windowIds[windowIndex];
     if *windowIdPtr != WINDOW_NONE {
         ClearWindowTilemap(*windowIdPtr);
         RemoveWindow(*windowIdPtr);
         *windowIdPtr = WINDOW_NONE;
     }
 }
-pub(crate) unsafe extern "C" fn PrintPageSpecificText(pageIndex: u8) {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < 8 {
+unsafe fn PrintPageSpecificText(pageIndex: u8) {
+    for i in 0..8u16 {
         if (*sMonSummaryScreen).windowIds[i] != WINDOW_NONE {
             FillWindowPixelBuffer((*sMonSummaryScreen).windowIds[i], 0);
         }
-        i += 1;
     }
     sTextPrinterFunctions[pageIndex].unwrap_unchecked()();
 }
-pub(crate) unsafe extern "C" fn CreateTextPrinterTask(pageIndex: u8) {
+unsafe fn CreateTextPrinterTask(pageIndex: u8) {
     CreateTask(sTextPrinterTasks[pageIndex], 16);
 }
-pub(crate) unsafe extern "C" fn PrintInfoPageText() {
+pub(crate) unsafe fn PrintInfoPageText() {
     if (*sMonSummaryScreen).summary.isEgg != 0 {
         PrintEggOTName();
         PrintEggOTID();
@@ -2778,8 +2952,8 @@ pub(crate) unsafe extern "C" fn PrintInfoPageText() {
         PrintMonTrainerMemo();
     }
 }
-pub(crate) unsafe extern "C" fn Task_PrintInfoPage(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_PrintInfoPage(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         1 => {
             PrintMonOTName();
@@ -2807,7 +2981,7 @@ pub(crate) unsafe extern "C" fn Task_PrintInfoPage(taskId: u8) {
     }
     *data += 1;
 }
-pub(crate) unsafe extern "C" fn PrintMonOTName() {
+unsafe fn PrintMonOTName() {
     let mut x: i32 = 0;
     let mut windowId: i32 = 0;
     if InBattleFactory() != TRUE && InSlateportBattleTent() != TRUE {
@@ -2817,13 +2991,21 @@ pub(crate) unsafe extern "C" fn PrintMonOTName() {
         ) as i32;
         PrintTextOnWindow(
             windowId as u8,
-            gText_OTSlash.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_OTSlash).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             0,
             1,
             0,
             1,
         );
-        x = GetStringWidth(FONT_NORMAL, gText_OTSlash.as_ptr().cast_mut(), 0);
+        x = GetStringWidth(
+            FONT_NORMAL,
+            (*(&raw const crate::data::strings::gText_OTSlash).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            0,
+        );
         if (*sMonSummaryScreen).summary.OTGender == 0 {
             PrintTextOnWindow(
                 windowId as u8,
@@ -2845,13 +3027,15 @@ pub(crate) unsafe extern "C" fn PrintMonOTName() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn PrintMonOTID() {
+unsafe fn PrintMonOTID() {
     let mut xPos: i32 = 0;
     if InBattleFactory() != TRUE && InSlateportBattleTent() != TRUE {
         ConvertIntToDecimalStringN(
             StringCopy(
                 gStringVar1.as_mut_ptr(),
-                gText_IDNumber2.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_IDNumber2).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
             ),
             (*sMonSummaryScreen).summary.OTID as u16 as i32,
             STR_CONV_MODE_LEADING_ZEROS,
@@ -2868,8 +3052,8 @@ pub(crate) unsafe extern "C" fn PrintMonOTID() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn PrintMonAbilityName() {
-    let mut ability: u8 = GetAbilityBySpecies(
+unsafe fn PrintMonAbilityName() {
+    let ability: u8 = GetAbilityBySpecies(
         (*sMonSummaryScreen).summary.species,
         (*sMonSummaryScreen).summary.abilityNum,
     );
@@ -2878,15 +3062,18 @@ pub(crate) unsafe extern "C" fn PrintMonAbilityName() {
             sPageInfoTemplate.as_ptr().cast_mut(),
             PSS_DATA_WINDOW_INFO_ABILITY,
         ),
-        gAbilityNames[ability].as_ptr().cast_mut(),
+        (*(&raw const crate::data::battle_main::gAbilityNames).cast::<CArray<CArray<u8, 13>, 0>>())
+            [ability]
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         0,
         1,
     );
 }
-pub(crate) unsafe extern "C" fn PrintMonAbilityDescription() {
-    let mut ability: u8 = GetAbilityBySpecies(
+unsafe fn PrintMonAbilityDescription() {
+    let ability: u8 = GetAbilityBySpecies(
         (*sMonSummaryScreen).summary.species,
         (*sMonSummaryScreen).summary.abilityNum,
     );
@@ -2895,15 +3082,16 @@ pub(crate) unsafe extern "C" fn PrintMonAbilityDescription() {
             sPageInfoTemplate.as_ptr().cast_mut(),
             PSS_DATA_WINDOW_INFO_ABILITY,
         ),
-        gAbilityDescriptionPointers[ability],
+        (*(&raw const crate::data::battle_main::gAbilityDescriptionPointers)
+            .cast::<CArray<*mut u8, 0>>())[ability],
         0,
         17,
         0,
         0,
     );
 }
-pub(crate) unsafe extern "C" fn BufferMonTrainerMemo() {
-    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+unsafe fn BufferMonTrainerMemo() {
+    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
     let mut text: *mut u8 = null_mut();
     DynamicPlaceholderTextUtil_Reset();
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, sMemoNatureTextColor.as_ptr().cast_mut());
@@ -2913,11 +3101,13 @@ pub(crate) unsafe extern "C" fn BufferMonTrainerMemo() {
     {
         DynamicPlaceholderTextUtil_ExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_XNature.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_XNature).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
     } else {
-        let mut metLevelString: *mut u8 = Alloc(32) as *mut u8;
-        let mut metLocationString: *mut u8 = Alloc(32) as *mut u8;
+        let metLevelString: *mut u8 = Alloc(32) as *mut u8;
+        let metLocationString: *mut u8 = Alloc(32) as *mut u8;
         GetMetLevelString(metLevelString);
         if (*sum).metLocation < MAPSEC_NONE as u8 {
             GetMapNameHandleAquaHideout(metLocationString, (*sum).metLocation as u16);
@@ -2926,34 +3116,58 @@ pub(crate) unsafe extern "C" fn BufferMonTrainerMemo() {
         if DoesMonOTMatchOwner() == TRUE {
             if (*sum).metLevel == 0 {
                 text = if (*sum).metLocation >= MAPSEC_NONE as u8 {
-                    gText_XNatureHatchedSomewhereAt.as_ptr().cast_mut()
+                    (*(&raw const crate::data::strings::gText_XNatureHatchedSomewhereAt)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut()
                 } else {
-                    gText_XNatureHatchedAtYZ.as_ptr().cast_mut()
+                    (*(&raw const crate::data::strings::gText_XNatureHatchedAtYZ)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut()
                 };
             } else {
                 text = if (*sum).metLocation >= MAPSEC_NONE as u8 {
-                    gText_XNatureMetSomewhereAt.as_ptr().cast_mut()
+                    (*(&raw const crate::data::strings::gText_XNatureMetSomewhereAt)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut()
                 } else {
-                    gText_XNatureMetAtYZ.as_ptr().cast_mut()
+                    (*(&raw const crate::data::strings::gText_XNatureMetAtYZ)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut()
                 };
             }
         } else if (*sum).metLocation == METLOC_FATEFUL_ENCOUNTER {
-            text = gText_XNatureFatefulEncounter.as_ptr().cast_mut();
+            text = (*(&raw const crate::data::strings::gText_XNatureFatefulEncounter)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         } else if (*sum).metLocation != METLOC_IN_GAME_TRADE && DidMonComeFromGBAGames() != 0 {
             text = if (*sum).metLocation >= MAPSEC_NONE as u8 {
-                gText_XNatureObtainedInTrade.as_ptr().cast_mut()
+                (*(&raw const crate::data::strings::gText_XNatureObtainedInTrade)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
             } else {
-                gText_XNatureProbablyMetAt.as_ptr().cast_mut()
+                (*(&raw const crate::data::strings::gText_XNatureProbablyMetAt)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
             };
         } else {
-            text = gText_XNatureObtainedInTrade.as_ptr().cast_mut();
+            text = (*(&raw const crate::data::strings::gText_XNatureObtainedInTrade)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         DynamicPlaceholderTextUtil_ExpandPlaceholders(gStringVar4.as_mut_ptr(), text);
         Free(metLevelString as *mut c_void);
         Free(metLocationString as *mut c_void);
     }
 }
-pub(crate) unsafe extern "C" fn PrintMonTrainerMemo() {
+unsafe fn PrintMonTrainerMemo() {
     PrintTextOnWindow(
         AddWindowFromTemplateList(
             sPageInfoTemplate.as_ptr().cast_mut(),
@@ -2966,15 +3180,20 @@ pub(crate) unsafe extern "C" fn PrintMonTrainerMemo() {
         0,
     );
 }
-pub(crate) unsafe extern "C" fn BufferNatureString() {
-    let mut sumStruct: *mut PokemonSummaryScreenData = sMonSummaryScreen;
+unsafe fn BufferNatureString() {
+    let sumStruct: *mut PokemonSummaryScreenData = sMonSummaryScreen;
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(
         2,
         gNatureNamePointers[(*sumStruct).summary.nature],
     );
-    DynamicPlaceholderTextUtil_SetPlaceholderPtr(5, gText_EmptyString5.as_ptr().cast_mut());
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(
+        5,
+        (*(&raw const crate::data::strings::gText_EmptyString5).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
 }
-pub(crate) unsafe extern "C" fn GetMetLevelString(output: *mut u8) {
+unsafe fn GetMetLevelString(output: *mut u8) {
     let mut level: u8 = (*sMonSummaryScreen).summary.metLevel;
     if level == 0 {
         level = EGG_HATCH_LEVEL;
@@ -2982,12 +3201,12 @@ pub(crate) unsafe extern "C" fn GetMetLevelString(output: *mut u8) {
     ConvertIntToDecimalStringN(output, level as i32, STR_CONV_MODE_LEFT_ALIGN, 3);
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(3, output);
 }
-pub(crate) unsafe extern "C" fn DoesMonOTMatchOwner() -> u8 {
-    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+unsafe fn DoesMonOTMatchOwner() -> u8 {
+    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
     let mut trainerId: u32 = 0;
     let mut gender: u8 = 0;
     if (*sMonSummaryScreen).monList.mons == gEnemyParty.as_mut_ptr() {
-        let mut multiID: u8 = GetMultiplayerId() ^ 1;
+        let multiID: u8 = GetMultiplayerId() ^ 1;
         trainerId = gLinkPlayers[multiID].trainerId & 0xFFFF;
         gender = gLinkPlayers[multiID].gender;
         StringCopy(
@@ -3013,44 +3232,51 @@ pub(crate) unsafe extern "C" fn DoesMonOTMatchOwner() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn DidMonComeFromGBAGames() -> u8 {
-    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+unsafe fn DidMonComeFromGBAGames() -> u8 {
+    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
     if (*sum).metGame > 0 && (*sum).metGame <= VERSION_LEAF_GREEN as u8 {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DidMonComeFromRSE() -> u8 {
-    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+pub unsafe fn DidMonComeFromRSE() -> u8 {
+    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
     if (*sum).metGame > 0 && (*sum).metGame <= VERSION_EMERALD {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn IsInGamePartnerMon() -> u8 {
-    if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0 && gMain.inBattle() != 0 {
-        if (*sMonSummaryScreen).curMonIndex == 1
+unsafe fn IsInGamePartnerMon() -> u8 {
+    if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0
+        && gMain.inBattle() != 0
+        && ((*sMonSummaryScreen).curMonIndex == 1
             || (*sMonSummaryScreen).curMonIndex == 4
-            || (*sMonSummaryScreen).curMonIndex == 5
-        {
-            return TRUE;
-        }
+            || (*sMonSummaryScreen).curMonIndex == 5)
+    {
+        return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn PrintEggOTName() {
-    let mut windowId: u32 = AddWindowFromTemplateList(
+unsafe fn PrintEggOTName() {
+    let windowId: u32 = AddWindowFromTemplateList(
         sPageInfoTemplate.as_ptr().cast_mut(),
         PSS_DATA_WINDOW_INFO_ORIGINAL_TRAINER,
     ) as u32;
-    let mut width: u32 = GetStringWidth(FONT_NORMAL, gText_OTSlash.as_ptr().cast_mut(), 0) as u32;
+    let width: u32 = GetStringWidth(
+        FONT_NORMAL,
+        (*(&raw const crate::data::strings::gText_OTSlash).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0,
+    ) as u32;
     PrintTextOnWindow(
         windowId as u8,
-        gText_OTSlash.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_OTSlash).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         0,
@@ -3058,24 +3284,29 @@ pub(crate) unsafe extern "C" fn PrintEggOTName() {
     );
     PrintTextOnWindow(
         windowId as u8,
-        gText_FiveMarks.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_FiveMarks).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         width as u8,
         1,
         0,
         1,
     );
 }
-pub(crate) unsafe extern "C" fn PrintEggOTID() {
-    let mut x: i32 = 0;
+unsafe fn PrintEggOTID() {
     StringCopy(
         gStringVar1.as_mut_ptr(),
-        gText_IDNumber2.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_IDNumber2).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     StringAppend(
         gStringVar1.as_mut_ptr(),
-        gText_FiveMarks.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_FiveMarks).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
-    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar1.as_mut_ptr(), 56);
+    let x: i32 = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar1.as_mut_ptr(), 56);
     PrintTextOnWindow(
         AddWindowFromTemplateList(sPageInfoTemplate.as_ptr().cast_mut(), 1),
         gStringVar1.as_mut_ptr(),
@@ -3085,19 +3316,32 @@ pub(crate) unsafe extern "C" fn PrintEggOTID() {
         1,
     );
 }
-pub(crate) unsafe extern "C" fn PrintEggState() {
+unsafe fn PrintEggState() {
     let mut text: *mut u8 = null_mut();
-    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
     if (*sMonSummaryScreen).summary.sanity == TRUE {
-        text = gText_EggWillTakeALongTime.as_ptr().cast_mut();
+        text = (*(&raw const crate::data::strings::gText_EggWillTakeALongTime)
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     } else if (*sum).friendship <= 5 {
-        text = gText_EggAboutToHatch.as_ptr().cast_mut();
+        text = (*(&raw const crate::data::strings::gText_EggAboutToHatch).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     } else if (*sum).friendship <= 10 {
-        text = gText_EggWillHatchSoon.as_ptr().cast_mut();
+        text = (*(&raw const crate::data::strings::gText_EggWillHatchSoon).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     } else if (*sum).friendship <= 40 {
-        text = gText_EggWillTakeSomeTime.as_ptr().cast_mut();
+        text = (*(&raw const crate::data::strings::gText_EggWillTakeSomeTime)
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     } else {
-        text = gText_EggWillTakeALongTime.as_ptr().cast_mut();
+        text = (*(&raw const crate::data::strings::gText_EggWillTakeALongTime)
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     }
     PrintTextOnWindow(
         AddWindowFromTemplateList(
@@ -3111,25 +3355,42 @@ pub(crate) unsafe extern "C" fn PrintEggState() {
         0,
     );
 }
-pub(crate) unsafe extern "C" fn PrintEggMemo() {
+unsafe fn PrintEggMemo() {
     let mut text: *mut u8 = null_mut();
-    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
     if (*sMonSummaryScreen).summary.sanity != 1 {
         if (*sum).metLocation == METLOC_FATEFUL_ENCOUNTER {
-            text = gText_PeculiarEggNicePlace.as_ptr().cast_mut();
+            text = (*(&raw const crate::data::strings::gText_PeculiarEggNicePlace)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         } else if DidMonComeFromGBAGames() == FALSE || DoesMonOTMatchOwner() == FALSE {
-            text = gText_PeculiarEggTrade.as_ptr().cast_mut();
+            text = (*(&raw const crate::data::strings::gText_PeculiarEggTrade)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         } else if (*sum).metLocation == METLOC_SPECIAL_EGG {
             text = if DidMonComeFromRSE() == TRUE {
-                gText_EggFromHotSprings.as_ptr().cast_mut()
+                (*(&raw const crate::data::strings::gText_EggFromHotSprings)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
             } else {
-                gText_EggFromTraveler.as_ptr().cast_mut()
+                (*(&raw const crate::data::strings::gText_EggFromTraveler).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut()
             };
         } else {
-            text = gText_OddEggFoundByCouple.as_ptr().cast_mut();
+            text = (*(&raw const crate::data::strings::gText_OddEggFoundByCouple)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
     } else {
-        text = gText_OddEggFoundByCouple.as_ptr().cast_mut();
+        text = (*(&raw const crate::data::strings::gText_OddEggFoundByCouple)
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     }
     PrintTextOnWindow(
         AddWindowFromTemplateList(
@@ -3143,7 +3404,7 @@ pub(crate) unsafe extern "C" fn PrintEggMemo() {
         0,
     );
 }
-pub(crate) unsafe extern "C" fn PrintSkillsPageText() {
+pub(crate) unsafe fn PrintSkillsPageText() {
     PrintHeldItemName();
     PrintRibbonCount();
     BufferLeftColumnStats();
@@ -3152,8 +3413,8 @@ pub(crate) unsafe extern "C" fn PrintSkillsPageText() {
     PrintRightColumnStats();
     PrintExpPointsNextLevel();
 }
-pub(crate) unsafe extern "C" fn Task_PrintSkillsPage(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_PrintSkillsPage(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         1 => {
             PrintHeldItemName();
@@ -3184,9 +3445,8 @@ pub(crate) unsafe extern "C" fn Task_PrintSkillsPage(taskId: u8) {
     }
     *data += 1;
 }
-pub(crate) unsafe extern "C" fn PrintHeldItemName() {
+unsafe fn PrintHeldItemName() {
     let mut text: *mut u8 = null_mut();
-    let mut x: i32 = 0;
     if (*sMonSummaryScreen).summary.item == ITEM_ENIGMA_BERRY
         && IsMultiBattle() == TRUE
         && ((*sMonSummaryScreen).curMonIndex == 1
@@ -3195,12 +3455,14 @@ pub(crate) unsafe extern "C" fn PrintHeldItemName() {
     {
         text = GetItemName(ITEM_ENIGMA_BERRY);
     } else if (*sMonSummaryScreen).summary.item == ITEM_NONE {
-        text = gText_None.as_ptr().cast_mut();
+        text = (*(&raw const crate::data::strings::gText_None).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     } else {
         CopyItemName((*sMonSummaryScreen).summary.item, gStringVar1.as_mut_ptr());
         text = gStringVar1.as_mut_ptr();
     }
-    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, text, 72) + 6;
+    let x: i32 = GetStringCenterAlignXOffset(FONT_NORMAL as i32, text, 72) + 6;
     PrintTextOnWindow(
         AddWindowFromTemplateList(sPageSkillsTemplate.as_ptr().cast_mut(), 0),
         text,
@@ -3210,11 +3472,12 @@ pub(crate) unsafe extern "C" fn PrintHeldItemName() {
         0,
     );
 }
-pub(crate) unsafe extern "C" fn PrintRibbonCount() {
+unsafe fn PrintRibbonCount() {
     let mut text: *mut u8 = null_mut();
-    let mut x: i32 = 0;
     if (*sMonSummaryScreen).summary.ribbonCount == 0 {
-        text = gText_None.as_ptr().cast_mut();
+        text = (*(&raw const crate::data::strings::gText_None).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     } else {
         ConvertIntToDecimalStringN(
             gStringVar1.as_mut_ptr(),
@@ -3224,11 +3487,13 @@ pub(crate) unsafe extern "C" fn PrintRibbonCount() {
         );
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_RibbonsVar1.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_RibbonsVar1).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         text = gStringVar4.as_mut_ptr();
     }
-    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, text, 70) + 6;
+    let x: i32 = GetStringCenterAlignXOffset(FONT_NORMAL as i32, text, 70) + 6;
     PrintTextOnWindow(
         AddWindowFromTemplateList(sPageSkillsTemplate.as_ptr().cast_mut(), 1),
         text,
@@ -3238,11 +3503,11 @@ pub(crate) unsafe extern "C" fn PrintRibbonCount() {
         0,
     );
 }
-pub(crate) unsafe extern "C" fn BufferLeftColumnStats() {
-    let mut currentHPString: *mut u8 = Alloc(8) as *mut u8;
-    let mut maxHPString: *mut u8 = Alloc(8) as *mut u8;
-    let mut attackString: *mut u8 = Alloc(8) as *mut u8;
-    let mut defenseString: *mut u8 = Alloc(8) as *mut u8;
+unsafe fn BufferLeftColumnStats() {
+    let currentHPString: *mut u8 = Alloc(8) as *mut u8;
+    let maxHPString: *mut u8 = Alloc(8) as *mut u8;
+    let attackString: *mut u8 = Alloc(8) as *mut u8;
+    let defenseString: *mut u8 = Alloc(8) as *mut u8;
     ConvertIntToDecimalStringN(
         currentHPString,
         (*sMonSummaryScreen).summary.currentHP as i32,
@@ -3281,7 +3546,7 @@ pub(crate) unsafe extern "C" fn BufferLeftColumnStats() {
     Free(attackString as *mut c_void);
     Free(defenseString as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn PrintLeftColumnStats() {
+unsafe fn PrintLeftColumnStats() {
     PrintTextOnWindow(
         AddWindowFromTemplateList(
             sPageSkillsTemplate.as_ptr().cast_mut(),
@@ -3294,7 +3559,7 @@ pub(crate) unsafe extern "C" fn PrintLeftColumnStats() {
         0,
     );
 }
-pub(crate) unsafe extern "C" fn BufferRightColumnStats() {
+unsafe fn BufferRightColumnStats() {
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
         (*sMonSummaryScreen).summary.spatk as i32,
@@ -3322,7 +3587,7 @@ pub(crate) unsafe extern "C" fn BufferRightColumnStats() {
         sStatsRightColumnLayout.as_ptr().cast_mut(),
     );
 }
-pub(crate) unsafe extern "C" fn PrintRightColumnStats() {
+unsafe fn PrintRightColumnStats() {
     PrintTextOnWindow(
         AddWindowFromTemplateList(
             sPageSkillsTemplate.as_ptr().cast_mut(),
@@ -3335,11 +3600,10 @@ pub(crate) unsafe extern "C" fn PrintRightColumnStats() {
         0,
     );
 }
-pub(crate) unsafe extern "C" fn PrintExpPointsNextLevel() {
-    let mut sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
-    let mut windowId: u8 =
+unsafe fn PrintExpPointsNextLevel() {
+    let sum: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let windowId: u8 =
         AddWindowFromTemplateList(sPageSkillsTemplate.as_ptr().cast_mut(), PSS_DATA_WINDOW_EXP);
-    let mut x: i32 = 0;
     let mut expToNextLevel: u32 = 0;
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
@@ -3347,11 +3611,15 @@ pub(crate) unsafe extern "C" fn PrintExpPointsNextLevel() {
         STR_CONV_MODE_RIGHT_ALIGN,
         7,
     );
-    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar1.as_mut_ptr(), 42) + 2;
+    let mut x: i32 =
+        GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar1.as_mut_ptr(), 42) + 2;
     PrintTextOnWindow(windowId, gStringVar1.as_mut_ptr(), x as u8, 1, 0, 0);
     if (*sum).level < MAX_LEVEL as u8 {
-        expToNextLevel = gExperienceTables[gSpeciesInfo[(*sum).species].growthRate]
-            [(*sum).level as i32 + 1]
+        expToNextLevel = (*(&raw const crate::data::pokemon::gExperienceTables)
+            .cast::<CArray<CArray<u32, 101>, 0>>())
+            [(*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+                [(*sum).species]
+                .growthRate][(*sum).level as i32 + 1]
             - (*sum).exp;
     } else {
         expToNextLevel = 0;
@@ -3365,7 +3633,7 @@ pub(crate) unsafe extern "C" fn PrintExpPointsNextLevel() {
     x = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar1.as_mut_ptr(), 42) + 2;
     PrintTextOnWindow(windowId, gStringVar1.as_mut_ptr(), x as u8, 17, 0, 0);
 }
-pub(crate) unsafe extern "C" fn PrintBattleMoves() {
+pub(crate) unsafe fn PrintBattleMoves() {
     PrintMoveNameAndPP(0);
     PrintMoveNameAndPP(1);
     PrintMoveNameAndPP(2);
@@ -3383,8 +3651,8 @@ pub(crate) unsafe extern "C" fn PrintBattleMoves() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_PrintBattleMoves(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_PrintBattleMoves(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         1 => {
             PrintMoveNameAndPP(0);
@@ -3415,12 +3683,11 @@ pub(crate) unsafe extern "C" fn Task_PrintBattleMoves(taskId: u8) {
             }
         }
         7 => {
-            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
-                if (*sMonSummaryScreen).newMove != MOVE_NONE
-                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8
-                {
-                    PrintMoveDetails(*data.at(1) as u16);
-                }
+            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE
+                && ((*sMonSummaryScreen).newMove != MOVE_NONE
+                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8)
+            {
+                PrintMoveDetails(*data.at(1) as u16);
             }
         }
         8 => {
@@ -3431,26 +3698,29 @@ pub(crate) unsafe extern "C" fn Task_PrintBattleMoves(taskId: u8) {
     }
     *data += 1;
 }
-pub(crate) unsafe extern "C" fn PrintMoveNameAndPP(moveIndex: u8) {
+unsafe fn PrintMoveNameAndPP(moveIndex: u8) {
     let mut pp: u8 = 0;
     let mut ppState: i32 = 0;
     let mut x: i32 = 0;
     let mut text: *mut u8 = null_mut();
-    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
-    let mut moveNameWindowId: u8 = AddWindowFromTemplateList(
+    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let moveNameWindowId: u8 = AddWindowFromTemplateList(
         sPageMovesTemplate.as_ptr().cast_mut(),
         PSS_DATA_WINDOW_MOVE_NAMES,
     );
-    let mut ppValueWindowId: u8 = AddWindowFromTemplateList(
+    let ppValueWindowId: u8 = AddWindowFromTemplateList(
         sPageMovesTemplate.as_ptr().cast_mut(),
         PSS_DATA_WINDOW_MOVE_PP,
     );
-    let mut r#move: u16 = (*summary).moves[moveIndex];
+    let r#move: u16 = (*summary).moves[moveIndex];
     if r#move != 0 {
         pp = CalculatePPWithBonus(r#move, (*summary).ppBonuses, moveIndex);
         PrintTextOnWindow(
             moveNameWindowId,
-            gMoveNames[r#move].as_ptr().cast_mut(),
+            (*(&raw const crate::data::data_tables::gMoveNames)
+                .cast::<CArray<CArray<u8, 13>, 355>>())[r#move]
+                .as_ptr()
+                .cast_mut(),
             0,
             moveIndex * 16 + 1,
             0,
@@ -3481,13 +3751,17 @@ pub(crate) unsafe extern "C" fn PrintMoveNameAndPP(moveIndex: u8) {
     } else {
         PrintTextOnWindow(
             moveNameWindowId,
-            gText_OneDash.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_OneDash).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             0,
             moveIndex * 16 + 1,
             0,
             1,
         );
-        text = gText_TwoDashes.as_ptr().cast_mut();
+        text = (*(&raw const crate::data::strings::gText_TwoDashes).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         ppState = 12;
         x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, text, 44);
     }
@@ -3500,28 +3774,44 @@ pub(crate) unsafe extern "C" fn PrintMoveNameAndPP(moveIndex: u8) {
         ppState as u8,
     );
 }
-pub(crate) unsafe extern "C" fn PrintMovePowerAndAccuracy(moveIndex: u16) {
+unsafe fn PrintMovePowerAndAccuracy(moveIndex: u16) {
     let mut text: *mut u8 = null_mut();
     if moveIndex != 0 {
         FillWindowPixelRect(PSS_LABEL_WINDOW_MOVES_POWER_ACC, 0, 53, 0, 19, 32);
-        if gBattleMoves[moveIndex].power < 2 {
-            text = gText_ThreeDashes.as_ptr().cast_mut();
+        if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+            [moveIndex]
+            .power
+            < 2
+        {
+            text = (*(&raw const crate::data::strings::gText_ThreeDashes).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         } else {
             ConvertIntToDecimalStringN(
                 gStringVar1.as_mut_ptr(),
-                gBattleMoves[moveIndex].power as i32,
+                (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                    [moveIndex]
+                    .power as i32,
                 STR_CONV_MODE_RIGHT_ALIGN,
                 3,
             );
             text = gStringVar1.as_mut_ptr();
         }
         PrintTextOnWindow(PSS_LABEL_WINDOW_MOVES_POWER_ACC, text, 53, 1, 0, 0);
-        if gBattleMoves[moveIndex].accuracy == 0 {
-            text = gText_ThreeDashes.as_ptr().cast_mut();
+        if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+            [moveIndex]
+            .accuracy
+            == 0
+        {
+            text = (*(&raw const crate::data::strings::gText_ThreeDashes).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         } else {
             ConvertIntToDecimalStringN(
                 gStringVar1.as_mut_ptr(),
-                gBattleMoves[moveIndex].accuracy as i32,
+                (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                    [moveIndex]
+                    .accuracy as i32,
                 STR_CONV_MODE_RIGHT_ALIGN,
                 3,
             );
@@ -3530,7 +3820,7 @@ pub(crate) unsafe extern "C" fn PrintMovePowerAndAccuracy(moveIndex: u16) {
         PrintTextOnWindow(PSS_LABEL_WINDOW_MOVES_POWER_ACC, text, 53, 17, 0, 0);
     }
 }
-pub(crate) unsafe extern "C" fn PrintContestMoves() {
+pub(crate) unsafe fn PrintContestMoves() {
     PrintMoveNameAndPP(0);
     PrintMoveNameAndPP(1);
     PrintMoveNameAndPP(2);
@@ -3540,8 +3830,8 @@ pub(crate) unsafe extern "C" fn PrintContestMoves() {
         PrintContestMoveDescription((*sMonSummaryScreen).firstMoveIndex);
     }
 }
-pub(crate) unsafe extern "C" fn Task_PrintContestMoves(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_PrintContestMoves(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         1 => {
             PrintMoveNameAndPP(0);
@@ -3561,12 +3851,11 @@ pub(crate) unsafe extern "C" fn Task_PrintContestMoves(taskId: u8) {
             }
         }
         6 => {
-            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE {
-                if (*sMonSummaryScreen).newMove != MOVE_NONE
-                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8
-                {
-                    PrintContestMoveDescription((*sMonSummaryScreen).firstMoveIndex);
-                }
+            if (*sMonSummaryScreen).mode == SUMMARY_MODE_SELECT_MOVE
+                && ((*sMonSummaryScreen).newMove != MOVE_NONE
+                    || (*sMonSummaryScreen).firstMoveIndex != MAX_MON_MOVES as u8)
+            {
+                PrintContestMoveDescription((*sMonSummaryScreen).firstMoveIndex);
             }
         }
         7 => {
@@ -3577,7 +3866,7 @@ pub(crate) unsafe extern "C" fn Task_PrintContestMoves(taskId: u8) {
     }
     *data += 1;
 }
-pub(crate) unsafe extern "C" fn PrintContestMoveDescription(moveSlot: u8) {
+pub(crate) unsafe fn PrintContestMoveDescription(moveSlot: u8) {
     let mut r#move: u16 = 0;
     if moveSlot == MAX_MON_MOVES as u8 {
         r#move = (*sMonSummaryScreen).newMove;
@@ -3585,13 +3874,17 @@ pub(crate) unsafe extern "C" fn PrintContestMoveDescription(moveSlot: u8) {
         r#move = (*sMonSummaryScreen).summary.moves[moveSlot];
     }
     if r#move != MOVE_NONE {
-        let mut windowId: u8 = AddWindowFromTemplateList(
+        let windowId: u8 = AddWindowFromTemplateList(
             sPageMovesTemplate.as_ptr().cast_mut(),
             PSS_DATA_WINDOW_MOVE_DESCRIPTION,
         );
         PrintTextOnWindow(
             windowId,
-            gContestEffectDescriptionPointers[gContestMoves[r#move].effect],
+            (*(&raw const crate::data::contest::gContestEffectDescriptionPointers)
+                .cast::<CArray<*mut u8, 0>>())
+                [(*(&raw const crate::data::contest_effect::gContestMoves)
+                    .cast::<CArray<ContestMove, 0>>())[r#move]
+                    .effect],
             6,
             1,
             0,
@@ -3599,8 +3892,8 @@ pub(crate) unsafe extern "C" fn PrintContestMoveDescription(moveSlot: u8) {
         );
     }
 }
-pub(crate) unsafe extern "C" fn PrintMoveDetails(r#move: u16) {
-    let mut windowId: u8 = AddWindowFromTemplateList(
+unsafe fn PrintMoveDetails(r#move: u16) {
+    let windowId: u8 = AddWindowFromTemplateList(
         sPageMovesTemplate.as_ptr().cast_mut(),
         PSS_DATA_WINDOW_MOVE_DESCRIPTION,
     );
@@ -3619,7 +3912,14 @@ pub(crate) unsafe extern "C" fn PrintMoveDetails(r#move: u16) {
         } else {
             PrintTextOnWindow(
                 windowId,
-                gContestEffectDescriptionPointers[gContestMoves[r#move].effect],
+                (*(&raw const crate::data::contest::gContestEffectDescriptionPointers)
+                    .cast::<CArray<*mut u8, 0>>())
+                    [(*(&raw const crate::data::contest_effect::gContestMoves).cast::<CArray<
+                        ContestMove,
+                        0,
+                    >>(
+                    ))[r#move]
+                        .effect],
                 6,
                 1,
                 0,
@@ -3632,23 +3932,35 @@ pub(crate) unsafe extern "C" fn PrintMoveDetails(r#move: u16) {
     }
     ScheduleBgCopyTilemapToVram(0);
 }
-pub(crate) unsafe extern "C" fn PrintNewMoveDetailsOrCancelText() {
-    let mut windowId1: u8 = AddWindowFromTemplateList(
+unsafe fn PrintNewMoveDetailsOrCancelText() {
+    let windowId1: u8 = AddWindowFromTemplateList(
         sPageMovesTemplate.as_ptr().cast_mut(),
         PSS_DATA_WINDOW_MOVE_NAMES,
     );
-    let mut windowId2: u8 = AddWindowFromTemplateList(
+    let windowId2: u8 = AddWindowFromTemplateList(
         sPageMovesTemplate.as_ptr().cast_mut(),
         PSS_DATA_WINDOW_MOVE_PP,
     );
     if (*sMonSummaryScreen).newMove == MOVE_NONE {
-        PrintTextOnWindow(windowId1, gText_Cancel.as_ptr().cast_mut(), 0, 65, 0, 1);
+        PrintTextOnWindow(
+            windowId1,
+            (*(&raw const crate::data::strings::gText_Cancel).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            0,
+            65,
+            0,
+            1,
+        );
     } else {
-        let mut r#move: u16 = (*sMonSummaryScreen).newMove;
+        let r#move: u16 = (*sMonSummaryScreen).newMove;
         if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_BATTLE_MOVES {
             PrintTextOnWindow(
                 windowId1,
-                gMoveNames[r#move].as_ptr().cast_mut(),
+                (*(&raw const crate::data::data_tables::gMoveNames)
+                    .cast::<CArray<CArray<u8, 13>, 355>>())[r#move]
+                    .as_ptr()
+                    .cast_mut(),
                 0,
                 65,
                 0,
@@ -3657,7 +3969,10 @@ pub(crate) unsafe extern "C" fn PrintNewMoveDetailsOrCancelText() {
         } else {
             PrintTextOnWindow(
                 windowId1,
-                gMoveNames[r#move].as_ptr().cast_mut(),
+                (*(&raw const crate::data::data_tables::gMoveNames)
+                    .cast::<CArray<CArray<u8, 13>, 355>>())[r#move]
+                    .as_ptr()
+                    .cast_mut(),
                 0,
                 65,
                 0,
@@ -3666,7 +3981,9 @@ pub(crate) unsafe extern "C" fn PrintNewMoveDetailsOrCancelText() {
         }
         ConvertIntToDecimalStringN(
             gStringVar1.as_mut_ptr(),
-            gBattleMoves[r#move].pp as i32,
+            (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                [r#move]
+                .pp as i32,
             STR_CONV_MODE_RIGHT_ALIGN,
             2,
         );
@@ -3687,20 +4004,20 @@ pub(crate) unsafe extern "C" fn PrintNewMoveDetailsOrCancelText() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn AddAndFillMoveNamesWindow() {
-    let mut windowId: u8 = AddWindowFromTemplateList(
+unsafe fn AddAndFillMoveNamesWindow() {
+    let windowId: u8 = AddWindowFromTemplateList(
         sPageMovesTemplate.as_ptr().cast_mut(),
         PSS_DATA_WINDOW_MOVE_NAMES,
     );
     FillWindowPixelRect(windowId, 0, 0, 66, 72, 16);
     CopyWindowToVram(windowId, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn SwapMovesNamesPP(moveIndex1: u8, moveIndex2: u8) {
-    let mut windowId1: u8 = AddWindowFromTemplateList(
+unsafe fn SwapMovesNamesPP(moveIndex1: u8, moveIndex2: u8) {
+    let windowId1: u8 = AddWindowFromTemplateList(
         sPageMovesTemplate.as_ptr().cast_mut(),
         PSS_DATA_WINDOW_MOVE_NAMES,
     );
-    let mut windowId2: u8 = AddWindowFromTemplateList(
+    let windowId2: u8 = AddWindowFromTemplateList(
         sPageMovesTemplate.as_ptr().cast_mut(),
         PSS_DATA_WINDOW_MOVE_PP,
     );
@@ -3711,49 +4028,45 @@ pub(crate) unsafe extern "C" fn SwapMovesNamesPP(moveIndex1: u8, moveIndex2: u8)
     PrintMoveNameAndPP(moveIndex1);
     PrintMoveNameAndPP(moveIndex2);
 }
-pub(crate) unsafe extern "C" fn PrintHMMovesCantBeForgotten() {
-    let mut windowId: u8 = AddWindowFromTemplateList(
+unsafe fn PrintHMMovesCantBeForgotten() {
+    let windowId: u8 = AddWindowFromTemplateList(
         sPageMovesTemplate.as_ptr().cast_mut(),
         PSS_DATA_WINDOW_MOVE_DESCRIPTION,
     );
     FillWindowPixelBuffer(windowId, 0);
     PrintTextOnWindow(
         windowId,
-        gText_HMMovesCantBeForgotten2.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_HMMovesCantBeForgotten2).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         6,
         1,
         0,
         0,
     );
 }
-pub(crate) unsafe extern "C" fn ResetSpriteIds() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 28 {
+unsafe fn ResetSpriteIds() {
+    for i in 0..28u8 {
         (*sMonSummaryScreen).spriteIds[i] = SPRITE_NONE;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn DestroySpriteInArray(spriteArrayId: u8) {
+unsafe fn DestroySpriteInArray(spriteArrayId: u8) {
     if (*sMonSummaryScreen).spriteIds[spriteArrayId] != SPRITE_NONE {
         DestroySprite(&raw mut gSprites[(*sMonSummaryScreen).spriteIds[spriteArrayId]]);
         (*sMonSummaryScreen).spriteIds[spriteArrayId] = SPRITE_NONE;
     }
 }
-pub(crate) unsafe extern "C" fn SetSpriteInvisibility(spriteArrayId: u8, invisible: u8) {
+unsafe fn SetSpriteInvisibility(spriteArrayId: u8, invisible: u8) {
     gSprites[(*sMonSummaryScreen).spriteIds[spriteArrayId]].set_invisible(invisible as u16);
 }
-pub(crate) unsafe extern "C" fn HidePageSpecificSprites() {
-    let mut i: u8 = 0;
-    i = SPRITE_ARR_ID_TYPE;
-    while i < 28 {
+unsafe fn HidePageSpecificSprites() {
+    for i in SPRITE_ARR_ID_TYPE..28 {
         if (*sMonSummaryScreen).spriteIds[i] != SPRITE_NONE {
             SetSpriteInvisibility(i, TRUE);
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetTypeIcons() {
+unsafe fn SetTypeIcons() {
     match (*sMonSummaryScreen).currPageIndex {
         PSS_PAGE_INFO => {
             SetMonTypeIcons();
@@ -3769,25 +4082,17 @@ pub(crate) unsafe extern "C" fn SetTypeIcons() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CreateMoveTypeIcons() {
-    let mut i: u8 = 0;
-    i = SPRITE_ARR_ID_TYPE;
-    while i < 8 {
+unsafe fn CreateMoveTypeIcons() {
+    for i in SPRITE_ARR_ID_TYPE..8 {
         if (*sMonSummaryScreen).spriteIds[i] == SPRITE_NONE {
             (*sMonSummaryScreen).spriteIds[i] =
                 CreateSprite((&raw const *sSpriteTemplate_MoveTypes).cast_mut(), 0, 0, 2);
         }
         SetSpriteInvisibility(i, TRUE);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetTypeSpritePosAndPal(
-    typeId: u8,
-    x: u8,
-    y: u8,
-    spriteArrayId: u8,
-) {
-    let mut sprite: *mut Sprite = &raw mut gSprites[(*sMonSummaryScreen).spriteIds[spriteArrayId]];
+unsafe fn SetTypeSpritePosAndPal(typeId: u8, x: u8, y: u8, spriteArrayId: u8) {
+    let sprite: *mut Sprite = &raw mut gSprites[(*sMonSummaryScreen).spriteIds[spriteArrayId]];
     StartSpriteAnim(sprite, typeId);
     (*sprite)
         .oam
@@ -3796,34 +4101,49 @@ pub(crate) unsafe extern "C" fn SetTypeSpritePosAndPal(
     (*sprite).y = y as i16 + 8;
     SetSpriteInvisibility(spriteArrayId, FALSE);
 }
-pub(crate) unsafe extern "C" fn SetMonTypeIcons() {
-    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+unsafe fn SetMonTypeIcons() {
+    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
     if (*summary).isEgg != 0 {
         SetTypeSpritePosAndPal(TYPE_MYSTERY, 120, 48, SPRITE_ARR_ID_TYPE);
         SetSpriteInvisibility(4, 1);
     } else {
         SetTypeSpritePosAndPal(
-            gSpeciesInfo[(*summary).species].types[0],
+            (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+                [(*summary).species]
+                .types[0],
             120,
             48,
             SPRITE_ARR_ID_TYPE,
         );
-        if gSpeciesInfo[(*summary).species].types[0] != gSpeciesInfo[(*summary).species].types[1] {
-            SetTypeSpritePosAndPal(gSpeciesInfo[(*summary).species].types[1], 160, 48, 4);
+        if (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+            [(*summary).species]
+            .types[0]
+            != (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+                [(*summary).species]
+                .types[1]
+        {
+            SetTypeSpritePosAndPal(
+                (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+                    [(*summary).species]
+                    .types[1],
+                160,
+                48,
+                4,
+            );
             SetSpriteInvisibility(4, FALSE);
         } else {
             SetSpriteInvisibility(4, 1);
         }
     }
 }
-pub(crate) unsafe extern "C" fn SetMoveTypeIcons() {
-    let mut i: u8 = 0;
-    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
-    i = 0;
-    while i < MAX_MON_MOVES as u8 {
+unsafe fn SetMoveTypeIcons() {
+    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    for i in 0..(MAX_MON_MOVES as u8) {
         if (*summary).moves[i] != MOVE_NONE {
             SetTypeSpritePosAndPal(
-                gBattleMoves[(*summary).moves[i]].r#type,
+                (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                    [(*summary).moves[i]]
+                    .r#type,
                 85,
                 32 + i * 16,
                 i + SPRITE_ARR_ID_TYPE,
@@ -3831,17 +4151,20 @@ pub(crate) unsafe extern "C" fn SetMoveTypeIcons() {
         } else {
             SetSpriteInvisibility(i + SPRITE_ARR_ID_TYPE, TRUE);
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetContestMoveTypeIcons() {
-    let mut i: u8 = 0;
-    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
-    i = 0;
-    while i < MAX_MON_MOVES as u8 {
+unsafe fn SetContestMoveTypeIcons() {
+    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    for i in 0..(MAX_MON_MOVES as u8) {
         if (*summary).moves[i] != MOVE_NONE {
             SetTypeSpritePosAndPal(
-                NUMBER_OF_MON_TYPES + gContestMoves[(*summary).moves[i]].contestCategory(),
+                NUMBER_OF_MON_TYPES
+                    + (*(&raw const crate::data::contest_effect::gContestMoves).cast::<CArray<
+                        ContestMove,
+                        0,
+                    >>(
+                    ))[(*summary).moves[i]]
+                        .contestCategory(),
                 85,
                 32 + i * 16,
                 i + SPRITE_ARR_ID_TYPE,
@@ -3849,18 +4172,30 @@ pub(crate) unsafe extern "C" fn SetContestMoveTypeIcons() {
         } else {
             SetSpriteInvisibility(i + SPRITE_ARR_ID_TYPE, TRUE);
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetNewMoveTypeIcon() {
+unsafe fn SetNewMoveTypeIcon() {
     if (*sMonSummaryScreen).newMove == MOVE_NONE {
         SetSpriteInvisibility(7, TRUE);
     } else {
         if (*sMonSummaryScreen).currPageIndex == PSS_PAGE_BATTLE_MOVES {
-            SetTypeSpritePosAndPal(gBattleMoves[(*sMonSummaryScreen).newMove].r#type, 85, 96, 7);
+            SetTypeSpritePosAndPal(
+                (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                    [(*sMonSummaryScreen).newMove]
+                    .r#type,
+                85,
+                96,
+                7,
+            );
         } else {
             SetTypeSpritePosAndPal(
-                NUMBER_OF_MON_TYPES + gContestMoves[(*sMonSummaryScreen).newMove].contestCategory(),
+                NUMBER_OF_MON_TYPES
+                    + (*(&raw const crate::data::contest_effect::gContestMoves).cast::<CArray<
+                        ContestMove,
+                        0,
+                    >>(
+                    ))[(*sMonSummaryScreen).newMove]
+                        .contestCategory(),
                 85,
                 96,
                 7,
@@ -3868,10 +4203,10 @@ pub(crate) unsafe extern "C" fn SetNewMoveTypeIcon() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SwapMovesTypeSprites(moveIndex1: u8, moveIndex2: u8) {
-    let mut sprite1: *mut Sprite = &raw mut gSprites
+unsafe fn SwapMovesTypeSprites(moveIndex1: u8, moveIndex2: u8) {
+    let sprite1: *mut Sprite = &raw mut gSprites
         [(*sMonSummaryScreen).spriteIds[moveIndex1 as i32 + SPRITE_ARR_ID_TYPE as i32]];
-    let mut sprite2: *mut Sprite = &raw mut gSprites
+    let sprite2: *mut Sprite = &raw mut gSprites
         [(*sMonSummaryScreen).spriteIds[moveIndex2 as i32 + SPRITE_ARR_ID_TYPE as i32]];
     let mut temp: u8 = (*sprite1).animNum;
     (*sprite1).animNum = (*sprite2).animNum;
@@ -3884,22 +4219,26 @@ pub(crate) unsafe extern "C" fn SwapMovesTypeSprites(moveIndex1: u8, moveIndex2:
     (*sprite2).set_animBeginning(TRUE as u16);
     (*sprite2).set_animEnded(FALSE as u16);
 }
-pub(crate) unsafe extern "C" fn LoadMonGfxAndSprite(mon: *mut Pokemon, state: *mut i16) -> u8 {
+unsafe fn LoadMonGfxAndSprite(mon: *mut Pokemon, state: *mut i16) -> u8 {
     let mut pal: *mut CompressedSpritePalette = null_mut();
-    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
     match *state {
         0 => {
             if gMain.inBattle() != 0 {
                 if ShouldIgnoreDeoxysForm(3, (*sMonSummaryScreen).curMonIndex) != 0 {
                     HandleLoadSpecialPokePic_DontHandleDeoxys(
-                        (&raw const gMonFrontPicTable[(*summary).species2]).cast_mut(),
+                        (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+                            .cast::<CArray<CompressedSpriteSheet, 0>>())[(*summary).species2])
+                            .cast_mut(),
                         (*gMonSpritesGfxPtr).sprites.ptr[1],
                         (*summary).species2 as i32,
                         (*summary).pid,
                     );
                 } else {
                     HandleLoadSpecialPokePic_2(
-                        (&raw const gMonFrontPicTable[(*summary).species2]).cast_mut(),
+                        (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+                            .cast::<CArray<CompressedSpriteSheet, 0>>())[(*summary).species2])
+                            .cast_mut(),
                         (*gMonSpritesGfxPtr).sprites.ptr[1],
                         (*summary).species2 as i32,
                         (*summary).pid,
@@ -3912,14 +4251,14 @@ pub(crate) unsafe extern "C" fn LoadMonGfxAndSprite(mon: *mut Pokemon, state: *m
                         || (*sMonSummaryScreen).handleDeoxys == TRUE
                     {
                         HandleLoadSpecialPokePic_2(
-                            (&raw const gMonFrontPicTable[(*summary).species2]).cast_mut(),
+                            (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable).cast::<CArray<CompressedSpriteSheet, 0>>())[(*summary).species2]).cast_mut(),
                             (*gMonSpritesGfxPtr).sprites.ptr[1],
                             (*summary).species2 as i32,
                             (*summary).pid,
                         );
                     } else {
                         HandleLoadSpecialPokePic_DontHandleDeoxys(
-                            (&raw const gMonFrontPicTable[(*summary).species2]).cast_mut(),
+                            (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable).cast::<CArray<CompressedSpriteSheet, 0>>())[(*summary).species2]).cast_mut(),
                             (*gMonSpritesGfxPtr).sprites.ptr[1],
                             (*summary).species2 as i32,
                             (*summary).pid,
@@ -3931,7 +4270,7 @@ pub(crate) unsafe extern "C" fn LoadMonGfxAndSprite(mon: *mut Pokemon, state: *m
                         || (*sMonSummaryScreen).handleDeoxys == TRUE
                     {
                         HandleLoadSpecialPokePic_2(
-                            (&raw const gMonFrontPicTable[(*summary).species2]).cast_mut(),
+                            (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable).cast::<CArray<CompressedSpriteSheet, 0>>())[(*summary).species2]).cast_mut(),
                             MonSpritesGfxManager_GetSpritePtr(
                                 MON_SPR_GFX_MANAGER_A,
                                 B_POSITION_OPPONENT_LEFT,
@@ -3941,7 +4280,7 @@ pub(crate) unsafe extern "C" fn LoadMonGfxAndSprite(mon: *mut Pokemon, state: *m
                         );
                     } else {
                         HandleLoadSpecialPokePic_DontHandleDeoxys(
-                            (&raw const gMonFrontPicTable[(*summary).species2]).cast_mut(),
+                            (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable).cast::<CArray<CompressedSpriteSheet, 0>>())[(*summary).species2]).cast_mut(),
                             MonSpritesGfxManager_GetSpritePtr(
                                 MON_SPR_GFX_MANAGER_A,
                                 B_POSITION_OPPONENT_LEFT,
@@ -3972,11 +4311,11 @@ pub(crate) unsafe extern "C" fn LoadMonGfxAndSprite(mon: *mut Pokemon, state: *m
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn PlayMonCry() {
-    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+unsafe fn PlayMonCry() {
+    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
     if (*summary).isEgg == 0 {
         if ShouldPlayNormalMonCry(&raw mut (*sMonSummaryScreen).currentMon) == TRUE as u32 {
             PlayCry_ByMode((*summary).species2, 0, 0);
@@ -3985,9 +4324,9 @@ pub(crate) unsafe extern "C" fn PlayMonCry() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn CreateMonSprite(unused: *mut Pokemon) -> u8 {
-    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
-    let mut spriteId: u8 = CreateSprite(&raw mut gMultiuseSpriteTemplate, 40, 64, 5);
+pub(crate) unsafe fn CreateMonSprite(unused: *mut Pokemon) -> u8 {
+    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+    let spriteId: u8 = CreateSprite(&raw mut gMultiuseSpriteTemplate, 40, 64, 5);
     FreeSpriteOamMatrix(&raw mut gSprites[spriteId]);
     gSprites[spriteId].data[0] = (*summary).species2 as i16;
     gSprites[spriteId].data[2] = 0;
@@ -3998,29 +4337,28 @@ pub(crate) unsafe extern "C" fn CreateMonSprite(unused: *mut Pokemon) -> u8 {
     } else {
         gSprites[spriteId].set_hFlip(FALSE as u16);
     }
-    return spriteId;
+    spriteId
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Pokemon(sprite: *mut Sprite) {
-    let mut summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
+pub(crate) unsafe fn SpriteCB_Pokemon(sprite: *mut Sprite) {
+    let summary: *mut PokeSummary = &raw mut (*sMonSummaryScreen).summary;
     if gPaletteFade.active() == 0 && (*sprite).data[2] != 1 {
         (*sprite).data[1] = IsMonSpriteNotFlipped((*sprite).data[0] as u16) as i16;
         PlayMonCry();
         PokemonSummaryDoMonAnimation(sprite, (*sprite).data[0] as u16, (*summary).isEgg);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SummaryScreen_SetAnimDelayTaskId(taskId: u8) {
-    sAnimDelayTaskId = taskId;
+pub fn SummaryScreen_SetAnimDelayTaskId(taskId: u8) {
+    sAnimDelayTaskId.set(taskId);
 }
-pub(crate) unsafe extern "C" fn SummaryScreen_DestroyAnimDelayTask() {
-    if sAnimDelayTaskId != TASK_NONE {
-        DestroyTask(sAnimDelayTaskId);
-        sAnimDelayTaskId = TASK_NONE;
+fn SummaryScreen_DestroyAnimDelayTask() {
+    if sAnimDelayTaskId.get() != TASK_NONE {
+        DestroyTask(sAnimDelayTaskId.get());
+        sAnimDelayTaskId.set(TASK_NONE);
     }
 }
-pub(crate) unsafe extern "C" fn IsMonAnimationFinished() -> u32 {
+unsafe fn IsMonAnimationFinished() -> u32 {
     if gSprites[(*sMonSummaryScreen).spriteIds[0]].callback
-        == Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
+        == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
     {
         return FALSE as u32;
     } else {
@@ -4028,25 +4366,22 @@ pub(crate) unsafe extern "C" fn IsMonAnimationFinished() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn StopPokemonAnimations() {
-    let mut i: u16 = 0;
-    let mut paletteIndex: u16 = 0;
+unsafe fn StopPokemonAnimations() {
     gSprites[(*sMonSummaryScreen).spriteIds[0]].set_animPaused(TRUE);
     gSprites[(*sMonSummaryScreen).spriteIds[0]].callback = Some(SpriteCallbackDummy);
     StopPokemonAnimationDelayTask();
-    paletteIndex = 0x100 + gSprites[(*sMonSummaryScreen).spriteIds[0]].oam.paletteNum() * 16;
-    i = 0;
-    while i < 16 {
-        let mut id: u16 = i + paletteIndex;
+    let paletteIndex: u16 =
+        0x100 + gSprites[(*sMonSummaryScreen).spriteIds[0]].oam.paletteNum() * 16;
+    for i in 0..16u16 {
+        let id: u16 = i + paletteIndex;
         gPlttBufferUnfaded[id] = gPlttBufferFaded[id];
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateMonMarkingsSprite(mon: *mut Pokemon) {
-    let mut sprite: *mut Sprite = CreateMonMarkingAllCombosSprite(
+unsafe fn CreateMonMarkingsSprite(mon: *mut Pokemon) {
+    let sprite: *mut Sprite = CreateMonMarkingAllCombosSprite(
         TAG_MON_MARKINGS,
         TAG_MON_MARKINGS,
         sMarkings_Pal.as_ptr().cast_mut(),
@@ -4059,16 +4394,18 @@ pub(crate) unsafe extern "C" fn CreateMonMarkingsSprite(mon: *mut Pokemon) {
         (*(*sMonSummaryScreen).markingsSprite).oam.set_priority(1);
     }
 }
-pub(crate) unsafe extern "C" fn RemoveAndCreateMonMarkingsSprite(mon: *mut Pokemon) {
+unsafe fn RemoveAndCreateMonMarkingsSprite(mon: *mut Pokemon) {
     DestroySprite((*sMonSummaryScreen).markingsSprite);
     FreeSpriteTilesByTag(TAG_MON_MARKINGS);
     CreateMonMarkingsSprite(mon);
 }
-pub(crate) unsafe extern "C" fn CreateCaughtBallSprite(mon: *mut Pokemon) {
-    let mut ball: u8 = ItemIdToBallId(GetMonData2(mon, MON_DATA_POKEBALL) as u16);
+unsafe fn CreateCaughtBallSprite(mon: *mut Pokemon) {
+    let ball: u8 = ItemIdToBallId(GetMonData2(mon, MON_DATA_POKEBALL) as u16);
     LoadBallGfx(ball);
     (*sMonSummaryScreen).spriteIds[1] = CreateSprite(
-        (&raw const gBallSpriteTemplates[ball]).cast_mut(),
+        (&raw const (*(&raw const crate::data::pokeball::gBallSpriteTemplates)
+            .cast::<CArray<SpriteTemplate, 0>>())[ball])
+            .cast_mut(),
         16,
         136,
         0,
@@ -4078,9 +4415,8 @@ pub(crate) unsafe extern "C" fn CreateCaughtBallSprite(mon: *mut Pokemon) {
         .oam
         .set_priority(3);
 }
-pub(crate) unsafe extern "C" fn CreateSetStatusSprite() {
-    let mut spriteId: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[2];
-    let mut statusAnim: u8 = 0;
+unsafe fn CreateSetStatusSprite() {
+    let spriteId: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[2];
     if *spriteId == SPRITE_NONE {
         *spriteId = CreateSprite(
             (&raw const *sSpriteTemplate_StatusCondition).cast_mut(),
@@ -4089,7 +4425,7 @@ pub(crate) unsafe extern "C" fn CreateSetStatusSprite() {
             0,
         );
     }
-    statusAnim = GetMonAilment(&raw mut (*sMonSummaryScreen).currentMon);
+    let statusAnim: u8 = GetMonAilment(&raw mut (*sMonSummaryScreen).currentMon);
     if statusAnim != 0 {
         StartSpriteAnim(&raw mut gSprites[*spriteId], statusAnim - 1);
         SetSpriteInvisibility(SPRITE_ARR_ID_STATUS, FALSE);
@@ -4097,16 +4433,14 @@ pub(crate) unsafe extern "C" fn CreateSetStatusSprite() {
         SetSpriteInvisibility(SPRITE_ARR_ID_STATUS, TRUE);
     }
 }
-pub(crate) unsafe extern "C" fn CreateMoveSelectorSprites(idArrayStart: u8) {
-    let mut i: u8 = 0;
-    let mut spriteIds: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[idArrayStart];
+unsafe fn CreateMoveSelectorSprites(idArrayStart: u8) {
+    let spriteIds: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[idArrayStart];
     if (*sMonSummaryScreen).currPageIndex >= PSS_PAGE_BATTLE_MOVES {
         let mut subpriority: u8 = 0;
         if idArrayStart == SPRITE_ARR_ID_MOVE_SELECTOR1 {
             subpriority = 1;
         }
-        i = 0;
-        while i < MOVE_SELECTOR_SPRITES_COUNT {
+        for i in 0..MOVE_SELECTOR_SPRITES_COUNT {
             *spriteIds.at(i) = CreateSprite(
                 (&raw const *sMoveSelectorSpriteTemplate).cast_mut(),
                 i as i16 * 16 + 89,
@@ -4123,13 +4457,12 @@ pub(crate) unsafe extern "C" fn CreateMoveSelectorSprites(idArrayStart: u8) {
             gSprites[*spriteIds.at(i)].callback = Some(SpriteCB_MoveSelector);
             gSprites[*spriteIds.at(i)].data[0] = idArrayStart as i16;
             gSprites[*spriteIds.at(i)].data[1] = 0;
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_MoveSelector(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_MoveSelector(sprite: *mut Sprite) {
     if (*sprite).animNum > 3 && (*sprite).animNum < 7 {
-        (*sprite).data[1] = (*sprite).data[1] + 1 & 0x1F;
+        (*sprite).data[1] = ((*sprite).data[1] + 1) & 0x1F;
         if (*sprite).data[1] > 24 {
             (*sprite).set_invisible(TRUE as u16);
         } else {
@@ -4145,20 +4478,15 @@ pub(crate) unsafe extern "C" fn SpriteCB_MoveSelector(sprite: *mut Sprite) {
         (*sprite).y2 = (*sMonSummaryScreen).secondMoveIndex as i16 * 16;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyMoveSelectorSprites(firstArrayId: u8) {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < MOVE_SELECTOR_SPRITES_COUNT {
+unsafe fn DestroyMoveSelectorSprites(firstArrayId: u8) {
+    for i in 0..MOVE_SELECTOR_SPRITES_COUNT {
         DestroySpriteInArray(firstArrayId + i);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetMainMoveSelectorColor(mut which: u8) {
-    let mut i: u8 = 0;
-    let mut spriteIds: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[8];
+unsafe fn SetMainMoveSelectorColor(mut which: u8) {
+    let spriteIds: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[8];
     which *= 3;
-    i = 0;
-    while i < MOVE_SELECTOR_SPRITES_COUNT {
+    for i in 0..MOVE_SELECTOR_SPRITES_COUNT {
         if i == 0 {
             StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], which + 4);
         } else if i == 9 {
@@ -4166,16 +4494,12 @@ pub(crate) unsafe extern "C" fn SetMainMoveSelectorColor(mut which: u8) {
         } else {
             StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], which + 6);
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn KeepMoveSelectorVisible(firstSpriteId: u8) {
-    let mut i: u8 = 0;
-    let mut spriteIds: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[firstSpriteId];
-    i = 0;
-    while i < MOVE_SELECTOR_SPRITES_COUNT {
+unsafe fn KeepMoveSelectorVisible(firstSpriteId: u8) {
+    let spriteIds: *mut u8 = &raw mut (*sMonSummaryScreen).spriteIds[firstSpriteId];
+    for i in 0..MOVE_SELECTOR_SPRITES_COUNT {
         gSprites[*spriteIds.at(i)].data[1] = 0;
         gSprites[*spriteIds.at(i)].set_invisible(FALSE as u16);
-        i += 1;
     }
 }

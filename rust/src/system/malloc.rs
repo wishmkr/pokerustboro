@@ -34,7 +34,7 @@ pub struct Heap(pub [u8; HEAP_SIZE]);
 pub static mut gHeap: Heap = Heap([0; HEAP_SIZE]);
 
 static mut HEAP_START: *mut u8 = core::ptr::null_mut();
-static mut HEAP_BYTES: u32 = 0;
+static HEAP_BYTES: crate::global::Global<u32> = crate::global::Global::new(0);
 
 #[inline]
 unsafe fn flag(block: *mut u8) -> u16 {
@@ -102,7 +102,7 @@ const fn aligned(size: u32) -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PutMemBlockHeader(
+pub unsafe fn PutMemBlockHeader(
     block: *mut u8,
     previous: *mut u8,
     following: *mut u8,
@@ -116,12 +116,12 @@ pub unsafe extern "C" fn PutMemBlockHeader(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PutFirstMemBlockHeader(block: *mut u8, block_size: u32) {
+pub unsafe fn PutFirstMemBlockHeader(block: *mut u8, block_size: u32) {
     unsafe { PutMemBlockHeader(block, block, block, block_size - MEM_BLOCK_SIZE as u32) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AllocInternal(heap_start: *mut u8, requested: u32) -> *mut u8 {
+pub unsafe fn AllocInternal(heap_start: *mut u8, requested: u32) -> *mut u8 {
     let head = heap_start;
     let mut pos = heap_start;
     let requested = aligned(requested);
@@ -161,7 +161,7 @@ pub unsafe extern "C" fn AllocInternal(heap_start: *mut u8, requested: u32) -> *
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeInternal(heap_start: *mut u8, pointer: *mut u8) {
+pub unsafe fn FreeInternal(heap_start: *mut u8, pointer: *mut u8) {
     if pointer.is_null() {
         return;
     }
@@ -199,7 +199,7 @@ pub unsafe extern "C" fn FreeInternal(heap_start: *mut u8, pointer: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AllocZeroedInternal(heap_start: *mut u8, requested: u32) -> *mut u8 {
+pub unsafe fn AllocZeroedInternal(heap_start: *mut u8, requested: u32) -> *mut u8 {
     let memory = unsafe { AllocInternal(heap_start, requested) };
     if memory.is_null() {
         return memory;
@@ -220,7 +220,7 @@ pub unsafe extern "C" fn AllocZeroedInternal(heap_start: *mut u8, requested: u32
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckMemBlockInternal(heap_start: *mut u8, pointer: *mut u8) -> u32 {
+pub unsafe fn CheckMemBlockInternal(heap_start: *mut u8, pointer: *mut u8) -> u32 {
     let head = heap_start;
     let block = unsafe { pointer.sub(MEM_BLOCK_SIZE) };
 
@@ -249,34 +249,34 @@ pub unsafe extern "C" fn CheckMemBlockInternal(heap_start: *mut u8, pointer: *mu
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitHeap(heap_start: *mut u8, heap_size: u32) {
+pub unsafe fn InitHeap(heap_start: *mut u8, heap_size: u32) {
     unsafe { (&raw mut HEAP_START).write(heap_start) };
-    unsafe { (&raw mut HEAP_BYTES).write(heap_size) };
+    unsafe { (HEAP_BYTES.as_ptr()).write(heap_size) };
     unsafe { PutFirstMemBlockHeader(heap_start, heap_size) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Alloc(requested: u32) -> *mut u8 {
+pub unsafe fn Alloc(requested: u32) -> *mut u8 {
     unsafe { AllocInternal((&raw const HEAP_START).read(), requested) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AllocZeroed(requested: u32) -> *mut u8 {
+pub unsafe fn AllocZeroed(requested: u32) -> *mut u8 {
     unsafe { AllocZeroedInternal((&raw const HEAP_START).read(), requested) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Free(pointer: *mut u8) {
+pub unsafe fn Free(pointer: *mut u8) {
     unsafe { FreeInternal((&raw const HEAP_START).read(), pointer) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckMemBlock(pointer: *mut u8) -> u32 {
+pub unsafe fn CheckMemBlock(pointer: *mut u8) -> u32 {
     unsafe { CheckMemBlockInternal((&raw const HEAP_START).read(), pointer) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckHeap() -> u32 {
+pub unsafe fn CheckHeap() -> u32 {
     let head = unsafe { (&raw const HEAP_START).read() };
     let mut pos = head;
 

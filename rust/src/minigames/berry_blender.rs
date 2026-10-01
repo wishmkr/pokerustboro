@@ -3,37 +3,238 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::agb_main::{SetVBlankCallback, gSoftResetDisabled};
+use crate::battle_records::gRecordsWindowId;
+use crate::berry::GetBerryInfo;
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect_Palette0,
+    ResetBgsAndClearDma3BusyFlags, SetBgAffine, ShowBg, UnsetBgTilemapBuffer,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::FlagGet;
+use crate::ffi::gSpecialVar_0x8004;
+use crate::gpu_regs::{SetGpuReg, SetGpuRegBits};
+use crate::item::{IsBagPocketNonEmpty, RemoveBagItem};
+use crate::item_menu::{ChooseBerryForMachine, gSpecialVar_ItemId};
+use crate::item_menu_icons::CreateSpinningBerrySprite;
+use crate::link::{
+    ClearLinkCallback, GetBlockReceivedStatus, GetLinkPlayerCount, GetLinkPlayerCountAsBitFlags,
+    GetMultiplayerId, IsLinkTaskFinished, ResetBlockReceivedFlags, SendBlock, SendBlockRequest,
+    SetBerryBlenderLinkCallback, SetCloseLinkCallback, SetLinkDebugValues, SetLinkStandbyCallback,
+    SetWirelessCommType0, gLinkPlayers, gLinkType, gReceivedRemoteLinkPlayers, gWirelessCommType,
+};
+use crate::link::{gBlockSendBuffer, gRecvCmds, gSendCmd};
+use crate::link_rfu_3::{
+    CreateWirelessStatusIndicatorSprite, LoadWirelessStatusIndicatorSpriteGfx,
+};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::m4a::{
+    gMPlayInfo_BGM, gMPlayInfo_SE2, m4aMPlayPitchControl, m4aMPlayStop, m4aMPlayTempoControl,
+};
+use crate::menu::{
+    AddTextPrinterParameterized4, ClearDialogWindowAndFrameToTransparent,
+    ClearStdWindowAndFrameToTransparent, CreateYesNoMenu, DrawDialogFrameWithCustomTileAndPalette,
+    DrawStdFrameWithCustomTileAndPalette, DrawStdWindowFrame, GetPlayerTextSpeedDelay,
+    Menu_LoadStdPalAt, Menu_ProcessInputNoWrapClearOnChoose,
+};
+use crate::new_game::gEnableContestDebugging;
+use crate::overworld::{CB2_ReturnToFieldContinueScriptPlayMapMusic, IncrementGameStat};
+use crate::palette::{
+    BeginFastPaletteFade, BeginNormalPaletteFade, LoadPalette, TransferPlttBuffer,
+    UpdatePaletteFade, gPaletteFade,
+};
+use crate::pokeblock::{
+    AddPokeblock, GetFirstFreePokeblockSlot, GetHighestPokeblocksFlavorLevel, GetPokeblocksFeel,
+    GetPokeblocksFlavor,
+};
+use crate::random::Random;
+use crate::save::{WriteSaveBlock1Sector, WriteSaveBlock2};
+use crate::sound::{GetCurrentMapMusic, IsFanfareTaskInactive, PlayBGM, PlayFanfare, PlaySE};
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData,
+};
+use crate::string_util::ConvertInternationalString;
+use crate::string_util::gStringVar4;
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::task::{task_get, task_set};
+use crate::text::{DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters};
+use crate::text_window::{LoadMessageBoxGfx, LoadUserWindowBorderGfx};
+use crate::tv::{IncrementDailyBerryBlender, Put3CheersForPokeblocksOnTheAir};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, PutWindowTilemap,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `CopyToBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBuffer(a0, a1 as _, a2, a3);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `GetDecompressedDataSize` with this module's view of its types.
+#[inline]
+unsafe fn GetDecompressedDataSize(a0: *mut u32) -> u32 {
+    unsafe { crate::decompress::GetDecompressedDataSize(a0 as _) }
+}
+/// `GetStringCenterAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringCenterAlignXOffset(a0, a1 as _, a2) }
+}
+/// `GetStringRightAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringRightAlignXOffset(a0, a1 as _, a2) }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LZDecompressWram` with this module's view of its types.
+#[inline]
+unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::decompress::LZDecompressWram(a0 as _, a1 as _);
+    }
+}
+/// `LoadBgTiles` with this module's view of its types.
+#[inline]
+unsafe fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
+    unsafe { crate::bg::LoadBgTiles(a0, a1 as _, a2, a3) }
+}
+/// `LoadSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
+    unsafe { crate::sprite::LoadSpritePalette(a0 as _) }
+}
+/// `LoadSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
+    unsafe { crate::sprite::LoadSpriteSheet(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StringAppend` with this module's view of its types.
+#[inline]
+unsafe fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringAppend(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringCompare` with this module's view of its types.
+#[inline]
+unsafe fn StringCompare(a0: *mut u8, a1: *mut u8) -> i32 {
+    unsafe { crate::string_util::StringCompare(a0 as _, a1 as _) }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const sState: usize = 0;
+const sTargetY: usize = 0;
+const tDidInput: usize = 0;
+const tTimer: usize = 0;
+const sX: usize = 1;
+const sYPos: usize = 1;
+const tDelay: usize = 1;
+const sDelay: usize = 2;
+const sY: usize = 2;
+const tPlayerId: usize = 2;
+const sAnimId: usize = 3;
+const sBounceSpeed: usize = 3;
+const sYUpSpeed: usize = 4;
+const sBounces: usize = 5;
+const sXSpeed: usize = 6;
+const sYDownSpeed: usize = 7;
 // Data tables (translate with cdata.py): sBlenderCenter_Pal sBlenderCenter_Tilemap sBlenderOuter_Pal sUnused_Pal sEmpty_Pal sUnusedText_YesNo sUnusedText_2 sUnusedText_Space sUnusedText_Terminating sUnusedText_LinkPartnerNotFound sText_BerryBlenderStart sText_NewParagraph sText_WasMade sText_Mister sText_Laddie sText_Lassie sText_Master sText_Dude sText_Miss sBlenderOpponentsNames sText_PressAToStart sText_PleaseWaitAWhile sText_CommunicationStandby sText_WouldLikeToBlendAnotherBerry sText_RunOutOfBerriesForBlending sText_YourPokeblockCaseIsFull sText_HasNoBerriesToPut sText_ApostropheSPokeblockCaseIsFull sText_BlendingResults sText_BerryUsed sText_SpaceBerry sText_Time sText_Min sText_Sec sText_MaximumSpeed sText_RPM sText_Dot sText_NewLine sText_Space sText_Ranking sText_TheLevelIs sText_TheFeelIs sText_Dot2 sBgTemplates sWindowTemplates sYesNoWindowTemplate_ContinuePlaying sPlayerArrowQuadrant sPlayerArrowPos sPlayerIdMap sArrowStartPos sArrowStartPosIds sArrowHitRangeStart sLocalOpponentTasks sOam_PlayerArrow sAnim_PlayerArrow_TopLeft sAnim_PlayerArrow_TopRight sAnim_PlayerArrow_BottomLeft sAnim_PlayerArrow_BottomRight sAnim_PlayerArrow_TopLeft_Flash sAnim_PlayerArrow_TopRight_Flash sAnim_PlayerArrow_BottomLeft_Flash sAnim_PlayerArrow_BottomRight_Flash sAnim_PlayerArrow_TopLeft_Off sAnim_PlayerArrow_TopRight_Off sAnim_PlayerArrow_BottomLeft_Off sAnim_PlayerArrow_BottomRight_Off sAnims_PlayerArrow sSpriteSheet_PlayerArrow sSpritePal_BlenderMisc sSpritePal_PlayerArrow sSpriteTemplate_PlayerArrow sOam_ScoreSymbols sAnim_ScoreSymbols_Good sAnim_ScoreSymbols_Miss sAnim_ScoreSymbols_BestFlash sAnim_ScoreSymbols_BestStatic sAnims_ScoreSymbols sSpriteSheet_ScoreSymbols sSpriteTemplate_ScoreSymbols sOam_Particles sAnim_SparkleCrossToX sAnim_SparkleXToCross sAnim_SparkleFull sAnim_GreenArrow sAnim_GreenDot sAnims_Particles sSpriteSheet_Particles sSpriteTemplate_Particles sOam_CountdownNumbers sAnim_CountdownNumbers_3 sAnim_CountdownNumbers_2 sAnim_CountdownNumbers_1 sAnims_CountdownNumbers sSpriteSheet_CountdownNumbers sSpriteTemplate_CountdownNumbers sOam_Start sAnim_Start sAnims_Start sSpriteSheet_Start sSpriteTemplate_Start sBerrySpriteData sOpponentBerrySets sBerryMasterBerries sNumPlayersToSpeedDivisor sBlackPokeblockFlavorFlags sJPText_GoodTvReady sJPText_BadTvReady sJPText_Flavors sUnused sBlenderRecordWindowTemplate
 
 /// `struct BerryBlender`
@@ -266,7 +467,7 @@ static sBlenderOuter_Pal: Table<CArray<u16, 16>> =
     Table((&raw const crate::data::berry_blender::sBlenderOuter_Pal).cast());
 static sBlenderRecordWindowTemplate: Table<WindowTemplate> =
     Table((&raw const crate::data::berry_blender::sBlenderRecordWindowTemplate).cast());
-static sLocalOpponentTasks: Table<CArray<Option<unsafe extern "C" fn(u8)>, 3>> =
+static sLocalOpponentTasks: Table<CArray<Option<unsafe fn(u8)>, 3>> =
     Table((&raw const crate::data::berry_blender::sLocalOpponentTasks).cast());
 static sNumPlayersToSpeedDivisor: Table<CArray<u8, 5>> =
     Table((&raw const crate::data::berry_blender::sNumPlayersToSpeedDivisor).cast());
@@ -358,188 +559,60 @@ pub(crate) static mut sDebug_PokeblockFactorFlavors: CArray<i32, 5> = unsafe { z
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sDebug_PokeblockFactorFlavorsAfterRPM: CArray<i32, 5> = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sDebug_PokeblockFactorRPM: u32 = 0;
+pub(crate) static sDebug_PokeblockFactorRPM: crate::global::Global<u32> =
+    crate::global::Global::new(0);
 pub(crate) static mut sPokeblockFlavors: Aligned<CArray<i16, 6>> = Aligned(unsafe { zeroed() });
 pub(crate) static mut sPokeblockPresentFlavors: Aligned<CArray<i16, 6>> =
     Aligned(unsafe { zeroed() });
-pub(crate) static mut sDebug_MaxRPMStage: i16 = 0;
-pub(crate) static mut sDebug_GameTimeStage: i16 = 0;
-#[unsafe(no_mangle)]
+pub(crate) static sDebug_MaxRPMStage: crate::global::Global<i16> = crate::global::Global::new(0);
+pub(crate) static sDebug_GameTimeStage: crate::global::Global<i16> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
-pub static mut gInGameOpponentsNo: u8 = 0;
+pub static gInGameOpponentsNo: crate::global::Global<u8> = crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static gBerryBlenderCenter_Gfx: CArray<u32, 0>;
-    static gBerryBlenderOuter_Gfx: CArray<u32, 0>;
-    static gBerryBlenderOuter_Tilemap: CArray<u32, 0>;
-    static mut gBlockRecvBuffer: CArray<CArray<u16, 128>, 5>;
-    static mut gBlockSendBuffer: CArray<u8, 256>;
-    static mut gEnableContestDebugging: u8;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gLinkType: u16;
-    static mut gMPlayInfo_BGM: MusicPlayerInfo;
-    static mut gMPlayInfo_SE2: MusicPlayerInfo;
-    static mut gMain: Main;
-    static mut gPaletteFade: PaletteFadeControl;
-    static gPokeblockNames: CArray<*mut u8, 0>;
-    static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gRecordsWindowId: u8;
-    static mut gRecvCmds: CArray<CArray<u16, 8>, 5>;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSendCmd: CArray<u16, 8>;
-    static gSineTable: CArray<i16, 0>;
-    static mut gSoftResetDisabled: u8;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_ItemId: u16;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_234Players: CArray<u8, 0>;
-    static gText_BlenderMaxSpeedRecord: CArray<u8, 0>;
-    static gText_SavingDontTurnOff2: CArray<u8, 0>;
-    static gText_Space: CArray<u8, 0>;
-    static mut gWirelessCommType: u8;
-    fn AddPokeblock(a0: *mut Pokeblock) -> u32;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddTextPrinterParameterized4(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: i8,
-        a8: *mut u8,
-    );
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginFastPaletteFade(a0: u8);
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BuildOamBuffer();
-    fn CB2_ReturnToFieldContinueScriptPlayMapMusic();
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChooseBerryForMachine(a0: Option<unsafe extern "C" fn()>);
-    fn ClearDialogWindowAndFrameToTransparent(a0: u8, a1: u8);
-    fn ClearLinkCallback();
-    fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn ConvertInternationalString(a0: *mut u8, a1: u8);
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateSpinningBerrySprite(a0: u8, a1: u8, a2: u8, a3: u8) -> u8;
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateWirelessStatusIndicatorSprite(a0: u8, a1: u8);
-    fn CreateYesNoMenu(a0: *mut WindowTemplate, a1: u16, a2: u8, a3: u8);
-    fn DeactivateAllTextPrinters();
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DrawDialogFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
-    fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
-    fn DrawStdWindowFrame(a0: u8, a1: u8);
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn GetBerryInfo(a0: u8) -> *mut Berry;
-    fn GetBlockReceivedStatus() -> u8;
-    fn GetCurrentMapMusic() -> u16;
-    fn GetDecompressedDataSize(a0: *mut u32) -> u32;
-    fn GetFirstFreePokeblockSlot() -> i8;
-    fn GetHighestPokeblocksFlavorLevel(a0: *mut Pokeblock) -> u8;
-    fn GetLinkPlayerCount() -> u8;
-    fn GetLinkPlayerCountAsBitFlags() -> u8;
-    fn GetMultiplayerId() -> u8;
-    fn GetPlayerTextSpeedDelay() -> u8;
-    fn GetPokeblocksFeel(a0: *mut Pokeblock) -> u8;
-    fn GetPokeblocksFlavor(a0: *mut Pokeblock) -> u8;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn IncrementDailyBerryBlender();
-    fn IncrementGameStat(a0: u8);
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsBagPocketNonEmpty(a0: u8) -> u8;
-    fn IsFanfareTaskInactive() -> u8;
-    fn IsLinkTaskFinished() -> u8;
-    fn IsTextPrinterActive(a0: u8) -> u16;
-    fn LZDecompressWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadMessageBoxGfx(a0: u8, a1: u16, a2: u8);
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
-    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn LoadWirelessStatusIndicatorSpriteGfx();
-    fn Menu_LoadStdPalAt(a0: u16);
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn PlayBGM(a0: u16);
-    fn PlayFanfare(a0: u16);
-    fn PlaySE(a0: u16);
-    fn ProcessSpriteCopyRequests();
-    fn Put3CheersForPokeblocksOnTheAir(a0: *mut u8, a1: u8, a2: u8, a3: u8, a4: u8) -> u8;
-    fn PutWindowTilemap(a0: u8);
-    fn Random() -> u16;
-    fn RemoveBagItem(a0: u16, a1: u16) -> u8;
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetBlockReceivedFlags();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn RunTasks();
-    fn RunTextPrinters();
-    fn SendBlock(a0: u8, a1: *mut c_void, a2: u16) -> u8;
-    fn SendBlockRequest(a0: u8) -> u8;
-    fn SetBerryBlenderLinkCallback();
-    fn SetBgAffine(a0: u8, a1: i32, a2: i32, a3: i16, a4: i16, a5: i16, a6: i16, a7: u16);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetCloseLinkCallback();
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetGpuRegBits(a0: u8, a1: u16);
-    fn SetLinkDebugValues(a0: u32, a1: u32);
-    fn SetLinkStandbyCallback();
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetWirelessCommType0();
-    fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCompare(a0: *mut u8, a1: *mut u8) -> i32;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TransferPlttBuffer();
-    fn UnsetBgTilemapBuffer(a0: u8);
-    fn UpdatePaletteFade() -> u8;
-    fn WriteSaveBlock1Sector() -> u8;
-    fn WriteSaveBlock2() -> u8;
-    fn m4aMPlayPitchControl(a0: *mut MusicPlayerInfo, a1: u16, a2: i16);
-    fn m4aMPlayStop(a0: *mut MusicPlayerInfo);
-    fn m4aMPlayTempoControl(a0: *mut MusicPlayerInfo, a1: u16);
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn UpdateHitPitch() {
+unsafe fn UpdateHitPitch() {
     m4aMPlayPitchControl(
         &raw mut gMPlayInfo_SE2,
         TRACKS_ALL,
         2 * ((*sBerryBlender).speed - MIN_ARROW_SPEED),
     );
 }
-pub(crate) unsafe extern "C" fn VBlankCB_BerryBlender() {
+pub(crate) unsafe fn VBlankCB_BerryBlender() {
     SetBgPos();
     SetBgAffine(
         2,
@@ -555,14 +628,22 @@ pub(crate) unsafe extern "C" fn VBlankCB_BerryBlender() {
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn LoadBerryBlenderGfx() -> u8 {
+unsafe fn LoadBerryBlenderGfx() -> u8 {
     match (*sBerryBlender).loadGfxState {
         0 => {
             (*sBerryBlender).tilesBuffer = AllocZeroed(
-                GetDecompressedDataSize(gBerryBlenderCenter_Gfx.as_ptr().cast_mut()) + 100,
+                GetDecompressedDataSize(
+                    (*(&raw const crate::data::graphics::gBerryBlenderCenter_Gfx)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                ) + 100,
             );
             LZDecompressWram(
-                gBerryBlenderCenter_Gfx.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gBerryBlenderCenter_Gfx)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 (*sBerryBlender).tilesBuffer,
             );
             (*sBerryBlender).loadGfxState += 1;
@@ -586,14 +667,22 @@ pub(crate) unsafe extern "C" fn LoadBerryBlenderGfx() -> u8 {
             LoadBgTiles(
                 2,
                 (*sBerryBlender).tilesBuffer,
-                GetDecompressedDataSize(gBerryBlenderCenter_Gfx.as_ptr().cast_mut()) as u16,
+                GetDecompressedDataSize(
+                    (*(&raw const crate::data::graphics::gBerryBlenderCenter_Gfx)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                ) as u16,
                 0,
             );
             (*sBerryBlender).loadGfxState += 1;
         }
         3 => {
             LZDecompressWram(
-                gBerryBlenderOuter_Gfx.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gBerryBlenderOuter_Gfx)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 (*sBerryBlender).tilesBuffer,
             );
             (*sBerryBlender).loadGfxState += 1;
@@ -602,14 +691,22 @@ pub(crate) unsafe extern "C" fn LoadBerryBlenderGfx() -> u8 {
             LoadBgTiles(
                 1,
                 (*sBerryBlender).tilesBuffer,
-                GetDecompressedDataSize(gBerryBlenderOuter_Gfx.as_ptr().cast_mut()) as u16,
+                GetDecompressedDataSize(
+                    (*(&raw const crate::data::graphics::gBerryBlenderOuter_Gfx)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                ) as u16,
                 0,
             );
             (*sBerryBlender).loadGfxState += 1;
         }
         5 => {
             LZDecompressWram(
-                gBerryBlenderOuter_Tilemap.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gBerryBlenderOuter_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 (*sBerryBlender).tilesBuffer,
             );
             (*sBerryBlender).loadGfxState += 1;
@@ -618,7 +715,12 @@ pub(crate) unsafe extern "C" fn LoadBerryBlenderGfx() -> u8 {
             CopyToBgTilemapBuffer(
                 1,
                 (*sBerryBlender).tilesBuffer,
-                GetDecompressedDataSize(gBerryBlenderOuter_Tilemap.as_ptr().cast_mut()) as u16,
+                GetDecompressedDataSize(
+                    (*(&raw const crate::data::graphics::gBerryBlenderOuter_Tilemap)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                ) as u16,
                 0,
             );
             CopyBgTilemapBufferToVram(1);
@@ -649,9 +751,9 @@ pub(crate) unsafe extern "C" fn LoadBerryBlenderGfx() -> u8 {
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DrawBlenderBg() {
+unsafe fn DrawBlenderBg() {
     FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT);
     CopyBgTilemapBufferToVram(0);
     ShowBg(0);
@@ -662,21 +764,18 @@ pub(crate) unsafe extern "C" fn DrawBlenderBg() {
     ChangeBgX(1, 0, BG_COORD_SET);
     ChangeBgY(1, 0, BG_COORD_SET);
 }
-pub(crate) unsafe extern "C" fn InitBerryBlenderWindows() {
+unsafe fn InitBerryBlenderWindows() {
     if InitWindows(sWindowTemplates.as_ptr().cast_mut()) != 0 {
-        let mut i: i32 = 0;
         DeactivateAllTextPrinters();
-        i = 0;
-        while i < WIN_RESULTS as i32 {
+        for i in 0..(WIN_RESULTS as i32) {
             FillWindowPixelBuffer(i as u8, 0);
-            i += 1;
         }
         FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT);
         Menu_LoadStdPalAt(224);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoBerryBlending() {
+pub unsafe fn DoBerryBlending() {
     if sBerryBlender.is_null() {
         sBerryBlender = AllocZeroed(4576) as *mut BerryBlender;
     }
@@ -686,8 +785,7 @@ pub unsafe extern "C" fn DoBerryBlending() {
     InitLocalPlayers(gSpecialVar_0x8004 as u8);
     SetMainCallback2(Some(CB2_LoadBerryBlender));
 }
-pub(crate) unsafe extern "C" fn CB2_LoadBerryBlender() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn CB2_LoadBerryBlender() {
     match (*sBerryBlender).mainState {
         0 => {
             SetGpuReg(0x0, 0);
@@ -718,8 +816,7 @@ pub(crate) unsafe extern "C" fn CB2_LoadBerryBlender() {
         }
         1 => {
             if LoadBerryBlenderGfx() != 0 {
-                i = 0;
-                while i < BLENDER_MAX_PLAYERS {
+                for i in 0..BLENDER_MAX_PLAYERS {
                     (*sBerryBlender).playerArrowSpriteIds[i] = CreateSprite(
                         (&raw const *sSpriteTemplate_PlayerArrow).cast_mut(),
                         sPlayerArrowPos[i][0] as i16,
@@ -730,7 +827,6 @@ pub(crate) unsafe extern "C" fn CB2_LoadBerryBlender() {
                         &raw mut gSprites[(*sBerryBlender).playerArrowSpriteIds[i]],
                         i as u8 + 8,
                     );
-                    i += 1;
                 }
                 if gReceivedRemoteLinkPlayers != 0 && gWirelessCommType != 0 {
                     LoadWirelessStatusIndicatorSpriteGfx();
@@ -765,15 +861,13 @@ pub(crate) unsafe extern "C" fn CB2_LoadBerryBlender() {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
             (*sBerryBlender).mainState += 1;
         }
-        6 => {
-            if gPaletteFade.active() == 0 {
-                FreeAllWindowBuffers();
-                UnsetBgTilemapBuffer(2);
-                UnsetBgTilemapBuffer(1);
-                SetVBlankCallback(None);
-                ChooseBerryForMachine(Some(StartBlender));
-                (*sBerryBlender).mainState = 0;
-            }
+        6 if gPaletteFade.active() == 0 => {
+            FreeAllWindowBuffers();
+            UnsetBgTilemapBuffer(2);
+            UnsetBgTilemapBuffer(1);
+            SetVBlankCallback(None);
+            ChooseBerryForMachine(Some(StartBlender));
+            (*sBerryBlender).mainState = 0;
         }
         _ => {}
     }
@@ -782,20 +876,20 @@ pub(crate) unsafe extern "C" fn CB2_LoadBerryBlender() {
     RunTextPrinters();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Berry(sprite: *mut Sprite) {
-    (*sprite).data[1] += (*sprite).data[6];
-    (*sprite).data[2] -= (*sprite).data[4];
-    (*sprite).data[2] += (*sprite).data[7];
-    (*sprite).data[0] += (*sprite).data[7];
-    (*sprite).data[4] -= 1;
-    if (*sprite).data[0] < (*sprite).data[2] {
-        (*sprite).data[3] = {
-            (*sprite).data[4] = (*sprite).data[3] - 1;
-            (*sprite).data[4]
+pub(crate) unsafe fn SpriteCB_Berry(sprite: *mut Sprite) {
+    (*sprite).data[sX] += (*sprite).data[sXSpeed];
+    (*sprite).data[sY] -= (*sprite).data[sYUpSpeed];
+    (*sprite).data[sY] += (*sprite).data[sYDownSpeed];
+    (*sprite).data[sTargetY] += (*sprite).data[sYDownSpeed];
+    (*sprite).data[sYUpSpeed] -= 1;
+    if (*sprite).data[sTargetY] < (*sprite).data[sY] {
+        (*sprite).data[sBounceSpeed] = {
+            (*sprite).data[sYUpSpeed] = (*sprite).data[sBounceSpeed] - 1;
+            (*sprite).data[sYUpSpeed]
         };
         if ({
-            (*sprite).data[5] += 1;
-            (*sprite).data[5]
+            (*sprite).data[sBounces] += 1;
+            (*sprite).data[sBounces]
         }) > 3
         {
             DestroySprite(sprite);
@@ -803,10 +897,10 @@ pub(crate) unsafe extern "C" fn SpriteCB_Berry(sprite: *mut Sprite) {
             PlaySE(SE_BALL_TRAY_EXIT);
         }
     }
-    (*sprite).x = (*sprite).data[1];
-    (*sprite).y = (*sprite).data[2];
+    (*sprite).x = (*sprite).data[sX];
+    (*sprite).y = (*sprite).data[sY];
 }
-pub(crate) unsafe extern "C" fn SetBerrySpriteData(
+unsafe fn SetBerrySpriteData(
     sprite: *mut Sprite,
     x: i16,
     y: i16,
@@ -814,18 +908,18 @@ pub(crate) unsafe extern "C" fn SetBerrySpriteData(
     xSpeed: i16,
     ySpeed: i16,
 ) {
-    (*sprite).data[0] = y;
-    (*sprite).data[1] = x;
-    (*sprite).data[2] = y;
-    (*sprite).data[3] = bounceSpeed;
-    (*sprite).data[4] = 10;
-    (*sprite).data[5] = 0;
-    (*sprite).data[6] = xSpeed;
-    (*sprite).data[7] = ySpeed;
+    (*sprite).data[sTargetY] = y;
+    (*sprite).data[sX] = x;
+    (*sprite).data[sY] = y;
+    (*sprite).data[sBounceSpeed] = bounceSpeed;
+    (*sprite).data[sYUpSpeed] = 10;
+    (*sprite).data[sBounces] = 0;
+    (*sprite).data[sXSpeed] = xSpeed;
+    (*sprite).data[sYDownSpeed] = ySpeed;
     (*sprite).callback = Some(SpriteCB_Berry);
 }
-pub(crate) unsafe extern "C" fn CreateBerrySprite(itemId: u16, playerId: u8) {
-    let mut spriteId: u8 = CreateSpinningBerrySprite(
+pub(crate) unsafe fn CreateBerrySprite(itemId: u16, playerId: u8) {
+    let spriteId: u8 = CreateSpinningBerrySprite(
         itemId as u8 - ITEM_CHERI_BERRY as u8 + 1 - 1,
         0,
         80,
@@ -840,8 +934,8 @@ pub(crate) unsafe extern "C" fn CreateBerrySprite(itemId: u16, playerId: u8) {
         sBerrySpriteData[playerId][4],
     );
 }
-pub(crate) unsafe extern "C" fn ConvertItemToBlenderBerry(berry: *mut BlenderBerry, itemId: u16) {
-    let mut berryInfo: *mut Berry = GetBerryInfo(itemId as u8 - ITEM_CHERI_BERRY as u8 + 1);
+unsafe fn ConvertItemToBlenderBerry(berry: *mut BlenderBerry, itemId: u16) {
+    let berryInfo: *mut Berry = GetBerryInfo(itemId as u8 - ITEM_CHERI_BERRY as u8 + 1);
     (*berry).itemId = itemId;
     StringCopy((*berry).name.as_mut_ptr(), (*berryInfo).name.as_mut_ptr());
     (*berry).flavors[0] = (*berryInfo).spicy;
@@ -851,13 +945,13 @@ pub(crate) unsafe extern "C" fn ConvertItemToBlenderBerry(berry: *mut BlenderBer
     (*berry).flavors[4] = (*berryInfo).sour;
     (*berry).flavors[5] = (*berryInfo).smoothness;
 }
-pub(crate) unsafe extern "C" fn InitLocalPlayers(opponentsNum: u8) {
+unsafe fn InitLocalPlayers(opponentsNum: u8) {
     match opponentsNum {
         0 => {
-            gInGameOpponentsNo = 0;
+            gInGameOpponentsNo.set(0);
         }
         1 => {
-            gInGameOpponentsNo = 1;
+            gInGameOpponentsNo.set(1);
             (*sBerryBlender).numPlayers = 2;
             StringCopy(
                 gLinkPlayers[0].name.as_mut_ptr(),
@@ -872,7 +966,7 @@ pub(crate) unsafe extern "C" fn InitLocalPlayers(opponentsNum: u8) {
             gLinkPlayers[1].language = GAME_LANGUAGE as u16;
         }
         2 => {
-            gInGameOpponentsNo = 2;
+            gInGameOpponentsNo.set(2);
             (*sBerryBlender).numPlayers = 3;
             StringCopy(
                 gLinkPlayers[0].name.as_mut_ptr(),
@@ -885,7 +979,7 @@ pub(crate) unsafe extern "C" fn InitLocalPlayers(opponentsNum: u8) {
             gLinkPlayers[2].language = 2;
         }
         3 => {
-            gInGameOpponentsNo = 3;
+            gInGameOpponentsNo.set(3);
             (*sBerryBlender).numPlayers = 4;
             StringCopy(
                 gLinkPlayers[0].name.as_mut_ptr(),
@@ -902,18 +996,15 @@ pub(crate) unsafe extern "C" fn InitLocalPlayers(opponentsNum: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn StartBlender() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn StartBlender() {
     SetGpuReg(0x0, 0);
     if sBerryBlender.is_null() {
         sBerryBlender = AllocZeroed(4576) as *mut BerryBlender;
     }
     (*sBerryBlender).mainState = 0;
     (*sBerryBlender).unk1 = 0;
-    i = 0;
-    while i < BLENDER_MAX_PLAYERS {
+    for i in 0..BLENDER_MAX_PLAYERS {
         (*sBerryBlender).chosenItemId[i] = ITEM_NONE;
-        i += 1;
     }
     InitLocalPlayers(gSpecialVar_0x8004 as u8);
     if gSpecialVar_0x8004 == 0 {
@@ -922,23 +1013,18 @@ pub(crate) unsafe extern "C" fn StartBlender() {
         SetMainCallback2(Some(CB2_StartBlenderLocal));
     }
 }
-pub(crate) unsafe extern "C" fn CB2_StartBlenderLink() {
+pub(crate) unsafe fn CB2_StartBlenderLink() {
     let mut i: i32 = 0;
-    let mut j: i32 = 0;
     match (*sBerryBlender).mainState {
         0 => {
             InitBlenderBgs();
             gLinkType = LINKTYPE_BERRY_BLENDER;
             (*sBerryBlender).slowdownTimer = 0;
-            i = 0;
-            while i < BLENDER_MAX_PLAYERS {
+            for i in 0..BLENDER_MAX_PLAYERS {
                 (*sBerryBlender).playerContinueResponses[i] = 0;
-                j = 0;
-                while j < NUM_SCORE_TYPES {
+                for j in 0..NUM_SCORE_TYPES {
                     (*sBerryBlender).scores[i][j] = 0;
-                    j += 1;
                 }
-                i += 1;
             }
             (*sBerryBlender).playAgainState = 0;
             (*sBerryBlender).maxRPM = 0;
@@ -952,8 +1038,7 @@ pub(crate) unsafe extern "C" fn CB2_StartBlenderLink() {
             }
         }
         2 => {
-            i = 0;
-            while i < BLENDER_MAX_PLAYERS {
+            for i in 0..BLENDER_MAX_PLAYERS {
                 (*sBerryBlender).playerArrowSpriteIds2[i] = CreateSprite(
                     (&raw const *sSpriteTemplate_PlayerArrow).cast_mut(),
                     sPlayerArrowPos[i][0] as i16,
@@ -964,7 +1049,6 @@ pub(crate) unsafe extern "C" fn CB2_StartBlenderLink() {
                     &raw mut gSprites[(*sBerryBlender).playerArrowSpriteIds2[i]],
                     i as u8 + 8,
                 );
-                i += 1;
             }
             if gReceivedRemoteLinkPlayers != 0 && gWirelessCommType != 0 {
                 LoadWirelessStatusIndicatorSpriteGfx();
@@ -1027,7 +1111,9 @@ pub(crate) unsafe extern "C" fn CB2_StartBlenderLink() {
                     while i < GetLinkPlayerCount() as i32 {
                         memcpy(
                             &raw mut (*sBerryBlender).blendedBerries[i] as *mut u8,
-                            &raw mut gBlockRecvBuffer[i][0] as *mut u8,
+                            &raw mut (*(&raw const crate::link::gBlockRecvBuffer)
+                                .cast::<CArray<CArray<u16, 128>, 5>>()
+                                .cast_mut())[i][0] as *mut u8,
                             16,
                         );
                         (*sBerryBlender).chosenItemId[i] =
@@ -1041,8 +1127,7 @@ pub(crate) unsafe extern "C" fn CB2_StartBlenderLink() {
         }
         11 => {
             (*sBerryBlender).numPlayers = GetLinkPlayerCount();
-            i = 0;
-            while i < BLENDER_MAX_PLAYERS {
+            for i in 0..BLENDER_MAX_PLAYERS {
                 if (*sBerryBlender).playerToThrowBerry
                     == sPlayerIdMap[(*sBerryBlender).numPlayers as i32 - 2][i]
                 {
@@ -1052,7 +1137,6 @@ pub(crate) unsafe extern "C" fn CB2_StartBlenderLink() {
                     );
                     break;
                 }
-                i += 1;
             }
             (*sBerryBlender).framesToWait = 0;
             (*sBerryBlender).mainState += 1;
@@ -1148,7 +1232,7 @@ pub(crate) unsafe extern "C" fn CB2_StartBlenderLink() {
     RunTextPrinters();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn InitBlenderBgs() {
+unsafe fn InitBlenderBgs() {
     SetGpuReg(0x0, 0);
     ResetSpriteData();
     FreeAllSpritePalettes();
@@ -1174,10 +1258,10 @@ pub(crate) unsafe extern "C" fn InitBlenderBgs() {
     (*sBerryBlender).bg_X = 0;
     (*sBerryBlender).bg_Y = 0;
 }
-pub(crate) unsafe extern "C" fn GetArrowProximity(arrowPos: u16, playerId: u8) -> u8 {
-    let mut pos: u32 = (arrowPos as i32 / 256) as u32 + 24;
-    let mut arrowId: u8 = (*sBerryBlender).playerIdToArrowId[playerId] as u8;
-    let mut hitRangeStart: u32 = sArrowHitRangeStart[arrowId] as u32;
+unsafe fn GetArrowProximity(arrowPos: u16, playerId: u8) -> u8 {
+    let pos: u32 = (arrowPos as i32 / 256) as u32 + 24;
+    let arrowId: u8 = (*sBerryBlender).playerIdToArrowId[playerId] as u8;
+    let hitRangeStart: u32 = sArrowHitRangeStart[arrowId] as u32;
     if pos >= hitRangeStart && pos < hitRangeStart + 48 {
         if pos >= hitRangeStart + 20 && pos < hitRangeStart + 28 {
             return PROXIMITY_BEST;
@@ -1185,9 +1269,9 @@ pub(crate) unsafe extern "C" fn GetArrowProximity(arrowPos: u16, playerId: u8) -
             return PROXIMITY_GOOD;
         }
     }
-    return PROXIMITY_MISS;
+    PROXIMITY_MISS
 }
-pub(crate) unsafe extern "C" fn SetOpponentsBerryData(
+unsafe fn SetOpponentsBerryData(
     playerBerryItemId: u16,
     playersNum: u8,
     playerBerry: *mut BlenderBerry,
@@ -1197,12 +1281,10 @@ pub(crate) unsafe extern "C" fn SetOpponentsBerryData(
     let mut berryMasterDiff: u16 = 0;
     let mut i: u16 = 0;
     if playerBerryItemId == ITEM_ENIGMA_BERRY {
-        i = 0;
-        while i < FLAVOR_COUNT as u16 {
+        for i in 0..(FLAVOR_COUNT as u16) {
             if (*playerBerry).flavors[opponentSetId] > (*playerBerry).flavors[i] {
                 opponentSetId = i;
             }
-            i += 1;
         }
         opponentSetId += 5;
     } else {
@@ -1216,7 +1298,7 @@ pub(crate) unsafe extern "C" fn SetOpponentsBerryData(
         opponentBerryId = sOpponentBerrySets[opponentSetId][i] as u16;
         berryMasterDiff = playerBerryItemId - ITEM_CHERI_BERRY + 1 - 31;
         if FlagGet(FLAG_HIDE_LILYCOVE_CONTEST_HALL_BLEND_MASTER) == 0 && gSpecialVar_0x8004 == 1 {
-            opponentSetId = opponentSetId % 5;
+            opponentSetId %= 5;
             opponentBerryId = sBerryMasterBerries[opponentSetId] as u16;
             if berryMasterDiff < 5 {
                 opponentBerryId -= 5;
@@ -1226,38 +1308,30 @@ pub(crate) unsafe extern "C" fn SetOpponentsBerryData(
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetPlayerIdMaps() {
+unsafe fn SetPlayerIdMaps() {
     let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    i = 0;
     while i < BLENDER_MAX_PLAYERS {
         (*sBerryBlender).playerIdToArrowId[i] = NO_PLAYER;
         (*sBerryBlender).arrowIdToPlayerId[i] =
             sPlayerIdMap[(*sBerryBlender).numPlayers as i32 - 2][i] as u16;
         i += 1;
     }
-    j = 0;
-    while j < BLENDER_MAX_PLAYERS {
-        i = 0;
-        while i < BLENDER_MAX_PLAYERS {
+    for j in 0..BLENDER_MAX_PLAYERS {
+        for i in 0..BLENDER_MAX_PLAYERS {
             if (*sBerryBlender).arrowIdToPlayerId[i] as i32 == j {
                 (*sBerryBlender).playerIdToArrowId[j] = i as u16;
             }
-            i += 1;
         }
-        j += 1;
     }
 }
-pub(crate) unsafe extern "C" fn PrintPlayerNames() {
-    let mut i: i32 = 0;
+unsafe fn PrintPlayerNames() {
     let mut xPos: i32 = 0;
     let mut playerId: u32 = 0;
     let mut text: CArray<u8, 20> = zeroed();
     if gReceivedRemoteLinkPlayers != 0 {
         playerId = GetMultiplayerId() as u32;
     }
-    i = 0;
-    while i < BLENDER_MAX_PLAYERS {
+    for i in 0..BLENDER_MAX_PLAYERS {
         if (*sBerryBlender).arrowIdToPlayerId[i] != NO_PLAYER {
             (*sBerryBlender).playerArrowSpriteIds[(*sBerryBlender).arrowIdToPlayerId[i]] =
                 (*sBerryBlender).playerArrowSpriteIds2[i];
@@ -1282,12 +1356,10 @@ pub(crate) unsafe extern "C" fn PrintPlayerNames() {
             PutWindowTilemap(i as u8);
             CopyWindowToVram(i as u8, COPYWIN_FULL);
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CB2_StartBlenderLocal() {
+pub(crate) unsafe fn CB2_StartBlenderLocal() {
     let mut i: i32 = 0;
-    let mut j: i32 = 0;
     match (*sBerryBlender).mainState {
         0 => {
             SetWirelessCommType0();
@@ -1302,15 +1374,11 @@ pub(crate) unsafe extern "C" fn CB2_StartBlenderLocal() {
                 (*sBerryBlender).numPlayers,
                 &raw mut (*sBerryBlender).blendedBerries[0],
             );
-            i = 0;
-            while i < BLENDER_MAX_PLAYERS {
+            for i in 0..BLENDER_MAX_PLAYERS {
                 (*sBerryBlender).playerContinueResponses[i] = 0;
-                j = 0;
-                while j < NUM_SCORE_TYPES {
+                for j in 0..NUM_SCORE_TYPES {
                     (*sBerryBlender).scores[i][j] = 0;
-                    j += 1;
                 }
-                i += 1;
             }
             (*sBerryBlender).playAgainState = 0;
             (*sBerryBlender).loadGfxState = 0;
@@ -1324,8 +1392,7 @@ pub(crate) unsafe extern "C" fn CB2_StartBlenderLocal() {
             }
         }
         2 => {
-            i = 0;
-            while i < BLENDER_MAX_PLAYERS {
+            for i in 0..BLENDER_MAX_PLAYERS {
                 (*sBerryBlender).playerArrowSpriteIds2[i] = CreateSprite(
                     (&raw const *sSpriteTemplate_PlayerArrow).cast_mut(),
                     sPlayerArrowPos[i][0] as i16,
@@ -1336,7 +1403,6 @@ pub(crate) unsafe extern "C" fn CB2_StartBlenderLocal() {
                     &raw mut gSprites[(*sBerryBlender).playerArrowSpriteIds2[i]],
                     i as u8 + 8,
                 );
-                i += 1;
             }
             (*sBerryBlender).mainState += 1;
         }
@@ -1362,10 +1428,8 @@ pub(crate) unsafe extern "C" fn CB2_StartBlenderLocal() {
             (*sBerryBlender).playerToThrowBerry = 0;
         }
         11 => {
-            i = 0;
-            while i < BLENDER_MAX_PLAYERS {
-                let mut playerId: u32 =
-                    sPlayerIdMap[(*sBerryBlender).numPlayers as i32 - 2][i] as u32;
+            for i in 0..BLENDER_MAX_PLAYERS {
+                let playerId: u32 = sPlayerIdMap[(*sBerryBlender).numPlayers as i32 - 2][i] as u32;
                 if (*sBerryBlender).playerToThrowBerry as u32 == playerId {
                     CreateBerrySprite(
                         (*sBerryBlender).chosenItemId[(*sBerryBlender).playerToThrowBerry],
@@ -1373,7 +1437,6 @@ pub(crate) unsafe extern "C" fn CB2_StartBlenderLocal() {
                     );
                     break;
                 }
-                i += 1;
             }
             (*sBerryBlender).framesToWait = 0;
             (*sBerryBlender).mainState += 1;
@@ -1483,37 +1546,34 @@ pub(crate) unsafe extern "C" fn CB2_StartBlenderLocal() {
     RunTextPrinters();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn ResetLinkCmds() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < BLENDER_MAX_PLAYERS {
+unsafe fn ResetLinkCmds() {
+    for i in 0..BLENDER_MAX_PLAYERS {
         gSendCmd[0] = 0;
         gSendCmd[2] = 0;
         gRecvCmds[i][0] = 0;
         gRecvCmds[i][2] = 0;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn Task_OpponentMiss(taskId: u8) {
+pub(crate) unsafe fn Task_OpponentMiss(taskId: u8) {
     if ({
-        gTasks[taskId].data[0] += 1;
-        gTasks[taskId].data[0]
-    }) > gTasks[taskId].data[1]
+        task_set(taskId, tTimer, task_get(taskId, tTimer) + 1);
+        task_get(taskId, tTimer)
+    }) > task_get(taskId, tDelay)
     {
-        gRecvCmds[gTasks[taskId].data[2]][2] = LINKCMD_BLENDER_SCORE_MISS;
+        gRecvCmds[task_get(taskId, tPlayerId)][2] = LINKCMD_BLENDER_SCORE_MISS;
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn CreateOpponentMissTask(playerId: u8, delay: u8) {
-    let mut taskId: u8 = CreateTask(Some(Task_OpponentMiss), 80);
-    gTasks[taskId].data[1] = delay as i16;
-    gTasks[taskId].data[2] = playerId as i16;
+unsafe fn CreateOpponentMissTask(playerId: u8, delay: u8) {
+    let taskId: u8 = CreateTask(Some(Task_OpponentMiss), 80);
+    task_set(taskId, tDelay, delay as i16);
+    task_set(taskId, tPlayerId, playerId as i16);
 }
-pub(crate) unsafe extern "C" fn Task_HandleOpponent1(taskId: u8) {
+pub(crate) unsafe fn Task_HandleOpponent1(taskId: u8) {
     if GetArrowProximity((*sBerryBlender).arrowPos, 1) == PROXIMITY_BEST {
-        if gTasks[taskId].data[0] == 0 {
+        if task_get(taskId, tDidInput) == 0 {
             if (*sBerryBlender).perfectOpponents == 0 {
-                let mut rand: u8 = (Random() as i32 / 655) as u8;
+                let rand: u8 = (Random() as i32 / 655) as u8;
                 if (*sBerryBlender).speed < 500 {
                     if rand > 75 {
                         gRecvCmds[1][2] = LINKCMD_BLENDER_SCORE_BEST;
@@ -1525,7 +1585,7 @@ pub(crate) unsafe extern "C" fn Task_HandleOpponent1(taskId: u8) {
                     if rand > 80 {
                         gRecvCmds[1][2] = LINKCMD_BLENDER_SCORE_BEST;
                     } else {
-                        let mut value: u8 = rand - 21;
+                        let value: u8 = rand - 21;
                         if value < 60 {
                             gRecvCmds[1][2] = LINKCMD_BLENDER_SCORE_GOOD;
                         } else if rand < 10 {
@@ -1533,7 +1593,7 @@ pub(crate) unsafe extern "C" fn Task_HandleOpponent1(taskId: u8) {
                         }
                     }
                 } else if rand <= 90 {
-                    let mut value: u8 = rand - 71;
+                    let value: u8 = rand - 71;
                     if value < 20 {
                         gRecvCmds[1][2] = LINKCMD_BLENDER_SCORE_GOOD;
                     } else if rand < 30 {
@@ -1545,21 +1605,21 @@ pub(crate) unsafe extern "C" fn Task_HandleOpponent1(taskId: u8) {
             } else {
                 gRecvCmds[1][2] = LINKCMD_BLENDER_SCORE_BEST;
             }
-            gTasks[taskId].data[0] = TRUE as i16;
+            task_set(taskId, tDidInput, TRUE as i16);
         }
     } else {
-        gTasks[taskId].data[0] = FALSE as i16;
+        task_set(taskId, tDidInput, FALSE as i16);
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleOpponent2(taskId: u8) {
-    let mut var1: u32 = (*sBerryBlender).arrowPos as u32 + 0x1800 & 0xFFFF;
-    let mut arrowId: u8 = (*sBerryBlender).playerIdToArrowId[2] as u8;
+pub(crate) unsafe fn Task_HandleOpponent2(taskId: u8) {
+    let var1: u32 = ((*sBerryBlender).arrowPos as u32 + 0x1800) & 0xFFFF;
+    let arrowId: u8 = (*sBerryBlender).playerIdToArrowId[2] as u8;
     if var1 >> 8 > sArrowHitRangeStart[arrowId] as u32 + 20
         && var1 >> 8 < sArrowHitRangeStart[arrowId] as u32 + 40
     {
-        if gTasks[taskId].data[0] == 0 {
+        if task_get(taskId, tDidInput) == 0 {
             if (*sBerryBlender).perfectOpponents == 0 {
-                let mut rand: u8 = (Random() as i32 / 655) as u8;
+                let rand: u8 = (Random() as i32 / 655) as u8;
                 if (*sBerryBlender).speed < 500 {
                     if rand > 66 {
                         gRecvCmds[2][2] = LINKCMD_BLENDER_SCORE_BEST;
@@ -1577,25 +1637,25 @@ pub(crate) unsafe extern "C" fn Task_HandleOpponent2(taskId: u8) {
                         CreateOpponentMissTask(2, 5);
                     }
                 }
-                gTasks[taskId].data[0] = TRUE as i16;
+                task_set(taskId, tDidInput, TRUE as i16);
             } else {
                 gRecvCmds[2][2] = LINKCMD_BLENDER_SCORE_BEST;
-                gTasks[taskId].data[0] = TRUE as i16;
+                task_set(taskId, tDidInput, TRUE as i16);
             }
         }
     } else {
-        gTasks[taskId].data[0] = FALSE as i16;
+        task_set(taskId, tDidInput, FALSE as i16);
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleOpponent3(taskId: u8) {
-    let mut var1: u32 = (*sBerryBlender).arrowPos as u32 + 0x1800 & 0xFFFF;
-    let mut arrowId: u8 = (*sBerryBlender).playerIdToArrowId[3] as u8;
+pub(crate) unsafe fn Task_HandleOpponent3(taskId: u8) {
+    let var1: u32 = ((*sBerryBlender).arrowPos as u32 + 0x1800) & 0xFFFF;
+    let arrowId: u8 = (*sBerryBlender).playerIdToArrowId[3] as u8;
     if var1 >> 8 > sArrowHitRangeStart[arrowId] as u32 + 20
         && var1 >> 8 < sArrowHitRangeStart[arrowId] as u32 + 40
     {
-        if gTasks[taskId].data[0] == 0 {
+        if task_get(taskId, 0) == 0 {
             if (*sBerryBlender).perfectOpponents == 0 {
-                let mut rand: u8 = (Random() as i32 / 655) as u8;
+                let rand: u8 = (Random() as i32 / 655) as u8;
                 if (*sBerryBlender).speed < 500 {
                     if rand > 88 {
                         gRecvCmds[3][2] = LINKCMD_BLENDER_SCORE_BEST;
@@ -1612,29 +1672,28 @@ pub(crate) unsafe extern "C" fn Task_HandleOpponent3(taskId: u8) {
                         CreateOpponentMissTask(3, 5);
                     }
                 }
-                gTasks[taskId].data[0] = TRUE as i16;
+                task_set(taskId, 0, TRUE as i16);
             } else {
                 gRecvCmds[3][2] = LINKCMD_BLENDER_SCORE_BEST;
-                gTasks[taskId].data[0] = TRUE as i16;
+                task_set(taskId, 0, TRUE as i16);
             }
         }
     } else {
-        gTasks[taskId].data[0] = FALSE as i16;
+        task_set(taskId, 0, FALSE as i16);
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleBerryMaster(taskId: u8) {
+pub(crate) unsafe fn Task_HandleBerryMaster(taskId: u8) {
     if GetArrowProximity((*sBerryBlender).arrowPos, 1) == PROXIMITY_BEST {
-        if gTasks[taskId].data[0] == 0 {
+        if task_get(taskId, tDidInput) == 0 {
             gRecvCmds[1][2] = LINKCMD_BLENDER_SCORE_BEST;
-            gTasks[taskId].data[0] = TRUE as i16;
+            task_set(taskId, tDidInput, TRUE as i16);
         }
     } else {
-        gTasks[taskId].data[0] = FALSE as i16;
+        task_set(taskId, tDidInput, FALSE as i16);
     }
 }
-pub(crate) unsafe extern "C" fn CreateScoreSymbolSprite(cmd: u16, arrowId: u8) {
-    let mut spriteId: u8 = 0;
-    spriteId = CreateSprite(
+unsafe fn CreateScoreSymbolSprite(cmd: u16, arrowId: u8) {
+    let spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_ScoreSymbols).cast_mut(),
         sPlayerArrowPos[arrowId][0] as i16 - 10 * sPlayerArrowQuadrant[arrowId][0] as i16,
         sPlayerArrowPos[arrowId][1] as i16 - 10 * sPlayerArrowQuadrant[arrowId][1] as i16,
@@ -1653,7 +1712,7 @@ pub(crate) unsafe extern "C" fn CreateScoreSymbolSprite(cmd: u16, arrowId: u8) {
     }
     CreateParticleSprites();
 }
-pub(crate) unsafe extern "C" fn UpdateSpeedFromHit(cmd: u16) {
+unsafe fn UpdateSpeedFromHit(cmd: u16) {
     UpdateHitPitch();
     match cmd {
         LINKCMD_BLENDER_SCORE_BEST => {
@@ -1697,11 +1756,7 @@ pub(crate) unsafe extern "C" fn UpdateSpeedFromHit(cmd: u16) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CheckRecvCmdMatches(
-    recvCmd: u16,
-    linkCmd: u16,
-    rfuCmd: u16,
-) -> u32 {
+unsafe fn CheckRecvCmdMatches(recvCmd: u16, linkCmd: u16, rfuCmd: u16) -> u32 {
     if gReceivedRemoteLinkPlayers != 0 && gWirelessCommType != 0 {
         if recvCmd as i32 & RFUCMD_MASK == rfuCmd as i32 {
             return TRUE as u32;
@@ -1711,9 +1766,9 @@ pub(crate) unsafe extern "C" fn CheckRecvCmdMatches(
             return TRUE as u32;
         }
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn UpdateOpponentScores() {
+unsafe fn UpdateOpponentScores() {
     let mut i: i32 = 0;
     if gSpecialVar_0x8004 != 0 {
         if gSendCmd[2] != 0 {
@@ -1721,12 +1776,10 @@ pub(crate) unsafe extern "C" fn UpdateOpponentScores() {
             gRecvCmds[0][0] = LINKCMD_BLENDER_SEND_KEYS;
             gSendCmd[2] = 0;
         }
-        i = 1;
-        while i < BLENDER_MAX_PLAYERS {
+        for i in 1..BLENDER_MAX_PLAYERS {
             if gRecvCmds[i][2] != 0 {
                 gRecvCmds[i][0] = LINKCMD_BLENDER_SEND_KEYS;
             }
-            i += 1;
         }
     }
     i = 0;
@@ -1737,7 +1790,7 @@ pub(crate) unsafe extern "C" fn UpdateOpponentScores() {
             RFUCMD_BLENDER_SEND_KEYS,
         ) != 0
         {
-            let mut arrowId: u32 = (*sBerryBlender).playerIdToArrowId[i] as u32;
+            let arrowId: u32 = (*sBerryBlender).playerIdToArrowId[i] as u32;
             if gRecvCmds[i][2] == LINKCMD_BLENDER_SCORE_BEST {
                 UpdateSpeedFromHit(LINKCMD_BLENDER_SCORE_BEST);
                 (*sBerryBlender).progressBarValue += ((*sBerryBlender).speed / 55) as u16;
@@ -1775,22 +1828,19 @@ pub(crate) unsafe extern "C" fn UpdateOpponentScores() {
         i += 1;
     }
     if gSpecialVar_0x8004 != 0 {
-        i = 0;
-        while i < (*sBerryBlender).numPlayers as i32 {
+        for i in 0..((*sBerryBlender).numPlayers as i32) {
             gRecvCmds[i][0] = 0;
             gRecvCmds[i][2] = 0;
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn HandlePlayerInput() {
-    let mut arrowId: u8 = 0;
+pub(crate) unsafe fn HandlePlayerInput() {
     let mut pressedA: u8 = FALSE;
     let mut playerId: u8 = 0;
     if gReceivedRemoteLinkPlayers != 0 {
         playerId = GetMultiplayerId();
     }
-    arrowId = (*sBerryBlender).playerIdToArrowId[playerId] as u8;
+    let arrowId: u8 = (*sBerryBlender).playerIdToArrowId[playerId] as u8;
     if (*sBerryBlender).gameEndState == 0 {
         if (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_L_EQUALS_A
             && gMain.newKeys as i32 & A_BUTTON != 0
@@ -1802,13 +1852,12 @@ pub(crate) unsafe extern "C" fn HandlePlayerInput() {
             pressedA = TRUE;
         }
         if pressedA != 0 {
-            let mut proximity: u8 = 0;
             StartSpriteAnim(
                 &raw mut gSprites[(*sBerryBlender).playerArrowSpriteIds
                     [(*sBerryBlender).arrowIdToPlayerId[arrowId]]],
                 arrowId + 4,
             );
-            proximity = GetArrowProximity((*sBerryBlender).arrowPos, playerId);
+            let proximity: u8 = GetArrowProximity((*sBerryBlender).arrowPos, playerId);
             if proximity == PROXIMITY_BEST {
                 gSendCmd[2] = LINKCMD_BLENDER_SCORE_BEST;
             } else if proximity == PROXIMITY_GOOD {
@@ -1828,11 +1877,11 @@ pub(crate) unsafe extern "C" fn HandlePlayerInput() {
         }
         (*sBerryBlender).slowdownTimer = 0;
     }
-    if gEnableContestDebugging != 0 && gMain.newKeys as i32 & L_BUTTON != 0 {
+    if gEnableContestDebugging.get() != 0 && gMain.newKeys as i32 & L_BUTTON != 0 {
         (*sBerryBlender).perfectOpponents ^= 1;
     }
 }
-pub(crate) unsafe extern "C" fn CB2_PlayBlender() {
+pub(crate) unsafe fn CB2_PlayBlender() {
     UpdateBlenderCenter();
     if (*sBerryBlender).gameFrameTime < 0x57e04 {
         (*sBerryBlender).gameFrameTime += 1;
@@ -1861,12 +1910,8 @@ pub(crate) unsafe extern "C" fn CB2_PlayBlender() {
     RunTextPrinters();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn Blender_DummiedOutFunc(bgX: i16, bgY: i16) {}
-pub(crate) unsafe extern "C" fn AreBlenderBerriesSame(
-    berries: *mut BlenderBerry,
-    a: u8,
-    b: u8,
-) -> u8 {
+unsafe fn Blender_DummiedOutFunc(bgX: i16, bgY: i16) {}
+unsafe fn AreBlenderBerriesSame(berries: *mut BlenderBerry, a: u8, b: u8) -> u8 {
     if (*berries.at(a)).itemId != (*berries.at(b)).itemId
         || StringCompare(
             (*berries.at(a)).name.as_mut_ptr(),
@@ -1885,26 +1930,21 @@ pub(crate) unsafe extern "C" fn AreBlenderBerriesSame(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn CalculatePokeblockColor(
+unsafe fn CalculatePokeblockColor(
     berries: *mut BlenderBerry,
     _flavors: *mut i16,
     numPlayers: u8,
     negativeFlavors: u8,
 ) -> u32 {
     let mut flavors: CArray<i16, 6> = zeroed();
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    let mut numFlavors: u8 = 0;
-    i = 0;
-    while i < 6 {
+    for i in 0..6i32 {
         flavors[i] = *_flavors.at(i);
-        i += 1;
     }
-    j = 0;
-    i = 0;
+    let mut j: i32 = 0;
+    let mut i: i32 = 0;
     while i < FLAVOR_COUNT {
         if flavors[i] == 0 {
             j += 1;
@@ -1914,10 +1954,8 @@ pub(crate) unsafe extern "C" fn CalculatePokeblockColor(
     if j == FLAVOR_COUNT || negativeFlavors > 3 {
         return PBLOCK_CLR_BLACK;
     }
-    i = 0;
-    while i < numPlayers as i32 {
-        j = 0;
-        while j < numPlayers as i32 {
+    for i in 0..(numPlayers as i32) {
+        for j in 0..(numPlayers as i32) {
             if (*berries.at(i)).itemId == (*berries.at(j)).itemId
                 && i != j
                 && ((*berries.at(i)).itemId != ITEM_ENIGMA_BERRY
@@ -1925,18 +1963,13 @@ pub(crate) unsafe extern "C" fn CalculatePokeblockColor(
             {
                 return PBLOCK_CLR_BLACK;
             }
-            j += 1;
         }
-        i += 1;
     }
-    numFlavors = 0;
-    numFlavors = 0;
-    i = 0;
-    while i < FLAVOR_COUNT {
+    let mut numFlavors: u8 = 0;
+    for i in 0..FLAVOR_COUNT {
         if flavors[i] > 0 {
             numFlavors += 1;
         }
-        i += 1;
     }
     if numFlavors > 3 {
         return PBLOCK_CLR_WHITE;
@@ -1968,8 +2001,7 @@ pub(crate) unsafe extern "C" fn CalculatePokeblockColor(
     }
     if numFlavors == 2 {
         let mut idx: i32 = 0;
-        i = 0;
-        while i < FLAVOR_COUNT {
+        for i in 0..FLAVOR_COUNT {
             if flavors[i] > 0 {
                 sPokeblockPresentFlavors[{
                     let t1 = idx;
@@ -1977,7 +2009,6 @@ pub(crate) unsafe extern "C" fn CalculatePokeblockColor(
                     t1
                 }] = i as i16;
             }
-            i += 1;
         }
         if flavors[sPokeblockPresentFlavors[0]] >= flavors[sPokeblockPresentFlavors[1]] {
             if sPokeblockPresentFlavors[0] == 0 {
@@ -2013,63 +2044,52 @@ pub(crate) unsafe extern "C" fn CalculatePokeblockColor(
             }
         }
     }
-    return PBLOCK_CLR_NONE as u32;
+    PBLOCK_CLR_NONE as u32
 }
-pub(crate) unsafe extern "C" fn Debug_SetMaxRPMStage(value: i16) {
-    sDebug_MaxRPMStage = value;
+fn Debug_SetMaxRPMStage(value: i16) {
+    sDebug_MaxRPMStage.set(value);
 }
-pub(crate) unsafe extern "C" fn Debug_GetMaxRPMStage() -> i16 {
-    return sDebug_MaxRPMStage;
+fn Debug_GetMaxRPMStage() -> i16 {
+    sDebug_MaxRPMStage.get()
 }
-pub(crate) unsafe extern "C" fn Debug_SetGameTimeStage(value: i16) {
-    sDebug_GameTimeStage = value;
+fn Debug_SetGameTimeStage(value: i16) {
+    sDebug_GameTimeStage.set(value);
 }
-pub(crate) unsafe extern "C" fn Debug_GetGameTimeStage() -> i16 {
-    return sDebug_GameTimeStage;
+fn Debug_GetGameTimeStage() -> i16 {
+    sDebug_GameTimeStage.get()
 }
-pub(crate) unsafe extern "C" fn CalculatePokeblock(
+unsafe fn CalculatePokeblock(
     berries: *mut BlenderBerry,
     pokeblock: *mut Pokeblock,
     numPlayers: u8,
-    mut flavors: *mut u8,
+    flavors: *mut u8,
     maxRPM: u16,
 ) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    let mut multiuseVar: i32 = 0;
-    let mut numNegatives: u8 = 0;
-    i = 0;
-    while i < 6 {
+    for i in 0..6i32 {
         sPokeblockFlavors[i] = 0;
-        i += 1;
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i < numPlayers as i32 {
-        j = 0;
-        while j < 6 {
+        for j in 0..6i32 {
             sPokeblockFlavors[j] += (*berries.at(i)).flavors[j] as i16;
-            j += 1;
         }
         i += 1;
     }
-    multiuseVar = sPokeblockFlavors[0] as i32;
+    let mut multiuseVar: i32 = sPokeblockFlavors[0] as i32;
     sPokeblockFlavors[0] -= sPokeblockFlavors[1];
     sPokeblockFlavors[1] -= sPokeblockFlavors[2];
     sPokeblockFlavors[2] -= sPokeblockFlavors[3];
     sPokeblockFlavors[3] -= sPokeblockFlavors[4];
     sPokeblockFlavors[4] -= multiuseVar as i16;
     multiuseVar = 0;
-    i = 0;
-    while i < FLAVOR_COUNT {
+    for i in 0..FLAVOR_COUNT {
         if sPokeblockFlavors[i] < 0 {
             sPokeblockFlavors[i] = 0;
             multiuseVar += 1;
         }
-        i += 1;
     }
-    numNegatives = multiuseVar as u8;
-    i = 0;
-    while i < FLAVOR_COUNT {
+    let numNegatives: u8 = multiuseVar as u8;
+    for i in 0..FLAVOR_COUNT {
         if sPokeblockFlavors[i] > 0 {
             if (sPokeblockFlavors[i] as i32) < multiuseVar {
                 sPokeblockFlavors[i] = 0;
@@ -2077,29 +2097,25 @@ pub(crate) unsafe extern "C" fn CalculatePokeblock(
                 sPokeblockFlavors[i] -= multiuseVar as i16;
             }
         }
-        i += 1;
     }
-    i = 0;
-    while i < FLAVOR_COUNT {
+    for i in 0..FLAVOR_COUNT {
         sDebug_PokeblockFactorFlavors[i] = sPokeblockFlavors[i] as i32;
-        i += 1;
     }
-    sDebug_PokeblockFactorRPM = ({
-        multiuseVar = maxRPM as i32 / 333 + 100;
-        multiuseVar
-    }) as u32;
-    i = 0;
-    while i < FLAVOR_COUNT {
-        let mut remainder: i32 = 0;
+    sDebug_PokeblockFactorRPM.set(
+        ({
+            multiuseVar = maxRPM as i32 / 333 + 100;
+            multiuseVar
+        }) as u32,
+    );
+    for i in 0..FLAVOR_COUNT {
         let mut flavor: i32 = sPokeblockFlavors[i] as i32;
         flavor = flavor * multiuseVar / 10;
-        remainder = flavor % 10;
-        flavor = flavor / 10;
+        let remainder: i32 = flavor % 10;
+        flavor /= 10;
         if remainder > 4 {
             flavor += 1;
         }
         sPokeblockFlavors[i] = flavor as i16;
-        i += 1;
     }
     i = 0;
     while i < FLAVOR_COUNT {
@@ -2119,22 +2135,18 @@ pub(crate) unsafe extern "C" fn CalculatePokeblock(
     }
     if (*pokeblock).color == PBLOCK_CLR_BLACK as u8 {
         multiuseVar = (Random() % 10) as i32;
-        i = 0;
-        while i < FLAVOR_COUNT {
+        for i in 0..FLAVOR_COUNT {
             if shr_i32(sBlackPokeblockFlavorFlags[multiuseVar] as i32, i as u32) & 1 != 0 {
                 sPokeblockFlavors[i] = 2;
             } else {
                 sPokeblockFlavors[i] = 0;
             }
-            i += 1;
         }
     }
-    i = 0;
-    while i < 6 {
+    for i in 0..6i32 {
         if sPokeblockFlavors[i] > 255 {
             sPokeblockFlavors[i] = 255;
         }
-        i += 1;
     }
     (*pokeblock).spicy = sPokeblockFlavors[0] as u8;
     (*pokeblock).dry = sPokeblockFlavors[1] as u8;
@@ -2142,13 +2154,11 @@ pub(crate) unsafe extern "C" fn CalculatePokeblock(
     (*pokeblock).bitter = sPokeblockFlavors[3] as u8;
     (*pokeblock).sour = sPokeblockFlavors[4] as u8;
     (*pokeblock).feel = sPokeblockFlavors[5] as u8;
-    i = 0;
-    while i < 6 {
+    for i in 0..6i32 {
         *flavors.at(i) = sPokeblockFlavors[i] as u8;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn Debug_CalculatePokeblock(
+unsafe fn Debug_CalculatePokeblock(
     berries: *mut BlenderBerry,
     pokeblock: *mut Pokeblock,
     numPlayers: u8,
@@ -2157,9 +2167,9 @@ pub(crate) unsafe extern "C" fn Debug_CalculatePokeblock(
 ) {
     CalculatePokeblock(berries, pokeblock, numPlayers, flavors, maxRPM);
 }
-pub(crate) unsafe extern "C" fn Debug_SetStageVars() {
-    let mut frames: u32 = (*sBerryBlender).gameFrameTime as u16 as u32;
-    let mut maxRPM: u16 = (*sBerryBlender).maxRPM;
+unsafe fn Debug_SetStageVars() {
+    let frames: u32 = (*sBerryBlender).gameFrameTime as u16 as u32;
+    let maxRPM: u16 = (*sBerryBlender).maxRPM;
     let mut stage: i16 = 0;
     if frames < 900 {
         stage = 5;
@@ -2175,23 +2185,23 @@ pub(crate) unsafe extern "C" fn Debug_SetStageVars() {
     Debug_SetGameTimeStage(stage);
     stage = 0;
     if maxRPM <= 64 {
-        if maxRPM >= 50 && maxRPM < 100 {
+        if (50..100).contains(&maxRPM) {
             stage = -1;
-        } else if maxRPM >= 100 && maxRPM < 150 {
+        } else if (100..150).contains(&maxRPM) {
             stage = -2;
-        } else if maxRPM >= 150 && maxRPM < 200 {
+        } else if (150..200).contains(&maxRPM) {
             stage = -3;
-        } else if maxRPM >= 200 && maxRPM < 250 {
+        } else if (200..250).contains(&maxRPM) {
             stage = -4;
-        } else if maxRPM >= 250 && maxRPM < 300 {
+        } else if (250..300).contains(&maxRPM) {
             stage = -5;
-        } else if maxRPM >= 350 && maxRPM < 400 {
+        } else if (350..400).contains(&maxRPM) {
             stage = -6;
-        } else if maxRPM >= 400 && maxRPM < 450 {
+        } else if (400..450).contains(&maxRPM) {
             stage = -7;
-        } else if maxRPM >= 500 && maxRPM < 550 {
+        } else if (500..550).contains(&maxRPM) {
             stage = -8;
-        } else if maxRPM >= 550 && maxRPM < 600 {
+        } else if (550..600).contains(&maxRPM) {
             stage = -9;
         } else if maxRPM >= 600 {
             stage = -10;
@@ -2199,16 +2209,15 @@ pub(crate) unsafe extern "C" fn Debug_SetStageVars() {
     }
     Debug_SetMaxRPMStage(stage);
 }
-pub(crate) unsafe extern "C" fn SendContinuePromptResponse(cmd: *mut u16) {
+unsafe fn SendContinuePromptResponse(cmd: *mut u16) {
     if gReceivedRemoteLinkPlayers != 0 && gWirelessCommType != 0 {
         *cmd = RFUCMD_SEND_PACKET as u16;
     } else {
         *cmd = LINKCMD_SEND_PACKET;
     }
 }
-pub(crate) unsafe extern "C" fn CB2_EndBlenderGame() {
+pub(crate) unsafe fn CB2_EndBlenderGame() {
     let mut i: u8 = 0;
-    let mut j: u8 = 0;
     if (*sBerryBlender).gameEndState < 3 {
         UpdateBlenderCenter();
     }
@@ -2245,14 +2254,10 @@ pub(crate) unsafe extern "C" fn CB2_EndBlenderGame() {
                 if gReceivedRemoteLinkPlayers != 0 && gWirelessCommType != 0 {
                     (*sBerryBlender).gameBlock.timeRPM.time = (*sBerryBlender).gameFrameTime;
                     (*sBerryBlender).gameBlock.timeRPM.maxRPM = (*sBerryBlender).maxRPM;
-                    i = 0;
-                    while i < BLENDER_MAX_PLAYERS as u8 {
-                        j = 0;
-                        while j < NUM_SCORE_TYPES as u8 {
+                    for i in 0..(BLENDER_MAX_PLAYERS as u8) {
+                        for j in 0..(NUM_SCORE_TYPES as u8) {
                             (*sBerryBlender).gameBlock.scores[i][j] = (*sBerryBlender).scores[i][j];
-                            j += 1;
                         }
-                        i += 1;
                     }
                     if SendBlock(0, &raw mut (*sBerryBlender).gameBlock as *mut c_void, 32) != 0 {
                         (*sBerryBlender).gameEndState += 1;
@@ -2271,22 +2276,22 @@ pub(crate) unsafe extern "C" fn CB2_EndBlenderGame() {
                 ResetBlockReceivedFlags();
                 (*sBerryBlender).gameEndState += 1;
                 if gReceivedRemoteLinkPlayers != 0 && gWirelessCommType != 0 {
-                    let mut receivedBlock: *mut BlenderGameBlock =
-                        &raw mut gBlockRecvBuffer as *mut BlenderGameBlock;
+                    let receivedBlock: *mut BlenderGameBlock =
+                        &raw mut (*(&raw const crate::link::gBlockRecvBuffer)
+                            .cast::<CArray<CArray<u16, 128>, 5>>()
+                            .cast_mut()) as *mut BlenderGameBlock;
                     (*sBerryBlender).maxRPM = (*receivedBlock).timeRPM.maxRPM;
                     (*sBerryBlender).gameFrameTime = (*receivedBlock).timeRPM.time;
-                    i = 0;
-                    while i < BLENDER_MAX_PLAYERS as u8 {
-                        j = 0;
-                        while j < NUM_SCORE_TYPES as u8 {
+                    for i in 0..(BLENDER_MAX_PLAYERS as u8) {
+                        for j in 0..(NUM_SCORE_TYPES as u8) {
                             (*sBerryBlender).scores[i][j] = (*receivedBlock).scores[i][j];
-                            j += 1;
                         }
-                        i += 1;
                     }
                 } else {
-                    let mut receivedBlock: *mut TimeAndRPM =
-                        &raw mut gBlockRecvBuffer as *mut TimeAndRPM;
+                    let receivedBlock: *mut TimeAndRPM =
+                        &raw mut (*(&raw const crate::link::gBlockRecvBuffer)
+                            .cast::<CArray<CArray<u16, 128>, 5>>()
+                            .cast_mut()) as *mut TimeAndRPM;
                     (*sBerryBlender).maxRPM = (*receivedBlock).maxRPM;
                     (*sBerryBlender).gameFrameTime = (*receivedBlock).time;
                 }
@@ -2299,7 +2304,7 @@ pub(crate) unsafe extern "C" fn CB2_EndBlenderGame() {
         }
         6 => {
             if PrintBlendingResults() != 0 {
-                if gInGameOpponentsNo == 0 {
+                if gInGameOpponentsNo.get() == 0 {
                     IncrementGameStat(GAME_STAT_POKEBLOCKS_WITH_FRIENDS);
                 } else {
                     IncrementGameStat(GAME_STAT_POKEBLOCKS);
@@ -2331,31 +2336,31 @@ pub(crate) unsafe extern "C" fn CB2_EndBlenderGame() {
             1 | MENU_B_PRESSED => {
                 (*sBerryBlender).yesNoAnswer = 1;
                 (*sBerryBlender).gameEndState += 1;
-                i = 0;
-                while i < BLENDER_MAX_PLAYERS as u8 {
+                for i in 0..(BLENDER_MAX_PLAYERS as u8) {
                     if (*sBerryBlender).arrowIdToPlayerId[i] != NO_PLAYER {
                         PutWindowTilemap(i);
                         CopyWindowToVram(i, COPYWIN_FULL);
                     }
-                    i += 1;
                 }
             }
             0 => {
                 (*sBerryBlender).yesNoAnswer = 0;
                 (*sBerryBlender).gameEndState += 1;
-                i = 0;
-                while i < BLENDER_MAX_PLAYERS as u8 {
+                for i in 0..(BLENDER_MAX_PLAYERS as u8) {
                     if (*sBerryBlender).arrowIdToPlayerId[i] != NO_PLAYER {
                         PutWindowTilemap(i);
                         CopyWindowToVram(i, COPYWIN_FULL);
                     }
-                    i += 1;
                 }
             }
             _ => {}
         },
         11 => {
-            SendContinuePromptResponse(&raw mut gSendCmd[0]);
+            SendContinuePromptResponse(
+                &raw mut (*(&raw const crate::link::gSendCmd)
+                    .cast::<CArray<u16, 8>>()
+                    .cast_mut())[0],
+            );
             if (*sBerryBlender).yesNoAnswer == 0 {
                 if IsBagPocketNonEmpty(POCKET_BERRIES) == FALSE {
                     (*sBerryBlender).playAgainState = CANT_PLAY_NO_BERRIES;
@@ -2375,7 +2380,7 @@ pub(crate) unsafe extern "C" fn CB2_EndBlenderGame() {
             }
         }
         12 => {
-            if gInGameOpponentsNo != 0 {
+            if gInGameOpponentsNo.get() != 0 {
                 SetMainCallback2(Some(CB2_CheckPlayAgainLocal));
                 (*sBerryBlender).gameEndState = 0;
                 (*sBerryBlender).mainState = 0;
@@ -2386,17 +2391,15 @@ pub(crate) unsafe extern "C" fn CB2_EndBlenderGame() {
         8 => {
             (*sBerryBlender).gameEndState += 1;
         }
-        13 => {
-            if PrintMessage(
-                &raw mut (*sBerryBlender).textState,
-                sText_CommunicationStandby.as_ptr().cast_mut(),
-                GetPlayerTextSpeedDelay() as i32,
-            ) != 0
-            {
-                SetMainCallback2(Some(CB2_CheckPlayAgainLink));
-                (*sBerryBlender).gameEndState = 0;
-                (*sBerryBlender).mainState = 0;
-            }
+        13 if PrintMessage(
+            &raw mut (*sBerryBlender).textState,
+            sText_CommunicationStandby.as_ptr().cast_mut(),
+            GetPlayerTextSpeedDelay() as i32,
+        ) != 0 =>
+        {
+            SetMainCallback2(Some(CB2_CheckPlayAgainLink));
+            (*sBerryBlender).gameEndState = 0;
+            (*sBerryBlender).mainState = 0;
         }
         _ => {}
     }
@@ -2410,7 +2413,7 @@ pub(crate) unsafe extern "C" fn CB2_EndBlenderGame() {
     RunTextPrinters();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn LinkPlayAgainHandleSaving() -> u8 {
+unsafe fn LinkPlayAgainHandleSaving() -> u8 {
     match (*sBerryBlender).linkPlayAgainState {
         0 => {
             SetLinkStandbyCallback();
@@ -2452,21 +2455,19 @@ pub(crate) unsafe extern "C" fn LinkPlayAgainHandleSaving() -> u8 {
             (*sBerryBlender).linkPlayAgainState += 1;
             (*sBerryBlender).framesToWait = 0;
         }
-        6 => {
-            if ({
-                (*sBerryBlender).framesToWait += 1;
-                (*sBerryBlender).framesToWait
-            }) > 5
-            {
-                gSoftResetDisabled = FALSE;
-                return TRUE;
-            }
+        6 if ({
+            (*sBerryBlender).framesToWait += 1;
+            (*sBerryBlender).framesToWait
+        }) > 5 =>
+        {
+            gSoftResetDisabled = FALSE;
+            return TRUE;
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn CB2_CheckPlayAgainLink() {
+pub(crate) unsafe fn CB2_CheckPlayAgainLink() {
     match (*sBerryBlender).gameEndState {
         0 => {
             if (*sBerryBlender).playerContinueResponses[0] == LINKCMD_SEND_LINK_TYPE {
@@ -2530,7 +2531,10 @@ pub(crate) unsafe extern "C" fn CB2_CheckPlayAgainLink() {
         5 => {
             PrintMessage(
                 &raw mut (*sBerryBlender).textState,
-                gText_SavingDontTurnOff2.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_SavingDontTurnOff2)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 0,
             );
             SetLinkStandbyCallback();
@@ -2584,12 +2588,10 @@ pub(crate) unsafe extern "C" fn CB2_CheckPlayAgainLink() {
                 (*sBerryBlender).gameEndState += 1;
             }
         }
-        12 => {
-            if gReceivedRemoteLinkPlayers == 0 {
-                Free(sBerryBlender as *mut c_void);
-                sBerryBlender = null_mut();
-                SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
-            }
+        12 if gReceivedRemoteLinkPlayers == 0 => {
+            Free(sBerryBlender as *mut c_void);
+            sBerryBlender = null_mut();
+            SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
         }
         _ => {}
     }
@@ -2601,7 +2603,7 @@ pub(crate) unsafe extern "C" fn CB2_CheckPlayAgainLink() {
     RunTextPrinters();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn CB2_CheckPlayAgainLocal() {
+pub(crate) unsafe fn CB2_CheckPlayAgainLocal() {
     match (*sBerryBlender).gameEndState {
         0 => {
             if (*sBerryBlender).playAgainState == PLAY_AGAIN_YES
@@ -2646,19 +2648,17 @@ pub(crate) unsafe extern "C" fn CB2_CheckPlayAgainLocal() {
             BeginFastPaletteFade(3);
             (*sBerryBlender).gameEndState += 1;
         }
-        10 => {
-            if gPaletteFade.active() == 0 {
-                if (*sBerryBlender).playAgainState == PLAY_AGAIN_YES {
-                    SetMainCallback2(Some(DoBerryBlending));
-                } else {
-                    SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
-                }
-                FreeAllWindowBuffers();
-                UnsetBgTilemapBuffer(2);
-                UnsetBgTilemapBuffer(1);
-                Free(sBerryBlender as *mut c_void);
-                sBerryBlender = null_mut();
+        10 if gPaletteFade.active() == 0 => {
+            if (*sBerryBlender).playAgainState == PLAY_AGAIN_YES {
+                SetMainCallback2(Some(DoBerryBlending));
+            } else {
+                SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
             }
+            FreeAllWindowBuffers();
+            UnsetBgTilemapBuffer(2);
+            UnsetBgTilemapBuffer(1);
+            Free(sBerryBlender as *mut c_void);
+            sBerryBlender = null_mut();
         }
         _ => {}
     }
@@ -2670,7 +2670,7 @@ pub(crate) unsafe extern "C" fn CB2_CheckPlayAgainLocal() {
     RunTextPrinters();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn ProcessLinkPlayerCmds() {
+unsafe fn ProcessLinkPlayerCmds() {
     if gReceivedRemoteLinkPlayers != 0 {
         if CheckRecvCmdMatches(
             gRecvCmds[0][0],
@@ -2704,7 +2704,6 @@ pub(crate) unsafe extern "C" fn ProcessLinkPlayerCmds() {
             && (*sBerryBlender).playerContinueResponses[0] != LINKCMD_SEND_LINK_TYPE
         {
             let mut i: u8 = 0;
-            i = 0;
             while i < GetLinkPlayerCount() {
                 if CheckRecvCmdMatches(
                     gRecvCmds[i][0],
@@ -2748,7 +2747,11 @@ pub(crate) unsafe extern "C" fn ProcessLinkPlayerCmds() {
                     }
                     i += 1;
                 }
-                SendContinuePromptResponse(&raw mut gSendCmd[0]);
+                SendContinuePromptResponse(
+                    &raw mut (*(&raw const crate::link::gSendCmd)
+                        .cast::<CArray<u16, 8>>()
+                        .cast_mut())[0],
+                );
                 if i == GetLinkPlayerCount() {
                     gSendCmd[1] = LINKCMD_SEND_LINK_TYPE;
                 } else {
@@ -2760,7 +2763,7 @@ pub(crate) unsafe extern "C" fn ProcessLinkPlayerCmds() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn DrawBlenderCenter(dest: *mut BgAffineSrcData) {
+unsafe fn DrawBlenderCenter(dest: *mut BgAffineSrcData) {
     let mut affineSrc: BgAffineSrcData = zeroed();
     affineSrc.texX = 30720;
     affineSrc.texY = 20480;
@@ -2771,11 +2774,10 @@ pub(crate) unsafe extern "C" fn DrawBlenderCenter(dest: *mut BgAffineSrcData) {
     affineSrc.alpha = (*sBerryBlender).arrowPos;
     *dest = affineSrc;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBlenderArrowPosition() -> u16 {
-    return (*sBerryBlender).arrowPos;
+pub unsafe fn GetBlenderArrowPosition() -> u16 {
+    (*sBerryBlender).arrowPos
 }
-pub(crate) unsafe extern "C" fn UpdateBlenderCenter() {
+unsafe fn UpdateBlenderCenter() {
     let mut playerId: u8 = 0;
     if gReceivedRemoteLinkPlayers != 0 {
         playerId = GetMultiplayerId();
@@ -2798,13 +2800,13 @@ pub(crate) unsafe extern "C" fn UpdateBlenderCenter() {
         DrawBlenderCenter(&raw mut (*sBerryBlender).bgAffineSrc);
     }
 }
-pub(crate) unsafe extern "C" fn SetBgPos() {
+unsafe fn SetBgPos() {
     SetGpuReg(REG_OFFSET_BG1HOFS, (*sBerryBlender).bg_X);
     SetGpuReg(REG_OFFSET_BG1VOFS, (*sBerryBlender).bg_Y);
     SetGpuReg(REG_OFFSET_BG0HOFS, (*sBerryBlender).bg_X);
     SetGpuReg(REG_OFFSET_BG0VOFS, (*sBerryBlender).bg_Y);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Particle(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_Particle(sprite: *mut Sprite) {
     (*sprite).data[2] += (*sprite).data[0];
     (*sprite).data[3] += (*sprite).data[1];
     (*sprite).x2 = (*sprite).data[2] / 8;
@@ -2813,19 +2815,17 @@ pub(crate) unsafe extern "C" fn SpriteCB_Particle(sprite: *mut Sprite) {
         DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn CreateParticleSprites() {
-    let mut limit: i32 = Random() as i32 % 2 + 1;
-    let mut i: i32 = 0;
-    i = 0;
-    while i < limit {
-        let mut rand: u16 = 0;
-        let mut x: i32 = 0;
-        let mut y: i32 = 0;
-        let mut spriteId: u8 = 0;
-        rand = (*sBerryBlender).arrowPos + (Random() as i32 % 20) as u16;
-        x = (gSineTable[(rand as i32 & 0xFF) + 64] / 4) as i32;
-        y = (gSineTable[rand as i32 & 0xFF] / 4) as i32;
-        spriteId = CreateSprite(
+unsafe fn CreateParticleSprites() {
+    let limit: i32 = Random() as i32 % 2 + 1;
+    for i in 0..limit {
+        let rand: u16 = (*sBerryBlender).arrowPos + (Random() as i32 % 20) as u16;
+        let x: i32 = ((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+            [(rand as i32 & 0xFF) + 64]
+            / 4) as i32;
+        let y: i32 = ((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+            [rand as i32 & 0xFF]
+            / 4) as i32;
+        let spriteId: u8 = CreateSprite(
             (&raw const *sSpriteTemplate_Particles).cast_mut(),
             x as i16 + 120,
             y as i16 + 80,
@@ -2834,17 +2834,16 @@ pub(crate) unsafe extern "C" fn CreateParticleSprites() {
         gSprites[spriteId].data[0] = 16 - (Random() as i32 % 32) as i16;
         gSprites[spriteId].data[1] = 16 - (Random() as i32 % 32) as i16;
         gSprites[spriteId].callback = Some(SpriteCB_Particle);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ScoreSymbol(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ScoreSymbol(sprite: *mut Sprite) {
     (*sprite).data[0] += 1;
     (*sprite).y2 = -((*sprite).data[0] / 3);
     if (*sprite).animEnded() != 0 {
         DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ScoreSymbolBest(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ScoreSymbolBest(sprite: *mut Sprite) {
     (*sprite).data[0] += 1;
     (*sprite).y2 = -((*sprite).data[0] * 2);
     if (*sprite).y2 < -12 {
@@ -2854,52 +2853,52 @@ pub(crate) unsafe extern "C" fn SpriteCB_ScoreSymbolBest(sprite: *mut Sprite) {
         DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn SetPlayerBerryData(playerId: u8, itemId: u16) {
+unsafe fn SetPlayerBerryData(playerId: u8, itemId: u16) {
     (*sBerryBlender).chosenItemId[playerId] = itemId;
     ConvertItemToBlenderBerry(&raw mut (*sBerryBlender).blendedBerries[playerId], itemId);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_CountdownNumber(sprite: *mut Sprite) {
-    match (*sprite).data[0] {
+pub(crate) unsafe fn SpriteCB_CountdownNumber(sprite: *mut Sprite) {
+    match (*sprite).data[sState] {
         0 => {
-            (*sprite).data[1] += 8;
-            if (*sprite).data[1] > 88 {
-                (*sprite).data[1] = 88;
-                (*sprite).data[0] += 1;
+            (*sprite).data[sYPos] += 8;
+            if (*sprite).data[sYPos] > 88 {
+                (*sprite).data[sYPos] = 88;
+                (*sprite).data[sState] += 1;
                 PlaySE(SE_BALL_BOUNCE_1);
             }
         }
         1 => {
             if ({
-                (*sprite).data[2] += 1;
-                (*sprite).data[2]
+                (*sprite).data[sDelay] += 1;
+                (*sprite).data[sDelay]
             }) > 20
             {
-                (*sprite).data[0] += 1;
-                (*sprite).data[2] = 0;
+                (*sprite).data[sState] += 1;
+                (*sprite).data[sDelay] = 0;
             }
         }
         2 => {
-            (*sprite).data[1] += 4;
-            if (*sprite).data[1] > 176 {
+            (*sprite).data[sYPos] += 4;
+            if (*sprite).data[sYPos] > 176 {
                 if ({
-                    (*sprite).data[3] += 1;
-                    (*sprite).data[3]
+                    (*sprite).data[sAnimId] += 1;
+                    (*sprite).data[sAnimId]
                 }) == 3
                 {
                     DestroySprite(sprite);
                     CreateSprite((&raw const *sSpriteTemplate_Start).cast_mut(), 120, -20, 2);
                 } else {
-                    (*sprite).data[0] = 0;
-                    (*sprite).data[1] = -16;
-                    StartSpriteAnim(sprite, (*sprite).data[3] as u8);
+                    (*sprite).data[sState] = 0;
+                    (*sprite).data[sYPos] = -16;
+                    StartSpriteAnim(sprite, (*sprite).data[sAnimId] as u8);
                 }
             }
         }
         _ => {}
     }
-    (*sprite).y2 = (*sprite).data[1];
+    (*sprite).y2 = (*sprite).data[sYPos];
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Start(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_Start(sprite: *mut Sprite) {
     match (*sprite).data[0] {
         0 => {
             (*sprite).data[1] += 8;
@@ -2926,28 +2925,23 @@ pub(crate) unsafe extern "C" fn SpriteCB_Start(sprite: *mut Sprite) {
     }
     (*sprite).y2 = (*sprite).data[1];
 }
-pub(crate) unsafe extern "C" fn TryUpdateProgressBar(current: u16, limit: u16) {
+unsafe fn TryUpdateProgressBar(current: u16, limit: u16) {
     if (*sBerryBlender).maxProgressBarValue < current {
         (*sBerryBlender).maxProgressBarValue += 2;
         UpdateProgressBar((*sBerryBlender).maxProgressBarValue, limit);
     }
 }
-pub(crate) unsafe extern "C" fn UpdateProgressBar(value: u16, limit: u16) {
-    let mut amountFilled: i32 = 0;
-    let mut maxFilledSegment: i32 = 0;
-    let mut subSegmentsFilled: i32 = 0;
+unsafe fn UpdateProgressBar(value: u16, limit: u16) {
+    let vram: *mut u16 = 0x6006000_usize as *mut u16;
+    let amountFilled: i32 = div_i32(value as i32 * 64, limit as i32);
+    let maxFilledSegment: i32 = amountFilled / 8;
     let mut i: i32 = 0;
-    let mut vram: *mut u16 = null_mut();
-    vram = 0x6006000 as usize as *mut u16;
-    amountFilled = div_i32(value as i32 * 64, limit as i32);
-    maxFilledSegment = amountFilled / 8;
-    i = 0;
     while i < maxFilledSegment {
         *vram.at(11 + i) = PROGRESS_BAR_FILLED_TOP;
         *vram.at(43 + i) = PROGRESS_BAR_FILLED_BOTTOM;
         i += 1;
     }
-    subSegmentsFilled = amountFilled % 8;
+    let subSegmentsFilled: i32 = amountFilled % 8;
     if subSegmentsFilled != 0 {
         *vram.at(11 + i) = subSegmentsFilled as u16 + PROGRESS_BAR_EMPTY_TOP;
         *vram.at(43 + i) = subSegmentsFilled as u16 + PROGRESS_BAR_EMPTY_BOTTOM;
@@ -2959,34 +2953,31 @@ pub(crate) unsafe extern "C" fn UpdateProgressBar(value: u16, limit: u16) {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ArrowSpeedToRPM(speed: u16) -> u32 {
-    return (360000 * speed as i32 / 0x10000) as u32;
+fn ArrowSpeedToRPM(speed: u16) -> u32 {
+    (360000 * speed as i32 / 0x10000) as u32
 }
-pub(crate) unsafe extern "C" fn UpdateRPM(speed: u16) {
-    let mut i: u8 = 0;
+unsafe fn UpdateRPM(speed: u16) {
     let mut digits: CArray<u8, 5> = zeroed();
     let mut currentRPM: u32 = ArrowSpeedToRPM(speed);
     if ((*sBerryBlender).maxRPM as u32) < currentRPM {
         (*sBerryBlender).maxRPM = currentRPM as u16;
     }
-    i = 0;
-    while i < 5 {
+    for i in 0..5u8 {
         digits[i] = (currentRPM % 10) as u8;
-        currentRPM = currentRPM / 10;
-        i += 1;
+        currentRPM /= 10;
     }
-    *(100688984 as usize as *mut u16) = digits[4] as u16 + RPM_DIGIT;
-    *(100688986 as usize as *mut u16) = digits[3] as u16 + RPM_DIGIT;
-    *(100688988 as usize as *mut u16) = digits[2] as u16 + RPM_DIGIT;
-    *(100688992 as usize as *mut u16) = digits[1] as u16 + RPM_DIGIT;
-    *(100688994 as usize as *mut u16) = digits[0] as u16 + RPM_DIGIT;
+    *(100688984_usize as *mut u16) = digits[4] as u16 + RPM_DIGIT;
+    *(100688986_usize as *mut u16) = digits[3] as u16 + RPM_DIGIT;
+    *(100688988_usize as *mut u16) = digits[2] as u16 + RPM_DIGIT;
+    *(100688992_usize as *mut u16) = digits[1] as u16 + RPM_DIGIT;
+    *(100688994_usize as *mut u16) = digits[0] as u16 + RPM_DIGIT;
 }
-pub(crate) unsafe extern "C" fn ShakeBgCoordForHit(coord: *mut i16, speed: u16) {
+unsafe fn ShakeBgCoordForHit(coord: *mut i16, speed: u16) {
     if *coord == 0 {
         *coord = rem_i32(Random() as i32, speed as i32) as i16 - (speed as i32 / 2) as i16;
     }
 }
-pub(crate) unsafe extern "C" fn RestoreBgCoord(coord: *mut i16) {
+unsafe fn RestoreBgCoord(coord: *mut i16) {
     if *coord < 0 {
         *coord += 1;
     }
@@ -2994,11 +2985,11 @@ pub(crate) unsafe extern "C" fn RestoreBgCoord(coord: *mut i16) {
         *coord -= 1;
     }
 }
-pub(crate) unsafe extern "C" fn RestoreBgCoords() {
+unsafe fn RestoreBgCoords() {
     RestoreBgCoord(&raw mut (*sBerryBlender).bg_X as *mut i16);
     RestoreBgCoord(&raw mut (*sBerryBlender).bg_Y as *mut i16);
 }
-pub(crate) unsafe extern "C" fn BlenderLandShakeBgCoord(coord: *mut i16, timer: u16) {
+unsafe fn BlenderLandShakeBgCoord(coord: *mut i16, timer: u16) {
     let mut strength: i32 = 0;
     if timer < 10 {
         strength = 16;
@@ -3016,7 +3007,7 @@ pub(crate) unsafe extern "C" fn BlenderLandShakeBgCoord(coord: *mut i16, timer: 
         }
     }
 }
-pub(crate) unsafe extern "C" fn UpdateBlenderLandScreenShake() -> u8 {
+unsafe fn UpdateBlenderLandScreenShake() -> u8 {
     if (*sBerryBlender).framesToWait == 0 {
         (*sBerryBlender).bg_X = 0;
         (*sBerryBlender).bg_Y = 0;
@@ -3035,13 +3026,13 @@ pub(crate) unsafe extern "C" fn UpdateBlenderLandScreenShake() -> u8 {
         (*sBerryBlender).bg_Y = 0;
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SpriteCB_PlayerArrow(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_PlayerArrow(sprite: *mut Sprite) {
     (*sprite).x2 = -((*sBerryBlender).bg_X as i16);
     (*sprite).y2 = -((*sBerryBlender).bg_Y as i16);
 }
-pub(crate) unsafe extern "C" fn TryUpdateBerryBlenderRecord() {
+unsafe fn TryUpdateBerryBlenderRecord() {
     if (*gSaveBlock1Ptr).berryBlenderRecords[(*sBerryBlender).numPlayers as i32 - 2]
         < (*sBerryBlender).maxRPM
     {
@@ -3049,7 +3040,7 @@ pub(crate) unsafe extern "C" fn TryUpdateBerryBlenderRecord() {
             (*sBerryBlender).maxRPM;
     }
 }
-pub(crate) unsafe extern "C" fn PrintBlendingResults() -> u8 {
+unsafe fn PrintBlendingResults() -> u8 {
     let mut i: u16 = 0;
     let mut xPos: i32 = 0;
     let mut yPos: i32 = 0;
@@ -3075,19 +3066,14 @@ pub(crate) unsafe extern "C" fn PrintBlendingResults() -> u8 {
                 (*sBerryBlender).framesToWait
             }) > 20
             {
-                i = 0;
-                while i < NUM_SCORE_TYPES as u16 {
+                for i in 0..(NUM_SCORE_TYPES as u16) {
                     DestroySprite(&raw mut gSprites[(*sBerryBlender).scoreIconIds[i]]);
-                    i += 1;
                 }
                 (*sBerryBlender).framesToWait = 0;
                 (*sBerryBlender).mainState += 1;
             }
         }
         3 => {
-            let mut minutes: u16 = 0;
-            let mut seconds: u16 = 0;
-            let mut txtPtr: *mut u8 = null_mut();
             xPos = GetStringCenterAlignXOffset(
                 FONT_NORMAL as i32,
                 sText_BlendingResults.as_ptr().cast_mut(),
@@ -3108,7 +3094,7 @@ pub(crate) unsafe extern "C" fn PrintBlendingResults() -> u8 {
             }
             i = 0;
             while i < (*sBerryBlender).numPlayers as u16 {
-                let mut place: u8 = (*sBerryBlender).playerPlaces[i];
+                let place: u8 = (*sBerryBlender).playerPlaces[i];
                 ConvertIntToDecimalStringN(
                     (*sBerryBlender).stringVar.as_mut_ptr(),
                     i as i32 + 1,
@@ -3121,7 +3107,9 @@ pub(crate) unsafe extern "C" fn PrintBlendingResults() -> u8 {
                 );
                 StringAppend(
                     (*sBerryBlender).stringVar.as_mut_ptr(),
-                    gText_Space.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_Space).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                 );
                 StringAppend(
                     (*sBerryBlender).stringVar.as_mut_ptr(),
@@ -3208,15 +3196,15 @@ pub(crate) unsafe extern "C" fn PrintBlendingResults() -> u8 {
                 TEXT_SKIP_DRAW as i32,
                 3,
             );
-            seconds = ((*sBerryBlender).gameFrameTime / 60 % 60) as u16;
-            minutes = ((*sBerryBlender).gameFrameTime / 3600) as u16;
+            let seconds: u16 = ((*sBerryBlender).gameFrameTime / 60 % 60) as u16;
+            let minutes: u16 = ((*sBerryBlender).gameFrameTime / 3600) as u16;
             ConvertIntToDecimalStringN(
                 (*sBerryBlender).stringVar.as_mut_ptr(),
                 minutes as i32,
                 STR_CONV_MODE_LEADING_ZEROS,
                 2,
             );
-            txtPtr = StringAppend(
+            let txtPtr: *mut u8 = StringAppend(
                 (*sBerryBlender).stringVar.as_mut_ptr(),
                 sText_Min.as_ptr().cast_mut(),
             );
@@ -3249,8 +3237,7 @@ pub(crate) unsafe extern "C" fn PrintBlendingResults() -> u8 {
         }
         5 => {
             ClearStdWindowAndFrameToTransparent(WIN_RESULTS, TRUE);
-            i = 0;
-            while i < BLENDER_MAX_PLAYERS as u16 {
+            for i in 0..(BLENDER_MAX_PLAYERS as u16) {
                 if (*sBerryBlender).chosenItemId[i] != 0 {
                     berryIds[i] = (*sBerryBlender).chosenItemId[i] - ITEM_CHERI_BERRY;
                 }
@@ -3258,7 +3245,6 @@ pub(crate) unsafe extern "C" fn PrintBlendingResults() -> u8 {
                     PutWindowTilemap(i as u8);
                     CopyWindowToVram(i as u8, COPYWIN_FULL);
                 }
-                i += 1;
             }
             Debug_SetStageVars();
             CalculatePokeblock(
@@ -3277,34 +3263,31 @@ pub(crate) unsafe extern "C" fn PrintBlendingResults() -> u8 {
             (*sBerryBlender).textState = 0;
             (*sBerryBlender).mainState += 1;
         }
-        6 => {
-            if PrintMessage(
-                &raw mut (*sBerryBlender).textState,
-                (*sBerryBlender).stringVar.as_mut_ptr(),
-                GetPlayerTextSpeedDelay() as i32,
-            ) != 0
-            {
-                TryUpdateBerryBlenderRecord();
-                return TRUE;
-            }
+        6 if PrintMessage(
+            &raw mut (*sBerryBlender).textState,
+            (*sBerryBlender).stringVar.as_mut_ptr(),
+            GetPlayerTextSpeedDelay() as i32,
+        ) != 0 =>
+        {
+            TryUpdateBerryBlenderRecord();
+            return TRUE;
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn PrintMadePokeblockString(
-    pokeblock: *mut Pokeblock,
-    mut dst: *mut u8,
-) {
+unsafe fn PrintMadePokeblockString(pokeblock: *mut Pokeblock, dst: *mut u8) {
     let mut text: CArray<u8, 12> = zeroed();
-    let mut flavorLvl: u8 = 0;
-    let mut feel: u8 = 0;
     *dst = EOS;
-    StringCopy(dst, gPokeblockNames[(*pokeblock).color]);
+    StringCopy(
+        dst,
+        (*(&raw const crate::data::pokeblock::gPokeblockNames).cast::<CArray<*mut u8, 0>>())
+            [(*pokeblock).color],
+    );
     StringAppend(dst, sText_WasMade.as_ptr().cast_mut());
     StringAppend(dst, sText_NewLine.as_ptr().cast_mut());
-    flavorLvl = GetHighestPokeblocksFlavorLevel(pokeblock);
-    feel = GetPokeblocksFeel(pokeblock);
+    let flavorLvl: u8 = GetHighestPokeblocksFlavorLevel(pokeblock);
+    let feel: u8 = GetPokeblocksFeel(pokeblock);
     StringAppend(dst, sText_TheLevelIs.as_ptr().cast_mut());
     ConvertIntToDecimalStringN(
         text.as_mut_ptr(),
@@ -3319,51 +3302,35 @@ pub(crate) unsafe extern "C" fn PrintMadePokeblockString(
     StringAppend(dst, sText_Dot2.as_ptr().cast_mut());
     StringAppend(dst, sText_NewParagraph.as_ptr().cast_mut());
 }
-pub(crate) unsafe extern "C" fn SortBasedOnPoints(
-    mut places: *mut u8,
-    playersNum: u8,
-    scores: *mut u32,
-) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    i = 0;
-    while i < playersNum as i32 {
-        j = 0;
-        while j < playersNum as i32 {
+unsafe fn SortBasedOnPoints(places: *mut u8, playersNum: u8, scores: *mut u32) {
+    for i in 0..(playersNum as i32) {
+        for j in 0..(playersNum as i32) {
             if *scores.at(*places.at(i)) > *scores.at(*places.at(j)) {
-                let mut temp: u8 = 0;
-                temp = *places.at(i);
+                let temp: u8 = *places.at(i);
                 *places.at(i) = *places.at(j);
                 *places.at(j) = temp;
             }
-            j += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SortScores() {
+unsafe fn SortScores() {
     let mut playerId: u8 = 0;
-    let mut i: u8 = 0;
     let mut places: CArray<u8, 4> = zeroed();
     let mut points: CArray<u32, 4> = zeroed();
-    i = 0;
-    while i < (*sBerryBlender).numPlayers {
+    for i in 0..(*sBerryBlender).numPlayers {
         places[i] = i;
-        i += 1;
     }
-    i = 0;
-    while i < (*sBerryBlender).numPlayers {
+    for i in 0..(*sBerryBlender).numPlayers {
         points[i] = 0xf4240 * (*sBerryBlender).scores[i][0] as u32;
         points[i] += 1000 * (*sBerryBlender).scores[i][1] as u32;
         points[i] += 1000 - (*sBerryBlender).scores[i][2] as u32;
-        i += 1;
     }
     SortBasedOnPoints(
         places.as_mut_ptr(),
         (*sBerryBlender).numPlayers,
         points.as_mut_ptr(),
     );
-    i = 0;
+    let mut i: u8 = 0;
     while i < (*sBerryBlender).numPlayers {
         (*sBerryBlender).playerPlaces[i] = places[i];
         i += 1;
@@ -3381,7 +3348,7 @@ pub(crate) unsafe extern "C" fn SortScores() {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn PrintBlendingRanking() -> u8 {
+unsafe fn PrintBlendingRanking() -> u8 {
     let mut i: u16 = 0;
     let mut xPos: i32 = 0;
     let mut yPos: i32 = 0;
@@ -3455,7 +3422,7 @@ pub(crate) unsafe extern "C" fn PrintBlendingRanking() -> u8 {
             yPos = 41;
             i = 0;
             while i < (*sBerryBlender).numPlayers as u16 {
-                let mut place: u8 = (*sBerryBlender).playerPlaces[i];
+                let place: u8 = (*sBerryBlender).playerPlaces[i];
                 ConvertIntToDecimalStringN(
                     (*sBerryBlender).stringVar.as_mut_ptr(),
                     i as i32 + 1,
@@ -3468,7 +3435,9 @@ pub(crate) unsafe extern "C" fn PrintBlendingRanking() -> u8 {
                 );
                 StringAppend(
                     (*sBerryBlender).stringVar.as_mut_ptr(),
-                    gText_Space.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_Space).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                 );
                 StringAppend(
                     (*sBerryBlender).stringVar.as_mut_ptr(),
@@ -3553,49 +3522,48 @@ pub(crate) unsafe extern "C" fn PrintBlendingRanking() -> u8 {
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowBerryBlenderRecordWindow() {
-    let mut i: i32 = 0;
-    let mut xPos: i32 = 0;
-    let mut yPos: i32 = 0;
-    let mut winTemplate: WindowTemplate = zeroed();
+pub unsafe fn ShowBerryBlenderRecordWindow() {
     let mut text: CArray<u8, 32> = zeroed();
-    winTemplate = *sBlenderRecordWindowTemplate;
-    gRecordsWindowId = AddWindow(&raw mut winTemplate) as u8;
-    DrawStdWindowFrame(gRecordsWindowId, FALSE);
-    FillWindowPixelBuffer(gRecordsWindowId, 17);
-    xPos = GetStringCenterAlignXOffset(
+    let mut winTemplate: WindowTemplate = *sBlenderRecordWindowTemplate;
+    gRecordsWindowId.set(AddWindow(&raw mut winTemplate) as u8);
+    DrawStdWindowFrame(gRecordsWindowId.get(), FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId.get(), 17);
+    let mut xPos: i32 = GetStringCenterAlignXOffset(
         FONT_NORMAL as i32,
-        gText_BlenderMaxSpeedRecord.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_BlenderMaxSpeedRecord).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         144,
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_BlenderMaxSpeedRecord.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_BlenderMaxSpeedRecord).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         xPos as u8,
         1,
         0,
         None,
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_234Players.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_234Players).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         4,
         41,
         0,
         None,
     );
-    i = 0;
-    yPos = 41;
-    while i < NUM_SCORE_TYPES {
-        let mut txtPtr: *mut u8 = null_mut();
-        let mut record: u32 = 0;
-        record = (*gSaveBlock1Ptr).berryBlenderRecords[i] as u32;
-        txtPtr = ConvertIntToDecimalStringN(
+    let yPos: i32 = 41;
+    for i in 0..NUM_SCORE_TYPES {
+        let record: u32 = (*gSaveBlock1Ptr).berryBlenderRecords[i] as u32;
+        let mut txtPtr: *mut u8 = ConvertIntToDecimalStringN(
             text.as_mut_ptr(),
             (record / 100) as i32,
             STR_CONV_MODE_RIGHT_ALIGN,
@@ -3611,7 +3579,7 @@ pub unsafe extern "C" fn ShowBerryBlenderRecordWindow() {
         txtPtr = StringAppend(txtPtr, sText_RPM.as_ptr().cast_mut());
         xPos = GetStringRightAlignXOffset(FONT_NORMAL as i32, text.as_mut_ptr(), 140);
         AddTextPrinterParameterized(
-            gRecordsWindowId,
+            gRecordsWindowId.get(),
             FONT_NORMAL,
             text.as_mut_ptr(),
             xPos as u8,
@@ -3619,28 +3587,26 @@ pub unsafe extern "C" fn ShowBerryBlenderRecordWindow() {
             0,
             None,
         );
-        i += 1;
     }
-    PutWindowTilemap(gRecordsWindowId);
-    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
+    PutWindowTilemap(gRecordsWindowId.get());
+    CopyWindowToVram(gRecordsWindowId.get(), COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn Task_PlayPokeblockFanfare(taskId: u8) {
-    if gTasks[taskId].data[0] == 0 {
+pub(crate) unsafe fn Task_PlayPokeblockFanfare(taskId: u8) {
+    if task_get(taskId, 0) == 0 {
         PlayFanfare(MUS_LEVEL_UP);
-        gTasks[taskId].data[0] += 1;
+        task_set(taskId, 0, task_get(taskId, 0) + 1);
     }
     if IsFanfareTaskInactive() != 0 {
         PlayBGM((*sBerryBlender).savedMusic);
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn TryAddContestLinkTvShow(
+unsafe fn TryAddContestLinkTvShow(
     pokeblock: *mut Pokeblock,
     tvBlender: *mut TvBlenderStruct,
 ) -> u32 {
-    let mut flavorLevel: u8 = GetHighestPokeblocksFlavorLevel(pokeblock);
-    let mut sheen: u16 =
-        div_i32(flavorLevel as i32 * 10, GetPokeblocksFeel(pokeblock) as i32) as u16;
+    let flavorLevel: u8 = GetHighestPokeblocksFlavorLevel(pokeblock);
+    let sheen: u16 = div_i32(flavorLevel as i32 * 10, GetPokeblocksFeel(pokeblock) as i32) as u16;
     (*tvBlender).pokeblockSheen = sheen as u8;
     (*tvBlender).pokeblockColor = (*pokeblock).color;
     (*tvBlender).name[0] = EOS;
@@ -3688,9 +3654,9 @@ pub(crate) unsafe extern "C" fn TryAddContestLinkTvShow(
             return FALSE as u32;
         }
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn Blender_AddTextPrinter(
+unsafe fn Blender_AddTextPrinter(
     windowId: u8,
     string: *mut u8,
     x: u8,
@@ -3699,7 +3665,7 @@ pub(crate) unsafe extern "C" fn Blender_AddTextPrinter(
     caseId: i32,
 ) {
     let mut txtColor: CArray<u8, 3> = zeroed();
-    let mut letterSpacing: u32 = 0;
+    let letterSpacing: u32 = 0;
     match caseId {
         1 => {
             txtColor[0] = 0x0;
@@ -3732,11 +3698,7 @@ pub(crate) unsafe extern "C" fn Blender_AddTextPrinter(
         string,
     );
 }
-pub(crate) unsafe extern "C" fn PrintMessage(
-    textState: *mut i16,
-    string: *mut u8,
-    textSpeed: i32,
-) -> u32 {
+pub(crate) unsafe fn PrintMessage(textState: *mut i16, string: *mut u8, textSpeed: i32) -> u32 {
     match *textState {
         0 => {
             DrawDialogFrameWithCustomTileAndPalette(WIN_MSG, FALSE, 0x14, 0xF);
@@ -3745,13 +3707,11 @@ pub(crate) unsafe extern "C" fn PrintMessage(
             CopyWindowToVram(WIN_MSG, COPYWIN_FULL);
             *textState += 1;
         }
-        1 => {
-            if IsTextPrinterActive(WIN_MSG) == 0 {
-                *textState = 0;
-                return TRUE as u32;
-            }
+        1 if IsTextPrinterActive(WIN_MSG) == 0 => {
+            *textState = 0;
+            return TRUE as u32;
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }

@@ -44,7 +44,7 @@ unsafe fn get_landmarks(map_section: u8, id: u8) -> *const *const u8 {
 
 /// The `count`th landmark (among those unlocked) at this map section and id.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLandmarkName(map_section: u8, id: u8, mut count: u8) -> *const u8 {
+pub unsafe fn GetLandmarkName(map_section: u8, id: u8, mut count: u8) -> *const u8 {
     let mut landmarks = unsafe { get_landmarks(map_section, id) };
     if landmarks.is_null() {
         return core::ptr::null();

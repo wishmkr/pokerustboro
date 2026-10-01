@@ -4,126 +4,6 @@
 
 use crate::ffi::{RomBytes, RomPtr};
 
-unsafe extern "C" {
-    static BattleFrontier_ExchangeServiceCorner_Text_BrightpowderDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_CalciumDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_CarbosDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_ChikoritaDollDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_ChoiceBandDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_ClefairyDollDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_CyndaquilDollDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_DittoDollDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_FocusBandDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_HPUpDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_IronDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_KingsRockDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_KissCushionDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_KissPosterDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_LargeDollDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_LeftoversDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_MentalHerbDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_MeowthDollDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_ProteinDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_QuickClawDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_ScopeLensDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_SmoochumDollDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_TogepiDollDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_TotodileDollDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_WhiteHerbDesc: u8;
-    static BattleFrontier_ExchangeServiceCorner_Text_ZincDesc: u8;
-    static BattleFrontier_Lounge2_Text_ArenaTycoonGoldMons: u8;
-    static BattleFrontier_Lounge2_Text_ArenaTycoonIsThere: u8;
-    static BattleFrontier_Lounge2_Text_ArenaTycoonSilverMons: u8;
-    static BattleFrontier_Lounge2_Text_DomeAceGoldMons: u8;
-    static BattleFrontier_Lounge2_Text_DomeAceIsThere: u8;
-    static BattleFrontier_Lounge2_Text_DomeAceSilverMons: u8;
-    static BattleFrontier_Lounge2_Text_DoubleBattleAdvice1: u8;
-    static BattleFrontier_Lounge2_Text_DoubleBattleAdvice2: u8;
-    static BattleFrontier_Lounge2_Text_DoubleBattleAdvice3: u8;
-    static BattleFrontier_Lounge2_Text_FactoryHeadGoldMons: u8;
-    static BattleFrontier_Lounge2_Text_FactoryHeadIsThere: u8;
-    static BattleFrontier_Lounge2_Text_FactoryHeadSilverMons: u8;
-    static BattleFrontier_Lounge2_Text_LinkMultiBattleAdvice: u8;
-    static BattleFrontier_Lounge2_Text_MultiBattleAdvice: u8;
-    static BattleFrontier_Lounge2_Text_PalaceMavenGoldMons: u8;
-    static BattleFrontier_Lounge2_Text_PalaceMavenIsThere: u8;
-    static BattleFrontier_Lounge2_Text_PalaceMavenSilverMons: u8;
-    static BattleFrontier_Lounge2_Text_PikeQueenGoldMons: u8;
-    static BattleFrontier_Lounge2_Text_PikeQueenIsThere: u8;
-    static BattleFrontier_Lounge2_Text_PikeQueenSilverMons: u8;
-    static BattleFrontier_Lounge2_Text_PyramidKingGoldMons: u8;
-    static BattleFrontier_Lounge2_Text_PyramidKingIsThere: u8;
-    static BattleFrontier_Lounge2_Text_PyramidKingSilverMons: u8;
-    static BattleFrontier_Lounge2_Text_SalonMaidenGoldMons: u8;
-    static BattleFrontier_Lounge2_Text_SalonMaidenIsThere: u8;
-    static BattleFrontier_Lounge2_Text_SalonMaidenSilverMons: u8;
-    static BattleFrontier_Lounge3_Text_ChallengeBattleArena: u8;
-    static BattleFrontier_Lounge3_Text_ChallengeBattleDomeDouble: u8;
-    static BattleFrontier_Lounge3_Text_ChallengeBattleDomeSingle: u8;
-    static BattleFrontier_Lounge3_Text_ChallengeBattleFactoryDouble: u8;
-    static BattleFrontier_Lounge3_Text_ChallengeBattleFactorySingle: u8;
-    static BattleFrontier_Lounge3_Text_ChallengeBattlePalaceDouble: u8;
-    static BattleFrontier_Lounge3_Text_ChallengeBattlePalaceSingle: u8;
-    static BattleFrontier_Lounge3_Text_ChallengeBattlePike: u8;
-    static BattleFrontier_Lounge3_Text_ChallengeBattlePyramid: u8;
-    static BattleFrontier_Lounge3_Text_ChallengeBattleTowerDouble: u8;
-    static BattleFrontier_Lounge3_Text_ChallengeBattleTowerMulti: u8;
-    static BattleFrontier_Lounge3_Text_ChallengeBattleTowerSingle: u8;
-    static BattleFrontier_Lounge3_Text_GetToBattleArena: u8;
-    static BattleFrontier_Lounge3_Text_GetToBattleDomeDouble: u8;
-    static BattleFrontier_Lounge3_Text_GetToBattleDomeSingle: u8;
-    static BattleFrontier_Lounge3_Text_GetToBattleFactoryDouble: u8;
-    static BattleFrontier_Lounge3_Text_GetToBattleFactorySingle: u8;
-    static BattleFrontier_Lounge3_Text_GetToBattlePalaceDouble: u8;
-    static BattleFrontier_Lounge3_Text_GetToBattlePalaceSingle: u8;
-    static BattleFrontier_Lounge3_Text_GetToBattlePike: u8;
-    static BattleFrontier_Lounge3_Text_GetToBattlePyramid: u8;
-    static BattleFrontier_Lounge3_Text_GetToBattleTowerDouble: u8;
-    static BattleFrontier_Lounge3_Text_GetToBattleTowerMulti: u8;
-    static BattleFrontier_Lounge3_Text_GetToBattleTowerSingle: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlAdamant: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlBashful: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlBold: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlBrave: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlCalm: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlCareful: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlDocileNaiveQuietQuirky: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlGentle: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlHardy: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlHasty: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlImpish: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlJolly: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlLax: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlLonely: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlMild: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlModest: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlNaughty: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlRash: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlRelaxed: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlSassy: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlSerious: u8;
-    static BattleFrontier_Lounge5_Text_NatureGirlTimid: u8;
-    static BattleFrontier_Lounge7_Text_BodySlamDesc: u8;
-    static BattleFrontier_Lounge7_Text_CounterDesc: u8;
-    static BattleFrontier_Lounge7_Text_DefenseCurlDesc: u8;
-    static BattleFrontier_Lounge7_Text_DreamEaterDesc: u8;
-    static BattleFrontier_Lounge7_Text_EndureDesc: u8;
-    static BattleFrontier_Lounge7_Text_FirePunchDesc: u8;
-    static BattleFrontier_Lounge7_Text_IcePunchDesc: u8;
-    static BattleFrontier_Lounge7_Text_IcyWindDesc: u8;
-    static BattleFrontier_Lounge7_Text_MegaKickDesc: u8;
-    static BattleFrontier_Lounge7_Text_MegaPunchDesc: u8;
-    static BattleFrontier_Lounge7_Text_MudSlapDesc: u8;
-    static BattleFrontier_Lounge7_Text_PsychUpDesc: u8;
-    static BattleFrontier_Lounge7_Text_RockSlideDesc: u8;
-    static BattleFrontier_Lounge7_Text_SeismicTossDesc: u8;
-    static BattleFrontier_Lounge7_Text_SnoreDesc: u8;
-    static BattleFrontier_Lounge7_Text_SoftboiledDesc: u8;
-    static BattleFrontier_Lounge7_Text_SwiftDesc: u8;
-    static BattleFrontier_Lounge7_Text_SwordsDanceDesc: u8;
-    static BattleFrontier_Lounge7_Text_ThunderPunchDesc: u8;
-    static BattleFrontier_Lounge7_Text_ThunderWaveDesc: u8;
-}
 
 pub(crate) static sMauvilleGymSwitchCoords: RomBytes<16> = RomBytes([7, 22, 0, 0, 11, 19, 0, 0, 10, 16, 0, 0, 15, 16, 0, 0]);
 
@@ -181,36 +61,36 @@ pub(crate) static sPokemonCenters_29: RomBytes<38> = RomBytes([2, 2, 1, 3, 5, 4,
 pub(crate) static sFrontierManiacStreakThresholds_28: RomBytes<20> = RomBytes([21, 56, 21, 35, 255, 255, 255, 255, 2, 4, 7, 21, 7, 21, 14, 28, 13, 112, 7, 56]);
 
 pub(crate) static sFrontierManiacMessages_27: [RomPtr<u8>; 30] = [
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_SalonMaidenIsThere)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_SalonMaidenSilverMons)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_SalonMaidenGoldMons)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_DoubleBattleAdvice1)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_DoubleBattleAdvice2)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_DoubleBattleAdvice3)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_MultiBattleAdvice)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_MultiBattleAdvice)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_MultiBattleAdvice)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_LinkMultiBattleAdvice)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_LinkMultiBattleAdvice)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_LinkMultiBattleAdvice)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_DomeAceIsThere)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_DomeAceSilverMons)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_DomeAceGoldMons)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_FactoryHeadIsThere)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_FactoryHeadSilverMons)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_FactoryHeadGoldMons)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_PalaceMavenIsThere)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_PalaceMavenSilverMons)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_PalaceMavenGoldMons)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_ArenaTycoonIsThere)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_ArenaTycoonSilverMons)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_ArenaTycoonGoldMons)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_PikeQueenIsThere)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_PikeQueenSilverMons)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_PikeQueenGoldMons)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_PyramidKingIsThere)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_PyramidKingSilverMons)),
-    RomPtr((&raw const BattleFrontier_Lounge2_Text_PyramidKingGoldMons)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_SalonMaidenIsThere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_SalonMaidenSilverMons.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_SalonMaidenGoldMons.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_DoubleBattleAdvice1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_DoubleBattleAdvice2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_DoubleBattleAdvice3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_MultiBattleAdvice.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_MultiBattleAdvice.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_MultiBattleAdvice.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_LinkMultiBattleAdvice.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_LinkMultiBattleAdvice.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_LinkMultiBattleAdvice.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_DomeAceIsThere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_DomeAceSilverMons.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_DomeAceGoldMons.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_FactoryHeadIsThere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_FactoryHeadSilverMons.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_FactoryHeadGoldMons.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_PalaceMavenIsThere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_PalaceMavenSilverMons.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_PalaceMavenGoldMons.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_ArenaTycoonIsThere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_ArenaTycoonSilverMons.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_ArenaTycoonGoldMons.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_PikeQueenIsThere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_PikeQueenSilverMons.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_PikeQueenGoldMons.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_PyramidKingIsThere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_PyramidKingSilverMons.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge2_Text_PyramidKingGoldMons.cast::<u8>()))),
 ];
 
 pub(crate) static sBattleTowerStreakThresholds_26: RomBytes<20> = RomBytes([7, 0, 14, 0, 21, 0, 28, 0, 35, 0, 49, 0, 63, 0, 77, 0, 91, 0, 0, 0]);
@@ -431,61 +311,61 @@ pub(crate) static sBattleFrontierTutor_WindowTemplate_10: RomBytes<8> = RomBytes
 pub(crate) static sScrollableMultichoice_ScrollArrowsTemplate_25: RomBytes<16> = RomBytes([2, 0, 0, 3, 0, 0, 0, 0, 0, 0, 208, 7, 100, 0, 0, 0]);
 
 pub(crate) static sNatureGirlMessages_24: [RomPtr<u8>; 25] = [
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlHardy)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlLonely)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlBrave)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlAdamant)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlNaughty)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlBold)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlDocileNaiveQuietQuirky)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlRelaxed)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlImpish)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlLax)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlTimid)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlHasty)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlSerious)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlJolly)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlDocileNaiveQuietQuirky)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlModest)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlMild)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlDocileNaiveQuietQuirky)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlBashful)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlRash)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlCalm)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlGentle)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlSassy)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlCareful)),
-    RomPtr((&raw const BattleFrontier_Lounge5_Text_NatureGirlDocileNaiveQuietQuirky)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlHardy.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlLonely.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlBrave.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlAdamant.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlNaughty.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlBold.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlDocileNaiveQuietQuirky.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlRelaxed.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlImpish.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlLax.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlTimid.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlHasty.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlSerious.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlJolly.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlDocileNaiveQuietQuirky.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlModest.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlMild.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlDocileNaiveQuietQuirky.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlBashful.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlRash.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlCalm.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlGentle.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlSassy.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlCareful.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge5_Text_NatureGirlDocileNaiveQuietQuirky.cast::<u8>()))),
 ];
 
 pub(crate) static sFrontierGamblerLookingMessages_23: [RomPtr<u8>; 12] = [
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_ChallengeBattleTowerSingle)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_ChallengeBattleTowerDouble)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_ChallengeBattleTowerMulti)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_ChallengeBattleDomeSingle)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_ChallengeBattleDomeDouble)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_ChallengeBattleFactorySingle)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_ChallengeBattleFactoryDouble)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_ChallengeBattlePalaceSingle)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_ChallengeBattlePalaceDouble)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_ChallengeBattleArena)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_ChallengeBattlePike)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_ChallengeBattlePyramid)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_ChallengeBattleTowerSingle.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_ChallengeBattleTowerDouble.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_ChallengeBattleTowerMulti.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_ChallengeBattleDomeSingle.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_ChallengeBattleDomeDouble.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_ChallengeBattleFactorySingle.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_ChallengeBattleFactoryDouble.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_ChallengeBattlePalaceSingle.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_ChallengeBattlePalaceDouble.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_ChallengeBattleArena.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_ChallengeBattlePike.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_ChallengeBattlePyramid.cast::<u8>()))),
 ];
 
 pub(crate) static sFrontierGamblerGoMessages_22: [RomPtr<u8>; 12] = [
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_GetToBattleTowerSingle)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_GetToBattleTowerDouble)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_GetToBattleTowerMulti)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_GetToBattleDomeSingle)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_GetToBattleDomeDouble)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_GetToBattleFactorySingle)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_GetToBattleFactoryDouble)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_GetToBattlePalaceSingle)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_GetToBattlePalaceDouble)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_GetToBattleArena)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_GetToBattlePike)),
-    RomPtr((&raw const BattleFrontier_Lounge3_Text_GetToBattlePyramid)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_GetToBattleTowerSingle.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_GetToBattleTowerDouble.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_GetToBattleTowerMulti.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_GetToBattleDomeSingle.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_GetToBattleDomeDouble.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_GetToBattleFactorySingle.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_GetToBattleFactoryDouble.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_GetToBattlePalaceSingle.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_GetToBattlePalaceDouble.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_GetToBattleArena.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_GetToBattlePike.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge3_Text_GetToBattlePyramid.cast::<u8>()))),
 ];
 
 pub(crate) static sFrontierChallenges_21: RomBytes<24> = RomBytes([0, 0, 1, 0, 2, 0, 0, 1, 1, 1, 0, 4, 1, 4, 0, 2, 1, 2, 0, 3, 0, 5, 0, 6]);
@@ -523,84 +403,84 @@ pub(crate) static CSWTCH_523: RomBytes<5> = RomBytes([0, 0, 1, 0, 1]);
 pub(crate) static CSWTCH_524: RomBytes<5> = RomBytes([3, 1, 0, 4, 5]);
 
 pub(crate) static sFrontierExchangeCorner_Decor1Descriptions_18: [RomPtr<u8>; 11] = [
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_KissPosterDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_KissCushionDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_SmoochumDollDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_TogepiDollDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_MeowthDollDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_ClefairyDollDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_DittoDollDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_CyndaquilDollDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_ChikoritaDollDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_TotodileDollDesc)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_KissPosterDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_KissCushionDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_SmoochumDollDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_TogepiDollDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_MeowthDollDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_ClefairyDollDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_DittoDollDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_CyndaquilDollDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_ChikoritaDollDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_TotodileDollDesc.cast::<u8>()))),
     RomPtr((&raw const crate::data::strings::gText_Exit).cast::<u8>()),
 ];
 
 pub(crate) static sFrontierExchangeCorner_Decor1_17: RomBytes<22> = RomBytes([75, 0, 103, 0, 87, 0, 79, 0, 84, 0, 85, 0, 86, 0, 80, 0, 81, 0, 82, 0, 255, 255]);
 
 pub(crate) static sFrontierExchangeCorner_Decor2Descriptions_16: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_LargeDollDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_LargeDollDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_LargeDollDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_LargeDollDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_LargeDollDesc)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_LargeDollDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_LargeDollDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_LargeDollDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_LargeDollDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_LargeDollDesc.cast::<u8>()))),
     RomPtr((&raw const crate::data::strings::gText_Exit).cast::<u8>()),
 ];
 
 pub(crate) static sFrontierExchangeCorner_Decor2_15: RomBytes<12> = RomBytes([113, 0, 111, 0, 114, 0, 115, 0, 116, 0, 255, 255]);
 
 pub(crate) static sFrontierExchangeCorner_VitaminsDescriptions_14: [RomPtr<u8>; 7] = [
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_ProteinDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_CalciumDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_IronDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_ZincDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_CarbosDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_HPUpDesc)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_ProteinDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_CalciumDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_IronDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_ZincDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_CarbosDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_HPUpDesc.cast::<u8>()))),
     RomPtr((&raw const crate::data::strings::gText_Exit).cast::<u8>()),
 ];
 
 pub(crate) static sFrontierExchangeCorner_Vitamins_13: RomBytes<14> = RomBytes([64, 0, 67, 0, 65, 0, 70, 0, 66, 0, 63, 0, 255, 255]);
 
 pub(crate) static sFrontierExchangeCorner_HoldItemsDescriptions_12: [RomPtr<u8>; 10] = [
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_LeftoversDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_WhiteHerbDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_QuickClawDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_MentalHerbDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_BrightpowderDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_ChoiceBandDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_KingsRockDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_FocusBandDesc)),
-    RomPtr((&raw const BattleFrontier_ExchangeServiceCorner_Text_ScopeLensDesc)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_LeftoversDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_WhiteHerbDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_QuickClawDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_MentalHerbDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_BrightpowderDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_ChoiceBandDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_KingsRockDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_FocusBandDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_ExchangeServiceCorner_Text_ScopeLensDesc.cast::<u8>()))),
     RomPtr((&raw const crate::data::strings::gText_Exit).cast::<u8>()),
 ];
 
 pub(crate) static sFrontierExchangeCorner_HoldItems_11: RomBytes<20> = RomBytes([200, 0, 180, 0, 183, 0, 185, 0, 179, 0, 186, 0, 187, 0, 196, 0, 198, 0, 255, 255]);
 
 pub(crate) static sBattleFrontier_TutorMoveDescriptions2_9: [RomPtr<u8>; 11] = [
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_DefenseCurlDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_SnoreDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_MudSlapDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_SwiftDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_IcyWindDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_EndureDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_PsychUpDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_IcePunchDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_ThunderPunchDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_FirePunchDesc)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_DefenseCurlDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_SnoreDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_MudSlapDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_SwiftDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_IcyWindDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_EndureDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_PsychUpDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_IcePunchDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_ThunderPunchDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_FirePunchDesc.cast::<u8>()))),
     RomPtr((&raw const crate::data::strings::gText_Exit).cast::<u8>()),
 ];
 
 pub(crate) static sBattleFrontier_TutorMoveDescriptions1_8: [RomPtr<u8>; 11] = [
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_SoftboiledDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_SeismicTossDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_DreamEaterDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_MegaPunchDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_MegaKickDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_BodySlamDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_RockSlideDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_CounterDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_ThunderWaveDesc)),
-    RomPtr((&raw const BattleFrontier_Lounge7_Text_SwordsDanceDesc)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_SoftboiledDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_SeismicTossDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_DreamEaterDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_MegaPunchDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_MegaKickDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_BodySlamDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_RockSlideDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_CounterDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_ThunderWaveDesc.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_Lounge7_Text_SwordsDanceDesc.cast::<u8>()))),
     RomPtr((&raw const crate::data::strings::gText_Exit).cast::<u8>()),
 ];
 

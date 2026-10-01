@@ -11,6 +11,7 @@ use crate::ffi::{
     WindowTemplate, gStringVar4, joy_new, main_state, palette_fade_active,
 };
 use crate::gpu_regs::SetGpuReg;
+use crate::link::{gLinkType, gReceivedRemoteLinkPlayers};
 use crate::mystery_event_script::RunMysteryEventScript;
 use crate::sprite::{
     AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
@@ -72,66 +73,163 @@ static WINDOW_TEMPLATES: [WindowTemplate; 3] = [
 
 static TEXT_COLOR: [u8; 3] = [1, 2, 3];
 
-unsafe extern "C" {
-    static gLinkPlayers: u8;
-    static mut gLinkType: u16;
-    static gLinkStatus: u32;
-    static gReceivedRemoteLinkPlayers: u8;
-    static gText_EventSafelyLoaded: u8;
-    static gText_LoadErrorEndingSession: u8;
-    static gText_LinkStandby2: u8;
-    static gText_PressAToLoadEvent: u8;
-    static gText_LoadingEvent: u8;
-    static gText_DontRemoveCableTurnOff: u8;
-
-    fn SetVBlankCallback(callback: Option<unsafe extern "C" fn()>);
-    fn SetMainCallback2(callback: MainCallback);
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
-    fn BeginNormalPaletteFade(
-        selected: u32,
-        delay: i8,
-        start_y: u8,
-        target_y: u8,
-        color: u16,
-    ) -> u8;
-    fn FillPalette(value: u16, offset: u16, size: u16);
-    fn Menu_LoadStdPalAt(offset: u16);
-    fn Task_DestroySelf(task_id: u8);
-    fn StopMapMusic();
-    fn DoSoftReset();
-    fn AddTextPrinterParameterized4(
-        window_id: u8,
-        font_id: u8,
-        left: u8,
-        top: u8,
-        letter_spacing: u8,
-        line_spacing: u8,
-        color: *const u8,
-        speed: i8,
-        string: *const u8,
-    );
-    fn OpenLink();
-    fn CloseLink();
-    fn GetLinkPlayerCount_2() -> u8;
-    fn CheckShouldAdvanceLinkState();
-    fn IsLinkConnectionEstablished() -> u8;
-    fn GetLinkPlayerDataExchangeStatusTimed(min_players: i32, max_players: i32) -> u8;
-    fn SetCloseLinkCallback();
-    fn GetBlockReceivedStatus() -> u8;
-    fn ResetBlockReceivedFlags();
-    fn IsLinkMaster() -> u8;
-    fn TrySavingData(save_type: u8) -> u8;
+/// `SetVBlankCallback` with this module's view of its types.
+#[inline]
+unsafe fn SetVBlankCallback(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetVBlankCallback(a0);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: MainCallback) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
+}
+/// `TransferPlttBuffer` with this module's view of its types.
+#[inline]
+unsafe fn TransferPlttBuffer() {
+    unsafe {
+        crate::palette::TransferPlttBuffer();
+    }
+}
+/// `UpdatePaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn UpdatePaletteFade() -> u8 {
+    unsafe { crate::palette::UpdatePaletteFade() }
+}
+/// `BeginNormalPaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8 {
+    unsafe { crate::palette::BeginNormalPaletteFade(a0, a1, a2, a3, a4) }
+}
+/// `FillPalette` with this module's view of its types.
+#[inline]
+unsafe fn FillPalette(a0: u16, a1: u16, a2: u16) {
+    unsafe {
+        crate::palette::FillPalette(a0, a1, a2);
+    }
+}
+/// `Menu_LoadStdPalAt` with this module's view of its types.
+#[inline]
+unsafe fn Menu_LoadStdPalAt(a0: u16) {
+    unsafe {
+        crate::menu::Menu_LoadStdPalAt(a0);
+    }
+}
+/// `Task_DestroySelf` with this module's view of its types.
+#[inline]
+unsafe fn Task_DestroySelf(a0: u8) {
+    unsafe {
+        crate::link::Task_DestroySelf(a0);
+    }
+}
+/// `StopMapMusic` with this module's view of its types.
+#[inline]
+unsafe fn StopMapMusic() {
+    {
+        crate::sound::StopMapMusic();
+    }
+}
+/// `DoSoftReset` with this module's view of its types.
+#[inline]
+unsafe fn DoSoftReset() {
+    unsafe {
+        crate::agb_main::DoSoftReset();
+    }
+}
+/// `AddTextPrinterParameterized4` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized4(
+    a0: u8,
+    a1: u8,
+    a2: u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: *const u8,
+    a7: i8,
+    a8: *const u8,
+) {
+    unsafe {
+        crate::menu::AddTextPrinterParameterized4(a0, a1, a2, a3, a4, a5, a6 as _, a7, a8 as _);
+    }
+}
+/// `OpenLink` with this module's view of its types.
+#[inline]
+unsafe fn OpenLink() {
+    unsafe {
+        crate::link::OpenLink();
+    }
+}
+/// `CloseLink` with this module's view of its types.
+#[inline]
+unsafe fn CloseLink() {
+    unsafe {
+        crate::link::CloseLink();
+    }
+}
+/// `GetLinkPlayerCount_2` with this module's view of its types.
+#[inline]
+unsafe fn GetLinkPlayerCount_2() -> u8 {
+    unsafe { crate::link::GetLinkPlayerCount_2() }
+}
+/// `CheckShouldAdvanceLinkState` with this module's view of its types.
+#[inline]
+unsafe fn CheckShouldAdvanceLinkState() {
+    unsafe {
+        crate::link::CheckShouldAdvanceLinkState();
+    }
+}
+/// `IsLinkConnectionEstablished` with this module's view of its types.
+#[inline]
+unsafe fn IsLinkConnectionEstablished() -> u8 {
+    unsafe { crate::link::IsLinkConnectionEstablished() }
+}
+/// `GetLinkPlayerDataExchangeStatusTimed` with this module's view of its types.
+#[inline]
+unsafe fn GetLinkPlayerDataExchangeStatusTimed(a0: i32, a1: i32) -> u8 {
+    unsafe { crate::link::GetLinkPlayerDataExchangeStatusTimed(a0, a1) }
+}
+/// `SetCloseLinkCallback` with this module's view of its types.
+#[inline]
+unsafe fn SetCloseLinkCallback() {
+    unsafe {
+        crate::link::SetCloseLinkCallback();
+    }
+}
+/// `GetBlockReceivedStatus` with this module's view of its types.
+#[inline]
+unsafe fn GetBlockReceivedStatus() -> u8 {
+    unsafe { crate::link::GetBlockReceivedStatus() }
+}
+/// `ResetBlockReceivedFlags` with this module's view of its types.
+#[inline]
+unsafe fn ResetBlockReceivedFlags() {
+    unsafe {
+        crate::link::ResetBlockReceivedFlags();
+    }
+}
+/// `IsLinkMaster` with this module's view of its types.
+#[inline]
+unsafe fn IsLinkMaster() -> u8 {
+    unsafe { crate::link::IsLinkMaster() }
+}
+/// `TrySavingData` with this module's view of its types.
+#[inline]
+unsafe fn TrySavingData(a0: u8) -> u8 {
+    unsafe { crate::save::TrySavingData(a0) }
 }
 
-unsafe extern "C" fn vblank_cb() {
+unsafe fn vblank_cb() {
     unsafe { LoadOam() };
     unsafe { ProcessSpriteCopyRequests() };
     unsafe { TransferPlttBuffer() };
 }
 
 unsafe fn language_matches() -> bool {
-    let players = &raw const gLinkPlayers;
+    let players = &raw const (*(&raw const crate::link::gLinkPlayers).cast::<u8>());
     let first = unsafe { players.add(LINK_PLAYER_LANGUAGE).cast::<u16>().read() };
     let second = unsafe {
         players
@@ -143,10 +241,10 @@ unsafe fn language_matches() -> bool {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_InitMysteryEventMenu() {
+pub unsafe fn CB2_InitMysteryEventMenu() {
     unsafe { ResetSpriteData() };
     unsafe { FreeAllSpritePalettes() };
-    unsafe { ResetTasks() };
+    ResetTasks();
     unsafe { SetVBlankCallback(Some(vblank_cb)) };
     unsafe { ResetBgsAndClearDma3BusyFlags(0) };
     unsafe { InitBgsFromTemplates(0, BG_TEMPLATES.as_ptr().cast(), 1) };
@@ -164,7 +262,7 @@ pub unsafe extern "C" fn CB2_InitMysteryEventMenu() {
     unsafe { SetGpuReg(REG_OFFSET_BLDCNT, 0) };
     unsafe { CreateTask(Task_DestroySelf, 0) };
     unsafe { StopMapMusic() };
-    unsafe { RunTasks() };
+    RunTasks();
     unsafe { AnimateSprites() };
     unsafe { BuildOamBuffer() };
     unsafe { RunTextPrinters() };
@@ -178,14 +276,26 @@ pub unsafe extern "C" fn CB2_InitMysteryEventMenu() {
 unsafe fn get_event_load_message(dest: *mut u8, status: u32) -> bool {
     let mut failed = true;
     if status == MEVENT_STATUS_LOAD_OK {
-        unsafe { StringCopy(dest, &raw const gText_EventSafelyLoaded) };
+        unsafe {
+            StringCopy(
+                dest,
+                &raw const (*(&raw const crate::data::strings::gText_EventSafelyLoaded)
+                    .cast::<u8>()),
+            )
+        };
         failed = false;
     }
     if status == MEVENT_STATUS_SUCCESS {
         failed = false;
     }
     if status == MEVENT_STATUS_LOAD_ERROR {
-        unsafe { StringCopy(dest, &raw const gText_LoadErrorEndingSession) };
+        unsafe {
+            StringCopy(
+                dest,
+                &raw const (*(&raw const crate::data::strings::gText_LoadErrorEndingSession)
+                    .cast::<u8>()),
+            )
+        };
     }
     failed
 }
@@ -220,10 +330,11 @@ unsafe fn cancel() -> u8 {
     15
 }
 
-unsafe extern "C" fn cb2_mystery_event_menu() {
+unsafe fn cb2_mystery_event_menu() {
     let state = unsafe { main_state() };
     let current = unsafe { state.read() };
-    let link_status = || unsafe { (&raw const gLinkStatus).read() };
+    let link_status =
+        || unsafe { (&raw const (*crate::link::gLinkStatus.as_ptr().cast::<u32>())).read() };
     let mut next = current;
 
     match current {
@@ -237,7 +348,14 @@ unsafe extern "C" fn cb2_mystery_event_menu() {
         }
         1 => {
             if !unsafe { palette_fade_active() } {
-                unsafe { print_text(WIN_MSG, &raw const gText_LinkStandby2, 1) };
+                unsafe {
+                    print_text(
+                        WIN_MSG,
+                        &raw const (*(&raw const crate::data::strings::gText_LinkStandby2)
+                            .cast::<u8>()),
+                        1,
+                    )
+                };
                 next = 2;
             }
         }
@@ -251,7 +369,14 @@ unsafe extern "C" fn cb2_mystery_event_menu() {
         3 => {
             if link_status() & LINK_STAT_MASTER != 0 && link_status() & LINK_STAT_PLAYER_COUNT > 4 {
                 unsafe { PlaySE(SE_PIN) };
-                unsafe { print_text(WIN_MSG, &raw const gText_PressAToLoadEvent, 1) };
+                unsafe {
+                    print_text(
+                        WIN_MSG,
+                        &raw const (*(&raw const crate::data::strings::gText_PressAToLoadEvent)
+                            .cast::<u8>()),
+                        1,
+                    )
+                };
                 next = 4;
             }
             if unsafe { joy_new(B_BUTTON) } {
@@ -269,7 +394,14 @@ unsafe extern "C" fn cb2_mystery_event_menu() {
                     unsafe { PlaySE(SE_SELECT) };
                     unsafe { CheckShouldAdvanceLinkState() };
                     unsafe { DrawStdFrameWithCustomTileAndPalette(WIN_LOADING, 1, 1, 0xd) };
-                    unsafe { print_text(WIN_LOADING, &raw const gText_LoadingEvent, 0) };
+                    unsafe {
+                        print_text(
+                            WIN_LOADING,
+                            &raw const (*(&raw const crate::data::strings::gText_LoadingEvent)
+                                .cast::<u8>()),
+                            0,
+                        )
+                    };
                     unsafe { PutWindowTilemap(WIN_LOADING) };
                     unsafe { CopyWindowToVram(WIN_LOADING, COPYWIN_FULL_MODE) };
                     next = 6;
@@ -289,7 +421,9 @@ unsafe extern "C" fn cb2_mystery_event_menu() {
                         unsafe { SetCloseLinkCallback() };
                         next = unsafe { fail_with_load_error() };
                     } else if unsafe { language_matches() } {
-                        unsafe { print_text(WIN_MSG, &raw const gText_DontRemoveCableTurnOff, 1) };
+                        unsafe {
+                            print_text(WIN_MSG, &raw const (*(&raw const crate::data::strings::gText_DontRemoveCableTurnOff).cast::<u8>()), 1)
+                        };
                         next = 7;
                     } else {
                         unsafe { CloseLink() };
@@ -363,7 +497,7 @@ unsafe extern "C" fn cb2_mystery_event_menu() {
         let failed = unsafe { fail_with_load_error() };
         unsafe { state.write(failed) };
     }
-    unsafe { RunTasks() };
+    RunTasks();
     unsafe { AnimateSprites() };
     unsafe { BuildOamBuffer() };
     unsafe { RunTextPrinters() };

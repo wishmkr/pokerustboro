@@ -1,10 +1,10 @@
 use crate::ffi::{
     AddTextPrinterParameterized, AddWindow, ClearStdWindowAndFrameToTransparent,
     ClearWindowTilemap, ConvertIntToDecimalStringN, DrawStdFrameWithCustomTileAndPalette,
-    FONT_NORMAL, FillWindowPixelBuffer, PutWindowTilemap, RemoveWindow,
-    SAVE2_ENCRYPTION_KEY_OFFSET, SetWindowTemplateFields, WindowTemplate, gSpecialVar_0x8004,
-    gStringVar1,
+    FONT_NORMAL, FillWindowPixelBuffer, PutWindowTilemap, RemoveWindow, SetWindowTemplateFields,
+    WindowTemplate, gSpecialVar_0x8004, gStringVar1,
 };
+use crate::types::SaveBlock2;
 use core::ffi::c_int;
 use core::ptr::addr_of;
 
@@ -13,9 +13,6 @@ const MAX_BERRY_POWDER: u32 = 99_999;
 const STR_CONV_MODE_RIGHT_ALIGN: c_int = 1;
 const TEXT_SKIP_DRAW: u8 = 0xff;
 const PIXEL_FILL_0: u8 = 0;
-
-/// `offsetof(struct SaveBlock2, berryCrush.berryPowderAmount)`
-const SAVE2_BERRY_POWDER_OFFSET: usize = 0x1f4;
 
 /// Tile and palette the vendor menu borrows for its window border.
 const VENDOR_BASE_TILE: u16 = 0x21d;
@@ -29,86 +26,118 @@ const VENDOR_PALETTE_OFFSET: u16 = 208;
 #[unsafe(link_section = "ewram_data")]
 static mut VENDOR_WINDOW_ID: u8 = 0;
 
-unsafe extern "C" {
-    static mut gSaveBlock2Ptr: *mut u8;
-    static gText_Powder: u8;
-
-    fn ApplyNewEncryptionKeyToWord(word: *mut u32, new_key: u32);
-    fn LoadUserWindowBorderGfx_(window_id: u8, dest_offset: u16, palette_offset: u16);
-}
-
+/// `ApplyNewEncryptionKeyToWord` with this module's view of its types.
 #[inline]
-unsafe fn encryption_key() -> u32 {
+unsafe fn ApplyNewEncryptionKeyToWord(a0: *mut u32, a1: u32) {
     unsafe {
-        gSaveBlock2Ptr
-            .add(SAVE2_ENCRYPTION_KEY_OFFSET)
-            .cast::<u32>()
-            .read()
+        crate::load_save::ApplyNewEncryptionKeyToWord(a0 as _, a1);
+    }
+}
+/// `LoadUserWindowBorderGfx_` with this module's view of its types.
+#[inline]
+unsafe fn LoadUserWindowBorderGfx_(a0: u8, a1: u16, a2: u16) {
+    unsafe {
+        crate::text_window::LoadUserWindowBorderGfx_(a0, a1, a2 as _);
     }
 }
 
-/// `&gSaveBlock2Ptr->berryCrush.berryPowderAmount`
-#[inline]
-unsafe fn powder_ptr() -> *mut u32 {
-    unsafe { gSaveBlock2Ptr.add(SAVE2_BERRY_POWDER_OFFSET).cast::<u32>() }
+/// The player's berry powder (from Berry Crush), stored in the save XORed
+/// with its encryption key.
+pub struct BerryPowder<'a> {
+    stored: &'a mut u32,
+    key: u32,
 }
 
-#[inline]
-unsafe fn decrypt_berry_powder(powder: *mut u32) -> u32 {
-    unsafe { powder.read() ^ encryption_key() }
-}
+impl<'a> BerryPowder<'a> {
+    pub fn new(save: &'a mut SaveBlock2) -> Self {
+        let key = save.encryptionKey;
+        Self::from_parts(&mut save.berryCrush.berryPowderAmount, key)
+    }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBerryPowder(powder: *mut u32, amount: u32) {
-    unsafe { powder.write(amount ^ encryption_key()) };
-}
+    pub fn from_parts(stored: &'a mut u32, key: u32) -> Self {
+        Self { stored, key }
+    }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ApplyNewEncryptionKeyToBerryPowder(encryption_key: u32) {
-    unsafe { ApplyNewEncryptionKeyToWord(powder_ptr(), encryption_key) };
-}
+    pub fn get(&self) -> u32 {
+        *self.stored ^ self.key
+    }
 
-#[inline]
-unsafe fn has_enough_berry_powder(cost: u32) -> bool {
-    let current = unsafe { decrypt_berry_powder(powder_ptr()) };
-    current >= cost
-}
+    pub fn set(&mut self, amount: u32) {
+        *self.stored = amount ^ self.key;
+    }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HasEnoughBerryPowder() -> u8 {
-    let cost = u32::from(unsafe { addr_of!(gSpecialVar_0x8004).read() });
-    u8::from(unsafe { has_enough_berry_powder(cost) })
-}
+    pub fn has_enough(&self, cost: u32) -> bool {
+        self.get() >= cost
+    }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GiveBerryPowder(amount_to_add: u32) -> u8 {
-    let powder = unsafe { powder_ptr() };
-    let amount = unsafe { decrypt_berry_powder(powder) }.wrapping_add(amount_to_add);
+    /// Adds powder. Past [`MAX_BERRY_POWDER`] it stops there and returns
+    /// false. (As in C, a sum past 2^32 wraps around first.)
+    pub fn give(&mut self, amount: u32) -> bool {
+        let total = self.get().wrapping_add(amount);
+        if total > MAX_BERRY_POWDER {
+            self.set(MAX_BERRY_POWDER);
+            false
+        } else {
+            self.set(total);
+            true
+        }
+    }
 
-    if amount > MAX_BERRY_POWDER {
-        unsafe { SetBerryPowder(powder, MAX_BERRY_POWDER) };
-        0
-    } else {
-        unsafe { SetBerryPowder(powder, amount) };
-        1
+    /// Spends powder. Returns false, changing nothing, if there isn't enough.
+    pub fn take(&mut self, cost: u32) -> bool {
+        match self.get().checked_sub(cost) {
+            Some(left) => {
+                self.set(left);
+                true
+            }
+            None => false,
+        }
     }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TakeBerryPowder() -> u8 {
-    let cost = u32::from(unsafe { addr_of!(gSpecialVar_0x8004).read() });
-    if !unsafe { has_enough_berry_powder(cost) } {
-        return 0;
-    }
+// ------------------------------------------------------------------ C names
 
-    let powder = unsafe { powder_ptr() };
-    unsafe { SetBerryPowder(powder, decrypt_berry_powder(powder) - cost) };
-    1
+/// # Safety
+/// The save blocks must be set up and not in use elsewhere meanwhile.
+unsafe fn save() -> &'static mut SaveBlock2 {
+    unsafe { crate::save_blocks::save_block2() }
+}
+
+/// The powder at `powder` (a save field), with the save's key.
+#[unsafe(no_mangle)]
+pub unsafe fn SetBerryPowder(powder: *mut u32, amount: u32) {
+    unsafe { BerryPowder::from_parts(&mut *powder, save().encryptionKey) }.set(amount);
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBerryPowder() -> u32 {
-    unsafe { decrypt_berry_powder(powder_ptr()) }
+pub unsafe fn ApplyNewEncryptionKeyToBerryPowder(encryption_key: u32) {
+    unsafe {
+        ApplyNewEncryptionKeyToWord(&raw mut save().berryCrush.berryPowderAmount, encryption_key)
+    };
+}
+
+/// Script special: whether the player has `VAR_0x8004` powder.
+#[unsafe(no_mangle)]
+pub unsafe fn HasEnoughBerryPowder() -> u8 {
+    let cost = u32::from(unsafe { gSpecialVar_0x8004 });
+    BerryPowder::new(unsafe { save() }).has_enough(cost).into()
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn GiveBerryPowder(amount: u32) -> u8 {
+    BerryPowder::new(unsafe { save() }).give(amount).into()
+}
+
+/// Script special: the player spends `VAR_0x8004` powder.
+#[unsafe(no_mangle)]
+pub unsafe fn TakeBerryPowder() -> u8 {
+    let cost = u32::from(unsafe { gSpecialVar_0x8004 });
+    BerryPowder::new(unsafe { save() }).take(cost).into()
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn GetBerryPowder() -> u32 {
+    BerryPowder::new(unsafe { save() }).get()
 }
 
 unsafe fn print_berry_powder_amount(window_id: u8, amount: i32, x: u8, y: u8, speed: u8) {
@@ -128,7 +157,7 @@ unsafe fn draw_player_powder_amount(
         AddTextPrinterParameterized(
             window_id,
             FONT_NORMAL,
-            &raw const gText_Powder,
+            &raw const (*(&raw const crate::data::strings::gText_Powder).cast::<u8>()),
             0,
             1,
             TEXT_SKIP_DRAW,
@@ -139,14 +168,14 @@ unsafe fn draw_player_powder_amount(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintPlayerBerryPowderAmount() {
+pub unsafe fn PrintPlayerBerryPowderAmount() {
     let amount = unsafe { GetBerryPowder() };
     let window_id = unsafe { addr_of!(VENDOR_WINDOW_ID).read_volatile() };
     unsafe { print_berry_powder_amount(window_id, amount as i32, 26, 17, 0) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DisplayBerryPowderVendorMenu() {
+pub unsafe fn DisplayBerryPowderVendorMenu() {
     let mut template = WindowTemplate::default();
     unsafe { SetWindowTemplateFields(&raw mut template, 0, 1, 1, 7, 4, 15, 0x1c) };
 
@@ -167,7 +196,7 @@ pub unsafe extern "C" fn DisplayBerryPowderVendorMenu() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RemoveBerryPowderVendorMenu() {
+pub unsafe fn RemoveBerryPowderVendorMenu() {
     let window_id = unsafe { addr_of!(VENDOR_WINDOW_ID).read_volatile() };
     unsafe { ClearWindowTilemap(window_id) };
     unsafe { ClearStdWindowAndFrameToTransparent(window_id, 1) };
@@ -179,24 +208,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_powder_amount_sits_inside_berry_crush_data() {
-        // struct SaveBlock2.berryCrush is at 0x1EC and berryPowderAmount is
-        // eight bytes into it.
-        assert_eq!(SAVE2_BERRY_POWDER_OFFSET, 0x1ec + 8);
+    fn giving_powder_caps_and_reports_the_overflow() {
+        let mut stored = 0;
+        let mut powder = BerryPowder::from_parts(&mut stored, 0xabcd_ef01);
+        powder.set(0);
+        assert!(powder.give(10));
+        assert_eq!(powder.get(), 10);
+        powder.set(MAX_BERRY_POWDER);
+        assert!(powder.give(0));
+        assert!(!powder.give(1));
+        assert_eq!(powder.get(), MAX_BERRY_POWDER);
     }
 
     #[test]
-    fn giving_powder_caps_and_reports_the_overflow() {
-        let give = |current: u32, add: u32| {
-            let amount = current.wrapping_add(add);
-            if amount > MAX_BERRY_POWDER {
-                (MAX_BERRY_POWDER, 0u8)
-            } else {
-                (amount, 1)
-            }
-        };
-        assert_eq!(give(0, 10), (10, 1));
-        assert_eq!(give(MAX_BERRY_POWDER, 0), (MAX_BERRY_POWDER, 1));
-        assert_eq!(give(MAX_BERRY_POWDER, 1), (MAX_BERRY_POWDER, 0));
+    fn taking_powder_needs_enough() {
+        let mut stored = 0;
+        let mut powder = BerryPowder::from_parts(&mut stored, 7);
+        powder.set(50);
+        assert!(!powder.take(51));
+        assert_eq!(powder.get(), 50);
+        assert!(powder.take(50));
+        assert_eq!(powder.get(), 0);
     }
 }

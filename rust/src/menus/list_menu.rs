@@ -3,37 +3,106 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::too_many_arguments,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::menu::{AddTextPrinterParameterized4, ClearStdWindowAndFrame};
+use crate::palette::LoadPalette;
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::sprite::{FreeSpritePaletteByTag, FreeSpriteTilesByTag};
+use crate::task::DestroyTask;
+use crate::task::gTasks;
+use crate::text::{GetFontAttribute, GetMenuCursorDimensionByFont};
+use crate::text_window::{DrawTextBorderOuter, LoadUserWindowBorderGfx};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect,
+    GetWindowAttribute, PutWindowRectTilemapOverridePalette, PutWindowTilemap, RemoveWindow,
+    ScrollWindow, SetWindowAttribute,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `LoadSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
+    unsafe { crate::sprite::LoadSpritePalette(a0 as _) }
+}
+/// `SetSubspriteTables` with this module's view of its types.
+#[inline]
+unsafe fn SetSubspriteTables(a0: *mut Sprite, a1: *mut SubspriteTable) {
+    unsafe {
+        crate::sprite::SetSubspriteTables(a0 as _, a1 as _);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+// The C's names for task and sprite data slots.
+const tState: usize = 0;
+const tAnimNum: usize = 1;
+const tBounceDir: usize = 2;
+const tMultiplier: usize = 3;
+const tFrequency: usize = 4;
+const tSinePos: usize = 5;
 // Data tables (translate with cdata.py): sScrollIndicatorTemplates sOamData_ScrollArrowIndicator sSpriteAnim_ScrollArrowIndicator0 sSpriteAnim_ScrollArrowIndicator1 sSpriteAnim_ScrollArrowIndicator2 sSpriteAnim_ScrollArrowIndicator3 sSpriteAnimTable_ScrollArrowIndicator sSpriteTemplate_ScrollArrowIndicator sSubsprite_RedOutline1 sSubsprite_RedOutline2 sSubsprite_RedOutline3 sSubsprite_RedOutline4 sSubsprite_RedOutline5 sSubsprite_RedOutline6 sSubsprite_RedOutline7 sSubsprite_RedOutline8 sOamData_RedArrowCursor sSpriteAnim_RedArrowCursor sSpriteAnimTable_RedArrowCursor sSpriteTemplate_RedArrowCursor sRedInterface_Pal sScrollIndicator_Gfx sOutlineCursor_Gfx sArrowCursor_Gfx
 
 /// `__typeof__(sMysteryGiftLinkMenu)`
@@ -62,11 +131,11 @@ pub struct gListMenuOverride_t {
 impl gListMenuOverride_t {
     #[inline(always)]
     pub fn cursorPal(&self) -> u8 {
-        ((self.bits_0 as u32 >> 0) & 0xf) as u8
+        ((self.bits_0 as u32) & 0xf) as u8
     }
     #[inline(always)]
     pub fn set_cursorPal(&mut self, v: u8) {
-        self.bits_0 = (self.bits_0 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+        self.bits_0 = (self.bits_0 & !0xf) | (v & 0xf);
     }
     #[inline(always)]
     pub fn fillValue(&self) -> u8 {
@@ -74,39 +143,39 @@ impl gListMenuOverride_t {
     }
     #[inline(always)]
     pub fn set_fillValue(&mut self, v: u8) {
-        self.bits_0 = (self.bits_0 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+        self.bits_0 = (self.bits_0 & !(0xf << 4)) | ((v & 0xf) << 4);
     }
     #[inline(always)]
     pub fn cursorShadowPal(&self) -> u8 {
-        ((self.bits_1 as u32 >> 0) & 0xf) as u8
+        ((self.bits_1 as u32) & 0xf) as u8
     }
     #[inline(always)]
     pub fn set_cursorShadowPal(&mut self, v: u8) {
-        self.bits_1 = (self.bits_1 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+        self.bits_1 = (self.bits_1 & !0xf) | (v & 0xf);
     }
     #[inline(always)]
     pub fn lettersSpacing(&self) -> u8 {
-        ((self.bits_2 as u32 >> 0) & 0x3f) as u8
+        ((self.bits_2 as u32) & 0x3f) as u8
     }
     #[inline(always)]
     pub fn set_lettersSpacing(&mut self, v: u8) {
-        self.bits_2 = (self.bits_2 & !(0x3f << 0)) | ((v as u8 & 0x3f) << 0);
+        self.bits_2 = (self.bits_2 & !0x3f) | (v & 0x3f);
     }
     #[inline(always)]
     pub fn field_2_2(&self) -> u8 {
-        ((self.bits_3 as u32 >> 0) & 0x3f) as u8
+        ((self.bits_3 as u32) & 0x3f) as u8
     }
     #[inline(always)]
     pub fn set_field_2_2(&mut self, v: u8) {
-        self.bits_3 = (self.bits_3 & !(0x3f << 0)) | ((v as u8 & 0x3f) << 0);
+        self.bits_3 = (self.bits_3 & !0x3f) | (v & 0x3f);
     }
     #[inline(always)]
     pub fn fontId(&self) -> u8 {
-        ((self.bits_4 as u32 >> 0) & 0x7f) as u8
+        ((self.bits_4 as u32) & 0x7f) as u8
     }
     #[inline(always)]
     pub fn set_fontId(&mut self, v: u8) {
-        self.bits_4 = (self.bits_4 & !(0x7f << 0)) | ((v as u8 & 0x7f) << 0);
+        self.bits_4 = (self.bits_4 & !0x7f) | (v & 0x7f);
     }
     #[inline(always)]
     pub fn enabled(&self) -> u8 {
@@ -114,7 +183,7 @@ impl gListMenuOverride_t {
     }
     #[inline(always)]
     pub fn set_enabled(&mut self, v: u8) {
-        self.bits_4 = (self.bits_4 & !(0x1 << 7)) | ((v as u8 & 0x1) << 7);
+        self.bits_4 = (self.bits_4 & !(0x1 << 7)) | ((v & 0x1) << 7);
     }
 }
 
@@ -172,11 +241,11 @@ pub struct sScrollIndicatorTemplates_0_t {
 impl sScrollIndicatorTemplates_0_t {
     #[inline(always)]
     pub fn animNum(&self) -> u8 {
-        ((self.bits_0 as u32 >> 0) & 0xf) as u8
+        ((self.bits_0 as u32) & 0xf) as u8
     }
     #[inline(always)]
     pub fn set_animNum(&mut self, v: u8) {
-        self.bits_0 = (self.bits_0 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+        self.bits_0 = (self.bits_0 & !0xf) | (v & 0xf);
     }
     #[inline(always)]
     pub fn bounceDir(&self) -> u8 {
@@ -184,7 +253,7 @@ impl sScrollIndicatorTemplates_0_t {
     }
     #[inline(always)]
     pub fn set_bounceDir(&mut self, v: u8) {
-        self.bits_0 = (self.bits_0 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+        self.bits_0 = (self.bits_0 & !(0xf << 4)) | ((v & 0xf) << 4);
     }
 }
 
@@ -262,68 +331,20 @@ static sSubsprite_RedOutline8: Table<Subsprite> =
     Table((&raw const crate::data::list_menu::sSubsprite_RedOutline8).cast());
 
 pub(crate) static mut sMysteryGiftLinkMenu: sMysteryGiftLinkMenu_t = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gTempScrollArrowTemplate: ScrollArrowsTemplate = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 pub static mut gListMenuOverride: gListMenuOverride_t = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gMultiuseListMenuTemplate: ListMenuTemplate = unsafe { zeroed() };
 
-unsafe extern "C" {
-    static gDummySpriteTemplate: SpriteTemplate;
-    static mut gMain: Main;
-    static gSineTable: CArray<i16, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_SelectorArrow2: CArray<u8, 0>;
-    fn AddTextPrinterParameterized4(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: i8,
-        a8: *mut u8,
-    );
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn ClearStdWindowAndFrame(a0: u8, a1: u8);
-    fn ClearWindowTilemap(a0: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DrawTextBorderOuter(a0: u8, a1: u16, a2: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn Free(a0: *mut c_void);
-    fn FreeSpritePaletteByTag(a0: u16);
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn GetFontAttribute(a0: u8, a1: u8) -> u8;
-    fn GetMenuCursorDimensionByFont(a0: u8, a1: u8) -> u8;
-    fn GetWindowAttribute(a0: u8, a1: u8) -> u32;
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn PlaySE(a0: u16);
-    fn PutWindowRectTilemapOverridePalette(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveWindow(a0: u8);
-    fn ScrollWindow(a0: u8, a1: u8, a2: u8, a3: u8);
-    fn SetSubspriteTables(a0: *mut Sprite, a1: *mut SubspriteTable);
-    fn SetWindowAttribute(a0: u8, a1: u8, a2: u32) -> u8;
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
 }
 
-pub(crate) unsafe extern "C" fn ListMenuDummyTask(taskId: u8) {}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoMysteryGiftListMenu(
+pub(crate) unsafe fn ListMenuDummyTask(taskId: u8) {}
+pub unsafe fn DoMysteryGiftListMenu(
     windowTemplate: *mut WindowTemplate,
     listMenuTemplate: *mut ListMenuTemplate,
     drawMode: u8,
@@ -378,7 +399,6 @@ pub unsafe extern "C" fn DoMysteryGiftListMenu(
                     );
                 }
                 if fall || sw1 == 1 {
-                    fall = true;
                     DrawTextBorderOuter(
                         sMysteryGiftLinkMenu.windowId,
                         tileNum,
@@ -395,29 +415,26 @@ pub unsafe extern "C" fn DoMysteryGiftListMenu(
             sMysteryGiftLinkMenu.state = 1;
         }
     }
-    return LIST_NOTHING_CHOSEN;
+    LIST_NOTHING_CHOSEN
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenuInit(
+pub unsafe fn ListMenuInit(
     listMenuTemplate: *mut ListMenuTemplate,
     scrollOffset: u16,
     selectedRow: u16,
 ) -> u8 {
-    let mut taskId: u8 = ListMenuInitInternal(listMenuTemplate, scrollOffset, selectedRow);
+    let taskId: u8 = ListMenuInitInternal(listMenuTemplate, scrollOffset, selectedRow);
     PutWindowTilemap((*listMenuTemplate).windowId);
     CopyWindowToVram((*listMenuTemplate).windowId, COPYWIN_GFX);
-    return taskId;
+    taskId
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenuInitInRect(
+pub unsafe fn ListMenuInitInRect(
     listMenuTemplate: *mut ListMenuTemplate,
     rect: *mut ListMenuWindowRect,
     scrollOffset: u16,
     selectedRow: u16,
 ) -> u8 {
+    let taskId: u8 = ListMenuInitInternal(listMenuTemplate, scrollOffset, selectedRow);
     let mut i: i32 = 0;
-    let mut taskId: u8 = ListMenuInitInternal(listMenuTemplate, scrollOffset, selectedRow);
-    i = 0;
     while (*rect.at(i)).palNum != 0xFF {
         PutWindowRectTilemapOverridePalette(
             (*listMenuTemplate).windowId,
@@ -430,12 +447,11 @@ pub unsafe extern "C" fn ListMenuInitInRect(
         i += 1;
     }
     CopyWindowToVram((*listMenuTemplate).windowId, COPYWIN_GFX);
-    return taskId;
+    taskId
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenu_ProcessInput(listTaskId: u8) -> i32 {
-    let mut list: *mut ListMenu =
-        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+pub unsafe fn ListMenu_ProcessInput(listTaskId: u8) -> i32 {
+    let list: *mut ListMenu =
+        (*gTasks.as_ptr())[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         return (*(*list)
             .template
@@ -479,17 +495,12 @@ pub unsafe extern "C" fn ListMenu_ProcessInput(listTaskId: u8) -> i32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DestroyListMenuTask(
-    listTaskId: u8,
-    scrollOffset: *mut u16,
-    selectedRow: *mut u16,
-) {
-    let mut list: *mut ListMenu =
-        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+pub unsafe fn DestroyListMenuTask(listTaskId: u8, scrollOffset: *mut u16, selectedRow: *mut u16) {
+    let list: *mut ListMenu =
+        (*gTasks.as_ptr())[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
     if !scrollOffset.is_null() {
         *scrollOffset = (*list).scrollOffset;
     }
@@ -504,10 +515,9 @@ pub unsafe extern "C" fn DestroyListMenuTask(
     }
     DestroyTask(listTaskId);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RedrawListMenu(listTaskId: u8) {
-    let mut list: *mut ListMenu =
-        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+pub unsafe fn RedrawListMenu(listTaskId: u8) {
+    let list: *mut ListMenu =
+        (*gTasks.as_ptr())[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
     FillWindowPixelBuffer(
         (*list).template.windowId,
         (*list).template.fillValue() | (*list).template.fillValue() << 4,
@@ -516,28 +526,25 @@ pub unsafe extern "C" fn RedrawListMenu(listTaskId: u8) {
     ListMenuDrawCursor(list);
     CopyWindowToVram((*list).template.windowId, COPYWIN_GFX);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ChangeListMenuPals(
+pub unsafe fn ChangeListMenuPals(
     listTaskId: u8,
     cursorPal: u8,
     fillValue: u8,
     cursorShadowPal: u8,
 ) {
-    let mut list: *mut ListMenu =
-        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+    let list: *mut ListMenu =
+        (*gTasks.as_ptr())[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
     (*list).template.set_cursorPal(cursorPal);
     (*list).template.set_fillValue(fillValue);
     (*list).template.set_cursorShadowPal(cursorShadowPal);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ChangeListMenuCoords(listTaskId: u8, x: u8, y: u8) {
-    let mut list: *mut ListMenu =
-        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+pub unsafe fn ChangeListMenuCoords(listTaskId: u8, x: u8, y: u8) {
+    let list: *mut ListMenu =
+        (*gTasks.as_ptr())[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
     SetWindowAttribute((*list).template.windowId, WINDOW_TILEMAP_LEFT, x as u32);
     SetWindowAttribute((*list).template.windowId, WINDOW_TILEMAP_TOP, y as u32);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenuTestInput(
+pub unsafe fn ListMenuTestInput(
     template: *mut ListMenuTemplate,
     scrollOffset: u32,
     selectedRow: u32,
@@ -563,24 +570,22 @@ pub unsafe extern "C" fn ListMenuTestInput(
     if !newSelectedRow.is_null() {
         *newSelectedRow = list.selectedRow;
     }
-    return LIST_NOTHING_CHOSEN;
+    LIST_NOTHING_CHOSEN
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenuGetCurrentItemArrayId(listTaskId: u8, arrayId: *mut u16) {
-    let mut list: *mut ListMenu =
-        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+pub unsafe fn ListMenuGetCurrentItemArrayId(listTaskId: u8, arrayId: *mut u16) {
+    let list: *mut ListMenu =
+        (*gTasks.as_ptr())[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
     if !arrayId.is_null() {
         *arrayId = (*list).scrollOffset + (*list).selectedRow;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenuGetScrollAndRow(
+pub unsafe fn ListMenuGetScrollAndRow(
     listTaskId: u8,
     scrollOffset: *mut u16,
     selectedRow: *mut u16,
 ) {
-    let mut list: *mut ListMenu =
-        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+    let list: *mut ListMenu =
+        (*gTasks.as_ptr())[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
     if !scrollOffset.is_null() {
         *scrollOffset = (*list).scrollOffset;
     }
@@ -588,23 +593,21 @@ pub unsafe extern "C" fn ListMenuGetScrollAndRow(
         *selectedRow = (*list).selectedRow;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenuGetYCoordForPrintingArrowCursor(listTaskId: u8) -> u16 {
-    let mut list: *mut ListMenu =
-        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
-    let mut yMultiplier: u8 =
-        GetFontAttribute((*list).template.fontId(), FONTATTR_MAX_LETTER_HEIGHT)
-            + (*list).template.itemVerticalPadding();
-    return (*list).selectedRow * yMultiplier as u16 + (*list).template.upText_Y() as u16;
+pub unsafe fn ListMenuGetYCoordForPrintingArrowCursor(listTaskId: u8) -> u16 {
+    let list: *mut ListMenu =
+        (*gTasks.as_ptr())[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+    let yMultiplier: u8 = GetFontAttribute((*list).template.fontId(), FONTATTR_MAX_LETTER_HEIGHT)
+        + (*list).template.itemVerticalPadding();
+    (*list).selectedRow * yMultiplier as u16 + (*list).template.upText_Y() as u16
 }
-pub(crate) unsafe extern "C" fn ListMenuInitInternal(
+unsafe fn ListMenuInitInternal(
     listMenuTemplate: *mut ListMenuTemplate,
     scrollOffset: u16,
     selectedRow: u16,
 ) -> u8 {
-    let mut listTaskId: u8 = CreateTask(Some(ListMenuDummyTask), 0);
-    let mut list: *mut ListMenu =
-        gTasks[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+    let listTaskId: u8 = CreateTask(Some(ListMenuDummyTask), 0);
+    let list: *mut ListMenu =
+        (*gTasks.as_ptr())[listTaskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
     (*list).template = *listMenuTemplate;
     (*list).scrollOffset = scrollOffset;
     (*list).selectedRow = selectedRow;
@@ -628,9 +631,9 @@ pub(crate) unsafe extern "C" fn ListMenuInitInternal(
     ListMenuPrintEntries(list, (*list).scrollOffset, 0, (*list).template.maxShowed);
     ListMenuDrawCursor(list);
     ListMenuCallSelectionChangedCallback(list, TRUE);
-    return listTaskId;
+    listTaskId
 }
-pub(crate) unsafe extern "C" fn ListMenuPrint(list: *mut ListMenu, str: *mut u8, x: u8, y: u8) {
+unsafe fn ListMenuPrint(list: *mut ListMenu, str: *mut u8, x: u8, y: u8) {
     let mut colors: CArray<u8, 3> = zeroed();
     if gListMenuOverride.enabled() != 0 {
         colors[0] = gListMenuOverride.fillValue();
@@ -665,20 +668,12 @@ pub(crate) unsafe extern "C" fn ListMenuPrint(list: *mut ListMenu, str: *mut u8,
         );
     }
 }
-pub(crate) unsafe extern "C" fn ListMenuPrintEntries(
-    list: *mut ListMenu,
-    mut startIndex: u16,
-    yOffset: u16,
-    count: u16,
-) {
-    let mut i: i32 = 0;
+unsafe fn ListMenuPrintEntries(list: *mut ListMenu, mut startIndex: u16, yOffset: u16, count: u16) {
     let mut x: u8 = 0;
     let mut y: u8 = 0;
-    let mut yMultiplier: u8 =
-        GetFontAttribute((*list).template.fontId(), FONTATTR_MAX_LETTER_HEIGHT)
-            + (*list).template.itemVerticalPadding();
-    i = 0;
-    while i < count as i32 {
+    let yMultiplier: u8 = GetFontAttribute((*list).template.fontId(), FONTATTR_MAX_LETTER_HEIGHT)
+        + (*list).template.itemVerticalPadding();
+    for i in 0..(count as i32) {
         if (*(*list).template.items.at(startIndex)).id != LIST_HEADER {
             x = (*list).template.item_X;
         } else {
@@ -694,18 +689,23 @@ pub(crate) unsafe extern "C" fn ListMenuPrintEntries(
         }
         ListMenuPrint(list, (*(*list).template.items.at(startIndex)).name, x, y);
         startIndex += 1;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ListMenuDrawCursor(list: *mut ListMenu) {
-    let mut yMultiplier: u8 =
-        GetFontAttribute((*list).template.fontId(), FONTATTR_MAX_LETTER_HEIGHT)
-            + (*list).template.itemVerticalPadding();
-    let mut x: u8 = (*list).template.cursor_X;
-    let mut y: u8 = (*list).selectedRow as u8 * yMultiplier + (*list).template.upText_Y();
+unsafe fn ListMenuDrawCursor(list: *mut ListMenu) {
+    let yMultiplier: u8 = GetFontAttribute((*list).template.fontId(), FONTATTR_MAX_LETTER_HEIGHT)
+        + (*list).template.itemVerticalPadding();
+    let x: u8 = (*list).template.cursor_X;
+    let y: u8 = (*list).selectedRow as u8 * yMultiplier + (*list).template.upText_Y();
     match (*list).template.cursorKind() {
         CURSOR_BLACK_ARROW => {
-            ListMenuPrint(list, gText_SelectorArrow2.as_ptr().cast_mut(), x, y);
+            ListMenuPrint(
+                list,
+                (*(&raw const crate::data::strings::gText_SelectorArrow2).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                x,
+                y,
+            );
         }
         1 => {}
         2 => {
@@ -737,10 +737,7 @@ pub(crate) unsafe extern "C" fn ListMenuDrawCursor(list: *mut ListMenu) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn ListMenuAddCursorObject(
-    list: *mut ListMenu,
-    cursorObjId: u32,
-) -> u8 {
+unsafe fn ListMenuAddCursorObject(list: *mut ListMenu, cursorObjId: u32) -> u8 {
     let mut cursor: CursorStruct = zeroed();
     cursor.left = 0;
     cursor.top = DISPLAY_HEIGHT as u8;
@@ -750,16 +747,16 @@ pub(crate) unsafe extern "C" fn ListMenuAddCursorObject(
     cursor.tileTag = 0x4000;
     cursor.palTag = TAG_NONE;
     cursor.palNum = 15;
-    return ListMenuAddCursorObjectInternal(&raw mut cursor, cursorObjId);
+    ListMenuAddCursorObjectInternal(&raw mut cursor, cursorObjId)
 }
-pub(crate) unsafe extern "C" fn ListMenuErasePrintedCursor(list: *mut ListMenu, selectedRow: u16) {
-    let mut cursorKind: u8 = (*list).template.cursorKind();
+unsafe fn ListMenuErasePrintedCursor(list: *mut ListMenu, selectedRow: u16) {
+    let cursorKind: u8 = (*list).template.cursorKind();
     if cursorKind == CURSOR_BLACK_ARROW {
-        let mut yMultiplier: u8 =
+        let yMultiplier: u8 =
             GetFontAttribute((*list).template.fontId(), FONTATTR_MAX_LETTER_HEIGHT)
                 + (*list).template.itemVerticalPadding();
-        let mut width: u8 = GetMenuCursorDimensionByFont((*list).template.fontId(), 0);
-        let mut height: u8 = GetMenuCursorDimensionByFont((*list).template.fontId(), 1);
+        let width: u8 = GetMenuCursorDimensionByFont((*list).template.fontId(), 0);
+        let height: u8 = GetMenuCursorDimensionByFont((*list).template.fontId(), 1);
         FillWindowPixelRect(
             (*list).template.windowId,
             (*list).template.fillValue() | (*list).template.fillValue() << 4,
@@ -770,12 +767,9 @@ pub(crate) unsafe extern "C" fn ListMenuErasePrintedCursor(list: *mut ListMenu, 
         );
     }
 }
-pub(crate) unsafe extern "C" fn ListMenuUpdateSelectedRowIndexAndScrollOffset(
-    list: *mut ListMenu,
-    movingDown: u8,
-) -> u8 {
+unsafe fn ListMenuUpdateSelectedRowIndexAndScrollOffset(list: *mut ListMenu, movingDown: u8) -> u8 {
     let mut selectedRow: u16 = (*list).selectedRow;
-    let mut scrollOffset: u16 = (*list).scrollOffset;
+    let scrollOffset: u16 = (*list).scrollOffset;
     let mut newRow: u16 = 0;
     let mut newScroll: u32 = 0;
     if movingDown == 0 {
@@ -857,9 +851,9 @@ pub(crate) unsafe extern "C" fn ListMenuUpdateSelectedRowIndexAndScrollOffset(
     }
     (*list).selectedRow = newRow;
     (*list).scrollOffset = newScroll as u16;
-    return 2;
+    2
 }
-pub(crate) unsafe extern "C" fn ListMenuScroll(list: *mut ListMenu, count: u8, movingDown: u8) {
+unsafe fn ListMenuScroll(list: *mut ListMenu, count: u8, movingDown: u8) {
     if count as u16 >= (*list).template.maxShowed {
         FillWindowPixelBuffer(
             (*list).template.windowId,
@@ -867,13 +861,10 @@ pub(crate) unsafe extern "C" fn ListMenuScroll(list: *mut ListMenu, count: u8, m
         );
         ListMenuPrintEntries(list, (*list).scrollOffset, 0, (*list).template.maxShowed);
     } else {
-        let mut yMultiplier: u8 =
+        let yMultiplier: u8 =
             GetFontAttribute((*list).template.fontId(), FONTATTR_MAX_LETTER_HEIGHT)
                 + (*list).template.itemVerticalPadding();
         if movingDown == 0 {
-            let mut y: u16 = 0;
-            let mut width: u16 = 0;
-            let mut height: u16 = 0;
             ScrollWindow(
                 (*list).template.windowId,
                 1,
@@ -881,10 +872,11 @@ pub(crate) unsafe extern "C" fn ListMenuScroll(list: *mut ListMenu, count: u8, m
                 (*list).template.fillValue() | (*list).template.fillValue() << 4,
             );
             ListMenuPrintEntries(list, (*list).scrollOffset, 0, count as u16);
-            y = (*list).template.maxShowed * yMultiplier as u16
+            let y: u16 = (*list).template.maxShowed * yMultiplier as u16
                 + (*list).template.upText_Y() as u16;
-            width = GetWindowAttribute((*list).template.windowId, WINDOW_WIDTH) as u16 * 8;
-            height = GetWindowAttribute((*list).template.windowId, WINDOW_HEIGHT) as u16 * 8 - y;
+            let width: u16 = GetWindowAttribute((*list).template.windowId, WINDOW_WIDTH) as u16 * 8;
+            let height: u16 =
+                GetWindowAttribute((*list).template.windowId, WINDOW_HEIGHT) as u16 * 8 - y;
             FillWindowPixelRect(
                 (*list).template.windowId,
                 (*list).template.fillValue() | (*list).template.fillValue() << 4,
@@ -894,7 +886,6 @@ pub(crate) unsafe extern "C" fn ListMenuScroll(list: *mut ListMenu, count: u8, m
                 height,
             );
         } else {
-            let mut width: u16 = 0;
             ScrollWindow(
                 (*list).template.windowId,
                 0,
@@ -907,7 +898,7 @@ pub(crate) unsafe extern "C" fn ListMenuScroll(list: *mut ListMenu, count: u8, m
                 (*list).template.maxShowed - count as u16,
                 count as u16,
             );
-            width = GetWindowAttribute((*list).template.windowId, WINDOW_WIDTH) as u16 * 8;
+            let width: u16 = GetWindowAttribute((*list).template.windowId, WINDOW_WIDTH) as u16 * 8;
             FillWindowPixelRect(
                 (*list).template.windowId,
                 (*list).template.fillValue() | (*list).template.fillValue() << 4,
@@ -919,23 +910,18 @@ pub(crate) unsafe extern "C" fn ListMenuScroll(list: *mut ListMenu, count: u8, m
         }
     }
 }
-pub(crate) unsafe extern "C" fn ListMenuChangeSelection(
+unsafe fn ListMenuChangeSelection(
     list: *mut ListMenu,
     updateCursorAndCallCallback: u8,
     count: u8,
     movingDown: u8,
 ) -> u8 {
-    let mut oldSelectedRow: u16 = 0;
-    let mut selectionChange: u8 = 0;
-    let mut i: u8 = 0;
+    let oldSelectedRow: u16 = (*list).selectedRow;
     let mut cursorCount: u8 = 0;
-    oldSelectedRow = (*list).selectedRow;
-    cursorCount = 0;
-    selectionChange = 0;
-    i = 0;
-    while i < count {
+    let mut selectionChange: u8 = 0;
+    for i in 0..count {
         loop {
-            let mut ret: u8 = ListMenuUpdateSelectedRowIndexAndScrollOffset(list, movingDown);
+            let ret: u8 = ListMenuUpdateSelectedRowIndexAndScrollOffset(list, movingDown);
             selectionChange |= ret;
             if ret != 2 {
                 break;
@@ -950,7 +936,6 @@ pub(crate) unsafe extern "C" fn ListMenuChangeSelection(
                 break;
             }
         }
-        i += 1;
     }
     if updateCursorAndCallCallback != 0 {
         match selectionChange {
@@ -972,12 +957,9 @@ pub(crate) unsafe extern "C" fn ListMenuChangeSelection(
             }
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn ListMenuCallSelectionChangedCallback(
-    list: *mut ListMenu,
-    onInit: u8,
-) {
+unsafe fn ListMenuCallSelectionChangedCallback(list: *mut ListMenu, onInit: u8) {
     if (*list).template.moveCursorFunc.is_some() {
         (*list).template.moveCursorFunc.unwrap_unchecked()(
             (*(*list)
@@ -990,30 +972,20 @@ pub(crate) unsafe extern "C" fn ListMenuCallSelectionChangedCallback(
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenuOverrideSetColors(
-    cursorPal: u8,
-    fillValue: u8,
-    cursorShadowPal: u8,
-) {
+pub unsafe fn ListMenuOverrideSetColors(cursorPal: u8, fillValue: u8, cursorShadowPal: u8) {
     gListMenuOverride.set_cursorPal(cursorPal);
     gListMenuOverride.set_fillValue(fillValue);
     gListMenuOverride.set_cursorShadowPal(cursorShadowPal);
     gListMenuOverride.set_enabled(TRUE);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenuDefaultCursorMoveFunc(
-    itemIndex: i32,
-    onInit: u8,
-    list: *mut ListMenu,
-) {
+pub unsafe fn ListMenuDefaultCursorMoveFunc(itemIndex: i32, onInit: u8, list: *mut ListMenu) {
     if onInit == 0 {
         PlaySE(SE_SELECT);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenuGetTemplateField(taskId: u8, field: u8) -> i32 {
-    let mut data: *mut ListMenu = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
+pub unsafe fn ListMenuGetTemplateField(taskId: u8, field: u8) -> i32 {
+    let data: *mut ListMenu =
+        (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut ListMenu;
     match field {
         LISTFIELD_MOVECURSORFUNC | LISTFIELD_MOVECURSORFUNC2 => {
             return core::mem::transmute::<_, usize>((*data).template.moveCursorFunc) as i32;
@@ -1069,17 +1041,17 @@ pub unsafe extern "C" fn ListMenuGetTemplateField(taskId: u8, field: u8) -> i32 
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenuSetTemplateField(taskId: u8, field: u8, value: i32) {
-    let mut data: *mut ListMenu = &raw mut gTasks[taskId].data as *mut c_void as *mut ListMenu;
+pub unsafe fn ListMenuSetTemplateField(taskId: u8, field: u8, value: i32) {
+    let data: *mut ListMenu =
+        &raw mut (*gTasks.as_ptr())[taskId].data as *mut c_void as *mut ListMenu;
     match field {
         LISTFIELD_MOVECURSORFUNC | LISTFIELD_MOVECURSORFUNC2 => {
             (*data).template.moveCursorFunc = core::mem::transmute::<
                 _,
-                Option<unsafe extern "C" fn(i32, u8, *mut ListMenu)>,
+                Option<unsafe fn(i32, u8, *mut ListMenu)>,
             >(value as usize as *mut c_void);
         }
         LISTFIELD_TOTALITEMS => {
@@ -1130,63 +1102,63 @@ pub unsafe extern "C" fn ListMenuSetTemplateField(taskId: u8, field: u8, value: 
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCallback_ScrollIndicatorArrow(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCallback_ScrollIndicatorArrow(sprite: *mut Sprite) {
     let mut multiplier: i32 = 0;
-    match (*sprite).data[0] {
+    match (*sprite).data[tState] {
         0 => {
-            StartSpriteAnim(sprite, (*sprite).data[1] as u8);
-            (*sprite).data[0] += 1;
+            StartSpriteAnim(sprite, (*sprite).data[tAnimNum] as u8);
+            (*sprite).data[tState] += 1;
         }
         1 => {
-            match (*sprite).data[2] {
+            match (*sprite).data[tBounceDir] {
                 0 => {
-                    multiplier = (*sprite).data[3] as i32;
-                    (*sprite).x2 =
-                        (gSineTable[(*sprite).data[5] as u8] as i32 * multiplier / 256) as i16;
+                    multiplier = (*sprite).data[tMultiplier] as i32;
+                    (*sprite).x2 = ((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+                        [(*sprite).data[tSinePos] as u8] as i32
+                        * multiplier
+                        / 256) as i16;
                 }
                 1 => {
-                    multiplier = (*sprite).data[3] as i32;
-                    (*sprite).y2 =
-                        (gSineTable[(*sprite).data[5] as u8] as i32 * multiplier / 256) as i16;
+                    multiplier = (*sprite).data[tMultiplier] as i32;
+                    (*sprite).y2 = ((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+                        [(*sprite).data[tSinePos] as u8] as i32
+                        * multiplier
+                        / 256) as i16;
                 }
                 _ => {}
             }
-            (*sprite).data[5] += (*sprite).data[4];
+            (*sprite).data[tSinePos] += (*sprite).data[tFrequency];
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn AddScrollIndicatorArrowObject(
+unsafe fn AddScrollIndicatorArrowObject(
     arrowDir: u8,
     x: u8,
     y: u8,
     tileTag: u16,
     palTag: u16,
 ) -> u8 {
-    let mut spriteId: u8 = 0;
-    let mut spriteTemplate: SpriteTemplate = zeroed();
-    spriteTemplate = *sSpriteTemplate_ScrollArrowIndicator;
+    let mut spriteTemplate: SpriteTemplate = *sSpriteTemplate_ScrollArrowIndicator;
     spriteTemplate.tileTag = tileTag;
     spriteTemplate.paletteTag = palTag;
-    spriteId = CreateSprite(&raw mut spriteTemplate, x as i16, y as i16, 0);
+    let spriteId: u8 = CreateSprite(&raw mut spriteTemplate, x as i16, y as i16, 0);
     gSprites[spriteId].set_invisible(TRUE as u16);
-    gSprites[spriteId].data[0] = 0;
-    gSprites[spriteId].data[1] = sScrollIndicatorTemplates[arrowDir].animNum() as i16;
-    gSprites[spriteId].data[2] = sScrollIndicatorTemplates[arrowDir].bounceDir() as i16;
-    gSprites[spriteId].data[3] = sScrollIndicatorTemplates[arrowDir].multiplier as i16;
-    gSprites[spriteId].data[4] = sScrollIndicatorTemplates[arrowDir].frequency as i16;
-    gSprites[spriteId].data[5] = 0;
-    return spriteId;
+    gSprites[spriteId].data[tState] = 0;
+    gSprites[spriteId].data[tAnimNum] = sScrollIndicatorTemplates[arrowDir].animNum() as i16;
+    gSprites[spriteId].data[tBounceDir] = sScrollIndicatorTemplates[arrowDir].bounceDir() as i16;
+    gSprites[spriteId].data[tMultiplier] = sScrollIndicatorTemplates[arrowDir].multiplier as i16;
+    gSprites[spriteId].data[tFrequency] = sScrollIndicatorTemplates[arrowDir].frequency as i16;
+    gSprites[spriteId].data[tSinePos] = 0;
+    spriteId
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddScrollIndicatorArrowPair(
+pub unsafe fn AddScrollIndicatorArrowPair(
     arrowInfo: *mut ScrollArrowsTemplate,
     scrollOffset: *mut u16,
 ) -> u8 {
     let mut spriteSheet: CompressedSpriteSheet = zeroed();
     let mut spritePal: SpritePalette = zeroed();
     let mut data: *mut ScrollIndicatorPair = null_mut();
-    let mut taskId: u8 = 0;
     spriteSheet.data = sScrollIndicator_Gfx.as_ptr().cast_mut();
     spriteSheet.size = 0x100;
     spriteSheet.tag = (*arrowInfo).tileTag;
@@ -1202,8 +1174,8 @@ pub unsafe extern "C" fn AddScrollIndicatorArrowPair(
         spritePal.tag = (*arrowInfo).palTag;
         LoadSpritePalette(&raw mut spritePal);
     }
-    taskId = CreateTask(Some(Task_ScrollIndicatorArrowPair), 0);
-    data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut ScrollIndicatorPair;
+    let taskId: u8 = CreateTask(Some(Task_ScrollIndicatorArrowPair), 0);
+    data = (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut ScrollIndicatorPair;
     (*data).field_0 = 0;
     (*data).scrollOffset = scrollOffset;
     (*data).fullyUpThreshold = (*arrowInfo).fullyUpThreshold;
@@ -1232,10 +1204,9 @@ pub unsafe extern "C" fn AddScrollIndicatorArrowPair(
             .oam
             .set_paletteNum((*arrowInfo).palNum as u16);
     }
-    return taskId;
+    taskId
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddScrollIndicatorArrowPairParameterized(
+pub unsafe fn AddScrollIndicatorArrowPairParameterized(
     arrowType: u32,
     commonPos: i32,
     firstPos: i32,
@@ -1265,12 +1236,12 @@ pub unsafe extern "C" fn AddScrollIndicatorArrowPairParameterized(
     gTempScrollArrowTemplate.tileTag = tileTag as u16;
     gTempScrollArrowTemplate.palTag = palTag as u16;
     gTempScrollArrowTemplate.palNum = 0;
-    return AddScrollIndicatorArrowPair(&raw mut gTempScrollArrowTemplate, scrollOffset);
+    AddScrollIndicatorArrowPair(&raw mut gTempScrollArrowTemplate, scrollOffset)
 }
-pub(crate) unsafe extern "C" fn Task_ScrollIndicatorArrowPair(taskId: u8) {
-    let mut data: *mut ScrollIndicatorPair =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut ScrollIndicatorPair;
-    let mut currItem: u16 = *(*data).scrollOffset;
+pub(crate) unsafe fn Task_ScrollIndicatorArrowPair(taskId: u8) {
+    let data: *mut ScrollIndicatorPair =
+        (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut ScrollIndicatorPair;
+    let currItem: u16 = *(*data).scrollOffset;
     if currItem == (*data).fullyUpThreshold && currItem != 0xFFFF {
         gSprites[(*data).topSpriteId].set_invisible(TRUE as u16);
     } else {
@@ -1282,10 +1253,9 @@ pub(crate) unsafe extern "C" fn Task_ScrollIndicatorArrowPair(taskId: u8) {
         gSprites[(*data).bottomSpriteId].set_invisible(FALSE as u16);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Task_ScrollIndicatorArrowPairOnMainMenu(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut scrollData: *mut ScrollIndicatorPair = data as *mut c_void as *mut ScrollIndicatorPair;
+pub unsafe fn Task_ScrollIndicatorArrowPairOnMainMenu(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let scrollData: *mut ScrollIndicatorPair = data as *mut c_void as *mut ScrollIndicatorPair;
     if *data.at(15) != 0 {
         gSprites[(*scrollData).topSpriteId].set_invisible(FALSE as u16);
         gSprites[(*scrollData).bottomSpriteId].set_invisible(TRUE as u16);
@@ -1294,10 +1264,9 @@ pub unsafe extern "C" fn Task_ScrollIndicatorArrowPairOnMainMenu(taskId: u8) {
         gSprites[(*scrollData).bottomSpriteId].set_invisible(FALSE as u16);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RemoveScrollIndicatorArrowPair(taskId: u8) {
-    let mut data: *mut ScrollIndicatorPair =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut ScrollIndicatorPair;
+pub unsafe fn RemoveScrollIndicatorArrowPair(taskId: u8) {
+    let data: *mut ScrollIndicatorPair =
+        (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut ScrollIndicatorPair;
     if (*data).tileTag != TAG_NONE {
         FreeSpriteTilesByTag((*data).tileTag);
     }
@@ -1308,10 +1277,7 @@ pub unsafe extern "C" fn RemoveScrollIndicatorArrowPair(taskId: u8) {
     DestroySprite(&raw mut gSprites[(*data).bottomSpriteId]);
     DestroyTask(taskId);
 }
-pub(crate) unsafe extern "C" fn ListMenuAddCursorObjectInternal(
-    cursor: *mut CursorStruct,
-    cursorObjId: u32,
-) -> u8 {
+unsafe fn ListMenuAddCursorObjectInternal(cursor: *mut CursorStruct, cursorObjId: u32) -> u8 {
     match cursorObjId {
         1 => {
             return ListMenuAddRedArrowCursorObject(cursor);
@@ -1322,15 +1288,10 @@ pub(crate) unsafe extern "C" fn ListMenuAddCursorObjectInternal(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ListMenuUpdateCursorObject(
-    taskId: u8,
-    x: u16,
-    y: u16,
-    cursorObjId: u32,
-) {
+unsafe fn ListMenuUpdateCursorObject(taskId: u8, x: u16, y: u16, cursorObjId: u32) {
     match cursorObjId {
         0 => {
             ListMenuUpdateRedOutlineCursorObject(taskId, x, y);
@@ -1341,7 +1302,7 @@ pub(crate) unsafe extern "C" fn ListMenuUpdateCursorObject(
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn ListMenuRemoveCursorObject(taskId: u8, cursorObjId: u32) {
+unsafe fn ListMenuRemoveCursorObject(taskId: u8, cursorObjId: u32) {
     match cursorObjId {
         0 => {
             ListMenuRemoveRedOutlineCursorObject(taskId);
@@ -1352,12 +1313,8 @@ pub(crate) unsafe extern "C" fn ListMenuRemoveCursorObject(taskId: u8, cursorObj
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_RedOutlineCursor(taskId: u8) {}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenuGetRedOutlineCursorSpriteCount(
-    rowWidth: u16,
-    rowHeight: u16,
-) -> u8 {
+pub(crate) unsafe fn Task_RedOutlineCursor(taskId: u8) {}
+pub unsafe fn ListMenuGetRedOutlineCursorSpriteCount(rowWidth: u16, rowHeight: u16) -> u8 {
     let mut i: i32 = 0;
     let mut count: i32 = 4;
     if rowWidth > 16 {
@@ -1374,13 +1331,12 @@ pub unsafe extern "C" fn ListMenuGetRedOutlineCursorSpriteCount(
             i += 8;
         }
     }
-    return count as u8;
+    count as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenuSetUpRedOutlineCursorSpriteOamTable(
+pub unsafe fn ListMenuSetUpRedOutlineCursorSpriteOamTable(
     rowWidth: u16,
     rowHeight: u16,
-    mut subsprites: *mut Subsprite,
+    subsprites: *mut Subsprite,
 ) {
     let mut i: i32 = 0;
     let mut j: i32 = 0;
@@ -1430,12 +1386,10 @@ pub unsafe extern "C" fn ListMenuSetUpRedOutlineCursorSpriteOamTable(
         }
     }
 }
-pub(crate) unsafe extern "C" fn ListMenuAddRedOutlineCursorObject(cursor: *mut CursorStruct) -> u8 {
+unsafe fn ListMenuAddRedOutlineCursorObject(cursor: *mut CursorStruct) -> u8 {
     let mut spriteSheet: CompressedSpriteSheet = zeroed();
     let mut spritePal: SpritePalette = zeroed();
     let mut data: *mut RedOutlineCursor = null_mut();
-    let mut spriteTemplate: SpriteTemplate = zeroed();
-    let mut taskId: u8 = 0;
     spriteSheet.data = sOutlineCursor_Gfx.as_ptr().cast_mut();
     spriteSheet.size = 0x100;
     spriteSheet.tag = (*cursor).tileTag;
@@ -1451,8 +1405,8 @@ pub(crate) unsafe extern "C" fn ListMenuAddRedOutlineCursorObject(cursor: *mut C
         spritePal.tag = (*cursor).palTag;
         LoadSpritePalette(&raw mut spritePal);
     }
-    taskId = CreateTask(Some(Task_RedOutlineCursor), 0);
-    data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut RedOutlineCursor;
+    let taskId: u8 = CreateTask(Some(Task_RedOutlineCursor), 0);
+    data = (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut RedOutlineCursor;
     (*data).tileTag = (*cursor).tileTag;
     (*data).palTag = (*cursor).palTag;
     (*data).subspriteTable.subspriteCount =
@@ -1467,7 +1421,8 @@ pub(crate) unsafe extern "C" fn ListMenuAddRedOutlineCursorObject(cursor: *mut C
         (*cursor).rowHeight,
         (*data).subspritesPtr,
     );
-    spriteTemplate = gDummySpriteTemplate;
+    let mut spriteTemplate: SpriteTemplate =
+        *(&raw const crate::sprite::gDummySpriteTemplate).cast::<SpriteTemplate>();
     spriteTemplate.tileTag = (*cursor).tileTag;
     spriteTemplate.paletteTag = (*cursor).palTag;
     (*data).spriteId = CreateSprite(
@@ -1488,17 +1443,17 @@ pub(crate) unsafe extern "C" fn ListMenuAddRedOutlineCursorObject(cursor: *mut C
             .oam
             .set_paletteNum((*cursor).palNum as u16);
     }
-    return taskId;
+    taskId
 }
-pub(crate) unsafe extern "C" fn ListMenuUpdateRedOutlineCursorObject(taskId: u8, x: u16, y: u16) {
-    let mut data: *mut RedOutlineCursor =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut RedOutlineCursor;
+unsafe fn ListMenuUpdateRedOutlineCursorObject(taskId: u8, x: u16, y: u16) {
+    let data: *mut RedOutlineCursor =
+        (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut RedOutlineCursor;
     gSprites[(*data).spriteId].x = x as i16 + 120;
     gSprites[(*data).spriteId].y = y as i16 + 120;
 }
-pub(crate) unsafe extern "C" fn ListMenuRemoveRedOutlineCursorObject(taskId: u8) {
-    let mut data: *mut RedOutlineCursor =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut RedOutlineCursor;
+unsafe fn ListMenuRemoveRedOutlineCursorObject(taskId: u8) {
+    let data: *mut RedOutlineCursor =
+        (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut RedOutlineCursor;
     Free((*data).subspritesPtr as *mut c_void);
     if (*data).tileTag != TAG_NONE {
         FreeSpriteTilesByTag((*data).tileTag);
@@ -1509,17 +1464,17 @@ pub(crate) unsafe extern "C" fn ListMenuRemoveRedOutlineCursorObject(taskId: u8)
     DestroySprite(&raw mut gSprites[(*data).spriteId]);
     DestroyTask(taskId);
 }
-pub(crate) unsafe extern "C" fn SpriteCallback_RedArrowCursor(sprite: *mut Sprite) {
-    (*sprite).x2 = gSineTable[(*sprite).data[0] as u8] / 64;
+pub(crate) unsafe fn SpriteCallback_RedArrowCursor(sprite: *mut Sprite) {
+    (*sprite).x2 = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+        [(*sprite).data[0] as u8]
+        / 64;
     (*sprite).data[0] += 8;
 }
-pub(crate) unsafe extern "C" fn Task_RedArrowCursor(taskId: u8) {}
-pub(crate) unsafe extern "C" fn ListMenuAddRedArrowCursorObject(cursor: *mut CursorStruct) -> u8 {
+pub(crate) unsafe fn Task_RedArrowCursor(taskId: u8) {}
+unsafe fn ListMenuAddRedArrowCursorObject(cursor: *mut CursorStruct) -> u8 {
     let mut spriteSheet: CompressedSpriteSheet = zeroed();
     let mut spritePal: SpritePalette = zeroed();
     let mut data: *mut RedArrowCursor = null_mut();
-    let mut spriteTemplate: SpriteTemplate = zeroed();
-    let mut taskId: u8 = 0;
     spriteSheet.data = sArrowCursor_Gfx.as_ptr().cast_mut();
     spriteSheet.size = 0x80;
     spriteSheet.tag = (*cursor).tileTag;
@@ -1535,11 +1490,11 @@ pub(crate) unsafe extern "C" fn ListMenuAddRedArrowCursorObject(cursor: *mut Cur
         spritePal.tag = (*cursor).palTag;
         LoadSpritePalette(&raw mut spritePal);
     }
-    taskId = CreateTask(Some(Task_RedArrowCursor), 0);
-    data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut RedArrowCursor;
+    let taskId: u8 = CreateTask(Some(Task_RedArrowCursor), 0);
+    data = (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut RedArrowCursor;
     (*data).tileTag = (*cursor).tileTag;
     (*data).palTag = (*cursor).palTag;
-    spriteTemplate = *sSpriteTemplate_RedArrowCursor;
+    let mut spriteTemplate: SpriteTemplate = *sSpriteTemplate_RedArrowCursor;
     spriteTemplate.tileTag = (*cursor).tileTag;
     spriteTemplate.paletteTag = (*cursor).palTag;
     (*data).spriteId = CreateSprite(
@@ -1555,17 +1510,17 @@ pub(crate) unsafe extern "C" fn ListMenuAddRedArrowCursorObject(cursor: *mut Cur
             .oam
             .set_paletteNum((*cursor).palNum as u16);
     }
-    return taskId;
+    taskId
 }
-pub(crate) unsafe extern "C" fn ListMenuUpdateRedArrowCursorObject(taskId: u8, x: u16, y: u16) {
-    let mut data: *mut RedArrowCursor =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut RedArrowCursor;
+unsafe fn ListMenuUpdateRedArrowCursorObject(taskId: u8, x: u16, y: u16) {
+    let data: *mut RedArrowCursor =
+        (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut RedArrowCursor;
     gSprites[(*data).spriteId].x = x as i16;
     gSprites[(*data).spriteId].y = y as i16;
 }
-pub(crate) unsafe extern "C" fn ListMenuRemoveRedArrowCursorObject(taskId: u8) {
-    let mut data: *mut RedArrowCursor =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut RedArrowCursor;
+unsafe fn ListMenuRemoveRedArrowCursorObject(taskId: u8) {
+    let data: *mut RedArrowCursor =
+        (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut RedArrowCursor;
     if (*data).tileTag != TAG_NONE {
         FreeSpriteTilesByTag((*data).tileTag);
     }

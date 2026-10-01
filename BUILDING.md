@@ -7,5 +7,8 @@ In short, with devkitARM and Rust (plus `rust-src`) installed:
 
 ```sh
 make tools
-make modern -j4
+make modern -j4     # the main port (rust/, Rust rules)  -> pokeemerald_modern.gba
+make c-style -j4    # the C-style port (rust-c-style/)    -> pokeemerald_c_style.gba
 ```
+
+The two versions are explained in [The two versions](README.md#the-two-versions).

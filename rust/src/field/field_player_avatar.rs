@@ -3,37 +3,149 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::bike::{
+    Bike_HandleBumpySlopeJump, Bike_TryAcroBikeHistoryUpdate, Bike_UpdateBikeCounterSpeed,
+    BikeClearState, GetPlayerSpeed, IsPlayerNotUsingAcroBikeOnBumpySlope, IsRunningDisallowed,
+    MovePlayerOnBike,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::FlagGet;
+use crate::event_object_movement::{
+    CameraObjectFreeze, CameraObjectReset, GetAcroEndWheelieFaceDirectionMovementAction,
+    GetAcroEndWheelieMoveDirectionMovementAction, GetAcroPopWheelieFaceDirectionMovementAction,
+    GetAcroPopWheelieMoveDirectionMovementAction, GetAcroWheelieDirectionAnimNum,
+    GetAcroWheelieFaceDirectionMovementAction, GetAcroWheelieHopDirectionMovementAction,
+    GetAcroWheelieHopFaceDirectionMovementAction, GetAcroWheelieInPlaceDirectionMovementAction,
+    GetAcroWheelieJumpDirectionMovementAction, GetAcroWheelieMoveDirectionMovementAction,
+    GetCollisionAtCoords, GetFaceDirectionAnimNum, GetFaceDirectionMovementAction,
+    GetFishingBiteDirectionAnimNum, GetFishingDirectionAnimNum, GetFishingNoCatchDirectionAnimNum,
+    GetJump2MovementAction, GetJumpInPlaceMovementAction, GetJumpInPlaceTurnAroundMovementAction,
+    GetJumpSpecialMovementAction, GetLedgeJumpDirection, GetObjectEventIdByLocalIdAndMap,
+    GetObjectEventIdByPosition, GetObjectEventIdByXY, GetOppositeDirection,
+    GetPlayerRunMovementAction, GetRideWaterCurrentMovementAction, GetWalkFastMovementAction,
+    GetWalkFasterMovementAction, GetWalkInPlaceFastMovementAction,
+    GetWalkInPlaceNormalMovementAction, GetWalkInPlaceSlowMovementAction,
+    GetWalkNormalMovementAction, GetWalkSlowMovementAction, MoveCoords, MoveObjectEventToMapCoords,
+    ObjectEventCheckHeldMovementStatus, ObjectEventClearHeldMovement,
+    ObjectEventClearHeldMovementIfActive, ObjectEventClearHeldMovementIfFinished,
+    ObjectEventForceSetHeldMovement, ObjectEventGetHeldMovementActionId,
+    ObjectEventIsHeldMovementActive, ObjectEventIsMovementOverridden, ObjectEventSetGraphicsId,
+    ObjectEventSetHeldMovement, ObjectEventTurn, SetObjectEventDirection, SpawnSpecialObjectEvent,
+    UnfreezeObjectEvents, UpdateObjectEventCurrentMovement,
+};
+use crate::field_camera::gTotalCameraPixelOffsetY;
+use crate::field_effect::{FieldEffectStart, gFieldEffectArguments};
+use crate::field_effect_helpers::{
+    CreateWarpArrowSprite, SetSpriteInvisible, SetSurfBlob_BobState, SetSurfBlob_PlayerOffset,
+    ShowWarpArrowSprite, StartUnderwaterSurfBlobBobbing,
+};
+use crate::fieldmap::{MapGridGetElevationAt, MapGridGetMetatileBehaviorAt};
+use crate::menu::{
+    AddTextPrinterParameterized2, ClearDialogWindowAndFrame, LoadMessageBoxAndFrameGfx,
+};
+use crate::metatile_behavior::{
+    MetatileBehavior_IsNonAnimDoor, MetatileBehavior_IsSurfableFishableWater,
+    MetatileBehavior_IsWarpDoor,
+};
+use crate::overworld::{
+    IncrementGameStat, Overworld_ChangeMusicToDefault, Overworld_ClearSavedMusic,
+};
+use crate::party_menu::MonKnowsMove;
+use crate::pokemon::{GetMonAbility, GetMonData2, gPlayerParty};
+use crate::random::Random;
+use crate::rotating_gate::{
+    CheckForRotatingGatePuzzleCollision, CheckForRotatingGatePuzzleCollisionWithoutAnimation,
+};
+use crate::script::{LockPlayerFieldControls, UnlockPlayerFieldControls};
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::task::DestroyTask;
+use crate::task::gTasks;
+use crate::task::{task_get, task_set, task_set_func};
+use crate::text::{IsTextPrinterActive, RunTextPrinters};
+use crate::tv::RecordFishingAttemptForTV;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::wild_encounter::{DoesCurrentMapHaveFishingMons, FishingWildEncounter};
+use crate::window::FillWindowPixelBuffer;
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AnimateSprite` with this module's view of its types.
+#[inline]
+unsafe fn AnimateSprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::AnimateSprite(a0 as _);
+    }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+unsafe fn FindTaskIdByFunc(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `SeekSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn SeekSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::SeekSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+// The C's names for task and sprite data slots.
+const tState: usize = 0;
+const tStep: usize = 0;
+const tBoulderObjId: usize = 1;
+const tFrameCounter: usize = 1;
+const tDirection: usize = 2;
+const tNumDots: usize = 2;
+const tDotsRequired: usize = 3;
+const tRoundsPlayed: usize = 12;
+const tMinRoundsRequired: usize = 13;
+const tPlayerGfxId: usize = 14;
+const tFishingRod: usize = 15;
 // Data tables (translate with cdata.py): sForcedMovementTestFuncs sForcedMovementFuncs sPlayerNotOnBikeFuncs sAcroBikeTrickMetatiles sAcroBikeTrickCollisionTypes sPlayerAvatarTransitionFuncs sArrowWarpMetatileBehaviorChecks sRivalAvatarGfxIds sPlayerAvatarGfxIds sFRLGAvatarGfxIds sRSAvatarGfxIds sPlayerAvatarGfxToStateFlag sArrowWarpMetatileBehaviorChecks2 sPushBoulderFuncs sPlayerAvatarSecretBaseMatJump sPlayerAvatarSecretBaseMatSpin sFishingStateFuncs sSpinDirections
 
 /// `__typeof__(sPlayerAvatarGfxToStateFlag[0][0])`
@@ -64,37 +176,36 @@ const NUM_FORCED_MOVEMENTS: u8 = 18;
 
 static sAcroBikeTrickCollisionTypes: Table<CArray<u8, 5>> =
     Table((&raw const crate::data::field_player_avatar::sAcroBikeTrickCollisionTypes).cast());
-static sAcroBikeTrickMetatiles: Table<CArray<Option<unsafe extern "C" fn(u8) -> u8>, 5>> =
+static sAcroBikeTrickMetatiles: Table<CArray<Option<unsafe fn(u8) -> u8>, 5>> =
     Table((&raw const crate::data::field_player_avatar::sAcroBikeTrickMetatiles).cast());
-static sArrowWarpMetatileBehaviorChecks: Table<CArray<Option<unsafe extern "C" fn(u8) -> u8>, 4>> =
+static sArrowWarpMetatileBehaviorChecks: Table<CArray<Option<unsafe fn(u8) -> u8>, 4>> =
     Table((&raw const crate::data::field_player_avatar::sArrowWarpMetatileBehaviorChecks).cast());
-static sArrowWarpMetatileBehaviorChecks2: Table<CArray<Option<unsafe extern "C" fn(u8) -> u8>, 4>> =
+static sArrowWarpMetatileBehaviorChecks2: Table<CArray<Option<unsafe fn(u8) -> u8>, 4>> =
     Table((&raw const crate::data::field_player_avatar::sArrowWarpMetatileBehaviorChecks2).cast());
 static sFRLGAvatarGfxIds: Table<CArray<u8, 2>> =
     Table((&raw const crate::data::field_player_avatar::sFRLGAvatarGfxIds).cast());
-static sFishingStateFuncs: Table<CArray<Option<unsafe extern "C" fn(*mut Task) -> u8>, 16>> =
+static sFishingStateFuncs: Table<CArray<Option<unsafe fn(*mut Task) -> u8>, 16>> =
     Table((&raw const crate::data::field_player_avatar::sFishingStateFuncs).cast());
-static sForcedMovementFuncs: Table<CArray<Option<unsafe extern "C" fn() -> u8>, 19>> =
+static sForcedMovementFuncs: Table<CArray<Option<unsafe fn() -> u8>, 19>> =
     Table((&raw const crate::data::field_player_avatar::sForcedMovementFuncs).cast());
-static sForcedMovementTestFuncs: Table<CArray<Option<unsafe extern "C" fn(u8) -> u8>, 18>> =
+static sForcedMovementTestFuncs: Table<CArray<Option<unsafe fn(u8) -> u8>, 18>> =
     Table((&raw const crate::data::field_player_avatar::sForcedMovementTestFuncs).cast());
 static sPlayerAvatarGfxIds: Table<CArray<CArray<u8, 2>, 8>> =
     Table((&raw const crate::data::field_player_avatar::sPlayerAvatarGfxIds).cast());
 static sPlayerAvatarGfxToStateFlag: Table<CArray<CArray<sPlayerAvatarGfxToStateFlag_0_0_t, 5>, 2>> =
     Table((&raw const crate::data::field_player_avatar::sPlayerAvatarGfxToStateFlag).cast());
 static sPlayerAvatarSecretBaseMatJump: Table<
-    CArray<Option<unsafe extern "C" fn(*mut Task, *mut ObjectEvent) -> u8>, 1>,
+    CArray<Option<unsafe fn(*mut Task, *mut ObjectEvent) -> u8>, 1>,
 > = Table((&raw const crate::data::field_player_avatar::sPlayerAvatarSecretBaseMatJump).cast());
 static sPlayerAvatarSecretBaseMatSpin: Table<
-    CArray<Option<unsafe extern "C" fn(*mut Task, *mut ObjectEvent) -> u8>, 4>,
+    CArray<Option<unsafe fn(*mut Task, *mut ObjectEvent) -> u8>, 4>,
 > = Table((&raw const crate::data::field_player_avatar::sPlayerAvatarSecretBaseMatSpin).cast());
-static sPlayerAvatarTransitionFuncs: Table<
-    CArray<Option<unsafe extern "C" fn(*mut ObjectEvent)>, 8>,
-> = Table((&raw const crate::data::field_player_avatar::sPlayerAvatarTransitionFuncs).cast());
-static sPlayerNotOnBikeFuncs: Table<CArray<Option<unsafe extern "C" fn(u8, u16)>, 3>> =
+static sPlayerAvatarTransitionFuncs: Table<CArray<Option<unsafe fn(*mut ObjectEvent)>, 8>> =
+    Table((&raw const crate::data::field_player_avatar::sPlayerAvatarTransitionFuncs).cast());
+static sPlayerNotOnBikeFuncs: Table<CArray<Option<unsafe fn(u8, u16)>, 3>> =
     Table((&raw const crate::data::field_player_avatar::sPlayerNotOnBikeFuncs).cast());
 static sPushBoulderFuncs: Table<
-    CArray<Option<unsafe extern "C" fn(*mut Task, *mut ObjectEvent, *mut ObjectEvent) -> u8>, 3>,
+    CArray<Option<unsafe fn(*mut Task, *mut ObjectEvent, *mut ObjectEvent) -> u8>, 3>,
 > = Table((&raw const crate::data::field_player_avatar::sPushBoulderFuncs).cast());
 static sRSAvatarGfxIds: Table<CArray<u8, 2>> =
     Table((&raw const crate::data::field_player_avatar::sRSAvatarGfxIds).cast());
@@ -104,7 +215,7 @@ static sSpinDirections: Table<CArray<u8, 5>> =
     Table((&raw const crate::data::field_player_avatar::sSpinDirections).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSpinStartFacingDir: u8 = 0;
+pub(crate) static sSpinStartFacingDir: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gObjectEvents: CArray<ObjectEvent, 16> = unsafe { zeroed() };
@@ -112,162 +223,45 @@ pub static mut gObjectEvents: CArray<ObjectEvent, 16> = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
 pub static mut gPlayerAvatar: PlayerAvatar = unsafe { zeroed() };
 
-unsafe extern "C" {
-    static mut gFieldEffectArguments: CArray<i32, 8>;
-    static mut gMain: Main;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_ItGotAway: CArray<u8, 0>;
-    static gText_NotEvenANibble: CArray<u8, 0>;
-    static gText_OhABite: CArray<u8, 0>;
-    static gText_PokemonOnHook: CArray<u8, 0>;
-    static mut gTotalCameraPixelOffsetY: u16;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddTextPrinterParameterized2(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-        a5: u8,
-        a6: u8,
-        a7: u8,
-    ) -> u16;
-    fn AnimateSprite(a0: *mut Sprite);
-    fn BikeClearState(a0: i32, a1: i32);
-    fn Bike_HandleBumpySlopeJump();
-    fn Bike_TryAcroBikeHistoryUpdate(a0: u16, a1: u16);
-    fn Bike_UpdateBikeCounterSpeed(a0: u8);
-    fn CameraObjectFreeze();
-    fn CameraObjectReset();
-    fn CheckForRotatingGatePuzzleCollision(a0: u8, a1: i16, a2: i16) -> u32;
-    fn CheckForRotatingGatePuzzleCollisionWithoutAnimation(a0: u8, a1: i16, a2: i16) -> u32;
-    fn ClearDialogWindowAndFrame(a0: u8, a1: u8);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateWarpArrowSprite() -> u8;
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DoesCurrentMapHaveFishingMons() -> u8;
-    fn FieldEffectStart(a0: u8) -> u32;
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn FishingWildEncounter(a0: u8);
-    fn FlagGet(a0: u16) -> u8;
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetAcroEndWheelieFaceDirectionMovementAction(a0: u32) -> u8;
-    fn GetAcroEndWheelieMoveDirectionMovementAction(a0: u32) -> u8;
-    fn GetAcroPopWheelieFaceDirectionMovementAction(a0: u32) -> u8;
-    fn GetAcroPopWheelieMoveDirectionMovementAction(a0: u32) -> u8;
-    fn GetAcroWheelieDirectionAnimNum(a0: u8) -> u8;
-    fn GetAcroWheelieFaceDirectionMovementAction(a0: u32) -> u8;
-    fn GetAcroWheelieHopDirectionMovementAction(a0: u32) -> u8;
-    fn GetAcroWheelieHopFaceDirectionMovementAction(a0: u32) -> u8;
-    fn GetAcroWheelieInPlaceDirectionMovementAction(a0: u32) -> u8;
-    fn GetAcroWheelieJumpDirectionMovementAction(a0: u32) -> u8;
-    fn GetAcroWheelieMoveDirectionMovementAction(a0: u32) -> u8;
-    fn GetCollisionAtCoords(a0: *mut ObjectEvent, a1: i16, a2: i16, a3: u32) -> u8;
-    fn GetFaceDirectionAnimNum(a0: u8) -> u8;
-    fn GetFaceDirectionMovementAction(a0: u32) -> u8;
-    fn GetFishingBiteDirectionAnimNum(a0: u8) -> u8;
-    fn GetFishingDirectionAnimNum(a0: u8) -> u8;
-    fn GetFishingNoCatchDirectionAnimNum(a0: u8) -> u8;
-    fn GetJump2MovementAction(a0: u32) -> u8;
-    fn GetJumpInPlaceMovementAction(a0: u32) -> u8;
-    fn GetJumpInPlaceTurnAroundMovementAction(a0: u32) -> u8;
-    fn GetJumpSpecialMovementAction(a0: u32) -> u8;
-    fn GetLedgeJumpDirection(a0: i16, a1: i16, a2: u8) -> u8;
-    fn GetMonAbility(a0: *mut Pokemon) -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetObjectEventIdByLocalIdAndMap(a0: u8, a1: u8, a2: u8) -> u8;
-    fn GetObjectEventIdByPosition(a0: u16, a1: u16, a2: u8) -> u8;
-    fn GetObjectEventIdByXY(a0: i16, a1: i16) -> u8;
-    fn GetOppositeDirection(a0: u8) -> u8;
-    fn GetPlayerRunMovementAction(a0: u32) -> u8;
-    fn GetPlayerSpeed() -> i16;
-    fn GetRideWaterCurrentMovementAction(a0: u32) -> u8;
-    fn GetWalkFastMovementAction(a0: u32) -> u8;
-    fn GetWalkFasterMovementAction(a0: u32) -> u8;
-    fn GetWalkInPlaceFastMovementAction(a0: u32) -> u8;
-    fn GetWalkInPlaceNormalMovementAction(a0: u32) -> u8;
-    fn GetWalkInPlaceSlowMovementAction(a0: u32) -> u8;
-    fn GetWalkNormalMovementAction(a0: u32) -> u8;
-    fn GetWalkSlowMovementAction(a0: u32) -> u8;
-    fn IncrementGameStat(a0: u8);
-    fn IsPlayerNotUsingAcroBikeOnBumpySlope() -> u8;
-    fn IsRunningDisallowed(a0: u8) -> u32;
-    fn IsTextPrinterActive(a0: u8) -> u16;
-    fn LoadMessageBoxAndFrameGfx(a0: u8, a1: u8);
-    fn LockPlayerFieldControls();
-    fn MapGridGetElevationAt(a0: i32, a1: i32) -> u8;
-    fn MapGridGetMetatileBehaviorAt(a0: i32, a1: i32) -> i32;
-    fn MetatileBehavior_IsNonAnimDoor(a0: u8) -> u8;
-    fn MetatileBehavior_IsSurfableFishableWater(a0: u8) -> u8;
-    fn MetatileBehavior_IsWarpDoor(a0: u8) -> u8;
-    fn MonKnowsMove(a0: *mut Pokemon, a1: u16) -> u8;
-    fn MoveCoords(a0: u8, a1: *mut i16, a2: *mut i16);
-    fn MoveObjectEventToMapCoords(a0: *mut ObjectEvent, a1: i16, a2: i16);
-    fn MovePlayerOnBike(a0: u8, a1: u16, a2: u16);
-    fn ObjectEventCheckHeldMovementStatus(a0: *mut ObjectEvent) -> u8;
-    fn ObjectEventClearHeldMovement(a0: *mut ObjectEvent);
-    fn ObjectEventClearHeldMovementIfActive(a0: *mut ObjectEvent);
-    fn ObjectEventClearHeldMovementIfFinished(a0: *mut ObjectEvent) -> u8;
-    fn ObjectEventForceSetHeldMovement(a0: *mut ObjectEvent, a1: u8);
-    fn ObjectEventGetHeldMovementActionId(a0: *mut ObjectEvent) -> u8;
-    fn ObjectEventIsHeldMovementActive(a0: *mut ObjectEvent) -> u8;
-    fn ObjectEventIsMovementOverridden(a0: *mut ObjectEvent) -> u8;
-    fn ObjectEventSetGraphicsId(a0: *mut ObjectEvent, a1: u8);
-    fn ObjectEventSetHeldMovement(a0: *mut ObjectEvent, a1: u8) -> u8;
-    fn ObjectEventTurn(a0: *mut ObjectEvent, a1: u8);
-    fn Overworld_ChangeMusicToDefault();
-    fn Overworld_ClearSavedMusic();
-    fn PlaySE(a0: u16);
-    fn Random() -> u16;
-    fn RecordFishingAttemptForTV(a0: u8);
-    fn RunTextPrinters();
-    fn SeekSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn SetObjectEventDirection(a0: *mut ObjectEvent, a1: u8);
-    fn SetSpriteInvisible(a0: u8);
-    fn SetSurfBlob_BobState(a0: u8, a1: u8);
-    fn SetSurfBlob_PlayerOffset(a0: u8, a1: u8, a2: i16);
-    fn ShowWarpArrowSprite(a0: u8, a1: u8, a2: i16, a3: i16);
-    fn SpawnSpecialObjectEvent(a0: *mut ObjectEventTemplate) -> u8;
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StartUnderwaterSurfBlobBobbing(a0: u8) -> u8;
-    fn UnfreezeObjectEvents();
-    fn UnlockPlayerFieldControls();
-    fn UpdateObjectEventCurrentMovement(
-        a0: *mut ObjectEvent,
-        a1: *mut Sprite,
-        a2: Option<unsafe extern "C" fn(*mut ObjectEvent, *mut Sprite) -> u8>,
-    );
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MovementType_Player(sprite: *mut Sprite) {
+pub unsafe fn MovementType_Player(sprite: *mut Sprite) {
     UpdateObjectEventCurrentMovement(
         &raw mut gObjectEvents[(*sprite).data[0]],
         sprite,
         core::mem::transmute::<
-            Option<unsafe extern "C" fn() -> u8>,
-            Option<unsafe extern "C" fn(*mut ObjectEvent, *mut Sprite) -> u8>,
+            Option<unsafe fn() -> u8>,
+            Option<unsafe fn(*mut ObjectEvent, *mut Sprite) -> u8>,
         >(Some(ObjectEventCB2_NoMovement2)),
     );
 }
-pub(crate) unsafe extern "C" fn ObjectEventCB2_NoMovement2() -> u8 {
-    return 0;
+pub(crate) unsafe fn ObjectEventCB2_NoMovement2() -> u8 {
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerStep(direction: u8, newKeys: u16, heldKeys: u16) {
-    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+pub unsafe fn PlayerStep(direction: u8, newKeys: u16, heldKeys: u16) {
+    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
     HideShowWarpArrow(playerObjEvent);
     if gPlayerAvatar.preventStep == FALSE {
         Bike_TryAcroBikeHistoryUpdate(newKeys, heldKeys);
@@ -281,14 +275,14 @@ pub unsafe extern "C" fn PlayerStep(direction: u8, newKeys: u16, heldKeys: u16) 
         }
     }
 }
-pub(crate) unsafe extern "C" fn TryInterruptObjectEventSpecialAnim(
+unsafe fn TryInterruptObjectEventSpecialAnim(
     playerObjEvent: *mut ObjectEvent,
     direction: u8,
 ) -> u8 {
     if ObjectEventIsMovementOverridden(playerObjEvent) != 0
         && ObjectEventClearHeldMovementIfFinished(playerObjEvent) == 0
     {
-        let mut heldMovementActionId: u8 = ObjectEventGetHeldMovementActionId(playerObjEvent);
+        let heldMovementActionId: u8 = ObjectEventGetHeldMovementActionId(playerObjEvent);
         if heldMovementActionId > MOVEMENT_ACTION_WALK_FAST_RIGHT
             && heldMovementActionId < MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_DOWN
         {
@@ -306,65 +300,54 @@ pub(crate) unsafe extern "C" fn TryInterruptObjectEventSpecialAnim(
         }
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn npc_clear_strange_bits(objEvent: *mut ObjectEvent) {
+unsafe fn npc_clear_strange_bits(objEvent: *mut ObjectEvent) {
     (*objEvent).set_inanimate(FALSE as u32);
     (*objEvent).set_disableAnim(FALSE as u32);
     (*objEvent).set_facingDirectionLocked(FALSE as u32);
     gPlayerAvatar.flags &= 127;
 }
-pub(crate) unsafe extern "C" fn MovePlayerAvatarUsingKeypadInput(
-    direction: u8,
-    newKeys: u16,
-    heldKeys: u16,
-) {
+unsafe fn MovePlayerAvatarUsingKeypadInput(direction: u8, newKeys: u16, heldKeys: u16) {
     if gPlayerAvatar.flags as i32 & 6 != 0 {
         MovePlayerOnBike(direction, newKeys, heldKeys);
     } else {
         MovePlayerNotOnBike(direction, heldKeys);
     }
 }
-pub(crate) unsafe extern "C" fn PlayerAllowForcedMovementIfMovingSameDirection() {
+unsafe fn PlayerAllowForcedMovementIfMovingSameDirection() {
     if gPlayerAvatar.runningState == MOVING {
         gPlayerAvatar.flags &= 223;
     }
 }
-pub(crate) unsafe extern "C" fn TryDoMetatileBehaviorForcedMovement() -> u8 {
-    return sForcedMovementFuncs[GetForcedMovementByMetatileBehavior()].unwrap_unchecked()();
+unsafe fn TryDoMetatileBehaviorForcedMovement() -> u8 {
+    sForcedMovementFuncs[GetForcedMovementByMetatileBehavior()].unwrap_unchecked()()
 }
-pub(crate) unsafe extern "C" fn GetForcedMovementByMetatileBehavior() -> u8 {
-    let mut i: u8 = 0;
+unsafe fn GetForcedMovementByMetatileBehavior() -> u8 {
     if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_CONTROLLABLE as i32 == 0 {
-        let mut metatileBehavior: u8 =
+        let metatileBehavior: u8 =
             gObjectEvents[gPlayerAvatar.objectEventId].currentMetatileBehavior;
-        i = 0;
-        while i < NUM_FORCED_MOVEMENTS {
+        for i in 0..NUM_FORCED_MOVEMENTS {
             if sForcedMovementTestFuncs[i].unwrap_unchecked()(metatileBehavior) != 0 {
                 return i + 1;
             }
-            i += 1;
         }
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_None() -> u8 {
+pub(crate) unsafe fn ForcedMovement_None() -> u8 {
     if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_FORCED_MOVE != 0 {
-        let mut playerObjEvent: *mut ObjectEvent =
-            &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+        let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
         (*playerObjEvent).set_facingDirectionLocked(FALSE as u32);
         (*playerObjEvent).set_enableAnim(TRUE as u32);
         SetObjectEventDirection(playerObjEvent, (*playerObjEvent).facingDirection() as u8);
         gPlayerAvatar.flags &= 191;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DoForcedMovement(
-    direction: u8,
-    moveFunc: Option<unsafe extern "C" fn(u8)>,
-) -> u8 {
-    let mut playerAvatar: *mut PlayerAvatar = &raw mut gPlayerAvatar;
-    let mut collision: u8 = CheckForPlayerAvatarCollision(direction);
+unsafe fn DoForcedMovement(direction: u8, moveFunc: Option<unsafe fn(u8)>) -> u8 {
+    let playerAvatar: *mut PlayerAvatar = &raw mut gPlayerAvatar;
+    let collision: u8 = CheckForPlayerAvatarCollision(direction);
     (*playerAvatar).flags |= PLAYER_AVATAR_FLAG_FORCED_MOVE as u8;
     if collision != 0 {
         ForcedMovement_None();
@@ -385,74 +368,69 @@ pub(crate) unsafe extern "C" fn DoForcedMovement(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn DoForcedMovementInCurrentDirection(
-    moveFunc: Option<unsafe extern "C" fn(u8)>,
-) -> u8 {
-    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+unsafe fn DoForcedMovementInCurrentDirection(moveFunc: Option<unsafe fn(u8)>) -> u8 {
+    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
     (*playerObjEvent).set_disableAnim(TRUE as u32);
-    return DoForcedMovement((*playerObjEvent).movementDirection() as u8, moveFunc);
+    DoForcedMovement((*playerObjEvent).movementDirection() as u8, moveFunc)
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_Slip() -> u8 {
-    return DoForcedMovementInCurrentDirection(Some(PlayerWalkFast));
+pub(crate) unsafe fn ForcedMovement_Slip() -> u8 {
+    DoForcedMovementInCurrentDirection(Some(PlayerWalkFast))
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_WalkSouth() -> u8 {
-    return DoForcedMovement(DIR_SOUTH, Some(PlayerWalkNormal));
+pub(crate) unsafe fn ForcedMovement_WalkSouth() -> u8 {
+    DoForcedMovement(DIR_SOUTH, Some(PlayerWalkNormal))
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_WalkNorth() -> u8 {
-    return DoForcedMovement(DIR_NORTH, Some(PlayerWalkNormal));
+pub(crate) unsafe fn ForcedMovement_WalkNorth() -> u8 {
+    DoForcedMovement(DIR_NORTH, Some(PlayerWalkNormal))
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_WalkWest() -> u8 {
-    return DoForcedMovement(DIR_WEST, Some(PlayerWalkNormal));
+pub(crate) unsafe fn ForcedMovement_WalkWest() -> u8 {
+    DoForcedMovement(DIR_WEST, Some(PlayerWalkNormal))
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_WalkEast() -> u8 {
-    return DoForcedMovement(DIR_EAST, Some(PlayerWalkNormal));
+pub(crate) unsafe fn ForcedMovement_WalkEast() -> u8 {
+    DoForcedMovement(DIR_EAST, Some(PlayerWalkNormal))
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_PushedSouthByCurrent() -> u8 {
-    return DoForcedMovement(DIR_SOUTH, Some(PlayerRideWaterCurrent));
+pub(crate) unsafe fn ForcedMovement_PushedSouthByCurrent() -> u8 {
+    DoForcedMovement(DIR_SOUTH, Some(PlayerRideWaterCurrent))
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_PushedNorthByCurrent() -> u8 {
-    return DoForcedMovement(DIR_NORTH, Some(PlayerRideWaterCurrent));
+pub(crate) unsafe fn ForcedMovement_PushedNorthByCurrent() -> u8 {
+    DoForcedMovement(DIR_NORTH, Some(PlayerRideWaterCurrent))
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_PushedWestByCurrent() -> u8 {
-    return DoForcedMovement(DIR_WEST, Some(PlayerRideWaterCurrent));
+pub(crate) unsafe fn ForcedMovement_PushedWestByCurrent() -> u8 {
+    DoForcedMovement(DIR_WEST, Some(PlayerRideWaterCurrent))
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_PushedEastByCurrent() -> u8 {
-    return DoForcedMovement(DIR_EAST, Some(PlayerRideWaterCurrent));
+pub(crate) unsafe fn ForcedMovement_PushedEastByCurrent() -> u8 {
+    DoForcedMovement(DIR_EAST, Some(PlayerRideWaterCurrent))
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_Slide(
-    direction: u8,
-    moveFunc: Option<unsafe extern "C" fn(u8)>,
-) -> u8 {
-    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+unsafe fn ForcedMovement_Slide(direction: u8, moveFunc: Option<unsafe fn(u8)>) -> u8 {
+    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
     (*playerObjEvent).set_disableAnim(TRUE as u32);
     (*playerObjEvent).set_facingDirectionLocked(TRUE as u32);
-    return DoForcedMovement(direction, moveFunc);
+    DoForcedMovement(direction, moveFunc)
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_SlideSouth() -> u8 {
-    return ForcedMovement_Slide(DIR_SOUTH, Some(PlayerWalkFast));
+pub(crate) unsafe fn ForcedMovement_SlideSouth() -> u8 {
+    ForcedMovement_Slide(DIR_SOUTH, Some(PlayerWalkFast))
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_SlideNorth() -> u8 {
-    return ForcedMovement_Slide(DIR_NORTH, Some(PlayerWalkFast));
+pub(crate) unsafe fn ForcedMovement_SlideNorth() -> u8 {
+    ForcedMovement_Slide(DIR_NORTH, Some(PlayerWalkFast))
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_SlideWest() -> u8 {
-    return ForcedMovement_Slide(DIR_WEST, Some(PlayerWalkFast));
+pub(crate) unsafe fn ForcedMovement_SlideWest() -> u8 {
+    ForcedMovement_Slide(DIR_WEST, Some(PlayerWalkFast))
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_SlideEast() -> u8 {
-    return ForcedMovement_Slide(DIR_EAST, Some(PlayerWalkFast));
+pub(crate) unsafe fn ForcedMovement_SlideEast() -> u8 {
+    ForcedMovement_Slide(DIR_EAST, Some(PlayerWalkFast))
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_MatJump() -> u8 {
+pub(crate) unsafe fn ForcedMovement_MatJump() -> u8 {
     DoPlayerMatJump();
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_MatSpin() -> u8 {
+pub(crate) unsafe fn ForcedMovement_MatSpin() -> u8 {
     DoPlayerMatSpin();
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ForcedMovement_MuddySlope() -> u8 {
-    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+pub(crate) unsafe fn ForcedMovement_MuddySlope() -> u8 {
+    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
     if (*playerObjEvent).movementDirection() != DIR_NORTH as u16
         || GetPlayerSpeed() < PLAYER_SPEED_FASTEST
     {
@@ -464,15 +442,15 @@ pub(crate) unsafe extern "C" fn ForcedMovement_MuddySlope() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn MovePlayerNotOnBike(direction: u8, heldKeys: u16) {
+unsafe fn MovePlayerNotOnBike(direction: u8, heldKeys: u16) {
     sPlayerNotOnBikeFuncs[CheckMovementInputNotOnBike(direction)].unwrap_unchecked()(
         direction, heldKeys,
     );
 }
-pub(crate) unsafe extern "C" fn CheckMovementInputNotOnBike(direction: u8) -> u8 {
+unsafe fn CheckMovementInputNotOnBike(direction: u8) -> u8 {
     if direction == DIR_NONE {
         return {
             gPlayerAvatar.runningState = NOT_MOVING;
@@ -491,17 +469,17 @@ pub(crate) unsafe extern "C" fn CheckMovementInputNotOnBike(direction: u8) -> u8
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn PlayerNotOnBikeNotMoving(direction: u8, heldKeys: u16) {
+pub(crate) unsafe fn PlayerNotOnBikeNotMoving(direction: u8, heldKeys: u16) {
     PlayerFaceDirection(GetPlayerFacingDirection());
 }
-pub(crate) unsafe extern "C" fn PlayerNotOnBikeTurningInPlace(direction: u8, heldKeys: u16) {
+pub(crate) unsafe fn PlayerNotOnBikeTurningInPlace(direction: u8, heldKeys: u16) {
     PlayerTurnInPlace(direction);
 }
-pub(crate) unsafe extern "C" fn PlayerNotOnBikeMoving(direction: u8, heldKeys: u16) {
-    let mut collision: u8 = CheckForPlayerAvatarCollision(direction);
+pub(crate) unsafe fn PlayerNotOnBikeMoving(direction: u8, heldKeys: u16) {
+    let collision: u8 = CheckForPlayerAvatarCollision(direction);
     if collision != 0 {
         if collision == COLLISION_LEDGE_JUMP {
             PlayerJumpLedge(direction);
@@ -534,43 +512,41 @@ pub(crate) unsafe extern "C" fn PlayerNotOnBikeMoving(direction: u8, heldKeys: u
     {
         PlayerRun(direction);
         gPlayerAvatar.flags |= PLAYER_AVATAR_FLAG_DASH;
-        return;
     } else {
         PlayerWalkNormal(direction);
     }
 }
-pub(crate) unsafe extern "C" fn CheckForPlayerAvatarCollision(direction: u8) -> u8 {
+unsafe fn CheckForPlayerAvatarCollision(direction: u8) -> u8 {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
-    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
     x = (*playerObjEvent).currentCoords.x;
     y = (*playerObjEvent).currentCoords.y;
     MoveCoords(direction, &raw mut x, &raw mut y);
-    return CheckForObjectEventCollision(
+    CheckForObjectEventCollision(
         playerObjEvent,
         x,
         y,
         direction,
         MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8,
-    );
+    )
 }
-pub(crate) unsafe extern "C" fn CheckForPlayerAvatarStaticCollision(direction: u8) -> u8 {
+unsafe fn CheckForPlayerAvatarStaticCollision(direction: u8) -> u8 {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
-    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
     x = (*playerObjEvent).currentCoords.x;
     y = (*playerObjEvent).currentCoords.y;
     MoveCoords(direction, &raw mut x, &raw mut y);
-    return CheckForObjectEventStaticCollision(
+    CheckForObjectEventStaticCollision(
         playerObjEvent,
         x,
         y,
         direction,
         MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8,
-    );
+    )
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckForObjectEventCollision(
+pub unsafe fn CheckForObjectEventCollision(
     objectEvent: *mut ObjectEvent,
     x: i16,
     y: i16,
@@ -594,9 +570,9 @@ pub unsafe extern "C" fn CheckForObjectEventCollision(
         }
         CheckAcroBikeCollision(x, y, metatileBehavior, &raw mut collision);
     }
-    return collision;
+    collision
 }
-pub(crate) unsafe extern "C" fn CheckForObjectEventStaticCollision(
+unsafe fn CheckForObjectEventStaticCollision(
     objectEvent: *mut ObjectEvent,
     x: i16,
     y: i16,
@@ -610,9 +586,9 @@ pub(crate) unsafe extern "C" fn CheckForObjectEventStaticCollision(
         }
         CheckAcroBikeCollision(x, y, metatileBehavior, &raw mut collision);
     }
-    return collision;
+    collision
 }
-pub(crate) unsafe extern "C" fn CanStopSurfing(x: i16, y: i16, direction: u8) -> u8 {
+unsafe fn CanStopSurfing(x: i16, y: i16, direction: u8) -> u8 {
     if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_SURFING as i32 != 0
         && MapGridGetElevationAt(x as i32, y as i32) == ELEVATION_DEFAULT
         && GetObjectEventIdByPosition(x as u16, y as u16, ELEVATION_DEFAULT) == OBJECT_EVENTS_COUNT
@@ -624,10 +600,10 @@ pub(crate) unsafe extern "C" fn CanStopSurfing(x: i16, y: i16, direction: u8) ->
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ShouldJumpLedge(x: i16, y: i16, direction: u8) -> u8 {
+unsafe fn ShouldJumpLedge(x: i16, y: i16, direction: u8) -> u8 {
     if GetLedgeJumpDirection(x, y, direction) != DIR_NONE {
         return TRUE;
     } else {
@@ -635,12 +611,12 @@ pub(crate) unsafe extern "C" fn ShouldJumpLedge(x: i16, y: i16, direction: u8) -
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn TryPushBoulder(mut x: i16, mut y: i16, direction: u8) -> u8 {
+unsafe fn TryPushBoulder(mut x: i16, mut y: i16, direction: u8) -> u8 {
     if FlagGet(FLAG_SYS_USE_STRENGTH) != 0 {
-        let mut objectEventId: u8 = GetObjectEventIdByXY(x, y);
+        let objectEventId: u8 = GetObjectEventIdByXY(x, y);
         if objectEventId != OBJECT_EVENTS_COUNT
             && gObjectEvents[objectEventId].graphicsId == OBJ_EVENT_GFX_PUSHABLE_BOULDER
         {
@@ -662,59 +638,44 @@ pub(crate) unsafe extern "C" fn TryPushBoulder(mut x: i16, mut y: i16, direction
             }
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn CheckAcroBikeCollision(
-    x: i16,
-    y: i16,
-    metatileBehavior: u8,
-    collision: *mut u8,
-) {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < NUM_ACRO_BIKE_COLLISIONS {
+unsafe fn CheckAcroBikeCollision(x: i16, y: i16, metatileBehavior: u8, collision: *mut u8) {
+    for i in 0..NUM_ACRO_BIKE_COLLISIONS {
         if sAcroBikeTrickMetatiles[i].unwrap_unchecked()(metatileBehavior) != 0 {
             *collision = sAcroBikeTrickCollisionTypes[i];
             return;
         }
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsPlayerCollidingWithFarawayIslandMew(direction: u8) -> u8 {
-    let mut mewObjectId: u8 = 0;
-    let mut object: *mut ObjectEvent = null_mut();
-    let mut playerX: i16 = 0;
-    let mut playerY: i16 = 0;
-    let mut mewPrevX: i16 = 0;
-    object = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
-    playerX = (*object).currentCoords.x;
-    playerY = (*object).currentCoords.y;
+pub unsafe fn IsPlayerCollidingWithFarawayIslandMew(direction: u8) -> u8 {
+    let mut object: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let mut playerX: i16 = (*object).currentCoords.x;
+    let mut playerY: i16 = (*object).currentCoords.y;
     MoveCoords(direction, &raw mut playerX, &raw mut playerY);
-    mewObjectId = GetObjectEventIdByLocalIdAndMap(LOCALID_FARAWAY_ISLAND_MEW, 57, 26);
+    let mewObjectId: u8 = GetObjectEventIdByLocalIdAndMap(LOCALID_FARAWAY_ISLAND_MEW, 57, 26);
     if mewObjectId == OBJECT_EVENTS_COUNT {
         return FALSE;
     }
     object = &raw mut gObjectEvents[mewObjectId];
-    mewPrevX = (*object).previousCoords.x;
-    if mewPrevX == playerX {
-        if (*object).previousCoords.y != playerY
+    let mewPrevX: i16 = (*object).previousCoords.x;
+    if mewPrevX == playerX
+        && ((*object).previousCoords.y != playerY
             || (*object).currentCoords.x != mewPrevX
-            || (*object).currentCoords.y != (*object).previousCoords.y
-        {
-            if (*object).previousCoords.x == playerX && (*object).previousCoords.y == playerY {
-                return TRUE;
-            }
-        }
+            || (*object).currentCoords.y != (*object).previousCoords.y)
+        && (*object).previousCoords.x == playerX
+        && (*object).previousCoords.y == playerY
+    {
+        return TRUE;
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetPlayerAvatarTransitionFlags(transitionFlags: u16) {
+pub unsafe fn SetPlayerAvatarTransitionFlags(transitionFlags: u16) {
     gPlayerAvatar.transitionFlags |= transitionFlags as u8;
     DoPlayerAvatarTransition();
 }
-pub(crate) unsafe extern "C" fn DoPlayerAvatarTransition() {
+unsafe fn DoPlayerAvatarTransition() {
     let mut i: u8 = 0;
     let mut flags: u8 = gPlayerAvatar.transitionFlags;
     if flags != 0 {
@@ -731,8 +692,8 @@ pub(crate) unsafe extern "C" fn DoPlayerAvatarTransition() {
         gPlayerAvatar.transitionFlags = 0;
     }
 }
-pub(crate) unsafe extern "C" fn PlayerAvatarTransition_Dummy(objEvent: *mut ObjectEvent) {}
-pub(crate) unsafe extern "C" fn PlayerAvatarTransition_Normal(objEvent: *mut ObjectEvent) {
+pub(crate) fn PlayerAvatarTransition_Dummy(objEvent: *mut ObjectEvent) {}
+pub(crate) unsafe fn PlayerAvatarTransition_Normal(objEvent: *mut ObjectEvent) {
     ObjectEventSetGraphicsId(
         objEvent,
         GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_NORMAL),
@@ -740,7 +701,7 @@ pub(crate) unsafe extern "C" fn PlayerAvatarTransition_Normal(objEvent: *mut Obj
     ObjectEventTurn(objEvent, (*objEvent).movementDirection() as u8);
     SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_ON_FOOT);
 }
-pub(crate) unsafe extern "C" fn PlayerAvatarTransition_MachBike(objEvent: *mut ObjectEvent) {
+pub(crate) unsafe fn PlayerAvatarTransition_MachBike(objEvent: *mut ObjectEvent) {
     ObjectEventSetGraphicsId(
         objEvent,
         GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_MACH_BIKE),
@@ -749,7 +710,7 @@ pub(crate) unsafe extern "C" fn PlayerAvatarTransition_MachBike(objEvent: *mut O
     SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_MACH_BIKE);
     BikeClearState(0, 0);
 }
-pub(crate) unsafe extern "C" fn PlayerAvatarTransition_AcroBike(objEvent: *mut ObjectEvent) {
+pub(crate) unsafe fn PlayerAvatarTransition_AcroBike(objEvent: *mut ObjectEvent) {
     ObjectEventSetGraphicsId(
         objEvent,
         GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_ACRO_BIKE),
@@ -759,8 +720,7 @@ pub(crate) unsafe extern "C" fn PlayerAvatarTransition_AcroBike(objEvent: *mut O
     BikeClearState(0, 0);
     Bike_HandleBumpySlopeJump();
 }
-pub(crate) unsafe extern "C" fn PlayerAvatarTransition_Surfing(objEvent: *mut ObjectEvent) {
-    let mut spriteId: u8 = 0;
+pub(crate) unsafe fn PlayerAvatarTransition_Surfing(objEvent: *mut ObjectEvent) {
     ObjectEventSetGraphicsId(
         objEvent,
         GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_SURFING),
@@ -770,11 +730,11 @@ pub(crate) unsafe extern "C" fn PlayerAvatarTransition_Surfing(objEvent: *mut Ob
     gFieldEffectArguments[0] = (*objEvent).currentCoords.x as i32;
     gFieldEffectArguments[1] = (*objEvent).currentCoords.y as i32;
     gFieldEffectArguments[2] = gPlayerAvatar.objectEventId as i32;
-    spriteId = FieldEffectStart(FLDEFF_SURF_BLOB) as u8;
+    let spriteId: u8 = FieldEffectStart(FLDEFF_SURF_BLOB) as u8;
     (*objEvent).fieldEffectSpriteId = spriteId;
     SetSurfBlob_BobState(spriteId, BOB_PLAYER_AND_MON);
 }
-pub(crate) unsafe extern "C" fn PlayerAvatarTransition_Underwater(objEvent: *mut ObjectEvent) {
+pub(crate) unsafe fn PlayerAvatarTransition_Underwater(objEvent: *mut ObjectEvent) {
     ObjectEventSetGraphicsId(
         objEvent,
         GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_UNDERWATER),
@@ -783,11 +743,10 @@ pub(crate) unsafe extern "C" fn PlayerAvatarTransition_Underwater(objEvent: *mut
     SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_UNDERWATER);
     (*objEvent).fieldEffectSpriteId = StartUnderwaterSurfBlobBobbing((*objEvent).spriteId);
 }
-pub(crate) unsafe extern "C" fn PlayerAvatarTransition_ReturnToField(objEvent: *mut ObjectEvent) {
+pub(crate) unsafe fn PlayerAvatarTransition_ReturnToField(objEvent: *mut ObjectEvent) {
     gPlayerAvatar.flags |= PLAYER_AVATAR_FLAG_CONTROLLABLE;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdatePlayerAvatarTransitionState() {
+pub unsafe fn UpdatePlayerAvatarTransitionState() {
     gPlayerAvatar.tileTransitionState = T_NOT_MOVING;
     if PlayerIsAnimActive() != 0 {
         if PlayerCheckIfAnimFinishedOrInactive() == 0 {
@@ -801,17 +760,17 @@ pub unsafe extern "C" fn UpdatePlayerAvatarTransitionState() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn PlayerAnimIsMultiFrameStationary() -> u8 {
-    let mut movementActionId: u8 = gObjectEvents[gPlayerAvatar.objectEventId].movementActionId;
+unsafe fn PlayerAnimIsMultiFrameStationary() -> u8 {
+    let movementActionId: u8 = gObjectEvents[gPlayerAvatar.objectEventId].movementActionId;
     if movementActionId <= MOVEMENT_ACTION_FACE_RIGHT
-        || movementActionId >= MOVEMENT_ACTION_DELAY_1
-            && movementActionId <= MOVEMENT_ACTION_DELAY_16
-        || movementActionId >= MOVEMENT_ACTION_WALK_IN_PLACE_SLOW_DOWN
-            && movementActionId <= MOVEMENT_ACTION_WALK_IN_PLACE_FASTER_RIGHT
-        || movementActionId >= MOVEMENT_ACTION_ACRO_WHEELIE_FACE_DOWN
-            && movementActionId <= MOVEMENT_ACTION_ACRO_END_WHEELIE_FACE_RIGHT
-        || movementActionId >= MOVEMENT_ACTION_ACRO_WHEELIE_IN_PLACE_DOWN
-            && movementActionId <= MOVEMENT_ACTION_ACRO_WHEELIE_IN_PLACE_RIGHT
+        || (MOVEMENT_ACTION_DELAY_1..=MOVEMENT_ACTION_DELAY_16).contains(&movementActionId)
+        || (MOVEMENT_ACTION_WALK_IN_PLACE_SLOW_DOWN..=MOVEMENT_ACTION_WALK_IN_PLACE_FASTER_RIGHT)
+            .contains(&movementActionId)
+        || (MOVEMENT_ACTION_ACRO_WHEELIE_FACE_DOWN..=MOVEMENT_ACTION_ACRO_END_WHEELIE_FACE_RIGHT)
+            .contains(&movementActionId)
+        || (MOVEMENT_ACTION_ACRO_WHEELIE_IN_PLACE_DOWN
+            ..=MOVEMENT_ACTION_ACRO_WHEELIE_IN_PLACE_RIGHT)
+            .contains(&movementActionId)
     {
         return TRUE;
     } else {
@@ -819,10 +778,10 @@ pub(crate) unsafe extern "C" fn PlayerAnimIsMultiFrameStationary() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn PlayerAnimIsMultiFrameStationaryAndStateNotTurning() -> u8 {
+unsafe fn PlayerAnimIsMultiFrameStationaryAndStateNotTurning() -> u8 {
     if PlayerAnimIsMultiFrameStationary() != 0 && gPlayerAvatar.runningState != TURN_DIRECTION {
         return TRUE;
     } else {
@@ -830,30 +789,28 @@ pub(crate) unsafe extern "C" fn PlayerAnimIsMultiFrameStationaryAndStateNotTurni
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn PlayerIsAnimActive() -> u8 {
-    return ObjectEventIsMovementOverridden(&raw mut gObjectEvents[gPlayerAvatar.objectEventId]);
+unsafe fn PlayerIsAnimActive() -> u8 {
+    ObjectEventIsMovementOverridden(&raw mut gObjectEvents[gPlayerAvatar.objectEventId])
 }
-pub(crate) unsafe extern "C" fn PlayerCheckIfAnimFinishedOrInactive() -> u8 {
-    return ObjectEventCheckHeldMovementStatus(&raw mut gObjectEvents[gPlayerAvatar.objectEventId]);
+unsafe fn PlayerCheckIfAnimFinishedOrInactive() -> u8 {
+    ObjectEventCheckHeldMovementStatus(&raw mut gObjectEvents[gPlayerAvatar.objectEventId])
 }
-pub(crate) unsafe extern "C" fn PlayerSetCopyableMovement(movement: u8) {
+unsafe fn PlayerSetCopyableMovement(movement: u8) {
     gObjectEvents[gPlayerAvatar.objectEventId].playerCopyableMovement = movement;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerGetCopyableMovement() -> u8 {
-    return gObjectEvents[gPlayerAvatar.objectEventId].playerCopyableMovement;
+pub unsafe fn PlayerGetCopyableMovement() -> u8 {
+    gObjectEvents[gPlayerAvatar.objectEventId].playerCopyableMovement
 }
-pub(crate) unsafe extern "C" fn PlayerForceSetHeldMovement(movementActionId: u8) {
+unsafe fn PlayerForceSetHeldMovement(movementActionId: u8) {
     ObjectEventForceSetHeldMovement(
         &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
         movementActionId,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerSetAnimId(movementActionId: u8, copyableMovement: u8) {
+pub unsafe fn PlayerSetAnimId(movementActionId: u8, copyableMovement: u8) {
     if PlayerIsAnimActive() == 0 {
         PlayerSetCopyableMovement(copyableMovement);
         ObjectEventSetHeldMovement(
@@ -862,180 +819,158 @@ pub unsafe extern "C" fn PlayerSetAnimId(movementActionId: u8, copyableMovement:
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerWalkNormal(direction: u8) {
+pub unsafe fn PlayerWalkNormal(direction: u8) {
     PlayerSetAnimId(
         GetWalkNormalMovementAction(direction as u32),
         COPY_MOVE_WALK,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerWalkFast(direction: u8) {
+pub unsafe fn PlayerWalkFast(direction: u8) {
     PlayerSetAnimId(GetWalkFastMovementAction(direction as u32), COPY_MOVE_WALK);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerRideWaterCurrent(direction: u8) {
+pub unsafe fn PlayerRideWaterCurrent(direction: u8) {
     PlayerSetAnimId(
         GetRideWaterCurrentMovementAction(direction as u32),
         COPY_MOVE_WALK,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerWalkFaster(direction: u8) {
+pub unsafe fn PlayerWalkFaster(direction: u8) {
     PlayerSetAnimId(
         GetWalkFasterMovementAction(direction as u32),
         COPY_MOVE_WALK,
     );
 }
-pub(crate) unsafe extern "C" fn PlayerRun(direction: u8) {
+unsafe fn PlayerRun(direction: u8) {
     PlayerSetAnimId(GetPlayerRunMovementAction(direction as u32), COPY_MOVE_WALK);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerOnBikeCollide(direction: u8) {
+pub unsafe fn PlayerOnBikeCollide(direction: u8) {
     PlayCollisionSoundIfNotFacingWarp(direction);
     PlayerSetAnimId(
         GetWalkInPlaceNormalMovementAction(direction as u32),
         COPY_MOVE_WALK,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerOnBikeCollideWithFarawayIslandMew(direction: u8) {
+pub unsafe fn PlayerOnBikeCollideWithFarawayIslandMew(direction: u8) {
     PlayerSetAnimId(
         GetWalkInPlaceNormalMovementAction(direction as u32),
         COPY_MOVE_WALK,
     );
 }
-pub(crate) unsafe extern "C" fn PlayerNotOnBikeCollide(direction: u8) {
+unsafe fn PlayerNotOnBikeCollide(direction: u8) {
     PlayCollisionSoundIfNotFacingWarp(direction);
     PlayerSetAnimId(
         GetWalkInPlaceSlowMovementAction(direction as u32),
         COPY_MOVE_WALK,
     );
 }
-pub(crate) unsafe extern "C" fn PlayerNotOnBikeCollideWithFarawayIslandMew(direction: u8) {
+unsafe fn PlayerNotOnBikeCollideWithFarawayIslandMew(direction: u8) {
     PlayerSetAnimId(
         GetWalkInPlaceSlowMovementAction(direction as u32),
         COPY_MOVE_WALK,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerFaceDirection(direction: u8) {
+pub unsafe fn PlayerFaceDirection(direction: u8) {
     PlayerSetAnimId(
         GetFaceDirectionMovementAction(direction as u32),
         COPY_MOVE_FACE,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerTurnInPlace(direction: u8) {
+pub unsafe fn PlayerTurnInPlace(direction: u8) {
     PlayerSetAnimId(
         GetWalkInPlaceFastMovementAction(direction as u32),
         COPY_MOVE_FACE,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerJumpLedge(direction: u8) {
+pub unsafe fn PlayerJumpLedge(direction: u8) {
     PlaySE(SE_LEDGE);
     PlayerSetAnimId(GetJump2MovementAction(direction as u32), COPY_MOVE_JUMP2);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerFreeze() {
-    if gPlayerAvatar.tileTransitionState == T_TILE_CENTER
-        || gPlayerAvatar.tileTransitionState == T_NOT_MOVING
+pub unsafe fn PlayerFreeze() {
+    if (gPlayerAvatar.tileTransitionState == T_TILE_CENTER
+        || gPlayerAvatar.tileTransitionState == T_NOT_MOVING)
+        && IsPlayerNotUsingAcroBikeOnBumpySlope() != 0
     {
-        if IsPlayerNotUsingAcroBikeOnBumpySlope() != 0 {
-            PlayerForceSetHeldMovement(GetFaceDirectionMovementAction(
-                gObjectEvents[gPlayerAvatar.objectEventId].facingDirection() as u32,
-            ));
-        }
+        PlayerForceSetHeldMovement(GetFaceDirectionMovementAction(
+            gObjectEvents[gPlayerAvatar.objectEventId].facingDirection() as u32,
+        ));
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerIdleWheelie(direction: u8) {
+pub unsafe fn PlayerIdleWheelie(direction: u8) {
     PlayerSetAnimId(
         GetAcroWheelieFaceDirectionMovementAction(direction as u32),
         COPY_MOVE_FACE,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerStartWheelie(direction: u8) {
+pub unsafe fn PlayerStartWheelie(direction: u8) {
     PlayerSetAnimId(
         GetAcroPopWheelieFaceDirectionMovementAction(direction as u32),
         COPY_MOVE_FACE,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerEndWheelie(direction: u8) {
+pub unsafe fn PlayerEndWheelie(direction: u8) {
     PlayerSetAnimId(
         GetAcroEndWheelieFaceDirectionMovementAction(direction as u32),
         COPY_MOVE_FACE,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerStandingHoppingWheelie(direction: u8) {
+pub unsafe fn PlayerStandingHoppingWheelie(direction: u8) {
     PlaySE(SE_BIKE_HOP);
     PlayerSetAnimId(
         GetAcroWheelieHopFaceDirectionMovementAction(direction as u32),
         COPY_MOVE_FACE,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerMovingHoppingWheelie(direction: u8) {
+pub unsafe fn PlayerMovingHoppingWheelie(direction: u8) {
     PlaySE(SE_BIKE_HOP);
     PlayerSetAnimId(
         GetAcroWheelieHopDirectionMovementAction(direction as u32),
         COPY_MOVE_WALK,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerLedgeHoppingWheelie(direction: u8) {
+pub unsafe fn PlayerLedgeHoppingWheelie(direction: u8) {
     PlaySE(SE_BIKE_HOP);
     PlayerSetAnimId(
         GetAcroWheelieJumpDirectionMovementAction(direction as u32),
         COPY_MOVE_JUMP2,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerAcroTurnJump(direction: u8) {
+pub unsafe fn PlayerAcroTurnJump(direction: u8) {
     PlaySE(SE_BIKE_HOP);
     PlayerSetAnimId(
         GetJumpInPlaceTurnAroundMovementAction(direction as u32),
         COPY_MOVE_FACE,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerWheelieInPlace(direction: u8) {
+pub unsafe fn PlayerWheelieInPlace(direction: u8) {
     PlaySE(SE_WALL_HIT);
     PlayerSetAnimId(
         GetAcroWheelieInPlaceDirectionMovementAction(direction as u32),
         COPY_MOVE_WALK,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerPopWheelieWhileMoving(direction: u8) {
+pub unsafe fn PlayerPopWheelieWhileMoving(direction: u8) {
     PlayerSetAnimId(
         GetAcroPopWheelieMoveDirectionMovementAction(direction as u32),
         COPY_MOVE_WALK,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerWheelieMove(direction: u8) {
+pub unsafe fn PlayerWheelieMove(direction: u8) {
     PlayerSetAnimId(
         GetAcroWheelieMoveDirectionMovementAction(direction as u32),
         COPY_MOVE_WALK,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerEndWheelieWhileMoving(direction: u8) {
+pub unsafe fn PlayerEndWheelieWhileMoving(direction: u8) {
     PlayerSetAnimId(
         GetAcroEndWheelieMoveDirectionMovementAction(direction as u32),
         COPY_MOVE_WALK,
     );
 }
-pub(crate) unsafe extern "C" fn PlayCollisionSoundIfNotFacingWarp(direction: u8) {
+unsafe fn PlayCollisionSoundIfNotFacingWarp(direction: u8) {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
-    let mut metatileBehavior: u8 =
-        gObjectEvents[gPlayerAvatar.objectEventId].currentMetatileBehavior;
+    let metatileBehavior: u8 = gObjectEvents[gPlayerAvatar.objectEventId].currentMetatileBehavior;
     if sArrowWarpMetatileBehaviorChecks[direction as i32 - 1].unwrap_unchecked()(metatileBehavior)
         == 0
     {
@@ -1052,22 +987,18 @@ pub(crate) unsafe extern "C" fn PlayCollisionSoundIfNotFacingWarp(direction: u8)
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetXYCoordsOneStepInFrontOfPlayer(x: *mut i16, y: *mut i16) {
+pub unsafe fn GetXYCoordsOneStepInFrontOfPlayer(x: *mut i16, y: *mut i16) {
     *x = gObjectEvents[gPlayerAvatar.objectEventId].currentCoords.x;
     *y = gObjectEvents[gPlayerAvatar.objectEventId].currentCoords.y;
     MoveCoords(GetPlayerFacingDirection(), x, y);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerGetDestCoords(x: *mut i16, y: *mut i16) {
+pub unsafe fn PlayerGetDestCoords(x: *mut i16, y: *mut i16) {
     *x = gObjectEvents[gPlayerAvatar.objectEventId].currentCoords.x;
     *y = gObjectEvents[gPlayerAvatar.objectEventId].currentCoords.y;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn player_get_pos_including_state_based_drift(
-    x: *mut i16,
-    y: *mut i16,
-) -> u8 {
-    let mut object: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+pub unsafe fn player_get_pos_including_state_based_drift(x: *mut i16, y: *mut i16) -> u8 {
+    let object: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
     if (*object).heldMovementActive() != 0
         && (*object).heldMovementFinished() == 0
         && gSprites[(*object).spriteId].data[2] == 0
@@ -1096,43 +1027,38 @@ pub unsafe extern "C" fn player_get_pos_including_state_based_drift(
     }
     *x = -1;
     *y = -1;
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerFacingDirection() -> u8 {
-    return gObjectEvents[gPlayerAvatar.objectEventId].facingDirection() as u8;
+pub unsafe fn GetPlayerFacingDirection() -> u8 {
+    gObjectEvents[gPlayerAvatar.objectEventId].facingDirection() as u8
+}
+pub unsafe fn GetPlayerMovementDirection() -> u8 {
+    gObjectEvents[gPlayerAvatar.objectEventId].movementDirection() as u8
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerMovementDirection() -> u8 {
-    return gObjectEvents[gPlayerAvatar.objectEventId].movementDirection() as u8;
+pub unsafe fn PlayerGetElevation() -> u8 {
+    gObjectEvents[gPlayerAvatar.objectEventId].previousElevation()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerGetElevation() -> u8 {
-    return gObjectEvents[gPlayerAvatar.objectEventId].previousElevation();
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MovePlayerToMapCoords(x: i16, y: i16) {
+pub unsafe fn MovePlayerToMapCoords(x: i16, y: i16) {
     MoveObjectEventToMapCoords(&raw mut gObjectEvents[gPlayerAvatar.objectEventId], x, y);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TestPlayerAvatarFlags(flag: u8) -> u8 {
-    return gPlayerAvatar.flags & flag;
+pub unsafe fn TestPlayerAvatarFlags(flag: u8) -> u8 {
+    gPlayerAvatar.flags & flag
+}
+pub unsafe fn GetPlayerAvatarFlags() -> u8 {
+    gPlayerAvatar.flags
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerAvatarFlags() -> u8 {
-    return gPlayerAvatar.flags;
+pub unsafe fn GetPlayerAvatarSpriteId() -> u8 {
+    gPlayerAvatar.spriteId
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerAvatarSpriteId() -> u8 {
-    return gPlayerAvatar.spriteId;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CancelPlayerForcedMovement() {
+pub unsafe fn CancelPlayerForcedMovement() {
     ForcedMovement_None();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StopPlayerAvatar() {
-    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+pub unsafe fn StopPlayerAvatar() {
+    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
     npc_clear_strange_bits(playerObjEvent);
     SetObjectEventDirection(playerObjEvent, (*playerObjEvent).facingDirection() as u8);
     if TestPlayerAvatarFlags(6) != 0 {
@@ -1140,28 +1066,22 @@ pub unsafe extern "C" fn StopPlayerAvatar() {
         Bike_UpdateBikeCounterSpeed(0);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRivalAvatarGraphicsIdByStateIdAndGender(state: u8, gender: u8) -> u8 {
-    return sRivalAvatarGfxIds[state][gender];
+pub fn GetRivalAvatarGraphicsIdByStateIdAndGender(state: u8, gender: u8) -> u8 {
+    sRivalAvatarGfxIds[state][gender]
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerAvatarGraphicsIdByStateIdAndGender(state: u8, gender: u8) -> u8 {
-    return sPlayerAvatarGfxIds[state][gender];
+pub unsafe fn GetPlayerAvatarGraphicsIdByStateIdAndGender(state: u8, gender: u8) -> u8 {
+    sPlayerAvatarGfxIds[state][gender]
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFRLGAvatarGraphicsIdByGender(gender: u8) -> u8 {
-    return sFRLGAvatarGfxIds[gender];
+pub unsafe fn GetFRLGAvatarGraphicsIdByGender(gender: u8) -> u8 {
+    sFRLGAvatarGfxIds[gender]
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRSAvatarGraphicsIdByGender(gender: u8) -> u8 {
-    return sRSAvatarGfxIds[gender];
+pub unsafe fn GetRSAvatarGraphicsIdByGender(gender: u8) -> u8 {
+    sRSAvatarGfxIds[gender]
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerAvatarGraphicsIdByStateId(state: u8) -> u8 {
-    return GetPlayerAvatarGraphicsIdByStateIdAndGender(state, gPlayerAvatar.gender);
+pub unsafe fn GetPlayerAvatarGraphicsIdByStateId(state: u8) -> u8 {
+    GetPlayerAvatarGraphicsIdByStateIdAndGender(state, gPlayerAvatar.gender)
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn unref_GetRivalAvatarGenderByGraphicsId(gfxId: u8) -> u8 {
+pub fn unref_GetRivalAvatarGenderByGraphicsId(gfxId: u8) -> u8 {
     match gfxId {
         OBJ_EVENT_GFX_RIVAL_MAY_NORMAL
         | OBJ_EVENT_GFX_RIVAL_MAY_MACH_BIKE
@@ -1179,11 +1099,10 @@ pub unsafe extern "C" fn unref_GetRivalAvatarGenderByGraphicsId(gfxId: u8) -> u8
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerAvatarGenderByGraphicsId(gfxId: u8) -> u8 {
+pub unsafe fn GetPlayerAvatarGenderByGraphicsId(gfxId: u8) -> u8 {
     match gfxId {
         OBJ_EVENT_GFX_MAY_NORMAL
         | OBJ_EVENT_GFX_MAY_MACH_BIKE
@@ -1201,28 +1120,23 @@ pub unsafe extern "C" fn GetPlayerAvatarGenderByGraphicsId(gfxId: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PartyHasMonWithSurf() -> u8 {
-    let mut i: u8 = 0;
+pub unsafe fn PartyHasMonWithSurf() -> u8 {
     if TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_SURFING) == 0 {
-        i = 0;
-        while i < PARTY_SIZE as u8 {
+        for i in 0..(PARTY_SIZE as u8) {
             if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) == SPECIES_NONE as u32 {
                 break;
             }
             if MonKnowsMove(&raw mut gPlayerParty[i], MOVE_SURF) != 0 {
                 return TRUE;
             }
-            i += 1;
         }
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsPlayerSurfingNorth() -> u8 {
+pub unsafe fn IsPlayerSurfingNorth() -> u8 {
     if GetPlayerMovementDirection() == DIR_NORTH
         && TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_SURFING) != 0
     {
@@ -1232,12 +1146,11 @@ pub unsafe extern "C" fn IsPlayerSurfingNorth() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsPlayerFacingSurfableFishableWater() -> u8 {
-    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+pub unsafe fn IsPlayerFacingSurfableFishableWater() -> u8 {
+    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
     let mut x: i16 = (*playerObjEvent).currentCoords.x;
     let mut y: i16 = (*playerObjEvent).currentCoords.y;
     MoveCoords(
@@ -1262,59 +1175,44 @@ pub unsafe extern "C" fn IsPlayerFacingSurfableFishableWater() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearPlayerAvatarInfo() {
+pub unsafe fn ClearPlayerAvatarInfo() {
     memset(&raw mut gPlayerAvatar as *mut u8, 0, 36);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetPlayerAvatarStateMask(flags: u8) {
+pub unsafe fn SetPlayerAvatarStateMask(flags: u8) {
     gPlayerAvatar.flags &= 224;
     gPlayerAvatar.flags |= flags;
 }
-pub(crate) unsafe extern "C" fn GetPlayerAvatarStateTransitionByGraphicsId(
-    graphicsId: u8,
-    gender: u8,
-) -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 5 {
+unsafe fn GetPlayerAvatarStateTransitionByGraphicsId(graphicsId: u8, gender: u8) -> u8 {
+    for i in 0..5u8 {
         if sPlayerAvatarGfxToStateFlag[gender][i].graphicsId == graphicsId {
             return sPlayerAvatarGfxToStateFlag[gender][i].playerFlag;
         }
-        i += 1;
     }
-    return PLAYER_AVATAR_FLAG_ON_FOOT;
+    PLAYER_AVATAR_FLAG_ON_FOOT
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerAvatarGraphicsIdByCurrentState() -> u8 {
-    let mut i: u8 = 0;
-    let mut flags: u8 = gPlayerAvatar.flags;
-    i = 0;
-    while i < 5 {
+pub unsafe fn GetPlayerAvatarGraphicsIdByCurrentState() -> u8 {
+    let flags: u8 = gPlayerAvatar.flags;
+    for i in 0..5u8 {
         if sPlayerAvatarGfxToStateFlag[gPlayerAvatar.gender][i].playerFlag as i32 & flags as i32
             != 0
         {
             return sPlayerAvatarGfxToStateFlag[gPlayerAvatar.gender][i].graphicsId;
         }
-        i += 1;
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetPlayerAvatarExtraStateTransition(graphicsId: u8, transitionFlag: u8) {
-    let mut stateFlag: u8 =
+pub unsafe fn SetPlayerAvatarExtraStateTransition(graphicsId: u8, transitionFlag: u8) {
+    let stateFlag: u8 =
         GetPlayerAvatarStateTransitionByGraphicsId(graphicsId, gPlayerAvatar.gender);
     gPlayerAvatar.transitionFlags |= stateFlag | transitionFlag;
     DoPlayerAvatarTransition();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitPlayerAvatar(x: i16, y: i16, direction: u8, gender: u8) {
+pub unsafe fn InitPlayerAvatar(x: i16, y: i16, direction: u8, gender: u8) {
     let mut playerObjEventTemplate: ObjectEventTemplate = zeroed();
-    let mut objectEventId: u8 = 0;
-    let mut objectEvent: *mut ObjectEvent = null_mut();
     playerObjEventTemplate.localId = LOCALID_PLAYER;
     playerObjEventTemplate.graphicsId =
         GetPlayerAvatarGraphicsIdByStateIdAndGender(PLAYER_AVATAR_STATE_NORMAL, gender);
@@ -1328,8 +1226,8 @@ pub unsafe extern "C" fn InitPlayerAvatar(x: i16, y: i16, direction: u8, gender:
     playerObjEventTemplate.trainerRange_berryTreeId = 0;
     playerObjEventTemplate.script = null_mut();
     playerObjEventTemplate.flagId = 0;
-    objectEventId = SpawnSpecialObjectEvent(&raw mut playerObjEventTemplate);
-    objectEvent = &raw mut gObjectEvents[objectEventId];
+    let objectEventId: u8 = SpawnSpecialObjectEvent(&raw mut playerObjEventTemplate);
+    let objectEvent: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
     (*objectEvent).set_isPlayer(TRUE as u32);
     (*objectEvent).warpArrowSpriteId = CreateWarpArrowSprite();
     ObjectEventTurn(objectEvent, direction);
@@ -1341,8 +1239,7 @@ pub unsafe extern "C" fn InitPlayerAvatar(x: i16, y: i16, direction: u8, gender:
     gPlayerAvatar.gender = gender;
     SetPlayerAvatarStateMask(33);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetPlayerInvisibility(invisible: u8) {
+pub unsafe fn SetPlayerInvisibility(invisible: u8) {
     gObjectEvents[gPlayerAvatar.objectEventId].set_invisible(invisible as u32);
     if TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_SURFING) != 0 {
         gSprites[gObjectEvents[gPlayerAvatar.objectEventId].fieldEffectSpriteId]
@@ -1350,14 +1247,14 @@ pub unsafe extern "C" fn SetPlayerInvisibility(invisible: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetPlayerAvatarFieldMove() {
+pub unsafe fn SetPlayerAvatarFieldMove() {
     ObjectEventSetGraphicsId(
         &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
         GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_FIELD_MOVE),
     );
     StartSpriteAnim(&raw mut gSprites[gPlayerAvatar.spriteId], ANIM_FIELD_MOVE);
 }
-pub(crate) unsafe extern "C" fn SetPlayerAvatarFishing(direction: u8) {
+unsafe fn SetPlayerAvatarFishing(direction: u8) {
     ObjectEventSetGraphicsId(
         &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
         GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_FISHING),
@@ -1367,8 +1264,7 @@ pub(crate) unsafe extern "C" fn SetPlayerAvatarFishing(direction: u8) {
         GetFishingDirectionAnimNum(direction),
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerUseAcroBikeOnBumpySlope(direction: u8) {
+pub unsafe fn PlayerUseAcroBikeOnBumpySlope(direction: u8) {
     ObjectEventSetGraphicsId(
         &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
         GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_ACRO_BIKE),
@@ -1379,8 +1275,7 @@ pub unsafe extern "C" fn PlayerUseAcroBikeOnBumpySlope(direction: u8) {
     );
     SeekSpriteAnim(&raw mut gSprites[gPlayerAvatar.spriteId], 1);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetPlayerAvatarWatering(direction: u8) {
+pub unsafe fn SetPlayerAvatarWatering(direction: u8) {
     ObjectEventSetGraphicsId(
         &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
         GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_WATERING),
@@ -1390,13 +1285,11 @@ pub unsafe extern "C" fn SetPlayerAvatarWatering(direction: u8) {
         GetFaceDirectionAnimNum(direction),
     );
 }
-pub(crate) unsafe extern "C" fn HideShowWarpArrow(objectEvent: *mut ObjectEvent) {
-    let mut x: i16 = 0;
+unsafe fn HideShowWarpArrow(objectEvent: *mut ObjectEvent) {
     let mut y: i16 = 0;
-    let mut direction: u8 = 0;
-    let mut metatileBehavior: u8 = (*objectEvent).currentMetatileBehavior;
-    x = 0;
-    direction = DIR_SOUTH;
+    let metatileBehavior: u8 = (*objectEvent).currentMetatileBehavior;
+    let mut x: i16 = 0;
+    let mut direction: u8 = DIR_SOUTH;
     while x < 4 {
         if sArrowWarpMetatileBehaviorChecks2[x].unwrap_unchecked()(metatileBehavior) != 0
             && direction as u16 == (*objectEvent).movementDirection()
@@ -1412,31 +1305,31 @@ pub(crate) unsafe extern "C" fn HideShowWarpArrow(objectEvent: *mut ObjectEvent)
     }
     SetSpriteInvisible((*objectEvent).warpArrowSpriteId);
 }
-pub(crate) unsafe extern "C" fn StartStrengthAnim(objectEventId: u8, direction: u8) {
-    let mut taskId: u8 = CreateTask(Some(Task_PushBoulder), 0xFF);
-    gTasks[taskId].data[1] = objectEventId as i16;
-    gTasks[taskId].data[2] = direction as i16;
+unsafe fn StartStrengthAnim(objectEventId: u8, direction: u8) {
+    let taskId: u8 = CreateTask(Some(Task_PushBoulder), 0xFF);
+    task_set(taskId, tBoulderObjId, objectEventId as i16);
+    task_set(taskId, tDirection, direction as i16);
     Task_PushBoulder(taskId);
 }
-pub(crate) unsafe extern "C" fn Task_PushBoulder(taskId: u8) {
-    while sPushBoulderFuncs[gTasks[taskId].data[0]].unwrap_unchecked()(
-        &raw mut gTasks[taskId],
+pub(crate) unsafe fn Task_PushBoulder(taskId: u8) {
+    while sPushBoulderFuncs[task_get(taskId, tState)].unwrap_unchecked()(
+        &raw mut (*gTasks.as_ptr())[taskId],
         &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
-        &raw mut gObjectEvents[gTasks[taskId].data[1]],
+        &raw mut gObjectEvents[task_get(taskId, tBoulderObjId)],
     ) != 0
     {}
 }
-pub(crate) unsafe extern "C" fn PushBoulder_Start(
+pub(crate) unsafe fn PushBoulder_Start(
     task: *mut Task,
     player: *mut ObjectEvent,
     boulder: *mut ObjectEvent,
 ) -> u8 {
     LockPlayerFieldControls();
     gPlayerAvatar.preventStep = TRUE;
-    (*task).data[0] += 1;
-    return FALSE;
+    (*task).data[tState] += 1;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn PushBoulder_Move(
+pub(crate) unsafe fn PushBoulder_Move(
     task: *mut Task,
     player: *mut ObjectEvent,
     boulder: *mut ObjectEvent,
@@ -1453,11 +1346,11 @@ pub(crate) unsafe extern "C" fn PushBoulder_Move(
         ObjectEventClearHeldMovementIfFinished(boulder);
         ObjectEventSetHeldMovement(
             player,
-            GetWalkInPlaceNormalMovementAction((*task).data[2] as u8 as u32),
+            GetWalkInPlaceNormalMovementAction((*task).data[tDirection] as u8 as u32),
         );
         ObjectEventSetHeldMovement(
             boulder,
-            GetWalkSlowMovementAction((*task).data[2] as u8 as u32),
+            GetWalkSlowMovementAction((*task).data[tDirection] as u8 as u32),
         );
         gFieldEffectArguments[0] = (*boulder).currentCoords.x as i32;
         gFieldEffectArguments[1] = (*boulder).currentCoords.y as i32;
@@ -1465,11 +1358,11 @@ pub(crate) unsafe extern "C" fn PushBoulder_Move(
         gFieldEffectArguments[3] = gSprites[(*boulder).spriteId].oam.priority() as i32;
         FieldEffectStart(FLDEFF_DUST);
         PlaySE(SE_M_STRENGTH);
-        (*task).data[0] += 1;
+        (*task).data[tState] += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn PushBoulder_End(
+pub(crate) unsafe fn PushBoulder_End(
     task: *mut Task,
     player: *mut ObjectEvent,
     boulder: *mut ObjectEvent,
@@ -1483,19 +1376,19 @@ pub(crate) unsafe extern "C" fn PushBoulder_End(
         UnlockPlayerFieldControls();
         DestroyTask(FindTaskIdByFunc(Some(Task_PushBoulder)));
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DoPlayerMatJump() {
+unsafe fn DoPlayerMatJump() {
     DoPlayerAvatarSecretBaseMatJump(CreateTask(Some(DoPlayerAvatarSecretBaseMatJump), 0xFF));
 }
-pub(crate) unsafe extern "C" fn DoPlayerAvatarSecretBaseMatJump(taskId: u8) {
-    while sPlayerAvatarSecretBaseMatJump[gTasks[taskId].data[0]].unwrap_unchecked()(
-        &raw mut gTasks[taskId],
+pub(crate) unsafe fn DoPlayerAvatarSecretBaseMatJump(taskId: u8) {
+    while sPlayerAvatarSecretBaseMatJump[task_get(taskId, 0)].unwrap_unchecked()(
+        &raw mut (*gTasks.as_ptr())[taskId],
         &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
     ) != 0
     {}
 }
-pub(crate) unsafe extern "C" fn PlayerAvatar_DoSecretBaseMatJump(
+pub(crate) unsafe fn PlayerAvatar_DoSecretBaseMatJump(
     task: *mut Task,
     objectEvent: *mut ObjectEvent,
 ) -> u8 {
@@ -1513,20 +1406,20 @@ pub(crate) unsafe extern "C" fn PlayerAvatar_DoSecretBaseMatJump(
             DestroyTask(FindTaskIdByFunc(Some(DoPlayerAvatarSecretBaseMatJump)));
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DoPlayerMatSpin() {
-    let mut taskId: u8 = CreateTask(Some(PlayerAvatar_DoSecretBaseMatSpin), 0xFF);
+unsafe fn DoPlayerMatSpin() {
+    let taskId: u8 = CreateTask(Some(PlayerAvatar_DoSecretBaseMatSpin), 0xFF);
     PlayerAvatar_DoSecretBaseMatSpin(taskId);
 }
-pub(crate) unsafe extern "C" fn PlayerAvatar_DoSecretBaseMatSpin(taskId: u8) {
-    while sPlayerAvatarSecretBaseMatSpin[gTasks[taskId].data[0]].unwrap_unchecked()(
-        &raw mut gTasks[taskId],
+pub(crate) unsafe fn PlayerAvatar_DoSecretBaseMatSpin(taskId: u8) {
+    while sPlayerAvatarSecretBaseMatSpin[task_get(taskId, 0)].unwrap_unchecked()(
+        &raw mut (*gTasks.as_ptr())[taskId],
         &raw mut gObjectEvents[gPlayerAvatar.objectEventId],
     ) != 0
     {}
 }
-pub(crate) unsafe extern "C" fn PlayerAvatar_SecretBaseMatSpinStep0(
+pub(crate) unsafe fn PlayerAvatar_SecretBaseMatSpinStep0(
     task: *mut Task,
     objectEvent: *mut ObjectEvent,
 ) -> u8 {
@@ -1535,13 +1428,13 @@ pub(crate) unsafe extern "C" fn PlayerAvatar_SecretBaseMatSpinStep0(
     gPlayerAvatar.preventStep = TRUE;
     LockPlayerFieldControls();
     PlaySE(SE_WARP_IN);
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn PlayerAvatar_SecretBaseMatSpinStep1(
+pub(crate) unsafe fn PlayerAvatar_SecretBaseMatSpinStep1(
     task: *mut Task,
     objectEvent: *mut ObjectEvent,
 ) -> u8 {
-    let mut directions: CArray<u8, 4> = CArray([3, 4, 2, 1]);
+    let directions: CArray<u8, 4> = CArray([3, 4, 2, 1]);
     if ObjectEventClearHeldMovementIfFinished(objectEvent) != 0 {
         let mut direction: u8 = 0;
         ObjectEventSetHeldMovement(
@@ -1561,20 +1454,20 @@ pub(crate) unsafe extern "C" fn PlayerAvatar_SecretBaseMatSpinStep1(
             (*task).data[0] += 1;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn PlayerAvatar_SecretBaseMatSpinStep2(
+pub(crate) unsafe fn PlayerAvatar_SecretBaseMatSpinStep2(
     task: *mut Task,
     objectEvent: *mut ObjectEvent,
 ) -> u8 {
-    let mut actions: CArray<u8, 5> = CArray([16, 16, 17, 18, 19]);
+    let actions: CArray<u8, 5> = CArray([16, 16, 17, 18, 19]);
     if ObjectEventClearHeldMovementIfFinished(objectEvent) != 0 {
         ObjectEventSetHeldMovement(objectEvent, actions[(*task).data[2]]);
         (*task).data[0] = 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn PlayerAvatar_SecretBaseMatSpinStep3(
+pub(crate) unsafe fn PlayerAvatar_SecretBaseMatSpinStep3(
     task: *mut Task,
     objectEvent: *mut ObjectEvent,
 ) -> u8 {
@@ -1587,36 +1480,35 @@ pub(crate) unsafe extern "C" fn PlayerAvatar_SecretBaseMatSpinStep3(
         gPlayerAvatar.preventStep = FALSE;
         DestroyTask(FindTaskIdByFunc(Some(PlayerAvatar_DoSecretBaseMatSpin)));
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn CreateStopSurfingTask(direction: u8) {
-    let mut taskId: u8 = 0;
+unsafe fn CreateStopSurfingTask(direction: u8) {
     LockPlayerFieldControls();
     Overworld_ClearSavedMusic();
     Overworld_ChangeMusicToDefault();
     gPlayerAvatar.flags &= 247;
     gPlayerAvatar.flags |= PLAYER_AVATAR_FLAG_ON_FOOT;
     gPlayerAvatar.preventStep = TRUE;
-    taskId = CreateTask(Some(Task_StopSurfingInit), 0xFF);
-    gTasks[taskId].data[0] = direction as i16;
+    let taskId: u8 = CreateTask(Some(Task_StopSurfingInit), 0xFF);
+    task_set(taskId, 0, direction as i16);
     Task_StopSurfingInit(taskId);
 }
-pub(crate) unsafe extern "C" fn Task_StopSurfingInit(taskId: u8) {
-    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
-    if ObjectEventIsMovementOverridden(playerObjEvent) != 0 {
-        if ObjectEventClearHeldMovementIfFinished(playerObjEvent) == 0 {
-            return;
-        }
+pub(crate) unsafe fn Task_StopSurfingInit(taskId: u8) {
+    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    if ObjectEventIsMovementOverridden(playerObjEvent) != 0
+        && ObjectEventClearHeldMovementIfFinished(playerObjEvent) == 0
+    {
+        return;
     }
     SetSurfBlob_BobState((*playerObjEvent).fieldEffectSpriteId, BOB_JUST_MON);
     ObjectEventSetHeldMovement(
         playerObjEvent,
-        GetJumpSpecialMovementAction(gTasks[taskId].data[0] as u8 as u32),
+        GetJumpSpecialMovementAction(task_get(taskId, 0) as u8 as u32),
     );
-    gTasks[taskId].func = Some(Task_WaitStopSurfing);
+    task_set_func(taskId, Some(Task_WaitStopSurfing));
 }
-pub(crate) unsafe extern "C" fn Task_WaitStopSurfing(taskId: u8) {
-    let mut playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+pub(crate) unsafe fn Task_WaitStopSurfing(taskId: u8) {
+    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
     if ObjectEventClearHeldMovementIfFinished(playerObjEvent) != 0 {
         ObjectEventSetGraphicsId(
             playerObjEvent,
@@ -1632,25 +1524,24 @@ pub(crate) unsafe extern "C" fn Task_WaitStopSurfing(taskId: u8) {
         DestroyTask(taskId);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartFishing(rod: u8) {
-    let mut taskId: u8 = CreateTask(Some(Task_Fishing), 0xFF);
-    gTasks[taskId].data[15] = rod as i16;
+pub unsafe fn StartFishing(rod: u8) {
+    let taskId: u8 = CreateTask(Some(Task_Fishing), 0xFF);
+    task_set(taskId, tFishingRod, rod as i16);
     Task_Fishing(taskId);
 }
-pub(crate) unsafe extern "C" fn Task_Fishing(taskId: u8) {
-    while sFishingStateFuncs[gTasks[taskId].data[0]].unwrap_unchecked()(&raw mut gTasks[taskId])
-        != 0
+pub(crate) unsafe fn Task_Fishing(taskId: u8) {
+    while sFishingStateFuncs[task_get(taskId, tStep)].unwrap_unchecked()(
+        &raw mut (*gTasks.as_ptr())[taskId],
+    ) != 0
     {}
 }
-pub(crate) unsafe extern "C" fn Fishing_Init(task: *mut Task) -> u8 {
+pub(crate) unsafe fn Fishing_Init(task: *mut Task) -> u8 {
     LockPlayerFieldControls();
     gPlayerAvatar.preventStep = TRUE;
-    (*task).data[0] += 1;
-    return FALSE;
+    (*task).data[tStep] += 1;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Fishing_GetRodOut(task: *mut Task) -> u8 {
-    let mut playerObjEvent: *mut ObjectEvent = null_mut();
+pub(crate) unsafe fn Fishing_GetRodOut(task: *mut Task) -> u8 {
     let mut minRounds1: CArray<i16, 3> = zeroed();
     minRounds1[0] = 1;
     minRounds1[1] = 1;
@@ -1659,100 +1550,101 @@ pub(crate) unsafe extern "C" fn Fishing_GetRodOut(task: *mut Task) -> u8 {
     minRounds2[0] = 1;
     minRounds2[1] = 3;
     minRounds2[2] = 6;
-    (*task).data[12] = 0;
-    (*task).data[13] = minRounds1[(*task).data[15]]
-        + rem_i32(Random() as i32, minRounds2[(*task).data[15]] as i32) as i16;
-    (*task).data[14] = gObjectEvents[gPlayerAvatar.objectEventId].graphicsId as i16;
-    playerObjEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    (*task).data[tRoundsPlayed] = 0;
+    (*task).data[tMinRoundsRequired] = minRounds1[(*task).data[tFishingRod]]
+        + rem_i32(
+            Random() as i32,
+            minRounds2[(*task).data[tFishingRod]] as i32,
+        ) as i16;
+    (*task).data[tPlayerGfxId] = gObjectEvents[gPlayerAvatar.objectEventId].graphicsId as i16;
+    let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
     ObjectEventClearHeldMovementIfActive(playerObjEvent);
     (*playerObjEvent).set_enableAnim(TRUE as u32);
     SetPlayerAvatarFishing((*playerObjEvent).facingDirection() as u8);
-    (*task).data[0] += 1;
-    return FALSE;
+    (*task).data[tStep] += 1;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Fishing_WaitBeforeDots(task: *mut Task) -> u8 {
+pub(crate) unsafe fn Fishing_WaitBeforeDots(task: *mut Task) -> u8 {
     AlignFishingAnimationFrames();
-    (*task).data[1] += 1;
-    if (*task).data[1] >= 60 {
-        (*task).data[0] += 1;
+    (*task).data[tFrameCounter] += 1;
+    if (*task).data[tFrameCounter] >= 60 {
+        (*task).data[tStep] += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Fishing_InitDots(task: *mut Task) -> u8 {
-    let mut randVal: u32 = 0;
+pub(crate) unsafe fn Fishing_InitDots(task: *mut Task) -> u8 {
     LoadMessageBoxAndFrameGfx(0, TRUE);
-    (*task).data[0] += 1;
-    (*task).data[1] = 0;
-    (*task).data[2] = 0;
-    randVal = Random() as u32;
-    randVal = randVal % 10;
-    (*task).data[3] = randVal as i16 + 1;
-    if (*task).data[12] == 0 {
-        (*task).data[3] = randVal as i16 + 4;
+    (*task).data[tStep] += 1;
+    (*task).data[tFrameCounter] = 0;
+    (*task).data[tNumDots] = 0;
+    let mut randVal: u32 = Random() as u32;
+    randVal %= 10;
+    (*task).data[tDotsRequired] = randVal as i16 + 1;
+    if (*task).data[tRoundsPlayed] == 0 {
+        (*task).data[tDotsRequired] = randVal as i16 + 4;
     }
-    if (*task).data[3] >= 10 {
-        (*task).data[3] = 10;
+    if (*task).data[tDotsRequired] >= 10 {
+        (*task).data[tDotsRequired] = 10;
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn Fishing_ShowDots(task: *mut Task) -> u8 {
+pub(crate) unsafe fn Fishing_ShowDots(task: *mut Task) -> u8 {
     let mut dot: CArray<u8, 2> = CArray([175, 255]);
     AlignFishingAnimationFrames();
-    (*task).data[1] += 1;
+    (*task).data[tFrameCounter] += 1;
     if gMain.newKeys as i32 & A_BUTTON != 0 {
-        (*task).data[0] = FISHING_NO_BITE;
-        if (*task).data[12] != 0 {
-            (*task).data[0] = FISHING_GOT_AWAY;
+        (*task).data[tStep] = FISHING_NO_BITE;
+        if (*task).data[tRoundsPlayed] != 0 {
+            (*task).data[tStep] = FISHING_GOT_AWAY;
         }
         return TRUE;
     } else {
-        if (*task).data[1] >= 20 {
-            (*task).data[1] = 0;
-            if (*task).data[2] >= (*task).data[3] {
-                (*task).data[0] += 1;
-                if (*task).data[12] != 0 {
-                    (*task).data[0] += 1;
+        if (*task).data[tFrameCounter] >= 20 {
+            (*task).data[tFrameCounter] = 0;
+            if (*task).data[tNumDots] >= (*task).data[tDotsRequired] {
+                (*task).data[tStep] += 1;
+                if (*task).data[tRoundsPlayed] != 0 {
+                    (*task).data[tStep] += 1;
                 }
-                (*task).data[12] += 1;
+                (*task).data[tRoundsPlayed] += 1;
             } else {
                 AddTextPrinterParameterized(
                     0,
                     FONT_NORMAL,
                     dot.as_mut_ptr(),
-                    (*task).data[2] as u8 * 8,
+                    (*task).data[tNumDots] as u8 * 8,
                     1,
                     0,
                     None,
                 );
-                (*task).data[2] += 1;
+                (*task).data[tNumDots] += 1;
             }
         }
         return FALSE;
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn Fishing_CheckForBite(task: *mut Task) -> u8 {
-    let mut bite: u8 = 0;
+pub(crate) unsafe fn Fishing_CheckForBite(task: *mut Task) -> u8 {
     AlignFishingAnimationFrames();
-    (*task).data[0] += 1;
-    bite = FALSE;
+    (*task).data[tStep] += 1;
+    let mut bite: u8 = FALSE;
     if DoesCurrentMapHaveFishingMons() == 0 {
-        (*task).data[0] = FISHING_NO_BITE;
+        (*task).data[tStep] = FISHING_NO_BITE;
     } else {
         if GetMonData2(&raw mut gPlayerParty[0], MON_DATA_SANITY_IS_EGG) == 0 {
-            let mut ability: u8 = GetMonAbility(&raw mut gPlayerParty[0]);
-            if ability == ABILITY_SUCTION_CUPS || ability == ABILITY_STICKY_HOLD {
-                if Random() as i32 % 100 > 14 {
-                    bite = TRUE;
-                }
+            let ability: u8 = GetMonAbility(&raw mut gPlayerParty[0]);
+            if (ability == ABILITY_SUCTION_CUPS || ability == ABILITY_STICKY_HOLD)
+                && Random() as i32 % 100 > 14
+            {
+                bite = TRUE;
             }
         }
         if bite == 0 {
             if Random() as i32 & 1 != 0 {
-                (*task).data[0] = FISHING_NO_BITE;
+                (*task).data[tStep] = FISHING_NO_BITE;
             } else {
                 bite = TRUE;
             }
@@ -1764,38 +1656,40 @@ pub(crate) unsafe extern "C" fn Fishing_CheckForBite(task: *mut Task) -> u8 {
             );
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn Fishing_GotBite(task: *mut Task) -> u8 {
+pub(crate) unsafe fn Fishing_GotBite(task: *mut Task) -> u8 {
     AlignFishingAnimationFrames();
     AddTextPrinterParameterized(
         0,
         FONT_NORMAL,
-        gText_OhABite.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_OhABite).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         17,
         0,
         None,
     );
-    (*task).data[0] += 1;
-    (*task).data[1] = 0;
-    return FALSE;
+    (*task).data[tStep] += 1;
+    (*task).data[tFrameCounter] = 0;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Fishing_WaitForA(task: *mut Task) -> u8 {
+pub(crate) unsafe fn Fishing_WaitForA(task: *mut Task) -> u8 {
     let mut reelTimeouts: CArray<i16, 3> = zeroed();
     reelTimeouts[0] = 36;
     reelTimeouts[1] = 33;
     reelTimeouts[2] = 30;
     AlignFishingAnimationFrames();
-    (*task).data[1] += 1;
-    if (*task).data[1] >= reelTimeouts[(*task).data[15]] {
-        (*task).data[0] = FISHING_GOT_AWAY;
+    (*task).data[tFrameCounter] += 1;
+    if (*task).data[tFrameCounter] >= reelTimeouts[(*task).data[tFishingRod]] {
+        (*task).data[tStep] = FISHING_GOT_AWAY;
     } else if gMain.newKeys as i32 & A_BUTTON != 0 {
-        (*task).data[0] += 1;
+        (*task).data[tStep] += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Fishing_CheckMoreDots(task: *mut Task) -> u8 {
+pub(crate) unsafe fn Fishing_CheckMoreDots(task: *mut Task) -> u8 {
     let mut moreDotsChance: CArray<CArray<i16, 2>, 3> = zeroed();
     moreDotsChance[0][0] = 0;
     moreDotsChance[0][1] = 0;
@@ -1804,119 +1698,44 @@ pub(crate) unsafe extern "C" fn Fishing_CheckMoreDots(task: *mut Task) -> u8 {
     moreDotsChance[2][0] = 70;
     moreDotsChance[2][1] = 30;
     AlignFishingAnimationFrames();
-    (*task).data[0] += 1;
-    if (*task).data[12] < (*task).data[13] {
-        (*task).data[0] = FISHING_START_ROUND;
-    } else if (*task).data[12] < 2 {
-        let mut probability: i16 = (Random() as i32 % 100) as i16;
-        if moreDotsChance[(*task).data[15]][(*task).data[12]] > probability {
-            (*task).data[0] = FISHING_START_ROUND;
+    (*task).data[tStep] += 1;
+    if (*task).data[tRoundsPlayed] < (*task).data[tMinRoundsRequired] {
+        (*task).data[tStep] = FISHING_START_ROUND;
+    } else if (*task).data[tRoundsPlayed] < 2 {
+        let probability: i16 = (Random() as i32 % 100) as i16;
+        if moreDotsChance[(*task).data[tFishingRod]][(*task).data[tRoundsPlayed]] > probability {
+            (*task).data[tStep] = FISHING_START_ROUND;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Fishing_MonOnHook(task: *mut Task) -> u8 {
+pub(crate) unsafe fn Fishing_MonOnHook(task: *mut Task) -> u8 {
     AlignFishingAnimationFrames();
     FillWindowPixelBuffer(0, 17);
     AddTextPrinterParameterized2(
         0,
         FONT_NORMAL,
-        gText_PokemonOnHook.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_PokemonOnHook).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         1,
         None,
         TEXT_COLOR_DARK_GRAY,
         0x1,
         TEXT_COLOR_LIGHT_GRAY,
     );
-    (*task).data[0] += 1;
-    (*task).data[1] = 0;
-    return FALSE;
+    (*task).data[tStep] += 1;
+    (*task).data[tFrameCounter] = 0;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Fishing_StartEncounter(task: *mut Task) -> u8 {
-    if (*task).data[1] == 0 {
+pub(crate) unsafe fn Fishing_StartEncounter(task: *mut Task) -> u8 {
+    if (*task).data[tFrameCounter] == 0 {
         AlignFishingAnimationFrames();
     }
     RunTextPrinters();
-    if (*task).data[1] == 0 {
-        if IsTextPrinterActive(0) == 0 {
-            let mut playerObjEvent: *mut ObjectEvent =
-                &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
-            ObjectEventSetGraphicsId(playerObjEvent, (*task).data[14] as u8);
-            ObjectEventTurn(playerObjEvent, (*playerObjEvent).movementDirection() as u8);
-            if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_SURFING as i32 != 0 {
-                SetSurfBlob_PlayerOffset(
-                    gObjectEvents[gPlayerAvatar.objectEventId].fieldEffectSpriteId,
-                    0,
-                    0,
-                );
-            }
-            gSprites[gPlayerAvatar.spriteId].x2 = 0;
-            gSprites[gPlayerAvatar.spriteId].y2 = 0;
-            ClearDialogWindowAndFrame(0, TRUE);
-            (*task).data[1] += 1;
-            return FALSE;
-        }
-    }
-    if (*task).data[1] != 0 {
-        gPlayerAvatar.preventStep = FALSE;
-        UnlockPlayerFieldControls();
-        FishingWildEncounter((*task).data[15] as u8);
-        RecordFishingAttemptForTV(TRUE);
-        DestroyTask(FindTaskIdByFunc(Some(Task_Fishing)));
-    }
-    return FALSE;
-}
-pub(crate) unsafe extern "C" fn Fishing_NotEvenNibble(task: *mut Task) -> u8 {
-    AlignFishingAnimationFrames();
-    StartSpriteAnim(
-        &raw mut gSprites[gPlayerAvatar.spriteId],
-        GetFishingNoCatchDirectionAnimNum(GetPlayerFacingDirection()),
-    );
-    FillWindowPixelBuffer(0, 17);
-    AddTextPrinterParameterized2(
-        0,
-        FONT_NORMAL,
-        gText_NotEvenANibble.as_ptr().cast_mut(),
-        1,
-        None,
-        TEXT_COLOR_DARK_GRAY,
-        0x1,
-        TEXT_COLOR_LIGHT_GRAY,
-    );
-    (*task).data[0] = FISHING_SHOW_RESULT;
-    return TRUE;
-}
-pub(crate) unsafe extern "C" fn Fishing_GotAway(task: *mut Task) -> u8 {
-    AlignFishingAnimationFrames();
-    StartSpriteAnim(
-        &raw mut gSprites[gPlayerAvatar.spriteId],
-        GetFishingNoCatchDirectionAnimNum(GetPlayerFacingDirection()),
-    );
-    FillWindowPixelBuffer(0, 17);
-    AddTextPrinterParameterized2(
-        0,
-        FONT_NORMAL,
-        gText_ItGotAway.as_ptr().cast_mut(),
-        1,
-        None,
-        TEXT_COLOR_DARK_GRAY,
-        0x1,
-        TEXT_COLOR_LIGHT_GRAY,
-    );
-    (*task).data[0] += 1;
-    return TRUE;
-}
-pub(crate) unsafe extern "C" fn Fishing_NoMon(task: *mut Task) -> u8 {
-    AlignFishingAnimationFrames();
-    (*task).data[0] += 1;
-    return FALSE;
-}
-pub(crate) unsafe extern "C" fn Fishing_PutRodAway(task: *mut Task) -> u8 {
-    AlignFishingAnimationFrames();
-    if gSprites[gPlayerAvatar.spriteId].animEnded() != 0 {
-        let mut playerObjEvent: *mut ObjectEvent =
-            &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
-        ObjectEventSetGraphicsId(playerObjEvent, (*task).data[14] as u8);
+    if (*task).data[tFrameCounter] == 0 && IsTextPrinterActive(0) == 0 {
+        let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+        ObjectEventSetGraphicsId(playerObjEvent, (*task).data[tPlayerGfxId] as u8);
         ObjectEventTurn(playerObjEvent, (*playerObjEvent).movementDirection() as u8);
         if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_SURFING as i32 != 0 {
             SetSurfBlob_PlayerOffset(
@@ -1927,11 +1746,88 @@ pub(crate) unsafe extern "C" fn Fishing_PutRodAway(task: *mut Task) -> u8 {
         }
         gSprites[gPlayerAvatar.spriteId].x2 = 0;
         gSprites[gPlayerAvatar.spriteId].y2 = 0;
-        (*task).data[0] += 1;
+        ClearDialogWindowAndFrame(0, TRUE);
+        (*task).data[tFrameCounter] += 1;
+        return FALSE;
     }
-    return FALSE;
+    if (*task).data[tFrameCounter] != 0 {
+        gPlayerAvatar.preventStep = FALSE;
+        UnlockPlayerFieldControls();
+        FishingWildEncounter((*task).data[tFishingRod] as u8);
+        RecordFishingAttemptForTV(TRUE);
+        DestroyTask(FindTaskIdByFunc(Some(Task_Fishing)));
+    }
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Fishing_EndNoMon(task: *mut Task) -> u8 {
+pub(crate) unsafe fn Fishing_NotEvenNibble(task: *mut Task) -> u8 {
+    AlignFishingAnimationFrames();
+    StartSpriteAnim(
+        &raw mut gSprites[gPlayerAvatar.spriteId],
+        GetFishingNoCatchDirectionAnimNum(GetPlayerFacingDirection()),
+    );
+    FillWindowPixelBuffer(0, 17);
+    AddTextPrinterParameterized2(
+        0,
+        FONT_NORMAL,
+        (*(&raw const crate::data::strings::gText_NotEvenANibble).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        1,
+        None,
+        TEXT_COLOR_DARK_GRAY,
+        0x1,
+        TEXT_COLOR_LIGHT_GRAY,
+    );
+    (*task).data[tStep] = FISHING_SHOW_RESULT;
+    TRUE
+}
+pub(crate) unsafe fn Fishing_GotAway(task: *mut Task) -> u8 {
+    AlignFishingAnimationFrames();
+    StartSpriteAnim(
+        &raw mut gSprites[gPlayerAvatar.spriteId],
+        GetFishingNoCatchDirectionAnimNum(GetPlayerFacingDirection()),
+    );
+    FillWindowPixelBuffer(0, 17);
+    AddTextPrinterParameterized2(
+        0,
+        FONT_NORMAL,
+        (*(&raw const crate::data::strings::gText_ItGotAway).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        1,
+        None,
+        TEXT_COLOR_DARK_GRAY,
+        0x1,
+        TEXT_COLOR_LIGHT_GRAY,
+    );
+    (*task).data[tStep] += 1;
+    TRUE
+}
+pub(crate) unsafe fn Fishing_NoMon(task: *mut Task) -> u8 {
+    AlignFishingAnimationFrames();
+    (*task).data[tStep] += 1;
+    FALSE
+}
+pub(crate) unsafe fn Fishing_PutRodAway(task: *mut Task) -> u8 {
+    AlignFishingAnimationFrames();
+    if gSprites[gPlayerAvatar.spriteId].animEnded() != 0 {
+        let playerObjEvent: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+        ObjectEventSetGraphicsId(playerObjEvent, (*task).data[tPlayerGfxId] as u8);
+        ObjectEventTurn(playerObjEvent, (*playerObjEvent).movementDirection() as u8);
+        if gPlayerAvatar.flags as i32 & PLAYER_AVATAR_FLAG_SURFING as i32 != 0 {
+            SetSurfBlob_PlayerOffset(
+                gObjectEvents[gPlayerAvatar.objectEventId].fieldEffectSpriteId,
+                0,
+                0,
+            );
+        }
+        gSprites[gPlayerAvatar.spriteId].x2 = 0;
+        gSprites[gPlayerAvatar.spriteId].y2 = 0;
+        (*task).data[tStep] += 1;
+    }
+    FALSE
+}
+pub(crate) unsafe fn Fishing_EndNoMon(task: *mut Task) -> u8 {
     RunTextPrinters();
     if IsTextPrinterActive(0) == 0 {
         gPlayerAvatar.preventStep = FALSE;
@@ -1941,12 +1837,11 @@ pub(crate) unsafe extern "C" fn Fishing_EndNoMon(task: *mut Task) -> u8 {
         RecordFishingAttemptForTV(FALSE);
         DestroyTask(FindTaskIdByFunc(Some(Task_Fishing)));
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn AlignFishingAnimationFrames() {
-    let mut playerSprite: *mut Sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
+unsafe fn AlignFishingAnimationFrames() {
+    let playerSprite: *mut Sprite = &raw mut gSprites[gPlayerAvatar.spriteId];
     let mut animCmdIndex: u8 = 0;
-    let mut animType: u8 = 0;
     AnimateSprite(playerSprite);
     (*playerSprite).x2 = 0;
     (*playerSprite).y2 = 0;
@@ -1959,7 +1854,7 @@ pub(crate) unsafe extern "C" fn AlignFishingAnimationFrames() {
             animCmdIndex -= 1;
         }
     }
-    animType =
+    let animType: u8 =
         (*(*(*playerSprite).anims.at((*playerSprite).animNum)).at(animCmdIndex)).r#type as u8;
     if animType == 1 || animType == 2 || animType == 3 {
         (*playerSprite).x2 = 8;
@@ -1981,20 +1876,19 @@ pub(crate) unsafe extern "C" fn AlignFishingAnimationFrames() {
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetSpinStartFacingDir(direction: u8) {
-    sSpinStartFacingDir = direction;
+pub unsafe fn SetSpinStartFacingDir(direction: u8) {
+    sSpinStartFacingDir.set(direction);
 }
-pub(crate) unsafe extern "C" fn GetSpinStartFacingDir() -> u8 {
-    if sSpinStartFacingDir == DIR_NONE {
+unsafe fn GetSpinStartFacingDir() -> u8 {
+    if sSpinStartFacingDir.get() == DIR_NONE {
         return DIR_SOUTH;
     }
-    return sSpinStartFacingDir;
+    sSpinStartFacingDir.get()
 }
-pub(crate) unsafe extern "C" fn Task_DoPlayerSpinExit(taskId: u8) {
-    let mut object: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
-    let mut sprite: *mut Sprite = &raw mut gSprites[(*object).spriteId];
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_DoPlayerSpinExit(taskId: u8) {
+    let object: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let sprite: *mut Sprite = &raw mut gSprites[(*object).spriteId];
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     'l1: {
         let sw1: i16 = *data;
         let mut fall = false;
@@ -2016,7 +1910,6 @@ pub(crate) unsafe extern "C" fn Task_DoPlayerSpinExit(taskId: u8) {
             *data += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             TrySpinPlayerForWarp(object, data.at(1));
             *data.at(3) -= *data.at(2);
             *data.at(2) += 3;
@@ -2027,32 +1920,27 @@ pub(crate) unsafe extern "C" fn Task_DoPlayerSpinExit(taskId: u8) {
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             DestroyTask(taskId);
             break 'l1;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoPlayerSpinEntrance() {
+pub unsafe fn DoPlayerSpinEntrance() {
     Task_DoPlayerSpinEntrance(CreateTask(Some(Task_DoPlayerSpinEntrance), 0));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsPlayerSpinEntranceActive() -> u32 {
-    return FuncIsActiveTask(Some(Task_DoPlayerSpinEntrance)) as u32;
+pub unsafe fn IsPlayerSpinEntranceActive() -> u32 {
+    FuncIsActiveTask(Some(Task_DoPlayerSpinEntrance)) as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoPlayerSpinExit() {
+pub unsafe fn DoPlayerSpinExit() {
     Task_DoPlayerSpinExit(CreateTask(Some(Task_DoPlayerSpinExit), 0));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsPlayerSpinExitActive() -> u32 {
-    return FuncIsActiveTask(Some(Task_DoPlayerSpinExit)) as u32;
+pub unsafe fn IsPlayerSpinExitActive() -> u32 {
+    FuncIsActiveTask(Some(Task_DoPlayerSpinExit)) as u32
 }
-pub(crate) unsafe extern "C" fn Task_DoPlayerSpinEntrance(taskId: u8) {
-    let mut object: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
-    let mut sprite: *mut Sprite = &raw mut gSprites[(*object).spriteId];
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_DoPlayerSpinEntrance(taskId: u8) {
+    let object: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let sprite: *mut Sprite = &raw mut gSprites[(*object).spriteId];
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     'l1: {
         let sw1: i16 = *data;
         let mut fall = false;
@@ -2078,7 +1966,6 @@ pub(crate) unsafe extern "C" fn Task_DoPlayerSpinEntrance(taskId: u8) {
             *data += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             TrySpinPlayerForWarp(object, data.at(1));
             *data.at(3) += *data.at(2);
             *data.at(2) -= 3;
@@ -2094,7 +1981,6 @@ pub(crate) unsafe extern "C" fn Task_DoPlayerSpinEntrance(taskId: u8) {
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             TrySpinPlayerForWarp(object, data.at(1));
             if ({
                 *data.at(8) += 1;
@@ -2106,7 +1992,6 @@ pub(crate) unsafe extern "C" fn Task_DoPlayerSpinEntrance(taskId: u8) {
             break 'l1;
         }
         if sw1 == 3 {
-            fall = true;
             if *data.at(5) == TrySpinPlayerForWarp(object, data.at(1)) as i16 {
                 (*object).set_fixedPriority(0);
                 (*sprite).oam.set_priority(*data.at(6) as u16);
@@ -2118,10 +2003,7 @@ pub(crate) unsafe extern "C" fn Task_DoPlayerSpinEntrance(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn TrySpinPlayerForWarp(
-    object: *mut ObjectEvent,
-    delayTimer: *mut i16,
-) -> u8 {
+unsafe fn TrySpinPlayerForWarp(object: *mut ObjectEvent, delayTimer: *mut i16) -> u8 {
     if *delayTimer < 8
         && ({
             *delayTimer += 1;
@@ -2138,5 +2020,5 @@ pub(crate) unsafe extern "C" fn TrySpinPlayerForWarp(
         GetFaceDirectionMovementAction(sSpinDirections[(*object).facingDirection()] as u32),
     );
     *delayTimer = 0;
-    return sSpinDirections[(*object).facingDirection()];
+    sSpinDirections[(*object).facingDirection()]
 }

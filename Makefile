@@ -69,8 +69,13 @@ endif
 
 ROM_NAME := $(FILE_NAME).gba
 OBJ_DIR_NAME := $(BUILD_DIR)/emerald
+ifeq ($(RUST_STYLE),c)
+MODERN_ROM_NAME := $(FILE_NAME)_c_style.gba
+MODERN_OBJ_DIR_NAME := $(BUILD_DIR)/c_style
+else
 MODERN_ROM_NAME := $(FILE_NAME)_modern.gba
 MODERN_OBJ_DIR_NAME := $(BUILD_DIR)/modern
+endif
 ASSETS_DIR_NAME := $(BUILD_DIR)/assets
 
 ELF_NAME := $(ROM_NAME:.gba=.elf)
@@ -93,6 +98,12 @@ SYM := $(ROM:.gba=.sym)
 # Commonly used directories
 C_SUBDIR = src
 RUST_SUBDIR = rust
+# Which Rust to build: the port that follows Rust's rules (rust/, the
+# default), or the C-style one kept in rust-c-style/ (`make c-style`).
+RUST_STYLE ?= rules
+ifeq ($(RUST_STYLE),c)
+  RUST_SUBDIR = rust-c-style
+endif
 ASM_SUBDIR = asm
 DATA_SRC_SUBDIR = src/data
 DATA_ASM_SUBDIR = data
@@ -534,10 +545,26 @@ DATA_ASM_OBJS := $(patsubst $(DATA_ASM_SUBDIR)/%.s,$(DATA_ASM_BUILDDIR)/%.o,$(DA
 MID_SRCS := $(wildcard $(MID_SUBDIR)/*.mid)
 MID_OBJS := $(patsubst $(MID_SUBDIR)/%.mid,$(MID_BUILDDIR)/%.o,$(MID_SRCS))
 
-OBJS     := $(C_OBJS) $(RUST_OBJS) $(C_ASM_OBJS) $(ASM_OBJS) $(DATA_ASM_OBJS) $(MID_OBJS)
+# The assembled data (scripts, maps, songs) is linked as Rust: obj2rs.py
+# turns these objects into rust/src/asmdata. Build them with `make asmdata-objs`
+# before regenerating it.
+ASMDATA_OBJS := $(DATA_ASM_OBJS) $(MID_OBJS)
+OBJS     := $(C_OBJS) $(RUST_OBJS) $(C_ASM_OBJS) $(ASM_OBJS)
+ifeq ($(RUST_STYLE),c)
+# the C-style crate still reaches the assembled data by symbol
+OBJS     += $(ASMDATA_OBJS)
+endif
 OBJS_REL := $(patsubst $(OBJ_DIR)/%,%,$(OBJS))
 
-SUBDIRS  := $(sort $(dir $(OBJS)))
+SUBDIRS  := $(sort $(dir $(OBJS) $(ASMDATA_OBJS)))
+
+asmdata-objs: $(ASMDATA_OBJS)
+.PHONY: asmdata-objs
+
+# The C-style Rust (rust-c-style/) as pokeemerald_c_style.gba.
+c-style:
+	@$(MAKE) modern RUST_STYLE=c
+.PHONY: c-style
 $(shell mkdir -p $(SUBDIRS))
 
 # Pretend rules that are actually flags defer to `make all`

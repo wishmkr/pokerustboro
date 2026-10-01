@@ -3,37 +3,178 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    clippy::missing_transmute_annotations,
+    clippy::self_assignment,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::battle_main::gBattleTypeFlags;
+use crate::berry_crush::StartBerryCrush;
+use crate::bg::{CopyBgTilemapBufferToVram, FillBgTilemapBufferRect};
 #[allow(unused_imports)]
 use crate::c::*;
+use crate::cable_club::{AreBattleTowerLinkSpeciesSame, CB2_ReturnFromCableClubBattle};
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::dodrio_berry_picking::StartDodrioBerryPicking;
+use crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_Reset;
+use crate::dynamic_placeholder_text_util::{
+    DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_SetPlaceholderPtr,
+};
+use crate::easy_chat::CopyEasyChatWord;
+use crate::event_data::VarSet;
+use crate::event_object_lock::{FreezeObjects_WaitForPlayer, UnionRoom_UnlockPlayerAndChatPartner};
+use crate::ffi::{gSpecialVar_0x8004, gSpecialVar_Result};
+use crate::field_control_avatar::SetCableClubWarp;
+use crate::field_player_avatar::{GetXYCoordsOneStepInFrontOfPlayer, gPlayerAvatar};
+use crate::field_screen_effect::FieldCB_ContinueScriptUnionRoom;
+use crate::field_weather::FadeScreen;
+use crate::international_string_util::GetStringRightAlignXOffset;
+use crate::librfu_rfu::gRfuLinkStatus;
+use crate::link::{
+    GetBlockReceivedStatus, GetLinkPlayerCount, GetLinkPlayerCountAsBitFlags, GetMultiplayerId,
+    IsLinkTaskFinished, OpenLink, ResetBlockReceivedFlags, SendBlock, SendBlockRequest,
+    SetCloseLinkCallback, SetLinkStandbyCallback, SetWirelessCommType1, gLinkPlayers,
+    gReceivedRemoteLinkPlayers,
+};
+use crate::link::{gBlockRecvBuffer, gBlockSendBuffer, gRecvCmds};
+use crate::link_rfu_2::{
+    CreateTask_RfuReconnectWithParent, GetHostRfuGameData, GetLinkPlayerInfoFlags,
+    GetOtherPlayersInfoFlags, HasTrainerLeftPartnersList, InitializeRfuLinkManager_EnterUnionRoom,
+    InitializeRfuLinkManager_JoinGroup, InitializeRfuLinkManager_LinkLeader,
+    IsRfuCommunicatingWithAllChildren, IsUnionRoomListenTaskActive,
+    LinkRfu_CreateConnectionAsParent, LinkRfu_Shutdown, LinkRfu_StopManagerAndFinalizeSlots,
+    LinkRfu_StopManagerBeforeEnteringChat, LmanAcceptSlotFlagIsNotZero,
+    RequestDisconnectSlotByTrainerNameAndId, ResetHostRfuGameData, Rfu_DisconnectPlayerById,
+    Rfu_SendPacket, RfuGetStatus, RfuHasErrored, RfuSetIgnoreError, RfuSetStatus,
+    RfuTryDisconnectLeavingChildren, SendLeaveGroupNotice, SendRfuStatusToPartner,
+    SetHostRfuGameData, SetHostRfuWonderFlags, SetTradeBoardRegisteredMonInfo,
+    StopUnionRoomLinkManager, TryConnectToUnionRoomParent, UpdateGameData_GroupLockedIn,
+    UpdateGameData_SetActivity, WaitRfuState, WaitSendRfuStatusToPartner,
+};
+use crate::link_rfu_3::{
+    CopyHostRfuGameDataAndUsername, CreateWirelessStatusIndicatorSprite,
+    DestroyWirelessStatusIndicatorSprite, LoadWirelessStatusIndicatorSpriteGfx,
+    PlayerHasMetTrainerBefore, Rfu_GetCompatiblePlayerData, Rfu_GetWonderDistributorPlayerData,
+    SaveLinkTrainerNames,
+};
+use crate::list_menu::{
+    DestroyListMenuTask, ListMenu_ProcessInput, ListMenuInit, RedrawListMenu,
+    gMultiuseListMenuTemplate,
+};
+use crate::load_save::{LoadPlayerBag, SavePlayerParty};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::menu::{
+    AddTextPrinterForMessage_2, AddTextPrinterWithCustomSpeedForMessage, BlitMenuInfoIcon,
+    ClearStdWindowAndFrame, DisplayYesNoMenuDefaultYes, DrawDialogueFrame, DrawStdWindowFrame,
+    EraseYesNoWindow, ListMenuLoadStdPalAt, LoadMessageBoxAndBorderGfx,
+    Menu_ProcessInputNoWrapClearOnChoose, RunTextPrintersAndIsPrinter0Active,
+};
+use crate::mystery_gift::{
+    GetWonderCardFlagID, MysteryGift_DisableStats, MysteryGift_TryEnableStatsByFlagId,
+};
+use crate::mystery_gift_menu::{
+    DoMysteryGiftYesNo, GetMysteryGiftBaseBlock, MG_AddMessageTextPrinter, MG_DrawTextBorder,
+    PrintMysteryGiftMenuMessage,
+};
+use crate::overworld::{
+    CB2_LoadMap, CB2_ReturnToField, CB2_ReturnToFieldCableClub, CleanupOverworldWindowsAndTilemaps,
+    IncrementGameStat, SetDynamicWarpWithCoords, SetWarpDestination, WarpIntoMap, gFieldCallback,
+    gFieldLinkPlayerCount, gLocalLinkPlayerId,
+};
+use crate::palette::{BeginNormalPaletteFade, UpdatePaletteFade, gPaletteFade};
+use crate::party_menu::gSelectedOrderFromParty;
+use crate::party_menu::{
+    ChooseMonForTradingBoard, GetCursorSelectionMonId, GetPartyMenuType,
+    InitChooseHalfPartyForBattle,
+};
+use crate::pokemon::{
+    GetMonData2, GetMonData3, GetUnionRoomTrainerClass, PlayBattleBGM, gEnemyParty, gPlayerParty,
+    gPlayerPartyCount,
+};
+use crate::pokemon_jump::StartPokemonJump;
+use crate::random::Random;
+use crate::script::{
+    ArePlayerFieldControlsLocked, LockPlayerFieldControls, ScriptContext_Enable,
+    ScriptContext_IsEnabled, UnlockPlayerFieldControls,
+};
+use crate::script_pokemon_util::HealPlayerParty;
+use crate::sound::PlaySE;
+use crate::sprite::{AnimateSprites, BuildOamBuffer};
+use crate::start_menu::Task_ShowStartMenu;
+use crate::string_util::ConvertInternationalString;
+use crate::string_util::{
+    ConvertIntToDecimalStringN, StringAppend, StringCopy, StringCopy_PlayerName,
+    StringExpandPlaceholders,
+};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar4};
+use crate::task::gTasks;
+use crate::task::{DestroyTask, RunTasks};
+use crate::task::{task_get, task_set};
+use crate::text::RunTextPrinters;
+use crate::trade::gSelectedTradeMonPositions;
+use crate::trade::{CB2_LinkTrade, CB2_StartCreateTradeMenu, gTradeMail};
+use crate::trainer_card::{
+    CopyTrainerCardData, ShowTrainerCardInLink, TrainerCard_GenerateCardForLinkPlayer,
+    gTrainerCards,
+};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::union_room_battle::CB2_UnionRoomBattle;
+use crate::union_room_chat::EnterUnionRoomChat;
+use crate::union_room_player_avatar::{
+    CreateUnionRoomPlayerSprites, DestroyUnionRoomPlayerObjects, DestroyUnionRoomPlayerSprites,
+    HandleUnionRoomPlayerRefresh, InitUnionRoomPlayerObjects, ScheduleUnionRoomPlayerRefresh,
+    SetTilesAroundUnionRoomPlayersPassable, TryInteractWithUnionRoomMember,
+    UpdateUnionRoomMemberFacing,
+};
+use crate::window::{
+    ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, PutWindowTilemap, RemoveWindow,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `Intl_GetListMenuWidth` with this module's view of its types.
+#[inline]
+unsafe fn Intl_GetListMenuWidth(a0: *mut ListMenuTemplate) -> i32 {
+    unsafe { crate::international_string_util::Intl_GetListMenuWidth(a0 as _) }
+}
 // Data tables (translate with cdata.py): sText_EmptyString sText_Colon sText_ID sText_PleaseStartOver sText_WirelessSearchCanceled sText_AwaitingCommunucation2 sText_AwaitingCommunication sText_AwaitingLinkPressStart sJPText_SingleBattle sJPText_DoubleBattle sJPText_MultiBattle sJPText_TradePokemon sJPText_Chat sJPText_DistWonderCard sJPText_DistWonderNews sJPText_DistMysteryEvent sJPText_HoldPokemonJump sJPText_HoldBerryCrush sJPText_HoldBerryPicking sJPText_HoldSpinTrade sJPText_HoldSpinShop sJPLinkGroupActionTexts sText_1PlayerNeeded sText_2PlayersNeeded sText_3PlayersNeeded sText_4PlayersNeeded sText_2PlayerMode sText_3PlayerMode sText_4PlayerMode sText_5PlayerMode sPlayersNeededOrModeTexts sText_BButtonCancel sJPText_SearchingForParticipants sText_PlayerContactedYouForXAccept sText_PlayerContactedYouShareX sText_PlayerContactedYouAddToMembers sText_AreTheseMembersOK sText_CancelModeWithTheseMembers sText_AnOKWasSentToPlayer sText_OtherTrainerUnavailableNow sText_CantTransmitTrainerTooFar sText_TrainersNotReadyYet sCantTransmitToTrainerTexts sText_ModeWithTheseMembersWillBeCanceled sText_MemberNoLongerAvailable sPlayerUnavailableTexts sText_TrainerAppearsUnavailable sText_PlayerSentBackOK sText_PlayerOKdRegistration sText_PlayerRepliedNo sText_AwaitingOtherMembers sText_QuitBeingMember sText_StoppedBeingMember sPlayerDisconnectedTexts sText_WirelessLinkEstablished sText_WirelessLinkDropped sText_LinkWithFriendDropped sText_PlayerRepliedNo2 sLinkDroppedTexts sText_DoYouWantXMode sText_DoYouWantXMode2 sDoYouWantModeTexts sText_CommunicatingPleaseWait sText_AwaitingPlayersResponseAboutTrade sText_Communicating sText_CommunicatingWithPlayer sText_PleaseWaitAWhile sCommunicatingWaitTexts sText_HiDoSomethingMale sText_HiDoSomethingFemale sText_HiDoSomethingAgainMale sText_HiDoSomethingAgainFemale sHiDoSomethingTexts sText_DoSomethingMale sText_DoSomethingFemale sText_DoSomethingAgainMale sText_DoSomethingAgainFemale sDoSomethingTexts sText_SomebodyHasContactedYou sText_PlayerHasContactedYou sPlayerContactedYouTexts sText_AwaitingResponseFromTrainer sText_AwaitingResponseFromPlayer sAwaitingResponseTexts sText_ShowTrainerCard sText_BattleChallenge sText_ChatInvitation sText_OfferToTradeMon sText_OfferToTradeEgg sText_ChatDropped sText_OfferDeclined1 sText_OfferDeclined2 sText_ChatEnded sInvitationTexts sText_JoinChatMale sText_PlayerJoinChatMale sText_JoinChatFemale sText_PlayerJoinChatFemale sJoinChatTexts sText_TrainerAppearsBusy sText_WaitForBattleMale sText_WaitForChatMale sText_ShowTrainerCardMale sText_WaitForBattleFemale sText_WaitForChatFemale sText_ShowTrainerCardFemale sText_WaitOrShowCardTexts sText_WaitForChatMale2 sText_DoneWaitingBattleMale sText_DoneWaitingChatMale sText_DoneWaitingBattleFemale sText_DoneWaitingChatFemale sText_TradeWillBeStarted sText_BattleWillBeStarted sText_EnteringChat sStartActivityTexts sText_BattleDeclinedMale sText_BattleDeclinedFemale sBattleDeclinedTexts sText_ShowTrainerCardDeclinedMale sText_ShowTrainerCardDeclinedFemale sShowTrainerCardDeclinedTexts sText_IfYouWantToDoSomethingMale sText_IfYouWantToDoSomethingFemale sIfYouWantToDoSomethingTexts sText_TrainerBattleBusy sText_NeedTwoMonsOfLevel30OrLower1 sText_NeedTwoMonsOfLevel30OrLower2 sText_DeclineChatMale stext_DeclineChatFemale sDeclineChatTexts sText_ChatDeclinedMale sText_ChatDeclinedFemale sChatDeclinedTexts sText_YoureToughMale sText_UsedGoodMoveMale sText_BattleSurpriseMale sText_SwitchedMonsMale sText_YoureToughFemale sText_UsedGoodMoveFemale sText_BattleSurpriseFemale sText_SwitchedMonsFemale sBattleReactionTexts sText_LearnedSomethingMale sText_ThatsFunnyMale sText_RandomChatMale1 sText_RandomChatMale2 sText_LearnedSomethingFemale sText_ThatsFunnyFemale sText_RandomChatFemale1 sText_RandomChatFemale2 sChatReactionTexts sText_ShowedTrainerCardMale1 sText_ShowedTrainerCardMale2 sText_ShowedTrainerCardFemale1 sText_ShowedTrainerCardFemale2 sTrainerCardReactionTexts sText_MaleTraded1 sText_MaleTraded2 sText_FemaleTraded1 sText_FemaleTraded2 sTradeReactionTexts sText_XCheckedTradingBoard sText_RegisterMonAtTradingBoard sText_TradingBoardInfo sText_ThankYouForRegistering sText_NobodyHasRegistered sText_ChooseRequestedMonType sText_WhichMonWillYouOffer sText_RegistrationCanceled sText_RegistrationCompleted sText_TradeCanceled sText_CancelRegistrationOfMon sText_CancelRegistrationOfEgg sText_RegistrationCanceled2 sText_TradeTrainersWillBeListed sText_ChooseTrainerToTradeWith2 sText_AskTrainerToMakeTrade sText_AwaitingResponseFromTrainer2 sText_NotRegisteredAMonForTrade sText_DontHaveTypeTrainerWants sText_DontHaveEggTrainerWants sText_PlayerCantTradeForYourMon sText_CantTradeForPartnersMon sCantTradeMonTexts sText_TradeOfferRejected sText_EggTrade sText_ChooseJoinCancel sText_ChooseTrainer sText_ChooseTrainerSingleBattle sText_ChooseTrainerDoubleBattle sText_ChooseLeaderMultiBattle sText_ChooseTrainerToTradeWith sText_ChooseTrainerToShareWonderCards sText_ChooseTrainerToShareWonderNews sText_ChooseLeaderPokemonJump sText_ChooseLeaderBerryCrush sText_ChooseLeaderBerryPicking sText_ChooseLeaderBerryBlender sText_ChooseLeaderRecordCorner sText_ChooseLeaderCoolContest sText_ChooseLeaderBeautyContest sText_ChooseLeaderCuteContest sText_ChooseLeaderSmartContest sText_ChooseLeaderToughContest sText_ChooseLeaderBattleTowerLv50 sText_ChooseLeaderBattleTowerOpenLv sChooseTrainerTexts sText_SearchingForWirelessSystemWait sText_MustHaveTwoMonsForDoubleBattle sText_AwaitingPlayersResponse sText_PlayerHasBeenAskedToRegisterYouPleaseWait sText_AwaitingResponseFromWirelessSystem sText_PleaseWaitForOtherTrainersToGather sText_NoCardsSharedRightNow sText_NoNewsSharedRightNow sNoWonderSharedTexts sText_Battle sText_Chat2 sText_Greetings sText_Exit sText_Exit2 sText_Info sText_NameWantedOfferLv sText_SingleBattle sText_DoubleBattle sText_MultiBattle sText_PokemonTrades sText_Chat sText_Cards sText_WonderCards sText_WonderNews sText_PokemonJump sText_BerryCrush sText_BerryPicking sText_Search sText_BerryBlender sText_RecordCorner sText_CoolContest sText_BeautyContest sText_CuteContest sText_SmartContest sText_ToughContest sText_BattleTowerLv50 sText_BattleTowerOpenLv sText_ItsNormalCard sText_ItsBronzeCard sText_ItsCopperCard sText_ItsSilverCard sText_ItsGoldCard sCardColorTexts sText_TrainerCardInfoPage1 sText_TrainerCardInfoPage2 sText_GladToMeetYouMale sText_GladToMeetYouFemale sGladToMeetYouTexts sText_FinishedCheckingPlayersTrainerCard sLinkGroupActivityNameTexts sWindowTemplate_BButtonCancel sLinkGroupToActivityAndCapacity sWindowTemplate_PlayerList sWindowTemplate_5PlayerList sWindowTemplate_NumPlayerMode sPossibleGroupMembersListMenuItems sListMenuTemplate_PossibleGroupMembers sWindowTemplate_GroupList sWindowTemplate_PlayerNameAndId sUnionRoomGroupsMenuItems sListMenuTemplate_UnionRoomGroups sWindowTemplate_InviteToActivity sInviteToActivityMenuItems sListMenuTemplate_InviteToActivity sWindowTemplate_RegisterForTrade sRegisterForTradeListMenuItems sListMenuTemplate_RegisterForTrade sWindowTemplate_TradingBoardRequestType sTradingBoardTypes sMenuTemplate_TradingBoardRequestType sWindowTemplate_TradingBoardHeader sWindowTemplate_TradingBoardMain sTradeBoardListMenuItems sTradeBoardListMenuTemplate sWindowTemplate_Unused sEmptyListMenuItems sEmptyListMenuTemplate sUnionRoomPlayer_DummyRfu sAcceptedActivityIds_SingleBattle sAcceptedActivityIds_DoubleBattle sAcceptedActivityIds_MultiBattle sAcceptedActivityIds_Trade sAcceptedActivityIds_PokemonJump sAcceptedActivityIds_BerryCrush sAcceptedActivityIds_BerryPicking sAcceptedActivityIds_WonderCard sAcceptedActivityIds_WonderNews sAcceptedActivityIds_Resume sAcceptedActivityIds_Init sAcceptedActivityIds_Unk11 sAcceptedActivityIds_RecordCorner sAcceptedActivityIds_BerryBlender sAcceptedActivityIds_CoolContest sAcceptedActivityIds_BeautyContest sAcceptedActivityIds_CuteContest sAcceptedActivityIds_SmartContest sAcceptedActivityIds_ToughContest sAcceptedActivityIds_BattleTower sAcceptedActivityIds_BattleTowerOpen sAcceptedActivityIds sLinkGroupToURoomActivity
 
 /// `__typeof__(sWirelessLinkMain)`
@@ -392,21 +533,18 @@ static sWindowTemplate_TradingBoardRequestType: Table<WindowTemplate> =
 
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sUnionRoomPlayerName: Aligned<CArray<u8, 12>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gPlayerCurrActivity: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPlayerActivityGroupSize: u8 = 0;
+pub(crate) static sPlayerActivityGroupSize: crate::global::Global<u8> =
+    crate::global::Global::new(0);
 pub(crate) static mut sWirelessLinkMain: sWirelessLinkMain_t = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sUnused: u32 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gRfuPartnerCompatibilityData: RfuGameCompatibilityData = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gUnionRoomOfferedSpecies: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gUnionRoomRequestedMonType: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
@@ -415,225 +553,29 @@ pub(crate) static mut sLeader: *mut WirelessLink_Leader = null_mut();
 pub(crate) static mut sGroup: *mut WirelessLink_Group = null_mut();
 pub(crate) static mut sURoom: *mut WirelessLink_URoom = null_mut();
 
-unsafe extern "C" {
-    static mut gBattleTypeFlags: u32;
-    static mut gBlockRecvBuffer: CArray<CArray<u16, 128>, 5>;
-    static mut gBlockSendBuffer: CArray<u8, 256>;
-    static mut gDecompressionBuffer: CArray<u8, 16384>;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static mut gFieldCallback: Option<unsafe extern "C" fn()>;
-    static mut gFieldLinkPlayerCount: u8;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gLocalLinkPlayerId: u8;
-    static mut gMain: Main;
-    static mut gMultiuseListMenuTemplate: ListMenuTemplate;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlayerAvatar: PlayerAvatar;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gPlayerPartyCount: u8;
-    static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gRecvCmds: CArray<CArray<u16, 8>, 5>;
-    static mut gRfuLinkStatus: *mut RfuLinkStatus;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSelectedOrderFromParty: CArray<u8, 4>;
-    static mut gSelectedTradeMonPositions: CArray<u8, 2>;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_Result: u16;
-    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static mut gTextFlags: TextFlags;
-    static mut gTradeMail: CArray<Mail, 6>;
-    static mut gTrainerCards: CArray<TrainerCard, 4>;
-    static gTrainerClassNames: CArray<CArray<u8, 13>, 0>;
-    static gTypeNames: CArray<CArray<u8, 7>, 18>;
-    fn AddTextPrinter(
-        a0: *mut TextPrinterTemplate,
-        a1: u8,
-        a2: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddTextPrinterForMessage_2(a0: u8);
-    fn AddTextPrinterWithCustomSpeedForMessage(a0: u8, a1: u8);
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn AreBattleTowerLinkSpeciesSame(a0: *mut u16, a1: *mut u16) -> u32;
-    fn ArePlayerFieldControlsLocked() -> u8;
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BlitMenuInfoIcon(a0: u8, a1: u8, a2: u16, a3: u16);
-    fn BuildOamBuffer();
-    fn CB2_LinkTrade();
-    fn CB2_LoadMap();
-    fn CB2_ReturnFromCableClubBattle();
-    fn CB2_ReturnToField();
-    fn CB2_ReturnToFieldCableClub();
-    fn CB2_StartCreateTradeMenu();
-    fn CB2_UnionRoomBattle();
-    fn ChooseMonForTradingBoard(a0: u8, a1: Option<unsafe extern "C" fn()>);
-    fn CleanupOverworldWindowsAndTilemaps();
-    fn ClearStdWindowAndFrame(a0: u8, a1: u8);
-    fn ClearWindowTilemap(a0: u8);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn ConvertInternationalString(a0: *mut u8, a1: u8);
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyEasyChatWord(a0: *mut u8, a1: u16) -> *mut u8;
-    fn CopyHostRfuGameDataAndUsername(a0: *mut RfuGameData, a1: *mut u8);
-    fn CopyTrainerCardData(a0: *mut TrainerCard, a1: *mut TrainerCard, a2: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateTask_RfuReconnectWithParent(a0: *mut u8, a1: u16);
-    fn CreateUnionRoomPlayerSprites(a0: *mut u8, a1: i32);
-    fn CreateWirelessStatusIndicatorSprite(a0: u8, a1: u8);
-    fn DestroyListMenuTask(a0: u8, a1: *mut u16, a2: *mut u16);
-    fn DestroyTask(a0: u8);
-    fn DestroyUnionRoomPlayerObjects();
-    fn DestroyUnionRoomPlayerSprites(a0: *mut u8);
-    fn DestroyWirelessStatusIndicatorSprite();
-    fn DisplayYesNoMenuDefaultYes();
-    fn DoMysteryGiftYesNo(a0: *mut u8, a1: *mut u16, a2: u8, a3: *mut u8) -> i8;
-    fn DrawDialogueFrame(a0: u8, a1: u8);
-    fn DrawStdWindowFrame(a0: u8, a1: u8);
-    fn DynamicPlaceholderTextUtil_ExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn DynamicPlaceholderTextUtil_Reset();
-    fn DynamicPlaceholderTextUtil_SetPlaceholderPtr(a0: u8, a1: *mut u8);
-    fn EnterUnionRoomChat();
-    fn EraseYesNoWindow();
-    fn FadeScreen(a0: u8, a1: i8);
-    fn FieldCB_ContinueScriptUnionRoom();
-    fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut c_void);
-    fn FreezeObjects_WaitForPlayer();
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetBlockReceivedStatus() -> u8;
-    fn GetCursorSelectionMonId() -> u8;
-    fn GetHostRfuGameData() -> *mut RfuGameData;
-    fn GetLinkPlayerCount() -> u8;
-    fn GetLinkPlayerCountAsBitFlags() -> u8;
-    fn GetLinkPlayerInfoFlags(a0: i32) -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetMultiplayerId() -> u8;
-    fn GetMysteryGiftBaseBlock() -> u16;
-    fn GetOtherPlayersInfoFlags();
-    fn GetPartyMenuType() -> u8;
-    fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetUnionRoomTrainerClass() -> u16;
-    fn GetWonderCardFlagID() -> u16;
-    fn GetXYCoordsOneStepInFrontOfPlayer(a0: *mut i16, a1: *mut i16);
-    fn HandleUnionRoomPlayerRefresh(a0: *mut WirelessLink_URoom);
-    fn HasTrainerLeftPartnersList(a0: u16, a1: *mut u8) -> u32;
-    fn HealPlayerParty();
-    fn IncrementGameStat(a0: u8);
-    fn InitChooseHalfPartyForBattle(a0: u8);
-    fn InitUnionRoomPlayerObjects(a0: *mut UnionRoomObject) -> u8;
-    fn InitializeRfuLinkManager_EnterUnionRoom();
-    fn InitializeRfuLinkManager_JoinGroup();
-    fn InitializeRfuLinkManager_LinkLeader(a0: u32);
-    fn Intl_GetListMenuWidth(a0: *mut ListMenuTemplate) -> i32;
-    fn IsLinkTaskFinished() -> u8;
-    fn IsRfuCommunicatingWithAllChildren() -> u32;
-    fn IsUnionRoomListenTaskActive() -> u32;
-    fn LinkRfu_CreateConnectionAsParent();
-    fn LinkRfu_Shutdown();
-    fn LinkRfu_StopManagerAndFinalizeSlots();
-    fn LinkRfu_StopManagerBeforeEnteringChat();
-    fn ListMenuInit(a0: *mut ListMenuTemplate, a1: u16, a2: u16) -> u8;
-    fn ListMenuLoadStdPalAt(a0: u8, a1: u8);
-    fn ListMenu_ProcessInput(a0: u8) -> i32;
-    fn LmanAcceptSlotFlagIsNotZero() -> u8;
-    fn LoadMessageBoxAndBorderGfx();
-    fn LoadPlayerBag();
-    fn LoadWirelessStatusIndicatorSpriteGfx();
-    fn LockPlayerFieldControls();
-    fn MG_AddMessageTextPrinter(a0: *mut u8);
-    fn MG_DrawTextBorder(a0: u8);
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn MysteryGift_DisableStats();
-    fn MysteryGift_TryEnableStatsByFlagId(a0: u16) -> u32;
-    fn OpenLink();
-    fn PlayBattleBGM();
-    fn PlaySE(a0: u16);
-    fn PlayerHasMetTrainerBefore(a0: u16, a1: *mut u8) -> u32;
-    fn PrintMysteryGiftMenuMessage(a0: *mut u8, a1: *mut u8) -> u32;
-    fn PutWindowTilemap(a0: u8);
-    fn Random() -> u16;
-    fn RedrawListMenu(a0: u8);
-    fn RemoveWindow(a0: u8);
-    fn RequestDisconnectSlotByTrainerNameAndId(a0: *mut u8, a1: u16);
-    fn ResetBlockReceivedFlags();
-    fn ResetHostRfuGameData();
-    fn RfuGetStatus() -> u8;
-    fn RfuHasErrored() -> u32;
-    fn RfuSetIgnoreError(a0: u32);
-    fn RfuSetStatus(a0: u8, a1: u16);
-    fn RfuTryDisconnectLeavingChildren() -> u32;
-    fn Rfu_DisconnectPlayerById(a0: u32);
-    fn Rfu_GetCompatiblePlayerData(a0: *mut RfuGameData, a1: *mut u8, a2: u8) -> u8;
-    fn Rfu_GetWonderDistributorPlayerData(a0: *mut RfuGameData, a1: *mut u8, a2: u8) -> u8;
-    fn Rfu_SendPacket(a0: *mut c_void);
-    fn RunTasks();
-    fn RunTextPrinters();
-    fn RunTextPrintersAndIsPrinter0Active() -> u16;
-    fn SaveLinkTrainerNames();
-    fn SavePlayerParty();
-    fn ScheduleUnionRoomPlayerRefresh(a0: *mut WirelessLink_URoom);
-    fn ScriptContext_Enable();
-    fn ScriptContext_IsEnabled() -> u8;
-    fn SendBlock(a0: u8, a1: *mut c_void, a2: u16) -> u8;
-    fn SendBlockRequest(a0: u8) -> u8;
-    fn SendLeaveGroupNotice();
-    fn SendRfuStatusToPartner(a0: u8, a1: u16, a2: *mut u8);
-    fn SetCableClubWarp() -> i32;
-    fn SetCloseLinkCallback();
-    fn SetDynamicWarpWithCoords(a0: i32, a1: i8, a2: i8, a3: i8, a4: i8, a5: i8);
-    fn SetHostRfuGameData(a0: u8, a1: u32, a2: u32);
-    fn SetHostRfuWonderFlags(a0: u32, a1: u32);
-    fn SetLinkStandbyCallback();
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetTilesAroundUnionRoomPlayersPassable();
-    fn SetTradeBoardRegisteredMonInfo(a0: u32, a1: u32, a2: u32);
-    fn SetWarpDestination(a0: i8, a1: i8, a2: i8, a3: i8, a4: i8);
-    fn SetWirelessCommType1();
-    fn ShowTrainerCardInLink(a0: u8, a1: Option<unsafe extern "C" fn()>);
-    fn StartBerryCrush(a0: Option<unsafe extern "C" fn()>);
-    fn StartDodrioBerryPicking(a0: u16, a1: Option<unsafe extern "C" fn()>);
-    fn StartPokemonJump(a0: u16, a1: Option<unsafe extern "C" fn()>);
-    fn StopUnionRoomLinkManager();
-    fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy_PlayerName(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn Task_ShowStartMenu(a0: u8);
-    fn TrainerCard_GenerateCardForLinkPlayer(a0: *mut TrainerCard);
-    fn TryConnectToUnionRoomParent(a0: *mut u8, a1: *mut RfuGameData, a2: u8);
-    fn TryInteractWithUnionRoomMember(
-        a0: *mut RfuPlayerList,
-        a1: *mut i16,
-        a2: *mut i16,
-        a3: *mut u8,
-    ) -> u32;
-    fn UnionRoom_UnlockPlayerAndChatPartner();
-    fn UnlockPlayerFieldControls();
-    fn UpdateGameData_GroupLockedIn(a0: u8);
-    fn UpdateGameData_SetActivity(a0: u8, a1: u32, a2: u32);
-    fn UpdatePaletteFade() -> u8;
-    fn UpdateUnionRoomMemberFacing(a0: u32, a1: u32, a2: *mut RfuPlayerList);
-    fn VarSet(a0: u16, a1: u16) -> u8;
-    fn WaitRfuState(a0: u32) -> u32;
-    fn WaitSendRfuStatusToPartner(a0: u16, a1: *mut u8) -> u32;
-    fn WarpIntoMap();
+/// `AddTextPrinter` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinter(
+    a0: *mut TextPrinterTemplate,
+    a1: u8,
+    a2: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe { crate::text::AddTextPrinter(a0 as _, a1, core::mem::transmute(a2)) }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn PrintNumPlayersWaitingForMsg(
-    windowId: u8,
-    capacityCode: u8,
-    stringId: u8,
-) {
+unsafe fn PrintNumPlayersWaitingForMsg(windowId: u8, capacityCode: u8, stringId: u8) {
     FillWindowPixelBuffer(windowId, 17);
     match (capacityCode as i32) << 8 {
         512 => {
@@ -690,9 +632,8 @@ pub(crate) unsafe extern "C" fn PrintNumPlayersWaitingForMsg(
     }
     CopyWindowToVram(windowId, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn PrintPlayerNameAndIdOnWindow(windowId: u8) {
+unsafe fn PrintPlayerNameAndIdOnWindow(windowId: u8) {
     let mut text: CArray<u8, 30> = zeroed();
-    let mut txtPtr: *mut u8 = null_mut();
     PrintUnionRoomText(
         windowId,
         FONT_NORMAL,
@@ -701,7 +642,7 @@ pub(crate) unsafe extern "C" fn PrintPlayerNameAndIdOnWindow(windowId: u8) {
         1,
         UR_COLOR_DEFAULT,
     );
-    txtPtr = StringCopy(text.as_mut_ptr(), sText_ID.as_ptr().cast_mut());
+    let txtPtr: *mut u8 = StringCopy(text.as_mut_ptr(), sText_ID.as_ptr().cast_mut());
     ConvertIntToDecimalStringN(
         txtPtr,
         ReadAsU16((*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr()) as i32,
@@ -717,7 +658,7 @@ pub(crate) unsafe extern "C" fn PrintPlayerNameAndIdOnWindow(windowId: u8) {
         UR_COLOR_DEFAULT,
     );
 }
-pub(crate) unsafe extern "C" fn GetAwaitingCommunicationText(dst: *mut u8, activity: u8) {
+unsafe fn GetAwaitingCommunicationText(dst: *mut u8, activity: u8) {
     match activity {
         ACTIVITY_BATTLE_SINGLE
         | ACTIVITY_BATTLE_DOUBLE
@@ -745,7 +686,7 @@ pub(crate) unsafe extern "C" fn GetAwaitingCommunicationText(dst: *mut u8, activ
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn IsActivityWithVariableGroupSize(activity: u32) -> u32 {
+unsafe fn IsActivityWithVariableGroupSize(activity: u32) -> u32 {
     match activity {
         9 | 10 | 11 | 15 | 16 | 23 | 24 | 25 | 26 | 27 => {
             return TRUE as u32;
@@ -756,16 +697,16 @@ pub(crate) unsafe extern "C" fn IsActivityWithVariableGroupSize(activity: u32) -
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryBecomeLinkLeader() {
-    let mut taskId: u8 = 0;
+pub unsafe fn TryBecomeLinkLeader() {
     let mut data: *mut WirelessLink_Leader = null_mut();
-    taskId = CreateTask(Some(Task_TryBecomeLinkLeader), 0);
+    let taskId: u8 = CreateTask(Some(Task_TryBecomeLinkLeader), 0);
     sWirelessLinkMain.leader = {
-        data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Leader;
+        data =
+            (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Leader;
         data
     };
     sLeader = data;
@@ -773,10 +714,10 @@ pub unsafe extern "C" fn TryBecomeLinkLeader() {
     (*data).textState = 0;
     gSpecialVar_Result = LINKUP_ONGOING;
 }
-pub(crate) unsafe extern "C" fn Task_TryBecomeLinkLeader(taskId: u8) {
+pub(crate) unsafe fn Task_TryBecomeLinkLeader(taskId: u8) {
     let mut id: u32 = 0;
     let mut val: u32 = 0;
-    let mut data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
+    let data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
     match (*data).state {
         LL_STATE_INIT => {
             if gSpecialVar_0x8004 == LINK_GROUP_BATTLE_TOWER
@@ -784,13 +725,20 @@ pub(crate) unsafe extern "C" fn Task_TryBecomeLinkLeader(taskId: u8) {
             {
                 gSpecialVar_0x8004 += 1;
             }
-            gPlayerCurrActivity = sLinkGroupToActivityAndCapacity[gSpecialVar_0x8004] as u8;
-            sPlayerActivityGroupSize =
-                (sLinkGroupToActivityAndCapacity[gSpecialVar_0x8004] >> 8) as u8;
+            gPlayerCurrActivity = sLinkGroupToActivityAndCapacity
+                [*(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut()] as u8;
+            sPlayerActivityGroupSize.set(
+                (sLinkGroupToActivityAndCapacity[*(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut()]
+                    >> 8) as u8,
+            );
             SetHostRfuGameData(gPlayerCurrActivity, 0, 0);
             SetWirelessCommType1();
             OpenLink();
-            InitializeRfuLinkManager_LinkLeader(sPlayerActivityGroupSize as u32 & 0x0F);
+            InitializeRfuLinkManager_LinkLeader(sPlayerActivityGroupSize.get() as u32 & 0x0F);
             (*data).state = LL_STATE_INIT2;
         }
         LL_STATE_INIT2 => {
@@ -814,8 +762,8 @@ pub(crate) unsafe extern "C" fn Task_TryBecomeLinkLeader(taskId: u8) {
                 CreateTask_ListenForCompatiblePartners((*data).incomingPlayerList, 0xFF);
             (*data).bButtonCancelWindowId =
                 AddWindow((&raw const *sWindowTemplate_BButtonCancel).cast_mut()) as u8;
-            match sPlayerActivityGroupSize as i32 & 0x0F {
-                2 | 3 | 4 => {
+            match sPlayerActivityGroupSize.get() as i32 & 0x0F {
+                2..=4 => {
                     (*data).listWindowId =
                         AddWindow((&raw const *sWindowTemplate_PlayerList).cast_mut()) as u8;
                 }
@@ -854,9 +802,9 @@ pub(crate) unsafe extern "C" fn Task_TryBecomeLinkLeader(taskId: u8) {
                 gStringVar1.as_mut_ptr(),
                 sLinkGroupActivityNameTexts[gPlayerCurrActivity],
             );
-            if sPlayerActivityGroupSize >> 4 != 0 {
-                if (*data).playerCount as i32 > (sPlayerActivityGroupSize >> 4) as i32 - 1
-                    && sPlayerActivityGroupSize as i32 & 0x0F != 0
+            if sPlayerActivityGroupSize.get() >> 4 != 0 {
+                if (*data).playerCount as i32 > (sPlayerActivityGroupSize.get() >> 4) as i32 - 1
+                    && sPlayerActivityGroupSize.get() as i32 & 0x0F != 0
                 {
                     StringExpandPlaceholders(
                         gStringVar4.as_mut_ptr(),
@@ -873,7 +821,7 @@ pub(crate) unsafe extern "C" fn Task_TryBecomeLinkLeader(taskId: u8) {
             }
             PrintNumPlayersWaitingForMsg(
                 (*data).nPlayerModeWindowId,
-                sPlayerActivityGroupSize,
+                sPlayerActivityGroupSize.get(),
                 (*data).playerCount,
             );
             (*data).state = LL_STATE_PRINT_AWAITING_PLAYERS;
@@ -892,15 +840,15 @@ pub(crate) unsafe extern "C" fn Task_TryBecomeLinkLeader(taskId: u8) {
             if gMain.newKeys as i32 & B_BUTTON != 0 {
                 if (*data).playerCount == 1 {
                     (*data).state = LL_STATE_SHUTDOWN_AND_FAIL;
-                } else if sPlayerActivityGroupSize as i32 & 0xF0 != 0 {
+                } else if sPlayerActivityGroupSize.get() as i32 & 0xF0 != 0 {
                     (*data).state = LL_STATE_CANCEL_WITH_MSG;
                 } else {
                     (*data).state = LL_STATE_CANCEL_PROMPT;
                 }
             }
-            if sPlayerActivityGroupSize >> 4 != 0
-                && (*data).playerCount as i32 > (sPlayerActivityGroupSize >> 4) as i32 - 1
-                && sPlayerActivityGroupSize as i32 & 0x0F != 0
+            if sPlayerActivityGroupSize.get() >> 4 != 0
+                && (*data).playerCount as i32 > (sPlayerActivityGroupSize.get() >> 4) as i32 - 1
+                && sPlayerActivityGroupSize.get() as i32 & 0x0F != 0
                 && IsRfuCommunicatingWithAllChildren() != 0
                 && gMain.newKeys as i32 & START_BUTTON != 0
             {
@@ -930,7 +878,7 @@ pub(crate) unsafe extern "C" fn Task_TryBecomeLinkLeader(taskId: u8) {
             }
         }
         LL_STATE_MEMBER_DISCONNECTED => {
-            id = (if sPlayerActivityGroupSize as i32 & 0x0F == 2 {
+            id = (if sPlayerActivityGroupSize.get() as i32 & 0x0F == 2 {
                 0
             } else {
                 1
@@ -1028,8 +976,8 @@ pub(crate) unsafe extern "C" fn Task_TryBecomeLinkLeader(taskId: u8) {
                     (*(*data).playerList).players[(*data).playerCount].newPlayerCountdown = 0;
                     RedrawListMenu((*data).listTaskId);
                     (*data).playerCount += 1;
-                    if (*data).playerCount as i32 == sPlayerActivityGroupSize as i32 & 0x0F {
-                        if sPlayerActivityGroupSize as i32 & 0xF0 != 0
+                    if (*data).playerCount as i32 == sPlayerActivityGroupSize.get() as i32 & 0x0F {
+                        if sPlayerActivityGroupSize.get() as i32 & 0xF0 != 0
                             || (*data).playerCount == RFU_CHILD_MAX
                         {
                             (*data).state = LL_STATE_MEMBERS_OK_PROMPT;
@@ -1048,7 +996,7 @@ pub(crate) unsafe extern "C" fn Task_TryBecomeLinkLeader(taskId: u8) {
                         LinkRfu_StopManagerAndFinalizeSlots();
                         PrintNumPlayersWaitingForMsg(
                             (*data).nPlayerModeWindowId,
-                            sPlayerActivityGroupSize,
+                            sPlayerActivityGroupSize.get(),
                             (*data).playerCount,
                         );
                     } else {
@@ -1110,7 +1058,7 @@ pub(crate) unsafe extern "C" fn Task_TryBecomeLinkLeader(taskId: u8) {
                     (*data).state = LL_STATE_CONFIRMED_MEMBERS;
                 }
                 1 | MENU_B_PRESSED => {
-                    if sPlayerActivityGroupSize as i32 & 0xF0 != 0 {
+                    if sPlayerActivityGroupSize.get() as i32 & 0xF0 != 0 {
                         (*data).state = LL_STATE_CANCEL_WITH_MSG;
                     } else {
                         (*data).state = LL_STATE_CANCEL_PROMPT;
@@ -1134,9 +1082,11 @@ pub(crate) unsafe extern "C" fn Task_TryBecomeLinkLeader(taskId: u8) {
                     (*data).state = LL_STATE_SHUTDOWN_AND_FAIL;
                 }
                 1 | MENU_B_PRESSED => {
-                    if sPlayerActivityGroupSize as i32 & 0xF0 != 0 {
+                    if sPlayerActivityGroupSize.get() as i32 & 0xF0 != 0 {
                         (*data).state = LL_STATE_MEMBERS_OK_PROMPT;
-                    } else if (*data).playerCount as i32 == sPlayerActivityGroupSize as i32 & 0x0F {
+                    } else if (*data).playerCount as i32
+                        == sPlayerActivityGroupSize.get() as i32 & 0x0F
+                    {
                         (*data).state = LL_STATE_MEMBERS_OK_PROMPT;
                     } else {
                         (*data).state = LL_STATE_GET_AWAITING_PLAYERS_TEXT;
@@ -1217,7 +1167,7 @@ pub(crate) unsafe extern "C" fn Task_TryBecomeLinkLeader(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Leader_DestroyResources(data: *mut WirelessLink_Leader) {
+unsafe fn Leader_DestroyResources(data: *mut WirelessLink_Leader) {
     ClearWindowTilemap((*data).nPlayerModeWindowId);
     ClearStdWindowAndFrame((*data).nPlayerModeWindowId, FALSE);
     DestroyListMenuTask((*data).listTaskId, null_mut(), null_mut());
@@ -1232,7 +1182,7 @@ pub(crate) unsafe extern "C" fn Leader_DestroyResources(data: *mut WirelessLink_
     Free((*data).playerList as *mut c_void);
     Free((*data).incomingPlayerList as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn Leader_GetAcceptNewMemberPrompt(dst: *mut u8, activity: u8) {
+unsafe fn Leader_GetAcceptNewMemberPrompt(dst: *mut u8, activity: u8) {
     match activity {
         ACTIVITY_BATTLE_SINGLE
         | ACTIVITY_BATTLE_DOUBLE
@@ -1263,7 +1213,7 @@ pub(crate) unsafe extern "C" fn Leader_GetAcceptNewMemberPrompt(dst: *mut u8, ac
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn GetYouDeclinedTheOfferMessage(dst: *mut u8, activity: u8) {
+unsafe fn GetYouDeclinedTheOfferMessage(dst: *mut u8, activity: u8) {
     match activity {
         65 | 68 => {
             StringExpandPlaceholders(dst, sText_OfferDeclined1.as_ptr().cast_mut());
@@ -1274,10 +1224,7 @@ pub(crate) unsafe extern "C" fn GetYouDeclinedTheOfferMessage(dst: *mut u8, acti
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn GetYouAskedToJoinGroupPleaseWaitMessage(
-    dst: *mut u8,
-    activity: u8,
-) {
+unsafe fn GetYouAskedToJoinGroupPleaseWaitMessage(dst: *mut u8, activity: u8) {
     match activity {
         ACTIVITY_BATTLE_SINGLE
         | ACTIVITY_BATTLE_DOUBLE
@@ -1309,7 +1256,7 @@ pub(crate) unsafe extern "C" fn GetYouAskedToJoinGroupPleaseWaitMessage(
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn GetGroupLeaderSentAnOKMessage(dst: *mut u8, activity: u8) {
+unsafe fn GetGroupLeaderSentAnOKMessage(dst: *mut u8, activity: u8) {
     match activity {
         ACTIVITY_BATTLE_SINGLE
         | ACTIVITY_BATTLE_DOUBLE
@@ -1336,7 +1283,7 @@ pub(crate) unsafe extern "C" fn GetGroupLeaderSentAnOKMessage(dst: *mut u8, acti
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Leader_SetStateIfMemberListChanged(
+unsafe fn Leader_SetStateIfMemberListChanged(
     data: *mut WirelessLink_Leader,
     joinedState: u32,
     droppedState: u32,
@@ -1360,10 +1307,10 @@ pub(crate) unsafe extern "C" fn Leader_SetStateIfMemberListChanged(
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn ItemPrintFunc_PossibleGroupMembers(windowId: u8, id: u32, y: u8) {
-    let mut data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
+pub(crate) unsafe fn ItemPrintFunc_PossibleGroupMembers(windowId: u8, id: u32, y: u8) {
+    let data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
     let mut colorIdx: u8 = UR_COLOR_DEFAULT;
     match (*(*data).playerList).players[id].groupScheduledAnim() {
         UNION_ROOM_SPAWN_IN => {
@@ -1385,14 +1332,12 @@ pub(crate) unsafe extern "C" fn ItemPrintFunc_PossibleGroupMembers(windowId: u8,
         id as u8,
     );
 }
-pub(crate) unsafe extern "C" fn LeaderUpdateGroupMembership(list: *mut RfuPlayerList) -> u8 {
-    let mut data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
+unsafe fn LeaderUpdateGroupMembership(list: *mut RfuPlayerList) -> u8 {
+    let data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
     let mut ret: u8 = UNION_ROOM_SPAWN_NONE;
-    let mut i: u8 = 0;
     let mut id: i32 = 0;
-    i = 1;
-    while i < MAX_RFU_PLAYERS as u8 {
-        let mut var: u16 = (*(*data).playerList).players[i].groupScheduledAnim() as u16;
+    for i in 1..(MAX_RFU_PLAYERS as u8) {
+        let var: u16 = (*(*data).playerList).players[i].groupScheduledAnim() as u16;
         if var == UNION_ROOM_SPAWN_IN as u16 {
             id = GetNewIncomingPlayerId(
                 &raw mut (*(*data).playerList).players[i],
@@ -1407,7 +1352,6 @@ pub(crate) unsafe extern "C" fn LeaderUpdateGroupMembership(list: *mut RfuPlayer
                 ret = UNION_ROOM_SPAWN_OUT;
             }
         }
-        i += 1;
     }
     id = 0;
     while id < RFU_CHILD_MAX as i32 {
@@ -1419,28 +1363,21 @@ pub(crate) unsafe extern "C" fn LeaderUpdateGroupMembership(list: *mut RfuPlayer
         id += 1;
     }
     if ret != UNION_ROOM_SPAWN_OUT {
-        id = 0;
-        while id < MAX_RFU_PLAYERS {
+        for id in 0..MAX_RFU_PLAYERS {
             if (*(*data).playerList).players[id].newPlayerCountdown != 0 {
                 ret = UNION_ROOM_SPAWN_IN;
             }
-            id += 1;
         }
     }
-    return ret;
+    ret
 }
-pub(crate) unsafe extern "C" fn LeaderPrunePlayerList(list: *mut RfuPlayerList) -> u8 {
-    let mut data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
+unsafe fn LeaderPrunePlayerList(list: *mut RfuPlayerList) -> u8 {
+    let data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
+    for i in 0..MAX_RFU_PLAYERS {
+        (*(*data).playerListBackup).players[i] = (*(*data).playerList).players[i];
+    }
     let mut copiedCount: u8 = 0;
     let mut i: i32 = 0;
-    let mut playerCount: u8 = 0;
-    i = 0;
-    while i < MAX_RFU_PLAYERS {
-        (*(*data).playerListBackup).players[i] = (*(*data).playerList).players[i];
-        i += 1;
-    }
-    copiedCount = 0;
-    i = 0;
     while i < MAX_RFU_PLAYERS {
         if (*(*data).playerListBackup).players[i].groupScheduledAnim() == UNION_ROOM_SPAWN_IN {
             (*(*data).playerList).players[copiedCount] = (*(*data).playerListBackup).players[i];
@@ -1448,7 +1385,7 @@ pub(crate) unsafe extern "C" fn LeaderPrunePlayerList(list: *mut RfuPlayerList) 
         }
         i += 1;
     }
-    playerCount = copiedCount;
+    let mut playerCount: u8 = copiedCount;
     while copiedCount < MAX_RFU_PLAYERS as u8 {
         (*(*data).playerList).players[copiedCount].rfu = *sUnionRoomPlayer_DummyRfu;
         (*(*data).playerList).players[copiedCount].timeoutCounter = 0;
@@ -1457,8 +1394,7 @@ pub(crate) unsafe extern "C" fn LeaderPrunePlayerList(list: *mut RfuPlayerList) 
         (*(*data).playerList).players[copiedCount].newPlayerCountdown = 0;
         copiedCount += 1;
     }
-    i = 0;
-    'l5: while i < MAX_RFU_PLAYERS {
+    'l5: for i in 0..MAX_RFU_PLAYERS {
         'l4: {
             if (*(*data).playerList).players[i].groupScheduledAnim() != UNION_ROOM_SPAWN_IN {
                 break 'l4;
@@ -1469,17 +1405,16 @@ pub(crate) unsafe extern "C" fn LeaderPrunePlayerList(list: *mut RfuPlayerList) 
             playerCount = i as u8;
             break 'l5;
         }
-        i += 1;
     }
-    return playerCount;
+    playerCount
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryJoinLinkGroup() {
-    let mut taskId: u8 = 0;
+pub unsafe fn TryJoinLinkGroup() {
     let mut data: *mut WirelessLink_Group = null_mut();
-    taskId = CreateTask(Some(Task_TryJoinLinkGroup), 0);
+    let taskId: u8 = CreateTask(Some(Task_TryJoinLinkGroup), 0);
     sWirelessLinkMain.group = {
-        data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Group;
+        data =
+            (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Group;
         data
     };
     sGroup = data;
@@ -1487,9 +1422,9 @@ pub unsafe extern "C" fn TryJoinLinkGroup() {
     (*data).textState = 0;
     gSpecialVar_Result = LINKUP_ONGOING;
 }
-pub(crate) unsafe extern "C" fn Task_TryJoinLinkGroup(taskId: u8) {
+pub(crate) unsafe fn Task_TryJoinLinkGroup(taskId: u8) {
     let mut id: i32 = 0;
-    let mut data: *mut WirelessLink_Group = sWirelessLinkMain.group;
+    let data: *mut WirelessLink_Group = sWirelessLinkMain.group;
     match (*data).state {
         LG_STATE_INIT => {
             if gSpecialVar_0x8004 == LINK_GROUP_BATTLE_TOWER
@@ -1497,7 +1432,10 @@ pub(crate) unsafe extern "C" fn Task_TryJoinLinkGroup(taskId: u8) {
             {
                 gSpecialVar_0x8004 += 1;
             }
-            gPlayerCurrActivity = sLinkGroupToURoomActivity[gSpecialVar_0x8004];
+            gPlayerCurrActivity = sLinkGroupToURoomActivity
+                [*(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut()];
             SetHostRfuGameData(gPlayerCurrActivity, 0, 0);
             SetWirelessCommType1();
             OpenLink();
@@ -1509,7 +1447,9 @@ pub(crate) unsafe extern "C" fn Task_TryJoinLinkGroup(taskId: u8) {
         LG_STATE_CHOOSE_LEADER_MSG => {
             if PrintOnTextbox(
                 &raw mut (*data).textState,
-                sChooseTrainerTexts[gSpecialVar_0x8004],
+                sChooseTrainerTexts[*(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut()],
             ) != 0
             {
                 (*data).state = LG_STATE_INIT_WINDOWS;
@@ -1564,14 +1504,13 @@ pub(crate) unsafe extern "C" fn Task_TryJoinLinkGroup(taskId: u8) {
                 0 => {
                     id = ListMenu_ProcessInput((*data).listTaskId);
                     if gMain.newKeys as i32 & A_BUTTON != 0 && id != LIST_NOTHING_CHOSEN {
-                        let mut activity: u32 =
+                        let activity: u32 =
                             (*(*data).playerList).players[id].rfu.data.activity() as u32;
                         if (*(*data).playerList).players[id].groupScheduledAnim()
                             == UNION_ROOM_SPAWN_IN
                             && (*(*data).playerList).players[id].rfu.data.startedActivity() == 0
                         {
-                            let mut readyStatus: u32 =
-                                IsTryingToTradeAcrossVersionTooSoon(data, id);
+                            let readyStatus: u32 = IsTryingToTradeAcrossVersionTooSoon(data, id);
                             if readyStatus == UR_TRADE_READY {
                                 AskToJoinRfuGroup(data, id);
                                 (*data).state = LG_STATE_ASK_JOIN_GROUP;
@@ -1789,11 +1728,8 @@ pub(crate) unsafe extern "C" fn Task_TryJoinLinkGroup(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn IsTryingToTradeAcrossVersionTooSoon(
-    data: *mut WirelessLink_Group,
-    id: i32,
-) -> u32 {
-    let mut partner: *mut RfuPlayer = &raw mut (*(*data).playerList).players[id];
+unsafe fn IsTryingToTradeAcrossVersionTooSoon(data: *mut WirelessLink_Group, id: i32) -> u32 {
+    let partner: *mut RfuPlayer = &raw mut (*(*data).playerList).players[id];
     if gPlayerCurrActivity == ACTIVITY_TRADE
         && (*partner).rfu.data.compatibility.version() != VERSION_EMERALD as u16
     {
@@ -1805,9 +1741,9 @@ pub(crate) unsafe extern "C" fn IsTryingToTradeAcrossVersionTooSoon(
     } else {
         return UR_TRADE_READY;
     }
-    return UR_TRADE_PARTNER_NOT_READY;
+    UR_TRADE_PARTNER_NOT_READY
 }
-pub(crate) unsafe extern "C" fn AskToJoinRfuGroup(data: *mut WirelessLink_Group, id: i32) {
+unsafe fn AskToJoinRfuGroup(data: *mut WirelessLink_Group, id: i32) {
     (*data).leaderId = id as u8;
     LoadWirelessStatusIndicatorSpriteGfx();
     CreateWirelessStatusIndicatorSprite(0, 0);
@@ -1817,7 +1753,9 @@ pub(crate) unsafe extern "C" fn AskToJoinRfuGroup(data: *mut WirelessLink_Group,
         &raw mut (*(*data).playerList).players[(*data).leaderId],
     );
     UpdateGameData_SetActivity(
-        sLinkGroupToURoomActivity[gSpecialVar_0x8004],
+        sLinkGroupToURoomActivity[*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()],
         0,
         TRUE as u32,
     );
@@ -1836,22 +1774,21 @@ pub(crate) unsafe extern "C" fn AskToJoinRfuGroup(data: *mut WirelessLink_Group,
         ),
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateTask_ListenToWireless() -> u8 {
-    let mut taskId: u8 = 0;
+pub unsafe fn CreateTask_ListenToWireless() -> u8 {
     let mut data: *mut WirelessLink_Group = null_mut();
-    taskId = CreateTask(Some(Task_ListenToWireless), 0);
+    let taskId: u8 = CreateTask(Some(Task_ListenToWireless), 0);
     sWirelessLinkMain.group = {
-        data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Group;
+        data =
+            (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Group;
         data
     };
     (*data).state = 0;
     (*data).textState = 0;
     sGroup = data;
-    return taskId;
+    taskId
 }
-pub(crate) unsafe extern "C" fn Task_ListenToWireless(taskId: u8) {
-    let mut data: *mut WirelessLink_Group = sWirelessLinkMain.group;
+pub(crate) unsafe fn Task_ListenToWireless(taskId: u8) {
+    let data: *mut WirelessLink_Group = sWirelessLinkMain.group;
     match (*data).state {
         0 => {
             SetHostRfuGameData(0, 0, 0);
@@ -1878,7 +1815,7 @@ pub(crate) unsafe extern "C" fn Task_ListenToWireless(taskId: u8) {
             if GetNewLeaderCandidate() == 1 {
                 PlaySE(SE_PC_LOGIN);
             }
-            if gTasks[taskId].data[15] == 0xFF {
+            if task_get(taskId, 15) == 0xFF {
                 (*data).state = 10;
             }
         }
@@ -1896,7 +1833,7 @@ pub(crate) unsafe extern "C" fn Task_ListenToWireless(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn IsPartnerActivityAcceptable(activity: u32, linkGroup: u32) -> u32 {
+unsafe fn IsPartnerActivityAcceptable(activity: u32, linkGroup: u32) -> u32 {
     if linkGroup == 0xFF {
         return TRUE as u32;
     }
@@ -1909,12 +1846,9 @@ pub(crate) unsafe extern "C" fn IsPartnerActivityAcceptable(activity: u32, linkG
             bytes = bytes.at(1);
         }
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn GetGroupListTextColor(
-    data: *mut WirelessLink_Group,
-    id: u32,
-) -> u8 {
+unsafe fn GetGroupListTextColor(data: *mut WirelessLink_Group, id: u32) -> u8 {
     if (*(*data).playerList).players[id].groupScheduledAnim() == UNION_ROOM_SPAWN_IN {
         if (*(*data).playerList).players[id].rfu.data.startedActivity() != 0 {
             return UR_COLOR_WHITE;
@@ -1924,15 +1858,11 @@ pub(crate) unsafe extern "C" fn GetGroupListTextColor(
             return UR_COLOR_GREEN;
         }
     }
-    return UR_COLOR_DEFAULT;
+    UR_COLOR_DEFAULT
 }
-pub(crate) unsafe extern "C" fn ListMenuItemPrintFunc_UnionRoomGroups(
-    windowId: u8,
-    id: u32,
-    y: u8,
-) {
-    let mut data: *mut WirelessLink_Group = sWirelessLinkMain.group;
-    let mut colorId: u8 = GetGroupListTextColor(data, id);
+pub(crate) unsafe fn ListMenuItemPrintFunc_UnionRoomGroups(windowId: u8, id: u32, y: u8) {
+    let data: *mut WirelessLink_Group = sWirelessLinkMain.group;
+    let colorId: u8 = GetGroupListTextColor(data, id);
     PrintGroupMemberOnWindow(
         windowId,
         8,
@@ -1942,13 +1872,11 @@ pub(crate) unsafe extern "C" fn ListMenuItemPrintFunc_UnionRoomGroups(
         id as u8,
     );
 }
-pub(crate) unsafe extern "C" fn GetNewLeaderCandidate() -> u8 {
-    let mut data: *mut WirelessLink_Group = sWirelessLinkMain.group;
+unsafe fn GetNewLeaderCandidate() -> u8 {
+    let data: *mut WirelessLink_Group = sWirelessLinkMain.group;
     let mut ret: u8 = 0;
-    let mut i: u8 = 0;
     let mut id: i32 = 0;
-    i = 0;
-    while i < MAX_RFU_PLAYER_LIST_SIZE {
+    for i in 0..MAX_RFU_PLAYER_LIST_SIZE {
         if (*(*data).playerList).players[i].groupScheduledAnim() != UNION_ROOM_SPAWN_NONE {
             id = GetNewIncomingPlayerId(
                 &raw mut (*(*data).playerList).players[i],
@@ -1990,10 +1918,8 @@ pub(crate) unsafe extern "C" fn GetNewLeaderCandidate() -> u8 {
                 }
             }
         }
-        i += 1;
     }
-    id = 0;
-    while id < RFU_CHILD_MAX as i32 {
+    for id in 0..(RFU_CHILD_MAX as i32) {
         if TryAddIncomingPlayerToList(
             (*(*data).playerList).players.as_mut_ptr(),
             &raw mut (*(*data).incomingPlayerList).players[id],
@@ -2002,24 +1928,21 @@ pub(crate) unsafe extern "C" fn GetNewLeaderCandidate() -> u8 {
         {
             ret = 1;
         }
-        id += 1;
     }
-    return ret;
+    ret
 }
-pub(crate) unsafe extern "C" fn Task_CreateTradeMenu(taskId: u8) {
+pub(crate) unsafe fn Task_CreateTradeMenu(taskId: u8) {
     CB2_StartCreateTradeMenu();
     DestroyTask(taskId);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateTask_CreateTradeMenu() -> u8 {
-    return CreateTask(Some(Task_CreateTradeMenu), 0);
+pub unsafe fn CreateTask_CreateTradeMenu() -> u8 {
+    CreateTask(Some(Task_CreateTradeMenu), 0)
 }
-pub(crate) unsafe extern "C" fn Task_StartUnionRoomTrade(taskId: u8) {
-    let mut monId: u32 =
-        GetPartyPositionOfRegisteredMon(&raw mut sUnionRoomTrade, GetMultiplayerId());
-    match gTasks[taskId].data[0] {
+pub(crate) unsafe fn Task_StartUnionRoomTrade(taskId: u8) {
+    let monId: u32 = GetPartyPositionOfRegisteredMon(&raw mut sUnionRoomTrade, GetMultiplayerId());
+    match task_get(taskId, 0) {
         0 => {
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, 0, task_get(taskId, 0) + 1);
             SendBlock(0, &raw mut gPlayerParty[monId] as *mut c_void, 100);
         }
         1 => {
@@ -2028,7 +1951,7 @@ pub(crate) unsafe extern "C" fn Task_StartUnionRoomTrade(taskId: u8) {
                     *(gBlockRecvBuffer[GetMultiplayerId() as i32 ^ 1].as_mut_ptr() as *mut Pokemon);
                 IncrementGameStat(GAME_STAT_NUM_UNION_ROOM_BATTLES);
                 ResetBlockReceivedFlags();
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, 0, task_get(taskId, 0) + 1);
             }
         }
         2 => {
@@ -2038,75 +1961,68 @@ pub(crate) unsafe extern "C" fn Task_StartUnionRoomTrade(taskId: u8) {
                 220,
             );
             if SendBlock(0, gBlockSendBuffer.as_mut_ptr() as *mut c_void, 220) != 0 {
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, 0, task_get(taskId, 0) + 1);
             }
         }
-        3 => {
-            if GetBlockReceivedStatus() == 3 {
-                memcpy(
-                    gTradeMail.as_mut_ptr() as *mut u8,
-                    gBlockRecvBuffer[GetMultiplayerId() as i32 ^ 1].as_mut_ptr() as *mut u8,
-                    216,
-                );
-                ResetBlockReceivedFlags();
-                gSelectedTradeMonPositions[0] = monId as u8;
-                gSelectedTradeMonPositions[1] = PARTY_SIZE as u8;
-                gMain.savedCallback = Some(CB2_ReturnToField);
-                SetMainCallback2(Some(CB2_LinkTrade));
-                ResetUnionRoomTrade(&raw mut sUnionRoomTrade);
-                DestroyTask(taskId);
-            }
+        3 if GetBlockReceivedStatus() == 3 => {
+            memcpy(
+                gTradeMail.as_mut_ptr() as *mut u8,
+                gBlockRecvBuffer[GetMultiplayerId() as i32 ^ 1].as_mut_ptr() as *mut u8,
+                216,
+            );
+            ResetBlockReceivedFlags();
+            gSelectedTradeMonPositions[0] = monId as u8;
+            gSelectedTradeMonPositions[1] = PARTY_SIZE as u8;
+            gMain.savedCallback = Some(CB2_ReturnToField);
+            SetMainCallback2(Some(CB2_LinkTrade));
+            ResetUnionRoomTrade(&raw mut sUnionRoomTrade);
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_ExchangeCards(taskId: u8) {
-    match gTasks[taskId].data[0] {
+pub(crate) unsafe fn Task_ExchangeCards(taskId: u8) {
+    match task_get(taskId, 0) {
         0 => {
             if GetMultiplayerId() == 0 {
                 SendBlockRequest(BLOCK_REQ_SIZE_100);
             }
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
-        1 => {
-            if GetBlockReceivedStatus() == GetLinkPlayerCountAsBitFlags() {
-                let mut i: i32 = 0;
-                let mut recvBuff: *mut u16 = null_mut();
-                i = 0;
-                while i < GetLinkPlayerCount() as i32 {
-                    recvBuff = gBlockRecvBuffer[i].as_mut_ptr();
-                    CopyTrainerCardData(
-                        &raw mut gTrainerCards[i],
-                        recvBuff as *mut TrainerCard,
-                        gLinkPlayers[i].version as u8,
-                    );
-                    i += 1;
-                }
-                if GetLinkPlayerCount() == 2 {
-                    recvBuff = gBlockRecvBuffer[GetMultiplayerId() as i32 ^ 1].as_mut_ptr();
-                    MysteryGift_TryEnableStatsByFlagId(
-                        (*(recvBuff as *mut TrainerCard)).hasAllFrontierSymbols,
-                    );
-                } else {
-                    MysteryGift_DisableStats();
-                }
-                ResetBlockReceivedFlags();
-                DestroyTask(taskId);
+        1 if GetBlockReceivedStatus() == GetLinkPlayerCountAsBitFlags() => {
+            let mut recvBuff: *mut u16 = null_mut();
+            let mut i: i32 = 0;
+            while i < GetLinkPlayerCount() as i32 {
+                recvBuff = gBlockRecvBuffer[i].as_mut_ptr();
+                CopyTrainerCardData(
+                    &raw mut gTrainerCards[i],
+                    recvBuff as *mut TrainerCard,
+                    gLinkPlayers[i].version as u8,
+                );
+                i += 1;
             }
+            if GetLinkPlayerCount() == 2 {
+                recvBuff = gBlockRecvBuffer[GetMultiplayerId() as i32 ^ 1].as_mut_ptr();
+                MysteryGift_TryEnableStatsByFlagId(
+                    (*(recvBuff as *mut TrainerCard)).hasAllFrontierSymbols,
+                );
+            } else {
+                MysteryGift_DisableStats();
+            }
+            ResetBlockReceivedFlags();
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CB2_ShowCard() {
+pub(crate) unsafe fn CB2_ShowCard() {
     match gMain.state {
         0 => {
             CreateTask(Some(Task_ExchangeCards), 5);
             gMain.state += 1;
         }
-        1 => {
-            if FuncIsActiveTask(Some(Task_ExchangeCards)) == 0 {
-                ShowTrainerCardInLink(GetMultiplayerId() ^ 1, Some(CB2_ReturnToField));
-            }
+        1 if FuncIsActiveTask(Some(Task_ExchangeCards)) == 0 => {
+            ShowTrainerCardInLink(GetMultiplayerId() ^ 1, Some(CB2_ReturnToField));
         }
         _ => {}
     }
@@ -2116,7 +2032,7 @@ pub(crate) unsafe extern "C" fn CB2_ShowCard() {
     BuildOamBuffer();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartUnionRoomBattle(battleFlags: u16) {
+pub unsafe fn StartUnionRoomBattle(battleFlags: u16) {
     HealPlayerParty();
     SavePlayerParty();
     LoadPlayerBag();
@@ -2127,7 +2043,7 @@ pub unsafe extern "C" fn StartUnionRoomBattle(battleFlags: u16) {
     gBattleTypeFlags = battleFlags as u32;
     PlayBattleBGM();
 }
-pub(crate) unsafe extern "C" fn WarpForWirelessMinigame(linkService: u16, x: u16, y: u16) {
+unsafe fn WarpForWirelessMinigame(linkService: u16, x: u16, y: u16) {
     VarSet(VAR_CABLE_CLUB_STATE, linkService);
     SetWarpDestination(
         (*gSaveBlock1Ptr).location.mapGroup,
@@ -2146,13 +2062,7 @@ pub(crate) unsafe extern "C" fn WarpForWirelessMinigame(linkService: u16, x: u16
     );
     WarpIntoMap();
 }
-pub(crate) unsafe extern "C" fn WarpForCableClubActivity(
-    mapGroup: i8,
-    mapNum: i8,
-    x: i32,
-    y: i32,
-    linkService: u16,
-) {
+unsafe fn WarpForCableClubActivity(mapGroup: i8, mapNum: i8, x: i32, y: i32, linkService: u16) {
     gSpecialVar_0x8004 = linkService;
     VarSet(VAR_CABLE_CLUB_STATE, linkService);
     gFieldLinkPlayerCount = GetLinkPlayerCount();
@@ -2161,16 +2071,14 @@ pub(crate) unsafe extern "C" fn WarpForCableClubActivity(
     SetWarpDestination(mapGroup, mapNum, WARP_ID_NONE, x as i8, y as i8);
     WarpIntoMap();
 }
-pub(crate) unsafe extern "C" fn CB2_TransitionToCableClub() {
+pub(crate) unsafe fn CB2_TransitionToCableClub() {
     match gMain.state {
         0 => {
             CreateTask(Some(Task_ExchangeCards), 5);
             gMain.state += 1;
         }
-        1 => {
-            if FuncIsActiveTask(Some(Task_ExchangeCards)) == 0 {
-                SetMainCallback2(Some(CB2_ReturnToFieldCableClub));
-            }
+        1 if FuncIsActiveTask(Some(Task_ExchangeCards)) == 0 => {
+            SetMainCallback2(Some(CB2_ReturnToFieldCableClub));
         }
         _ => {}
     }
@@ -2179,8 +2087,8 @@ pub(crate) unsafe extern "C" fn CB2_TransitionToCableClub() {
     AnimateSprites();
     BuildOamBuffer();
 }
-pub(crate) unsafe extern "C" fn CreateTrainerCardInBuffer(dest: *mut c_void, setWonderCard: u32) {
-    let mut card: *mut TrainerCard = dest as *mut TrainerCard;
+unsafe fn CreateTrainerCardInBuffer(dest: *mut c_void, setWonderCard: u32) {
+    let card: *mut TrainerCard = dest as *mut TrainerCard;
     TrainerCard_GenerateCardForLinkPlayer(card);
     if setWonderCard != 0 {
         (*card).hasAllFrontierSymbols = GetWonderCardFlagID();
@@ -2188,7 +2096,7 @@ pub(crate) unsafe extern "C" fn CreateTrainerCardInBuffer(dest: *mut c_void, set
         (*card).hasAllFrontierSymbols = 0;
     }
 }
-pub(crate) unsafe extern "C" fn Task_StartActivity(taskId: u8) {
+pub(crate) unsafe fn Task_StartActivity(taskId: u8) {
     MysteryGift_DisableStats();
     match gPlayerCurrActivity {
         ACTIVITY_BATTLE_SINGLE
@@ -2286,9 +2194,9 @@ pub(crate) unsafe extern "C" fn Task_StartActivity(taskId: u8) {
         UnlockPlayerFieldControls();
     }
 }
-pub(crate) unsafe extern "C" fn Task_RunScriptAndFadeToActivity(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut sendBuff: *mut u16 = gBlockSendBuffer.as_mut_ptr() as *mut u16;
+pub(crate) unsafe fn Task_RunScriptAndFadeToActivity(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let sendBuff: *mut u16 = gBlockSendBuffer.as_mut_ptr() as *mut u16;
     match *data {
         0 => {
             gSpecialVar_Result = LINKUP_SUCCESS;
@@ -2304,7 +2212,6 @@ pub(crate) unsafe extern "C" fn Task_RunScriptAndFadeToActivity(taskId: u8) {
                     || sw1 == ACTIVITY_CONTEST_TOUGH;
                 let mut fall = false;
                 if sw1 == ACTIVITY_BATTLE_TOWER || sw1 == ACTIVITY_BATTLE_TOWER_OPEN {
-                    fall = true;
                     gLinkPlayers[0].linkType = LINKTYPE_BATTLE as u32;
                     gLinkPlayers[0].id = 0;
                     gLinkPlayers[1].id = 2;
@@ -2335,7 +2242,6 @@ pub(crate) unsafe extern "C" fn Task_RunScriptAndFadeToActivity(taskId: u8) {
                     DestroyTask(taskId);
                 }
                 if fall || !matched {
-                    fall = true;
                     ScriptContext_Enable();
                     *data = 1;
                     break 'l2;
@@ -2393,30 +2299,27 @@ pub(crate) unsafe extern "C" fn Task_RunScriptAndFadeToActivity(taskId: u8) {
             SetCloseLinkCallback();
             *data = 8;
         }
-        8 => {
-            if gReceivedRemoteLinkPlayers == 0 {
-                DestroyWirelessStatusIndicatorSprite();
-                ScriptContext_Enable();
-                DestroyTask(taskId);
-            }
+        8 if gReceivedRemoteLinkPlayers == 0 => {
+            DestroyWirelessStatusIndicatorSprite();
+            ScriptContext_Enable();
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CreateTask_RunScriptAndFadeToActivity() {
+unsafe fn CreateTask_RunScriptAndFadeToActivity() {
     CreateTask(Some(Task_RunScriptAndFadeToActivity), 0);
 }
-pub(crate) unsafe extern "C" fn CreateTask_StartActivity() {
-    let mut taskId: u8 = CreateTask(Some(Task_StartActivity), 0);
-    gTasks[taskId].data[0] = 0;
+unsafe fn CreateTask_StartActivity() {
+    let taskId: u8 = CreateTask(Some(Task_StartActivity), 0);
+    task_set(taskId, 0, 0);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateTask_SendMysteryGift(activity: u32) {
-    let mut taskId: u8 = 0;
+pub unsafe fn CreateTask_SendMysteryGift(activity: u32) {
     let mut data: *mut WirelessLink_Leader = null_mut();
-    taskId = CreateTask(Some(Task_SendMysteryGift), 0);
+    let taskId: u8 = CreateTask(Some(Task_SendMysteryGift), 0);
     sWirelessLinkMain.leader = {
-        data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Leader;
+        data =
+            (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Leader;
         data
     };
     (*data).state = 0;
@@ -2424,14 +2327,14 @@ pub unsafe extern "C" fn CreateTask_SendMysteryGift(activity: u32) {
     (*data).activity = activity as u8;
     gSpecialVar_Result = LINKUP_ONGOING;
 }
-pub(crate) unsafe extern "C" fn Task_SendMysteryGift(taskId: u8) {
-    let mut data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
+pub(crate) unsafe fn Task_SendMysteryGift(taskId: u8) {
+    let data: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
     let mut winTemplate: WindowTemplate = zeroed();
     let mut val: i32 = 0;
     match (*data).state {
         0 => {
             gPlayerCurrActivity = (*data).activity;
-            sPlayerActivityGroupSize = 2;
+            sPlayerActivityGroupSize.set(2);
             SetHostRfuGameData((*data).activity, 0, 0);
             SetHostRfuWonderFlags(FALSE as u32, FALSE as u32);
             SetWirelessCommType1();
@@ -2681,21 +2584,18 @@ pub(crate) unsafe extern "C" fn Task_SendMysteryGift(taskId: u8) {
             SetLinkStandbyCallback();
             (*data).state += 1;
         }
-        17 => {
-            if IsLinkTaskFinished() != 0 {
-                DestroyTask(taskId);
-            }
+        17 if IsLinkTaskFinished() != 0 => {
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateTask_LinkMysteryGiftWithFriend(activity: u32) {
-    let mut taskId: u8 = 0;
+pub unsafe fn CreateTask_LinkMysteryGiftWithFriend(activity: u32) {
     let mut data: *mut WirelessLink_Group = null_mut();
-    taskId = CreateTask(Some(Task_CardOrNewsWithFriend), 0);
+    let taskId: u8 = CreateTask(Some(Task_CardOrNewsWithFriend), 0);
     sWirelessLinkMain.group = {
-        data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Group;
+        data =
+            (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Group;
         data
     };
     sGroup = data;
@@ -2704,11 +2604,11 @@ pub unsafe extern "C" fn CreateTask_LinkMysteryGiftWithFriend(activity: u32) {
     (*data).isWonderNews = activity as u8 - ACTIVITY_WONDER_CARD;
     gSpecialVar_Result = LINKUP_ONGOING;
 }
-pub(crate) unsafe extern "C" fn Task_CardOrNewsWithFriend(taskId: u8) {
+pub(crate) unsafe fn Task_CardOrNewsWithFriend(taskId: u8) {
     let mut id: i32 = 0;
     let mut listWinTemplate: WindowTemplate = zeroed();
     let mut playerNameWinTemplate: WindowTemplate = zeroed();
-    let mut data: *mut WirelessLink_Group = sWirelessLinkMain.group;
+    let data: *mut WirelessLink_Group = sWirelessLinkMain.group;
     match (*data).state {
         0 => {
             SetHostRfuGameData((*data).isWonderNews + ACTIVITY_WONDER_CARD, 0, 0);
@@ -2764,15 +2664,13 @@ pub(crate) unsafe extern "C" fn Task_CardOrNewsWithFriend(taskId: u8) {
                     PlaySE(SE_PC_LOGIN);
                 }
                 if fall || !matched {
-                    fall = true;
                     RedrawListMenu((*data).listTaskId);
                     break 'l2;
                 }
                 if sw1 == 0 {
-                    fall = true;
                     id = ListMenu_ProcessInput((*data).listTaskId);
                     if gMain.newKeys as i32 & A_BUTTON != 0 && id != LIST_NOTHING_CHOSEN {
-                        let mut activity: u32 =
+                        let activity: u32 =
                             (*(*data).playerList).players[id].rfu.data.activity() as u32;
                         if (*(*data).playerList).players[id].groupScheduledAnim()
                             == UNION_ROOM_SPAWN_IN
@@ -2872,21 +2770,18 @@ pub(crate) unsafe extern "C" fn Task_CardOrNewsWithFriend(taskId: u8) {
             (*data).state += 1;
             SetLinkStandbyCallback();
         }
-        12 => {
-            if IsLinkTaskFinished() != 0 {
-                DestroyTask(taskId);
-            }
+        12 if IsLinkTaskFinished() != 0 => {
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateTask_LinkMysteryGiftOverWireless(activity: u32) {
-    let mut taskId: u8 = 0;
+pub unsafe fn CreateTask_LinkMysteryGiftOverWireless(activity: u32) {
     let mut data: *mut WirelessLink_Group = null_mut();
-    taskId = CreateTask(Some(Task_CardOrNewsOverWireless), 0);
+    let taskId: u8 = CreateTask(Some(Task_CardOrNewsOverWireless), 0);
     sWirelessLinkMain.group = {
-        data = gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Group;
+        data =
+            (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut WirelessLink_Group;
         data
     };
     sGroup = data;
@@ -2895,10 +2790,10 @@ pub unsafe extern "C" fn CreateTask_LinkMysteryGiftOverWireless(activity: u32) {
     (*data).isWonderNews = activity as u8 - ACTIVITY_WONDER_CARD;
     gSpecialVar_Result = LINKUP_ONGOING;
 }
-pub(crate) unsafe extern "C" fn Task_CardOrNewsOverWireless(taskId: u8) {
+pub(crate) unsafe fn Task_CardOrNewsOverWireless(taskId: u8) {
     let mut id: i32 = 0;
     let mut winTemplate: WindowTemplate = zeroed();
-    let mut data: *mut WirelessLink_Group = sWirelessLinkMain.group;
+    let data: *mut WirelessLink_Group = sWirelessLinkMain.group;
     match (*data).state {
         0 => {
             SetHostRfuGameData(0, 0, 0);
@@ -2947,14 +2842,12 @@ pub(crate) unsafe extern "C" fn Task_CardOrNewsOverWireless(taskId: u8) {
                     PlaySE(SE_PC_LOGIN);
                 }
                 if fall || !matched {
-                    fall = true;
                     if (*data).showListMenu != 0 {
                         RedrawListMenu((*data).listTaskId);
                     }
                     break 'l2;
                 }
                 if sw1 == 0 {
-                    fall = true;
                     if (*data).showListMenu != 0 {
                         id = ListMenu_ProcessInput((*data).listTaskId);
                     }
@@ -3077,21 +2970,18 @@ pub(crate) unsafe extern "C" fn Task_CardOrNewsOverWireless(taskId: u8) {
             (*data).state += 1;
             SetLinkStandbyCallback();
         }
-        14 => {
-            if IsLinkTaskFinished() != 0 {
-                DestroyTask(taskId);
-            }
+        14 if IsLinkTaskFinished() != 0 => {
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunUnionRoom() {
-    let mut uroom: *mut WirelessLink_URoom = null_mut();
+pub unsafe fn RunUnionRoom() {
     ResetHostRfuGameData();
     CreateTask(Some(Task_RunUnionRoom), 10);
     sWirelessLinkMain.uRoom = sWirelessLinkMain.uRoom;
-    uroom = AllocZeroed(620) as *mut WirelessLink_URoom;
+    let uroom: *mut WirelessLink_URoom = AllocZeroed(620) as *mut WirelessLink_URoom;
     sWirelessLinkMain.uRoom = uroom;
     sURoom = uroom;
     (*uroom).state = UR_STATE_INIT;
@@ -3101,47 +2991,48 @@ pub unsafe extern "C" fn RunUnionRoom() {
     gSpecialVar_Result = 0;
     ListMenuLoadStdPalAt(208, 1);
 }
-pub(crate) unsafe extern "C" fn ReadAsU16(ptr: *mut u8) -> u16 {
-    return (*ptr.at(1) as u16) << 8 | *ptr as u16;
+unsafe fn ReadAsU16(ptr: *mut u8) -> u16 {
+    (*ptr.at(1) as u16) << 8 | *ptr as u16
 }
-pub(crate) unsafe extern "C" fn ScheduleFieldMessageWithFollowupState(
-    nextState: u32,
-    src: *mut u8,
-) {
-    let mut uroom: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
+unsafe fn ScheduleFieldMessageWithFollowupState(nextState: u32, src: *mut u8) {
+    let uroom: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
     (*uroom).state = UR_STATE_PRINT_MSG;
     (*uroom).stateAfterPrint = nextState as u8;
     if src != gStringVar4.as_mut_ptr() {
         StringExpandPlaceholders(gStringVar4.as_mut_ptr(), src);
     }
 }
-pub(crate) unsafe extern "C" fn ScheduleFieldMessageAndExit(src: *mut u8) {
-    let mut uroom: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
+unsafe fn ScheduleFieldMessageAndExit(src: *mut u8) {
+    let uroom: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
     (*uroom).state = UR_STATE_PRINT_AND_EXIT;
     if src != gStringVar4.as_mut_ptr() {
         StringExpandPlaceholders(gStringVar4.as_mut_ptr(), src);
     }
 }
-pub(crate) unsafe extern "C" fn CopyPlayerListToBuffer(uroom: *mut WirelessLink_URoom) {
+unsafe fn CopyPlayerListToBuffer(uroom: *mut WirelessLink_URoom) {
     memcpy(
-        &raw mut gDecompressionBuffer[16128],
+        &raw mut (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())[16128],
         (*uroom).playerList as *mut u8,
         256,
     );
 }
-pub(crate) unsafe extern "C" fn CopyPlayerListFromBuffer(uroom: *mut WirelessLink_URoom) {
+unsafe fn CopyPlayerListFromBuffer(uroom: *mut WirelessLink_URoom) {
     memcpy(
         (*uroom).playerList as *mut u8,
-        &raw mut gDecompressionBuffer[16128],
+        &raw mut (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())[16128],
         256,
     );
 }
-pub(crate) unsafe extern "C" fn Task_RunUnionRoom(taskId: u8) {
+pub(crate) unsafe fn Task_RunUnionRoom(taskId: u8) {
     let mut id: u32 = 0;
     let mut input: i32 = 0;
     let mut playerGender: i32 = MALE as i32;
-    let mut uroom: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
-    let mut taskData: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let uroom: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
+    let taskData: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     'l1: {
         match (*uroom).state {
             UR_STATE_INIT => {
@@ -3295,12 +3186,10 @@ pub(crate) unsafe extern "C" fn Task_RunUnionRoom(taskId: u8) {
                             PlaySE(SE_PC_LOGIN);
                         }
                         if fall || sw2 == 2 {
-                            fall = true;
                             ScheduleUnionRoomPlayerRefresh(uroom);
                             break 'l3;
                         }
                         if sw2 == PLIST_CONTACTED {
-                            fall = true;
                             (*uroom).state = UR_STATE_PLAYER_CONTACTED_YOU;
                             StartScriptInteraction();
                             SetTradeBoardRegisteredMonInfo(0, 0, 0);
@@ -3446,7 +3335,7 @@ pub(crate) unsafe extern "C" fn Task_RunUnionRoom(taskId: u8) {
                             (*uroom).state = UR_STATE_REQUEST_DECLINED;
                         } else {
                             gPlayerCurrActivity = input as u8;
-                            sPlayerActivityGroupSize = (input as u32 >> 8) as u8;
+                            sPlayerActivityGroupSize.set((input as u32 >> 8) as u8);
                             if gPlayerCurrActivity == 65 && HasAtLeastTwoMonsOfLevel30OrLower() == 0
                             {
                                 ScheduleFieldMessageWithFollowupState(
@@ -3824,9 +3713,13 @@ pub(crate) unsafe extern "C" fn Task_RunUnionRoom(taskId: u8) {
                     } else {
                         StringCopy(
                             gStringVar1.as_mut_ptr(),
-                            gSpeciesNames[(*GetHostRfuGameData()).tradeSpecies()]
-                                .as_ptr()
-                                .cast_mut(),
+                            (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<
+                                CArray<u8, 11>,
+                                0,
+                            >>(
+                            ))[(*GetHostRfuGameData()).tradeSpecies()]
+                            .as_ptr()
+                            .cast_mut(),
                         );
                         ConvertIntToDecimalStringN(
                             gStringVar2.as_mut_ptr(),
@@ -4009,7 +3902,10 @@ pub(crate) unsafe extern "C" fn Task_RunUnionRoom(taskId: u8) {
                                     );
                                     StringCopy(
                                         gStringVar2.as_mut_ptr(),
-                                        gTypeNames[(*(*uroom).playerList).players[input]
+                                        (*(&raw const crate::data::battle_main::gTypeNames)
+                                            .cast::<CArray<CArray<u8, 7>, 18>>())[(*(*uroom)
+                                            .playerList)
+                                            .players[input]
                                             .rfu
                                             .data
                                             .tradeType()]
@@ -4028,7 +3924,10 @@ pub(crate) unsafe extern "C" fn Task_RunUnionRoom(taskId: u8) {
                                     );
                                     StringCopy(
                                         gStringVar2.as_mut_ptr(),
-                                        gTypeNames[(*(*uroom).playerList).players[input]
+                                        (*(&raw const crate::data::battle_main::gTypeNames)
+                                            .cast::<CArray<CArray<u8, 7>, 18>>())[(*(*uroom)
+                                            .playerList)
+                                            .players[input]
                                             .rfu
                                             .data
                                             .tradeType()]
@@ -4116,22 +4015,21 @@ pub(crate) unsafe extern "C" fn Task_RunUnionRoom(taskId: u8) {
                     (*uroom).state = UR_STATE_MAIN;
                 }
             }
-            UR_STATE_PRINT_MSG => {
-                if PrintOnTextbox(&raw mut (*uroom).textState, gStringVar4.as_mut_ptr()) != 0 {
-                    (*uroom).state = (*uroom).stateAfterPrint;
-                }
+            UR_STATE_PRINT_MSG
+                if PrintOnTextbox(&raw mut (*uroom).textState, gStringVar4.as_mut_ptr()) != 0 =>
+            {
+                (*uroom).state = (*uroom).stateAfterPrint;
             }
             _ => {}
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetUsingUnionRoomStartMenu() {
+pub unsafe fn SetUsingUnionRoomStartMenu() {
     if InUnionRoom() == TRUE as u32 {
         gSpecialVar_Result = UR_INTERACT_START_MENU;
     }
 }
-pub(crate) unsafe extern "C" fn ReceiveUnionRoomActivityPacket(data: *mut WirelessLink_URoom) {
+unsafe fn ReceiveUnionRoomActivityPacket(data: *mut WirelessLink_URoom) {
     if gRecvCmds[1][1] != 0 && gRecvCmds[1][0] as i32 & RFUCMD_MASK == RFUCMD_SEND_PACKET {
         (*data).recvActivityRequest[0] = gRecvCmds[1][1];
         if gRecvCmds[1][1] == 68 {
@@ -4140,11 +4038,9 @@ pub(crate) unsafe extern "C" fn ReceiveUnionRoomActivityPacket(data: *mut Wirele
         }
     }
 }
-pub(crate) unsafe extern "C" fn HandleContactFromOtherPlayer(
-    uroom: *mut WirelessLink_URoom,
-) -> u32 {
+unsafe fn HandleContactFromOtherPlayer(uroom: *mut WirelessLink_URoom) -> u32 {
     if (*uroom).recvActivityRequest[0] != 0 {
-        let mut id: i32 = GetChatLeaderActionRequestMessage(
+        let id: i32 = GetChatLeaderActionRequestMessage(
             gStringVar4.as_mut_ptr(),
             gLinkPlayers[1].gender as u32,
             &raw mut (*uroom).recvActivityRequest[0],
@@ -4162,10 +4058,10 @@ pub(crate) unsafe extern "C" fn HandleContactFromOtherPlayer(
             return FALSE as u32;
         }
     }
-    return TRUE as u32;
+    TRUE as u32
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitUnionRoom() {
+pub unsafe fn InitUnionRoom() {
     let mut data: *mut WirelessLink_URoom = null_mut();
     sUnionRoomPlayerName[0] = EOS;
     CreateTask(Some(Task_InitUnionRoom), 0);
@@ -4181,10 +4077,9 @@ pub unsafe extern "C" fn InitUnionRoom() {
     (*data).unreadPlayerId = 0;
     sUnionRoomPlayerName[0] = EOS;
 }
-pub(crate) unsafe extern "C" fn Task_InitUnionRoom(taskId: u8) {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn Task_InitUnionRoom(taskId: u8) {
     let mut text: CArray<u8, 32> = zeroed();
-    let mut data: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
+    let data: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
     match (*data).state {
         0 => {
             (*data).state = 1;
@@ -4219,8 +4114,7 @@ pub(crate) unsafe extern "C" fn Task_InitUnionRoom(taskId: u8) {
         3 => match HandlePlayerListUpdate() {
             PLIST_NEW_PLAYER | 2 => {
                 if sUnionRoomPlayerName[0] == EOS {
-                    i = 0;
-                    while i < MAX_UNION_ROOM_LEADERS {
+                    for i in 0..MAX_UNION_ROOM_LEADERS {
                         if (*(*data).playerList).players[i].groupScheduledAnim()
                             == UNION_ROOM_SPAWN_IN
                         {
@@ -4244,7 +4138,6 @@ pub(crate) unsafe extern "C" fn Task_InitUnionRoom(taskId: u8) {
                                 break;
                             }
                         }
-                        i += 1;
                     }
                 }
             }
@@ -4265,7 +4158,7 @@ pub(crate) unsafe extern "C" fn Task_InitUnionRoom(taskId: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferUnionRoomPlayerName() -> u16 {
+pub unsafe fn BufferUnionRoomPlayerName() -> u16 {
     if sUnionRoomPlayerName[0] != EOS {
         StringCopy(gStringVar1.as_mut_ptr(), sUnionRoomPlayerName.as_mut_ptr());
         sUnionRoomPlayerName[0] = EOS;
@@ -4275,15 +4168,13 @@ pub unsafe extern "C" fn BufferUnionRoomPlayerName() -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn HandlePlayerListUpdate() -> u8 {
-    let mut i: i32 = 0;
-    let mut j: u8 = 0;
-    let mut data: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
+unsafe fn HandlePlayerListUpdate() -> u8 {
+    let data: *mut WirelessLink_URoom = sWirelessLinkMain.uRoom;
     let mut retVal: i32 = PLIST_NONE;
-    i = 0;
+    let mut i: i32 = 0;
     while i < RFU_CHILD_MAX as i32 {
         if ArePlayersDifferent(
             &raw mut (*(*data).incomingParentList).players[i].rfu,
@@ -4298,8 +4189,7 @@ pub(crate) unsafe extern "C" fn HandlePlayerListUpdate() -> u8 {
         }
         i += 1;
     }
-    j = 0;
-    while j < MAX_UNION_ROOM_LEADERS as u8 {
+    for j in 0..(MAX_UNION_ROOM_LEADERS as u8) {
         if (*(*data).playerList).players[j].groupScheduledAnim() != UNION_ROOM_SPAWN_NONE {
             i = GetNewIncomingPlayerId(
                 &raw mut (*(*data).playerList).players[j],
@@ -4343,10 +4233,8 @@ pub(crate) unsafe extern "C" fn HandlePlayerListUpdate() -> u8 {
                 }
             }
         }
-        j += 1;
     }
-    i = 0;
-    while i < RFU_CHILD_MAX as i32 {
+    for i in 0..(RFU_CHILD_MAX as i32) {
         if TryAddIncomingPlayerToList(
             &raw mut (*(*data).playerList).players[0],
             &raw mut (*(*data).incomingChildList).players[i],
@@ -4355,22 +4243,18 @@ pub(crate) unsafe extern "C" fn HandlePlayerListUpdate() -> u8 {
         {
             retVal = PLIST_NEW_PLAYER as i32;
         }
-        i += 1;
     }
-    return retVal as u8;
+    retVal as u8
 }
-pub(crate) unsafe extern "C" fn Task_SearchForChildOrParent(taskId: u8) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+pub(crate) unsafe fn Task_SearchForChildOrParent(taskId: u8) {
     let mut rfu: RfuPlayerData = zeroed();
-    let mut list: *mut *mut RfuIncomingPlayerList =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuIncomingPlayerList;
+    let list: *mut *mut RfuIncomingPlayerList = (*gTasks.as_ptr())[taskId].data.as_mut_ptr()
+        as *mut c_void
+        as *mut *mut RfuIncomingPlayerList;
     let mut isParent: u8 = 0;
-    i = 0;
-    while i < RFU_CHILD_MAX as i32 {
+    for i in 0..(RFU_CHILD_MAX as i32) {
         isParent = Rfu_GetCompatiblePlayerData(&raw mut rfu.data, rfu.name.as_mut_ptr(), i as u8);
-        if IsPartnerActivityAcceptable(rfu.data.activity() as u32, gTasks[taskId].data[4] as u32)
-            == 0
+        if IsPartnerActivityAcceptable(rfu.data.activity() as u32, task_get(taskId, 4) as u32) == 0
         {
             rfu = *sUnionRoomPlayer_DummyRfu;
         }
@@ -4378,13 +4262,11 @@ pub(crate) unsafe extern "C" fn Task_SearchForChildOrParent(taskId: u8) {
             rfu = *sUnionRoomPlayer_DummyRfu;
         }
         if isParent == 0 {
-            j = 0;
-            while j < i {
+            for j in 0..i {
                 if ArePlayersDifferent(&raw mut (*(*list.at(1))).players[j].rfu, &raw mut rfu) == 0
                 {
                     rfu = *sUnionRoomPlayer_DummyRfu;
                 }
-                j += 1;
             }
             (*(*list.at(1))).players[i].rfu = rfu;
             (*(*list.at(1))).players[i].set_active(ArePlayersDifferent(
@@ -4398,29 +4280,27 @@ pub(crate) unsafe extern "C" fn Task_SearchForChildOrParent(taskId: u8) {
                 (&raw const *sUnionRoomPlayer_DummyRfu).cast_mut(),
             ));
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateTask_SearchForChildOrParent(
+unsafe fn CreateTask_SearchForChildOrParent(
     parentList: *mut RfuIncomingPlayerList,
     childList: *mut RfuIncomingPlayerList,
     linkGroup: u32,
 ) -> u8 {
-    let mut taskId: u8 = CreateTask(Some(Task_SearchForChildOrParent), 0);
-    let mut data: *mut *mut RfuIncomingPlayerList =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuIncomingPlayerList;
+    let taskId: u8 = CreateTask(Some(Task_SearchForChildOrParent), 0);
+    let data: *mut *mut RfuIncomingPlayerList = (*gTasks.as_ptr())[taskId].data.as_mut_ptr()
+        as *mut c_void
+        as *mut *mut RfuIncomingPlayerList;
     *data = parentList;
     *data.at(1) = childList;
-    gTasks[taskId].data[4] = linkGroup as i16;
-    return taskId;
+    task_set(taskId, 4, linkGroup as i16);
+    taskId
 }
-pub(crate) unsafe extern "C" fn Task_ListenForCompatiblePartners(taskId: u8) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    let mut list: *mut *mut RfuIncomingPlayerList =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuIncomingPlayerList;
-    i = 0;
-    while i < RFU_CHILD_MAX as i32 {
+pub(crate) unsafe fn Task_ListenForCompatiblePartners(taskId: u8) {
+    let list: *mut *mut RfuIncomingPlayerList = (*gTasks.as_ptr())[taskId].data.as_mut_ptr()
+        as *mut c_void
+        as *mut *mut RfuIncomingPlayerList;
+    for i in 0..(RFU_CHILD_MAX as i32) {
         Rfu_GetCompatiblePlayerData(
             &raw mut (*(*list)).players[i].rfu.data,
             (*(*list)).players[i].rfu.name.as_mut_ptr(),
@@ -4428,13 +4308,12 @@ pub(crate) unsafe extern "C" fn Task_ListenForCompatiblePartners(taskId: u8) {
         );
         if IsPartnerActivityAcceptable(
             (*(*list)).players[i].rfu.data.activity() as u32,
-            gTasks[taskId].data[2] as u32,
+            task_get(taskId, 2) as u32,
         ) == 0
         {
             (*(*list)).players[i].rfu = *sUnionRoomPlayer_DummyRfu;
         }
-        j = 0;
-        while j < i {
+        for j in 0..i {
             if ArePlayersDifferent(
                 &raw mut (*(*list)).players[j].rfu,
                 &raw mut (*(*list)).players[i].rfu,
@@ -4442,19 +4321,14 @@ pub(crate) unsafe extern "C" fn Task_ListenForCompatiblePartners(taskId: u8) {
             {
                 (*(*list)).players[i].rfu = *sUnionRoomPlayer_DummyRfu;
             }
-            j += 1;
         }
         (*(*list)).players[i].set_active(ArePlayersDifferent(
             &raw mut (*(*list)).players[i].rfu,
             (&raw const *sUnionRoomPlayer_DummyRfu).cast_mut(),
         ));
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn HasWonderCardOrNewsByLinkGroup(
-    data: *mut RfuGameData,
-    linkGroup: i16,
-) -> u32 {
+unsafe fn HasWonderCardOrNewsByLinkGroup(data: *mut RfuGameData, linkGroup: i16) -> u32 {
     if linkGroup == LINK_GROUP_WONDER_CARD as i16 {
         if (*data).compatibility.hasCard() == 0 {
             return FALSE as u32;
@@ -4472,15 +4346,14 @@ pub(crate) unsafe extern "C" fn HasWonderCardOrNewsByLinkGroup(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn Task_ListenForWonderDistributor(taskId: u8) {
-    let mut i: i32 = 0;
-    let mut list: *mut *mut RfuIncomingPlayerList =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuIncomingPlayerList;
-    i = 0;
-    while i < RFU_CHILD_MAX as i32 {
+pub(crate) unsafe fn Task_ListenForWonderDistributor(taskId: u8) {
+    let list: *mut *mut RfuIncomingPlayerList = (*gTasks.as_ptr())[taskId].data.as_mut_ptr()
+        as *mut c_void
+        as *mut *mut RfuIncomingPlayerList;
+    for i in 0..(RFU_CHILD_MAX as i32) {
         if Rfu_GetWonderDistributorPlayerData(
             &raw mut (*(*list)).players[i].rfu.data,
             (*(*list)).players[i].rfu.name.as_mut_ptr(),
@@ -4489,46 +4362,47 @@ pub(crate) unsafe extern "C" fn Task_ListenForWonderDistributor(taskId: u8) {
         {
             HasWonderCardOrNewsByLinkGroup(
                 &raw mut (*(*list)).players[i].rfu.data,
-                gTasks[taskId].data[2],
+                task_get(taskId, 2),
             );
         }
         (*(*list)).players[i].set_active(ArePlayersDifferent(
             &raw mut (*(*list)).players[i].rfu,
             (&raw const *sUnionRoomPlayer_DummyRfu).cast_mut(),
         ));
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateTask_ListenForCompatiblePartners(
+unsafe fn CreateTask_ListenForCompatiblePartners(
     list: *mut RfuIncomingPlayerList,
     linkGroup: u32,
 ) -> u8 {
-    let mut taskId: u8 = CreateTask(Some(Task_ListenForCompatiblePartners), 0);
-    let mut oldList: *mut *mut RfuIncomingPlayerList =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuIncomingPlayerList;
+    let taskId: u8 = CreateTask(Some(Task_ListenForCompatiblePartners), 0);
+    let oldList: *mut *mut RfuIncomingPlayerList = (*gTasks.as_ptr())[taskId].data.as_mut_ptr()
+        as *mut c_void
+        as *mut *mut RfuIncomingPlayerList;
     *oldList = list;
-    gTasks[taskId].data[2] = linkGroup as i16;
-    return taskId;
+    task_set(taskId, 2, linkGroup as i16);
+    taskId
 }
-pub(crate) unsafe extern "C" fn CreateTask_ListenForWonderDistributor(
+unsafe fn CreateTask_ListenForWonderDistributor(
     list: *mut RfuIncomingPlayerList,
     linkGroup: u32,
 ) -> u8 {
-    let mut taskId: u8 = CreateTask(Some(Task_ListenForWonderDistributor), 0);
-    let mut oldList: *mut *mut RfuIncomingPlayerList =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuIncomingPlayerList;
+    let taskId: u8 = CreateTask(Some(Task_ListenForWonderDistributor), 0);
+    let oldList: *mut *mut RfuIncomingPlayerList = (*gTasks.as_ptr())[taskId].data.as_mut_ptr()
+        as *mut c_void
+        as *mut *mut RfuIncomingPlayerList;
     *oldList = list;
-    gTasks[taskId].data[2] = linkGroup as i16;
-    return taskId;
+    task_set(taskId, 2, linkGroup as i16);
+    taskId
 }
-pub(crate) unsafe extern "C" fn UR_PrintFieldMessage(src: *mut u8) -> u32 {
+unsafe fn UR_PrintFieldMessage(src: *mut u8) -> u32 {
     LoadMessageBoxAndBorderGfx();
     DrawDialogueFrame(0, TRUE);
     StringExpandPlaceholders(gStringVar4.as_mut_ptr(), src);
     AddTextPrinterWithCustomSpeedForMessage(FALSE, 1);
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn UR_RunTextPrinters() -> u32 {
+unsafe fn UR_RunTextPrinters() -> u32 {
     if RunTextPrintersAndIsPrinter0Active() == 0 {
         return TRUE as u32;
     } else {
@@ -4536,10 +4410,10 @@ pub(crate) unsafe extern "C" fn UR_RunTextPrinters() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn PrintOnTextbox(textState: *mut u8, str: *mut u8) -> u8 {
+unsafe fn PrintOnTextbox(textState: *mut u8, str: *mut u8) -> u8 {
     match *textState {
         0 => {
             LoadMessageBoxAndBorderGfx();
@@ -4548,17 +4422,15 @@ pub(crate) unsafe extern "C" fn PrintOnTextbox(textState: *mut u8, str: *mut u8)
             AddTextPrinterForMessage_2(TRUE);
             *textState += 1;
         }
-        1 => {
-            if RunTextPrintersAndIsPrinter0Active() == 0 {
-                *textState = 0;
-                return TRUE;
-            }
+        1 if RunTextPrintersAndIsPrinter0Active() == 0 => {
+            *textState = 0;
+            return TRUE;
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn UnionRoomHandleYesNo(state: *mut u8, noDraw: u32) -> i8 {
+unsafe fn UnionRoomHandleYesNo(state: *mut u8, noDraw: u32) -> i8 {
     let mut input: i8 = 0;
     match *state {
         0 => {
@@ -4582,10 +4454,10 @@ pub(crate) unsafe extern "C" fn UnionRoomHandleYesNo(state: *mut u8, noDraw: u32
         }
         _ => {}
     }
-    return MENU_NOTHING_CHOSEN;
+    MENU_NOTHING_CHOSEN
 }
-pub(crate) unsafe extern "C" fn CreateTradeBoardWindow(template: *mut WindowTemplate) -> u8 {
-    let mut windowId: u8 = AddWindow(template) as u8;
+unsafe fn CreateTradeBoardWindow(template: *mut WindowTemplate) -> u8 {
+    let windowId: u8 = AddWindow(template) as u8;
     DrawStdWindowFrame(windowId, FALSE);
     FillWindowPixelBuffer(windowId, 255);
     PrintUnionRoomText(
@@ -4598,12 +4470,12 @@ pub(crate) unsafe extern "C" fn CreateTradeBoardWindow(template: *mut WindowTemp
     );
     CopyWindowToVram(windowId, COPYWIN_GFX);
     PutWindowTilemap(windowId);
-    return windowId;
+    windowId
 }
-pub(crate) unsafe extern "C" fn DeleteTradeBoardWindow(windowId: u8) {
+unsafe fn DeleteTradeBoardWindow(windowId: u8) {
     RemoveWindow(windowId);
 }
-pub(crate) unsafe extern "C" fn ListMenuHandler_AllItemsAvailable(
+unsafe fn ListMenuHandler_AllItemsAvailable(
     state: *mut u8,
     windowId: *mut u8,
     listMenuId: *mut u8,
@@ -4655,9 +4527,9 @@ pub(crate) unsafe extern "C" fn ListMenuHandler_AllItemsAvailable(
         }
         _ => {}
     }
-    return LIST_NOTHING_CHOSEN;
+    LIST_NOTHING_CHOSEN
 }
-pub(crate) unsafe extern "C" fn TradeBoardMenuHandler(
+unsafe fn TradeBoardMenuHandler(
     state: *mut u8,
     mainWindowId: *mut u8,
     listMenuId: *mut u8,
@@ -4708,23 +4580,16 @@ pub(crate) unsafe extern "C" fn TradeBoardMenuHandler(
         }
         _ => {}
     }
-    return LIST_NOTHING_CHOSEN;
+    LIST_NOTHING_CHOSEN
 }
-pub(crate) unsafe extern "C" fn UR_ClearBg0() {
+unsafe fn UR_ClearBg0() {
     FillBgTilemapBufferRect(0, 0, 0, 0, 32, 32, 0);
     CopyBgTilemapBufferToVram(0);
 }
-pub(crate) unsafe extern "C" fn JoinGroup_EnableScriptContexts() {
+unsafe fn JoinGroup_EnableScriptContexts() {
     ScriptContext_Enable();
 }
-pub(crate) unsafe extern "C" fn PrintUnionRoomText(
-    windowId: u8,
-    fontId: u8,
-    str: *mut u8,
-    x: u8,
-    y: u8,
-    colorIdx: u8,
-) {
+unsafe fn PrintUnionRoomText(windowId: u8, fontId: u8, str: *mut u8, x: u8, y: u8, colorIdx: u8) {
     let mut printerTemplate: TextPrinterTemplate = zeroed();
     printerTemplate.currentChar = str;
     printerTemplate.windowId = windowId;
@@ -4734,7 +4599,10 @@ pub(crate) unsafe extern "C" fn PrintUnionRoomText(
     printerTemplate.currentX = x;
     printerTemplate.currentY = y;
     printerTemplate.set_unk(0);
-    gTextFlags.set_useAlternateDownArrow(FALSE);
+    (*(&raw const crate::text::gTextFlags)
+        .cast::<TextFlags>()
+        .cast_mut())
+    .set_useAlternateDownArrow(FALSE);
     match colorIdx {
         UR_COLOR_DEFAULT => {
             printerTemplate.letterSpacing = 0;
@@ -4789,70 +4657,47 @@ pub(crate) unsafe extern "C" fn PrintUnionRoomText(
     }
     AddTextPrinter(&raw mut printerTemplate, TEXT_SKIP_DRAW, None);
 }
-pub(crate) unsafe extern "C" fn ClearRfuPlayerList(mut players: *mut RfuPlayer, count: u8) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < count as i32 {
+unsafe fn ClearRfuPlayerList(players: *mut RfuPlayer, count: u8) {
+    for i in 0..(count as i32) {
         (*players.at(i)).rfu = *sUnionRoomPlayer_DummyRfu;
         (*players.at(i)).timeoutCounter = 255;
         (*players.at(i)).set_groupScheduledAnim(UNION_ROOM_SPAWN_NONE);
         (*players.at(i)).set_useRedText(FALSE);
         (*players.at(i)).newPlayerCountdown = 0;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ClearIncomingPlayerList(
-    list: *mut RfuIncomingPlayerList,
-    count: u8,
-) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < RFU_CHILD_MAX as i32 {
+unsafe fn ClearIncomingPlayerList(list: *mut RfuIncomingPlayerList, count: u8) {
+    for i in 0..(RFU_CHILD_MAX as i32) {
         (*list).players[i].rfu = *sUnionRoomPlayer_DummyRfu;
         (*list).players[i].set_active(FALSE);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ArePlayersDifferent(
-    player1: *mut RfuPlayerData,
-    player2: *mut RfuPlayerData,
-) -> u8 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 2 {
+unsafe fn ArePlayersDifferent(player1: *mut RfuPlayerData, player2: *mut RfuPlayerData) -> u8 {
+    for i in 0..2i32 {
         if (*player1).data.compatibility.playerTrainerId[i]
             != (*player2).data.compatibility.playerTrainerId[i]
         {
             return TRUE;
         }
-        i += 1;
     }
-    i = 0;
-    while i < 8 {
+    for i in 0..8i32 {
         if (*player1).name[i] != (*player2).name[i] {
             return TRUE;
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn ArePlayerDataDifferent(
-    player1: *mut RfuPlayerData,
-    player2: *mut RfuPlayerData,
-) -> u32 {
-    let mut i: i32 = 0;
+unsafe fn ArePlayerDataDifferent(player1: *mut RfuPlayerData, player2: *mut RfuPlayerData) -> u32 {
     if (*player1).data.activity() != (*player2).data.activity() {
         return TRUE as u32;
     }
     if (*player1).data.startedActivity() != (*player2).data.startedActivity() {
         return TRUE as u32;
     }
-    i = 0;
-    while i < RFU_CHILD_MAX as i32 {
+    for i in 0..(RFU_CHILD_MAX as i32) {
         if (*player1).data.partnerInfo[i] != (*player2).data.partnerInfo[i] {
             return TRUE as u32;
         }
-        i += 1;
     }
     if (*player1).data.tradeSpecies() != (*player2).data.tradeSpecies() {
         return TRUE as u32;
@@ -4860,16 +4705,14 @@ pub(crate) unsafe extern "C" fn ArePlayerDataDifferent(
     if (*player1).data.tradeType() != (*player2).data.tradeType() {
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn GetNewIncomingPlayerId(
+unsafe fn GetNewIncomingPlayerId(
     player: *mut RfuPlayer,
-    mut incomingPlayer: *mut RfuIncomingPlayer,
+    incomingPlayer: *mut RfuIncomingPlayer,
 ) -> u32 {
     let mut result: u8 = 0xFF;
-    let mut i: i32 = 0;
-    i = 0;
-    while i < RFU_CHILD_MAX as i32 {
+    for i in 0..(RFU_CHILD_MAX as i32) {
         if (*incomingPlayer.at(i)).active() != 0
             && ArePlayersDifferent(&raw mut (*player).rfu, &raw mut (*incomingPlayer.at(i)).rfu)
                 == 0
@@ -4877,19 +4720,16 @@ pub(crate) unsafe extern "C" fn GetNewIncomingPlayerId(
             result = i as u8;
             (*incomingPlayer.at(i)).set_active(FALSE);
         }
-        i += 1;
     }
-    return result as u32;
+    result as u32
 }
-pub(crate) unsafe extern "C" fn TryAddIncomingPlayerToList(
-    mut players: *mut RfuPlayer,
+unsafe fn TryAddIncomingPlayerToList(
+    players: *mut RfuPlayer,
     incomingPlayer: *mut RfuIncomingPlayer,
     max: u8,
 ) -> u8 {
-    let mut i: i32 = 0;
     if (*incomingPlayer).active() != 0 {
-        i = 0;
-        while i < max as i32 {
+        for i in 0..(max as i32) {
             if (*players.at(i)).groupScheduledAnim() == UNION_ROOM_SPAWN_NONE {
                 (*players.at(i)).rfu = (*incomingPlayer).rfu;
                 (*players.at(i)).timeoutCounter = 0;
@@ -4898,12 +4738,11 @@ pub(crate) unsafe extern "C" fn TryAddIncomingPlayerToList(
                 (*incomingPlayer).set_active(FALSE);
                 return i as u8;
             }
-            i += 1;
         }
     }
-    return 0xFF;
+    0xFF
 }
-pub(crate) unsafe extern "C" fn PrintGroupMemberOnWindow(
+unsafe fn PrintGroupMemberOnWindow(
     windowId: u8,
     mut x: u8,
     y: u8,
@@ -4961,7 +4800,7 @@ pub(crate) unsafe extern "C" fn PrintGroupMemberOnWindow(
         );
     }
 }
-pub(crate) unsafe extern "C" fn PrintGroupCandidateOnWindow(
+unsafe fn PrintGroupCandidateOnWindow(
     windowId: u8,
     x: u8,
     y: u8,
@@ -4999,7 +4838,7 @@ pub(crate) unsafe extern "C" fn PrintGroupCandidateOnWindow(
         );
     }
 }
-pub(crate) unsafe extern "C" fn IsPlayerFacingTradingBoard() -> u32 {
+unsafe fn IsPlayerFacingTradingBoard() -> u32 {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
     GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
@@ -5014,9 +4853,9 @@ pub(crate) unsafe extern "C" fn IsPlayerFacingTradingBoard() -> u32 {
     {
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn GetResponseIdx_InviteToURoomActivity(activity: i32) -> u32 {
+fn GetResponseIdx_InviteToURoomActivity(activity: i32) -> u32 {
     match activity {
         5 => {
             return 1;
@@ -5033,15 +4872,13 @@ pub(crate) unsafe extern "C" fn GetResponseIdx_InviteToURoomActivity(activity: i
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ConvPartnerUnameAndGetWhetherMetAlready(
-    player: *mut RfuPlayer,
-) -> u32 {
+unsafe fn ConvPartnerUnameAndGetWhetherMetAlready(player: *mut RfuPlayer) -> u32 {
     let mut name: CArray<u8, 30> = zeroed();
     CopyAndTranslatePlayerName(name.as_mut_ptr(), player);
-    return PlayerHasMetTrainerBefore(
+    PlayerHasMetTrainerBefore(
         ReadAsU16(
             (*player)
                 .rfu
@@ -5051,16 +4888,16 @@ pub(crate) unsafe extern "C" fn ConvPartnerUnameAndGetWhetherMetAlready(
                 .as_mut_ptr(),
         ),
         name.as_mut_ptr(),
-    );
+    )
 }
-pub(crate) unsafe extern "C" fn UnionRoomGetPlayerInteractionResponse(
+unsafe fn UnionRoomGetPlayerInteractionResponse(
     list: *mut RfuPlayerList,
     overrideGender: u8,
     playerIdx: u8,
     mut playerGender: u32,
 ) -> i32 {
     let mut metBefore: u32 = 0;
-    let mut player: *mut RfuPlayer = &raw mut (*list).players[playerIdx];
+    let player: *mut RfuPlayer = &raw mut (*list).players[playerIdx];
     if (*player).rfu.data.startedActivity() == 0 && overrideGender == 0 {
         CopyAndTranslatePlayerName(gStringVar1.as_mut_ptr(), player);
         metBefore = PlayerHasMetTrainerBefore(
@@ -5128,11 +4965,11 @@ pub(crate) unsafe extern "C" fn UnionRoomGetPlayerInteractionResponse(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ItemPrintFunc_EmptyList(windowId: u8, itemId: u32, y: u8) {}
-pub(crate) unsafe extern "C" fn TradeBoardPrintItemInfo(
+pub(crate) fn ItemPrintFunc_EmptyList(windowId: u8, itemId: u32, y: u8) {}
+unsafe fn TradeBoardPrintItemInfo(
     windowId: u8,
     y: u8,
     data: *mut RfuGameData,
@@ -5140,9 +4977,9 @@ pub(crate) unsafe extern "C" fn TradeBoardPrintItemInfo(
     colorIdx: u8,
 ) {
     let mut levelStr: CArray<u8, 4> = zeroed();
-    let mut species: u16 = (*data).tradeSpecies();
-    let mut r#type: u8 = (*data).tradeType() as u8;
-    let mut level: u8 = (*data).tradeLevel();
+    let species: u16 = (*data).tradeSpecies();
+    let r#type: u8 = (*data).tradeType() as u8;
+    let level: u8 = (*data).tradeLevel();
     PrintUnionRoomText(windowId, FONT_NORMAL, playerName, 8, y, colorIdx);
     if species == SPECIES_EGG as u16 {
         PrintUnionRoomText(
@@ -5158,7 +4995,10 @@ pub(crate) unsafe extern "C" fn TradeBoardPrintItemInfo(
         PrintUnionRoomText(
             windowId,
             FONT_NORMAL,
-            gSpeciesNames[species].as_ptr().cast_mut(),
+            (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())[species]
+                .as_ptr()
+                .cast_mut(),
             118,
             y,
             colorIdx,
@@ -5179,10 +5019,9 @@ pub(crate) unsafe extern "C" fn TradeBoardPrintItemInfo(
         );
     }
 }
-pub(crate) unsafe extern "C" fn TradeBoardListMenuItemPrintFunc(windowId: u8, itemId: u32, y: u8) {
-    let mut leader: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
+pub(crate) unsafe fn TradeBoardListMenuItemPrintFunc(windowId: u8, itemId: u32, y: u8) {
+    let leader: *mut WirelessLink_Leader = sWirelessLinkMain.leader;
     let mut gameData: *mut RfuGameData = null_mut();
-    let mut i: i32 = 0;
     let mut j: i32 = 0;
     let mut playerName: CArray<u8, 9> = zeroed();
     if itemId == LIST_HEADER as u32 && y == (*sTradeBoardListMenuTemplate).upText_Y() {
@@ -5198,8 +5037,7 @@ pub(crate) unsafe extern "C" fn TradeBoardListMenuItemPrintFunc(windowId: u8, it
         }
     } else {
         j = 0;
-        i = 0;
-        while i < MAX_UNION_ROOM_LEADERS {
+        for i in 0..MAX_UNION_ROOM_LEADERS {
             if (*(*leader).playerList).players[i].groupScheduledAnim() == UNION_ROOM_SPAWN_IN
                 && (*(*leader).playerList).players[i].rfu.data.tradeSpecies() != SPECIES_NONE
             {
@@ -5219,18 +5057,12 @@ pub(crate) unsafe extern "C" fn TradeBoardListMenuItemPrintFunc(windowId: u8, it
                 );
                 break;
             }
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn GetIndexOfNthTradeBoardOffer(
-    players: *mut RfuPlayer,
-    n: i32,
-) -> i32 {
-    let mut i: i32 = 0;
+unsafe fn GetIndexOfNthTradeBoardOffer(players: *mut RfuPlayer, n: i32) -> i32 {
     let mut j: i32 = 0;
-    i = 0;
-    while i < MAX_UNION_ROOM_LEADERS {
+    for i in 0..MAX_UNION_ROOM_LEADERS {
         if (*players.at(i)).groupScheduledAnim() == UNION_ROOM_SPAWN_IN
             && (*players.at(i)).rfu.data.tradeSpecies() != SPECIES_NONE
         {
@@ -5239,20 +5071,13 @@ pub(crate) unsafe extern "C" fn GetIndexOfNthTradeBoardOffer(
         if j == n + 1 {
             return i;
         }
-        i += 1;
     }
-    return -1;
+    -1
 }
-pub(crate) unsafe extern "C" fn GetUnionRoomPlayerGender(
-    playerIdx: i32,
-    list: *mut RfuPlayerList,
-) -> i32 {
-    return (*list).players[playerIdx].rfu.data.playerGender() as i32;
+unsafe fn GetUnionRoomPlayerGender(playerIdx: i32, list: *mut RfuPlayerList) -> i32 {
+    (*list).players[playerIdx].rfu.data.playerGender() as i32
 }
-pub(crate) unsafe extern "C" fn IsRequestedTradeInPlayerParty(
-    r#type: u32,
-    mut species: u32,
-) -> i32 {
+unsafe fn IsRequestedTradeInPlayerParty(r#type: u32, mut species: u32) -> i32 {
     let mut i: i32 = 0;
     if species == SPECIES_EGG {
         i = 0;
@@ -5268,8 +5093,14 @@ pub(crate) unsafe extern "C" fn IsRequestedTradeInPlayerParty(
         i = 0;
         while i < gPlayerPartyCount as i32 {
             species = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG);
-            if gSpeciesInfo[species].types[0] as u32 == r#type
-                || gSpeciesInfo[species].types[1] as u32 == r#type
+            if (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+                [species]
+                .types[0] as u32
+                == r#type
+                || (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                    .cast::<CArray<SpeciesInfo, 0>>())[species]
+                    .types[1] as u32
+                    == r#type
             {
                 return UR_TRADE_MATCH;
             }
@@ -5279,14 +5110,10 @@ pub(crate) unsafe extern "C" fn IsRequestedTradeInPlayerParty(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn GetURoomActivityRejectMsg(
-    dst: *mut u8,
-    acitivty: i32,
-    playerGender: u32,
-) {
+unsafe fn GetURoomActivityRejectMsg(dst: *mut u8, acitivty: i32, playerGender: u32) {
     match acitivty {
         65 => {
             StringExpandPlaceholders(dst, sBattleDeclinedTexts[playerGender]);
@@ -5303,9 +5130,9 @@ pub(crate) unsafe extern "C" fn GetURoomActivityRejectMsg(
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn GetURoomActivityStartMsg(dst: *mut u8, acitivty: u8) {
-    let mut mpId: u8 = GetMultiplayerId();
-    let mut gender: u8 = gLinkPlayers[mpId as i32 ^ 1].gender;
+unsafe fn GetURoomActivityStartMsg(dst: *mut u8, acitivty: u8) {
+    let mpId: u8 = GetMultiplayerId();
+    let gender: u8 = gLinkPlayers[mpId as i32 ^ 1].gender;
     match acitivty {
         65 => {
             StringCopy(dst, sStartActivityTexts[mpId][gender][0]);
@@ -5319,7 +5146,7 @@ pub(crate) unsafe extern "C" fn GetURoomActivityStartMsg(dst: *mut u8, acitivty:
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn GetChatLeaderActionRequestMessage(
+unsafe fn GetChatLeaderActionRequestMessage(
     dst: *mut u8,
     gender: u32,
     activityData: *mut u16,
@@ -5346,7 +5173,8 @@ pub(crate) unsafe extern "C" fn GetChatLeaderActionRequestMessage(
             );
             StringCopy(
                 (*uroom).activityRequestStrbufs[1].as_mut_ptr(),
-                gSpeciesNames[sUnionRoomTrade.playerSpecies]
+                (*(&raw const crate::data::data_tables::gSpeciesNames)
+                    .cast::<CArray<CArray<u8, 11>, 0>>())[sUnionRoomTrade.playerSpecies]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -5361,7 +5189,13 @@ pub(crate) unsafe extern "C" fn GetChatLeaderActionRequestMessage(
                     );
                     StringCopy(
                         (*uroom).activityRequestStrbufs[3].as_mut_ptr(),
-                        gSpeciesNames[*activityData.at(1)].as_ptr().cast_mut(),
+                        (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<
+                            CArray<u8, 11>,
+                            0,
+                        >>(
+                        ))[*activityData.at(1)]
+                        .as_ptr()
+                        .cast_mut(),
                     );
                     species = *activityData.at(1);
                     break;
@@ -5371,13 +5205,11 @@ pub(crate) unsafe extern "C" fn GetChatLeaderActionRequestMessage(
             if species == SPECIES_EGG as u16 {
                 StringCopy(dst, sText_OfferToTradeEgg.as_ptr().cast_mut());
             } else {
-                i = 0;
-                while i < RFU_CHILD_MAX as i32 {
+                for i in 0..(RFU_CHILD_MAX as i32) {
                     DynamicPlaceholderTextUtil_SetPlaceholderPtr(
                         i as u8,
                         (*uroom).activityRequestStrbufs[i].as_mut_ptr(),
                     );
-                    i += 1;
                 }
                 DynamicPlaceholderTextUtil_ExpandPlaceholders(
                     dst,
@@ -5396,9 +5228,9 @@ pub(crate) unsafe extern "C" fn GetChatLeaderActionRequestMessage(
         }
         _ => {}
     }
-    return result;
+    result
 }
-pub(crate) unsafe extern "C" fn PollPartnerYesNoResponse(data: *mut WirelessLink_URoom) -> u32 {
+unsafe fn PollPartnerYesNoResponse(data: *mut WirelessLink_URoom) -> u32 {
     if gRecvCmds[0][1] != 0 {
         if gRecvCmds[0][1] == 81 {
             (*data).partnerYesNoResponse = 81;
@@ -5408,21 +5240,18 @@ pub(crate) unsafe extern "C" fn PollPartnerYesNoResponse(data: *mut WirelessLink
             return TRUE as u32;
         }
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InUnionRoom() -> u32 {
-    return (if (*gSaveBlock1Ptr).location.mapGroup == 25 && (*gSaveBlock1Ptr).location.mapNum == 60
-    {
+pub unsafe fn InUnionRoom() -> u32 {
+    (if (*gSaveBlock1Ptr).location.mapGroup == 25 && (*gSaveBlock1Ptr).location.mapNum == 60 {
         TRUE as i32
     } else {
         FALSE as i32
-    }) as u32;
+    }) as u32
 }
-pub(crate) unsafe extern "C" fn HasAtLeastTwoMonsOfLevel30OrLower() -> u32 {
-    let mut i: i32 = 0;
+unsafe fn HasAtLeastTwoMonsOfLevel30OrLower() -> u32 {
     let mut count: i32 = 0;
-    i = 0;
+    let mut i: i32 = 0;
     while i < gPlayerPartyCount as i32 {
         if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_LEVEL) <= UNION_ROOM_MAX_LEVEL as u32
             && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) != SPECIES_EGG
@@ -5438,10 +5267,10 @@ pub(crate) unsafe extern "C" fn HasAtLeastTwoMonsOfLevel30OrLower() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ResetUnionRoomTrade(trade: *mut UnionRoomTrade) {
+unsafe fn ResetUnionRoomTrade(trade: *mut UnionRoomTrade) {
     (*trade).state = URTRADE_STATE_NONE;
     (*trade).r#type = 0;
     (*trade).playerPersonality = 0;
@@ -5452,13 +5281,10 @@ pub(crate) unsafe extern "C" fn ResetUnionRoomTrade(trade: *mut UnionRoomTrade) 
     (*trade).personality = 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Script_ResetUnionRoomTrade() {
+pub unsafe fn Script_ResetUnionRoomTrade() {
     ResetUnionRoomTrade(&raw mut sUnionRoomTrade);
 }
-pub(crate) unsafe extern "C" fn RegisterTradeMonAndGetIsEgg(
-    monId: u32,
-    trade: *mut UnionRoomTrade,
-) -> u32 {
+unsafe fn RegisterTradeMonAndGetIsEgg(monId: u32, trade: *mut UnionRoomTrade) -> u32 {
     (*trade).playerSpecies =
         GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPECIES_OR_EGG) as u16;
     (*trade).playerLevel = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_LEVEL) as u16;
@@ -5470,24 +5296,20 @@ pub(crate) unsafe extern "C" fn RegisterTradeMonAndGetIsEgg(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn RegisterTradeMon(monId: u32, trade: *mut UnionRoomTrade) {
+unsafe fn RegisterTradeMon(monId: u32, trade: *mut UnionRoomTrade) {
     (*trade).species = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPECIES_OR_EGG) as u16;
     (*trade).level = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_LEVEL) as u16;
     (*trade).personality = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_PERSONALITY);
 }
-pub(crate) unsafe extern "C" fn GetPartyPositionOfRegisteredMon(
-    trade: *mut UnionRoomTrade,
-    multiplayerId: u8,
-) -> u32 {
+unsafe fn GetPartyPositionOfRegisteredMon(trade: *mut UnionRoomTrade, multiplayerId: u8) -> u32 {
     let mut response: u16 = 0;
     let mut species: u16 = 0;
     let mut personality: u32 = 0;
     let mut cur_personality: u32 = 0;
     let mut cur_species: u16 = 0;
-    let mut i: i32 = 0;
     if multiplayerId == 0 {
         species = (*trade).playerSpecies;
         personality = (*trade).playerPersonality;
@@ -5495,7 +5317,7 @@ pub(crate) unsafe extern "C" fn GetPartyPositionOfRegisteredMon(
         species = (*trade).species;
         personality = (*trade).personality;
     }
-    i = 0;
+    let mut i: i32 = 0;
     'l2: while i < gPlayerPartyCount as i32 {
         'l1: {
             cur_personality = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_PERSONALITY);
@@ -5511,9 +5333,9 @@ pub(crate) unsafe extern "C" fn GetPartyPositionOfRegisteredMon(
         }
         i += 1;
     }
-    return response as u32;
+    response as u32
 }
-pub(crate) unsafe extern "C" fn HandleCancelActivity(setData: u32) {
+unsafe fn HandleCancelActivity(setData: u32) {
     UR_ClearBg0();
     UnlockPlayerFieldControls();
     UnionRoom_UnlockPlayerAndChatPartner();
@@ -5527,15 +5349,13 @@ pub(crate) unsafe extern "C" fn HandleCancelActivity(setData: u32) {
         UpdateGameData_SetActivity(IN_UNION_ROOM, 0, 0);
     }
 }
-pub(crate) unsafe extern "C" fn StartScriptInteraction() {
+unsafe fn StartScriptInteraction() {
     LockPlayerFieldControls();
     FreezeObjects_WaitForPlayer();
 }
-pub(crate) unsafe extern "C" fn GetActivePartnersInfo(data: *mut WirelessLink_URoom) -> u8 {
+unsafe fn GetActivePartnersInfo(data: *mut WirelessLink_URoom) -> u8 {
     let mut retVal: u8 = PINFO_ACTIVE_FLAG;
-    let mut i: u8 = 0;
-    i = 0;
-    while i < RFU_CHILD_MAX {
+    for i in 0..RFU_CHILD_MAX {
         if (*(*data).incomingParentList).players[i].active() != 0 {
             retVal |= (*(*data).incomingParentList).players[i]
                 .rfu
@@ -5550,24 +5370,22 @@ pub(crate) unsafe extern "C" fn GetActivePartnersInfo(data: *mut WirelessLink_UR
                 & PINFO_TID_MASK;
             break;
         }
-        i += 1;
     }
-    return retVal;
+    retVal
 }
-pub(crate) unsafe extern "C" fn ViewURoomPartnerTrainerCard(
+unsafe fn ViewURoomPartnerTrainerCard(
     unused: *mut u8,
     data: *mut WirelessLink_URoom,
     isParent: u8,
 ) {
-    let mut trainerCard: *mut TrainerCard = &raw mut gTrainerCards[GetMultiplayerId() as i32 ^ 1];
-    let mut i: i32 = 0;
-    let mut n: i32 = 0;
+    let trainerCard: *mut TrainerCard = &raw mut gTrainerCards[GetMultiplayerId() as i32 ^ 1];
     DynamicPlaceholderTextUtil_Reset();
     StringCopy(
         (*data).trainerCardStrBuffer[0].as_mut_ptr(),
-        gTrainerClassNames[GetUnionRoomTrainerClass()]
-            .as_ptr()
-            .cast_mut(),
+        (*(&raw const crate::data::data_tables::gTrainerClassNames)
+            .cast::<CArray<CArray<u8, 13>, 0>>())[GetUnionRoomTrainerClass()]
+        .as_ptr()
+        .cast_mut(),
     );
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, (*data).trainerCardStrBuffer[0].as_mut_ptr());
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, (*trainerCard).playerName.as_mut_ptr());
@@ -5605,7 +5423,7 @@ pub(crate) unsafe extern "C" fn ViewURoomPartnerTrainerCard(
         gStringVar4.as_mut_ptr(),
         (*data).trainerCardMsgStrBuffer.as_mut_ptr(),
     );
-    n = (*trainerCard).linkBattleWins as i32;
+    let mut n: i32 = (*trainerCard).linkBattleWins as i32;
     if n > 9999 {
         n = 9999;
     }
@@ -5634,8 +5452,7 @@ pub(crate) unsafe extern "C" fn ViewURoomPartnerTrainerCard(
         5,
     );
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(3, (*data).trainerCardStrBuffer[2].as_mut_ptr());
-    i = 0;
-    while i < TRAINER_CARD_PROFILE_LENGTH as i32 {
+    for i in 0..(TRAINER_CARD_PROFILE_LENGTH as i32) {
         CopyEasyChatWord(
             (*data).trainerCardStrBuffer[i + 3].as_mut_ptr(),
             (*trainerCard).easyChatProfile[i],
@@ -5644,7 +5461,6 @@ pub(crate) unsafe extern "C" fn ViewURoomPartnerTrainerCard(
             i as u8 + 4,
             (*data).trainerCardStrBuffer[i + 3].as_mut_ptr(),
         );
-        i += 1;
     }
     DynamicPlaceholderTextUtil_ExpandPlaceholders(
         (*data).trainerCardMsgStrBuffer.as_mut_ptr(),
@@ -5674,7 +5490,7 @@ pub(crate) unsafe extern "C" fn ViewURoomPartnerTrainerCard(
         );
     }
 }
-pub(crate) unsafe extern "C" fn CopyAndTranslatePlayerName(dest: *mut u8, player: *mut RfuPlayer) {
+unsafe fn CopyAndTranslatePlayerName(dest: *mut u8, player: *mut RfuPlayer) {
     StringCopy_PlayerName(dest, (*player).rfu.name.as_mut_ptr());
     ConvertInternationalString(dest, (*player).rfu.data.compatibility.language() as u8);
 }

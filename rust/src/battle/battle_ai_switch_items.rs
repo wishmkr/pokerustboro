@@ -3,31 +3,36 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    unused_assignments
 )]
 
+use crate::battle_anim_mons::{GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide};
+use crate::battle_controllers::BtlController_EmitTwoReturnValues;
+use crate::battle_main::{
+    gAbsentBattlerFlags, gActiveBattler, gBattleMons, gBattleMoveDamage, gBattleResources,
+    gBattleScripting, gBattleStruct, gBattleTypeFlags, gCritMultiplier, gDisableStructs,
+    gDynamicBasePower, gMoveResultFlags, gSideTimers, gStatuses3,
+};
+use crate::battle_main::{gBattlerPartyIndexes, gLastHitBy, gLastLandedMoves};
+use crate::battle_script_commands::{AI_CalcDmg, AI_TypeCalc, TypeCalc};
+use crate::battle_util::AbilityBattleEffects;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::load_save::gSaveBlock1Ptr;
+use crate::pokemon::{GetItemEffectParamOffset, GetMonData2, gEnemyParty, gPlayerParty};
+use crate::random::Random;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::util::gBitTable;
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
@@ -35,46 +40,7 @@ use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
 
-unsafe extern "C" {
-    static mut gAbsentBattlerFlags: u8;
-    static mut gActiveBattler: u8;
-    static mut gBattleMons: CArray<BattlePokemon, 4>;
-    static mut gBattleMoveDamage: i32;
-    static gBattleMoves: CArray<BattleMove, 0>;
-    static mut gBattleResources: *mut BattleResources;
-    static mut gBattleScripting: BattleScripting;
-    static mut gBattleStruct: *mut BattleStruct;
-    static mut gBattleTypeFlags: u32;
-    static mut gBattlerPartyIndexes: CArray<u16, 4>;
-    static gBitTable: CArray<u32, 0>;
-    static mut gCritMultiplier: u8;
-    static mut gDisableStructs: CArray<DisableStruct, 4>;
-    static mut gDynamicBasePower: u16;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static gItemEffectTable: CArray<*mut u8, 0>;
-    static mut gLastHitBy: CArray<u8, 4>;
-    static mut gLastLandedMoves: CArray<u16, 4>;
-    static mut gMoveResultFlags: u8;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSideTimers: CArray<SideTimer, 2>;
-    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
-    static mut gStatuses3: CArray<u32, 4>;
-    static gTypeEffectiveness: CArray<u8, 336>;
-    fn AI_CalcDmg(a0: u8, a1: u8);
-    fn AI_TypeCalc(a0: u16, a1: u16, a2: u8) -> u8;
-    fn AbilityBattleEffects(a0: u8, a1: u8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BtlController_EmitTwoReturnValues(a0: u8, a1: u8, a2: u16);
-    fn GetBattlerAtPosition(a0: u8) -> u8;
-    fn GetBattlerPosition(a0: u8) -> u8;
-    fn GetBattlerSide(a0: u8) -> u8;
-    fn GetItemEffectParamOffset(a0: u16, a1: u8, a2: u8) -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn Random() -> u16;
-    fn TypeCalc(a0: u16, a1: u8, a2: u8) -> u8;
-}
-
-pub(crate) unsafe extern "C" fn ShouldSwitchIfPerishSong() -> u8 {
+unsafe fn ShouldSwitchIfPerishSong() -> u8 {
     if gStatuses3[gActiveBattler] & STATUS3_PERISH_SONG != 0
         && gDisableStructs[gActiveBattler].perishSongTimer() == 0
     {
@@ -89,15 +55,11 @@ pub(crate) unsafe extern "C" fn ShouldSwitchIfPerishSong() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ShouldSwitchIfWonderGuard() -> u8 {
-    let mut opposingPosition: u8 = 0;
-    let mut opposingBattler: u8 = 0;
+unsafe fn ShouldSwitchIfWonderGuard() -> u8 {
     let mut moveFlags: u8 = 0;
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
     let mut firstId: i32 = 0;
     let mut lastId: i32 = 0;
     let mut party: *mut Pokemon = null_mut();
@@ -105,12 +67,12 @@ pub(crate) unsafe extern "C" fn ShouldSwitchIfWonderGuard() -> u8 {
     if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
         return FALSE;
     }
-    opposingPosition = GetBattlerPosition(gActiveBattler) ^ 1;
+    let opposingPosition: u8 = GetBattlerPosition(gActiveBattler) ^ 1;
     if gBattleMons[GetBattlerAtPosition(opposingPosition)].ability != ABILITY_WONDER_GUARD {
         return FALSE;
     }
-    opposingBattler = GetBattlerAtPosition(opposingPosition);
-    i = 0;
+    let mut opposingBattler: u8 = GetBattlerAtPosition(opposingPosition);
+    let mut i: i32 = 0;
     while i < MAX_MON_MOVES {
         'l1: {
             r#move = gBattleMons[gActiveBattler].moves[i];
@@ -145,8 +107,7 @@ pub(crate) unsafe extern "C" fn ShouldSwitchIfWonderGuard() -> u8 {
     } else {
         party = gEnemyParty.as_mut_ptr();
     }
-    i = firstId;
-    while i < lastId {
+    for i in firstId..lastId {
         'l3: {
             if GetMonData2(party.at(i), MON_DATA_HP) == 0 {
                 break 'l3;
@@ -163,8 +124,7 @@ pub(crate) unsafe extern "C" fn ShouldSwitchIfWonderGuard() -> u8 {
             GetMonData2(party.at(i), MON_DATA_SPECIES);
             GetMonData2(party.at(i), MON_DATA_ABILITY_NUM);
             opposingBattler = GetBattlerAtPosition(opposingPosition);
-            j = 0;
-            while j < MAX_MON_MOVES {
+            for j in 0..MAX_MON_MOVES {
                 'l5: {
                     r#move = GetMonData2(party.at(i), MON_DATA_MOVE1 + j) as u16;
                     if r#move == MOVE_NONE {
@@ -184,21 +144,18 @@ pub(crate) unsafe extern "C" fn ShouldSwitchIfWonderGuard() -> u8 {
                         return TRUE;
                     }
                 }
-                j += 1;
             }
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn FindMonThatAbsorbsOpponentsMove() -> u8 {
+unsafe fn FindMonThatAbsorbsOpponentsMove() -> u8 {
     let mut battlerIn1: u8 = 0;
     let mut battlerIn2: u8 = 0;
     let mut absorbingTypeAbility: u8 = 0;
     let mut firstId: i32 = 0;
     let mut lastId: i32 = 0;
     let mut party: *mut Pokemon = null_mut();
-    let mut i: i32 = 0;
     if HasSuperEffectiveMoveAgainstOpponents(TRUE) != 0 && Random() as i32 % 3 != 0 {
         return FALSE;
     }
@@ -208,13 +165,18 @@ pub(crate) unsafe extern "C" fn FindMonThatAbsorbsOpponentsMove() -> u8 {
     if gLastLandedMoves[gActiveBattler] == MOVE_UNAVAILABLE {
         return FALSE;
     }
-    if gBattleMoves[gLastLandedMoves[gActiveBattler]].power == 0 {
+    if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [gLastLandedMoves[gActiveBattler]]
+        .power
+        == 0
+    {
         return FALSE;
     }
     if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
         battlerIn1 = gActiveBattler;
         if gAbsentBattlerFlags as u32
-            & gBitTable[GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2)]
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                [GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2)]
             != 0
         {
             battlerIn2 = gActiveBattler;
@@ -225,11 +187,23 @@ pub(crate) unsafe extern "C" fn FindMonThatAbsorbsOpponentsMove() -> u8 {
         battlerIn1 = gActiveBattler;
         battlerIn2 = gActiveBattler;
     }
-    if gBattleMoves[gLastLandedMoves[gActiveBattler]].r#type == TYPE_FIRE {
+    if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [gLastLandedMoves[gActiveBattler]]
+        .r#type
+        == TYPE_FIRE
+    {
         absorbingTypeAbility = ABILITY_FLASH_FIRE;
-    } else if gBattleMoves[gLastLandedMoves[gActiveBattler]].r#type == TYPE_WATER {
+    } else if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [gLastLandedMoves[gActiveBattler]]
+        .r#type
+        == TYPE_WATER
+    {
         absorbingTypeAbility = ABILITY_WATER_ABSORB;
-    } else if gBattleMoves[gLastLandedMoves[gActiveBattler]].r#type == TYPE_ELECTRIC {
+    } else if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [gLastLandedMoves[gActiveBattler]]
+        .r#type
+        == TYPE_ELECTRIC
+    {
         absorbingTypeAbility = ABILITY_VOLT_ABSORB;
     } else {
         return FALSE;
@@ -254,10 +228,8 @@ pub(crate) unsafe extern "C" fn FindMonThatAbsorbsOpponentsMove() -> u8 {
     } else {
         party = gEnemyParty.as_mut_ptr();
     }
-    i = firstId;
-    while i < lastId {
+    for i in firstId..lastId {
         'l1: {
-            let mut species: u16 = 0;
             let mut monAbility: u8 = 0;
             if GetMonData2(party.at(i), MON_DATA_HP) == 0 {
                 break 'l1;
@@ -288,11 +260,15 @@ pub(crate) unsafe extern "C" fn FindMonThatAbsorbsOpponentsMove() -> u8 {
             {
                 break 'l1;
             }
-            species = GetMonData2(party.at(i), MON_DATA_SPECIES) as u16;
+            let species: u16 = GetMonData2(party.at(i), MON_DATA_SPECIES) as u16;
             if GetMonData2(party.at(i), MON_DATA_ABILITY_NUM) != 0 {
-                monAbility = gSpeciesInfo[species].abilities[1];
+                monAbility = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                    .cast::<CArray<SpeciesInfo, 0>>())[species]
+                    .abilities[1];
             } else {
-                monAbility = gSpeciesInfo[species].abilities[0];
+                monAbility = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                    .cast::<CArray<SpeciesInfo, 0>>())[species]
+                    .abilities[0];
             }
             if absorbingTypeAbility == monAbility && Random() as i32 & 1 != 0 {
                 *(*gBattleStruct)
@@ -303,11 +279,10 @@ pub(crate) unsafe extern "C" fn FindMonThatAbsorbsOpponentsMove() -> u8 {
                 return TRUE;
             }
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn ShouldSwitchIfNaturalCure() -> u8 {
+unsafe fn ShouldSwitchIfNaturalCure() -> u8 {
     if gBattleMons[gActiveBattler].status1 & STATUS1_SLEEP == 0 {
         return FALSE;
     }
@@ -327,7 +302,11 @@ pub(crate) unsafe extern "C" fn ShouldSwitchIfNaturalCure() -> u8 {
             .at(gActiveBattler) = PARTY_SIZE as u8;
         BtlController_EmitTwoReturnValues(B_COMM_TO_ENGINE, B_ACTION_SWITCH, 0);
         return TRUE;
-    } else if gBattleMoves[gLastLandedMoves[gActiveBattler]].power == 0 && Random() as i32 & 1 != 0
+    } else if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [gLastLandedMoves[gActiveBattler]]
+        .power
+        == 0
+        && Random() as i32 & 1 != 0
     {
         *(*gBattleStruct)
             .AI_monToSwitchIntoId
@@ -350,19 +329,18 @@ pub(crate) unsafe extern "C" fn ShouldSwitchIfNaturalCure() -> u8 {
         BtlController_EmitTwoReturnValues(B_COMM_TO_ENGINE, B_ACTION_SWITCH, 0);
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn HasSuperEffectiveMoveAgainstOpponents(noRng: u8) -> u8 {
-    let mut opposingPosition: u8 = 0;
-    let mut opposingBattler: u8 = 0;
-    let mut i: i32 = 0;
+unsafe fn HasSuperEffectiveMoveAgainstOpponents(noRng: u8) -> u8 {
     let mut moveFlags: u8 = 0;
     let mut r#move: u16 = 0;
-    opposingPosition = GetBattlerPosition(gActiveBattler) ^ 1;
-    opposingBattler = GetBattlerAtPosition(opposingPosition);
-    if gAbsentBattlerFlags as u32 & gBitTable[opposingBattler] == 0 {
-        i = 0;
-        while i < MAX_MON_MOVES {
+    let opposingPosition: u8 = GetBattlerPosition(gActiveBattler) ^ 1;
+    let mut opposingBattler: u8 = GetBattlerAtPosition(opposingPosition);
+    if gAbsentBattlerFlags as u32
+        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[opposingBattler]
+        == 0
+    {
+        for i in 0..MAX_MON_MOVES {
             'l1: {
                 r#move = gBattleMons[gActiveBattler].moves[i];
                 if r#move == MOVE_NONE {
@@ -382,16 +360,17 @@ pub(crate) unsafe extern "C" fn HasSuperEffectiveMoveAgainstOpponents(noRng: u8)
                     }
                 }
             }
-            i += 1;
         }
     }
     if gBattleTypeFlags & BATTLE_TYPE_DOUBLE == 0 {
         return FALSE;
     }
     opposingBattler = GetBattlerAtPosition(opposingPosition ^ 2);
-    if gAbsentBattlerFlags as u32 & gBitTable[opposingBattler] == 0 {
-        i = 0;
-        while i < MAX_MON_MOVES {
+    if gAbsentBattlerFlags as u32
+        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[opposingBattler]
+        == 0
+    {
+        for i in 0..MAX_MON_MOVES {
             'l3: {
                 r#move = gBattleMons[gActiveBattler].moves[i];
                 if r#move == MOVE_NONE {
@@ -411,35 +390,26 @@ pub(crate) unsafe extern "C" fn HasSuperEffectiveMoveAgainstOpponents(noRng: u8)
                     }
                 }
             }
-            i += 1;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn AreStatsRaised() -> u8 {
+unsafe fn AreStatsRaised() -> u8 {
     let mut buffedStatsValue: u8 = 0;
-    let mut i: i32 = 0;
-    i = 0;
-    while i < NUM_BATTLE_STATS {
+    for i in 0..NUM_BATTLE_STATS {
         if gBattleMons[gActiveBattler].statStages[i] > DEFAULT_STAT_STAGE {
             buffedStatsValue +=
                 gBattleMons[gActiveBattler].statStages[i] as u8 - DEFAULT_STAT_STAGE as u8;
         }
-        i += 1;
     }
-    return (buffedStatsValue > 3) as u8;
+    (buffedStatsValue > 3) as u8
 }
-pub(crate) unsafe extern "C" fn FindMonWithFlagsAndSuperEffective(
-    flags: u8,
-    moduloPercent: u8,
-) -> u8 {
+unsafe fn FindMonWithFlagsAndSuperEffective(flags: u8, moduloPercent: u8) -> u8 {
     let mut battlerIn1: u8 = 0;
     let mut battlerIn2: u8 = 0;
     let mut firstId: i32 = 0;
     let mut lastId: i32 = 0;
     let mut party: *mut Pokemon = null_mut();
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
     let mut r#move: u16 = 0;
     let mut moveFlags: u8 = 0;
     if gLastLandedMoves[gActiveBattler] == MOVE_NONE {
@@ -451,13 +421,18 @@ pub(crate) unsafe extern "C" fn FindMonWithFlagsAndSuperEffective(
     if gLastHitBy[gActiveBattler] == 0xFF {
         return FALSE;
     }
-    if gBattleMoves[gLastLandedMoves[gActiveBattler]].power == 0 {
+    if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [gLastLandedMoves[gActiveBattler]]
+        .power
+        == 0
+    {
         return FALSE;
     }
     if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
         battlerIn1 = gActiveBattler;
         if gAbsentBattlerFlags as u32
-            & gBitTable[GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2)]
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                [GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2)]
             != 0
         {
             battlerIn2 = gActiveBattler;
@@ -485,10 +460,8 @@ pub(crate) unsafe extern "C" fn FindMonWithFlagsAndSuperEffective(
     } else {
         party = gEnemyParty.as_mut_ptr();
     }
-    i = firstId;
-    while i < lastId {
+    for i in firstId..lastId {
         'l1: {
-            let mut species: u16 = 0;
             let mut monAbility: u8 = 0;
             if GetMonData2(party.at(i), MON_DATA_HP) == 0 {
                 break 'l1;
@@ -519,17 +492,20 @@ pub(crate) unsafe extern "C" fn FindMonWithFlagsAndSuperEffective(
             {
                 break 'l1;
             }
-            species = GetMonData2(party.at(i), MON_DATA_SPECIES) as u16;
+            let species: u16 = GetMonData2(party.at(i), MON_DATA_SPECIES) as u16;
             if GetMonData2(party.at(i), MON_DATA_ABILITY_NUM) != 0 {
-                monAbility = gSpeciesInfo[species].abilities[1];
+                monAbility = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                    .cast::<CArray<SpeciesInfo, 0>>())[species]
+                    .abilities[1];
             } else {
-                monAbility = gSpeciesInfo[species].abilities[0];
+                monAbility = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                    .cast::<CArray<SpeciesInfo, 0>>())[species]
+                    .abilities[0];
             }
             moveFlags = AI_TypeCalc(gLastLandedMoves[gActiveBattler], species, monAbility);
             if moveFlags as i32 & flags as i32 != 0 {
                 battlerIn1 = gLastHitBy[gActiveBattler];
-                j = 0;
-                while j < MAX_MON_MOVES {
+                for j in 0..MAX_MON_MOVES {
                     'l3: {
                         r#move = GetMonData2(party.at(i), MON_DATA_MOVE1 + j) as u16;
                         if r#move == 0 {
@@ -551,23 +527,19 @@ pub(crate) unsafe extern "C" fn FindMonWithFlagsAndSuperEffective(
                             return TRUE;
                         }
                     }
-                    j += 1;
                 }
             }
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn ShouldSwitch() -> u8 {
+unsafe fn ShouldSwitch() -> u8 {
     let mut battlerIn1: u8 = 0;
     let mut battlerIn2: u8 = 0;
     let mut activeBattlerPtr: *mut u8 = null_mut();
     let mut firstId: i32 = 0;
     let mut lastId: i32 = 0;
     let mut party: *mut Pokemon = null_mut();
-    let mut i: i32 = 0;
-    let mut availableToSwitch: i32 = 0;
     if gBattleMons[*({
         activeBattlerPtr = &raw mut gActiveBattler;
         activeBattlerPtr
@@ -587,21 +559,21 @@ pub(crate) unsafe extern "C" fn ShouldSwitch() -> u8 {
     if AbilityBattleEffects(12, gActiveBattler, ABILITY_ARENA_TRAP, 0, 0) != 0 {
         return FALSE;
     }
-    if AbilityBattleEffects(14, 0, ABILITY_MAGNET_PULL, 0, 0) != 0 {
-        if gBattleMons[gActiveBattler].types[0] == TYPE_STEEL
-            || gBattleMons[gActiveBattler].types[1] == TYPE_STEEL
-        {
-            return FALSE;
-        }
+    if AbilityBattleEffects(14, 0, ABILITY_MAGNET_PULL, 0, 0) != 0
+        && (gBattleMons[gActiveBattler].types[0] == TYPE_STEEL
+            || gBattleMons[gActiveBattler].types[1] == TYPE_STEEL)
+    {
+        return FALSE;
     }
     if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0 {
         return FALSE;
     }
-    availableToSwitch = 0;
+    let mut availableToSwitch: i32 = 0;
     if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
         battlerIn1 = *activeBattlerPtr;
         if gAbsentBattlerFlags as u32
-            & gBitTable[GetBattlerAtPosition(GetBattlerPosition(*activeBattlerPtr) ^ 2)]
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                [GetBattlerAtPosition(GetBattlerPosition(*activeBattlerPtr) ^ 2)]
             != 0
         {
             battlerIn2 = *activeBattlerPtr;
@@ -629,8 +601,7 @@ pub(crate) unsafe extern "C" fn ShouldSwitch() -> u8 {
     } else {
         party = gEnemyParty.as_mut_ptr();
     }
-    i = firstId;
-    while i < lastId {
+    for i in firstId..lastId {
         'l1: {
             if GetMonData2(party.at(i), MON_DATA_HP) == 0 {
                 break 'l1;
@@ -663,7 +634,6 @@ pub(crate) unsafe extern "C" fn ShouldSwitch() -> u8 {
             }
             availableToSwitch += 1;
         }
-        i += 1;
     }
     if availableToSwitch == 0 {
         return FALSE;
@@ -691,16 +661,15 @@ pub(crate) unsafe extern "C" fn ShouldSwitch() -> u8 {
     {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AI_TrySwitchOrUseItem() {
+pub unsafe fn AI_TrySwitchOrUseItem() {
     let mut party: *mut Pokemon = null_mut();
     let mut battlerIn1: u8 = 0;
     let mut battlerIn2: u8 = 0;
     let mut firstId: i32 = 0;
     let mut lastId: i32 = 0;
-    let mut battlerIdentity: u8 = GetBattlerPosition(gActiveBattler);
+    let battlerIdentity: u8 = GetBattlerPosition(gActiveBattler);
     if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER {
         party = gPlayerParty.as_mut_ptr();
     } else {
@@ -714,7 +683,7 @@ pub unsafe extern "C" fn AI_TrySwitchOrUseItem() {
                 .at(gActiveBattler)
                 == PARTY_SIZE as u8
             {
-                let mut monToSwitchId: i32 = GetMostSuitableMonToSwitchInto() as i32;
+                let monToSwitchId: i32 = GetMostSuitableMonToSwitchInto() as i32;
                 if monToSwitchId == PARTY_SIZE {
                     if gBattleTypeFlags & BATTLE_TYPE_DOUBLE == 0 {
                         battlerIn1 = GetBattlerAtPosition(battlerIdentity);
@@ -735,8 +704,7 @@ pub unsafe extern "C" fn AI_TrySwitchOrUseItem() {
                         firstId = 0;
                         lastId = PARTY_SIZE;
                     }
-                    monToSwitchId = firstId;
-                    'l2: while monToSwitchId < lastId {
+                    'l2: for monToSwitchId in firstId..lastId {
                         'l1: {
                             if GetMonData2(party.at(monToSwitchId), MON_DATA_HP) == 0 {
                                 break 'l1;
@@ -765,7 +733,6 @@ pub unsafe extern "C" fn AI_TrySwitchOrUseItem() {
                             }
                             break 'l2;
                         }
-                        monToSwitchId += 1;
                     }
                 }
                 *(*gBattleStruct)
@@ -791,30 +758,44 @@ pub unsafe extern "C" fn AI_TrySwitchOrUseItem() {
         (gActiveBattler as u16 ^ 1) << 8,
     );
 }
-pub(crate) unsafe extern "C" fn ModulateByTypeEffectiveness(
-    atkType: u8,
-    defType1: u8,
-    defType2: u8,
-    var: *mut u8,
-) {
+unsafe fn ModulateByTypeEffectiveness(atkType: u8, defType1: u8, defType2: u8, var: *mut u8) {
     let mut i: i32 = 0;
-    while gTypeEffectiveness[i + 0] != TYPE_ENDTABLE {
-        if gTypeEffectiveness[i + 0] == TYPE_FORESIGHT {
+    while (*(&raw const crate::data::battle_main::gTypeEffectiveness).cast::<CArray<u8, 336>>())[i]
+        != TYPE_ENDTABLE
+    {
+        if (*(&raw const crate::data::battle_main::gTypeEffectiveness).cast::<CArray<u8, 336>>())[i]
+            == TYPE_FORESIGHT
+        {
             i += 3;
             continue;
-        } else if gTypeEffectiveness[i + 0] == atkType {
-            if gTypeEffectiveness[i + 1] == defType1 {
-                *var = (*var as i32 * gTypeEffectiveness[i + 2] as i32 / 10) as u8;
+        } else if (*(&raw const crate::data::battle_main::gTypeEffectiveness)
+            .cast::<CArray<u8, 336>>())[i]
+            == atkType
+        {
+            if (*(&raw const crate::data::battle_main::gTypeEffectiveness)
+                .cast::<CArray<u8, 336>>())[i + 1]
+                == defType1
+            {
+                *var = (*var as i32
+                    * (*(&raw const crate::data::battle_main::gTypeEffectiveness)
+                        .cast::<CArray<u8, 336>>())[i + 2] as i32
+                    / 10) as u8;
             }
-            if gTypeEffectiveness[i + 1] == defType2 && defType1 != defType2 {
-                *var = (*var as i32 * gTypeEffectiveness[i + 2] as i32 / 10) as u8;
+            if (*(&raw const crate::data::battle_main::gTypeEffectiveness)
+                .cast::<CArray<u8, 336>>())[i + 1]
+                == defType2
+                && defType1 != defType2
+            {
+                *var = (*var as i32
+                    * (*(&raw const crate::data::battle_main::gTypeEffectiveness)
+                        .cast::<CArray<u8, 336>>())[i + 2] as i32
+                    / 10) as u8;
             }
         }
         i += 3;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMostSuitableMonToSwitchInto() -> u8 {
+pub unsafe fn GetMostSuitableMonToSwitchInto() -> u8 {
     let mut opposingBattler: u8 = 0;
     let mut bestDmg: u8 = 0;
     let mut bestMonId: u8 = 0;
@@ -824,8 +805,6 @@ pub unsafe extern "C" fn GetMostSuitableMonToSwitchInto() -> u8 {
     let mut lastId: i32 = 0;
     let mut party: *mut Pokemon = null_mut();
     let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    let mut invalidMons: u8 = 0;
     let mut r#move: u16 = 0;
     if *(*gBattleStruct)
         .monToSwitchIntoId
@@ -844,7 +823,8 @@ pub unsafe extern "C" fn GetMostSuitableMonToSwitchInto() -> u8 {
     if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
         battlerIn1 = gActiveBattler;
         if gAbsentBattlerFlags as u32
-            & gBitTable[GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2)]
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                [GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2)]
             != 0
         {
             battlerIn2 = gActiveBattler;
@@ -852,7 +832,10 @@ pub unsafe extern "C" fn GetMostSuitableMonToSwitchInto() -> u8 {
             battlerIn2 = GetBattlerAtPosition(GetBattlerPosition(gActiveBattler) ^ 2);
         }
         opposingBattler = Random() as u8 & BIT_FLANK;
-        if gAbsentBattlerFlags as u32 & gBitTable[opposingBattler] != 0 {
+        if gAbsentBattlerFlags as u32
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[opposingBattler]
+            != 0
+        {
             opposingBattler ^= BIT_FLANK;
         }
     } else {
@@ -877,16 +860,18 @@ pub unsafe extern "C" fn GetMostSuitableMonToSwitchInto() -> u8 {
     } else {
         party = gEnemyParty.as_mut_ptr();
     }
-    invalidMons = 0;
+    let mut invalidMons: u8 = 0;
     while invalidMons != 63 {
         bestDmg = TYPE_MUL_NO_EFFECT;
         bestMonId = PARTY_SIZE as u8;
         i = firstId;
         while i < lastId {
-            let mut species: u16 = GetMonData2(party.at(i), MON_DATA_SPECIES) as u16;
+            let species: u16 = GetMonData2(party.at(i), MON_DATA_SPECIES) as u16;
             if species != SPECIES_NONE
                 && GetMonData2(party.at(i), MON_DATA_HP) != 0
-                && gBitTable[i] & invalidMons as u32 == 0
+                && (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[i]
+                    & invalidMons as u32
+                    == 0
                 && gBattlerPartyIndexes[battlerIn1] as i32 != i
                 && gBattlerPartyIndexes[battlerIn2] as i32 != i
                 && i != *(*gBattleStruct)
@@ -898,8 +883,14 @@ pub unsafe extern "C" fn GetMostSuitableMonToSwitchInto() -> u8 {
                     .as_mut_ptr()
                     .at(battlerIn2) as i32
             {
-                let mut type1: u8 = gSpeciesInfo[species].types[0];
-                let mut type2: u8 = gSpeciesInfo[species].types[1];
+                let type1: u8 =
+                    (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                        .cast::<CArray<SpeciesInfo, 0>>())[species]
+                        .types[0];
+                let type2: u8 =
+                    (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                        .cast::<CArray<SpeciesInfo, 0>>())[species]
+                        .types[1];
                 let mut typeDmg: u8 = TYPE_MUL_NORMAL;
                 ModulateByTypeEffectiveness(
                     gBattleMons[opposingBattler].types[0],
@@ -950,8 +941,7 @@ pub unsafe extern "C" fn GetMostSuitableMonToSwitchInto() -> u8 {
     gCritMultiplier = 1;
     bestDmg = 0;
     bestMonId = PARTY_SIZE as u8;
-    i = firstId;
-    while i < lastId {
+    for i in firstId..lastId {
         'l4: {
             if GetMonData2(party.at(i), MON_DATA_SPECIES) as u16 == SPECIES_NONE {
                 break 'l4;
@@ -979,11 +969,15 @@ pub unsafe extern "C" fn GetMostSuitableMonToSwitchInto() -> u8 {
             {
                 break 'l4;
             }
-            j = 0;
-            while j < MAX_MON_MOVES {
+            for j in 0..MAX_MON_MOVES {
                 r#move = GetMonData2(party.at(i), MON_DATA_MOVE1 + j) as u16;
                 gBattleMoveDamage = 0;
-                if r#move != MOVE_NONE && gBattleMoves[r#move].power != 1 {
+                if r#move != MOVE_NONE
+                    && (*(&raw const crate::data::pokemon::gBattleMoves)
+                        .cast::<CArray<BattleMove, 0>>())[r#move]
+                        .power
+                        != 1
+                {
                     AI_CalcDmg(gActiveBattler, opposingBattler);
                     TypeCalc(r#move, gActiveBattler, opposingBattler);
                 }
@@ -991,14 +985,12 @@ pub unsafe extern "C" fn GetMostSuitableMonToSwitchInto() -> u8 {
                     bestDmg = gBattleMoveDamage as u8;
                     bestMonId = i as u8;
                 }
-                j += 1;
             }
         }
-        i += 1;
     }
-    return bestMonId;
+    bestMonId
 }
-pub(crate) unsafe extern "C" fn GetAI_ItemType(itemId: u8, itemEffect: *mut u8) -> u8 {
+unsafe fn GetAI_ItemType(itemId: u8, itemEffect: *mut u8) -> u8 {
     if itemId == ITEM_FULL_RESTORE {
         return AI_ITEM_FULL_RESTORE;
     } else if *itemEffect.at(4) as i32 & 0x4 != 0 {
@@ -1014,12 +1006,11 @@ pub(crate) unsafe extern "C" fn GetAI_ItemType(itemId: u8, itemEffect: *mut u8) 
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ShouldUseItem() -> u8 {
+unsafe fn ShouldUseItem() -> u8 {
     let mut party: *mut Pokemon = null_mut();
-    let mut i: i32 = 0;
     let mut validMons: u8 = 0;
     let mut shouldUse: u8 = FALSE;
     if gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER != 0
@@ -1032,7 +1023,7 @@ pub(crate) unsafe extern "C" fn ShouldUseItem() -> u8 {
     } else {
         party = gEnemyParty.as_mut_ptr();
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i < PARTY_SIZE {
         if GetMonData2(party.at(i), MON_DATA_HP) != 0
             && GetMonData2(party.at(i), MON_DATA_SPECIES_OR_EGG) != SPECIES_NONE as u32
@@ -1042,10 +1033,8 @@ pub(crate) unsafe extern "C" fn ShouldUseItem() -> u8 {
         }
         i += 1;
     }
-    i = 0;
-    while i < MAX_TRAINER_ITEMS {
+    for i in 0..MAX_TRAINER_ITEMS {
         'l2: {
-            let mut item: u16 = 0;
             let mut itemEffects: *mut u8 = null_mut();
             let mut paramOffset: u8 = 0;
             let mut battlerSide: u8 = 0;
@@ -1054,17 +1043,22 @@ pub(crate) unsafe extern "C" fn ShouldUseItem() -> u8 {
             {
                 break 'l2;
             }
-            item = (*(*gBattleResources).battleHistory).trainerItems[i];
+            let item: u16 = (*(*gBattleResources).battleHistory).trainerItems[i];
             if item == ITEM_NONE {
                 break 'l2;
             }
-            if gItemEffectTable[item as i32 - ITEM_POTION].is_null() {
+            if (*(&raw const crate::data::pokemon::gItemEffectTable).cast::<CArray<*mut u8, 0>>())
+                [item as i32 - ITEM_POTION]
+                .is_null()
+            {
                 break 'l2;
             }
             if item == ITEM_ENIGMA_BERRY {
                 itemEffects = (*gSaveBlock1Ptr).enigmaBerry.itemEffect.as_mut_ptr();
             } else {
-                itemEffects = gItemEffectTable[item as i32 - ITEM_POTION];
+                itemEffects =
+                    (*(&raw const crate::data::pokemon::gItemEffectTable)
+                        .cast::<CArray<*mut u8, 0>>())[item as i32 - ITEM_POTION];
             }
             *(*gBattleStruct)
                 .AI_itemType
@@ -1235,7 +1229,6 @@ pub(crate) unsafe extern "C" fn ShouldUseItem() -> u8 {
                 return shouldUse;
             }
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }

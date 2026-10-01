@@ -3,37 +3,60 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::useless_transmute
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect_Palette0, HideBg,
+    ResetBgsAndClearDma3BusyFlags, ShowBg,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::gpu_regs::{DisableInterrupts, EnableInterrupts, SetGpuReg};
+use crate::m4a::m4aSoundVSyncOff;
+use crate::menu::AddTextPrinterParameterized3;
+use crate::multiboot::{MultiBootCheckComplete, MultiBootInit, MultiBootStartMaster};
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::sprite::ResetSpriteData;
+use crate::task::ResetTasks;
+use crate::text::DeactivateAllTextPrinters;
+use crate::text::GetStringWidth;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{CopyWindowToVram, FillWindowPixelBuffer, PutWindowTilemap};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `MultiBootMain` with this module's view of its types.
+#[inline]
+unsafe fn MultiBootMain(a0: *mut MultiBootParam) -> i32 {
+    unsafe { crate::multiboot::MultiBootMain(a0 as _) }
+}
 // Data tables (translate with cdata.py): sText_BerryProgramUpdate sText_RubySapphire sText_Emerald sText_BerryProgramWillBeUpdatedPressA sText_EnsureGBAConnectionMatches sText_TurnOffPowerHoldingStartSelect sText_TransmittingPleaseWait sText_PleaseFollowInstructionsOnScreen sText_TransmissionFailureTryAgain sBerryFixBgTemplates sBerryFixWindowTemplates sText_Pal sBerryProgramTextColors sGameTitleTextColors sBerryProgramTexts sBerryFixGraphics
 
 /// `__typeof__(*((__typeof__(sBerryFix))0))`
@@ -117,54 +140,41 @@ static sText_RubySapphire: Table<CArray<u8, 14>> =
 
 pub(crate) static mut sBerryFix: *mut typeof___sBerryFix_0_t = null_mut();
 
-unsafe extern "C" {
-    static mut gMain: Main;
-    static gMultiBootProgram_BerryGlitchFix_End: CArray<u8, 0>;
-    static gMultiBootProgram_BerryGlitchFix_Start: CArray<u8, 15348>;
-    fn AddTextPrinterParameterized3(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: *mut u8,
-        a5: i8,
-        a6: *mut u8,
-    );
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn DeactivateAllTextPrinters();
-    fn DisableInterrupts(a0: u16);
-    fn DoSoftReset();
-    fn EnableInterrupts(a0: u16);
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32;
-    fn HideBg(a0: u8);
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void);
-    fn MultiBootCheckComplete(a0: *mut MultiBootParam) -> i32;
-    fn MultiBootInit(a0: *mut MultiBootParam);
-    fn MultiBootMain(a0: *mut MultiBootParam) -> i32;
-    fn MultiBootStartMaster(a0: *mut MultiBootParam, a1: *mut u8, a2: i32, a3: u8, a4: i8);
-    fn PutWindowTilemap(a0: u8);
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn ScanlineEffect_Stop();
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn m4aSoundVSyncOff();
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `DoSoftReset` with this module's view of its types.
+#[inline]
+unsafe fn DoSoftReset() {
+    unsafe {
+        crate::agb_main::DoSoftReset();
+    }
+}
+/// `LZ77UnCompVram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_InitBerryFixProgram() {
+pub unsafe fn CB2_InitBerryFixProgram() {
     DisableInterrupts(0xFFFF);
     EnableInterrupts(INTR_FLAG_VBLANK);
     m4aSoundVSyncOff();
@@ -178,7 +188,7 @@ pub unsafe extern "C" fn CB2_InitBerryFixProgram() {
     (*sBerryFix).curScene = SCENE_NONE;
     SetMainCallback2(Some(BerryFix_Main));
 }
-pub(crate) unsafe extern "C" fn BerryFix_Main() {
+pub(crate) unsafe fn BerryFix_Main() {
     match (*sBerryFix).state {
         MAINSTATE_INIT => {
             BerryFix_GpuSet();
@@ -200,8 +210,10 @@ pub(crate) unsafe extern "C" fn BerryFix_Main() {
         }
         MAINSTATE_INIT_MULTIBOOT => {
             if BerryFix_TrySetScene(SCENE_TURN_OFF_POWER) == SCENE_TURN_OFF_POWER {
-                (*sBerryFix).mb.masterp =
-                    gMultiBootProgram_BerryGlitchFix_Start.as_ptr().cast_mut();
+                (*sBerryFix).mb.masterp = (*crate::asmdata::gMultiBootProgram_BerryGlitchFix_Start
+                    .cast::<CArray<u8, 15348>>())
+                .as_ptr()
+                .cast_mut();
                 (*sBerryFix).mb.server_type = 0;
                 MultiBootInit(&raw mut (*sBerryFix).mb);
                 (*sBerryFix).timer = 0;
@@ -222,16 +234,23 @@ pub(crate) unsafe extern "C" fn BerryFix_Main() {
             {
                 MultiBootStartMaster(
                     &raw mut (*sBerryFix).mb,
-                    gMultiBootProgram_BerryGlitchFix_Start
+                    (*crate::asmdata::gMultiBootProgram_BerryGlitchFix_Start
+                        .cast::<CArray<u8, 15348>>())
+                    .as_ptr()
+                    .cast_mut()
+                    .at(192),
+                    ((*crate::asmdata::gMultiBootProgram_BerryGlitchFix_End.cast::<CArray<u8, 0>>())
                         .as_ptr()
-                        .cast_mut()
-                        .at(192),
-                    (gMultiBootProgram_BerryGlitchFix_End.as_ptr().cast_mut() as usize)
+                        .cast_mut() as usize)
                         .wrapping_sub(
-                            gMultiBootProgram_BerryGlitchFix_Start
-                                .as_ptr()
-                                .cast_mut()
-                                .at(192) as usize,
+                            (*crate::asmdata::gMultiBootProgram_BerryGlitchFix_Start.cast::<CArray<
+                                u8,
+                                15348,
+                            >>(
+                            ))
+                            .as_ptr()
+                            .cast_mut()
+                            .at(192) as usize,
                         ) as i32 as u32 as i32,
                     4,
                     1,
@@ -256,19 +275,16 @@ pub(crate) unsafe extern "C" fn BerryFix_Main() {
                 DoSoftReset();
             }
         }
-        MAINSTATE_FAILED => {
+        MAINSTATE_FAILED
             if BerryFix_TrySetScene(SCENE_TRANSMIT_FAILED) == SCENE_TRANSMIT_FAILED
-                && gMain.newKeys as i32 & A_BUTTON != 0
-            {
-                (*sBerryFix).state = MAINSTATE_BEGIN;
-            }
+                && gMain.newKeys as i32 & A_BUTTON != 0 =>
+        {
+            (*sBerryFix).state = MAINSTATE_BEGIN;
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn BerryFix_GpuSet() {
-    let mut width: i32 = 0;
-    let mut left: i32 = 0;
+unsafe fn BerryFix_GpuSet() {
     SetGpuReg(REG_OFFSET_BG0CNT, 0);
     SetGpuReg(REG_OFFSET_BG1CNT, 0);
     SetGpuReg(REG_OFFSET_BG0HOFS, 0);
@@ -282,7 +298,7 @@ pub(crate) unsafe extern "C" fn BerryFix_GpuSet() {
             volatile_write(&raw mut tmp, 0);
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                     volatile_write(dmaRegs.at(1), VRAM as u32);
                     volatile_write(dmaRegs.at(2), 0x85006000);
@@ -297,7 +313,7 @@ pub(crate) unsafe extern "C" fn BerryFix_GpuSet() {
             volatile_write(&raw mut tmp, 0);
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                     volatile_write(dmaRegs.at(1), OAM);
                     volatile_write(dmaRegs.at(2), 0x85000100);
@@ -312,7 +328,7 @@ pub(crate) unsafe extern "C" fn BerryFix_GpuSet() {
             volatile_write(&raw mut tmp, 0);
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                     volatile_write(dmaRegs.at(1), PLTT);
                     volatile_write(dmaRegs.at(2), 0x85000100);
@@ -332,7 +348,7 @@ pub(crate) unsafe extern "C" fn BerryFix_GpuSet() {
     {
         {
             {
-                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                 volatile_write(dmaRegs, sText_Pal.as_ptr().cast_mut() as usize as u32);
                 volatile_write(dmaRegs.at(1), 0x50001e0);
                 volatile_write(dmaRegs.at(2), 0x84000008);
@@ -344,8 +360,8 @@ pub(crate) unsafe extern "C" fn BerryFix_GpuSet() {
     FillWindowPixelBuffer(WIN_GAME_NAMES, 0);
     FillWindowPixelBuffer(WIN_TURN_OFF_TITLE, 0);
     FillWindowPixelBuffer(WIN_TITLE, 170);
-    width = GetStringWidth(FONT_SMALL, sText_Emerald.as_ptr().cast_mut(), 0);
-    left = (120 - width) / 2;
+    let mut width: i32 = GetStringWidth(FONT_SMALL, sText_Emerald.as_ptr().cast_mut(), 0);
+    let mut left: i32 = (120 - width) / 2;
     AddTextPrinterParameterized3(
         WIN_GAME_NAMES,
         FONT_SMALL,
@@ -392,7 +408,7 @@ pub(crate) unsafe extern "C" fn BerryFix_GpuSet() {
     CopyWindowToVram(WIN_TURN_OFF_TITLE, COPYWIN_GFX);
     CopyWindowToVram(WIN_TITLE, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn BerryFix_TrySetScene(scene: i32) -> i32 {
+unsafe fn BerryFix_TrySetScene(scene: i32) -> i32 {
     if (*sBerryFix).curScene as i32 == scene {
         return scene;
     }
@@ -403,9 +419,9 @@ pub(crate) unsafe extern "C" fn BerryFix_TrySetScene(scene: i32) -> i32 {
         BerryFix_HideScene();
         (*sBerryFix).curScene = SCENE_NONE;
     }
-    return (*sBerryFix).curScene as i32;
+    (*sBerryFix).curScene as i32
 }
-pub(crate) unsafe extern "C" fn BerryFix_SetScene(scene: i32) {
+unsafe fn BerryFix_SetScene(scene: i32) {
     FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, 32, 32);
     FillWindowPixelBuffer(WIN_MSG_BODY, 170);
     AddTextPrinterParameterized3(
@@ -435,13 +451,10 @@ pub(crate) unsafe extern "C" fn BerryFix_SetScene(scene: i32) {
         _ => {}
     }
     CopyBgTilemapBufferToVram(0);
-    LZ77UnCompVram(
-        sBerryFixGraphics[scene].gfx,
-        0x6004000 as usize as *mut c_void,
-    );
+    LZ77UnCompVram(sBerryFixGraphics[scene].gfx, 0x6004000_usize as *mut c_void);
     LZ77UnCompVram(
         sBerryFixGraphics[scene].tilemap,
-        0x600f800 as usize as *mut c_void,
+        0x600f800_usize as *mut c_void,
     );
     CpuSet(
         sBerryFixGraphics[scene].palette as *mut c_void,
@@ -451,7 +464,7 @@ pub(crate) unsafe extern "C" fn BerryFix_SetScene(scene: i32) {
     ShowBg(0);
     ShowBg(1);
 }
-pub(crate) unsafe extern "C" fn BerryFix_HideScene() {
+unsafe fn BerryFix_HideScene() {
     HideBg(0);
     HideBg(1);
 }

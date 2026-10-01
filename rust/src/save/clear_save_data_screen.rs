@@ -5,8 +5,7 @@ use crate::ffi::{
     AddTextPrinterParameterized, BgTemplate, DUMMY_WIN_TEMPLATE, DestroyTask,
     DrawStdFrameWithCustomTileAndPalette, FONT_NORMAL, MAIN_STATE_OFFSET, MENU_B_PRESSED,
     MainCallback, PALETTES_BG, PLTT_SIZE, PLTT_SIZE_4BPP, PlaySE, RGB_WHITE, RGB_WHITEALPHA,
-    SE_SELECT, WindowTemplate, dma3_fill_large, gPlttBufferFaded, gPlttBufferUnfaded,
-    palette_fade_active, rgb, set_task_func,
+    SE_SELECT, WindowTemplate, dma3_fill_large, palette_fade_active, rgb, set_task_func,
 };
 use crate::gpu_regs::{EnableInterrupts, SetGpuReg};
 use crate::sprite::ResetSpriteData;
@@ -67,56 +66,108 @@ static YES_NO: WindowTemplate = WindowTemplate {
     base_block: 115,
 };
 
-unsafe extern "C" {
-    static gText_ClearAllSaveData: u8;
-    static gText_ClearingData: u8;
-    static gStandardMenuPalette: u16;
-    static mut gMain: u8;
-
-    fn SetMainCallback2(callback: MainCallback);
-    fn SetVBlankCallback(callback: Option<unsafe extern "C" fn()>);
-    fn BeginNormalPaletteFade(
-        selected_palettes: u32,
-        delay: i8,
-        start_y: u8,
-        target_y: u8,
-        blend_color: u16,
-    ) -> u8;
-    fn UpdatePaletteFade() -> u8;
-    fn TransferPlttBuffer();
-    fn ResetPaletteFade();
-    fn LoadPalette(src: *const core::ffi::c_void, offset: u16, size: u16);
-    fn DoSoftReset();
-    fn CreateYesNoMenu(
-        window: *const WindowTemplate,
-        base_tile_num: u16,
-        palette_num: u8,
-        initial_cursor_pos: u8,
-    );
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn DeactivateAllTextPrinters();
-    fn ClearSaveData();
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: MainCallback) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
+}
+/// `SetVBlankCallback` with this module's view of its types.
+#[inline]
+unsafe fn SetVBlankCallback(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetVBlankCallback(a0);
+    }
+}
+/// `BeginNormalPaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8 {
+    unsafe { crate::palette::BeginNormalPaletteFade(a0, a1, a2, a3, a4) }
+}
+/// `UpdatePaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn UpdatePaletteFade() -> u8 {
+    unsafe { crate::palette::UpdatePaletteFade() }
+}
+/// `TransferPlttBuffer` with this module's view of its types.
+#[inline]
+unsafe fn TransferPlttBuffer() {
+    unsafe {
+        crate::palette::TransferPlttBuffer();
+    }
+}
+/// `ResetPaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn ResetPaletteFade() {
+    unsafe {
+        crate::palette::ResetPaletteFade();
+    }
+}
+/// `LoadPalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadPalette(a0: *const core::ffi::c_void, a1: u16, a2: u16) {
+    unsafe {
+        crate::palette::LoadPalette(a0 as _, a1, a2);
+    }
+}
+/// `DoSoftReset` with this module's view of its types.
+#[inline]
+unsafe fn DoSoftReset() {
+    unsafe {
+        crate::agb_main::DoSoftReset();
+    }
+}
+/// `CreateYesNoMenu` with this module's view of its types.
+#[inline]
+unsafe fn CreateYesNoMenu(a0: *const WindowTemplate, a1: u16, a2: u8, a3: u8) {
+    unsafe {
+        crate::menu::CreateYesNoMenu(a0 as _, a1, a2, a3);
+    }
+}
+/// `Menu_ProcessInputNoWrapClearOnChoose` with this module's view of its types.
+#[inline]
+unsafe fn Menu_ProcessInputNoWrapClearOnChoose() -> i8 {
+    unsafe { crate::menu::Menu_ProcessInputNoWrapClearOnChoose() }
+}
+/// `DeactivateAllTextPrinters` with this module's view of its types.
+#[inline]
+unsafe fn DeactivateAllTextPrinters() {
+    unsafe {
+        crate::text::DeactivateAllTextPrinters();
+    }
+}
+/// `ClearSaveData` with this module's view of its types.
+#[inline]
+unsafe fn ClearSaveData() {
+    unsafe {
+        crate::save::ClearSaveData();
+    }
 }
 
 #[inline]
 unsafe fn main_state() -> *mut u8 {
-    unsafe { (&raw mut gMain).cast::<u8>().add(MAIN_STATE_OFFSET) }
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_InitClearSaveDataScreen() {
-    if unsafe { setup_screen() } {
-        unsafe { CreateTask(task_do_yes_no, 0) };
+    unsafe {
+        (&raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
+            .cast::<u8>()
+            .add(MAIN_STATE_OFFSET)
     }
 }
 
-unsafe extern "C" fn task_do_yes_no(task_id: u8) {
+#[unsafe(no_mangle)]
+pub unsafe fn CB2_InitClearSaveDataScreen() {
+    if unsafe { setup_screen() } {
+        CreateTask(task_do_yes_no, 0);
+    }
+}
+
+unsafe fn task_do_yes_no(task_id: u8) {
     unsafe { DrawStdFrameWithCustomTileAndPalette(0, 0, 2, 14) };
     unsafe {
         AddTextPrinterParameterized(
             0,
             FONT_NORMAL,
-            &raw const gText_ClearAllSaveData,
+            &raw const (*(&raw const crate::data::strings::gText_ClearAllSaveData).cast::<u8>()),
             0,
             1,
             0,
@@ -127,7 +178,7 @@ unsafe extern "C" fn task_do_yes_no(task_id: u8) {
     unsafe { set_task_func(task_id, task_yes_no_choice) };
 }
 
-unsafe extern "C" fn task_yes_no_choice(task_id: u8) {
+unsafe fn task_yes_no_choice(task_id: u8) {
     match unsafe { Menu_ProcessInputNoWrapClearOnChoose() } {
         0 => {
             unsafe { FillWindowPixelBuffer(0, 0x11) };
@@ -135,7 +186,8 @@ unsafe extern "C" fn task_yes_no_choice(task_id: u8) {
                 AddTextPrinterParameterized(
                     0,
                     FONT_NORMAL,
-                    &raw const gText_ClearingData,
+                    &raw const (*(&raw const crate::data::strings::gText_ClearingData)
+                        .cast::<u8>()),
                     0,
                     1,
                     0,
@@ -153,30 +205,34 @@ unsafe extern "C" fn task_yes_no_choice(task_id: u8) {
     }
 }
 
-unsafe extern "C" fn task_clear_save_data(task_id: u8) {
+unsafe fn task_clear_save_data(task_id: u8) {
     unsafe { ClearSaveData() };
     unsafe { DestroyTask(task_id) };
     unsafe { SetMainCallback2(cb2_fade_and_do_reset) };
 }
 
-unsafe extern "C" fn main_cb() {
-    unsafe { RunTasks() };
+unsafe fn main_cb() {
+    RunTasks();
     unsafe { UpdatePaletteFade() };
 }
 
-unsafe extern "C" fn vblank_cb() {
+unsafe fn vblank_cb() {
     unsafe { TransferPlttBuffer() };
 }
 
 unsafe fn set_palette_color(index: usize, color: u16) {
     unsafe {
-        (&raw mut gPlttBufferUnfaded)
+        (&raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+            .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
+            .cast_mut()))
             .cast::<u16>()
             .add(index)
             .write(color)
     };
     unsafe {
-        (&raw mut gPlttBufferFaded)
+        (&raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+            .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
+            .cast_mut()))
             .cast::<u16>()
             .add(index)
             .write(color)
@@ -224,7 +280,7 @@ unsafe fn setup_screen() -> bool {
     for i in 0..0x400 {
         unsafe { (BG_SCREEN_30 as *mut u16).add(i).write_volatile(0x0001) };
     }
-    unsafe { ResetTasks() };
+    ResetTasks();
     unsafe { ResetSpriteData() };
     unsafe { ResetBgsAndClearDma3BusyFlags(0) };
     unsafe { InitBgsFromTemplates(0, BG_TEMPLATES.as_ptr().cast(), BG_TEMPLATES.len() as u8) };
@@ -240,7 +296,7 @@ unsafe fn setup_screen() -> bool {
     false
 }
 
-unsafe extern "C" fn cb2_fade_and_do_reset() {
+unsafe fn cb2_fade_and_do_reset() {
     let state = unsafe { main_state() };
     if unsafe { state.read() } == 1 {
         unsafe { UpdatePaletteFade() };
@@ -261,7 +317,8 @@ unsafe fn init_windows() {
     unsafe { LoadWindowGfx(0, 0, 2, 14 * 16) };
     unsafe {
         LoadPalette(
-            (&raw const gStandardMenuPalette).cast(),
+            (&raw const (*(&raw const crate::data::menu::gStandardMenuPalette).cast::<u16>()))
+                .cast(),
             15 * 16,
             PLTT_SIZE_4BPP,
         )

@@ -28,13 +28,33 @@ const ESCALATOR_2F_1: [i16; 3] = [0x2a1, 0x2a3, 0x2a5];
 const ESCALATOR_2F_2: [i16; 3] = [0x2a8, 0x2aa, 0x2ac];
 
 #[unsafe(link_section = "ewram_data")]
-static mut ESCALATOR_ANIM_TASK_ID: u8 = 0;
+static ESCALATOR_ANIM_TASK_ID: crate::global::Global<u8> = crate::global::Global::new(0);
 
-unsafe extern "C" {
-    fn MapGridGetMetatileIdAt(x: i32, y: i32) -> i32;
-    fn MapGridSetMetatileIdAt(x: i32, y: i32, metatile: u16);
-    fn DrawWholeMapView();
-    fn PlayerGetDestCoords(x: *mut i16, y: *mut i16);
+/// `MapGridGetMetatileIdAt` with this module's view of its types.
+#[inline]
+unsafe fn MapGridGetMetatileIdAt(a0: i32, a1: i32) -> i32 {
+    unsafe { crate::fieldmap::MapGridGetMetatileIdAt(a0, a1) }
+}
+/// `MapGridSetMetatileIdAt` with this module's view of its types.
+#[inline]
+unsafe fn MapGridSetMetatileIdAt(a0: i32, a1: i32, a2: u16) {
+    unsafe {
+        crate::fieldmap::MapGridSetMetatileIdAt(a0, a1, a2);
+    }
+}
+/// `DrawWholeMapView` with this module's view of its types.
+#[inline]
+unsafe fn DrawWholeMapView() {
+    unsafe {
+        crate::field_camera::DrawWholeMapView();
+    }
+}
+/// `PlayerGetDestCoords` with this module's view of its types.
+#[inline]
+unsafe fn PlayerGetDestCoords(a0: *mut i16, a1: *mut i16) {
+    unsafe {
+        crate::field_player_avatar::PlayerGetDestCoords(a0 as _, a1 as _);
+    }
 }
 
 /// Advances whichever of the 3x3 tiles around the player currently shows
@@ -76,7 +96,7 @@ unsafe fn set_escalator_metatile(task_id: u8, metatile_ids: &[i16; 3], metatile_
     }
 }
 
-unsafe extern "C" fn task_draw_escalator(task_id: u8) {
+unsafe fn task_draw_escalator(task_id: u8) {
     unsafe { set_task_data(task_id, T_DRAWING_ESCALATOR, 1) };
 
     // One escalator section per frame, in sequence.
@@ -120,20 +140,20 @@ unsafe fn create_escalator_task(going_up: u16) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartEscalator(going_up: u8) {
+pub unsafe fn StartEscalator(going_up: u8) {
     let task_id = unsafe { create_escalator_task(u16::from(going_up)) };
-    unsafe { (&raw mut ESCALATOR_ANIM_TASK_ID).write_volatile(task_id) };
+    unsafe { (ESCALATOR_ANIM_TASK_ID.as_ptr()).write_volatile(task_id) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StopEscalator() {
-    let task_id = unsafe { (&raw const ESCALATOR_ANIM_TASK_ID).read_volatile() };
+pub unsafe fn StopEscalator() {
+    let task_id = unsafe { (ESCALATOR_ANIM_TASK_ID.as_ptr().cast_const()).read_volatile() };
     unsafe { DestroyTask(task_id) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsEscalatorMoving() -> u8 {
-    let task_id = unsafe { (&raw const ESCALATOR_ANIM_TASK_ID).read_volatile() };
+pub unsafe fn IsEscalatorMoving() -> u8 {
+    let task_id = unsafe { (ESCALATOR_ANIM_TASK_ID.as_ptr().cast_const()).read_volatile() };
     // Only stopped once a full cycle has finished on the last stage.
     let finished = unsafe { task_data(task_id, T_DRAWING_ESCALATOR) } == 0
         && unsafe { task_data(task_id, T_TRANSITION_STAGE) } == LAST_ESCALATOR_STAGE;

@@ -3,37 +3,103 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::type_complexity,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::bg::CopyToBgTilemapBuffer;
+use crate::bg::{
+    CopyBgTilemapBufferToVram, FillBgTilemapBufferRect_Palette0, ResetBgsAndClearDma3BusyFlags,
+    ShowBg, UnsetBgTilemapBuffer,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::easy_chat::{ConvertEasyChatWordsToString, CopyEasyChatWord};
+use crate::gpu_regs::SetGpuReg;
+use crate::international_string_util::ConvertInternationalPlayerName;
+use crate::international_string_util::GetStringCenterAlignXOffset;
+use crate::load_save::gSaveBlock2Ptr;
+use crate::mail_data::MailSpeciesToSpecies;
+use crate::menu::{
+    AddTextPrinterParameterized3, DecompressAndCopyTileDataToVram,
+    FreeTempTileDataBuffersIfPossible, ResetTempTileDataBuffers,
+};
+use crate::menu_helpers::MenuHelpers_IsLinkActive;
+use crate::overworld::Overworld_IsRecvQueueAtMax;
+use crate::palette::{
+    BeginNormalPaletteFade, LoadPalette, ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade,
+    gPaletteFade,
+};
+use crate::palette::{gPlttBufferFaded, gPlttBufferUnfaded};
+use crate::pokemon_icon::{
+    CreateMonIconNoPersonality, FreeAndDestroyMonIconSprite, FreeMonIconPalette,
+    GetIconSpeciesNoPersonality, LoadMonIconPalette,
+};
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData,
+};
+use crate::string_util::{StringCopy, StringLength};
+use crate::task::ResetTasks;
+use crate::text::{DeactivateAllTextPrinters, RunTextPrinters};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, PutWindowTilemap,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
 // Data tables (translate with cdata.py): sBgTemplates sWindowTemplates sTextColors sBgColors sMailGraphics sLineLayouts_Wide sMailLayouts_Wide sLineLayouts_Tall sMailLayouts_Tall
 
 /// `struct MailRead`
@@ -42,8 +108,8 @@ use core::ptr::null_mut;
 pub struct MailRead {
     pub message: CArray<CArray<u8, 64>, 8>,
     pub playerName: CArray<u8, 12>,
-    pub exitCallback: Option<unsafe extern "C" fn()>,
-    pub callback: Option<unsafe extern "C" fn()>,
+    pub exitCallback: Option<unsafe fn()>,
+    pub callback: Option<unsafe fn()>,
     pub mail: *mut Mail,
     pub hasText: u8,
     pub signatureWidth: u8,
@@ -52,8 +118,8 @@ pub struct MailRead {
     pub monIconSpriteId: u8,
     pub language: u8,
     pub international: u8,
-    pub parserSingle: Option<unsafe extern "C" fn(*mut u8, u16) -> *mut u8>,
-    pub parserMultiple: Option<unsafe extern "C" fn(*mut u8, *mut u16, u16, u16) -> *mut u8>,
+    pub parserSingle: Option<unsafe fn(*mut u8, u16) -> *mut u8>,
+    pub parserMultiple: Option<unsafe fn(*mut u8, *mut u16, u16, u16) -> *mut u8>,
     pub layout: *mut MailLayout,
     pub bg1TilemapBuffer: CArray<u8, 4096>,
     pub bg2TilemapBuffer: CArray<u8, 4096>,
@@ -100,11 +166,11 @@ pub struct MailLineLayout {
 impl MailLineLayout {
     #[inline(always)]
     pub fn numEasyChatWords(&self) -> u8 {
-        ((self.bits_0 as u32 >> 0) & 0x3) as u8
+        ((self.bits_0 as u32) & 0x3) as u8
     }
     #[inline(always)]
     pub fn set_numEasyChatWords(&mut self, v: u8) {
-        self.bits_0 = (self.bits_0 & !(0x3 << 0)) | ((v as u8 & 0x3) << 0);
+        self.bits_0 = (self.bits_0 & !0x3) | (v & 0x3);
     }
     #[inline(always)]
     pub fn xOffset(&self) -> u8 {
@@ -112,7 +178,7 @@ impl MailLineLayout {
     }
     #[inline(always)]
     pub fn set_xOffset(&mut self, v: u8) {
-        self.bits_0 = (self.bits_0 & !(0x3f << 2)) | ((v as u8 & 0x3f) << 2);
+        self.bits_0 = (self.bits_0 & !(0x3f << 2)) | ((v & 0x3f) << 2);
     }
 }
 
@@ -181,97 +247,32 @@ static sWindowTemplates: Table<CArray<WindowTemplate, 2>> =
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sMailRead: *mut MailRead = null_mut();
 
-unsafe extern "C" {
-    static mut gMain: Main;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlttBufferFaded: CArray<u16, 512>;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSprites: CArray<Sprite, 65>;
-    static gText_FromSpace: CArray<u8, 0>;
-    fn AddTextPrinterParameterized3(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: *mut u8,
-        a5: i8,
-        a6: *mut u8,
-    );
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BuildOamBuffer();
-    fn ConvertEasyChatWordsToString(a0: *mut u8, a1: *mut u16, a2: u16, a3: u16) -> *mut u8;
-    fn ConvertInternationalPlayerName(a0: *mut u8);
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyEasyChatWord(a0: *mut u8, a1: u16) -> *mut u8;
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateMonIconNoPersonality(
-        a0: u16,
-        a1: Option<unsafe extern "C" fn(*mut Sprite)>,
-        a2: i16,
-        a3: i16,
-        a4: u8,
-        a5: u32,
-    ) -> u8;
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeAndDestroyMonIconSprite(a0: *mut Sprite);
-    fn FreeMonIconPalette(a0: u16);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn GetIconSpeciesNoPersonality(a0: u16) -> u16;
-    fn GetOverworldTextboxPalettePtr() -> *mut u16;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn LoadMonIconPalette(a0: u16);
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn MailSpeciesToSpecies(a0: u16, a1: *mut u16) -> u16;
-    fn MenuHelpers_IsLinkActive() -> u8;
-    fn Overworld_IsRecvQueueAtMax() -> u32;
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn ResetTempTileDataBuffers();
-    fn RunTextPrinters();
-    fn ScanlineEffect_Stop();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringLength(a0: *mut u8) -> u16;
-    fn TransferPlttBuffer();
-    fn UnsetBgTilemapBuffer(a0: u8);
-    fn UpdatePaletteFade() -> u8;
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `GetOverworldTextboxPalettePtr` with this module's view of its types.
+#[inline]
+unsafe fn GetOverworldTextboxPalettePtr() -> *mut u16 {
+    unsafe { crate::text_window::GetOverworldTextboxPalettePtr() as *mut u16 }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ReadMail(
-    mail: *mut Mail,
-    exitCallback: Option<unsafe extern "C" fn()>,
-    mut hasText: u8,
-) {
+pub unsafe fn ReadMail(mail: *mut Mail, exitCallback: Option<unsafe fn()>, mut hasText: u8) {
     let mut buffer: CArray<u16, 2> = zeroed();
     let mut species: u16 = 0;
     sMailRead = AllocZeroed(8748) as *mut MailRead;
@@ -326,7 +327,7 @@ pub unsafe extern "C" fn ReadMail(
     (*sMailRead).hasText = hasText;
     SetMainCallback2(Some(CB2_InitMailRead));
 }
-pub(crate) unsafe extern "C" fn MailReadBuildGraphics() -> u8 {
+unsafe fn MailReadBuildGraphics() -> u8 {
     let mut icon: u16 = 0;
     match gMain.state {
         0 => {
@@ -472,9 +473,9 @@ pub(crate) unsafe extern "C" fn MailReadBuildGraphics() -> u8 {
         }
     }
     gMain.state += 1;
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn CB2_InitMailRead() {
+pub(crate) unsafe fn CB2_InitMailRead() {
     loop {
         if MailReadBuildGraphics() == TRUE {
             SetMainCallback2(Some(CB2_MailRead));
@@ -485,12 +486,9 @@ pub(crate) unsafe extern "C" fn CB2_InitMailRead() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn BufferMailText() {
-    let mut i: u16 = 0;
+unsafe fn BufferMailText() {
     let mut numWords: u8 = 0;
-    let mut ptr: *mut u8 = null_mut();
-    numWords = 0;
-    i = 0;
+    let mut i: u16 = 0;
     while i < (*(*sMailRead).layout).numLines as u16 {
         ConvertEasyChatWordsToString(
             (*sMailRead).message[i].as_mut_ptr(),
@@ -501,12 +499,17 @@ pub(crate) unsafe extern "C" fn BufferMailText() {
         numWords += (*(*(*sMailRead).layout).lines.at(i)).numEasyChatWords();
         i += 1;
     }
-    ptr = StringCopy(
+    let ptr: *mut u8 = StringCopy(
         (*sMailRead).playerName.as_mut_ptr(),
         (*(*sMailRead).mail).playerName.as_mut_ptr(),
     );
     if (*sMailRead).international == 0 {
-        StringCopy(ptr, gText_FromSpace.as_ptr().cast_mut());
+        StringCopy(
+            ptr,
+            (*(&raw const crate::data::strings::gText_FromSpace).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
         (*sMailRead).signatureWidth = (*(*sMailRead).layout).signatureWidth
             - (StringLength((*sMailRead).playerName.as_mut_ptr()) as u8 * 8 - 96);
     } else {
@@ -514,19 +517,14 @@ pub(crate) unsafe extern "C" fn BufferMailText() {
         (*sMailRead).signatureWidth = (*(*sMailRead).layout).signatureWidth;
     }
 }
-pub(crate) unsafe extern "C" fn PrintMailText() {
-    let mut i: u16 = 0;
+unsafe fn PrintMailText() {
     let mut signature: CArray<u8, 32> = zeroed();
     let mut y: u8 = 0;
-    let mut bufptr: *mut u8 = null_mut();
-    let mut box_x: i32 = 0;
-    let mut box_y: i32 = 0;
-    y = 0;
     PutWindowTilemap(0);
     PutWindowTilemap(1);
     FillWindowPixelBuffer(0, 0);
     FillWindowPixelBuffer(1, 0);
-    i = 0;
+    let mut i: u16 = 0;
     while i < (*(*sMailRead).layout).numLines as u16 {
         'l1: {
             if (*sMailRead).message[i][0] == EOS || (*sMailRead).message[i][0] == 0x00 {
@@ -545,14 +543,19 @@ pub(crate) unsafe extern "C" fn PrintMailText() {
         }
         i += 1;
     }
-    bufptr = StringCopy(signature.as_mut_ptr(), gText_FromSpace.as_ptr().cast_mut());
+    let bufptr: *mut u8 = StringCopy(
+        signature.as_mut_ptr(),
+        (*(&raw const crate::data::strings::gText_FromSpace).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
     StringCopy(bufptr, (*sMailRead).playerName.as_mut_ptr());
-    box_x = GetStringCenterAlignXOffset(
+    let box_x: i32 = GetStringCenterAlignXOffset(
         FONT_NORMAL as i32,
         signature.as_mut_ptr(),
         (*sMailRead).signatureWidth as i32,
     ) + 104;
-    box_y = (*(*sMailRead).layout).signatureYPos as i32 + 88;
+    let box_y: i32 = (*(*sMailRead).layout).signatureYPos as i32 + 88;
     AddTextPrinterParameterized3(
         0,
         FONT_NORMAL,
@@ -565,30 +568,30 @@ pub(crate) unsafe extern "C" fn PrintMailText() {
     CopyWindowToVram(0, COPYWIN_FULL);
     CopyWindowToVram(1, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn VBlankCB_MailRead() {
+pub(crate) unsafe fn VBlankCB_MailRead() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn CB2_MailRead() {
+pub(crate) unsafe fn CB2_MailRead() {
     if (*sMailRead).iconType != ICON_TYPE_NONE {
         AnimateSprites();
         BuildOamBuffer();
     }
     (*sMailRead).callback.unwrap_unchecked()();
 }
-pub(crate) unsafe extern "C" fn CB2_WaitForPaletteExitOnKeyPress() {
+pub(crate) unsafe fn CB2_WaitForPaletteExitOnKeyPress() {
     if UpdatePaletteFade() == 0 {
         (*sMailRead).callback = Some(CB2_ExitOnKeyPress);
     }
 }
-pub(crate) unsafe extern "C" fn CB2_ExitOnKeyPress() {
+pub(crate) unsafe fn CB2_ExitOnKeyPress() {
     if gMain.newKeys as i32 & 3 != 0 {
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
         (*sMailRead).callback = Some(CB2_ExitMailReadFreeVars);
     }
 }
-pub(crate) unsafe extern "C" fn CB2_ExitMailReadFreeVars() {
+pub(crate) unsafe fn CB2_ExitMailReadFreeVars() {
     if UpdatePaletteFade() == 0 {
         SetMainCallback2((*sMailRead).exitCallback);
         match (*sMailRead).iconType {

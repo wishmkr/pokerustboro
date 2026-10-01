@@ -3,37 +3,93 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::int_plus_one,
+    clippy::missing_transmute_annotations,
+    clippy::too_many_arguments,
+    clippy::unnecessary_cast,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::agb_main::{SetHBlankCallback, SetVBlankCallback};
+use crate::bg::{ChangeBgX, ChangeBgY};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::gpu_regs::SetGpuReg;
+use crate::link::{IsLinkRecvQueueAtOverworldMax, gReceivedRemoteLinkPlayers};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::mail_data::ItemIsMail;
+use crate::menu::{
+    AddTextPrinterParameterized2, CreateYesNoMenu, DrawDialogFrameWithCustomTileAndPalette,
+    Menu_ProcessInputNoWrapClearOnChoose,
+};
+use crate::overworld::{IsOverworldLinkActive, Overworld_IsRecvQueueAtMax};
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::string_util::gStringVar4;
+use crate::task::task_set_func;
+use crate::text::{IsTextPrinterActive, RunTextPrinters};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::union_room::InUnionRoom;
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `DestroySpriteAndFreeResources` with this module's view of its types.
+#[inline]
+unsafe fn DestroySpriteAndFreeResources(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySpriteAndFreeResources(a0 as _);
+    }
+}
+/// `LoadCompressedSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+    unsafe {
+        crate::decompress::LoadCompressedSpritePalette(a0 as _);
+    }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StringExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringExpandPlaceholders(a0 as _, a1 as _) as *mut u8 }
+}
 // Data tables (translate with cdata.py): sOamData_SwapLine sAnim_SwapLine_RightArrow sAnim_SwapLine_Line sAnim_SwapLine_LeftArrow sAnims_SwapLine sSpriteSheet_SwapLine sSpritePalette_SwapLine sSpriteTemplate_SwapLine
 
 static sSpritePalette_SwapLine: Table<CompressedSpritePalette> =
@@ -46,56 +102,18 @@ static sSpriteTemplate_SwapLine: Table<SpriteTemplate> =
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sYesNo: YesNoFuncTable = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMessageWindowId: u8 = 0;
-pub(crate) static mut sMessageNextTask: Option<unsafe extern "C" fn(u8)> = None;
+pub(crate) static sMessageWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
+pub(crate) static mut sMessageNextTask: Option<unsafe fn(u8)> = None;
 
-unsafe extern "C" {
-    static mut gMain: Main;
-    static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static mut gTextFlags: TextFlags;
-    fn AddTextPrinterParameterized2(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-        a5: u8,
-        a6: u8,
-        a7: u8,
-    ) -> u16;
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateYesNoMenu(a0: *mut WindowTemplate, a1: u16, a2: u8, a3: u8);
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroySpriteAndFreeResources(a0: *mut Sprite);
-    fn DrawDialogFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
-    fn InUnionRoom() -> u32;
-    fn IsLinkRecvQueueAtOverworldMax() -> u32;
-    fn IsOverworldLinkActive() -> u32;
-    fn IsTextPrinterActive(a0: u8) -> u16;
-    fn ItemIsMail(a0: u16) -> u8;
-    fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette);
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn Overworld_IsRecvQueueAtMax() -> u32;
-    fn PlaySE(a0: u16);
-    fn RunTextPrinters();
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetHBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetVramOamAndBgCntRegs() {
+pub unsafe fn ResetVramOamAndBgCntRegs() {
     SetGpuReg(0x0, 0);
     SetGpuReg(REG_OFFSET_BG3CNT, 0);
     SetGpuReg(REG_OFFSET_BG2CNT, 0);
@@ -135,8 +153,7 @@ pub unsafe extern "C" fn ResetVramOamAndBgCntRegs() {
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetAllBgsCoordinates() {
+pub unsafe fn ResetAllBgsCoordinates() {
     ChangeBgX(0, 0, BG_COORD_SET);
     ChangeBgY(0, 0, BG_COORD_SET);
     ChangeBgX(1, 0, BG_COORD_SET);
@@ -146,13 +163,11 @@ pub unsafe extern "C" fn ResetAllBgsCoordinates() {
     ChangeBgX(3, 0, BG_COORD_SET);
     ChangeBgY(3, 0, BG_COORD_SET);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetVBlankHBlankCallbacksToNull() {
+pub unsafe fn SetVBlankHBlankCallbacksToNull() {
     SetVBlankCallback(None);
     SetHBlankCallback(None);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DisplayMessageAndContinueTask(
+pub unsafe fn DisplayMessageAndContinueTask(
     taskId: u8,
     windowId: u8,
     tileNum: u16,
@@ -162,12 +177,15 @@ pub unsafe extern "C" fn DisplayMessageAndContinueTask(
     string: *mut u8,
     taskFunc: *mut c_void,
 ) {
-    sMessageWindowId = windowId;
+    sMessageWindowId.set(windowId);
     DrawDialogFrameWithCustomTileAndPalette(windowId, TRUE, tileNum, paletteNum);
     if string != gStringVar4.as_mut_ptr() {
         StringExpandPlaceholders(gStringVar4.as_mut_ptr(), string);
     }
-    gTextFlags.set_canABSpeedUpPrint(1);
+    (*(&raw const crate::text::gTextFlags)
+        .cast::<TextFlags>()
+        .cast_mut())
+    .set_canABSpeedUpPrint(1);
     AddTextPrinterParameterized2(
         windowId,
         fontId,
@@ -178,26 +196,23 @@ pub unsafe extern "C" fn DisplayMessageAndContinueTask(
         TEXT_COLOR_WHITE,
         TEXT_COLOR_LIGHT_GRAY,
     );
-    sMessageNextTask = core::mem::transmute::<_, Option<unsafe extern "C" fn(u8)>>(taskFunc);
-    gTasks[taskId].func = Some(Task_ContinueTaskAfterMessagePrints);
+    sMessageNextTask = core::mem::transmute::<_, Option<unsafe fn(u8)>>(taskFunc);
+    task_set_func(taskId, Some(Task_ContinueTaskAfterMessagePrints));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunTextPrintersRetIsActive(textPrinterId: u8) -> u16 {
+pub unsafe fn RunTextPrintersRetIsActive(textPrinterId: u8) -> u16 {
     RunTextPrinters();
-    return IsTextPrinterActive(textPrinterId);
+    IsTextPrinterActive(textPrinterId)
 }
-pub(crate) unsafe extern "C" fn Task_ContinueTaskAfterMessagePrints(taskId: u8) {
-    if RunTextPrintersRetIsActive(sMessageWindowId) == 0 {
+pub(crate) unsafe fn Task_ContinueTaskAfterMessagePrints(taskId: u8) {
+    if RunTextPrintersRetIsActive(sMessageWindowId.get()) == 0 {
         sMessageNextTask.unwrap_unchecked()(taskId);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoYesNoFuncWithChoice(taskId: u8, data: *mut YesNoFuncTable) {
+pub unsafe fn DoYesNoFuncWithChoice(taskId: u8, data: *mut YesNoFuncTable) {
     sYesNo = *data;
-    gTasks[taskId].func = Some(Task_CallYesOrNoCallback);
+    task_set_func(taskId, Some(Task_CallYesOrNoCallback));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateYesNoMenuWithCallbacks(
+pub unsafe fn CreateYesNoMenuWithCallbacks(
     taskId: u8,
     template: *mut WindowTemplate,
     unused1: u8,
@@ -209,9 +224,9 @@ pub unsafe extern "C" fn CreateYesNoMenuWithCallbacks(
 ) {
     CreateYesNoMenu(template, tileStart, palette, 0);
     sYesNo = *yesNo;
-    gTasks[taskId].func = Some(Task_CallYesOrNoCallback);
+    task_set_func(taskId, Some(Task_CallYesOrNoCallback));
 }
-pub(crate) unsafe extern "C" fn Task_CallYesOrNoCallback(taskId: u8) {
+pub(crate) unsafe fn Task_CallYesOrNoCallback(taskId: u8) {
     match Menu_ProcessInputNoWrapClearOnChoose() {
         0 => {
             PlaySE(SE_SELECT);
@@ -224,9 +239,8 @@ pub(crate) unsafe extern "C" fn Task_CallYesOrNoCallback(taskId: u8) {
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AdjustQuantityAccordingToDPadInput(quantity: *mut i16, max: u16) -> u8 {
-    let mut valBefore: i16 = *quantity;
+pub unsafe fn AdjustQuantityAccordingToDPadInput(quantity: *mut i16, max: u16) -> u8 {
+    let valBefore: i16 = *quantity;
     if gMain.newAndRepeatedKeys as i32 & DPAD_ANY == DPAD_UP {
         *quantity += 1;
         if *quantity as i32 > max as i32 {
@@ -272,10 +286,9 @@ pub unsafe extern "C" fn AdjustQuantityAccordingToDPadInput(quantity: *mut i16, 
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLRKeysPressed() -> u8 {
+pub unsafe fn GetLRKeysPressed() -> u8 {
     if (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_LR {
         if gMain.newKeys as i32 & L_BUTTON != 0 {
             return MENU_L_PRESSED;
@@ -284,10 +297,9 @@ pub unsafe extern "C" fn GetLRKeysPressed() -> u8 {
             return MENU_R_PRESSED;
         }
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLRKeysPressedAndHeld() -> u8 {
+pub unsafe fn GetLRKeysPressedAndHeld() -> u8 {
     if (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_LR {
         if gMain.newAndRepeatedKeys as i32 & L_BUTTON != 0 {
             return MENU_L_PRESSED;
@@ -296,10 +308,9 @@ pub unsafe extern "C" fn GetLRKeysPressedAndHeld() -> u8 {
             return MENU_R_PRESSED;
         }
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsHoldingItemAllowed(itemId: u16) -> u8 {
+pub unsafe fn IsHoldingItemAllowed(itemId: u16) -> u8 {
     if itemId == ITEM_ENIGMA_BERRY
         && ((*gSaveBlock1Ptr).location.mapGroup == 25 && (*gSaveBlock1Ptr).location.mapNum == 25
             || InUnionRoom() == TRUE as u32)
@@ -310,11 +321,10 @@ pub unsafe extern "C" fn IsHoldingItemAllowed(itemId: u16) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsWritingMailAllowed(itemId: u16) -> u8 {
+pub unsafe fn IsWritingMailAllowed(itemId: u16) -> u8 {
     if (IsOverworldLinkActive() == TRUE as u32 || InUnionRoom() == TRUE as u32)
         && ItemIsMail(itemId) == TRUE
     {
@@ -324,11 +334,10 @@ pub unsafe extern "C" fn IsWritingMailAllowed(itemId: u16) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MenuHelpers_IsLinkActive() -> u8 {
+pub unsafe fn MenuHelpers_IsLinkActive() -> u8 {
     if IsOverworldLinkActive() == 1 || gReceivedRemoteLinkPlayers == 1 {
         return TRUE;
     } else {
@@ -336,10 +345,10 @@ pub unsafe extern "C" fn MenuHelpers_IsLinkActive() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn IsActiveOverworldLinkBusy() -> u8 {
+unsafe fn IsActiveOverworldLinkBusy() -> u8 {
     if MenuHelpers_IsLinkActive() == 0 {
         return FALSE;
     } else {
@@ -347,11 +356,10 @@ pub(crate) unsafe extern "C" fn IsActiveOverworldLinkBusy() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MenuHelpers_ShouldWaitForLinkRecv() -> u8 {
+pub unsafe fn MenuHelpers_ShouldWaitForLinkRecv() -> u8 {
     if IsActiveOverworldLinkBusy() == TRUE || IsLinkRecvQueueAtOverworldMax() == TRUE as u32 {
         return TRUE;
     } else {
@@ -359,26 +367,22 @@ pub unsafe extern "C" fn MenuHelpers_ShouldWaitForLinkRecv() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetItemListPerPageCount(
+pub unsafe fn SetItemListPerPageCount(
     slots: *mut ItemSlot,
     slotsCount: u8,
     pageItems: *mut u8,
     totalItems: *mut u8,
     maxPerPage: u8,
 ) {
-    let mut i: u16 = 0;
-    let mut slots_: *mut ItemSlot = slots;
+    let slots_: *mut ItemSlot = slots;
     *totalItems = 0;
-    i = 0;
-    while i < slotsCount as u16 {
+    for i in 0..(slotsCount as u16) {
         if (*slots_.at(i)).itemId != ITEM_NONE {
             *totalItems += 1;
         }
-        i += 1;
     }
     *totalItems += 1;
     if *totalItems > maxPerPage {
@@ -387,8 +391,7 @@ pub unsafe extern "C" fn SetItemListPerPageCount(
         *pageItems = *totalItems;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCursorWithinListBounds(
+pub unsafe fn SetCursorWithinListBounds(
     scrollOffset: *mut u16,
     cursorPos: *mut u16,
     maxShownItems: u8,
@@ -405,8 +408,7 @@ pub unsafe extern "C" fn SetCursorWithinListBounds(
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCursorScrollWithinListBounds(
+pub unsafe fn SetCursorScrollWithinListBounds(
     scrollOffset: *mut u16,
     cursorPos: *mut u16,
     shownItems: u8,
@@ -440,16 +442,12 @@ pub unsafe extern "C" fn SetCursorScrollWithinListBounds(
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadListMenuSwapLineGfx() {
+pub unsafe fn LoadListMenuSwapLineGfx() {
     LoadCompressedSpriteSheet((&raw const *sSpriteSheet_SwapLine).cast_mut());
     LoadCompressedSpritePalette((&raw const *sSpritePalette_SwapLine).cast_mut());
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateSwapLineSprites(mut spriteIds: *mut u8, count: u8) {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < count {
+pub unsafe fn CreateSwapLineSprites(spriteIds: *mut u8, count: u8) {
+    for i in 0..count {
         *spriteIds.at(i) = CreateSprite(
             (&raw const *sSpriteTemplate_SwapLine).cast_mut(),
             i as i16 * 16,
@@ -460,53 +458,31 @@ pub unsafe extern "C" fn CreateSwapLineSprites(mut spriteIds: *mut u8, count: u8
             StartSpriteAnim(&raw mut gSprites[*spriteIds.at(i)], 1);
         }
         gSprites[*spriteIds.at(i)].set_invisible(TRUE as u16);
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DestroySwapLineSprites(spriteIds: *mut u8, count: u8) {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < count {
+pub unsafe fn DestroySwapLineSprites(spriteIds: *mut u8, count: u8) {
+    for i in 0..count {
         if i as i32 == count as i32 - 1 {
             DestroySpriteAndFreeResources(&raw mut gSprites[*spriteIds.at(i)]);
         } else {
             DestroySprite(&raw mut gSprites[*spriteIds.at(i)]);
         }
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetSwapLineSpritesInvisibility(
-    spriteIds: *mut u8,
-    count: u8,
-    invisible: u8,
-) {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < count {
+pub unsafe fn SetSwapLineSpritesInvisibility(spriteIds: *mut u8, count: u8, invisible: u8) {
+    for i in 0..count {
         gSprites[*spriteIds.at(i)].set_invisible(invisible as u16);
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateSwapLineSpritesPos(
-    spriteIds: *mut u8,
-    mut count: u8,
-    x: i16,
-    y: u16,
-) {
-    let mut i: u8 = 0;
-    let mut hasMargin: u8 = count & SWAP_LINE_HAS_MARGIN;
+pub unsafe fn UpdateSwapLineSpritesPos(spriteIds: *mut u8, mut count: u8, x: i16, y: u16) {
+    let hasMargin: u8 = count & SWAP_LINE_HAS_MARGIN;
     count &= 127;
-    i = 0;
-    while i < count {
+    for i in 0..count {
         if i as i32 == count as i32 - 1 && hasMargin != 0 {
             gSprites[*spriteIds.at(i)].x2 = x - 8;
         } else {
             gSprites[*spriteIds.at(i)].x2 = x;
         }
         gSprites[*spriteIds.at(i)].y = 1 + y as i16;
-        i += 1;
     }
 }

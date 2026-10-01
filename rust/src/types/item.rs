@@ -19,9 +19,9 @@ pub struct Item {
     pub registrability: u8,
     pub pocket: u8,
     pub r#type: u8,
-    pub fieldUseFunc: Option<unsafe extern "C" fn(u8)>,
+    pub fieldUseFunc: Option<unsafe fn(u8)>,
     pub battleUsage: u8,
-    pub battleUseFunc: Option<unsafe extern "C" fn(u8)>,
+    pub battleUseFunc: Option<unsafe fn(u8)>,
     pub secondaryId: u8,
 }
 

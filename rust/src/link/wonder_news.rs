@@ -20,12 +20,25 @@ struct WonderNewsMetadata {
     berry: u8,
 }
 
-unsafe extern "C" {
-
-    fn GetSavedWonderNewsMetadata() -> *mut WonderNewsMetadata;
-    fn Random() -> u16;
-    fn IsMysteryEventEnabled() -> u32;
-    fn ValidateSavedWonderNews() -> u32;
+/// `GetSavedWonderNewsMetadata` with this module's view of its types.
+#[inline]
+unsafe fn GetSavedWonderNewsMetadata() -> *mut WonderNewsMetadata {
+    unsafe { crate::mystery_gift::GetSavedWonderNewsMetadata() as *mut WonderNewsMetadata }
+}
+/// `Random` with this module's view of its types.
+#[inline]
+unsafe fn Random() -> u16 {
+    crate::random::Random()
+}
+/// `IsMysteryEventEnabled` with this module's view of its types.
+#[inline]
+unsafe fn IsMysteryEventEnabled() -> u32 {
+    crate::event_data::IsMysteryEventEnabled()
+}
+/// `ValidateSavedWonderNews` with this module's view of its types.
+#[inline]
+unsafe fn ValidateSavedWonderNews() -> u32 {
+    unsafe { crate::mystery_gift::ValidateSavedWonderNews() }
 }
 
 unsafe fn news_type(data: *const WonderNewsMetadata) -> u8 {
@@ -93,7 +106,7 @@ unsafe fn take_reward_item(data: *mut WonderNewsMetadata) -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderNews_SetReward(value: u32) {
+pub unsafe fn WonderNews_SetReward(value: u32) {
     let data = unsafe { GetSavedWonderNewsMetadata() };
     unsafe { set_news_type(data, value as u8) };
     let berry = match value {
@@ -105,7 +118,7 @@ pub unsafe extern "C" fn WonderNews_SetReward(value: u32) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderNews_Reset() {
+pub unsafe fn WonderNews_Reset() {
     let data = unsafe { GetSavedWonderNewsMetadata() };
     unsafe { addr_of_mut!((*data).counters).write(0) };
     unsafe { addr_of_mut!((*data).berry).write(0) };
@@ -113,7 +126,7 @@ pub unsafe extern "C" fn WonderNews_Reset() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderNews_IncrementStepCounter() {
+pub unsafe fn WonderNews_IncrementStepCounter() {
     let step_counter = unsafe { GetVarPointer(VAR_WONDER_NEWS_STEP_COUNTER) };
     let data = unsafe { GetSavedWonderNewsMetadata() };
     if unsafe { reward_counter(data) } >= MAX_REWARD {
@@ -127,7 +140,7 @@ pub unsafe extern "C" fn WonderNews_IncrementStepCounter() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderNews_GetRewardInfo() -> u16 {
+pub unsafe fn WonderNews_GetRewardInfo() -> u16 {
     if unsafe { IsMysteryEventEnabled() } == 0 || unsafe { ValidateSavedWonderNews() } == 0 {
         return NEWS_REWARD_NONE;
     }

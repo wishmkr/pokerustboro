@@ -3,37 +3,132 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    clippy::missing_transmute_annotations,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::battle_main::{CB2_InitBattle, gBattleOutcome, gBattleTypeFlags};
+use crate::battle_records::UpdatePlayerLinkBattleRecords;
+use crate::battle_setup::gTrainerBattleOpponent_A;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::ffi::{gSpecialVar_0x8004, gSpecialVar_0x8005, gSpecialVar_0x8006, gSpecialVar_Result};
+use crate::field_message_box::{
+    GetFieldMessageBoxMode, HideFieldMessageBox, IsFieldMessageBoxHidden, StopFieldMessage,
+};
+use crate::field_message_box::{ShowFieldAutoScrollMessage, ShowFieldMessage};
+use crate::field_specials::UpdateTrainerFansAfterLinkBattle;
+use crate::field_weather::FadeScreen;
+use crate::international_string_util::GetStringCenterAlignXOffset;
+use crate::link::{
+    CB2_LinkError, CheckLinkPlayersMatchSaved, CheckShouldAdvanceLinkState, ClearLinkCallback_2,
+    CloseLink, ConvertLinkPlayerName, DoesLinkPlayerCountMatchSaved, GetBlockReceivedStatus,
+    GetLinkPlayerCount, GetLinkPlayerCount_2, GetLinkPlayerCountAsBitFlags,
+    GetLinkPlayerDataExchangeStatusTimed, GetMultiplayerId, GetSavedLinkPlayerCountAsBitFlags,
+    GetSavedPlayerCount, GetSioMultiSI, HasLinkErrorOccurred, IsLinkConnectionEstablished,
+    IsLinkMaster, IsLinkPlayerDataExchangeComplete, IsLinkTaskFinished,
+    Link_AnyPartnersPlayingRubyOrSapphire, OpenLink, OpenLinkTimed, ResetBlockReceivedFlag,
+    ResetBlockReceivedFlags, ResetLinkPlayerCount, ResetLinkPlayers, SaveLinkPlayers, SendBlock,
+    SendBlockRequest, SetCloseLinkCallback, SetCloseLinkCallbackHandleJP, SetLinkStandbyCallback,
+    SetLocalLinkPlayerId, SetSuppressLinkErrorMessage, StartSendingKeysToLink, gLinkPlayers,
+    gLinkType, gLocalLinkPlayer, gReceivedRemoteLinkPlayers, gWirelessCommType,
+};
+use crate::link::{gBlockRecvBuffer, gBlockSendBuffer};
+use crate::link_rfu_2::ClearLinkRfuCallback;
+use crate::load_save::gSaveBlock2Ptr;
+use crate::load_save::{LoadPlayerParty, SavePlayerBag};
+use crate::m4a::m4aMPlayAllStop;
+use crate::menu::{ClearStdWindowAndFrame, EraseFieldMessageBox, SetStandardWindowBorderStyle};
+use crate::mystery_gift::MysteryGift_TryIncrementStat;
+use crate::overworld::{
+    CB2_ReturnToField, CB2_ReturnToFieldContinueScriptPlayMapMusic,
+    CB2_ReturnToFieldFromMultiplayer, CleanupOverworldWindowsAndTilemaps,
+    GetCableClubPartnersReady, Overworld_ResetMapMusic, QueueExitLinkRoomKey, SetInCableClubSeat,
+    SetLinkWaitingForScript, SetStartedCableClubActivity, SetWarpDestinationToDynamicWarp,
+    gFieldLinkPlayerCount, gLocalLinkPlayerId,
+};
+use crate::palette::gPaletteFade;
+use crate::party_menu::gSelectedOrderFromParty;
+use crate::pokemon::{GetMonData3, PlayMapChosenOrBattleBGM, gPlayerParty};
+use crate::script::{LockPlayerFieldControls, ScriptContext_Enable, ScriptContext_Stop};
+use crate::script_pokemon_util::ReducePlayerPartyToSelectedMons;
+use crate::sound::PlaySE;
+use crate::start_menu::{CB2_SetUpSaveAfterLinkBattle, SaveGame};
+use crate::string_util::{ConvertIntToDecimalStringN, StringCopy, StringExpandPlaceholders};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar4};
+use crate::task::gTasks;
+use crate::task::{DestroyTask, RunTasks, SwitchTaskToFollowupFunc};
+use crate::task::{task_get, task_set, task_set_func};
+use crate::trade::CB2_StartCreateTradeMenu;
+use crate::trade::gSelectedTradeMonPositions;
+use crate::trainer_card::{
+    CopyTrainerCardData, GetTrainerCardStars, ShowTrainerCardInLink,
+    TrainerCard_GenerateCardForLinkPlayer, gTrainerCards,
+};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::union_room::{CreateTask_CreateTradeMenu, InUnionRoom};
+use crate::window::{CopyWindowToVram, RemoveWindow};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+unsafe fn FindTaskIdByFunc(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `SetTaskFuncWithFollowupFunc` with this module's view of its types.
+#[inline]
+unsafe fn SetTaskFuncWithFollowupFunc(
+    a0: u8,
+    a1: Option<unsafe fn(u8)>,
+    a2: Option<unsafe fn(u8)>,
+) {
+    unsafe {
+        crate::task::SetTaskFuncWithFollowupFunc(
+            a0,
+            core::mem::transmute(a1),
+            core::mem::transmute(a2),
+        );
+    }
+}
+// The C's names for task and sprite data slots.
+const tState: usize = 0;
+const tMinPlayers: usize = 1;
+const tMaxPlayers: usize = 2;
+const tNumPlayers: usize = 3;
+const tWindowId: usize = 5;
 // Data tables (translate with cdata.py): sWindowTemplate_LinkPlayerCount sTrainerCardColorNames
 
 static sTrainerCardColorNames: Table<CArray<*mut u8, 4>> =
@@ -41,162 +136,45 @@ static sTrainerCardColorNames: Table<CArray<*mut u8, 4>> =
 static sWindowTemplate_LinkPlayerCount: Table<WindowTemplate> =
     Table((&raw const crate::data::cable_club::sWindowTemplate_LinkPlayerCount).cast());
 
-unsafe extern "C" {
-    static mut gBattleOutcome: u8;
-    static mut gBattleTypeFlags: u32;
-    static mut gBlockRecvBuffer: CArray<CArray<u16, 128>, 5>;
-    static mut gBlockSendBuffer: CArray<u8, 256>;
-    static mut gFieldLinkPlayerCount: u8;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gLinkType: u16;
-    static mut gLocalLinkPlayer: LinkPlayer;
-    static mut gLocalLinkPlayerId: u8;
-    static mut gMain: Main;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSelectedOrderFromParty: CArray<u8, 4>;
-    static mut gSelectedTradeMonPositions: CArray<u8, 2>;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_0x8005: u16;
-    static mut gSpecialVar_0x8006: u16;
-    static mut gSpecialVar_Result: u16;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_AwaitingLinkup: CArray<u8, 0>;
-    static gText_ConfirmLinkWhenPlayersReady: CArray<u8, 0>;
-    static gText_ConfirmStartLinkWithXPlayers: CArray<u8, 0>;
-    static gText_NumPlayerLink: CArray<u8, 0>;
-    static gText_PleaseWaitForLink: CArray<u8, 0>;
-    static mut gTrainerBattleOpponent_A: u16;
-    static mut gTrainerCards: CArray<TrainerCard, 4>;
-    static mut gWirelessCommType: u8;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn CB2_InitBattle();
-    fn CB2_LinkError();
-    fn CB2_ReturnToField();
-    fn CB2_ReturnToFieldContinueScriptPlayMapMusic();
-    fn CB2_ReturnToFieldFromMultiplayer();
-    fn CB2_SetUpSaveAfterLinkBattle();
-    fn CB2_StartCreateTradeMenu();
-    fn CheckLinkPlayersMatchSaved();
-    fn CheckShouldAdvanceLinkState();
-    fn CleanupOverworldWindowsAndTilemaps();
-    fn ClearLinkCallback_2();
-    fn ClearLinkRfuCallback();
-    fn ClearStdWindowAndFrame(a0: u8, a1: u8);
-    fn CloseLink();
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn ConvertLinkPlayerName(a0: *mut LinkPlayer);
-    fn CopyTrainerCardData(a0: *mut TrainerCard, a1: *mut TrainerCard, a2: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateTask_CreateTradeMenu() -> u8;
-    fn DestroyTask(a0: u8);
-    fn DoesLinkPlayerCountMatchSaved() -> u8;
-    fn EraseFieldMessageBox(a0: u8);
-    fn FadeScreen(a0: u8, a1: i8);
-    fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetBlockReceivedStatus() -> u8;
-    fn GetCableClubPartnersReady() -> u32;
-    fn GetFieldMessageBoxMode() -> u8;
-    fn GetLinkPlayerCount() -> u8;
-    fn GetLinkPlayerCountAsBitFlags() -> u8;
-    fn GetLinkPlayerCount_2() -> u8;
-    fn GetLinkPlayerDataExchangeStatusTimed(a0: i32, a1: i32) -> u8;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetMultiplayerId() -> u8;
-    fn GetSavedLinkPlayerCountAsBitFlags() -> u8;
-    fn GetSavedPlayerCount() -> u8;
-    fn GetSioMultiSI() -> u8;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetTrainerCardStars(a0: u8) -> u8;
-    fn HasLinkErrorOccurred() -> u8;
-    fn HideFieldMessageBox();
-    fn InUnionRoom() -> u32;
-    fn IsFieldMessageBoxHidden() -> u8;
-    fn IsLinkConnectionEstablished() -> u8;
-    fn IsLinkMaster() -> u8;
-    fn IsLinkPlayerDataExchangeComplete() -> u8;
-    fn IsLinkTaskFinished() -> u8;
-    fn Link_AnyPartnersPlayingRubyOrSapphire() -> u32;
-    fn LoadPlayerParty();
-    fn LockPlayerFieldControls();
-    fn MysteryGift_TryIncrementStat(a0: u32, a1: u32);
-    fn OpenLink();
-    fn OpenLinkTimed();
-    fn Overworld_ResetMapMusic();
-    fn PlayMapChosenOrBattleBGM(a0: u16);
-    fn PlaySE(a0: u16);
-    fn QueueExitLinkRoomKey() -> u16;
-    fn ReducePlayerPartyToSelectedMons();
-    fn RemoveWindow(a0: u8);
-    fn ResetBlockReceivedFlag(a0: u8);
-    fn ResetBlockReceivedFlags();
-    fn ResetLinkPlayerCount();
-    fn ResetLinkPlayers();
-    fn RunTasks();
-    fn SaveGame();
-    fn SaveLinkPlayers(a0: u8);
-    fn SavePlayerBag();
-    fn ScriptContext_Enable();
-    fn ScriptContext_Stop();
-    fn SendBlock(a0: u8, a1: *mut c_void, a2: u16) -> u8;
-    fn SendBlockRequest(a0: u8) -> u8;
-    fn SetCloseLinkCallback();
-    fn SetCloseLinkCallbackHandleJP();
-    fn SetInCableClubSeat() -> u16;
-    fn SetLinkStandbyCallback();
-    fn SetLinkWaitingForScript() -> u16;
-    fn SetLocalLinkPlayerId(a0: u8);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetStandardWindowBorderStyle(a0: u8, a1: u8);
-    fn SetStartedCableClubActivity() -> u16;
-    fn SetSuppressLinkErrorMessage(a0: u8);
-    fn SetTaskFuncWithFollowupFunc(
-        a0: u8,
-        a1: Option<unsafe extern "C" fn(u8)>,
-        a2: Option<unsafe extern "C" fn(u8)>,
-    );
-    fn SetWarpDestinationToDynamicWarp(a0: u8);
-    fn ShowFieldAutoScrollMessage(a0: *mut u8) -> u8;
-    fn ShowFieldMessage(a0: *mut u8) -> u8;
-    fn ShowTrainerCardInLink(a0: u8, a1: Option<unsafe extern "C" fn()>);
-    fn StartSendingKeysToLink();
-    fn StopFieldMessage();
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn SwitchTaskToFollowupFunc(a0: u8);
-    fn TrainerCard_GenerateCardForLinkPlayer(a0: *mut TrainerCard);
-    fn UpdatePlayerLinkBattleRecords(a0: i32);
-    fn UpdateTrainerFansAfterLinkBattle();
-    fn m4aMPlayAllStop();
-}
-
-pub(crate) unsafe extern "C" fn CreateLinkupTask(minPlayers: u8, maxPlayers: u8) {
-    if FindTaskIdByFunc(Some(Task_LinkupStart)) == TASK_NONE {
-        let mut taskId1: u8 = 0;
-        taskId1 = CreateTask(Some(Task_LinkupStart), 80);
-        gTasks[taskId1].data[1] = minPlayers as i16;
-        gTasks[taskId1].data[2] = maxPlayers as i16;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
     }
 }
-pub(crate) unsafe extern "C" fn PrintNumPlayersInLink(windowId: u16, numPlayers: u32) {
-    let mut xPos: u8 = 0;
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
+}
+
+unsafe fn CreateLinkupTask(minPlayers: u8, maxPlayers: u8) {
+    if FindTaskIdByFunc(Some(Task_LinkupStart)) == TASK_NONE {
+        let taskId1: u8 = CreateTask(Some(Task_LinkupStart), 80);
+        task_set(taskId1, tMinPlayers, minPlayers as i16);
+        task_set(taskId1, tMaxPlayers, maxPlayers as i16);
+    }
+}
+unsafe fn PrintNumPlayersInLink(windowId: u16, numPlayers: u32) {
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
         numPlayers as i32,
@@ -206,9 +184,12 @@ pub(crate) unsafe extern "C" fn PrintNumPlayersInLink(windowId: u16, numPlayers:
     SetStandardWindowBorderStyle(windowId as u8, FALSE);
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_NumPlayerLink.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_NumPlayerLink).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
-    xPos = GetStringCenterAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 88) as u8;
+    let xPos: u8 =
+        GetStringCenterAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 88) as u8;
     AddTextPrinterParameterized(
         windowId as u8,
         FONT_NORMAL,
@@ -220,12 +201,12 @@ pub(crate) unsafe extern "C" fn PrintNumPlayersInLink(windowId: u16, numPlayers:
     );
     CopyWindowToVram(windowId as u8, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn ClearLinkPlayerCountWindow(windowId: u16) {
+unsafe fn ClearLinkPlayerCountWindow(windowId: u16) {
     ClearStdWindowAndFrame(windowId as u8, FALSE);
     CopyWindowToVram(windowId as u8, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn UpdateLinkPlayerCountDisplay(taskId: u8, numPlayers: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+unsafe fn UpdateLinkPlayerCountDisplay(taskId: u8, numPlayers: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if numPlayers as i16 != *data.at(3) {
         if numPlayers <= 1 {
             ClearLinkPlayerCountWindow(*data.at(5) as u16);
@@ -235,10 +216,7 @@ pub(crate) unsafe extern "C" fn UpdateLinkPlayerCountDisplay(taskId: u8, numPlay
         *data.at(3) = numPlayers as i16;
     }
 }
-pub(crate) unsafe extern "C" fn ExchangeDataAndGetLinkupStatus(
-    minPlayers: u8,
-    maxPlayers: u8,
-) -> u32 {
+unsafe fn ExchangeDataAndGetLinkupStatus(minPlayers: u8, maxPlayers: u8) -> u32 {
     match GetLinkPlayerDataExchangeStatusTimed(minPlayers as i32, maxPlayers as i32) {
         1 => {
             return LINKUP_SUCCESS as u32;
@@ -270,63 +248,63 @@ pub(crate) unsafe extern "C" fn ExchangeDataAndGetLinkupStatus(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn CheckLinkErrored(taskId: u8) -> u32 {
+fn CheckLinkErrored(taskId: u8) -> u32 {
     if HasLinkErrorOccurred() == TRUE {
-        gTasks[taskId].func = Some(Task_LinkupConnectionError);
+        task_set_func(taskId, Some(Task_LinkupConnectionError));
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn CheckLinkCanceledBeforeConnection(taskId: u8) -> u32 {
+unsafe fn CheckLinkCanceledBeforeConnection(taskId: u8) -> u32 {
     if gMain.newKeys as i32 & B_BUTTON != 0 && IsLinkConnectionEstablished() == FALSE {
         gLinkType = 0;
-        gTasks[taskId].func = Some(Task_LinkupFailed);
+        task_set_func(taskId, Some(Task_LinkupFailed));
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn CheckLinkCanceled(taskId: u8) -> u32 {
+unsafe fn CheckLinkCanceled(taskId: u8) -> u32 {
     if IsLinkConnectionEstablished() != 0 {
         SetSuppressLinkErrorMessage(TRUE);
     }
     if gMain.newKeys as i32 & B_BUTTON != 0 {
         gLinkType = 0;
-        gTasks[taskId].func = Some(Task_LinkupFailed);
+        task_set_func(taskId, Some(Task_LinkupFailed));
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn CheckSioErrored(taskId: u8) -> u32 {
+unsafe fn CheckSioErrored(taskId: u8) -> u32 {
     if GetSioMultiSI() == TRUE {
-        gTasks[taskId].func = Some(Task_LinkupConnectionError);
+        task_set_func(taskId, Some(Task_LinkupConnectionError));
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn Task_DelayedBlockRequest(taskId: u8) {
-    gTasks[taskId].data[0] += 1;
-    if gTasks[taskId].data[0] == 10 {
+unsafe fn Task_DelayedBlockRequest(taskId: u8) {
+    task_set(taskId, 0, task_get(taskId, 0) + 1);
+    if task_get(taskId, 0) == 10 {
         SendBlockRequest(BLOCK_REQ_SIZE_100);
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_LinkupStart(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_LinkupStart(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data == 0 {
         OpenLinkTimed();
         ResetLinkPlayerCount();
         ResetLinkPlayers();
         *data.at(5) = AddWindow((&raw const *sWindowTemplate_LinkPlayerCount).cast_mut()) as i16;
     } else if *data > 9 {
-        gTasks[taskId].func = Some(Task_LinkupAwaitConnection);
+        task_set_func(taskId, Some(Task_LinkupAwaitConnection));
     }
     *data += 1;
 }
-pub(crate) unsafe extern "C" fn Task_LinkupAwaitConnection(taskId: u8) {
-    let mut playerCount: u32 = GetLinkPlayerCount_2() as u32;
+pub(crate) unsafe fn Task_LinkupAwaitConnection(taskId: u8) {
+    let playerCount: u32 = GetLinkPlayerCount_2() as u32;
     if CheckLinkCanceledBeforeConnection(taskId) == TRUE as u32
         || CheckLinkCanceled(taskId) == TRUE as u32
         || playerCount < 2
@@ -334,18 +312,26 @@ pub(crate) unsafe extern "C" fn Task_LinkupAwaitConnection(taskId: u8) {
         return;
     }
     SetSuppressLinkErrorMessage(TRUE);
-    gTasks[taskId].data[3] = 0;
+    task_set(taskId, 3, 0);
     if IsLinkMaster() == TRUE {
         PlaySE(SE_PIN);
-        ShowFieldAutoScrollMessage(gText_ConfirmLinkWhenPlayersReady.as_ptr().cast_mut());
-        gTasks[taskId].func = Some(Task_LinkupConfirmWhenReady);
+        ShowFieldAutoScrollMessage(
+            (*crate::asmdata::gText_ConfirmLinkWhenPlayersReady.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
+        task_set_func(taskId, Some(Task_LinkupConfirmWhenReady));
     } else {
         PlaySE(SE_BOO);
-        ShowFieldAutoScrollMessage(gText_AwaitingLinkup.as_ptr().cast_mut());
-        gTasks[taskId].func = Some(Task_LinkupExchangeDataWithLeader);
+        ShowFieldAutoScrollMessage(
+            (*crate::asmdata::gText_AwaitingLinkup.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
+        task_set_func(taskId, Some(Task_LinkupExchangeDataWithLeader));
     }
 }
-pub(crate) unsafe extern "C" fn Task_LinkupConfirmWhenReady(taskId: u8) {
+pub(crate) unsafe fn Task_LinkupConfirmWhenReady(taskId: u8) {
     if CheckLinkCanceledBeforeConnection(taskId) == TRUE as u32
         || CheckSioErrored(taskId) == TRUE as u32
         || CheckLinkErrored(taskId) == TRUE as u32
@@ -353,13 +339,13 @@ pub(crate) unsafe extern "C" fn Task_LinkupConfirmWhenReady(taskId: u8) {
         return;
     }
     if GetFieldMessageBoxMode() == FIELD_MESSAGE_BOX_HIDDEN {
-        gTasks[taskId].data[3] = 0;
-        gTasks[taskId].func = Some(Task_LinkupAwaitConfirmation);
+        task_set(taskId, tNumPlayers, 0);
+        task_set_func(taskId, Some(Task_LinkupAwaitConfirmation));
     }
 }
-pub(crate) unsafe extern "C" fn Task_LinkupAwaitConfirmation(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut linkPlayerCount: i32 = GetLinkPlayerCount_2() as i32;
+pub(crate) unsafe fn Task_LinkupAwaitConfirmation(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let linkPlayerCount: i32 = GetLinkPlayerCount_2() as i32;
     if CheckLinkCanceledBeforeConnection(taskId) == TRUE as u32
         || CheckSioErrored(taskId) == TRUE as u32
         || CheckLinkErrored(taskId) == TRUE as u32
@@ -381,10 +367,14 @@ pub(crate) unsafe extern "C" fn Task_LinkupAwaitConfirmation(taskId: u8) {
         STR_CONV_MODE_LEFT_ALIGN,
         1,
     );
-    ShowFieldAutoScrollMessage(gText_ConfirmStartLinkWithXPlayers.as_ptr().cast_mut());
-    gTasks[taskId].func = Some(Task_LinkupTryConfirmation);
+    ShowFieldAutoScrollMessage(
+        (*crate::asmdata::gText_ConfirmStartLinkWithXPlayers.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
+    task_set_func(taskId, Some(Task_LinkupTryConfirmation));
 }
-pub(crate) unsafe extern "C" fn Task_LinkupTryConfirmation(taskId: u8) {
+pub(crate) unsafe fn Task_LinkupTryConfirmation(taskId: u8) {
     if CheckLinkCanceledBeforeConnection(taskId) == TRUE as u32
         || CheckSioErrored(taskId) == TRUE as u32
         || CheckLinkErrored(taskId) == TRUE as u32
@@ -393,39 +383,45 @@ pub(crate) unsafe extern "C" fn Task_LinkupTryConfirmation(taskId: u8) {
     }
     if GetFieldMessageBoxMode() == FIELD_MESSAGE_BOX_HIDDEN {
         if GetSavedPlayerCount() != GetLinkPlayerCount_2() {
-            ShowFieldAutoScrollMessage(gText_ConfirmLinkWhenPlayersReady.as_ptr().cast_mut());
-            gTasks[taskId].func = Some(Task_LinkupConfirmWhenReady);
+            ShowFieldAutoScrollMessage(
+                (*crate::asmdata::gText_ConfirmLinkWhenPlayersReady.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
+            task_set_func(taskId, Some(Task_LinkupConfirmWhenReady));
         } else if gMain.heldKeys as i32 & B_BUTTON != 0 {
-            ShowFieldAutoScrollMessage(gText_ConfirmLinkWhenPlayersReady.as_ptr().cast_mut());
-            gTasks[taskId].func = Some(Task_LinkupConfirmWhenReady);
+            ShowFieldAutoScrollMessage(
+                (*crate::asmdata::gText_ConfirmLinkWhenPlayersReady.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
+            task_set_func(taskId, Some(Task_LinkupConfirmWhenReady));
         } else if gMain.heldKeys as i32 & A_BUTTON != 0 {
             PlaySE(SE_SELECT);
             CheckShouldAdvanceLinkState();
-            gTasks[taskId].func = Some(Task_LinkupConfirm);
+            task_set_func(taskId, Some(Task_LinkupConfirm));
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_LinkupConfirm(taskId: u8) {
-    let mut minPlayers: u8 = gTasks[taskId].data[1] as u8;
-    let mut maxPlayers: u8 = gTasks[taskId].data[2] as u8;
+pub(crate) unsafe fn Task_LinkupConfirm(taskId: u8) {
+    let minPlayers: u8 = task_get(taskId, tMinPlayers) as u8;
+    let maxPlayers: u8 = task_get(taskId, tMaxPlayers) as u8;
     if CheckLinkErrored(taskId) == TRUE as u32 || TryLinkTimeout(taskId) == TRUE {
         return;
     }
     if GetLinkPlayerCount_2() != GetSavedPlayerCount() {
-        gTasks[taskId].func = Some(Task_LinkupConnectionError);
+        task_set_func(taskId, Some(Task_LinkupConnectionError));
     } else {
         gSpecialVar_Result = ExchangeDataAndGetLinkupStatus(minPlayers, maxPlayers) as u16;
         if gSpecialVar_Result != LINKUP_ONGOING {
-            gTasks[taskId].func = Some(Task_LinkupCheckStatusAfterConfirm);
+            task_set_func(taskId, Some(Task_LinkupCheckStatusAfterConfirm));
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_LinkupExchangeDataWithLeader(taskId: u8) {
-    let mut minPlayers: u8 = 0;
-    let mut maxPlayers: u8 = 0;
+pub(crate) unsafe fn Task_LinkupExchangeDataWithLeader(taskId: u8) {
     let mut card: *mut TrainerCard = null_mut();
-    minPlayers = gTasks[taskId].data[1] as u8;
-    maxPlayers = gTasks[taskId].data[2] as u8;
+    let minPlayers: u8 = task_get(taskId, tMinPlayers) as u8;
+    let maxPlayers: u8 = task_get(taskId, tMaxPlayers) as u8;
     if CheckLinkCanceledBeforeConnection(taskId) == TRUE as u32
         || CheckLinkErrored(taskId) == TRUE as u32
     {
@@ -440,13 +436,13 @@ pub(crate) unsafe extern "C" fn Task_LinkupExchangeDataWithLeader(taskId: u8) {
     {
         SetCloseLinkCallback();
         HideFieldMessageBox();
-        gTasks[taskId].func = Some(Task_StopLinkup);
+        task_set_func(taskId, Some(Task_StopLinkup));
     } else if gSpecialVar_Result == LINKUP_PLAYER_NOT_READY
         || gSpecialVar_Result == LINKUP_PARTNER_NOT_READY
     {
         CloseLink();
         HideFieldMessageBox();
-        gTasks[taskId].func = Some(Task_StopLinkup);
+        task_set_func(taskId, Some(Task_StopLinkup));
     } else {
         gFieldLinkPlayerCount = GetLinkPlayerCount_2();
         gLocalLinkPlayerId = GetMultiplayerId();
@@ -463,10 +459,10 @@ pub(crate) unsafe extern "C" fn Task_LinkupExchangeDataWithLeader(taskId: u8) {
             MON_DATA_SPECIES,
             null_mut(),
         ) as u16;
-        gTasks[taskId].func = Some(Task_LinkupAwaitTrainerCardData);
+        task_set_func(taskId, Some(Task_LinkupAwaitTrainerCardData));
     }
 }
-pub(crate) unsafe extern "C" fn Task_LinkupCheckStatusAfterConfirm(taskId: u8) {
+pub(crate) unsafe fn Task_LinkupCheckStatusAfterConfirm(taskId: u8) {
     let mut card: *mut TrainerCard = null_mut();
     if CheckLinkErrored(taskId) == TRUE as u32 {
         return;
@@ -475,22 +471,22 @@ pub(crate) unsafe extern "C" fn Task_LinkupCheckStatusAfterConfirm(taskId: u8) {
         if Link_AnyPartnersPlayingRubyOrSapphire() == 0 {
             SetCloseLinkCallback();
             HideFieldMessageBox();
-            gTasks[taskId].func = Some(Task_StopLinkup);
+            task_set_func(taskId, Some(Task_StopLinkup));
         } else {
             CloseLink();
             HideFieldMessageBox();
-            gTasks[taskId].func = Some(Task_StopLinkup);
+            task_set_func(taskId, Some(Task_StopLinkup));
         }
     } else if gSpecialVar_Result == LINKUP_DIFF_SELECTIONS {
         SetCloseLinkCallback();
         HideFieldMessageBox();
-        gTasks[taskId].func = Some(Task_StopLinkup);
+        task_set_func(taskId, Some(Task_StopLinkup));
     } else if gSpecialVar_Result == LINKUP_PLAYER_NOT_READY
         || gSpecialVar_Result == LINKUP_PARTNER_NOT_READY
     {
         CloseLink();
         HideFieldMessageBox();
-        gTasks[taskId].func = Some(Task_StopLinkup);
+        task_set_func(taskId, Some(Task_StopLinkup));
     } else {
         gFieldLinkPlayerCount = GetLinkPlayerCount_2();
         gLocalLinkPlayerId = GetMultiplayerId();
@@ -507,51 +503,53 @@ pub(crate) unsafe extern "C" fn Task_LinkupCheckStatusAfterConfirm(taskId: u8) {
             MON_DATA_SPECIES,
             null_mut(),
         ) as u16;
-        gTasks[taskId].func = Some(Task_LinkupAwaitTrainerCardData);
+        task_set_func(taskId, Some(Task_LinkupAwaitTrainerCardData));
         SendBlockRequest(BLOCK_REQ_SIZE_100);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AreBattleTowerLinkSpeciesSame(
-    speciesList1: *mut u16,
-    speciesList2: *mut u16,
-) -> u32 {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+pub unsafe fn AreBattleTowerLinkSpeciesSame(speciesList1: *mut u16, speciesList2: *mut u16) -> u32 {
     let mut haveSameSpecies: u32 = FALSE as u32;
     let mut numSameSpecies: i32 = 0;
     gStringVar1[0] = EOS;
     gStringVar2[0] = EOS;
-    i = 0;
-    while i < FRONTIER_MULTI_PARTY_SIZE {
-        j = 0;
-        while j < FRONTIER_MULTI_PARTY_SIZE {
+    for i in 0..FRONTIER_MULTI_PARTY_SIZE {
+        for j in 0..FRONTIER_MULTI_PARTY_SIZE {
             if *speciesList1.at(i) == *speciesList2.at(j) {
                 if numSameSpecies == 0 {
                     StringCopy(
                         gStringVar1.as_mut_ptr(),
-                        gSpeciesNames[*speciesList1.at(i)].as_ptr().cast_mut(),
+                        (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<
+                            CArray<u8, 11>,
+                            0,
+                        >>(
+                        ))[*speciesList1.at(i)]
+                        .as_ptr()
+                        .cast_mut(),
                     );
                     haveSameSpecies = TRUE as u32;
                 }
                 if numSameSpecies == 1 {
                     StringCopy(
                         gStringVar2.as_mut_ptr(),
-                        gSpeciesNames[*speciesList1.at(i)].as_ptr().cast_mut(),
+                        (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<CArray<
+                            CArray<u8, 11>,
+                            0,
+                        >>(
+                        ))[*speciesList1.at(i)]
+                        .as_ptr()
+                        .cast_mut(),
                     );
                     haveSameSpecies = TRUE as u32;
                 }
                 numSameSpecies += 1;
             }
-            j += 1;
         }
-        i += 1;
     }
     gSpecialVar_0x8005 = numSameSpecies as u16;
-    return haveSameSpecies;
+    haveSameSpecies
 }
-pub(crate) unsafe extern "C" fn FinishLinkup(linkupStatus: *mut u16, taskId: u32) {
-    let mut trainerCards: *mut TrainerCard = gTrainerCards.as_mut_ptr();
+unsafe fn FinishLinkup(linkupStatus: *mut u16, taskId: u32) {
+    let trainerCards: *mut TrainerCard = gTrainerCards.as_mut_ptr();
     if *linkupStatus == LINKUP_SUCCESS {
         if gLinkType == LINKTYPE_BATTLE_TOWER_50 || gLinkType == LINKTYPE_BATTLE_TOWER_OPEN {
             if AreBattleTowerLinkSpeciesSame(
@@ -561,31 +559,30 @@ pub(crate) unsafe extern "C" fn FinishLinkup(linkupStatus: *mut u16, taskId: u32
             {
                 *linkupStatus = LINKUP_FAILED_BATTLE_TOWER;
                 SetCloseLinkCallback();
-                gTasks[taskId].func = Some(Task_StopLinkup);
+                task_set_func(taskId, Some(Task_StopLinkup));
             } else {
-                ClearLinkPlayerCountWindow(gTasks[taskId].data[5] as u16);
+                ClearLinkPlayerCountWindow(task_get(taskId, tWindowId) as u16);
                 ScriptContext_Enable();
                 DestroyTask(taskId as u8);
             }
         } else {
-            ClearLinkPlayerCountWindow(gTasks[taskId].data[5] as u16);
+            ClearLinkPlayerCountWindow(task_get(taskId, tWindowId) as u16);
             ScriptContext_Enable();
             DestroyTask(taskId as u8);
         }
     } else {
         SetCloseLinkCallback();
-        gTasks[taskId].func = Some(Task_StopLinkup);
+        task_set_func(taskId, Some(Task_StopLinkup));
     }
 }
-pub(crate) unsafe extern "C" fn Task_LinkupAwaitTrainerCardData(taskId: u8) {
-    let mut index: u8 = 0;
+pub(crate) unsafe fn Task_LinkupAwaitTrainerCardData(taskId: u8) {
     if CheckLinkErrored(taskId) == TRUE as u32 {
         return;
     }
     if GetBlockReceivedStatus() != GetSavedLinkPlayerCountAsBitFlags() {
         return;
     }
-    index = 0;
+    let mut index: u8 = 0;
     while index < GetLinkPlayerCount() {
         CopyTrainerCardData(
             &raw mut gTrainerCards[index],
@@ -598,43 +595,46 @@ pub(crate) unsafe extern "C" fn Task_LinkupAwaitTrainerCardData(taskId: u8) {
     ResetBlockReceivedFlags();
     FinishLinkup(&raw mut gSpecialVar_Result, taskId as u32);
 }
-pub(crate) unsafe extern "C" fn Task_StopLinkup(taskId: u8) {
+pub(crate) unsafe fn Task_StopLinkup(taskId: u8) {
     if gReceivedRemoteLinkPlayers == 0 {
-        ClearLinkPlayerCountWindow(gTasks[taskId].data[5] as u16);
+        ClearLinkPlayerCountWindow(task_get(taskId, tWindowId) as u16);
         ScriptContext_Enable();
-        RemoveWindow(gTasks[taskId].data[5] as u8);
+        RemoveWindow(task_get(taskId, tWindowId) as u8);
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_LinkupFailed(taskId: u8) {
+pub(crate) unsafe fn Task_LinkupFailed(taskId: u8) {
     gSpecialVar_Result = LINKUP_FAILED;
-    ClearLinkPlayerCountWindow(gTasks[taskId].data[5] as u16);
+    ClearLinkPlayerCountWindow(task_get(taskId, tWindowId) as u16);
     StopFieldMessage();
-    RemoveWindow(gTasks[taskId].data[5] as u8);
+    RemoveWindow(task_get(taskId, tWindowId) as u8);
     ScriptContext_Enable();
     DestroyTask(taskId);
 }
-pub(crate) unsafe extern "C" fn Task_LinkupConnectionError(taskId: u8) {
+pub(crate) unsafe fn Task_LinkupConnectionError(taskId: u8) {
     gSpecialVar_Result = LINKUP_CONNECTION_ERROR;
-    ClearLinkPlayerCountWindow(gTasks[taskId].data[5] as u16);
-    RemoveWindow(gTasks[taskId].data[5] as u8);
+    ClearLinkPlayerCountWindow(task_get(taskId, tWindowId) as u16);
+    RemoveWindow(task_get(taskId, tWindowId) as u8);
     HideFieldMessageBox();
     ScriptContext_Enable();
     DestroyTask(taskId);
 }
-pub(crate) unsafe extern "C" fn TryLinkTimeout(taskId: u8) -> u8 {
-    gTasks[taskId].data[4] += 1;
-    if gTasks[taskId].data[4] > 600 {
-        gTasks[taskId].func = Some(Task_LinkupConnectionError);
+fn TryLinkTimeout(taskId: u8) -> u8 {
+    task_set(taskId, 4, task_get(taskId, 4) + 1);
+    if task_get(taskId, 4) > 600 {
+        task_set_func(taskId, Some(Task_LinkupConnectionError));
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryBattleLinkup() {
+pub unsafe fn TryBattleLinkup() {
     let mut minPlayers: u8 = 2;
     let mut maxPlayers: u8 = 2;
-    match gSpecialVar_0x8004 {
+    match *(&raw const crate::ffi::gSpecialVar_0x8004)
+        .cast::<u16>()
+        .cast_mut()
+    {
         USING_SINGLE_BATTLE => {
             minPlayers = 2;
             gLinkType = LINKTYPE_SINGLE_BATTLE;
@@ -661,40 +661,38 @@ pub unsafe extern "C" fn TryBattleLinkup() {
     CreateLinkupTask(minPlayers, maxPlayers);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryTradeLinkup() {
+pub unsafe fn TryTradeLinkup() {
     gLinkType = LINKTYPE_TRADE_SETUP;
     gBattleTypeFlags = 0;
     CreateLinkupTask(2, 2);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryRecordMixLinkup() {
+pub unsafe fn TryRecordMixLinkup() {
     gSpecialVar_Result = LINKUP_ONGOING;
     gLinkType = LINKTYPE_RECORD_MIX_BEFORE;
     gBattleTypeFlags = 0;
     CreateLinkupTask(2, 4);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ValidateMixingGameLanguage() {
+pub unsafe fn ValidateMixingGameLanguage() {
     let mut taskId: u32 = FindTaskIdByFunc(Some(Task_ValidateMixingGameLanguage)) as u32;
     if taskId == TASK_NONE as u32 {
         taskId = CreateTask(Some(Task_ValidateMixingGameLanguage), 80) as u32;
-        gTasks[taskId].data[0] = 0;
+        task_set(taskId, tState, 0);
     }
 }
-pub(crate) unsafe extern "C" fn Task_ValidateMixingGameLanguage(taskId: u8) {
+pub(crate) unsafe fn Task_ValidateMixingGameLanguage(taskId: u8) {
     let mut playerCount: i32 = 0;
-    let mut i: i32 = 0;
-    match gTasks[taskId].data[0] {
+    match task_get(taskId, tState) {
         0 => {
             if gSpecialVar_Result == LINKUP_SUCCESS {
                 let mut mixingForeignGames: u32 = FALSE as u32;
                 let mut isEnglishRSLinked: u32 = FALSE as u32;
                 let mut isJapaneseEmeraldLinked: u32 = FALSE as u32;
                 playerCount = GetLinkPlayerCount() as i32;
-                i = 0;
-                while i < playerCount {
-                    let mut version: u32 = gLinkPlayers[i].version as u8 as u32;
-                    let mut language: u32 = gLinkPlayers[i].language as u32;
+                for i in 0..playerCount {
+                    let version: u32 = gLinkPlayers[i].version as u8 as u32;
+                    let language: u32 = gLinkPlayers[i].language as u32;
                     if version == VERSION_RUBY as u32 || version == VERSION_SAPPHIRE as u32 {
                         if language == LANGUAGE_JAPANESE as u32 {
                             mixingForeignGames = TRUE as u32;
@@ -702,12 +700,11 @@ pub(crate) unsafe extern "C" fn Task_ValidateMixingGameLanguage(taskId: u8) {
                         } else {
                             isEnglishRSLinked = TRUE as u32;
                         }
-                    } else if version == VERSION_EMERALD as u32 {
-                        if language == LANGUAGE_JAPANESE as u32 {
-                            isJapaneseEmeraldLinked = TRUE as u32;
-                        }
+                    } else if version == VERSION_EMERALD as u32
+                        && language == LANGUAGE_JAPANESE as u32
+                    {
+                        isJapaneseEmeraldLinked = TRUE as u32;
                     }
-                    i += 1;
                 }
                 if isEnglishRSLinked != 0 && isJapaneseEmeraldLinked != 0 {
                     mixingForeignGames = TRUE as u32;
@@ -715,46 +712,46 @@ pub(crate) unsafe extern "C" fn Task_ValidateMixingGameLanguage(taskId: u8) {
                 if mixingForeignGames != 0 {
                     gSpecialVar_Result = LINKUP_FOREIGN_GAME;
                     SetCloseLinkCallbackHandleJP();
-                    gTasks[taskId].data[0] = 1;
+                    task_set(taskId, tState, 1);
                     return;
                 }
             }
             ScriptContext_Enable();
             DestroyTask(taskId);
         }
-        1 => {
-            if gReceivedRemoteLinkPlayers == 0 {
-                ScriptContext_Enable();
-                DestroyTask(taskId);
-            }
+        1 if gReceivedRemoteLinkPlayers == 0 => {
+            ScriptContext_Enable();
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryBerryBlenderLinkup() {
+pub unsafe fn TryBerryBlenderLinkup() {
     gLinkType = LINKTYPE_BERRY_BLENDER_SETUP;
     gBattleTypeFlags = 0;
     CreateLinkupTask(2, 4);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryContestGModeLinkup() {
+pub unsafe fn TryContestGModeLinkup() {
     gLinkType = LINKTYPE_CONTEST_GMODE;
     gBattleTypeFlags = 0;
     CreateLinkupTask(4, 4);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryContestEModeLinkup() {
+pub unsafe fn TryContestEModeLinkup() {
     gLinkType = LINKTYPE_CONTEST_EMODE;
     gBattleTypeFlags = 0;
     CreateLinkupTask(2, 4);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateTask_ReestablishCableClubLink() -> u8 {
+pub unsafe fn CreateTask_ReestablishCableClubLink() -> u8 {
     if FuncIsActiveTask(Some(Task_ReestablishLink)) != FALSE {
         return TASK_NONE;
     }
-    match gSpecialVar_0x8004 {
+    match *(&raw const crate::ffi::gSpecialVar_0x8004)
+        .cast::<u16>()
+        .cast_mut()
+    {
         USING_SINGLE_BATTLE => {
             gLinkType = LINKTYPE_SINGLE_BATTLE;
         }
@@ -779,35 +776,35 @@ pub unsafe extern "C" fn CreateTask_ReestablishCableClubLink() -> u8 {
         }
         _ => {}
     }
-    return CreateTask(Some(Task_ReestablishLink), 80);
+    CreateTask(Some(Task_ReestablishLink), 80)
 }
-pub(crate) unsafe extern "C" fn Task_ReestablishLink(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_ReestablishLink(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data == 0 {
         OpenLink();
         ResetLinkPlayers();
         CreateTask(Some(Task_WaitForLinkPlayerConnection), 80);
     } else if *data >= 10 {
-        gTasks[taskId].func = Some(Task_ReestablishLinkAwaitConnection);
+        task_set_func(taskId, Some(Task_ReestablishLinkAwaitConnection));
     }
     *data += 1;
 }
-pub(crate) unsafe extern "C" fn Task_ReestablishLinkAwaitConnection(taskId: u8) {
+pub(crate) unsafe fn Task_ReestablishLinkAwaitConnection(taskId: u8) {
     if GetLinkPlayerCount_2() >= 2 {
         if IsLinkMaster() == TRUE {
-            gTasks[taskId].func = Some(Task_ReestablishLinkLeader);
+            task_set_func(taskId, Some(Task_ReestablishLinkLeader));
         } else {
-            gTasks[taskId].func = Some(Task_ReestablishLinkAwaitConfirmation);
+            task_set_func(taskId, Some(Task_ReestablishLinkAwaitConfirmation));
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_ReestablishLinkLeader(taskId: u8) {
+pub(crate) unsafe fn Task_ReestablishLinkLeader(taskId: u8) {
     if GetSavedPlayerCount() == GetLinkPlayerCount_2() {
         CheckShouldAdvanceLinkState();
-        gTasks[taskId].func = Some(Task_ReestablishLinkAwaitConfirmation);
+        task_set_func(taskId, Some(Task_ReestablishLinkAwaitConfirmation));
     }
 }
-pub(crate) unsafe extern "C" fn Task_ReestablishLinkAwaitConfirmation(taskId: u8) {
+pub(crate) unsafe fn Task_ReestablishLinkAwaitConfirmation(taskId: u8) {
     if gReceivedRemoteLinkPlayers == TRUE && IsLinkPlayerDataExchangeComplete() == TRUE {
         CheckLinkPlayersMatchSaved();
         StartSendingKeysToLink();
@@ -815,10 +812,10 @@ pub(crate) unsafe extern "C" fn Task_ReestablishLinkAwaitConfirmation(taskId: u8
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CableClubSaveGame() {
+pub unsafe fn CableClubSaveGame() {
     SaveGame();
 }
-pub(crate) unsafe extern "C" fn SetLinkBattleTypeFlags(linkService: i32) {
+unsafe fn SetLinkBattleTypeFlags(linkService: i32) {
     match linkService {
         1 => {
             gBattleTypeFlags = 10;
@@ -836,33 +833,33 @@ pub(crate) unsafe extern "C" fn SetLinkBattleTypeFlags(linkService: i32) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_StartWiredCableClubBattle(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_StartWiredCableClubBattle(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         0 => {
             FadeScreen(FADE_TO_BLACK, 0);
             gLinkType = LINKTYPE_BATTLE;
             ClearLinkCallback_2();
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
         1 => {
             if gPaletteFade.active() == 0 {
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             }
         }
         2 => {
             (*task).data[1] += 1;
             if (*task).data[1] > 20 {
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             }
         }
         3 => {
             SetCloseLinkCallback();
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
         4 => {
             if gReceivedRemoteLinkPlayers == 0 {
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             }
         }
         5 => {
@@ -881,9 +878,9 @@ pub(crate) unsafe extern "C" fn Task_StartWiredCableClubBattle(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_StartWirelessCableClubBattle(taskId: u8) {
+pub(crate) unsafe fn Task_StartWirelessCableClubBattle(taskId: u8) {
     let mut i: i32 = 0;
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         0 => {
             FadeScreen(FADE_TO_BLACK, 0);
@@ -904,7 +901,7 @@ pub(crate) unsafe extern "C" fn Task_StartWirelessCableClubBattle(taskId: u8) {
             if GetBlockReceivedStatus() == GetLinkPlayerCountAsBitFlags() {
                 i = 0;
                 while i < GetLinkPlayerCount() as i32 {
-                    let mut player: *mut LinkPlayer =
+                    let player: *mut LinkPlayer =
                         gBlockRecvBuffer[i].as_mut_ptr() as *mut LinkPlayer;
                     gLinkPlayers[i] = *player;
                     ConvertLinkPlayerName(&raw mut gLinkPlayers[i]);
@@ -946,22 +943,19 @@ pub(crate) unsafe extern "C" fn Task_StartWirelessCableClubBattle(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CB2_ReturnFromUnionRoomBattle() {
+pub(crate) unsafe fn CB2_ReturnFromUnionRoomBattle() {
     let mut playerCount: u8 = 0;
-    let mut i: i32 = 0;
     let mut linkedWithFRLG: u32 = 0;
     match gMain.state {
         0 => {
             playerCount = GetLinkPlayerCount();
             linkedWithFRLG = FALSE as u32;
-            i = 0;
-            while i < playerCount as i32 {
-                let mut version: u32 = gLinkPlayers[i].version as u8 as u32;
+            for i in 0..(playerCount as i32) {
+                let version: u32 = gLinkPlayers[i].version as u8 as u32;
                 if version == VERSION_FIRE_RED as u32 || version == VERSION_LEAF_GREEN as u32 {
                     linkedWithFRLG = TRUE as u32;
                     break;
                 }
-                i += 1;
             }
             if linkedWithFRLG != 0 {
                 gMain.state = 2;
@@ -982,8 +976,7 @@ pub(crate) unsafe extern "C" fn CB2_ReturnFromUnionRoomBattle() {
     }
     RunTasks();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ReturnFromCableClubBattle() {
+pub unsafe fn CB2_ReturnFromCableClubBattle() {
     gBattleTypeFlags &= 0xffffffdf;
     Overworld_ResetMapMusic();
     LoadPlayerParty();
@@ -1017,7 +1010,7 @@ pub unsafe extern "C" fn CB2_ReturnFromCableClubBattle() {
     SetMainCallback2(Some(CB2_SetUpSaveAfterLinkBattle));
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CleanupLinkRoomState() {
+pub unsafe fn CleanupLinkRoomState() {
     if gSpecialVar_0x8004 == USING_SINGLE_BATTLE
         || gSpecialVar_0x8004 == USING_DOUBLE_BATTLE
         || gSpecialVar_0x8004 == USING_MULTI_BATTLE
@@ -1029,33 +1022,37 @@ pub unsafe extern "C" fn CleanupLinkRoomState() {
     SetWarpDestinationToDynamicWarp(WARP_ID_DYNAMIC);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ExitLinkRoom() {
+pub unsafe fn ExitLinkRoom() {
     QueueExitLinkRoomKey();
 }
-pub(crate) unsafe extern "C" fn Task_EnterCableClubSeat(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_EnterCableClubSeat(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         0 => {
-            ShowFieldMessage(gText_PleaseWaitForLink.as_ptr().cast_mut());
-            (*task).data[0] = 1;
+            ShowFieldMessage(
+                (*crate::asmdata::gText_PleaseWaitForLink.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
+            (*task).data[tState] = 1;
         }
         1 => {
             if IsFieldMessageBoxHidden() != 0 {
                 SetInCableClubSeat();
                 SetLocalLinkPlayerId(gSpecialVar_0x8005 as u8);
-                (*task).data[0] = 2;
+                (*task).data[tState] = 2;
             }
         }
         2 => match GetCableClubPartnersReady() {
             CABLE_SEAT_WAITING => {}
             CABLE_SEAT_SUCCESS => {
                 HideFieldMessageBox();
-                (*task).data[0] = 0;
+                (*task).data[tState] = 0;
                 SetStartedCableClubActivity();
                 SwitchTaskToFollowupFunc(taskId);
             }
             CABLE_SEAT_FAILED => {
-                (*task).data[0] = 3;
+                (*task).data[tState] = 3;
             }
             _ => {}
         },
@@ -1068,26 +1065,23 @@ pub(crate) unsafe extern "C" fn Task_EnterCableClubSeat(taskId: u8) {
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateTask_EnterCableClubSeat(
-    followupFunc: Option<unsafe extern "C" fn(u8)>,
-) {
-    let mut taskId: u8 = CreateTask(Some(Task_EnterCableClubSeat), 80);
+pub unsafe fn CreateTask_EnterCableClubSeat(followupFunc: Option<unsafe fn(u8)>) {
+    let taskId: u8 = CreateTask(Some(Task_EnterCableClubSeat), 80);
     SetTaskFuncWithFollowupFunc(taskId, Some(Task_EnterCableClubSeat), followupFunc);
     ScriptContext_Stop();
 }
-pub(crate) unsafe extern "C" fn Task_StartWiredTrade(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_StartWiredTrade(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         0 => {
             LockPlayerFieldControls();
             FadeScreen(FADE_TO_BLACK, 0);
             ClearLinkCallback_2();
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
         1 => {
             if gPaletteFade.active() == 0 {
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             }
         }
         2 => {
@@ -1095,19 +1089,17 @@ pub(crate) unsafe extern "C" fn Task_StartWiredTrade(taskId: u8) {
             gSelectedTradeMonPositions[1] = 0;
             m4aMPlayAllStop();
             SetCloseLinkCallback();
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
-        3 => {
-            if gReceivedRemoteLinkPlayers == 0 {
-                SetMainCallback2(Some(CB2_StartCreateTradeMenu));
-                DestroyTask(taskId);
-            }
+        3 if gReceivedRemoteLinkPlayers == 0 => {
+            SetMainCallback2(Some(CB2_StartCreateTradeMenu));
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_StartWirelessTrade(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_StartWirelessTrade(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         0 => {
             LockPlayerFieldControls();
@@ -1127,30 +1119,28 @@ pub(crate) unsafe extern "C" fn Task_StartWirelessTrade(taskId: u8) {
             SetLinkStandbyCallback();
             *data += 1;
         }
-        3 => {
-            if IsLinkTaskFinished() != 0 {
-                CreateTask_CreateTradeMenu();
-                DestroyTask(taskId);
-            }
+        3 if IsLinkTaskFinished() != 0 => {
+            CreateTask_CreateTradeMenu();
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerEnteredTradeSeat() {
+pub unsafe fn PlayerEnteredTradeSeat() {
     if gWirelessCommType != 0 {
         CreateTask_EnterCableClubSeat(Some(Task_StartWirelessTrade));
     } else {
         CreateTask_EnterCableClubSeat(Some(Task_StartWiredTrade));
     }
 }
-pub(crate) unsafe extern "C" fn CreateTask_StartWiredTrade() {
+unsafe fn CreateTask_StartWiredTrade() {
     CreateTask(Some(Task_StartWiredTrade), 80);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Script_StartWiredTrade() {}
+pub fn Script_StartWiredTrade() {}
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ColosseumPlayerSpotTriggered() {
+pub unsafe fn ColosseumPlayerSpotTriggered() {
     gLinkType = LINKTYPE_BATTLE;
     if gWirelessCommType != 0 {
         CreateTask_EnterCableClubSeat(Some(Task_StartWirelessCableClubBattle));
@@ -1158,26 +1148,24 @@ pub unsafe extern "C" fn ColosseumPlayerSpotTriggered() {
         CreateTask_EnterCableClubSeat(Some(Task_StartWiredCableClubBattle));
     }
 }
-pub(crate) unsafe extern "C" fn CreateTask_EnterCableClubSeatNoFollowup() {
-    let mut taskId: u8 = CreateTask(Some(Task_EnterCableClubSeat), 80);
+unsafe fn CreateTask_EnterCableClubSeatNoFollowup() {
+    let taskId: u8 = CreateTask(Some(Task_EnterCableClubSeat), 80);
     ScriptContext_Stop();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Script_ShowLinkTrainerCard() {
+pub unsafe fn Script_ShowLinkTrainerCard() {
     ShowTrainerCardInLink(
         gSpecialVar_0x8006 as u8,
         Some(CB2_ReturnToFieldContinueScriptPlayMapMusic),
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLinkTrainerCardColor(linkPlayerIndex: u8) -> u32 {
-    let mut numStars: u32 = 0;
+pub unsafe fn GetLinkTrainerCardColor(linkPlayerIndex: u8) -> u32 {
     gSpecialVar_0x8006 = linkPlayerIndex as u16;
     StringCopy(
         gStringVar1.as_mut_ptr(),
         gLinkPlayers[linkPlayerIndex].name.as_mut_ptr(),
     );
-    numStars = GetTrainerCardStars(linkPlayerIndex) as u32;
+    let numStars: u32 = GetTrainerCardStars(linkPlayerIndex) as u32;
     if numStars == 0 {
         return FALSE as u32;
     }
@@ -1185,11 +1173,10 @@ pub unsafe extern "C" fn GetLinkTrainerCardColor(linkPlayerIndex: u8) -> u32 {
         gStringVar2.as_mut_ptr(),
         sTrainerCardColorNames[numStars - 1],
     );
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Task_WaitForLinkPlayerConnection(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
+pub unsafe fn Task_WaitForLinkPlayerConnection(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
     (*task).data[0] += 1;
     if (*task).data[0] > 300 {
         CloseLink();
@@ -1208,19 +1195,18 @@ pub unsafe extern "C" fn Task_WaitForLinkPlayerConnection(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_WaitExitToScript(taskId: u8) {
+pub(crate) unsafe fn Task_WaitExitToScript(taskId: u8) {
     if gReceivedRemoteLinkPlayers == 0 {
         ScriptContext_Enable();
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn ExitLinkToScript(taskId: u8) {
+unsafe fn ExitLinkToScript(taskId: u8) {
     SetCloseLinkCallback();
-    gTasks[taskId].func = Some(Task_WaitExitToScript);
+    task_set_func(taskId, Some(Task_WaitExitToScript));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Task_ReconnectWithLinkPlayers(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub unsafe fn Task_ReconnectWithLinkPlayers(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         0 => {
             if gWirelessCommType != 0 {
@@ -1257,16 +1243,14 @@ pub unsafe extern "C" fn Task_ReconnectWithLinkPlayers(taskId: u8) {
                 }
             }
         }
-        3 => {
-            if gReceivedRemoteLinkPlayers == TRUE && IsLinkPlayerDataExchangeComplete() == TRUE {
-                DestroyTask(taskId);
-            }
+        3 if gReceivedRemoteLinkPlayers == TRUE && IsLinkPlayerDataExchangeComplete() == TRUE => {
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TrySetBattleTowerLinkType() {
+pub unsafe fn TrySetBattleTowerLinkType() {
     if gWirelessCommType == 0 {
         gLinkType = LINKTYPE_BATTLE_TOWER;
     }

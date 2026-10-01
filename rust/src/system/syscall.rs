@@ -124,6 +124,9 @@ pub unsafe extern "C" fn SoftReset(reset_flags: u32) -> ! {
 
 // Host builds (unit tests) have no BIOS; these are never called there.
 #[cfg(not(target_arch = "arm"))]
+pub use host::*;
+
+#[cfg(not(target_arch = "arm"))]
 mod host {
 
     #[unsafe(no_mangle)]

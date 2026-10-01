@@ -3,37 +3,128 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, SetBgAttribute, ShowBg, UnsetBgTilemapBuffer,
+};
+use crate::bg::{CopyToBgTilemapBufferRect_ChangePalette, LoadBgTiles};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::{FlagClear, FlagGet, FlagSet, VarGet};
+use crate::event_object_movement::TryGetObjectEventIdByLocalIdAndMap;
+use crate::field_camera::{
+    DrawWholeMapView, InstallCameraPanAheadCallback, SetCameraPanning, SetCameraPanningCallback,
+};
+use crate::field_player_avatar::{gObjectEvents, gPlayerAvatar};
+use crate::fieldmap::MapGridSetMetatileIdAt;
+use crate::gpu_regs::{SetGpuReg, SetGpuRegBits};
+use crate::load_save::gSaveBlock1Ptr;
+use crate::menu::InitStandardTextBoxWindows;
+use crate::palette_util::{
+    InitPulseBlend, InitPulseBlendPaletteSettings, MarkUsedPulseBlendPalettes,
+    UnloadUsedPulseBlendPalettes, UnmarkUsedPulseBlendPalettes, UpdatePulseBlend,
+};
+use crate::random::Random;
+use crate::script::ScriptContext_Enable;
+use crate::sound::PlaySE;
+use crate::sprite::FreeSpriteTilesByTag;
+use crate::sprite::gSprites;
+use crate::task::DestroyTask;
+use crate::task::gTasks;
+use crate::task::{task_get, task_set, task_set_func};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::FreeAllWindowBuffers;
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+unsafe fn FindTaskIdByFunc(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `LoadSpriteSheets` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheets(a0: *mut SpriteSheet) {
+    unsafe {
+        crate::sprite::LoadSpriteSheets(a0 as _);
+    }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+// The C's names for task and sprite data slots.
+const sIndex: usize = 0;
+const tState: usize = 0;
+const tXShakeOffset: usize = 0;
+const sYOffset: usize = 1;
+const tTimer: usize = 1;
+const tNumShakes: usize = 2;
+const tShakeDelay: usize = 3;
+const tYShakeOffset: usize = 4;
 // Data tables (translate with cdata.py): sMirageTower_Gfx sMirageTowerTilemap sFossil_Pal sFossil_Gfx sMirageTowerCrumbles_Gfx sMirageTowerCrumbles_Palette sCeilingCrumblePositions sCeilingCrumbleSpriteSheets sInvisibleMirageTowerMetatiles sAnim_FallingFossil sOamData_FallingFossil sAnims_FallingFossil sSpriteTemplate_FallingFossil gMirageTowerPulseBlendSettings sAnim_CeilingCrumbleSmall sAnims_CeilingCrumbleSmall sOamData_CeilingCrumbleSmall sSpriteTemplate_CeilingCrumbleSmall sAnim_CeilingCrumbleLarge sAnims_CeilingCrumbleLarge sOamData_CeilingCrumbleLarge sSpriteTemplate_CeilingCrumbleLarge
 
 /// `struct FallAnim_Fossil`
@@ -156,84 +247,38 @@ pub(crate) static mut sMirageTowerPulseBlend: *mut MirageTowerPulseBlend = null_
 pub(crate) static mut sDebug_DisintegrationData: Aligned<CArray<u16, 8>> =
     Aligned(unsafe { zeroed() });
 
-unsafe extern "C" {
-    static mut gObjectEvents: CArray<ObjectEvent, 16>;
-    static mut gPlayerAvatar: PlayerAvatar;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTasks: CArray<Task, 0>;
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBufferRect_ChangePalette(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-    );
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DrawWholeMapView();
-    fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn FlagClear(a0: u16) -> u8;
-    fn FlagGet(a0: u16) -> u8;
-    fn FlagSet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeAllWindowBuffers();
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn InitPulseBlend(a0: *mut PulseBlend);
-    fn InitPulseBlendPaletteSettings(a0: *mut PulseBlend, a1: *mut PulseBlendSettings) -> i32;
-    fn InitStandardTextBoxWindows();
-    fn InstallCameraPanAheadCallback();
-    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadSpriteSheets(a0: *mut SpriteSheet);
-    fn MapGridSetMetatileIdAt(a0: i32, a1: i32, a2: u16);
-    fn MarkUsedPulseBlendPalettes(a0: *mut PulseBlend, a1: u16, a2: u8);
-    fn PlaySE(a0: u16);
-    fn Random() -> u16;
-    fn ScriptContext_Enable();
-    fn SetBgAttribute(a0: u8, a1: u8, a2: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetCameraPanning(a0: i16, a1: i16);
-    fn SetCameraPanningCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetGpuRegBits(a0: u8, a1: u16);
-    fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn TryGetObjectEventIdByLocalIdAndMap(a0: u8, a1: u8, a2: u8, a3: *mut u8) -> u8;
-    fn UnloadUsedPulseBlendPalettes(a0: *mut PulseBlend, a1: u16, a2: u8);
-    fn UnmarkUsedPulseBlendPalettes(a0: *mut PulseBlend, a1: u16, a2: u8);
-    fn UnsetBgTilemapBuffer(a0: u8);
-    fn UpdatePulseBlend(a0: *mut PulseBlend);
-    fn VarGet(a0: u16) -> u16;
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsMirageTowerVisible() -> u8 {
+pub unsafe fn IsMirageTowerVisible() -> u8 {
     if !((*gSaveBlock1Ptr).location.mapGroup == 0 && (*gSaveBlock1Ptr).location.mapNum == 26) {
         return FALSE;
     }
-    return FlagGet(FLAG_MIRAGE_TOWER_VISIBLE);
+    FlagGet(FLAG_MIRAGE_TOWER_VISIBLE)
 }
-pub(crate) unsafe extern "C" fn UpdateMirageTowerPulseBlend(taskId: u8) {
+pub(crate) unsafe fn UpdateMirageTowerPulseBlend(taskId: u8) {
     UpdatePulseBlend(&raw mut (*sMirageTowerPulseBlend).pulseBlend);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearMirageTowerPulseBlend() {
+pub unsafe fn ClearMirageTowerPulseBlend() {
     sMirageTowerPulseBlend = null_mut();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryStartMirageTowerPulseBlendEffect() {
+pub unsafe fn TryStartMirageTowerPulseBlendEffect() {
     if !sMirageTowerPulseBlend.is_null() {
         sMirageTowerPulseBlend = null_mut();
         return;
@@ -254,7 +299,7 @@ pub unsafe extern "C" fn TryStartMirageTowerPulseBlendEffect() {
     (*sMirageTowerPulseBlend).taskId = CreateTask(Some(UpdateMirageTowerPulseBlend), 0xFF);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearMirageTowerPulseBlendEffect() {
+pub unsafe fn ClearMirageTowerPulseBlendEffect() {
     if (*gSaveBlock1Ptr).location.mapGroup != 0
         || (*gSaveBlock1Ptr).location.mapNum != 26
         || FlagGet(FLAG_MIRAGE_TOWER_VISIBLE) == 0
@@ -271,15 +316,13 @@ pub unsafe extern "C" fn ClearMirageTowerPulseBlendEffect() {
     sMirageTowerPulseBlend = null_mut();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetMirageTowerVisibility() {
-    let mut rand: u16 = 0;
-    let mut visible: u8 = 0;
+pub unsafe fn SetMirageTowerVisibility() {
     if VarGet(VAR_MIRAGE_TOWER_STATE) != 0 {
         FlagClear(FLAG_MIRAGE_TOWER_VISIBLE);
         return;
     }
-    rand = Random();
-    visible = rand as u8 & 1;
+    let rand: u16 = Random();
+    let mut visible: u8 = rand as u8 & 1;
     if FlagGet(FLAG_FORCE_MIRAGE_TOWER_VISIBLE) == TRUE {
         visible = TRUE;
     }
@@ -291,22 +334,20 @@ pub unsafe extern "C" fn SetMirageTowerVisibility() {
     FlagClear(FLAG_MIRAGE_TOWER_VISIBLE);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartPlayerDescendMirageTower() {
+pub unsafe fn StartPlayerDescendMirageTower() {
     CreateTask(Some(PlayerDescendMirageTower), 8);
 }
-pub(crate) unsafe extern "C" fn PlayerDescendMirageTower(taskId: u8) {
+pub(crate) unsafe fn PlayerDescendMirageTower(taskId: u8) {
     let mut objectEventId: u8 = 0;
-    let mut fallingPlayer: *mut ObjectEvent = null_mut();
-    let mut player: *mut ObjectEvent = null_mut();
     TryGetObjectEventIdByLocalIdAndMap(
         LOCALID_ROUTE111_PLAYER_FALLING,
         (*gSaveBlock1Ptr).location.mapNum as u8,
         (*gSaveBlock1Ptr).location.mapGroup as u8,
         &raw mut objectEventId,
     );
-    fallingPlayer = &raw mut gObjectEvents[objectEventId];
+    let fallingPlayer: *mut ObjectEvent = &raw mut gObjectEvents[objectEventId];
     gSprites[(*fallingPlayer).spriteId].y2 += 4;
-    player = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
+    let player: *mut ObjectEvent = &raw mut gObjectEvents[gPlayerAvatar.objectEventId];
     if gSprites[(*fallingPlayer).spriteId].y as i32 + gSprites[(*fallingPlayer).spriteId].y2 as i32
         >= gSprites[(*player).spriteId].y as i32 + gSprites[(*player).spriteId].y2 as i32
     {
@@ -314,24 +355,19 @@ pub(crate) unsafe extern "C" fn PlayerDescendMirageTower(taskId: u8) {
         ScriptContext_Enable();
     }
 }
-pub(crate) unsafe extern "C" fn StartScreenShake(
-    yShakeOffset: u8,
-    xShakeOffset: u8,
-    numShakes: u8,
-    shakeDelay: u8,
-) {
-    let mut taskId: u8 = CreateTask(Some(DoScreenShake), 9);
-    gTasks[taskId].data[0] = xShakeOffset as i16;
-    gTasks[taskId].data[1] = 0;
-    gTasks[taskId].data[2] = numShakes as i16;
-    gTasks[taskId].data[3] = shakeDelay as i16;
-    gTasks[taskId].data[4] = yShakeOffset as i16;
+unsafe fn StartScreenShake(yShakeOffset: u8, xShakeOffset: u8, numShakes: u8, shakeDelay: u8) {
+    let taskId: u8 = CreateTask(Some(DoScreenShake), 9);
+    task_set(taskId, tXShakeOffset, xShakeOffset as i16);
+    task_set(taskId, tTimer, 0);
+    task_set(taskId, tNumShakes, numShakes as i16);
+    task_set(taskId, tShakeDelay, shakeDelay as i16);
+    task_set(taskId, tYShakeOffset, yShakeOffset as i16);
     SetCameraPanningCallback(None);
     PlaySE(SE_M_STRENGTH);
 }
-pub(crate) unsafe extern "C" fn DoScreenShake(taskId: u8) {
+pub(crate) unsafe fn DoScreenShake(taskId: u8) {
     let mut data: *mut i16 = null_mut();
-    data = gTasks[taskId].data.as_mut_ptr();
+    data = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(1) += 1;
     if rem_i32(*data.at(1) as i32, *data.at(3) as i32) == 0 {
         *data.at(1) = 0;
@@ -346,36 +382,34 @@ pub(crate) unsafe extern "C" fn DoScreenShake(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn IncrementCeilingCrumbleFinishedCount() {
-    let mut taskId: u8 = FindTaskIdByFunc(Some(WaitCeilingCrumble));
+unsafe fn IncrementCeilingCrumbleFinishedCount() {
+    let taskId: u8 = FindTaskIdByFunc(Some(WaitCeilingCrumble));
     if taskId != TASK_NONE {
-        gTasks[taskId].data[0] += 1;
+        task_set(taskId, 0, task_get(taskId, 0) + 1);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoMirageTowerCeilingCrumble() {
+pub unsafe fn DoMirageTowerCeilingCrumble() {
     LoadSpriteSheets(sCeilingCrumbleSpriteSheets.as_ptr().cast_mut());
     CreateCeilingCrumbleSprites();
     CreateTask(Some(WaitCeilingCrumble), 8);
     StartScreenShake(2, 1, 16, 3);
 }
-pub(crate) unsafe extern "C" fn WaitCeilingCrumble(taskId: u8) {
-    let mut data: *mut u16 = gTasks[taskId].data.as_mut_ptr() as *mut u16;
+pub(crate) unsafe fn WaitCeilingCrumble(taskId: u8) {
+    let data: *mut u16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut u16;
     *data.at(1) += 1;
     if *data.at(1) == 1000 || *data == 17 {
-        gTasks[taskId].func = Some(FinishCeilingCrumbleTask);
+        task_set_func(taskId, Some(FinishCeilingCrumbleTask));
     }
 }
-pub(crate) unsafe extern "C" fn FinishCeilingCrumbleTask(taskId: u8) {
+pub(crate) unsafe fn FinishCeilingCrumbleTask(taskId: u8) {
     FreeSpriteTilesByTag(TAG_CEILING_CRUMBLE);
     DestroyTask(taskId);
     ScriptContext_Enable();
 }
-pub(crate) unsafe extern "C" fn CreateCeilingCrumbleSprites() {
-    let mut i: u8 = 0;
+unsafe fn CreateCeilingCrumbleSprites() {
     let mut spriteId: u8 = 0;
-    i = 0;
-    while i < 8 {
+    for i in 0..8u8 {
         spriteId = CreateSprite(
             (&raw const *sSpriteTemplate_CeilingCrumbleLarge).cast_mut(),
             sCeilingCrumblePositions[i][0] + 120,
@@ -384,11 +418,9 @@ pub(crate) unsafe extern "C" fn CreateCeilingCrumbleSprites() {
         );
         gSprites[spriteId].oam.set_priority(0);
         gSprites[spriteId].oam.set_paletteNum(PALSLOT_PLAYER as u16);
-        gSprites[spriteId].data[0] = i as i16;
-        i += 1;
+        gSprites[spriteId].data[sIndex] = i as i16;
     }
-    i = 0;
-    while i < 8 {
+    for i in 0..8u8 {
         spriteId = CreateSprite(
             (&raw const *sSpriteTemplate_CeilingCrumbleSmall).cast_mut(),
             sCeilingCrumblePositions[i][0] + 115,
@@ -397,72 +429,68 @@ pub(crate) unsafe extern "C" fn CreateCeilingCrumbleSprites() {
         );
         gSprites[spriteId].oam.set_priority(0);
         gSprites[spriteId].oam.set_paletteNum(PALSLOT_PLAYER as u16);
-        gSprites[spriteId].data[0] = i as i16;
-        i += 1;
+        gSprites[spriteId].data[sIndex] = i as i16;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_CeilingCrumble(sprite: *mut Sprite) {
-    (*sprite).data[1] += 2;
-    (*sprite).y2 = (*sprite).data[1] / 2;
+pub(crate) unsafe fn SpriteCB_CeilingCrumble(sprite: *mut Sprite) {
+    (*sprite).data[sYOffset] += 2;
+    (*sprite).y2 = (*sprite).data[sYOffset] / 2;
     if (*sprite).y as i32 + (*sprite).y2 as i32
-        > sCeilingCrumblePositions[(*sprite).data[0]][2] as i32
+        > sCeilingCrumblePositions[(*sprite).data[sIndex]][2] as i32
     {
         DestroySprite(sprite);
         IncrementCeilingCrumbleFinishedCount();
     }
 }
-pub(crate) unsafe extern "C" fn SetInvisibleMirageTowerMetatiles() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 18 {
+unsafe fn SetInvisibleMirageTowerMetatiles() {
+    for i in 0..18u8 {
         MapGridSetMetatileIdAt(
             sInvisibleMirageTowerMetatiles[i].x as i32 + MAP_OFFSET,
             sInvisibleMirageTowerMetatiles[i].y as i32 + MAP_OFFSET,
             sInvisibleMirageTowerMetatiles[i].metatileId,
         );
-        i += 1;
     }
     DrawWholeMapView();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartMirageTowerDisintegration() {
+pub unsafe fn StartMirageTowerDisintegration() {
     CreateTask(Some(DoMirageTowerDisintegration), 9);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartMirageTowerShake() {
+pub unsafe fn StartMirageTowerShake() {
     CreateTask(Some(InitMirageTowerShake), 9);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartMirageTowerFossilFallAndSink() {
+pub unsafe fn StartMirageTowerFossilFallAndSink() {
     CreateTask(Some(Task_FossilFallAndSink), 9);
 }
-pub(crate) unsafe extern "C" fn SetBgShakeOffsets() {
+unsafe fn SetBgShakeOffsets() {
     SetGpuReg(REG_OFFSET_BG0HOFS, (*sBgShakeOffsets).bgHOFS);
     SetGpuReg(REG_OFFSET_BG0VOFS, (*sBgShakeOffsets).bgVOFS);
 }
-pub(crate) unsafe extern "C" fn UpdateBgShake(taskId: u8) {
-    if gTasks[taskId].data[0] == 0 {
+pub(crate) unsafe fn UpdateBgShake(taskId: u8) {
+    if task_get(taskId, 0) == 0 {
         (*sBgShakeOffsets).bgHOFS = (*sBgShakeOffsets).bgHOFS.wrapping_neg();
-        gTasks[taskId].data[0] = 2;
+        task_set(taskId, 0, 2);
         SetBgShakeOffsets();
     } else {
-        gTasks[taskId].data[0] -= 1;
+        task_set(taskId, 0, task_get(taskId, 0) - 1);
     }
 }
-pub(crate) unsafe extern "C" fn InitMirageTowerShake(taskId: u8) {
+pub(crate) unsafe fn InitMirageTowerShake(taskId: u8) {
     let mut zero: u8 = 0;
-    match gTasks[taskId].data[0] {
+    match task_get(taskId, tState) {
         0 => {
             FreeAllWindowBuffers();
             SetBgAttribute(0, BG_ATTR_PRIORITY, 2);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         1 => {
             sMirageTowerGfxBuffer = AllocZeroed(2336) as *mut u8;
             sMirageTowerTilemapBuffer = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
             ChangeBgX(0, 0, BG_COORD_SET);
             ChangeBgY(0, 0, BG_COORD_SET);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         2 => {
             CpuSet(
@@ -471,7 +499,7 @@ pub(crate) unsafe extern "C" fn InitMirageTowerShake(taskId: u8) {
                 1168,
             );
             LoadBgTiles(0, sMirageTowerGfxBuffer as *mut c_void, 2336, 0);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         3 => {
             SetBgTilemapBuffer(0, sMirageTowerTilemapBuffer as *mut c_void);
@@ -485,15 +513,15 @@ pub(crate) unsafe extern "C" fn InitMirageTowerShake(taskId: u8) {
                 17,
             );
             CopyBgTilemapBufferToVram(0);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         4 => {
             ShowBg(0);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         5 => {
             SetInvisibleMirageTowerMetatiles();
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         6 => {
             sBgShakeOffsets = Alloc(4) as *mut BgRegOffsets;
@@ -507,52 +535,42 @@ pub(crate) unsafe extern "C" fn InitMirageTowerShake(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn DoMirageTowerDisintegration(taskId: u8) {
+pub(crate) unsafe fn DoMirageTowerDisintegration(taskId: u8) {
     let mut bgShakeTaskId: u8 = 0;
-    let mut j: u8 = 0;
-    let mut i: u16 = 0;
     let mut index: u8 = 0;
     'l1: {
-        match gTasks[taskId].data[0] {
+        match task_get(taskId, tState) {
             1 => {
                 sFallingTower = AllocZeroed(768) as *mut FallAnim_Tower;
             }
             3 => {
-                if gTasks[taskId].data[3] <= 95 {
-                    if gTasks[taskId].data[1] > 1 {
-                        index = gTasks[taskId].data[3] as u8;
+                if task_get(taskId, 3) <= 95 {
+                    if task_get(taskId, 1) > 1 {
+                        index = task_get(taskId, 3) as u8;
                         (*sFallingTower.at(index)).disintegrateRand =
                             Alloc(INNER_BUFFER_LENGTH) as *mut u8;
-                        i = 0;
-                        while i <= 47 {
+                        for i in 0..=47u16 {
                             *(*sFallingTower.at(index)).disintegrateRand.at(i) = i as u8;
-                            i += 1;
                         }
-                        i = 0;
-                        while i <= 47 {
-                            let mut rand1: u16 = 0;
-                            let mut rand2: u16 = 0;
-                            let mut temp: u16 = 0;
-                            rand1 = (Random() as i32 % 48) as u16;
-                            rand2 = (Random() as i32 % 48) as u16;
-                            temp = *(*sFallingTower.at(index)).disintegrateRand.at(rand2) as u16;
+                        for i in 0..=47u16 {
+                            let rand1: u16 = (Random() as i32 % 48) as u16;
+                            let rand2: u16 = (Random() as i32 % 48) as u16;
+                            let temp: u16 =
+                                *(*sFallingTower.at(index)).disintegrateRand.at(rand2) as u16;
                             *(*sFallingTower.at(index)).disintegrateRand.at(rand2) =
                                 *(*sFallingTower.at(index)).disintegrateRand.at(rand1);
                             *(*sFallingTower.at(index)).disintegrateRand.at(rand1) = temp as u8;
-                            i += 1;
                         }
-                        if gTasks[taskId].data[3] <= 95 {
-                            gTasks[taskId].data[3] += 1;
+                        if task_get(taskId, 3) <= 95 {
+                            task_set(taskId, 3, task_get(taskId, 3) + 1);
                         }
-                        gTasks[taskId].data[1] = 0;
+                        task_set(taskId, 1, 0);
                     }
-                    gTasks[taskId].data[1] += 1;
+                    task_set(taskId, 1, task_get(taskId, 1) + 1);
                 }
-                index = gTasks[taskId].data[3] as u8;
-                i = gTasks[taskId].data[2] as u8 as u16;
-                while i < index as u16 {
-                    j = 0;
-                    while j < 1 {
+                index = task_get(taskId, 3) as u8;
+                for i in (task_get(taskId, 2) as u8 as u16)..(index as u16) {
+                    for j in 0..1u8 {
                         UpdateDisintegrationEffect(
                             sMirageTowerGfxBuffer,
                             (95 - i) * INNER_BUFFER_LENGTH as u16
@@ -565,17 +583,15 @@ pub(crate) unsafe extern "C" fn DoMirageTowerDisintegration(taskId: u8) {
                             INNER_BUFFER_LENGTH as u8,
                             1,
                         );
-                        j += 1;
                     }
                     if (*sFallingTower.at(i)).disintegrateIdx > 47 {
                         Free((*sFallingTower.at(i)).disintegrateRand as *mut c_void);
                         (*sFallingTower.at(i)).disintegrateRand = null_mut();
-                        gTasks[taskId].data[2] += 1;
+                        task_set(taskId, 2, task_get(taskId, 2) + 1);
                         if i as i32 % 2 == 1 {
                             (*sBgShakeOffsets).bgVOFS -= 1;
                         }
                     }
-                    i += 1;
                 }
                 LoadBgTiles(0, sMirageTowerGfxBuffer as *mut c_void, 2336, 0);
                 if (*sFallingTower.at(95)).disintegrateIdx > 47 {
@@ -621,16 +637,15 @@ pub(crate) unsafe extern "C" fn DoMirageTowerDisintegration(taskId: u8) {
             _ => {}
         }
     }
-    gTasks[taskId].data[0] += 1;
+    task_set(taskId, tState, task_get(taskId, tState) + 1);
 }
-pub(crate) unsafe extern "C" fn Task_FossilFallAndSink(taskId: u8) {
+pub(crate) unsafe fn Task_FossilFallAndSink(taskId: u8) {
     let mut i: u16 = 0;
     let mut buffer: *mut u8 = null_mut();
     'l1: {
-        let sw1: i16 = gTasks[taskId].data[0];
+        let sw1: i16 = task_get(taskId, 0);
         let mut fall = false;
         if sw1 == 1 {
-            fall = true;
             sFallingFossil = AllocZeroed(20) as *mut FallAnim_Fossil;
             (*sFallingFossil).frameImageTiles = AllocZeroed(128) as *mut u8;
             (*sFallingFossil).frameImage = AllocZeroed(8) as *mut SpriteFrameImage;
@@ -639,7 +654,6 @@ pub(crate) unsafe extern "C" fn Task_FossilFallAndSink(taskId: u8) {
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             buffer = (*sFallingFossil).frameImageTiles;
             i = 0;
             while i < 128 {
@@ -650,7 +664,6 @@ pub(crate) unsafe extern "C" fn Task_FossilFallAndSink(taskId: u8) {
             break 'l1;
         }
         if sw1 == 3 {
-            fall = true;
             (*(*sFallingFossil).frameImage).data = (*sFallingFossil).frameImageTiles as *mut c_void;
             (*(*sFallingFossil).frameImage).size = 128;
             break 'l1;
@@ -658,8 +671,7 @@ pub(crate) unsafe extern "C" fn Task_FossilFallAndSink(taskId: u8) {
         if sw1 == 4 {
             fall = true;
             {
-                let mut fossilTemplate: SpriteTemplate = zeroed();
-                fossilTemplate = *sSpriteTemplate_FallingFossil;
+                let mut fossilTemplate: SpriteTemplate = *sSpriteTemplate_FallingFossil;
                 fossilTemplate.images = (*sFallingFossil).frameImage;
                 (*sFallingFossil).spriteId = CreateSprite(&raw mut fossilTemplate, 128, -16, 1);
                 gSprites[(*sFallingFossil).spriteId].centerToCornerVecX = 0;
@@ -669,36 +681,26 @@ pub(crate) unsafe extern "C" fn Task_FossilFallAndSink(taskId: u8) {
             }
         }
         if fall || sw1 == 5 {
-            fall = true;
-            i = 0;
-            while i < FOSSIL_DISINTEGRATE_LENGTH {
+            for i in 0..FOSSIL_DISINTEGRATE_LENGTH {
                 *(*sFallingFossil).disintegrateRand.at(i) = i;
-                i += 1;
             }
             break 'l1;
         }
         if sw1 == 6 {
-            fall = true;
-            i = 0;
-            while i < 512 {
-                let mut rand1: u16 = 0;
-                let mut rand2: u16 = 0;
-                let mut temp: u16 = 0;
-                rand1 = (Random() as i32 % 256) as u16;
-                rand2 = (Random() as i32 % 256) as u16;
-                temp = *(*sFallingFossil).disintegrateRand.at(rand2);
+            for i in 0..512u16 {
+                let rand1: u16 = (Random() as i32 % 256) as u16;
+                let rand2: u16 = (Random() as i32 % 256) as u16;
+                let temp: u16 = *(*sFallingFossil).disintegrateRand.at(rand2);
                 *(*sFallingFossil).disintegrateRand.at(rand2) =
                     *(*sFallingFossil).disintegrateRand.at(rand1);
                 *(*sFallingFossil).disintegrateRand.at(rand1) = temp;
-                i += 1;
             }
             gSprites[(*sFallingFossil).spriteId].callback = Some(SpriteCB_FallingFossil);
             break 'l1;
         }
         if sw1 == 7 {
-            fall = true;
             if gSprites[(*sFallingFossil).spriteId].callback
-                != Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
+                != Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
             {
                 return;
             }
@@ -714,20 +716,17 @@ pub(crate) unsafe extern "C" fn Task_FossilFallAndSink(taskId: u8) {
             break 'l1;
         }
         if sw1 == 8 {
-            fall = true;
             ScriptContext_Enable();
             break 'l1;
         }
     }
-    gTasks[taskId].data[0] += 1;
+    task_set(taskId, 0, task_get(taskId, 0) + 1);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_FallingFossil(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_FallingFossil(sprite: *mut Sprite) {
     if (*sFallingFossil).disintegrateIdx >= FOSSIL_DISINTEGRATE_LENGTH {
         (*sprite).callback = Some(SpriteCallbackDummy);
     } else if (*sprite).y >= 96 {
-        let mut i: u8 = 0;
-        i = 0;
-        while i < 2 {
+        for i in 0..2u8 {
             UpdateDisintegrationEffect(
                 (*sFallingFossil).frameImageTiles,
                 *(*sFallingFossil).disintegrateRand.at({
@@ -739,49 +738,32 @@ pub(crate) unsafe extern "C" fn SpriteCB_FallingFossil(sprite: *mut Sprite) {
                 16,
                 0,
             );
-            i += 1;
         }
         StartSpriteAnim(sprite, 0);
     } else {
         (*sprite).y += 1;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateDisintegrationEffect(
-    mut tiles: *mut u8,
-    randId: u16,
-    c: u8,
-    size: u8,
-    offset: u8,
-) {
-    let mut heightTiles: u8 = 0;
-    let mut height: u8 = 0;
-    let mut widthTiles: u8 = 0;
-    let mut width: u8 = 0;
-    let mut var: u16 = 0;
-    let mut baseOffset: u16 = 0;
-    let mut col: u8 = 0;
-    let mut row: u8 = 0;
-    let mut flag: u8 = 0;
-    let mut tileMask: u8 = 0;
-    height = div_i32(randId as i32, size as i32) as u8;
+unsafe fn UpdateDisintegrationEffect(tiles: *mut u8, randId: u16, c: u8, size: u8, offset: u8) {
+    let height: u8 = div_i32(randId as i32, size as i32) as u8;
     sDebug_DisintegrationData[0] = height as u16;
-    width = rem_i32(randId as i32, size as i32) as u8;
+    let width: u8 = rem_i32(randId as i32, size as i32) as u8;
     sDebug_DisintegrationData[1] = width as u16;
-    row = height & 7;
-    col = width & 7;
+    let row: u8 = height & 7;
+    let col: u8 = width & 7;
     sDebug_DisintegrationData[2] = height as u16 & 7;
     sDebug_DisintegrationData[3] = width as u16 & 7;
-    widthTiles = (width as i32 / 8) as u8;
-    heightTiles = (height as i32 / 8) as u8;
+    let widthTiles: u8 = (width as i32 / 8) as u8;
+    let heightTiles: u8 = (height as i32 / 8) as u8;
     sDebug_DisintegrationData[4] = (width as i32 / 8) as u16;
     sDebug_DisintegrationData[5] = (height as i32 / 8) as u16;
-    var = (size as i32 / 8) as u16 * (heightTiles as u16 * 64) + widthTiles as u16 * 64;
+    let var: u16 = (size as i32 / 8) as u16 * (heightTiles as u16 * 64) + widthTiles as u16 * 64;
     sDebug_DisintegrationData[6] = var;
-    baseOffset = var + (row as u16 * 8 + col as u16);
+    let mut baseOffset: u16 = var + (row as u16 * 8 + col as u16);
     baseOffset = (baseOffset as i32 / 2) as u16;
     sDebug_DisintegrationData[7] = var + (row as u16 * 8 + col as u16);
-    flag = (randId as i32 % 2) as u8 ^ 1;
-    tileMask =
+    let flag: u8 = (randId as i32 % 2) as u8 ^ 1;
+    let tileMask: u8 =
         shl_i32(c as i32, (flag as u32) << 2) as u8 | shl_i32(15, (flag as u32 ^ 1) << 2) as u8;
     *tiles.at(baseOffset as i32 + offset as i32 * 32) &= tileMask;
 }

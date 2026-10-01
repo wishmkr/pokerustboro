@@ -71,29 +71,97 @@ static WINDOW_TEMPLATES: [WindowTemplate; 3] = [
     DUMMY_WIN_TEMPLATE,
 ];
 
-unsafe extern "C" {
-    static gText_Hoenn: u8;
-
-    fn SetMainCallback2(callback: MainCallback);
-    fn SetVBlankCallback(callback: Option<unsafe extern "C" fn()>);
-    fn BeginNormalPaletteFade(
-        selected_palettes: u32,
-        delay: i8,
-        start_y: u8,
-        target_y: u8,
-        blend_color: u16,
-    ) -> u8;
-    fn UpdatePaletteFade() -> u8;
-    fn TransferPlttBuffer();
-    fn DeactivateAllTextPrinters();
-    fn ClearScheduledBgCopiesToVram();
-    fn DoScheduledBgTilemapCopiesToVram();
-    fn ScheduleBgCopyTilemapToVram(bg_id: u8);
-    fn InitRegionMap(region_map: *mut u8, zoomed: u8);
-    fn CreateRegionMapPlayerIcon(tile_tag: u16, palette_tag: u16);
-    fn CreateRegionMapCursor(tile_tag: u16, palette_tag: u16);
-    fn DoRegionMapInputCallback() -> u8;
-    fn FreeRegionMapIconResources();
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: MainCallback) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
+}
+/// `SetVBlankCallback` with this module's view of its types.
+#[inline]
+unsafe fn SetVBlankCallback(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetVBlankCallback(a0);
+    }
+}
+/// `BeginNormalPaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8 {
+    unsafe { crate::palette::BeginNormalPaletteFade(a0, a1, a2, a3, a4) }
+}
+/// `UpdatePaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn UpdatePaletteFade() -> u8 {
+    unsafe { crate::palette::UpdatePaletteFade() }
+}
+/// `TransferPlttBuffer` with this module's view of its types.
+#[inline]
+unsafe fn TransferPlttBuffer() {
+    unsafe {
+        crate::palette::TransferPlttBuffer();
+    }
+}
+/// `DeactivateAllTextPrinters` with this module's view of its types.
+#[inline]
+unsafe fn DeactivateAllTextPrinters() {
+    unsafe {
+        crate::text::DeactivateAllTextPrinters();
+    }
+}
+/// `ClearScheduledBgCopiesToVram` with this module's view of its types.
+#[inline]
+unsafe fn ClearScheduledBgCopiesToVram() {
+    unsafe {
+        crate::menu::ClearScheduledBgCopiesToVram();
+    }
+}
+/// `DoScheduledBgTilemapCopiesToVram` with this module's view of its types.
+#[inline]
+unsafe fn DoScheduledBgTilemapCopiesToVram() {
+    unsafe {
+        crate::menu::DoScheduledBgTilemapCopiesToVram();
+    }
+}
+/// `ScheduleBgCopyTilemapToVram` with this module's view of its types.
+#[inline]
+unsafe fn ScheduleBgCopyTilemapToVram(a0: u8) {
+    unsafe {
+        crate::menu::ScheduleBgCopyTilemapToVram(a0);
+    }
+}
+/// `InitRegionMap` with this module's view of its types.
+#[inline]
+unsafe fn InitRegionMap(a0: *mut u8, a1: u8) {
+    unsafe {
+        crate::region_map::InitRegionMap(a0 as _, a1);
+    }
+}
+/// `CreateRegionMapPlayerIcon` with this module's view of its types.
+#[inline]
+unsafe fn CreateRegionMapPlayerIcon(a0: u16, a1: u16) {
+    unsafe {
+        crate::region_map::CreateRegionMapPlayerIcon(a0, a1);
+    }
+}
+/// `CreateRegionMapCursor` with this module's view of its types.
+#[inline]
+unsafe fn CreateRegionMapCursor(a0: u16, a1: u16) {
+    unsafe {
+        crate::region_map::CreateRegionMapCursor(a0, a1);
+    }
+}
+/// `DoRegionMapInputCallback` with this module's view of its types.
+#[inline]
+unsafe fn DoRegionMapInputCallback() -> u8 {
+    unsafe { crate::region_map::DoRegionMapInputCallback() }
+}
+/// `FreeRegionMapIconResources` with this module's view of its types.
+#[inline]
+unsafe fn FreeRegionMapIconResources() {
+    unsafe {
+        crate::region_map::FreeRegionMapIconResources();
+    }
 }
 
 #[inline]
@@ -112,7 +180,7 @@ unsafe fn advance() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldInitRegionMap(callback: MainCallback) {
+pub unsafe fn FieldInitRegionMap(callback: MainCallback) {
     unsafe { SetVBlankCallback(None) };
     let h = unsafe { Alloc(H_SIZE) };
     unsafe { (&raw mut HANDLER).write(h) };
@@ -121,7 +189,7 @@ pub unsafe extern "C" fn FieldInitRegionMap(callback: MainCallback) {
     unsafe { SetMainCallback2(init_region_map_registers) };
 }
 
-unsafe extern "C" fn init_region_map_registers() {
+unsafe fn init_region_map_registers() {
     // DISPCNT, then BG0..BG3 HOFS/VOFS.
     unsafe { SetGpuReg(REG_OFFSET_DISPCNT, 0) };
     for reg in (0x10..0x20).step_by(2) {
@@ -139,13 +207,13 @@ unsafe extern "C" fn init_region_map_registers() {
     unsafe { SetVBlankCallback(Some(vblank_cb)) };
 }
 
-unsafe extern "C" fn vblank_cb() {
+unsafe fn vblank_cb() {
     unsafe { LoadOam() };
     unsafe { ProcessSpriteCopyRequests() };
     unsafe { TransferPlttBuffer() };
 }
 
-unsafe extern "C" fn field_update_region_map_cb2() {
+unsafe fn field_update_region_map_cb2() {
     unsafe { field_update_region_map() };
     unsafe { AnimateSprites() };
     unsafe { BuildOamBuffer() };
@@ -164,7 +232,7 @@ unsafe fn field_update_region_map() {
         }
         1 => {
             unsafe { DrawStdFrameWithCustomTileAndPalette(WIN_TITLE, 0, 0x27, 0xd) };
-            let hoenn = &raw const gText_Hoenn;
+            let hoenn = &raw const (*(&raw const crate::data::strings::gText_Hoenn).cast::<u8>());
             let offset =
                 unsafe { GetStringCenterAlignXOffset(i32::from(FONT_NORMAL), hoenn, 0x38) };
             unsafe {

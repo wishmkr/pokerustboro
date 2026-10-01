@@ -6,7 +6,7 @@ use crate::data::rotating_tile_puzzle::{
     sMovement_FaceDown, sMovement_FaceLeft, sMovement_FaceRight, sMovement_FaceUp,
     sMovement_ShiftDown, sMovement_ShiftLeft, sMovement_ShiftRight, sMovement_ShiftUp,
 };
-use crate::ffi::{OBJECT_EVENT_SIZE, gObjectEvents};
+use crate::ffi::OBJECT_EVENT_SIZE;
 use crate::load_save::gSaveBlock1Ptr;
 use crate::malloc::{AllocZeroed, Free};
 use crate::script_movement::{
@@ -56,10 +56,20 @@ const PUZZLE_IS_TRICK_HOUSE: usize = 33;
 #[unsafe(link_section = "ewram_data")]
 static mut PUZZLE: *mut u8 = core::ptr::null_mut();
 
-unsafe extern "C" {
-    fn MapGridGetMetatileIdAt(x: i32, y: i32) -> i32;
-    fn GetObjectEventIdByLocalIdAndMap(local_id: u8, map_num: u8, map_group: u8) -> u8;
-    fn ObjectEventClearHeldMovementIfFinished(object_event: *mut u8) -> u8;
+/// `MapGridGetMetatileIdAt` with this module's view of its types.
+#[inline]
+unsafe fn MapGridGetMetatileIdAt(a0: i32, a1: i32) -> i32 {
+    unsafe { crate::fieldmap::MapGridGetMetatileIdAt(a0, a1) }
+}
+/// `GetObjectEventIdByLocalIdAndMap` with this module's view of its types.
+#[inline]
+unsafe fn GetObjectEventIdByLocalIdAndMap(a0: u8, a1: u8, a2: u8) -> u8 {
+    unsafe { crate::event_object_movement::GetObjectEventIdByLocalIdAndMap(a0, a1, a2) }
+}
+/// `ObjectEventClearHeldMovementIfFinished` with this module's view of its types.
+#[inline]
+unsafe fn ObjectEventClearHeldMovementIfFinished(a0: *mut u8) -> u8 {
+    unsafe { crate::event_object_movement::ObjectEventClearHeldMovementIfFinished(a0 as _) }
 }
 
 #[inline]
@@ -69,13 +79,13 @@ fn puzzle() -> *mut u8 {
 
 #[inline]
 unsafe fn template(index: usize) -> *mut u8 {
-    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read() };
+    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read().cast::<u8>() };
     unsafe { sb1.add(SB1_OBJECT_EVENT_TEMPLATES + index * TEMPLATE_SIZE) }
 }
 
 #[inline]
 unsafe fn location() -> (u8, u8) {
-    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read() };
+    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read().cast::<u8>() };
     unsafe {
         (
             sb1.add(SB1_LOCATION_MAP_NUM).read(),
@@ -100,7 +110,7 @@ unsafe fn metatile_under(t: *mut u8) -> i32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitRotatingTilePuzzle(is_trick_house: u8) {
+pub unsafe fn InitRotatingTilePuzzle(is_trick_house: u8) {
     if puzzle().is_null() {
         unsafe { (&raw mut PUZZLE).write(AllocZeroed(PUZZLE_SIZE)) };
     }
@@ -108,14 +118,16 @@ pub unsafe extern "C" fn InitRotatingTilePuzzle(is_trick_house: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeRotatingTilePuzzle() {
+pub unsafe fn FreeRotatingTilePuzzle() {
     if !puzzle().is_null() {
         unsafe { Free(puzzle()) };
         unsafe { (&raw mut PUZZLE).write(core::ptr::null_mut()) };
     }
     let id = unsafe { GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0) };
     let object = unsafe {
-        (&raw mut gObjectEvents)
+        (&raw mut (*(&raw const crate::field_player_avatar::gObjectEvents)
+            .cast::<u8>()
+            .cast_mut()))
             .cast::<u8>()
             .add(usize::from(id) * OBJECT_EVENT_SIZE)
     };
@@ -124,7 +136,7 @@ pub unsafe extern "C" fn FreeRotatingTilePuzzle() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MoveRotatingTileObjects(puzzle_number: u8) -> u16 {
+pub unsafe fn MoveRotatingTileObjects(puzzle_number: u8) -> u16 {
     let mut local_id = LOCALID_NONE;
     for i in 0..OBJECT_EVENT_TEMPLATES_COUNT {
         let t = unsafe { template(i) };
@@ -187,7 +199,7 @@ fn rotation_for(tile_difference: i8, strict: bool) -> i32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TurnRotatingTileObjects() {
+pub unsafe fn TurnRotatingTileObjects() {
     let p = puzzle();
     if p.is_null() {
         return;
@@ -210,7 +222,9 @@ pub unsafe extern "C" fn TurnRotatingTileObjects() {
             continue;
         }
         let object = unsafe {
-            (&raw const gObjectEvents)
+            (&raw const (*(&raw const crate::field_player_avatar::gObjectEvents)
+                .cast::<u8>()
+                .cast_mut()))
                 .cast::<u8>()
                 .add(usize::from(object_id) * OBJECT_EVENT_SIZE)
         };

@@ -1,14 +1,16 @@
 //! The hand-off screen between accepting a Union Room battle and the battle
 //! itself: both players confirm, then the chosen two Pokémon are set up.
 
+use crate::battle_setup::gTrainerBattleOpponent_A;
 use crate::bg::{
     FillBgTilemapBufferRect, InitBgsFromTemplates, ResetBgsAndClearDma3BusyFlags, ShowBg,
 };
 use crate::ffi::{
     BgTemplate, COPYWIN_FULL_MODE, DUMMY_WIN_TEMPLATE, FONT_NORMAL, MainCallback, PARTY_SIZE,
-    POKEMON_SIZE, WindowTemplate, gEnemyParty, gPlayerParty, main_state,
+    POKEMON_SIZE, WindowTemplate, main_state,
 };
 use crate::gpu_regs::SetGpuReg;
+use crate::link::gReceivedRemoteLinkPlayers;
 use crate::malloc::AllocZeroed;
 use crate::sprite::{
     AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
@@ -55,56 +57,167 @@ static WINDOW_TEMPLATES: [WindowTemplate; 2] = [
 /// White background, dark grey text, light grey shadow.
 static TEXT_COLORS: [u8; 3] = [1, 2, 3];
 
-unsafe extern "C" {
-    static mut gSelectedOrderFromParty: [u8; 3];
-    static mut gTrainerBattleOpponent_A: u16;
-    static mut gBlockSendBuffer: [u8; 0x100];
-    static gBlockRecvBuffer: u8;
-    static gReceivedRemoteLinkPlayers: u8;
-    static gText_CommStandbyAwaitingOtherPlayer: u8;
-    static gText_RefusedBattle: u8;
-    static gText_BattleWasRefused: u8;
-
-    fn StartUnionRoomBattle(battle_flags: u16);
-    fn ZeroMonData(mon: *mut u8);
-    fn IncrementGameStat(index: u8);
-    fn CalculatePlayerPartyCount() -> u8;
-    fn CB2_InitBattle();
-    fn CB2_ReturnToField();
-    fn SetMainCallback2(callback: MainCallback);
-    fn SetVBlankCallback(callback: Option<unsafe extern "C" fn()>);
-    fn BeginNormalPaletteFade(
-        selected_palettes: u32,
-        delay: i8,
-        start_y: u8,
-        target_y: u8,
-        blend_color: u16,
-    ) -> u8;
-    fn UpdatePaletteFade() -> u8;
-    fn TransferPlttBuffer();
-    fn ResetTempTileDataBuffers();
-    fn DeactivateAllTextPrinters();
-    fn Menu_LoadStdPal();
-    fn RunTextPrinters();
-    fn IsTextPrinterActive(id: u8) -> u16;
-    fn AddTextPrinterParameterized4(
-        window_id: u8,
-        font_id: u8,
-        left: u8,
-        top: u8,
-        letter_spacing: u8,
-        line_spacing: u8,
-        color: *const u8,
-        speed: i8,
-        string: *const u8,
-    );
-    fn SendBlock(unused: u8, src: *const u8, size: u16) -> u8;
-    fn GetBlockReceivedStatus() -> u8;
-    fn ResetBlockReceivedFlags();
-    fn SetCloseLinkCallback();
-    fn SetLinkStandbyCallback();
-    fn IsLinkTaskFinished() -> u8;
-    fn GetMultiplayerId() -> u8;
+/// `StartUnionRoomBattle` with this module's view of its types.
+#[inline]
+unsafe fn StartUnionRoomBattle(a0: u16) {
+    unsafe {
+        crate::union_room::StartUnionRoomBattle(a0);
+    }
+}
+/// `ZeroMonData` with this module's view of its types.
+#[inline]
+unsafe fn ZeroMonData(a0: *mut u8) {
+    unsafe {
+        crate::pokemon::ZeroMonData(a0 as _);
+    }
+}
+/// `IncrementGameStat` with this module's view of its types.
+#[inline]
+unsafe fn IncrementGameStat(a0: u8) {
+    unsafe {
+        crate::overworld::IncrementGameStat(a0);
+    }
+}
+/// `CalculatePlayerPartyCount` with this module's view of its types.
+#[inline]
+unsafe fn CalculatePlayerPartyCount() -> u8 {
+    unsafe { crate::pokemon::CalculatePlayerPartyCount() }
+}
+/// `CB2_InitBattle` with this module's view of its types.
+#[inline]
+unsafe fn CB2_InitBattle() {
+    unsafe {
+        crate::battle_main::CB2_InitBattle();
+    }
+}
+/// `CB2_ReturnToField` with this module's view of its types.
+#[inline]
+unsafe fn CB2_ReturnToField() {
+    unsafe {
+        crate::overworld::CB2_ReturnToField();
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: MainCallback) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
+}
+/// `SetVBlankCallback` with this module's view of its types.
+#[inline]
+unsafe fn SetVBlankCallback(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetVBlankCallback(a0);
+    }
+}
+/// `BeginNormalPaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8 {
+    unsafe { crate::palette::BeginNormalPaletteFade(a0, a1, a2, a3, a4) }
+}
+/// `UpdatePaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn UpdatePaletteFade() -> u8 {
+    unsafe { crate::palette::UpdatePaletteFade() }
+}
+/// `TransferPlttBuffer` with this module's view of its types.
+#[inline]
+unsafe fn TransferPlttBuffer() {
+    unsafe {
+        crate::palette::TransferPlttBuffer();
+    }
+}
+/// `ResetTempTileDataBuffers` with this module's view of its types.
+#[inline]
+unsafe fn ResetTempTileDataBuffers() {
+    unsafe {
+        crate::menu::ResetTempTileDataBuffers();
+    }
+}
+/// `DeactivateAllTextPrinters` with this module's view of its types.
+#[inline]
+unsafe fn DeactivateAllTextPrinters() {
+    unsafe {
+        crate::text::DeactivateAllTextPrinters();
+    }
+}
+/// `Menu_LoadStdPal` with this module's view of its types.
+#[inline]
+unsafe fn Menu_LoadStdPal() {
+    unsafe {
+        crate::menu::Menu_LoadStdPal();
+    }
+}
+/// `RunTextPrinters` with this module's view of its types.
+#[inline]
+unsafe fn RunTextPrinters() {
+    unsafe {
+        crate::text::RunTextPrinters();
+    }
+}
+/// `IsTextPrinterActive` with this module's view of its types.
+#[inline]
+unsafe fn IsTextPrinterActive(a0: u8) -> u16 {
+    unsafe { crate::text::IsTextPrinterActive(a0) }
+}
+/// `AddTextPrinterParameterized4` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized4(
+    a0: u8,
+    a1: u8,
+    a2: u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: *const u8,
+    a7: i8,
+    a8: *const u8,
+) {
+    unsafe {
+        crate::menu::AddTextPrinterParameterized4(a0, a1, a2, a3, a4, a5, a6 as _, a7, a8 as _);
+    }
+}
+/// `SendBlock` with this module's view of its types.
+#[inline]
+unsafe fn SendBlock(a0: u8, a1: *const u8, a2: u16) -> u8 {
+    unsafe { crate::link::SendBlock(a0, a1 as _, a2) }
+}
+/// `GetBlockReceivedStatus` with this module's view of its types.
+#[inline]
+unsafe fn GetBlockReceivedStatus() -> u8 {
+    unsafe { crate::link::GetBlockReceivedStatus() }
+}
+/// `ResetBlockReceivedFlags` with this module's view of its types.
+#[inline]
+unsafe fn ResetBlockReceivedFlags() {
+    unsafe {
+        crate::link::ResetBlockReceivedFlags();
+    }
+}
+/// `SetCloseLinkCallback` with this module's view of its types.
+#[inline]
+unsafe fn SetCloseLinkCallback() {
+    unsafe {
+        crate::link::SetCloseLinkCallback();
+    }
+}
+/// `SetLinkStandbyCallback` with this module's view of its types.
+#[inline]
+unsafe fn SetLinkStandbyCallback() {
+    unsafe {
+        crate::link::SetLinkStandbyCallback();
+    }
+}
+/// `IsLinkTaskFinished` with this module's view of its types.
+#[inline]
+unsafe fn IsLinkTaskFinished() -> u8 {
+    unsafe { crate::link::IsLinkTaskFinished() }
+}
+/// `GetMultiplayerId` with this module's view of its types.
+#[inline]
+unsafe fn GetMultiplayerId() -> u8 {
+    unsafe { crate::link::GetMultiplayerId() }
 }
 
 #[inline]
@@ -112,11 +225,20 @@ unsafe fn mon(party: *mut u8, index: usize) -> *mut u8 {
     unsafe { party.add(index * POKEMON_SIZE) }
 }
 
-unsafe extern "C" fn cb2_set_up_parties_and_start_battle() {
+unsafe fn cb2_set_up_parties_and_start_battle() {
     unsafe { StartUnionRoomBattle(BATTLE_TYPE_LINK_TRAINER) };
-    let player = (&raw mut gPlayerParty).cast::<u8>();
-    let enemy = (&raw mut gEnemyParty).cast::<u8>();
-    let order = (&raw const gSelectedOrderFromParty).cast::<u8>();
+    let player = (&raw mut (*(&raw const crate::pokemon::gPlayerParty)
+        .cast::<u8>()
+        .cast_mut()))
+        .cast::<u8>();
+    let enemy = (&raw mut (*(&raw const crate::pokemon::gEnemyParty)
+        .cast::<u8>()
+        .cast_mut()))
+        .cast::<u8>();
+    let order = (&raw const (*(&raw const crate::party_menu::gSelectedOrderFromParty)
+        .cast::<[u8; 3]>()
+        .cast_mut()))
+        .cast::<u8>();
     for i in 0..UNION_ROOM_PARTY_SIZE {
         let slot = usize::from(unsafe { order.add(i).read() }).wrapping_sub(1);
         unsafe { core::ptr::copy(mon(player, slot), mon(enemy, i), POKEMON_SIZE) };
@@ -165,7 +287,7 @@ unsafe fn print_message(state: *mut i16, string: *const u8, speed: i8) -> bool {
     false
 }
 
-unsafe extern "C" fn vblank_cb() {
+unsafe fn vblank_cb() {
     unsafe { LoadOam() };
     unsafe { ProcessSpriteCopyRequests() };
     unsafe { TransferPlttBuffer() };
@@ -173,12 +295,12 @@ unsafe extern "C" fn vblank_cb() {
 
 #[inline]
 unsafe fn received(player: usize) -> u16 {
-    let buffer = &raw const gBlockRecvBuffer;
+    let buffer = &raw const (*(&raw const crate::link::gBlockRecvBuffer).cast::<u8>());
     unsafe { buffer.add(player * BLOCK_RECV_ROW).cast::<u16>().read() }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_UnionRoomBattle() {
+pub unsafe fn CB2_UnionRoomBattle() {
     let state = unsafe { main_state() };
     let text_state = unsafe { (&raw const BATTLE).read() };
     match unsafe { state.read() } {
@@ -188,7 +310,7 @@ pub unsafe extern "C" fn CB2_UnionRoomBattle() {
             unsafe { (&raw mut BATTLE).write(battle) };
             unsafe { ResetSpriteData() };
             unsafe { FreeAllSpritePalettes() };
-            unsafe { ResetTasks() };
+            ResetTasks();
             unsafe { ResetBgsAndClearDma3BusyFlags(0) };
             unsafe { InitBgsFromTemplates(0, BG_TEMPLATES.as_ptr().cast(), 1) };
             unsafe { ResetTempTileDataBuffers() };
@@ -212,7 +334,7 @@ pub unsafe extern "C" fn CB2_UnionRoomBattle() {
             if unsafe {
                 print_message(
                     text_state,
-                    &raw const gText_CommStandbyAwaitingOtherPlayer,
+                    &raw const (*(&raw const crate::data::strings::gText_CommStandbyAwaitingOtherPlayer).cast::<u8>()),
                     0,
                 )
             } {
@@ -226,9 +348,15 @@ pub unsafe extern "C" fn CB2_UnionRoomBattle() {
         }
         3 => {
             if unsafe { UpdatePaletteFade() } == 0 {
-                let send = (&raw mut gBlockSendBuffer).cast::<u8>();
+                let send = (&raw mut (*(&raw const crate::link::gBlockSendBuffer)
+                    .cast::<[u8; 0x100]>()
+                    .cast_mut()))
+                    .cast::<u8>();
                 unsafe { send.write_bytes(0, 0x20) };
-                let order = (&raw const gSelectedOrderFromParty).cast::<u8>();
+                let order = (&raw const (*(&raw const crate::party_menu::gSelectedOrderFromParty)
+                    .cast::<[u8; 3]>()
+                    .cast_mut()))
+                    .cast::<u8>();
                 let first = i32::from(unsafe { order.read() });
                 let second = i32::from(unsafe { order.add(1).read() });
                 // Only true when no Pokémon were chosen at all.
@@ -274,18 +402,32 @@ pub unsafe extern "C" fn CB2_UnionRoomBattle() {
             }
         }
         7 => {
-            if unsafe { print_message(text_state, &raw const gText_RefusedBattle, 1) } {
+            if unsafe {
+                print_message(
+                    text_state,
+                    &raw const (*(&raw const crate::data::strings::gText_RefusedBattle)
+                        .cast::<u8>()),
+                    1,
+                )
+            } {
                 unsafe { SetMainCallback2(CB2_ReturnToField) };
             }
         }
         9 => {
-            if unsafe { print_message(text_state, &raw const gText_BattleWasRefused, 1) } {
+            if unsafe {
+                print_message(
+                    text_state,
+                    &raw const (*(&raw const crate::data::strings::gText_BattleWasRefused)
+                        .cast::<u8>()),
+                    1,
+                )
+            } {
                 unsafe { SetMainCallback2(CB2_ReturnToField) };
             }
         }
         _ => {}
     }
-    unsafe { RunTasks() };
+    RunTasks();
     unsafe { RunTextPrinters() };
     unsafe { AnimateSprites() };
     unsafe { BuildOamBuffer() };

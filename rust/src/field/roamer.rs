@@ -110,36 +110,42 @@ static mut LOCATION_HISTORY: crate::ffi::Align4<[[u8; 2]; 3]> = crate::ffi::Alig
 #[unsafe(link_section = "ewram_data")]
 static mut ROAMER_LOCATION: [u8; 2] = [0; 2];
 
-unsafe extern "C" {
-    static mut gSaveBlock1Ptr: *mut u8;
-    static mut gEnemyParty: u8;
-
-    fn Random() -> u16;
-    fn ZeroEnemyPartyMons();
-    #[allow(clippy::too_many_arguments)]
-    fn CreateMon(
-        mon: *mut u8,
-        species: u16,
-        level: u8,
-        fixed_iv: u8,
-        has_fixed_personality: u8,
-        fixed_personality: u32,
-        ot_id_type: u8,
-        ot_id: u32,
-    );
-    fn CreateMonWithIVsPersonality(
-        mon: *mut u8,
-        species: u16,
-        level: u32,
-        ivs: u32,
-        personality: u32,
-    );
+/// `Random` with this module's view of its types.
+#[inline]
+unsafe fn Random() -> u16 {
+    crate::random::Random()
+}
+/// `ZeroEnemyPartyMons` with this module's view of its types.
+#[inline]
+unsafe fn ZeroEnemyPartyMons() {
+    unsafe {
+        crate::pokemon::ZeroEnemyPartyMons();
+    }
+}
+/// `CreateMon` with this module's view of its types.
+#[inline]
+unsafe fn CreateMon(a0: *mut u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u32, a6: u8, a7: u32) {
+    unsafe {
+        crate::pokemon::CreateMon(a0 as _, a1, a2, a3, a4, a5, a6, a7);
+    }
+}
+/// `CreateMonWithIVsPersonality` with this module's view of its types.
+#[inline]
+unsafe fn CreateMonWithIVsPersonality(a0: *mut u8, a1: u16, a2: u32, a3: u32, a4: u32) {
+    unsafe {
+        crate::pokemon::CreateMonWithIVsPersonality(a0 as _, a1, a2 as _, a3, a4);
+    }
 }
 
 /// `ROAMER` - `&gSaveBlock1Ptr->roamer`
 #[inline]
 unsafe fn roamer() -> *mut u8 {
-    unsafe { gSaveBlock1Ptr.add(SAVE1_ROAMER_OFFSET) }
+    unsafe {
+        (*(&raw const crate::load_save::gSaveBlock1Ptr)
+            .cast::<*mut u8>()
+            .cast_mut())
+        .add(SAVE1_ROAMER_OFFSET)
+    }
 }
 
 #[inline]
@@ -191,11 +197,14 @@ unsafe fn set_history(slot: usize, index: usize, value: u8) {
 /// The first mon of the enemy party, which the roamer is built into.
 #[inline]
 unsafe fn enemy_mon() -> *mut u8 {
-    (&raw mut gEnemyParty).cast::<u8>()
+    (&raw mut (*(&raw const crate::pokemon::gEnemyParty)
+        .cast::<u8>()
+        .cast_mut()))
+        .cast::<u8>()
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearRoamerData() {
+pub unsafe fn ClearRoamerData() {
     unsafe { core::ptr::write_bytes(roamer(), 0, ROAMER_SIZE) };
     unsafe {
         roamer()
@@ -206,7 +215,7 @@ pub unsafe extern "C" fn ClearRoamerData() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearRoamerLocationData() {
+pub unsafe fn ClearRoamerLocationData() {
     for slot in 0..3 {
         unsafe { set_history(slot, MAP_GRP, 0) };
         unsafe { set_history(slot, MAP_NUM, 0) };
@@ -293,7 +302,7 @@ unsafe fn create_initial_roamer_mon(create_latios: u16) {
 /// `gSpecialVar_0x8004` carries the MULTI_TV_LATI choice: 0 for Red (Latias),
 /// 1 for Blue (Latios).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitRoamer() {
+pub unsafe fn InitRoamer() {
     unsafe { ClearRoamerData() };
     unsafe { ClearRoamerLocationData() };
     let choice = unsafe { (&raw const gSpecialVar_0x8004).read_volatile() };
@@ -301,7 +310,7 @@ pub unsafe extern "C" fn InitRoamer() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateLocationHistoryForRoamer() {
+pub unsafe fn UpdateLocationHistoryForRoamer() {
     // Shift the three-entry history along and record where the player is now.
     for index in [MAP_GRP, MAP_NUM] {
         unsafe { set_history(2, index, history(1, index)) };
@@ -312,20 +321,28 @@ pub unsafe extern "C" fn UpdateLocationHistoryForRoamer() {
         set_history(
             0,
             MAP_GRP,
-            gSaveBlock1Ptr.add(SAVE1_LOCATION_MAP_GROUP).read_volatile(),
+            (*(&raw const crate::load_save::gSaveBlock1Ptr)
+                .cast::<*mut u8>()
+                .cast_mut())
+            .add(SAVE1_LOCATION_MAP_GROUP)
+            .read_volatile(),
         )
     };
     unsafe {
         set_history(
             0,
             MAP_NUM,
-            gSaveBlock1Ptr.add(SAVE1_LOCATION_MAP_NUM).read_volatile(),
+            (*(&raw const crate::load_save::gSaveBlock1Ptr)
+                .cast::<*mut u8>()
+                .cast_mut())
+            .add(SAVE1_LOCATION_MAP_NUM)
+            .read_volatile(),
         )
     };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RoamerMoveToOtherLocationSet() {
+pub unsafe fn RoamerMoveToOtherLocationSet() {
     if !unsafe { roamer_active() } {
         return;
     }
@@ -344,7 +361,7 @@ pub unsafe extern "C" fn RoamerMoveToOtherLocationSet() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RoamerMove() {
+pub unsafe fn RoamerMove() {
     // One move in sixteen jumps to an unrelated part of the map.
     if unsafe { Random() } % 16 == 0 {
         unsafe { RoamerMoveToOtherLocationSet() };
@@ -377,7 +394,7 @@ pub unsafe extern "C" fn RoamerMove() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsRoamerAt(map_group: u8, map_num: u8) -> u8 {
+pub unsafe fn IsRoamerAt(map_group: u8, map_num: u8) -> u8 {
     let here = unsafe { roamer_active() }
         && map_group == unsafe { location(MAP_GRP) }
         && map_num == unsafe { location(MAP_NUM) };
@@ -385,7 +402,7 @@ pub unsafe extern "C" fn IsRoamerAt(map_group: u8, map_num: u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateRoamerMonInstance() {
+pub unsafe fn CreateRoamerMonInstance() {
     let mon = unsafe { enemy_mon() };
     let roamer = unsafe { roamer() };
     unsafe { ZeroEnemyPartyMons() };
@@ -413,9 +430,21 @@ pub unsafe extern "C" fn CreateRoamerMonInstance() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryStartRoamerEncounter() -> u8 {
-    let map_group = unsafe { gSaveBlock1Ptr.add(SAVE1_LOCATION_MAP_GROUP).read_volatile() };
-    let map_num = unsafe { gSaveBlock1Ptr.add(SAVE1_LOCATION_MAP_NUM).read_volatile() };
+pub unsafe fn TryStartRoamerEncounter() -> u8 {
+    let map_group = unsafe {
+        (*(&raw const crate::load_save::gSaveBlock1Ptr)
+            .cast::<*mut u8>()
+            .cast_mut())
+        .add(SAVE1_LOCATION_MAP_GROUP)
+        .read_volatile()
+    };
+    let map_num = unsafe {
+        (*(&raw const crate::load_save::gSaveBlock1Ptr)
+            .cast::<*mut u8>()
+            .cast_mut())
+        .add(SAVE1_LOCATION_MAP_NUM)
+        .read_volatile()
+    };
 
     if unsafe { IsRoamerAt(map_group, map_num) } == 1 && unsafe { Random() } % 4 == 0 {
         unsafe { CreateRoamerMonInstance() };
@@ -426,7 +455,7 @@ pub unsafe extern "C" fn TryStartRoamerEncounter() -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateRoamerHPStatus(mon: *mut u8) {
+pub unsafe fn UpdateRoamerHPStatus(mon: *mut u8) {
     let roamer = unsafe { roamer() };
     unsafe {
         roamer
@@ -444,12 +473,12 @@ pub unsafe extern "C" fn UpdateRoamerHPStatus(mon: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetRoamerInactive() {
+pub unsafe fn SetRoamerInactive() {
     unsafe { roamer().add(R_ACTIVE).write_volatile(0) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRoamerLocation(map_group: *mut u8, map_num: *mut u8) {
+pub unsafe fn GetRoamerLocation(map_group: *mut u8, map_num: *mut u8) {
     unsafe { map_group.write(location(MAP_GRP)) };
     unsafe { map_num.write(location(MAP_NUM)) };
 }

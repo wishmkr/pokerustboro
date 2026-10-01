@@ -3,29 +3,27 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::type_complexity,
+    dead_code,
+    unused_variables
 )]
 
+use crate::battle_setup::CountBattledRematchTeams;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::{FlagGet, FlagSet};
+use crate::ffi::gSpecialVar_0x8004;
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::match_call::BufferPokedexRatingForMatchCall;
+use crate::string_util::StringExpandPlaceholders;
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -236,54 +234,35 @@ const REMATCH_CALL_START: u16 = 65534;
 
 static sCheckPageOverrides: Table<CArray<MatchCallCheckPageOverride, 4>> =
     Table((&raw const crate::data::pokenav_match_call_data::sCheckPageOverrides).cast());
-static sMatchCallGetEnabledFuncs: Table<
-    CArray<Option<unsafe extern "C" fn(match_call_t) -> u32>, 5>,
-> = Table((&raw const crate::data::pokenav_match_call_data::sMatchCallGetEnabledFuncs).cast());
-static sMatchCallGetMapSecFuncs: Table<
-    CArray<Option<unsafe extern "C" fn(match_call_t) -> u8>, 5>,
-> = Table((&raw const crate::data::pokenav_match_call_data::sMatchCallGetMapSecFuncs).cast());
+static sMatchCallGetEnabledFuncs: Table<CArray<Option<unsafe fn(match_call_t) -> u32>, 5>> =
+    Table((&raw const crate::data::pokenav_match_call_data::sMatchCallGetEnabledFuncs).cast());
+static sMatchCallGetMapSecFuncs: Table<CArray<Option<unsafe fn(match_call_t) -> u8>, 5>> =
+    Table((&raw const crate::data::pokenav_match_call_data::sMatchCallGetMapSecFuncs).cast());
 static sMatchCallHeaders: Table<CArray<match_call_t, 21>> =
     Table((&raw const crate::data::pokenav_match_call_data::sMatchCallHeaders).cast());
-static sMatchCall_GetMessageFunctions: Table<
-    CArray<Option<unsafe extern "C" fn(match_call_t, *mut u8)>, 5>,
-> = Table((&raw const crate::data::pokenav_match_call_data::sMatchCall_GetMessageFunctions).cast());
+static sMatchCall_GetMessageFunctions: Table<CArray<Option<unsafe fn(match_call_t, *mut u8)>, 5>> =
+    Table((&raw const crate::data::pokenav_match_call_data::sMatchCall_GetMessageFunctions).cast());
 static sMatchCall_GetNameAndDescFunctions: Table<
-    CArray<Option<unsafe extern "C" fn(match_call_t, *mut *mut u8, *mut *mut u8)>, 5>,
+    CArray<Option<unsafe fn(match_call_t, *mut *mut u8, *mut *mut u8)>, 5>,
 > = Table(
     (&raw const crate::data::pokenav_match_call_data::sMatchCall_GetNameAndDescFunctions).cast(),
 );
 static sMatchCall_GetRematchTableIdxFunctions: Table<
-    CArray<Option<unsafe extern "C" fn(match_call_t) -> u32>, 5>,
+    CArray<Option<unsafe fn(match_call_t) -> u32>, 5>,
 > = Table(
     (&raw const crate::data::pokenav_match_call_data::sMatchCall_GetRematchTableIdxFunctions)
         .cast(),
 );
-static sMatchCall_HasCheckPageFunctions: Table<
-    CArray<Option<unsafe extern "C" fn(match_call_t) -> u32>, 5>,
-> = Table(
-    (&raw const crate::data::pokenav_match_call_data::sMatchCall_HasCheckPageFunctions).cast(),
-);
-static sMatchCall_IsRematchableFunctions: Table<
-    CArray<Option<unsafe extern "C" fn(match_call_t) -> u32>, 5>,
-> = Table(
-    (&raw const crate::data::pokenav_match_call_data::sMatchCall_IsRematchableFunctions).cast(),
-);
+static sMatchCall_HasCheckPageFunctions: Table<CArray<Option<unsafe fn(match_call_t) -> u32>, 5>> =
+    Table(
+        (&raw const crate::data::pokenav_match_call_data::sMatchCall_HasCheckPageFunctions).cast(),
+    );
+static sMatchCall_IsRematchableFunctions: Table<CArray<Option<unsafe fn(match_call_t) -> u32>, 5>> =
+    Table(
+        (&raw const crate::data::pokenav_match_call_data::sMatchCall_IsRematchableFunctions).cast(),
+    );
 
-unsafe extern "C" {
-    static gRematchTable: CArray<RematchTrainer, 78>;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSpecialVar_0x8004: u16;
-    static gTrainerClassNames: CArray<CArray<u8, 13>, 0>;
-    static gTrainers: CArray<Trainer, 0>;
-    fn BufferPokedexRatingForMatchCall(a0: *mut u8);
-    fn CountBattledRematchTeams(a0: u16) -> u16;
-    fn FlagGet(a0: u16) -> u8;
-    fn FlagSet(a0: u16) -> u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-}
-
-pub(crate) unsafe extern "C" fn MatchCallGetFunctionIndex(mut matchCall: match_call_t) -> u32 {
+unsafe fn MatchCallGetFunctionIndex(matchCall: match_call_t) -> u32 {
     match (*matchCall.common).r#type {
         MC_TYPE_TRAINER | MC_TYPE_LEADER => {
             return 1;
@@ -303,232 +282,194 @@ pub(crate) unsafe extern "C" fn MatchCallGetFunctionIndex(mut matchCall: match_c
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetTrainerIdxByRematchIdx(rematchIdx: u32) -> u32 {
-    return gRematchTable[rematchIdx].trainerIds[0] as u32;
+pub unsafe fn GetTrainerIdxByRematchIdx(rematchIdx: u32) -> u32 {
+    (*(&raw const crate::data::battle_setup::gRematchTable).cast::<CArray<RematchTrainer, 78>>())
+        [rematchIdx]
+        .trainerIds[0] as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRematchIdxByTrainerIdx(trainerIdx: i32) -> i32 {
-    let mut rematchIdx: i32 = 0;
-    rematchIdx = 0;
-    while rematchIdx < REMATCH_TABLE_ENTRIES {
-        if gRematchTable[rematchIdx].trainerIds[0] as i32 == trainerIdx {
+pub unsafe fn GetRematchIdxByTrainerIdx(trainerIdx: i32) -> i32 {
+    for rematchIdx in 0..REMATCH_TABLE_ENTRIES {
+        if (*(&raw const crate::data::battle_setup::gRematchTable)
+            .cast::<CArray<RematchTrainer, 78>>())[rematchIdx]
+            .trainerIds[0] as i32
+            == trainerIdx
+        {
             return rematchIdx;
         }
-        rematchIdx += 1;
     }
-    return -1;
+    -1
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MatchCall_GetEnabled(idx: u32) -> u32 {
-    let mut matchCall: match_call_t = zeroed();
-    let mut i: u32 = 0;
+pub unsafe fn MatchCall_GetEnabled(idx: u32) -> u32 {
     if idx >= 21 {
         return FALSE as u32;
     }
-    matchCall = sMatchCallHeaders[idx];
-    i = MatchCallGetFunctionIndex(matchCall);
-    return sMatchCallGetEnabledFuncs[i].unwrap_unchecked()(matchCall);
+    let matchCall: match_call_t = sMatchCallHeaders[idx];
+    let i: u32 = MatchCallGetFunctionIndex(matchCall);
+    sMatchCallGetEnabledFuncs[i].unwrap_unchecked()(matchCall)
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_NPC(mut matchCall: match_call_t) -> u32 {
+pub(crate) unsafe fn MatchCall_GetEnabled_NPC(matchCall: match_call_t) -> u32 {
     if (*matchCall.npc).flag == 0xFFFF {
         return TRUE as u32;
     }
-    return FlagGet((*matchCall.npc).flag) as u32;
+    FlagGet((*matchCall.npc).flag) as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_Trainer(mut matchCall: match_call_t) -> u32 {
+pub(crate) unsafe fn MatchCall_GetEnabled_Trainer(matchCall: match_call_t) -> u32 {
     if (*matchCall.trainer).flag == 0xFFFF {
         return TRUE as u32;
     }
-    return FlagGet((*matchCall.trainer).flag) as u32;
+    FlagGet((*matchCall.trainer).flag) as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_Wally(mut matchCall: match_call_t) -> u32 {
+pub(crate) unsafe fn MatchCall_GetEnabled_Wally(matchCall: match_call_t) -> u32 {
     if (*matchCall.wally).flag == 0xFFFF {
         return TRUE as u32;
     }
-    return FlagGet((*matchCall.wally).flag) as u32;
+    FlagGet((*matchCall.wally).flag) as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_Rival(mut matchCall: match_call_t) -> u32 {
+pub(crate) unsafe fn MatchCall_GetEnabled_Rival(matchCall: match_call_t) -> u32 {
     if (*matchCall.rival).playerGender != (*gSaveBlock2Ptr).playerGender {
         return FALSE as u32;
     }
     if (*matchCall.rival).flag == 0xFFFF {
         return TRUE as u32;
     }
-    return FlagGet((*matchCall.rival).flag) as u32;
+    FlagGet((*matchCall.rival).flag) as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetEnabled_Birch(mut matchCall: match_call_t) -> u32 {
-    return FlagGet((*matchCall.birch).flag) as u32;
+pub(crate) unsafe fn MatchCall_GetEnabled_Birch(matchCall: match_call_t) -> u32 {
+    FlagGet((*matchCall.birch).flag) as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MatchCall_GetMapSec(idx: u32) -> u8 {
-    let mut matchCall: match_call_t = zeroed();
-    let mut i: u32 = 0;
+pub unsafe fn MatchCall_GetMapSec(idx: u32) -> u8 {
     if idx >= 21 {
         return 0;
     }
-    matchCall = sMatchCallHeaders[idx];
-    i = MatchCallGetFunctionIndex(matchCall);
-    return sMatchCallGetMapSecFuncs[i].unwrap_unchecked()(matchCall);
+    let matchCall: match_call_t = sMatchCallHeaders[idx];
+    let i: u32 = MatchCallGetFunctionIndex(matchCall);
+    sMatchCallGetMapSecFuncs[i].unwrap_unchecked()(matchCall)
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_NPC(mut matchCall: match_call_t) -> u8 {
-    return (*matchCall.npc).mapSec;
+pub(crate) unsafe fn MatchCall_GetMapSec_NPC(matchCall: match_call_t) -> u8 {
+    (*matchCall.npc).mapSec
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_Trainer(mut matchCall: match_call_t) -> u8 {
-    return (*matchCall.trainer).mapSec;
+pub(crate) unsafe fn MatchCall_GetMapSec_Trainer(matchCall: match_call_t) -> u8 {
+    (*matchCall.trainer).mapSec
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_Wally(mut matchCall: match_call_t) -> u8 {
+pub(crate) unsafe fn MatchCall_GetMapSec_Wally(matchCall: match_call_t) -> u8 {
     let mut i: i32 = 0;
-    i = 0;
     while (*(*matchCall.wally).locationData.at(i)).flag != 0xFFFF {
         if FlagGet((*(*matchCall.wally).locationData.at(i)).flag) == 0 {
             break;
         }
         i += 1;
     }
-    return (*(*matchCall.wally).locationData.at(i)).mapSec;
+    (*(*matchCall.wally).locationData.at(i)).mapSec
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_Rival(mut matchCall: match_call_t) -> u8 {
-    return MAPSEC_NONE as u8;
+pub(crate) fn MatchCall_GetMapSec_Rival(matchCall: match_call_t) -> u8 {
+    MAPSEC_NONE as u8
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetMapSec_Birch(mut matchCall: match_call_t) -> u8 {
-    return MAPSEC_NONE as u8;
+pub(crate) fn MatchCall_GetMapSec_Birch(matchCall: match_call_t) -> u8 {
+    MAPSEC_NONE as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MatchCall_IsRematchable(idx: u32) -> u32 {
-    let mut matchCall: match_call_t = zeroed();
-    let mut i: u32 = 0;
+pub unsafe fn MatchCall_IsRematchable(idx: u32) -> u32 {
     if idx >= 21 {
         return 0;
     }
-    matchCall = sMatchCallHeaders[idx];
-    i = MatchCallGetFunctionIndex(matchCall);
-    return sMatchCall_IsRematchableFunctions[i].unwrap_unchecked()(matchCall);
+    let matchCall: match_call_t = sMatchCallHeaders[idx];
+    let i: u32 = MatchCallGetFunctionIndex(matchCall);
+    sMatchCall_IsRematchableFunctions[i].unwrap_unchecked()(matchCall)
 }
-pub(crate) unsafe extern "C" fn MatchCall_IsRematchable_NPC(mut matchCall: match_call_t) -> u32 {
-    return FALSE as u32;
+pub(crate) fn MatchCall_IsRematchable_NPC(matchCall: match_call_t) -> u32 {
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_IsRematchable_Trainer(
-    mut matchCall: match_call_t,
-) -> u32 {
+pub(crate) unsafe fn MatchCall_IsRematchable_Trainer(matchCall: match_call_t) -> u32 {
     if (*matchCall.trainer).rematchTableIdx >= REMATCH_SIDNEY as u16 {
         return FALSE as u32;
     }
-    return (if (*gSaveBlock1Ptr).trainerRematches[(*matchCall.trainer).rematchTableIdx] != 0 {
+    (if (*gSaveBlock1Ptr).trainerRematches[(*matchCall.trainer).rematchTableIdx] != 0 {
         TRUE as i32
     } else {
         FALSE as i32
-    }) as u32;
+    }) as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_IsRematchable_Wally(mut matchCall: match_call_t) -> u32 {
-    return (if (*gSaveBlock1Ptr).trainerRematches[(*matchCall.wally).rematchTableIdx] != 0 {
+pub(crate) unsafe fn MatchCall_IsRematchable_Wally(matchCall: match_call_t) -> u32 {
+    (if (*gSaveBlock1Ptr).trainerRematches[(*matchCall.wally).rematchTableIdx] != 0 {
         TRUE as i32
     } else {
         FALSE as i32
-    }) as u32;
+    }) as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_IsRematchable_Rival(mut matchCall: match_call_t) -> u32 {
-    return FALSE as u32;
+pub(crate) fn MatchCall_IsRematchable_Rival(matchCall: match_call_t) -> u32 {
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_IsRematchable_Birch(mut matchCall: match_call_t) -> u32 {
-    return FALSE as u32;
+pub(crate) fn MatchCall_IsRematchable_Birch(matchCall: match_call_t) -> u32 {
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MatchCall_HasCheckPage(idx: u32) -> u32 {
-    let mut matchCall: match_call_t = zeroed();
-    let mut i: u32 = 0;
+pub unsafe fn MatchCall_HasCheckPage(idx: u32) -> u32 {
     if idx >= 21 {
         return FALSE as u32;
     }
-    matchCall = sMatchCallHeaders[idx];
-    i = MatchCallGetFunctionIndex(matchCall);
+    let matchCall: match_call_t = sMatchCallHeaders[idx];
+    let i: u32 = MatchCallGetFunctionIndex(matchCall);
     if sMatchCall_HasCheckPageFunctions[i].unwrap_unchecked()(matchCall) != 0 {
         return TRUE as u32;
     }
-    i = 0;
-    while i < 4 {
+    for i in 0..4u32 {
         if sCheckPageOverrides[i].idx as u32 == idx {
             return TRUE as u32;
         }
-        i += 1;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_NPC(mut matchCall: match_call_t) -> u32 {
-    return FALSE as u32;
+pub(crate) fn MatchCall_HasCheckPage_NPC(matchCall: match_call_t) -> u32 {
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_Trainer(mut matchCall: match_call_t) -> u32 {
-    return TRUE as u32;
+pub(crate) fn MatchCall_HasCheckPage_Trainer(matchCall: match_call_t) -> u32 {
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_Wally(mut matchCall: match_call_t) -> u32 {
-    return TRUE as u32;
+pub(crate) fn MatchCall_HasCheckPage_Wally(matchCall: match_call_t) -> u32 {
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_Rival(mut matchCall: match_call_t) -> u32 {
-    return FALSE as u32;
+pub(crate) fn MatchCall_HasCheckPage_Rival(matchCall: match_call_t) -> u32 {
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_HasCheckPage_Birch(mut matchCall: match_call_t) -> u32 {
-    return FALSE as u32;
+pub(crate) fn MatchCall_HasCheckPage_Birch(matchCall: match_call_t) -> u32 {
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MatchCall_GetRematchTableIdx(idx: u32) -> u32 {
-    let mut matchCall: match_call_t = zeroed();
-    let mut i: u32 = 0;
+pub unsafe fn MatchCall_GetRematchTableIdx(idx: u32) -> u32 {
     if idx >= 21 {
         return REMATCH_TABLE_ENTRIES as u32;
     }
-    matchCall = sMatchCallHeaders[idx];
-    i = MatchCallGetFunctionIndex(matchCall);
-    return sMatchCall_GetRematchTableIdxFunctions[i].unwrap_unchecked()(matchCall);
+    let matchCall: match_call_t = sMatchCallHeaders[idx];
+    let i: u32 = MatchCallGetFunctionIndex(matchCall);
+    sMatchCall_GetRematchTableIdxFunctions[i].unwrap_unchecked()(matchCall)
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetRematchTableIdx_NPC(
-    mut matchCall: match_call_t,
-) -> u32 {
-    return REMATCH_TABLE_ENTRIES as u32;
+pub(crate) fn MatchCall_GetRematchTableIdx_NPC(matchCall: match_call_t) -> u32 {
+    REMATCH_TABLE_ENTRIES as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetRematchTableIdx_Trainer(
-    mut matchCall: match_call_t,
-) -> u32 {
-    return (*matchCall.trainer).rematchTableIdx as u32;
+pub(crate) unsafe fn MatchCall_GetRematchTableIdx_Trainer(matchCall: match_call_t) -> u32 {
+    (*matchCall.trainer).rematchTableIdx as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetRematchTableIdx_Wally(
-    mut matchCall: match_call_t,
-) -> u32 {
-    return (*matchCall.wally).rematchTableIdx as u32;
+pub(crate) unsafe fn MatchCall_GetRematchTableIdx_Wally(matchCall: match_call_t) -> u32 {
+    (*matchCall.wally).rematchTableIdx as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetRematchTableIdx_Rival(
-    mut matchCall: match_call_t,
-) -> u32 {
-    return REMATCH_TABLE_ENTRIES as u32;
+pub(crate) fn MatchCall_GetRematchTableIdx_Rival(matchCall: match_call_t) -> u32 {
+    REMATCH_TABLE_ENTRIES as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetRematchTableIdx_Birch(
-    mut matchCall: match_call_t,
-) -> u32 {
-    return REMATCH_TABLE_ENTRIES as u32;
+pub(crate) fn MatchCall_GetRematchTableIdx_Birch(matchCall: match_call_t) -> u32 {
+    REMATCH_TABLE_ENTRIES as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MatchCall_GetMessage(idx: u32, dest: *mut u8) {
-    let mut matchCall: match_call_t = zeroed();
-    let mut i: u32 = 0;
+pub unsafe fn MatchCall_GetMessage(idx: u32, dest: *mut u8) {
     if idx >= 21 {
         return;
     }
-    matchCall = sMatchCallHeaders[idx];
-    i = MatchCallGetFunctionIndex(matchCall);
+    let matchCall: match_call_t = sMatchCallHeaders[idx];
+    let i: u32 = MatchCallGetFunctionIndex(matchCall);
     sMatchCall_GetMessageFunctions[i].unwrap_unchecked()(matchCall, dest);
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetMessage_NPC(
-    mut matchCall: match_call_t,
-    dest: *mut u8,
-) {
+pub(crate) unsafe fn MatchCall_GetMessage_NPC(matchCall: match_call_t, dest: *mut u8) {
     MatchCall_BufferCallMessageText((*matchCall.npc).textData, dest);
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetMessage_Trainer(
-    mut matchCall: match_call_t,
-    dest: *mut u8,
-) {
+pub(crate) unsafe fn MatchCall_GetMessage_Trainer(matchCall: match_call_t, dest: *mut u8) {
     if (*matchCall.common).r#type != MC_TYPE_LEADER {
         MatchCall_BufferCallMessageText((*matchCall.trainer).textData, dest);
     } else {
@@ -539,36 +480,21 @@ pub(crate) unsafe extern "C" fn MatchCall_GetMessage_Trainer(
         );
     }
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetMessage_Wally(
-    mut matchCall: match_call_t,
-    dest: *mut u8,
-) {
+pub(crate) unsafe fn MatchCall_GetMessage_Wally(matchCall: match_call_t, dest: *mut u8) {
     MatchCall_BufferCallMessageText((*matchCall.wally).textData, dest);
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetMessage_Rival(
-    mut matchCall: match_call_t,
-    dest: *mut u8,
-) {
+pub(crate) unsafe fn MatchCall_GetMessage_Rival(matchCall: match_call_t, dest: *mut u8) {
     MatchCall_BufferCallMessageText((*matchCall.rival).textData, dest);
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetMessage_Birch(
-    mut matchCall: match_call_t,
-    dest: *mut u8,
-) {
+pub(crate) unsafe fn MatchCall_GetMessage_Birch(matchCall: match_call_t, dest: *mut u8) {
     BufferPokedexRatingForMatchCall(dest);
 }
-pub(crate) unsafe extern "C" fn MatchCall_BufferCallMessageText(
-    textData: *mut MatchCallTextDataStruct,
-    dest: *mut u8,
-) {
+unsafe fn MatchCall_BufferCallMessageText(textData: *mut MatchCallTextDataStruct, dest: *mut u8) {
     let mut i: u32 = 0;
-    i = 0;
     while !(*textData.at(i)).text.is_null() {
         i += 1;
     }
-    if i != 0 {
-        i -= 1;
-    }
+    i = i.saturating_sub(1);
     while i != 0 {
         if (*textData.at(i)).availabilityFlag != ALWAYS_AVAILABLE
             && FlagGet((*textData.at(i)).availabilityFlag) == TRUE
@@ -582,13 +508,12 @@ pub(crate) unsafe extern "C" fn MatchCall_BufferCallMessageText(
     }
     StringExpandPlaceholders(dest, (*textData.at(i)).text);
 }
-pub(crate) unsafe extern "C" fn MatchCall_BufferCallMessageTextByRematchTeam(
+unsafe fn MatchCall_BufferCallMessageTextByRematchTeam(
     textData: *mut MatchCallTextDataStruct,
     idx: u16,
     dest: *mut u8,
 ) {
     let mut i: u32 = 0;
-    i = 0;
     while !(*textData.at(i)).text.is_null() {
         if (*textData.at(i)).availabilityFlag == REMATCH_CALL_START {
             break;
@@ -601,9 +526,7 @@ pub(crate) unsafe extern "C" fn MatchCall_BufferCallMessageTextByRematchTeam(
         i += 1;
     }
     if (*textData.at(i)).availabilityFlag != REMATCH_CALL_START {
-        if i != 0 {
-            i -= 1;
-        }
+        i = i.saturating_sub(1);
         if (*textData.at(i)).flagToSetOnCompletion != NO_FLAG_TO_SET {
             FlagSet((*textData.at(i)).flagToSetOnCompletion);
         }
@@ -621,36 +544,28 @@ pub(crate) unsafe extern "C" fn MatchCall_BufferCallMessageTextByRematchTeam(
         StringExpandPlaceholders(dest, (*textData.at(i)).text);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MatchCall_GetNameAndDesc(
-    idx: u32,
-    desc: *mut *mut u8,
-    name: *mut *mut u8,
-) {
-    let mut matchCall: match_call_t = zeroed();
-    let mut i: u32 = 0;
+pub unsafe fn MatchCall_GetNameAndDesc(idx: u32, desc: *mut *mut u8, name: *mut *mut u8) {
     if idx >= 21 {
         return;
     }
-    matchCall = sMatchCallHeaders[idx];
-    i = MatchCallGetFunctionIndex(matchCall);
+    let matchCall: match_call_t = sMatchCallHeaders[idx];
+    let i: u32 = MatchCallGetFunctionIndex(matchCall);
     sMatchCall_GetNameAndDescFunctions[i].unwrap_unchecked()(matchCall, desc, name);
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetNameAndDesc_NPC(
-    mut matchCall: match_call_t,
+pub(crate) unsafe fn MatchCall_GetNameAndDesc_NPC(
+    matchCall: match_call_t,
     desc: *mut *mut u8,
     name: *mut *mut u8,
 ) {
     *desc = (*matchCall.npc).desc;
     *name = (*matchCall.npc).name;
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetNameAndDesc_Trainer(
-    mut matchCall: match_call_t,
+pub(crate) unsafe fn MatchCall_GetNameAndDesc_Trainer(
+    matchCall: match_call_t,
     desc: *mut *mut u8,
     name: *mut *mut u8,
 ) {
-    let mut _matchCall: match_call_t = zeroed();
-    _matchCall = matchCall;
+    let mut _matchCall: match_call_t = matchCall;
     if (*_matchCall.trainer).name.is_null() {
         MatchCall_GetNameAndDescByRematchIdx(
             (*_matchCall.trainer).rematchTableIdx as u32,
@@ -662,48 +577,44 @@ pub(crate) unsafe extern "C" fn MatchCall_GetNameAndDesc_Trainer(
     }
     *desc = (*_matchCall.trainer).desc;
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetNameAndDesc_Wally(
-    mut matchCall: match_call_t,
+pub(crate) unsafe fn MatchCall_GetNameAndDesc_Wally(
+    matchCall: match_call_t,
     desc: *mut *mut u8,
     name: *mut *mut u8,
 ) {
     MatchCall_GetNameAndDescByRematchIdx((*matchCall.wally).rematchTableIdx as u32, desc, name);
     *desc = (*matchCall.wally).desc;
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetNameAndDesc_Rival(
-    mut matchCall: match_call_t,
+pub(crate) unsafe fn MatchCall_GetNameAndDesc_Rival(
+    matchCall: match_call_t,
     desc: *mut *mut u8,
     name: *mut *mut u8,
 ) {
     *desc = (*matchCall.rival).desc;
     *name = (*matchCall.rival).name;
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetNameAndDesc_Birch(
-    mut matchCall: match_call_t,
+pub(crate) unsafe fn MatchCall_GetNameAndDesc_Birch(
+    matchCall: match_call_t,
     desc: *mut *mut u8,
     name: *mut *mut u8,
 ) {
     *desc = (*matchCall.birch).desc;
     *name = (*matchCall.birch).name;
 }
-pub(crate) unsafe extern "C" fn MatchCall_GetNameAndDescByRematchIdx(
-    idx: u32,
-    desc: *mut *mut u8,
-    name: *mut *mut u8,
-) {
-    let mut trainer: *mut Trainer = gTrainers
-        .as_ptr()
-        .cast_mut()
-        .at(GetTrainerIdxByRematchIdx(idx));
-    *desc = gTrainerClassNames[(*trainer).trainerClass]
+unsafe fn MatchCall_GetNameAndDescByRematchIdx(idx: u32, desc: *mut *mut u8, name: *mut *mut u8) {
+    let trainer: *mut Trainer = (*(&raw const crate::data::data_tables::gTrainers)
+        .cast::<CArray<Trainer, 0>>())
+    .as_ptr()
+    .cast_mut()
+    .at(GetTrainerIdxByRematchIdx(idx));
+    *desc = (*(&raw const crate::data::data_tables::gTrainerClassNames)
+        .cast::<CArray<CArray<u8, 13>, 0>>())[(*trainer).trainerClass]
         .as_ptr()
         .cast_mut();
     *name = (*trainer).trainerName.as_mut_ptr();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MatchCall_GetOverrideFlavorText(idx: u32, offset: u32) -> *mut u8 {
+pub unsafe fn MatchCall_GetOverrideFlavorText(idx: u32, offset: u32) -> *mut u8 {
     let mut i: u32 = 0;
-    i = 0;
     while i < 4 {
         if sCheckPageOverrides[i].idx as u32 == idx {
             while i + 1 < 4
@@ -716,36 +627,28 @@ pub unsafe extern "C" fn MatchCall_GetOverrideFlavorText(idx: u32, offset: u32) 
         }
         i += 1;
     }
-    return null_mut();
+    null_mut()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MatchCall_GetOverrideFacilityClass(idx: u32) -> i32 {
-    let mut i: u32 = 0;
-    i = 0;
-    while i < 4 {
+pub fn MatchCall_GetOverrideFacilityClass(idx: u32) -> i32 {
+    for i in 0..4u32 {
         if sCheckPageOverrides[i].idx as u32 == idx {
             return sCheckPageOverrides[i].facilityClass as i32;
         }
-        i += 1;
     }
-    return -1;
+    -1
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MatchCall_HasRematchId(idx: u32) -> u32 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 21 {
-        let mut id: u32 = MatchCall_GetRematchTableIdx(i as u32);
+pub unsafe fn MatchCall_HasRematchId(idx: u32) -> u32 {
+    for i in 0..21i32 {
+        let id: u32 = MatchCall_GetRematchTableIdx(i as u32);
         if id != REMATCH_TABLE_ENTRIES as u32 && id == idx {
             return TRUE as u32;
         }
-        i += 1;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetMatchCallRegisteredFlag() {
-    let mut index: i32 = GetRematchIdxByTrainerIdx(gSpecialVar_0x8004 as i32);
+pub unsafe fn SetMatchCallRegisteredFlag() {
+    let index: i32 = GetRematchIdxByTrainerIdx(gSpecialVar_0x8004 as i32);
     if index >= 0 {
         FlagSet(TRAINER_REGISTERED_FLAGS_START + index as u16);
     }

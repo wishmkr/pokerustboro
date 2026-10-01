@@ -3,37 +3,96 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::battle_setup::{
+    GetLastBeatenRematchTrainerId, HasTrainerBeenFought, UpdateRematchIfDefeated,
+};
+use crate::bg::LoadBgTiles;
+use crate::bg::{
+    ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect_Palette0, GetBgAttribute,
+    IsDma3ManagerBusyWithBgCopy, WriteSequenceToBgTilemapBuffer,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::{FlagGet, IsNationalPokedexEnabled};
+use crate::event_object_movement::{
+    FreezeObjectEvents, GetObjectEventIdByLocalIdAndMap, ObjectEventClearHeldMovementIfFinished,
+    UnfreezeObjectEvents,
+};
+use crate::field_player_avatar::{PlayerFreeze, StopPlayerAvatar, gObjectEvents};
+use crate::fieldmap::gMapHeader;
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::menu::{
+    DecompressAndCopyTileDataToVram, FreeTempTileDataBuffersIfPossible, GetPlayerTextSpeedDelay,
+    LoadMessageBoxAndBorderGfx,
+};
+use crate::new_game::GetTrainerId;
+use crate::overworld::{
+    GetGameStat, Overworld_GetMapHeaderByGroupAndId, Overworld_MapTypeAllowsTeleportAndFly,
+};
+use crate::palette::LoadPalette;
+use crate::pokedex::{GetHoennPokedexCount, GetNationalPokedexCount, GetSetPokedexFlag};
+use crate::pokemon::{GetMonAbility, GetMonData2, SpeciesToNationalPokedexNum, gPlayerParty};
+use crate::random::Random;
+use crate::region_map::GetMapName;
+use crate::rtc::{RtcCalcLocalTime, RtcGetLocalDayCount, gLocalTime};
+use crate::script::{LockPlayerFieldControls, UnlockPlayerFieldControls};
+use crate::script_movement::ScriptMovement_UnfreezeObjectEvents;
+use crate::sound::{IsSEPlaying, PlaySE};
+use crate::sprite::SpriteCallbackDummy;
+use crate::string_util::{ConvertIntToDecimalStringN, StringCopy, StringExpandPlaceholders};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar4};
+use crate::task::DestroyTask;
+use crate::task::gTasks;
+use crate::text::{IsTextPrinterActive, RunTextPrinters};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    CopyWindowToVram, FillWindowPixelBuffer, GetWindowAttribute, PutWindowTilemap, RemoveWindow,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
 // Data tables (translate with cdata.py): sMatchCallTrainers sMatchCallWildBattleTexts sMatchCallNegativeBattleTexts sMatchCallPositiveBattleTexts sMatchCallSameRouteBattleRequestTexts sMatchCallDifferentRouteBattleRequestTexts sMatchCallPersonalizedTexts sMatchCallBattleFrontierStreakTexts sMatchCallBattleFrontierRecordStreakTexts sMatchCallBattleDomeTexts sMatchCallBattlePikeTexts sMatchCallBattlePyramidTexts sMatchCallBattleTopics sMatchCallBattleRequestTopics sMatchCallGeneralTopics sMatchCallWindow_Pal sMatchCallWindow_Gfx sPokenavIcon_Pal sPokenavIcon_Gfx sText_PokenavCallEllipsis sMatchCallTaskFuncs sMatchCallTextWindow sMatchCallTextStringVars sPopulateMatchCallStringVarFuncs sMultiTrainerMatchCallTexts sBattleFrontierFacilityNames sBadgeFlags sBirchDexRatingTexts
 
 /// `struct MatchCallState`
@@ -148,7 +207,7 @@ static sMatchCallBattleTopics: Table<CArray<*mut MatchCallText, 3>> =
     Table((&raw const crate::data::match_call::sMatchCallBattleTopics).cast());
 static sMatchCallGeneralTopics: Table<CArray<*mut MatchCallText, 6>> =
     Table((&raw const crate::data::match_call::sMatchCallGeneralTopics).cast());
-static sMatchCallTaskFuncs: Table<CArray<Option<unsafe extern "C" fn(u8) -> u32>, 8>> =
+static sMatchCallTaskFuncs: Table<CArray<Option<unsafe fn(u8) -> u32>, 8>> =
     Table((&raw const crate::data::match_call::sMatchCallTaskFuncs).cast());
 static sMatchCallTextStringVars: Table<CArray<*mut u8, 3>> =
     Table((&raw const crate::data::match_call::sMatchCallTextStringVars).cast());
@@ -166,9 +225,8 @@ static sPokenavIcon_Gfx: Table<CArray<u32, 249>> =
     Table((&raw const crate::data::match_call::sPokenavIcon_Gfx).cast());
 static sPokenavIcon_Pal: Table<CArray<u16, 16>> =
     Table((&raw const crate::data::match_call::sPokenavIcon_Pal).cast());
-static sPopulateMatchCallStringVarFuncs: Table<
-    CArray<Option<unsafe extern "C" fn(i32, *mut u8)>, 6>,
-> = Table((&raw const crate::data::match_call::sPopulateMatchCallStringVarFuncs).cast());
+static sPopulateMatchCallStringVarFuncs: Table<CArray<Option<unsafe fn(i32, *mut u8)>, 6>> =
+    Table((&raw const crate::data::match_call::sPopulateMatchCallStringVarFuncs).cast());
 static sText_PokenavCallEllipsis: Table<CArray<u8, 8>> =
     Table((&raw const crate::data::match_call::sText_PokenavCallEllipsis).cast());
 
@@ -177,129 +235,42 @@ pub(crate) static mut sMatchCallState: MatchCallState = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sBattleFrontierStreakInfo: BattleFrontierStreakInfo = unsafe { zeroed() };
 
-unsafe extern "C" {
-    static gBirchDexRatingText_AreYouCurious: CArray<u8, 0>;
-    static gBirchDexRatingText_OnANationwideBasis: CArray<u8, 0>;
-    static gBirchDexRatingText_SoYouveSeenAndCaught: CArray<u8, 0>;
-    static mut gLocalTime: Time;
-    static mut gMain: Main;
-    static mut gMapHeader: MapHeader;
-    static mut gObjectEvents: CArray<ObjectEvent, 16>;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static gRematchTable: CArray<RematchTrainer, 78>;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static mut gTextFlags: TextFlags;
-    static gTrainers: CArray<Trainer, 0>;
-    static gWildMonHeaders: CArray<WildPokemonHeader, 0>;
-    fn AddTextPrinter(
-        a0: *mut TextPrinterTemplate,
-        a1: u8,
-        a2: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DestroyTask(a0: u8);
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn FreezeObjectEvents();
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetBgAttribute(a0: u8, a1: u8) -> u16;
-    fn GetGameStat(a0: u8) -> u32;
-    fn GetHoennPokedexCount(a0: u8) -> u16;
-    fn GetLastBeatenRematchTrainerId(a0: u16) -> u16;
-    fn GetMapName(a0: *mut u8, a1: u16, a2: u16) -> *mut u8;
-    fn GetMonAbility(a0: *mut Pokemon) -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetNationalPokedexCount(a0: u8) -> u16;
-    fn GetObjectEventIdByLocalIdAndMap(a0: u8, a1: u8, a2: u8) -> u8;
-    fn GetPlayerTextSpeedDelay() -> u8;
-    fn GetSetPokedexFlag(a0: u16, a1: u8) -> i8;
-    fn GetTrainerId(a0: *mut u8) -> u32;
-    fn GetWindowAttribute(a0: u8, a1: u8) -> u32;
-    fn HasTrainerBeenFought(a0: u16) -> u8;
-    fn IsDma3ManagerBusyWithBgCopy() -> u8;
-    fn IsNationalPokedexEnabled() -> u32;
-    fn IsSEPlaying() -> u8;
-    fn IsTextPrinterActive(a0: u8) -> u16;
-    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadMessageBoxAndBorderGfx();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LockPlayerFieldControls();
-    fn ObjectEventClearHeldMovementIfFinished(a0: *mut ObjectEvent) -> u8;
-    fn Overworld_GetMapHeaderByGroupAndId(a0: u16, a1: u16) -> *mut MapHeader;
-    fn Overworld_MapTypeAllowsTeleportAndFly(a0: u8) -> u8;
-    fn PlaySE(a0: u16);
-    fn PlayerFreeze();
-    fn PutWindowTilemap(a0: u8);
-    fn Random() -> u16;
-    fn RemoveWindow(a0: u8);
-    fn RtcCalcLocalTime();
-    fn RtcGetLocalDayCount() -> u32;
-    fn RunTextPrinters();
-    fn ScriptMovement_UnfreezeObjectEvents();
-    fn SpeciesToNationalPokedexNum(a0: u16) -> u16;
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StopPlayerAvatar();
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn UnfreezeObjectEvents();
-    fn UnlockPlayerFieldControls();
-    fn UpdateRematchIfDefeated(a0: i32);
-    fn WriteSequenceToBgTilemapBuffer(
-        a0: u8,
-        a1: u16,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-        a7: i16,
-    );
+/// `AddTextPrinter` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinter(
+    a0: *mut TextPrinterTemplate,
+    a1: u8,
+    a2: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe { crate::text::AddTextPrinter(a0 as _, a1, core::mem::transmute(a2)) }
+}
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitMatchCallCounters() {
+pub unsafe fn InitMatchCallCounters() {
     RtcCalcLocalTime();
     sMatchCallState.minutes = GetCurrentTotalMinutes(&raw mut gLocalTime) + 10;
     sMatchCallState.stepCounter = 0;
 }
-pub(crate) unsafe extern "C" fn GetCurrentTotalMinutes(time: *mut Time) -> u32 {
-    return (*time).days as u32 * 24 * 60 + (*time).hours as u32 * 60 + (*time).minutes as u32;
+unsafe fn GetCurrentTotalMinutes(time: *mut Time) -> u32 {
+    (*time).days as u32 * 24 * 60 + (*time).hours as u32 * 60 + (*time).minutes as u32
 }
-pub(crate) unsafe extern "C" fn UpdateMatchCallMinutesCounter() -> u32 {
-    let mut curMinutes: i32 = 0;
+unsafe fn UpdateMatchCallMinutesCounter() -> u32 {
     RtcCalcLocalTime();
-    curMinutes = GetCurrentTotalMinutes(&raw mut gLocalTime) as i32;
+    let curMinutes: i32 = GetCurrentTotalMinutes(&raw mut gLocalTime) as i32;
     if sMatchCallState.minutes > curMinutes as u32
         || curMinutes as u32 - sMatchCallState.minutes > 9
     {
         sMatchCallState.minutes = curMinutes as u32;
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn CheckMatchCallChance() -> u32 {
+unsafe fn CheckMatchCallChance() -> u32 {
     let mut callChance: i32 = 1;
     if GetMonData2(&raw mut gPlayerParty[0], MON_DATA_SANITY_IS_EGG) == 0
         && GetMonAbility(&raw mut gPlayerParty[0]) == ABILITY_LIGHTNING_ROD
@@ -313,10 +284,10 @@ pub(crate) unsafe extern "C" fn CheckMatchCallChance() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn MapAllowsMatchCall() -> u32 {
+unsafe fn MapAllowsMatchCall() -> u32 {
     if Overworld_MapTypeAllowsTeleportAndFly(gMapHeader.mapType) == 0
         || gMapHeader.regionMapSectionId == MAPSEC_SAFARI_ZONE
     {
@@ -334,9 +305,9 @@ pub(crate) unsafe extern "C" fn MapAllowsMatchCall() -> u32 {
     {
         return FALSE as u32;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn UpdateMatchCallStepCounter() -> u32 {
+unsafe fn UpdateMatchCallStepCounter() -> u32 {
     if ({
         sMatchCallState.stepCounter += 1;
         sMatchCallState.stepCounter
@@ -349,12 +320,11 @@ pub(crate) unsafe extern "C" fn UpdateMatchCallStepCounter() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn SelectMatchCallTrainer() -> u32 {
-    let mut matchCallId: u32 = 0;
-    let mut numRegistered: u32 = GetNumRegisteredTrainers();
+unsafe fn SelectMatchCallTrainer() -> u32 {
+    let numRegistered: u32 = GetNumRegisteredTrainers();
     if numRegistered == 0 {
         return FALSE as u32;
     }
@@ -364,43 +334,37 @@ pub(crate) unsafe extern "C" fn SelectMatchCallTrainer() -> u32 {
     if sMatchCallState.trainerId == REMATCH_TABLE_ENTRIES as u16 {
         return FALSE as u32;
     }
-    matchCallId = GetTrainerMatchCallId(sMatchCallState.trainerId as i32) as u32;
+    let matchCallId: u32 = GetTrainerMatchCallId(sMatchCallState.trainerId as i32) as u32;
     if GetRematchTrainerLocation(matchCallId as i32) == gMapHeader.regionMapSectionId as u16
         && TrainerIsEligibleForRematch(matchCallId as i32) == 0
     {
         return FALSE as u32;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn GetNumRegisteredTrainers() -> u32 {
-    let mut i: u32 = 0;
+unsafe fn GetNumRegisteredTrainers() -> u32 {
     let mut count: u32 = 0;
-    i = 0;
-    count = 0;
-    while i < REMATCH_WALLY_VR {
+    for i in 0..REMATCH_WALLY_VR {
         if FlagGet(TRAINER_REGISTERED_FLAGS_START + i as u16) != 0 {
             count += 1;
         }
-        i += 1;
     }
-    return count;
+    count
 }
-pub(crate) unsafe extern "C" fn GetActiveMatchCallTrainerId(mut activeMatchCallId: u32) -> u32 {
-    let mut i: u32 = 0;
-    i = 0;
-    while i < REMATCH_WALLY_VR {
+unsafe fn GetActiveMatchCallTrainerId(mut activeMatchCallId: u32) -> u32 {
+    for i in 0..REMATCH_WALLY_VR {
         if FlagGet(TRAINER_REGISTERED_FLAGS_START + i as u16) != 0 {
             if activeMatchCallId == 0 {
-                return gRematchTable[i].trainerIds[0] as u32;
+                return (*(&raw const crate::data::battle_setup::gRematchTable)
+                    .cast::<CArray<RematchTrainer, 78>>())[i]
+                    .trainerIds[0] as u32;
             }
             activeMatchCallId -= 1;
         }
-        i += 1;
     }
-    return REMATCH_TABLE_ENTRIES as u32;
+    REMATCH_TABLE_ENTRIES as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryStartMatchCall() -> u32 {
+pub unsafe fn TryStartMatchCall() -> u32 {
     if FlagGet(FLAG_HAS_MATCH_CALL) != 0
         && UpdateMatchCallStepCounter() != 0
         && UpdateMatchCallMinutesCounter() != 0
@@ -411,18 +375,18 @@ pub unsafe extern "C" fn TryStartMatchCall() -> u32 {
         StartMatchCall();
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartMatchCallFromScript(message: *mut u8) {
+pub unsafe fn StartMatchCallFromScript(message: *mut u8) {
     sMatchCallState.triggeredFromScript = TRUE;
     StartMatchCall();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsMatchCallTaskActive() -> u32 {
-    return FuncIsActiveTask(Some(ExecuteMatchCall)) as u32;
+pub unsafe fn IsMatchCallTaskActive() -> u32 {
+    FuncIsActiveTask(Some(ExecuteMatchCall)) as u32
 }
-pub(crate) unsafe extern "C" fn StartMatchCall() {
+unsafe fn StartMatchCall() {
     if sMatchCallState.triggeredFromScript == 0 {
         LockPlayerFieldControls();
         FreezeObjectEvents();
@@ -432,8 +396,8 @@ pub(crate) unsafe extern "C" fn StartMatchCall() {
     PlaySE(SE_POKENAV_CALL);
     CreateTask(Some(ExecuteMatchCall), 1);
 }
-pub(crate) unsafe extern "C" fn ExecuteMatchCall(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn ExecuteMatchCall(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if sMatchCallTaskFuncs[*data].unwrap_unchecked()(taskId) != 0 {
         *data += 1;
         *data.at(1) = 0;
@@ -442,8 +406,8 @@ pub(crate) unsafe extern "C" fn ExecuteMatchCall(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn MatchCall_LoadGfx(taskId: u8) -> u32 {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn MatchCall_LoadGfx(taskId: u8) -> u32 {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(2) = AddWindow((&raw const *sMatchCallTextWindow).cast_mut()) as i16;
     if *data.at(2) == WINDOW_NONE as i16 {
         DestroyTask(taskId);
@@ -481,10 +445,10 @@ pub(crate) unsafe extern "C" fn MatchCall_LoadGfx(taskId: u8) -> u32 {
     );
     LoadPalette(sPokenavIcon_Pal.as_ptr().cast_mut() as *mut c_void, 240, 32);
     ChangeBgY(0, -8192, BG_COORD_SET);
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_DrawWindow(taskId: u8) -> u32 {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn MatchCall_DrawWindow(taskId: u8) -> u32 {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if FreeTempTileDataBuffersIfPossible() != 0 {
         return FALSE as u32;
     }
@@ -494,10 +458,10 @@ pub(crate) unsafe extern "C" fn MatchCall_DrawWindow(taskId: u8) -> u32 {
     *data.at(5) = CreateTask(Some(Task_SpinPokenavIcon), 10) as i16;
     CopyWindowToVram(*data.at(2) as u8, COPYWIN_GFX);
     CopyBgTilemapBufferToVram(0);
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_ReadyIntro(taskId: u8) -> u32 {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn MatchCall_ReadyIntro(taskId: u8) -> u32 {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if IsDma3ManagerBusyWithBgCopy() == 0 {
         InitMatchCallTextPrinter(
             *data.at(2) as i32,
@@ -505,17 +469,17 @@ pub(crate) unsafe extern "C" fn MatchCall_ReadyIntro(taskId: u8) -> u32 {
         );
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_SlideWindowIn(taskId: u8) -> u32 {
+pub(crate) unsafe fn MatchCall_SlideWindowIn(taskId: u8) -> u32 {
     if ChangeBgY(0, 0x600, BG_COORD_ADD) >= 0 {
         ChangeBgY(0, 0, BG_COORD_SET);
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_PrintIntro(taskId: u8) -> u32 {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn MatchCall_PrintIntro(taskId: u8) -> u32 {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if RunMatchCallTextPrinter(*data.at(2) as i32) == 0 {
         FillWindowPixelBuffer(*data.at(2) as u8, 136);
         if sMatchCallState.triggeredFromScript == 0 {
@@ -524,10 +488,10 @@ pub(crate) unsafe extern "C" fn MatchCall_PrintIntro(taskId: u8) -> u32 {
         InitMatchCallTextPrinter(*data.at(2) as i32, gStringVar4.as_mut_ptr());
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_PrintMessage(taskId: u8) -> u32 {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn MatchCall_PrintMessage(taskId: u8) -> u32 {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if RunMatchCallTextPrinter(*data.at(2) as i32) == 0
         && IsSEPlaying() == 0
         && gMain.newKeys as i32 & 3 != 0
@@ -537,10 +501,10 @@ pub(crate) unsafe extern "C" fn MatchCall_PrintMessage(taskId: u8) -> u32 {
         PlaySE(SE_POKENAV_HANG_UP);
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_SlideWindowOut(taskId: u8) -> u32 {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn MatchCall_SlideWindowOut(taskId: u8) -> u32 {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if ChangeBgY(0, 0x600, BG_COORD_SUB) <= -8192 {
         FillBgTilemapBufferRect_Palette0(0, 0, 0, 14, 30, 6);
         DestroyTask(*data.at(5) as u8);
@@ -548,9 +512,9 @@ pub(crate) unsafe extern "C" fn MatchCall_SlideWindowOut(taskId: u8) -> u32 {
         CopyBgTilemapBufferToVram(0);
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn MatchCall_EndCall(taskId: u8) -> u32 {
+pub(crate) unsafe fn MatchCall_EndCall(taskId: u8) -> u32 {
     let mut playerObjectId: u8 = 0;
     if IsDma3ManagerBusyWithBgCopy() == 0 && IsSEPlaying() == 0 {
         ChangeBgY(0, 0, BG_COORD_SET);
@@ -564,28 +528,18 @@ pub(crate) unsafe extern "C" fn MatchCall_EndCall(taskId: u8) -> u32 {
         }
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn DrawMatchCallTextBoxBorder_Internal(
-    windowId: u32,
-    tileOffset: u32,
-    paletteId: u32,
-) {
-    let mut bg: i32 = 0;
-    let mut x: i32 = 0;
-    let mut y: i32 = 0;
-    let mut width: i32 = 0;
-    let mut height: i32 = 0;
-    let mut tileNum: i32 = 0;
-    bg = GetWindowAttribute(windowId as u8, WINDOW_BG) as i32;
-    x = GetWindowAttribute(windowId as u8, WINDOW_TILEMAP_LEFT) as i32;
-    y = GetWindowAttribute(windowId as u8, WINDOW_TILEMAP_TOP) as i32;
-    width = GetWindowAttribute(windowId as u8, WINDOW_WIDTH) as i32;
-    height = GetWindowAttribute(windowId as u8, WINDOW_HEIGHT) as i32;
-    tileNum = tileOffset as i32 + GetBgAttribute(bg as u8, BG_ATTR_BASETILE) as i32;
+unsafe fn DrawMatchCallTextBoxBorder_Internal(windowId: u32, tileOffset: u32, paletteId: u32) {
+    let bg: i32 = GetWindowAttribute(windowId as u8, WINDOW_BG) as i32;
+    let x: i32 = GetWindowAttribute(windowId as u8, WINDOW_TILEMAP_LEFT) as i32;
+    let y: i32 = GetWindowAttribute(windowId as u8, WINDOW_TILEMAP_TOP) as i32;
+    let width: i32 = GetWindowAttribute(windowId as u8, WINDOW_WIDTH) as i32;
+    let height: i32 = GetWindowAttribute(windowId as u8, WINDOW_HEIGHT) as i32;
+    let tileNum: i32 = tileOffset as i32 + GetBgAttribute(bg as u8, BG_ATTR_BASETILE) as i32;
     FillBgTilemapBufferRect_Palette0(
         bg as u8,
-        (paletteId as u16) << 12 & 0xF000 | tileNum as u16 + 0,
+        (paletteId as u16) << 12 & 0xF000 | (tileNum as u16),
         x as u8 - 1,
         y as u8 - 1,
         1,
@@ -593,7 +547,7 @@ pub(crate) unsafe extern "C" fn DrawMatchCallTextBoxBorder_Internal(
     );
     FillBgTilemapBufferRect_Palette0(
         bg as u8,
-        (paletteId as u16) << 12 & 0xF000 | tileNum as u16 + 1,
+        (paletteId as u16) << 12 & 0xF000 | (tileNum as u16 + 1),
         x as u8,
         y as u8 - 1,
         width as u8,
@@ -601,7 +555,7 @@ pub(crate) unsafe extern "C" fn DrawMatchCallTextBoxBorder_Internal(
     );
     FillBgTilemapBufferRect_Palette0(
         bg as u8,
-        (paletteId as u16) << 12 & 0xF000 | tileNum as u16 + 2,
+        (paletteId as u16) << 12 & 0xF000 | (tileNum as u16 + 2),
         x as u8 + width as u8,
         y as u8 - 1,
         1,
@@ -609,7 +563,7 @@ pub(crate) unsafe extern "C" fn DrawMatchCallTextBoxBorder_Internal(
     );
     FillBgTilemapBufferRect_Palette0(
         bg as u8,
-        (paletteId as u16) << 12 & 0xF000 | tileNum as u16 + 3,
+        (paletteId as u16) << 12 & 0xF000 | (tileNum as u16 + 3),
         x as u8 - 1,
         y as u8,
         1,
@@ -617,7 +571,7 @@ pub(crate) unsafe extern "C" fn DrawMatchCallTextBoxBorder_Internal(
     );
     FillBgTilemapBufferRect_Palette0(
         bg as u8,
-        (paletteId as u16) << 12 & 0xF000 | tileNum as u16 + 4,
+        (paletteId as u16) << 12 & 0xF000 | (tileNum as u16 + 4),
         x as u8 + width as u8,
         y as u8,
         1,
@@ -625,7 +579,7 @@ pub(crate) unsafe extern "C" fn DrawMatchCallTextBoxBorder_Internal(
     );
     FillBgTilemapBufferRect_Palette0(
         bg as u8,
-        (paletteId as u16) << 12 & 0xF000 | tileNum as u16 + 5,
+        (paletteId as u16) << 12 & 0xF000 | (tileNum as u16 + 5),
         x as u8 - 1,
         y as u8 + height as u8,
         1,
@@ -633,7 +587,7 @@ pub(crate) unsafe extern "C" fn DrawMatchCallTextBoxBorder_Internal(
     );
     FillBgTilemapBufferRect_Palette0(
         bg as u8,
-        (paletteId as u16) << 12 & 0xF000 | tileNum as u16 + 6,
+        (paletteId as u16) << 12 & 0xF000 | (tileNum as u16 + 6),
         x as u8,
         y as u8 + height as u8,
         width as u8,
@@ -641,14 +595,14 @@ pub(crate) unsafe extern "C" fn DrawMatchCallTextBoxBorder_Internal(
     );
     FillBgTilemapBufferRect_Palette0(
         bg as u8,
-        (paletteId as u16) << 12 & 0xF000 | tileNum as u16 + 7,
+        (paletteId as u16) << 12 & 0xF000 | (tileNum as u16 + 7),
         x as u8 + width as u8,
         y as u8 + height as u8,
         1,
         1,
     );
 }
-pub(crate) unsafe extern "C" fn InitMatchCallTextPrinter(windowId: i32, str: *mut u8) {
+unsafe fn InitMatchCallTextPrinter(windowId: i32, str: *mut u8) {
     let mut printerTemplate: TextPrinterTemplate = zeroed();
     printerTemplate.currentChar = str;
     printerTemplate.windowId = windowId as u8;
@@ -663,20 +617,29 @@ pub(crate) unsafe extern "C" fn InitMatchCallTextPrinter(windowId: i32, str: *mu
     printerTemplate.set_fgColor(TEXT_DYNAMIC_COLOR_1);
     printerTemplate.set_bgColor(TEXT_COLOR_BLUE);
     printerTemplate.set_shadowColor(TEXT_DYNAMIC_COLOR_5);
-    gTextFlags.set_useAlternateDownArrow(FALSE);
+    (*(&raw const crate::text::gTextFlags)
+        .cast::<TextFlags>()
+        .cast_mut())
+    .set_useAlternateDownArrow(FALSE);
     AddTextPrinter(&raw mut printerTemplate, GetPlayerTextSpeedDelay(), None);
 }
-pub(crate) unsafe extern "C" fn RunMatchCallTextPrinter(windowId: i32) -> u32 {
+unsafe fn RunMatchCallTextPrinter(windowId: i32) -> u32 {
     if gMain.heldKeys as i32 & A_BUTTON != 0 {
-        gTextFlags.set_canABSpeedUpPrint(TRUE);
+        (*(&raw const crate::text::gTextFlags)
+            .cast::<TextFlags>()
+            .cast_mut())
+        .set_canABSpeedUpPrint(TRUE);
     } else {
-        gTextFlags.set_canABSpeedUpPrint(FALSE);
+        (*(&raw const crate::text::gTextFlags)
+            .cast::<TextFlags>()
+            .cast_mut())
+        .set_canABSpeedUpPrint(FALSE);
     }
     RunTextPrinters();
-    return IsTextPrinterActive(windowId as u8) as u32;
+    IsTextPrinterActive(windowId as u8) as u32
 }
-pub(crate) unsafe extern "C" fn Task_SpinPokenavIcon(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_SpinPokenavIcon(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if ({
         *data += 1;
         *data
@@ -695,51 +658,55 @@ pub(crate) unsafe extern "C" fn Task_SpinPokenavIcon(taskId: u8) {
         CopyBgTilemapBufferToVram(0);
     }
 }
-pub(crate) unsafe extern "C" fn TrainerIsEligibleForRematch(matchCallId: i32) -> u32 {
-    return ((*gSaveBlock1Ptr).trainerRematches[matchCallId] > 0) as u32;
+unsafe fn TrainerIsEligibleForRematch(matchCallId: i32) -> u32 {
+    ((*gSaveBlock1Ptr).trainerRematches[matchCallId] > 0) as u32
 }
-pub(crate) unsafe extern "C" fn GetRematchTrainerLocation(matchCallId: i32) -> u16 {
-    let mut mapHeader: *mut MapHeader = Overworld_GetMapHeaderByGroupAndId(
-        gRematchTable[matchCallId].mapGroup,
-        gRematchTable[matchCallId].mapNum,
+unsafe fn GetRematchTrainerLocation(matchCallId: i32) -> u16 {
+    let mapHeader: *mut MapHeader = Overworld_GetMapHeaderByGroupAndId(
+        (*(&raw const crate::data::battle_setup::gRematchTable)
+            .cast::<CArray<RematchTrainer, 78>>())[matchCallId]
+            .mapGroup,
+        (*(&raw const crate::data::battle_setup::gRematchTable)
+            .cast::<CArray<RematchTrainer, 78>>())[matchCallId]
+            .mapNum,
     );
-    return (*mapHeader).regionMapSectionId as u16;
+    (*mapHeader).regionMapSectionId as u16
 }
-pub(crate) unsafe extern "C" fn GetNumRematchTrainersFought() -> u32 {
-    let mut i: u32 = 0;
+unsafe fn GetNumRematchTrainersFought() -> u32 {
     let mut count: u32 = 0;
-    i = 0;
-    count = 0;
-    while i < REMATCH_WALLY_VR {
-        if HasTrainerBeenFought(gRematchTable[i].trainerIds[0]) != 0 {
+    for i in 0..REMATCH_WALLY_VR {
+        if HasTrainerBeenFought(
+            (*(&raw const crate::data::battle_setup::gRematchTable)
+                .cast::<CArray<RematchTrainer, 78>>())[i]
+                .trainerIds[0],
+        ) != 0
+        {
             count += 1;
         }
-        i += 1;
     }
-    return count;
+    count
 }
-pub(crate) unsafe extern "C" fn GetNthRematchTrainerFought(n: i32) -> u32 {
-    let mut i: u32 = 0;
+unsafe fn GetNthRematchTrainerFought(n: i32) -> u32 {
     let mut count: u32 = 0;
-    i = 0;
-    count = 0;
-    while i < REMATCH_TABLE_ENTRIES as u32 {
-        if HasTrainerBeenFought(gRematchTable[i].trainerIds[0]) != 0 {
+    for i in 0..(REMATCH_TABLE_ENTRIES as u32) {
+        if HasTrainerBeenFought(
+            (*(&raw const crate::data::battle_setup::gRematchTable)
+                .cast::<CArray<RematchTrainer, 78>>())[i]
+                .trainerIds[0],
+        ) != 0
+        {
             if count == n as u32 {
                 return i;
             }
             count += 1;
         }
-        i += 1;
     }
-    return REMATCH_TABLE_ENTRIES as u32;
+    REMATCH_TABLE_ENTRIES as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SelectMatchCallMessage(trainerId: i32, str: *mut u8) -> u32 {
-    let mut matchCallId: u32 = 0;
+pub unsafe fn SelectMatchCallMessage(trainerId: i32, str: *mut u8) -> u32 {
     let mut matchCallText: *mut MatchCallText = null_mut();
     let mut newRematchRequest: u32 = FALSE as u32;
-    matchCallId = GetTrainerMatchCallId(trainerId) as u32;
+    let matchCallId: u32 = GetTrainerMatchCallId(trainerId) as u32;
     sBattleFrontierStreakInfo.facilityId = 0;
     if TrainerIsEligibleForRematch(matchCallId as i32) != 0
         && GetRematchTrainerLocation(matchCallId as i32) == gMapHeader.regionMapSectionId as u16
@@ -755,9 +722,9 @@ pub unsafe extern "C" fn SelectMatchCallMessage(trainerId: i32, str: *mut u8) ->
         matchCallText = GetGeneralMatchCallText(matchCallId as i32, str);
     }
     BuildMatchCallString(matchCallId as i32, matchCallText, str);
-    return newRematchRequest;
+    newRematchRequest
 }
-pub(crate) unsafe extern "C" fn GetTrainerMatchCallId(trainerId: i32) -> i32 {
+unsafe fn GetTrainerMatchCallId(trainerId: i32) -> i32 {
     let mut i: i32 = 0;
     loop {
         if sMatchCallTrainers[i].trainerId as i32 == trainerId {
@@ -768,57 +735,40 @@ pub(crate) unsafe extern "C" fn GetTrainerMatchCallId(trainerId: i32) -> i32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn GetSameRouteMatchCallText(
-    matchCallId: i32,
-    str: *mut u8,
-) -> *mut MatchCallText {
-    let mut textId: u16 = sMatchCallTrainers[matchCallId].sameRouteMatchCallTextId;
-    let mut mask: i32 = 0xFF;
-    let mut topic: u32 = (textId >> 8) as u32 - 1;
-    let mut id: u32 = (textId as u32 & mask as u32) - 1;
-    return sMatchCallBattleRequestTopics[topic].at(id);
+fn GetSameRouteMatchCallText(matchCallId: i32, str: *mut u8) -> *mut MatchCallText {
+    let textId: u16 = sMatchCallTrainers[matchCallId].sameRouteMatchCallTextId;
+    let mask: i32 = 0xFF;
+    let topic: u32 = (textId >> 8) as u32 - 1;
+    let id: u32 = (textId as u32 & mask as u32) - 1;
+    sMatchCallBattleRequestTopics[topic].at(id)
 }
-pub(crate) unsafe extern "C" fn GetDifferentRouteMatchCallText(
-    matchCallId: i32,
-    str: *mut u8,
-) -> *mut MatchCallText {
-    let mut textId: u16 = sMatchCallTrainers[matchCallId].differentRouteMatchCallTextId;
-    let mut mask: i32 = 0xFF;
-    let mut topic: u32 = (textId >> 8) as u32 - 1;
-    let mut id: u32 = (textId as u32 & mask as u32) - 1;
-    return sMatchCallBattleRequestTopics[topic].at(id);
+fn GetDifferentRouteMatchCallText(matchCallId: i32, str: *mut u8) -> *mut MatchCallText {
+    let textId: u16 = sMatchCallTrainers[matchCallId].differentRouteMatchCallTextId;
+    let mask: i32 = 0xFF;
+    let topic: u32 = (textId >> 8) as u32 - 1;
+    let id: u32 = (textId as u32 & mask as u32) - 1;
+    sMatchCallBattleRequestTopics[topic].at(id)
 }
-pub(crate) unsafe extern "C" fn GetBattleMatchCallText(
-    matchCallId: i32,
-    str: *mut u8,
-) -> *mut MatchCallText {
-    let mut mask: i32 = 0;
-    let mut textId: u32 = 0;
-    let mut topic: u32 = 0;
-    let mut id: u32 = 0;
-    topic = (Random() as i32 % 3) as u32;
-    textId = sMatchCallTrainers[matchCallId].battleTopicTextIds[topic] as u32;
+unsafe fn GetBattleMatchCallText(matchCallId: i32, str: *mut u8) -> *mut MatchCallText {
+    let mut topic: u32 = (Random() as i32 % 3) as u32;
+    let textId: u32 = sMatchCallTrainers[matchCallId].battleTopicTextIds[topic] as u32;
     if textId == 0 {
         SpriteCallbackDummy(null_mut());
     }
-    mask = 0xFF;
+    let mask: i32 = 0xFF;
     topic = (textId >> 8) - 1;
-    id = (textId & mask as u32) - 1;
-    return sMatchCallBattleTopics[topic].at(id);
+    let id: u32 = (textId & mask as u32) - 1;
+    sMatchCallBattleTopics[topic].at(id)
 }
-pub(crate) unsafe extern "C" fn GetGeneralMatchCallText(
-    matchCallId: i32,
-    str: *mut u8,
-) -> *mut MatchCallText {
+unsafe fn GetGeneralMatchCallText(matchCallId: i32, str: *mut u8) -> *mut MatchCallText {
     let mut i: i32 = 0;
     let mut count: i32 = 0;
     let mut topic: u32 = 0;
     let mut id: u32 = 0;
-    let mut rand: u16 = 0;
-    rand = Random();
+    let rand: u16 = Random();
     if rand as i32 & 1 == 0 {
         count = 0;
         i = 0;
@@ -852,23 +802,14 @@ pub(crate) unsafe extern "C" fn GetGeneralMatchCallText(
     }
     topic = (sMatchCallTrainers[matchCallId].generalTextId >> 8) as u32 - 1;
     id = (sMatchCallTrainers[matchCallId].generalTextId as u32 & 0xFF) - 1;
-    return sMatchCallGeneralTopics[topic].at(id);
+    sMatchCallGeneralTopics[topic].at(id)
 }
-pub(crate) unsafe extern "C" fn BuildMatchCallString(
-    matchCallId: i32,
-    matchCallText: *mut MatchCallText,
-    str: *mut u8,
-) {
+unsafe fn BuildMatchCallString(matchCallId: i32, matchCallText: *mut MatchCallText, str: *mut u8) {
     PopulateMatchCallStringVars(matchCallId, (*matchCallText).stringVarFuncIds.as_mut_ptr());
     StringExpandPlaceholders(str, (*matchCallText).text);
 }
-pub(crate) unsafe extern "C" fn PopulateMatchCallStringVars(
-    matchCallId: i32,
-    stringVarFuncIds: *mut i8,
-) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < NUM_STRVARS_IN_MSG {
+unsafe fn PopulateMatchCallStringVars(matchCallId: i32, stringVarFuncIds: *mut i8) {
+    for i in 0..NUM_STRVARS_IN_MSG {
         if *stringVarFuncIds.at(i) >= 0 {
             PopulateMatchCallStringVar(
                 matchCallId,
@@ -876,67 +817,63 @@ pub(crate) unsafe extern "C" fn PopulateMatchCallStringVars(
                 sMatchCallTextStringVars[i],
             );
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn PopulateMatchCallStringVar(
-    matchCallId: i32,
-    funcId: i32,
-    destStr: *mut u8,
-) {
+unsafe fn PopulateMatchCallStringVar(matchCallId: i32, funcId: i32, destStr: *mut u8) {
     sPopulateMatchCallStringVarFuncs[funcId].unwrap_unchecked()(matchCallId, destStr);
 }
-pub(crate) unsafe extern "C" fn PopulateTrainerName(matchCallId: i32, destStr: *mut u8) {
-    let mut i: u32 = 0;
-    let mut trainerId: u16 = sMatchCallTrainers[matchCallId].trainerId;
-    i = 0;
-    while i < 6 {
+pub(crate) unsafe fn PopulateTrainerName(matchCallId: i32, destStr: *mut u8) {
+    let trainerId: u16 = sMatchCallTrainers[matchCallId].trainerId;
+    for i in 0..6u32 {
         if sMultiTrainerMatchCallTexts[i].trainerId == trainerId {
             StringCopy(destStr, sMultiTrainerMatchCallTexts[i].text);
             return;
         }
-        i += 1;
     }
     StringCopy(
         destStr,
-        gTrainers[trainerId].trainerName.as_ptr().cast_mut(),
+        (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())[trainerId]
+            .trainerName
+            .as_ptr()
+            .cast_mut(),
     );
 }
-pub(crate) unsafe extern "C" fn PopulateMapName(matchCallId: i32, destStr: *mut u8) {
+pub(crate) unsafe fn PopulateMapName(matchCallId: i32, destStr: *mut u8) {
     GetMapName(destStr, GetRematchTrainerLocation(matchCallId), 0);
 }
-pub(crate) unsafe extern "C" fn GetLandEncounterSlot() -> u8 {
-    let mut rand: i32 = Random() as i32 % 100;
+fn GetLandEncounterSlot() -> u8 {
+    let rand: i32 = Random() as i32 % 100;
     if rand < ENCOUNTER_CHANCE_LAND_MONS_SLOT_0 {
         return 0;
-    } else if rand >= ENCOUNTER_CHANCE_LAND_MONS_SLOT_0 && rand < ENCOUNTER_CHANCE_LAND_MONS_SLOT_1
+    } else if (ENCOUNTER_CHANCE_LAND_MONS_SLOT_0..ENCOUNTER_CHANCE_LAND_MONS_SLOT_1).contains(&rand)
     {
         return 1;
-    } else if rand >= ENCOUNTER_CHANCE_LAND_MONS_SLOT_1 && rand < ENCOUNTER_CHANCE_LAND_MONS_SLOT_2
+    } else if (ENCOUNTER_CHANCE_LAND_MONS_SLOT_1..ENCOUNTER_CHANCE_LAND_MONS_SLOT_2).contains(&rand)
     {
         return 2;
-    } else if rand >= ENCOUNTER_CHANCE_LAND_MONS_SLOT_2 && rand < ENCOUNTER_CHANCE_LAND_MONS_SLOT_3
+    } else if (ENCOUNTER_CHANCE_LAND_MONS_SLOT_2..ENCOUNTER_CHANCE_LAND_MONS_SLOT_3).contains(&rand)
     {
         return 3;
-    } else if rand >= ENCOUNTER_CHANCE_LAND_MONS_SLOT_3 && rand < ENCOUNTER_CHANCE_LAND_MONS_SLOT_4
+    } else if (ENCOUNTER_CHANCE_LAND_MONS_SLOT_3..ENCOUNTER_CHANCE_LAND_MONS_SLOT_4).contains(&rand)
     {
         return 4;
-    } else if rand >= ENCOUNTER_CHANCE_LAND_MONS_SLOT_4 && rand < ENCOUNTER_CHANCE_LAND_MONS_SLOT_5
+    } else if (ENCOUNTER_CHANCE_LAND_MONS_SLOT_4..ENCOUNTER_CHANCE_LAND_MONS_SLOT_5).contains(&rand)
     {
         return 5;
-    } else if rand >= ENCOUNTER_CHANCE_LAND_MONS_SLOT_5 && rand < ENCOUNTER_CHANCE_LAND_MONS_SLOT_6
+    } else if (ENCOUNTER_CHANCE_LAND_MONS_SLOT_5..ENCOUNTER_CHANCE_LAND_MONS_SLOT_6).contains(&rand)
     {
         return 6;
-    } else if rand >= ENCOUNTER_CHANCE_LAND_MONS_SLOT_6 && rand < ENCOUNTER_CHANCE_LAND_MONS_SLOT_7
+    } else if (ENCOUNTER_CHANCE_LAND_MONS_SLOT_6..ENCOUNTER_CHANCE_LAND_MONS_SLOT_7).contains(&rand)
     {
         return 7;
-    } else if rand >= ENCOUNTER_CHANCE_LAND_MONS_SLOT_7 && rand < ENCOUNTER_CHANCE_LAND_MONS_SLOT_8
+    } else if (ENCOUNTER_CHANCE_LAND_MONS_SLOT_7..ENCOUNTER_CHANCE_LAND_MONS_SLOT_8).contains(&rand)
     {
         return 8;
-    } else if rand >= ENCOUNTER_CHANCE_LAND_MONS_SLOT_8 && rand < ENCOUNTER_CHANCE_LAND_MONS_SLOT_9
+    } else if (ENCOUNTER_CHANCE_LAND_MONS_SLOT_8..ENCOUNTER_CHANCE_LAND_MONS_SLOT_9).contains(&rand)
     {
         return 9;
-    } else if rand >= ENCOUNTER_CHANCE_LAND_MONS_SLOT_9 && rand < ENCOUNTER_CHANCE_LAND_MONS_SLOT_10
+    } else if (ENCOUNTER_CHANCE_LAND_MONS_SLOT_9..ENCOUNTER_CHANCE_LAND_MONS_SLOT_10)
+        .contains(&rand)
     {
         return 10;
     } else {
@@ -944,23 +881,23 @@ pub(crate) unsafe extern "C" fn GetLandEncounterSlot() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn GetWaterEncounterSlot() -> u8 {
-    let mut rand: i32 = Random() as i32 % 100;
+fn GetWaterEncounterSlot() -> u8 {
+    let rand: i32 = Random() as i32 % 100;
     if rand < ENCOUNTER_CHANCE_WATER_MONS_SLOT_0 {
         return 0;
-    } else if rand >= ENCOUNTER_CHANCE_WATER_MONS_SLOT_0
-        && rand < ENCOUNTER_CHANCE_WATER_MONS_SLOT_1
+    } else if (ENCOUNTER_CHANCE_WATER_MONS_SLOT_0..ENCOUNTER_CHANCE_WATER_MONS_SLOT_1)
+        .contains(&rand)
     {
         return 1;
-    } else if rand >= ENCOUNTER_CHANCE_WATER_MONS_SLOT_1
-        && rand < ENCOUNTER_CHANCE_WATER_MONS_SLOT_2
+    } else if (ENCOUNTER_CHANCE_WATER_MONS_SLOT_1..ENCOUNTER_CHANCE_WATER_MONS_SLOT_2)
+        .contains(&rand)
     {
         return 2;
-    } else if rand >= ENCOUNTER_CHANCE_WATER_MONS_SLOT_2
-        && rand < ENCOUNTER_CHANCE_WATER_MONS_SLOT_3
+    } else if (ENCOUNTER_CHANCE_WATER_MONS_SLOT_2..ENCOUNTER_CHANCE_WATER_MONS_SLOT_3)
+        .contains(&rand)
     {
         return 3;
     } else {
@@ -968,46 +905,88 @@ pub(crate) unsafe extern "C" fn GetWaterEncounterSlot() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn PopulateSpeciesFromTrainerLocation(
-    matchCallId: i32,
-    mut destStr: *mut u8,
-) {
+pub(crate) unsafe fn PopulateSpeciesFromTrainerLocation(matchCallId: i32, destStr: *mut u8) {
     let mut species: CArray<u16, 2> = zeroed();
     let mut numSpecies: i32 = 0;
     let mut slot: u8 = 0;
     let mut i: i32 = 0;
-    if gWildMonHeaders[i].mapGroup != 255 {
-        while gWildMonHeaders[i].mapGroup != 255 {
-            if gWildMonHeaders[i].mapGroup as u16 == gRematchTable[matchCallId].mapGroup
-                && gWildMonHeaders[i].mapNum as u16 == gRematchTable[matchCallId].mapNum
+    if (*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+        .cast::<CArray<WildPokemonHeader, 0>>())[i]
+        .mapGroup
+        != 255
+    {
+        while (*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+            .cast::<CArray<WildPokemonHeader, 0>>())[i]
+            .mapGroup
+            != 255
+        {
+            if (*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+                .cast::<CArray<WildPokemonHeader, 0>>())[i]
+                .mapGroup as u16
+                == (*(&raw const crate::data::battle_setup::gRematchTable)
+                    .cast::<CArray<RematchTrainer, 78>>())[matchCallId]
+                    .mapGroup
+                && (*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+                    .cast::<CArray<WildPokemonHeader, 0>>())[i]
+                    .mapNum as u16
+                    == (*(&raw const crate::data::battle_setup::gRematchTable).cast::<CArray<
+                        RematchTrainer,
+                        78,
+                    >>(
+                    ))[matchCallId]
+                        .mapNum
             {
                 break;
             }
             i += 1;
         }
-        if gWildMonHeaders[i].mapGroup != 255 {
+        if (*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+            .cast::<CArray<WildPokemonHeader, 0>>())[i]
+            .mapGroup
+            != 255
+        {
             numSpecies = 0;
-            if !gWildMonHeaders[i].landMonsInfo.is_null() {
+            if !(*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+                .cast::<CArray<WildPokemonHeader, 0>>())[i]
+                .landMonsInfo
+                .is_null()
+            {
                 slot = GetLandEncounterSlot();
                 species[numSpecies] =
-                    (*(*gWildMonHeaders[i].landMonsInfo).wildPokemon.at(slot)).species;
+                    (*(*(*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+                        .cast::<CArray<WildPokemonHeader, 0>>())[i]
+                        .landMonsInfo)
+                        .wildPokemon
+                        .at(slot))
+                    .species;
                 numSpecies += 1;
             }
-            if !gWildMonHeaders[i].waterMonsInfo.is_null() {
+            if !(*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+                .cast::<CArray<WildPokemonHeader, 0>>())[i]
+                .waterMonsInfo
+                .is_null()
+            {
                 slot = GetWaterEncounterSlot();
                 species[numSpecies] =
-                    (*(*gWildMonHeaders[i].waterMonsInfo).wildPokemon.at(slot)).species;
+                    (*(*(*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+                        .cast::<CArray<WildPokemonHeader, 0>>())[i]
+                        .waterMonsInfo)
+                        .wildPokemon
+                        .at(slot))
+                    .species;
                 numSpecies += 1;
             }
             if numSpecies != 0 {
                 StringCopy(
                     destStr,
-                    gSpeciesNames[species[rem_i32(Random() as i32, numSpecies)]]
-                        .as_ptr()
-                        .cast_mut(),
+                    (*(&raw const crate::data::data_tables::gSpeciesNames)
+                        .cast::<CArray<CArray<u8, 11>, 0>>())
+                        [species[rem_i32(Random() as i32, numSpecies)]]
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 return;
             }
@@ -1015,55 +994,62 @@ pub(crate) unsafe extern "C" fn PopulateSpeciesFromTrainerLocation(
     }
     *destStr = EOS;
 }
-pub(crate) unsafe extern "C" fn PopulateSpeciesFromTrainerParty(
-    matchCallId: i32,
-    destStr: *mut u8,
-) {
+pub(crate) unsafe fn PopulateSpeciesFromTrainerParty(matchCallId: i32, destStr: *mut u8) {
     let mut trainerId: u16 = 0;
     let mut party: TrainerMonPtr = zeroed();
-    let mut monId: u8 = 0;
     let mut speciesName: *mut u8 = null_mut();
     trainerId = GetLastBeatenRematchTrainerId(sMatchCallTrainers[matchCallId].trainerId);
-    party = gTrainers[trainerId].party;
-    monId = rem_i32(Random() as i32, gTrainers[trainerId].partySize as i32) as u8;
-    match gTrainers[trainerId].partyFlags {
+    party = (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
+        [trainerId]
+        .party;
+    let monId: u8 = rem_i32(
+        Random() as i32,
+        (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())[trainerId]
+            .partySize as i32,
+    ) as u8;
+    match (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
+        [trainerId]
+        .partyFlags
+    {
         F_TRAINER_PARTY_CUSTOM_MOVESET => {
-            speciesName = gSpeciesNames[(*party.NoItemCustomMoves.at(monId)).species]
+            speciesName = (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())[(*party.NoItemCustomMoves.at(monId)).species]
                 .as_ptr()
                 .cast_mut();
         }
         F_TRAINER_PARTY_HELD_ITEM => {
-            speciesName = gSpeciesNames[(*party.ItemDefaultMoves.at(monId)).species]
+            speciesName = (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())[(*party.ItemDefaultMoves.at(monId)).species]
                 .as_ptr()
                 .cast_mut();
         }
         3 => {
-            speciesName = gSpeciesNames[(*party.ItemCustomMoves.at(monId)).species]
+            speciesName = (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())[(*party.ItemCustomMoves.at(monId)).species]
                 .as_ptr()
                 .cast_mut();
         }
         _ => {
-            speciesName = gSpeciesNames[(*party.NoItemDefaultMoves.at(monId)).species]
+            speciesName = (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())
+                [(*party.NoItemDefaultMoves.at(monId)).species]
                 .as_ptr()
                 .cast_mut();
         }
     }
     StringCopy(destStr, speciesName);
 }
-pub(crate) unsafe extern "C" fn PopulateBattleFrontierFacilityName(
-    matchCallId: i32,
-    destStr: *mut u8,
-) {
+pub(crate) unsafe fn PopulateBattleFrontierFacilityName(matchCallId: i32, destStr: *mut u8) {
     StringCopy(
         destStr,
         sBattleFrontierFacilityNames[sBattleFrontierStreakInfo.facilityId],
     );
 }
-pub(crate) unsafe extern "C" fn PopulateBattleFrontierStreak(matchCallId: i32, destStr: *mut u8) {
+pub(crate) unsafe fn PopulateBattleFrontierStreak(matchCallId: i32, destStr: *mut u8) {
     let mut i: i32 = 0;
     let mut streak: i32 = sBattleFrontierStreakInfo.streak as i32;
     while streak != 0 {
-        streak = streak / 10;
+        streak /= 10;
         i += 1;
     }
     ConvertIntToDecimalStringN(
@@ -1073,143 +1059,107 @@ pub(crate) unsafe extern "C" fn PopulateBattleFrontierStreak(matchCallId: i32, d
         i as u8,
     );
 }
-pub(crate) unsafe extern "C" fn GetNumOwnedBadges() -> i32 {
+unsafe fn GetNumOwnedBadges() -> i32 {
     let mut i: u32 = 0;
-    i = 0;
     while i < NUM_BADGES {
         if FlagGet(sBadgeFlags[i]) == 0 {
             break;
         }
         i += 1;
     }
-    return i as i32;
+    i as i32
 }
-pub(crate) unsafe extern "C" fn ShouldTrainerRequestBattle(matchCallId: i32) -> u32 {
-    let mut dayCount: i32 = 0;
-    let mut otId: i32 = 0;
-    let mut dewfordRand: u16 = 0;
-    let mut numRematchTrainersFought: i32 = 0;
-    let mut max: i32 = 0;
+unsafe fn ShouldTrainerRequestBattle(matchCallId: i32) -> u32 {
     let mut rand: i32 = 0;
-    let mut n: i32 = 0;
     if GetNumOwnedBadges() < 5 {
         return FALSE as u32;
     }
-    dayCount = RtcGetLocalDayCount() as i32;
-    otId = GetTrainerId((*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr()) as i32 & 0xFFFF;
-    dewfordRand = (*gSaveBlock1Ptr).dewfordTrends[0].rand;
-    numRematchTrainersFought = GetNumRematchTrainersFought() as i32;
-    max = numRematchTrainersFought * 13 / 10;
-    rand = (dayCount ^ dewfordRand as i32)
-        + (dewfordRand as i32 ^ GetGameStat(GAME_STAT_TRAINER_BATTLES) as i32)
+    let dayCount: i32 = RtcGetLocalDayCount() as i32;
+    let otId: i32 = GetTrainerId((*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr()) as i32 & 0xFFFF;
+    let dewfordRand: u16 = (*gSaveBlock1Ptr).dewfordTrends[0].rand;
+    let numRematchTrainersFought: i32 = GetNumRematchTrainersFought() as i32;
+    let max: i32 = numRematchTrainersFought * 13 / 10;
+    rand = ((dayCount ^ dewfordRand as i32)
+        + (dewfordRand as i32 ^ GetGameStat(GAME_STAT_TRAINER_BATTLES) as i32))
         ^ otId;
-    n = rem_i32(rand, max);
-    if n < numRematchTrainersFought {
-        if GetNthRematchTrainerFought(n) == matchCallId as u32 {
-            return TRUE as u32;
-        }
+    let n: i32 = rem_i32(rand, max);
+    if n < numRematchTrainersFought && GetNthRematchTrainerFought(n) == matchCallId as u32 {
+        return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn GetFrontierStreakInfo(
-    facilityId: u16,
-    topicTextId: *mut u32,
-) -> u16 {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+unsafe fn GetFrontierStreakInfo(facilityId: u16, topicTextId: *mut u32) -> u16 {
     let mut streak: u16 = 0;
     match facilityId {
         1 => {
-            i = 0;
-            while i < 2 {
-                j = 0;
-                while j < FRONTIER_LVL_MODE_COUNT {
+            for i in 0..2i32 {
+                for j in 0..FRONTIER_LVL_MODE_COUNT {
                     if streak < (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[i][j] {
                         streak = (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[i][j];
                     }
-                    j += 1;
                 }
-                i += 1;
             }
             *topicTextId = 3;
         }
         MATCH_CALL_PIKE => {
-            i = 0;
-            while i < FRONTIER_LVL_MODE_COUNT {
+            for i in 0..FRONTIER_LVL_MODE_COUNT {
                 if streak < (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[i] {
                     streak = (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[i];
                 }
-                i += 1;
             }
             *topicTextId = 4;
         }
         FRONTIER_FACILITY_TOWER => {
-            i = 0;
-            while i < 4 {
-                j = 0;
-                while j < FRONTIER_LVL_MODE_COUNT {
+            for i in 0..4i32 {
+                for j in 0..FRONTIER_LVL_MODE_COUNT {
                     if streak < (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[i][j] {
                         streak = (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[i][j];
                     }
-                    j += 1;
                 }
-                i += 1;
             }
             *topicTextId = 2;
         }
         2 => {
-            i = 0;
-            while i < 2 {
-                j = 0;
-                while j < FRONTIER_LVL_MODE_COUNT {
+            for i in 0..2i32 {
+                for j in 0..FRONTIER_LVL_MODE_COUNT {
                     if streak < (*gSaveBlock2Ptr).frontier.palaceRecordWinStreaks[i][j] {
                         streak = (*gSaveBlock2Ptr).frontier.palaceRecordWinStreaks[i][j];
                     }
-                    j += 1;
                 }
-                i += 1;
             }
             *topicTextId = 2;
         }
         MATCH_CALL_FACTORY => {
-            i = 0;
-            while i < 2 {
-                j = 0;
-                while j < FRONTIER_LVL_MODE_COUNT {
+            for i in 0..2i32 {
+                for j in 0..FRONTIER_LVL_MODE_COUNT {
                     if streak < (*gSaveBlock2Ptr).frontier.factoryRecordWinStreaks[i][j] {
                         streak = (*gSaveBlock2Ptr).frontier.factoryRecordWinStreaks[i][j];
                     }
-                    j += 1;
                 }
-                i += 1;
             }
             *topicTextId = 2;
         }
         3 => {
-            i = 0;
-            while i < FRONTIER_LVL_MODE_COUNT {
+            for i in 0..FRONTIER_LVL_MODE_COUNT {
                 if streak < (*gSaveBlock2Ptr).frontier.arenaRecordStreaks[i] {
                     streak = (*gSaveBlock2Ptr).frontier.arenaRecordStreaks[i];
                 }
-                i += 1;
             }
             *topicTextId = 2;
         }
         6 => {
-            i = 0;
-            while i < FRONTIER_LVL_MODE_COUNT {
+            for i in 0..FRONTIER_LVL_MODE_COUNT {
                 if streak < (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[i] {
                     streak = (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[i];
                 }
-                i += 1;
             }
             *topicTextId = 5;
         }
         _ => {}
     }
-    return streak;
+    streak
 }
-pub(crate) unsafe extern "C" fn GetPokedexRatingLevel(mut numSeen: u16) -> u8 {
+unsafe fn GetPokedexRatingLevel(mut numSeen: u16) -> u8 {
     if numSeen < 10 {
         return 0;
     }
@@ -1291,22 +1241,17 @@ pub(crate) unsafe extern "C" fn GetPokedexRatingLevel(mut numSeen: u16) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferPokedexRatingForMatchCall(mut destStr: *mut u8) {
-    let mut numSeen: i32 = 0;
-    let mut numCaught: i32 = 0;
-    let mut str: *mut u8 = null_mut();
-    let mut dexRatingLevel: u8 = 0;
-    let mut buffer: *mut u8 = Alloc(1000) as *mut u8;
+pub unsafe fn BufferPokedexRatingForMatchCall(destStr: *mut u8) {
+    let buffer: *mut u8 = Alloc(1000) as *mut u8;
     if buffer.is_null() {
         *destStr = EOS;
         return;
     }
-    numSeen = GetHoennPokedexCount(FLAG_GET_SEEN) as i32;
-    numCaught = GetHoennPokedexCount(FLAG_GET_CAUGHT) as i32;
+    let mut numSeen: i32 = GetHoennPokedexCount(FLAG_GET_SEEN) as i32;
+    let mut numCaught: i32 = GetHoennPokedexCount(FLAG_GET_CAUGHT) as i32;
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
         numSeen,
@@ -1319,10 +1264,12 @@ pub unsafe extern "C" fn BufferPokedexRatingForMatchCall(mut destStr: *mut u8) {
         STR_CONV_MODE_LEFT_ALIGN,
         3,
     );
-    dexRatingLevel = GetPokedexRatingLevel(numCaught as u16);
-    str = StringCopy(
+    let dexRatingLevel: u8 = GetPokedexRatingLevel(numCaught as u16);
+    let mut str: *mut u8 = StringCopy(
         buffer,
-        gBirchDexRatingText_AreYouCurious.as_ptr().cast_mut(),
+        (*crate::asmdata::gBirchDexRatingText_AreYouCurious.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     *({
         let t1 = str;
@@ -1331,7 +1278,9 @@ pub unsafe extern "C" fn BufferPokedexRatingForMatchCall(mut destStr: *mut u8) {
     }) = CHAR_PROMPT_CLEAR;
     str = StringCopy(
         str,
-        gBirchDexRatingText_SoYouveSeenAndCaught.as_ptr().cast_mut(),
+        (*crate::asmdata::gBirchDexRatingText_SoYouveSeenAndCaught.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     *({
         let t2 = str;
@@ -1362,14 +1311,15 @@ pub unsafe extern "C" fn BufferPokedexRatingForMatchCall(mut destStr: *mut u8) {
         );
         StringExpandPlaceholders(
             str,
-            gBirchDexRatingText_OnANationwideBasis.as_ptr().cast_mut(),
+            (*crate::asmdata::gBirchDexRatingText_OnANationwideBasis.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
     }
     Free(buffer as *mut c_void);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadMatchCallWindowGfx(windowId: u32, destOffset: u32, paletteId: u32) {
-    let mut bg: u8 = GetWindowAttribute(windowId as u8, WINDOW_BG) as u8;
+pub unsafe fn LoadMatchCallWindowGfx(windowId: u32, destOffset: u32, paletteId: u32) {
+    let bg: u8 = GetWindowAttribute(windowId as u8, WINDOW_BG) as u8;
     LoadBgTiles(
         bg,
         sMatchCallWindow_Gfx.as_ptr().cast_mut() as *mut c_void,
@@ -1378,15 +1328,10 @@ pub unsafe extern "C" fn LoadMatchCallWindowGfx(windowId: u32, destOffset: u32, 
     );
     LoadPalette(
         sMatchCallWindow_Pal.as_ptr().cast_mut() as *mut c_void,
-        0x000 + paletteId as u16 * 16,
+        paletteId as u16 * 16,
         32,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawMatchCallTextBoxBorder(
-    windowId: u32,
-    tileOffset: u32,
-    paletteId: u32,
-) {
+pub unsafe fn DrawMatchCallTextBoxBorder(windowId: u32, tileOffset: u32, paletteId: u32) {
     DrawMatchCallTextBoxBorder_Internal(windowId, tileOffset, paletteId);
 }

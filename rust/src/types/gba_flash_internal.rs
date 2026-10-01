@@ -33,11 +33,11 @@ unsafe impl Sync for FlashType {}
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct FlashSetupInfo {
-    pub programFlashByte: Option<unsafe extern "C" fn(u16, u32, u8) -> u16>,
-    pub programFlashSector: Option<unsafe extern "C" fn(u16, *mut u8) -> u16>,
-    pub eraseFlashChip: Option<unsafe extern "C" fn() -> u16>,
-    pub eraseFlashSector: Option<unsafe extern "C" fn(u16) -> u16>,
-    pub WaitForFlashWrite: Option<unsafe extern "C" fn(u8, *mut u8, u8) -> u16>,
+    pub programFlashByte: Option<unsafe fn(u16, u32, u8) -> u16>,
+    pub programFlashSector: Option<unsafe fn(u16, *mut u8) -> u16>,
+    pub eraseFlashChip: Option<unsafe fn() -> u16>,
+    pub eraseFlashSector: Option<unsafe fn(u16) -> u16>,
+    pub WaitForFlashWrite: Option<unsafe fn(u8, *mut u8, u8) -> u16>,
     pub maxTime: *mut u16,
     pub r#type: FlashType,
 }

@@ -3,29 +3,74 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::manual_clamp,
+    clippy::missing_transmute_annotations,
+    clippy::useless_transmute,
+    unused_assignments
 )]
 
 #[allow(unused_imports)]
 use crate::c::*;
+use crate::cable_club::CreateTask_ReestablishCableClubLink;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_object_lock::{IsPlayerStandingStill, ScriptUnfreezeObjectEvents};
+use crate::event_object_movement::{
+    FreezeObjectEvents, GetObjectEventIdByLocalIdAndMap, GetWalkNormalMovementAction,
+    ObjectEventClearHeldMovementIfActive, ObjectEventClearHeldMovementIfFinished,
+    ObjectEventSetHeldMovement, UnfreezeObjectEvents,
+};
+use crate::ffi::gSpecialVar_Result;
+use crate::field_camera::{
+    InstallCameraPanAheadCallback, SetCameraPanning, SetCameraPanningCallback,
+};
+use crate::field_door::{
+    FieldAnimateDoorClose, FieldAnimateDoorOpen, FieldSetDoorOpened, GetDoorSoundEffect,
+};
+use crate::field_effect::{
+    FieldCB_FallWarpExit, StartEscalatorWarp, StartLavaridgeGym1FWarp, StartLavaridgeGymB1FWarp,
+};
+use crate::field_player_avatar::{
+    DoPlayerSpinEntrance, DoPlayerSpinExit, GetPlayerFacingDirection, IsPlayerSpinEntranceActive,
+    IsPlayerSpinExitActive, PlayerGetDestCoords, SetPlayerInvisibility, gObjectEvents,
+};
+use crate::field_special_scene::FieldCB_ShowPortholeView;
+use crate::field_weather::{FadeScreen, IsWeatherNotFadingIn, PlayRainStoppingSoundEffect};
+use crate::fieldmap::MapGridGetMetatileBehaviorAt;
+use crate::fldeff_flash::{GetMapPairFadeFromType, GetMapPairFadeToType};
+use crate::gpu_regs::{ClearGpuRegBits, SetGpuReg, SetGpuRegBits};
+use crate::link::{
+    ClearLinkCallback_2, IsLinkTaskFinished, SetCloseLinkCallback, SetLinkStandbyCallback,
+    StartSendingKeysToLink, gReceivedRemoteLinkPlayers,
+};
+use crate::link_rfu_2::RfuSetErrorParams;
+use crate::load_save::SaveObjectEvents;
+use crate::load_save::gSaveBlock2Ptr;
+use crate::menu::{BgDmaFill, ScheduleBgCopyTilemapToVram, SetBgTilemapPalette};
+use crate::metatile_behavior::{MetatileBehavior_IsDoor, MetatileBehavior_IsNonAnimDoor};
+use crate::mirage_tower::ClearMirageTowerPulseBlendEffect;
+use crate::overworld::{
+    BGMusicStopped, CB2_LoadMap, CB2_ReturnToFieldCableClub, CB2_ReturnToFieldContestHall,
+    GetCurrentMapType, GetDestinationWarpMapHeader, GetFlashLevel, GetLastUsedWarpMapType,
+    Overworld_FadeOutMapMusic, Overworld_PlaySpecialMapMusic, ResetAllMultiplayerState,
+    SetObjectEventLoadFlag, TryFadeOutOldMapMusic, WarpIntoMap, gFieldCallback,
+};
+use crate::palette::gPlttBufferFaded;
+use crate::palette::{LoadPalette, gPaletteFade};
+use crate::scanline_effect::{ScanlineEffect_Clear, ScanlineEffect_Stop};
+use crate::script::{LockPlayerFieldControls, ScriptContext_Enable, UnlockPlayerFieldControls};
+use crate::sound::PlaySE;
+use crate::start_menu::{ShowReturnToFieldStartMenu, Task_ShowStartMenu};
+use crate::task::DestroyTask;
+use crate::task::gTasks;
+use crate::task::{task_get, task_set};
+use crate::trainer_hill::OnTrainerHillEReaderChallengeFloor;
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,6 +79,30 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+unsafe fn FindTaskIdByFunc(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `ScanlineEffect_SetParams` with this module's view of its types.
+#[inline]
+unsafe fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
+    unsafe {
+        crate::scanline_effect::ScanlineEffect_SetParams(core::mem::transmute(a0));
+    }
+}
+// The C's names for task and sprite data slots.
+const tState: usize = 0;
 // Data tables (translate with cdata.py): sFlashLevelToRadius gMaxFlashLevel sFlashEffectParams
 
 static sFlashEffectParams: Table<ScanlineEffectParams> =
@@ -41,103 +110,22 @@ static sFlashEffectParams: Table<ScanlineEffectParams> =
 static sFlashLevelToRadius: Table<CArray<u16, 9>> =
     Table((&raw const crate::data::field_screen_effect::sFlashLevelToRadius).cast());
 
-unsafe extern "C" {
-    static mut gFieldCallback: Option<unsafe extern "C" fn()>;
-    static mut gObjectEvents: CArray<ObjectEvent, 16>;
-    static gOrbEffectBackgroundLayerFlags: CArray<u16, 0>;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlttBufferFaded: CArray<u16, 512>;
-    static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gScanlineEffect: ScanlineEffect;
-    static mut gScanlineEffectRegBuffers: CArray<CArray<u16, 960>, 2>;
-    static mut gSpecialVar_Result: u16;
-    static mut gTasks: CArray<Task, 0>;
-    fn BGMusicStopped() -> u8;
-    fn BgDmaFill(a0: u32, a1: u8, a2: i32, a3: i32);
-    fn CB2_LoadMap();
-    fn CB2_ReturnToFieldCableClub();
-    fn CB2_ReturnToFieldContestHall();
-    fn ClearGpuRegBits(a0: u8, a1: u16);
-    fn ClearLinkCallback_2();
-    fn ClearMirageTowerPulseBlendEffect();
-    fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateTask_ReestablishCableClubLink() -> u8;
-    fn DestroyTask(a0: u8);
-    fn DoPlayerSpinEntrance();
-    fn DoPlayerSpinExit();
-    fn FadeScreen(a0: u8, a1: i8);
-    fn FieldAnimateDoorClose(a0: u32, a1: u32) -> i8;
-    fn FieldAnimateDoorOpen(a0: u32, a1: u32) -> i8;
-    fn FieldCB_FallWarpExit();
-    fn FieldCB_ShowPortholeView();
-    fn FieldSetDoorOpened(a0: u32, a1: u32);
-    fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn FreezeObjectEvents();
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetCurrentMapType() -> u8;
-    fn GetDestinationWarpMapHeader() -> *mut MapHeader;
-    fn GetDoorSoundEffect(a0: u32, a1: u32) -> u32;
-    fn GetFlashLevel() -> u8;
-    fn GetLastUsedWarpMapType() -> u8;
-    fn GetMapPairFadeFromType(a0: u8, a1: u8) -> u8;
-    fn GetMapPairFadeToType(a0: u8, a1: u8) -> u8;
-    fn GetObjectEventIdByLocalIdAndMap(a0: u8, a1: u8, a2: u8) -> u8;
-    fn GetPlayerFacingDirection() -> u8;
-    fn GetWalkNormalMovementAction(a0: u32) -> u8;
-    fn InstallCameraPanAheadCallback();
-    fn IsLinkTaskFinished() -> u8;
-    fn IsPlayerSpinEntranceActive() -> u32;
-    fn IsPlayerSpinExitActive() -> u32;
-    fn IsPlayerStandingStill() -> u8;
-    fn IsWeatherNotFadingIn() -> u8;
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LockPlayerFieldControls();
-    fn MapGridGetMetatileBehaviorAt(a0: i32, a1: i32) -> i32;
-    fn MetatileBehavior_IsDoor(a0: u8) -> u8;
-    fn MetatileBehavior_IsNonAnimDoor(a0: u8) -> u8;
-    fn ObjectEventClearHeldMovementIfActive(a0: *mut ObjectEvent);
-    fn ObjectEventClearHeldMovementIfFinished(a0: *mut ObjectEvent) -> u8;
-    fn ObjectEventSetHeldMovement(a0: *mut ObjectEvent, a1: u8) -> u8;
-    fn OnTrainerHillEReaderChallengeFloor() -> u32;
-    fn Overworld_FadeOutMapMusic();
-    fn Overworld_PlaySpecialMapMusic();
-    fn PlayRainStoppingSoundEffect();
-    fn PlaySE(a0: u16);
-    fn PlayerGetDestCoords(a0: *mut i16, a1: *mut i16);
-    fn ResetAllMultiplayerState();
-    fn RfuSetErrorParams(a0: u32);
-    fn SaveObjectEvents();
-    fn ScanlineEffect_Clear();
-    fn ScanlineEffect_SetParams(a0: ScanlineEffectParams);
-    fn ScanlineEffect_Stop();
-    fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn ScriptContext_Enable();
-    fn ScriptUnfreezeObjectEvents();
-    fn SetBgTilemapPalette(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn SetCameraPanning(a0: i16, a1: i16);
-    fn SetCameraPanningCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetCloseLinkCallback();
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetGpuRegBits(a0: u8, a1: u16);
-    fn SetLinkStandbyCallback();
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetObjectEventLoadFlag(a0: u8);
-    fn SetPlayerInvisibility(a0: u8);
-    fn ShowReturnToFieldStartMenu();
-    fn StartEscalatorWarp(a0: u8, a1: u8);
-    fn StartLavaridgeGym1FWarp(a0: u8);
-    fn StartLavaridgeGymB1FWarp(a0: u8);
-    fn StartSendingKeysToLink();
-    fn Task_ShowStartMenu(a0: u8);
-    fn TryFadeOutOldMapMusic();
-    fn UnfreezeObjectEvents();
-    fn UnlockPlayerFieldControls();
-    fn WarpIntoMap();
+/// `CpuFastSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuFastSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn FillPalBufferWhite() {
+unsafe fn FillPalBufferWhite() {
     {
         let mut tmp: u32 = 0;
         volatile_write(&raw mut tmp, 0x7fff7fff);
@@ -148,7 +136,7 @@ pub(crate) unsafe extern "C" fn FillPalBufferWhite() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn FillPalBufferBlack() {
+unsafe fn FillPalBufferBlack() {
     {
         let mut tmp: u32 = 0;
         volatile_write(&raw mut tmp, 0);
@@ -159,9 +147,8 @@ pub(crate) unsafe extern "C" fn FillPalBufferBlack() {
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WarpFadeInScreen() {
-    let mut previousMapType: u8 = GetLastUsedWarpMapType();
+pub unsafe fn WarpFadeInScreen() {
+    let previousMapType: u8 = GetLastUsedWarpMapType();
     match GetMapPairFadeFromType(previousMapType, GetCurrentMapType()) {
         0 => {
             FillPalBufferBlack();
@@ -174,19 +161,17 @@ pub unsafe extern "C" fn WarpFadeInScreen() {
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FadeInFromWhite() {
+pub unsafe fn FadeInFromWhite() {
     FillPalBufferWhite();
     FadeScreen(FADE_FROM_WHITE, 8);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FadeInFromBlack() {
+pub unsafe fn FadeInFromBlack() {
     FillPalBufferBlack();
     FadeScreen(0, 0);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WarpFadeOutScreen() {
-    let mut currentMapType: u8 = GetCurrentMapType();
+pub unsafe fn WarpFadeOutScreen() {
+    let currentMapType: u8 = GetCurrentMapType();
     match GetMapPairFadeToType(currentMapType, (*GetDestinationWarpMapHeader()).mapType) {
         0 => {
             FadeScreen(FADE_TO_BLACK, 0);
@@ -197,75 +182,70 @@ pub unsafe extern "C" fn WarpFadeOutScreen() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SetPlayerVisibility(visible: u8) {
+unsafe fn SetPlayerVisibility(visible: u8) {
     SetPlayerInvisibility((visible == 0) as u8);
 }
-pub(crate) unsafe extern "C" fn Task_WaitForUnionRoomFade(taskId: u8) {
+pub(crate) unsafe fn Task_WaitForUnionRoomFade(taskId: u8) {
     if WaitForWeatherFadeIn() == TRUE as u32 {
         DestroyTask(taskId);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldCB_ContinueScriptUnionRoom() {
+pub unsafe fn FieldCB_ContinueScriptUnionRoom() {
     LockPlayerFieldControls();
     Overworld_PlaySpecialMapMusic();
     FadeInFromBlack();
     CreateTask(Some(Task_WaitForUnionRoomFade), 10);
 }
-pub(crate) unsafe extern "C" fn Task_WaitForFadeAndEnableScriptCtx(taskID: u8) {
+pub(crate) unsafe fn Task_WaitForFadeAndEnableScriptCtx(taskID: u8) {
     if WaitForWeatherFadeIn() == TRUE as u32 {
         DestroyTask(taskID);
         ScriptContext_Enable();
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldCB_ContinueScriptHandleMusic() {
+pub unsafe fn FieldCB_ContinueScriptHandleMusic() {
     LockPlayerFieldControls();
     Overworld_PlaySpecialMapMusic();
     FadeInFromBlack();
     CreateTask(Some(Task_WaitForFadeAndEnableScriptCtx), 10);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldCB_ContinueScript() {
+pub unsafe fn FieldCB_ContinueScript() {
     LockPlayerFieldControls();
     FadeInFromBlack();
     CreateTask(Some(Task_WaitForFadeAndEnableScriptCtx), 10);
 }
-pub(crate) unsafe extern "C" fn Task_ReturnToFieldCableLink(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_ReturnToFieldCableLink(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         0 => {
             (*task).data[1] = CreateTask_ReestablishCableClubLink() as i16;
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
         1 => {
-            if gTasks[(*task).data[1]].isActive != 1 {
+            if (*gTasks.as_ptr())[(*task).data[1]].isActive != 1 {
                 WarpFadeInScreen();
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             }
         }
-        2 => {
-            if WaitForWeatherFadeIn() == TRUE as u32 {
-                UnlockPlayerFieldControls();
-                DestroyTask(taskId);
-            }
+        2 if WaitForWeatherFadeIn() == TRUE as u32 => {
+            UnlockPlayerFieldControls();
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldCB_ReturnToFieldCableLink() {
+pub unsafe fn FieldCB_ReturnToFieldCableLink() {
     LockPlayerFieldControls();
     Overworld_PlaySpecialMapMusic();
     FillPalBufferBlack();
     CreateTask(Some(Task_ReturnToFieldCableLink), 10);
 }
-pub(crate) unsafe extern "C" fn Task_ReturnToFieldWirelessLink(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_ReturnToFieldWirelessLink(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         0 => {
             SetLinkStandbyCallback();
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
         1 => {
             if IsLinkTaskFinished() == 0 {
@@ -278,30 +258,27 @@ pub(crate) unsafe extern "C" fn Task_ReturnToFieldWirelessLink(taskId: u8) {
                 }
             } else {
                 WarpFadeInScreen();
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             }
         }
-        2 => {
-            if WaitForWeatherFadeIn() == TRUE as u32 {
-                StartSendingKeysToLink();
-                UnlockPlayerFieldControls();
-                DestroyTask(taskId);
-            }
+        2 if WaitForWeatherFadeIn() == TRUE as u32 => {
+            StartSendingKeysToLink();
+            UnlockPlayerFieldControls();
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Task_ReturnToFieldRecordMixing(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub unsafe fn Task_ReturnToFieldRecordMixing(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         0 => {
             SetLinkStandbyCallback();
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
         1 => {
             if IsLinkTaskFinished() != 0 {
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             }
         }
         2 => {
@@ -313,20 +290,18 @@ pub unsafe extern "C" fn Task_ReturnToFieldRecordMixing(taskId: u8) {
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldCB_ReturnToFieldWirelessLink() {
+pub unsafe fn FieldCB_ReturnToFieldWirelessLink() {
     LockPlayerFieldControls();
     Overworld_PlaySpecialMapMusic();
     FillPalBufferBlack();
     CreateTask(Some(Task_ReturnToFieldWirelessLink), 10);
 }
-pub(crate) unsafe extern "C" fn SetUpWarpExitTask() {
+unsafe fn SetUpWarpExitTask() {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
-    let mut behavior: u8 = 0;
-    let mut func: Option<unsafe extern "C" fn(u8)> = None;
+    let mut func: Option<unsafe fn(u8)> = None;
     PlayerGetDestCoords(&raw mut x, &raw mut y);
-    behavior = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
+    let behavior: u8 = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
     if MetatileBehavior_IsDoor(behavior) == TRUE {
         func = Some(Task_ExitDoor);
     } else if MetatileBehavior_IsNonAnimDoor(behavior) == TRUE {
@@ -336,22 +311,19 @@ pub(crate) unsafe extern "C" fn SetUpWarpExitTask() {
     }
     CreateTask(func, 10);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldCB_DefaultWarpExit() {
+pub unsafe fn FieldCB_DefaultWarpExit() {
     Overworld_PlaySpecialMapMusic();
     WarpFadeInScreen();
     SetUpWarpExitTask();
     LockPlayerFieldControls();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldCB_WarpExitFadeFromWhite() {
+pub unsafe fn FieldCB_WarpExitFadeFromWhite() {
     Overworld_PlaySpecialMapMusic();
     FadeInFromWhite();
     SetUpWarpExitTask();
     LockPlayerFieldControls();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldCB_WarpExitFadeFromBlack() {
+pub unsafe fn FieldCB_WarpExitFadeFromBlack() {
     if OnTrainerHillEReaderChallengeFloor() == 0 {
         Overworld_PlaySpecialMapMusic();
     }
@@ -359,14 +331,14 @@ pub unsafe extern "C" fn FieldCB_WarpExitFadeFromBlack() {
     SetUpWarpExitTask();
     LockPlayerFieldControls();
 }
-pub(crate) unsafe extern "C" fn FieldCB_SpinEnterWarp() {
+pub(crate) unsafe fn FieldCB_SpinEnterWarp() {
     Overworld_PlaySpecialMapMusic();
     WarpFadeInScreen();
     PlaySE(SE_WARP_OUT);
     CreateTask(Some(Task_SpinEnterWarp), 10);
     LockPlayerFieldControls();
 }
-pub(crate) unsafe extern "C" fn FieldCB_MossdeepGymWarpExit() {
+pub(crate) unsafe fn FieldCB_MossdeepGymWarpExit() {
     Overworld_PlaySpecialMapMusic();
     WarpFadeInScreen();
     PlaySE(SE_WARP_OUT);
@@ -374,43 +346,41 @@ pub(crate) unsafe extern "C" fn FieldCB_MossdeepGymWarpExit() {
     LockPlayerFieldControls();
     SetObjectEventLoadFlag(14);
 }
-pub(crate) unsafe extern "C" fn Task_ExitDoor(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    let mut x: *mut i16 = &raw mut (*task).data[2];
-    let mut y: *mut i16 = &raw mut (*task).data[3];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_ExitDoor(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    let x: *mut i16 = &raw mut (*task).data[2];
+    let y: *mut i16 = &raw mut (*task).data[3];
+    match (*task).data[tState] {
         0 => {
             SetPlayerVisibility(FALSE);
             FreezeObjectEvents();
             PlayerGetDestCoords(x, y);
             FieldSetDoorOpened(*x as u32, *y as u32);
-            (*task).data[0] = 1;
+            (*task).data[tState] = 1;
         }
         1 => {
             if WaitForWeatherFadeIn() != 0 {
-                let mut objEventId: u8 = 0;
                 SetPlayerVisibility(TRUE);
-                objEventId = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
+                let objEventId: u8 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
                 ObjectEventSetHeldMovement(
                     &raw mut gObjectEvents[objEventId],
                     MOVEMENT_ACTION_WALK_NORMAL_DOWN,
                 );
-                (*task).data[0] = 2;
+                (*task).data[tState] = 2;
             }
         }
         2 => {
             if IsPlayerStandingStill() != 0 {
-                let mut objEventId: u8 = 0;
                 (*task).data[1] = FieldAnimateDoorClose(*x as u32, *y as u32) as i16;
-                objEventId = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
+                let objEventId: u8 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
                 ObjectEventClearHeldMovementIfFinished(&raw mut gObjectEvents[objEventId]);
-                (*task).data[0] = 3;
+                (*task).data[tState] = 3;
             }
         }
         3 => {
-            if (*task).data[1] < 0 || gTasks[(*task).data[1]].isActive != 1 {
+            if (*task).data[1] < 0 || (*gTasks.as_ptr())[(*task).data[1]].isActive != 1 {
                 UnfreezeObjectEvents();
-                (*task).data[0] = 4;
+                (*task).data[tState] = 4;
             }
         }
         4 => {
@@ -420,33 +390,32 @@ pub(crate) unsafe extern "C" fn Task_ExitDoor(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_ExitNonAnimDoor(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    let mut x: *mut i16 = &raw mut (*task).data[2];
-    let mut y: *mut i16 = &raw mut (*task).data[3];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_ExitNonAnimDoor(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    let x: *mut i16 = &raw mut (*task).data[2];
+    let y: *mut i16 = &raw mut (*task).data[3];
+    match (*task).data[tState] {
         0 => {
             SetPlayerVisibility(FALSE);
             FreezeObjectEvents();
             PlayerGetDestCoords(x, y);
-            (*task).data[0] = 1;
+            (*task).data[tState] = 1;
         }
         1 => {
             if WaitForWeatherFadeIn() != 0 {
-                let mut objEventId: u8 = 0;
                 SetPlayerVisibility(TRUE);
-                objEventId = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
+                let objEventId: u8 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
                 ObjectEventSetHeldMovement(
                     &raw mut gObjectEvents[objEventId],
                     GetWalkNormalMovementAction(GetPlayerFacingDirection() as u32),
                 );
-                (*task).data[0] = 2;
+                (*task).data[tState] = 2;
             }
         }
         2 => {
             if IsPlayerStandingStill() != 0 {
                 UnfreezeObjectEvents();
-                (*task).data[0] = 3;
+                (*task).data[tState] = 3;
             }
         }
         3 => {
@@ -456,64 +425,59 @@ pub(crate) unsafe extern "C" fn Task_ExitNonAnimDoor(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_ExitNonDoor(taskId: u8) {
-    match gTasks[taskId].data[0] {
+pub(crate) unsafe fn Task_ExitNonDoor(taskId: u8) {
+    match task_get(taskId, tState) {
         0 => {
             FreezeObjectEvents();
             LockPlayerFieldControls();
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
-        1 => {
-            if WaitForWeatherFadeIn() != 0 {
-                UnfreezeObjectEvents();
-                UnlockPlayerFieldControls();
-                DestroyTask(taskId);
-            }
+        1 if WaitForWeatherFadeIn() != 0 => {
+            UnfreezeObjectEvents();
+            UnlockPlayerFieldControls();
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_WaitForFadeShowStartMenu(taskId: u8) {
+pub(crate) unsafe fn Task_WaitForFadeShowStartMenu(taskId: u8) {
     if WaitForWeatherFadeIn() == TRUE as u32 {
         DestroyTask(taskId);
         CreateTask(Some(Task_ShowStartMenu), 80);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ReturnToFieldOpenStartMenu() {
+pub unsafe fn ReturnToFieldOpenStartMenu() {
     FadeInFromBlack();
     CreateTask(Some(Task_WaitForFadeShowStartMenu), 0x50);
     LockPlayerFieldControls();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldCB_ReturnToFieldOpenStartMenu() -> u8 {
+pub unsafe fn FieldCB_ReturnToFieldOpenStartMenu() -> u8 {
     ShowReturnToFieldStartMenu();
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Task_ReturnToFieldNoScript(taskId: u8) {
+pub(crate) unsafe fn Task_ReturnToFieldNoScript(taskId: u8) {
     if WaitForWeatherFadeIn() == 1 {
         UnlockPlayerFieldControls();
         DestroyTask(taskId);
         ScriptUnfreezeObjectEvents();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldCB_ReturnToFieldNoScript() {
+pub unsafe fn FieldCB_ReturnToFieldNoScript() {
     LockPlayerFieldControls();
     FadeInFromBlack();
     CreateTask(Some(Task_ReturnToFieldNoScript), 10);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldCB_ReturnToFieldNoScriptCheckMusic() {
+pub unsafe fn FieldCB_ReturnToFieldNoScriptCheckMusic() {
     LockPlayerFieldControls();
     Overworld_PlaySpecialMapMusic();
     FadeInFromBlack();
     CreateTask(Some(Task_ReturnToFieldNoScript), 10);
 }
-pub(crate) unsafe extern "C" fn PaletteFadeActive() -> u32 {
-    return gPaletteFade.active() as u32;
+unsafe fn PaletteFadeActive() -> u32 {
+    gPaletteFade.active() as u32
 }
-pub(crate) unsafe extern "C" fn WaitForWeatherFadeIn() -> u32 {
+unsafe fn WaitForWeatherFadeIn() -> u32 {
     if IsWeatherNotFadingIn() == TRUE {
         return TRUE as u32;
     } else {
@@ -521,11 +485,10 @@ pub(crate) unsafe extern "C" fn WaitForWeatherFadeIn() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoWarp() {
+pub unsafe fn DoWarp() {
     LockPlayerFieldControls();
     TryFadeOutOldMapMusic();
     WarpFadeOutScreen();
@@ -535,7 +498,7 @@ pub unsafe extern "C" fn DoWarp() {
     CreateTask(Some(Task_WarpAndLoadMap), 10);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoDiveWarp() {
+pub unsafe fn DoDiveWarp() {
     LockPlayerFieldControls();
     TryFadeOutOldMapMusic();
     WarpFadeOutScreen();
@@ -543,8 +506,7 @@ pub unsafe extern "C" fn DoDiveWarp() {
     gFieldCallback = Some(FieldCB_DefaultWarpExit);
     CreateTask(Some(Task_WarpAndLoadMap), 10);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoWhiteFadeWarp() {
+pub unsafe fn DoWhiteFadeWarp() {
     LockPlayerFieldControls();
     TryFadeOutOldMapMusic();
     FadeScreen(FADE_TO_WHITE, 8);
@@ -552,34 +514,29 @@ pub unsafe extern "C" fn DoWhiteFadeWarp() {
     gFieldCallback = Some(FieldCB_WarpExitFadeFromWhite);
     CreateTask(Some(Task_WarpAndLoadMap), 10);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoDoorWarp() {
+pub unsafe fn DoDoorWarp() {
     LockPlayerFieldControls();
     gFieldCallback = Some(FieldCB_DefaultWarpExit);
     CreateTask(Some(Task_DoDoorWarp), 10);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoFallWarp() {
+pub unsafe fn DoFallWarp() {
     DoDiveWarp();
     gFieldCallback = Some(FieldCB_FallWarpExit);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoEscalatorWarp(metatileBehavior: u8) {
+pub unsafe fn DoEscalatorWarp(metatileBehavior: u8) {
     LockPlayerFieldControls();
     StartEscalatorWarp(metatileBehavior, 10);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoLavaridgeGymB1FWarp() {
+pub unsafe fn DoLavaridgeGymB1FWarp() {
     LockPlayerFieldControls();
     StartLavaridgeGymB1FWarp(10);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoLavaridgeGym1FWarp() {
+pub unsafe fn DoLavaridgeGym1FWarp() {
     LockPlayerFieldControls();
     StartLavaridgeGym1FWarp(10);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoTeleportTileWarp() {
+pub unsafe fn DoTeleportTileWarp() {
     LockPlayerFieldControls();
     TryFadeOutOldMapMusic();
     WarpFadeOutScreen();
@@ -587,8 +544,7 @@ pub unsafe extern "C" fn DoTeleportTileWarp() {
     CreateTask(Some(Task_WarpAndLoadMap), 10);
     gFieldCallback = Some(FieldCB_SpinEnterWarp);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoMossdeepGymWarp() {
+pub unsafe fn DoMossdeepGymWarp() {
     SetObjectEventLoadFlag(SKIP_OBJECT_EVENT_LOAD);
     LockPlayerFieldControls();
     SaveObjectEvents();
@@ -599,22 +555,22 @@ pub unsafe extern "C" fn DoMossdeepGymWarp() {
     gFieldCallback = Some(FieldCB_MossdeepGymWarpExit);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoPortholeWarp() {
+pub unsafe fn DoPortholeWarp() {
     LockPlayerFieldControls();
     WarpFadeOutScreen();
     CreateTask(Some(Task_WarpAndLoadMap), 10);
     gFieldCallback = Some(FieldCB_ShowPortholeView);
 }
-pub(crate) unsafe extern "C" fn Task_DoCableClubWarp(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_DoCableClubWarp(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         0 => {
             LockPlayerFieldControls();
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
         1 => {
             if PaletteFadeActive() == 0 && BGMusicStopped() != 0 {
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             }
         }
         2 => {
@@ -626,15 +582,15 @@ pub(crate) unsafe extern "C" fn Task_DoCableClubWarp(taskId: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoCableClubWarp() {
+pub unsafe fn DoCableClubWarp() {
     LockPlayerFieldControls();
     TryFadeOutOldMapMusic();
     WarpFadeOutScreen();
     PlaySE(SE_EXIT);
     CreateTask(Some(Task_DoCableClubWarp), 10);
 }
-pub(crate) unsafe extern "C" fn Task_ReturnToWorldFromLinkRoom(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_ReturnToWorldFromLinkRoom(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         0 => {
             ClearLinkCallback_2();
@@ -649,27 +605,25 @@ pub(crate) unsafe extern "C" fn Task_ReturnToWorldFromLinkRoom(taskId: u8) {
                 *data += 1;
             }
         }
-        2 => {
-            if gReceivedRemoteLinkPlayers == 0 {
-                WarpIntoMap();
-                SetMainCallback2(Some(CB2_LoadMap));
-                DestroyTask(taskId);
-            }
+        2 if gReceivedRemoteLinkPlayers == 0 => {
+            WarpIntoMap();
+            SetMainCallback2(Some(CB2_LoadMap));
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ReturnFromLinkRoom() {
+pub unsafe fn ReturnFromLinkRoom() {
     CreateTask(Some(Task_ReturnToWorldFromLinkRoom), 10);
 }
-pub(crate) unsafe extern "C" fn Task_WarpAndLoadMap(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_WarpAndLoadMap(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         0 => {
             FreezeObjectEvents();
             LockPlayerFieldControls();
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
         1 => {
             if PaletteFadeActive() == 0 {
@@ -678,7 +632,7 @@ pub(crate) unsafe extern "C" fn Task_WarpAndLoadMap(taskId: u8) {
                     (*task).data[1] = 1;
                 }
                 if BGMusicStopped() != 0 {
-                    (*task).data[0] += 1;
+                    (*task).data[tState] += 1;
                 }
             }
         }
@@ -690,67 +644,65 @@ pub(crate) unsafe extern "C" fn Task_WarpAndLoadMap(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_DoDoorWarp(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    let mut x: *mut i16 = &raw mut (*task).data[2];
-    let mut y: *mut i16 = &raw mut (*task).data[3];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_DoDoorWarp(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    let x: *mut i16 = &raw mut (*task).data[2];
+    let y: *mut i16 = &raw mut (*task).data[3];
+    match (*task).data[tState] {
         0 => {
             FreezeObjectEvents();
             PlayerGetDestCoords(x, y);
             PlaySE(GetDoorSoundEffect(*x as u32, *y as u32 - 1) as u16);
             (*task).data[1] = FieldAnimateDoorOpen(*x as u32, *y as u32 - 1) as i16;
-            (*task).data[0] = 1;
+            (*task).data[tState] = 1;
         }
         1 => {
-            if (*task).data[1] < 0 || gTasks[(*task).data[1]].isActive != 1 {
-                let mut objEventId: u8 = 0;
-                objEventId = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
+            if (*task).data[1] < 0 || (*gTasks.as_ptr())[(*task).data[1]].isActive != 1 {
+                let mut objEventId: u8 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
                 ObjectEventClearHeldMovementIfActive(&raw mut gObjectEvents[objEventId]);
                 objEventId = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
                 ObjectEventSetHeldMovement(
                     &raw mut gObjectEvents[objEventId],
                     MOVEMENT_ACTION_WALK_NORMAL_UP,
                 );
-                (*task).data[0] = 2;
+                (*task).data[tState] = 2;
             }
         }
         2 => {
             if IsPlayerStandingStill() != 0 {
-                let mut objEventId: u8 = 0;
                 (*task).data[1] = FieldAnimateDoorClose(*x as u32, *y as u32 - 1) as i16;
-                objEventId = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
+                let objEventId: u8 = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
                 ObjectEventClearHeldMovementIfFinished(&raw mut gObjectEvents[objEventId]);
                 SetPlayerVisibility(FALSE);
-                (*task).data[0] = 3;
+                (*task).data[tState] = 3;
             }
         }
         3 => {
-            if (*task).data[1] < 0 || gTasks[(*task).data[1]].isActive != 1 {
-                (*task).data[0] = 4;
+            if (*task).data[1] < 0 || (*gTasks.as_ptr())[(*task).data[1]].isActive != 1 {
+                (*task).data[tState] = 4;
             }
         }
         4 => {
             TryFadeOutOldMapMusic();
             WarpFadeOutScreen();
             PlayRainStoppingSoundEffect();
-            (*task).data[0] = 0;
+            (*task).data[tState] = 0;
             (*task).func = Some(Task_WarpAndLoadMap);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_DoContestHallWarp(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_DoContestHallWarp(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         0 => {
             FreezeObjectEvents();
             LockPlayerFieldControls();
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
         1 => {
             if PaletteFadeActive() == 0 && BGMusicStopped() != 0 {
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             }
         }
         2 => {
@@ -762,7 +714,7 @@ pub(crate) unsafe extern "C" fn Task_DoContestHallWarp(taskId: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoContestHallWarp() {
+pub unsafe fn DoContestHallWarp() {
     LockPlayerFieldControls();
     TryFadeOutOldMapMusic();
     WarpFadeOutScreen();
@@ -771,8 +723,8 @@ pub unsafe extern "C" fn DoContestHallWarp() {
     gFieldCallback = Some(FieldCB_WarpExitFadeFromBlack);
     CreateTask(Some(Task_DoContestHallWarp), 10);
 }
-pub(crate) unsafe extern "C" fn SetFlashScanlineEffectWindowBoundary(
-    mut dest: *mut u16,
+unsafe fn SetFlashScanlineEffectWindowBoundary(
+    dest: *mut u16,
     y: u32,
     mut left: i32,
     mut right: i32,
@@ -793,7 +745,7 @@ pub(crate) unsafe extern "C" fn SetFlashScanlineEffectWindowBoundary(
         *dest.at(y) = (left as u16) << 8 | right as u16;
     }
 }
-pub(crate) unsafe extern "C" fn SetFlashScanlineEffectWindowBoundaries(
+unsafe fn SetFlashScanlineEffectWindowBoundaries(
     dest: *mut u16,
     centerX: i32,
     centerY: i32,
@@ -835,8 +787,8 @@ pub(crate) unsafe extern "C" fn SetFlashScanlineEffectWindowBoundaries(
         }
     }
 }
-pub(crate) unsafe extern "C" fn SetOrbFlashScanlineEffectWindowBoundary(
-    mut dest: *mut u16,
+unsafe fn SetOrbFlashScanlineEffectWindowBoundary(
+    dest: *mut u16,
     y: u32,
     mut left: i32,
     mut right: i32,
@@ -857,7 +809,7 @@ pub(crate) unsafe extern "C" fn SetOrbFlashScanlineEffectWindowBoundary(
         *dest.at(y) = (left as u16) << 8 | right as u16;
     }
 }
-pub(crate) unsafe extern "C" fn SetOrbFlashScanlineEffectWindowBoundaries(
+unsafe fn SetOrbFlashScanlineEffectWindowBoundaries(
     dest: *mut u16,
     centerX: i32,
     centerY: i32,
@@ -899,12 +851,18 @@ pub(crate) unsafe extern "C" fn SetOrbFlashScanlineEffectWindowBoundaries(
         }
     }
 }
-pub(crate) unsafe extern "C" fn UpdateFlashLevelEffect(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn UpdateFlashLevelEffect(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         0 => {
             SetFlashScanlineEffectWindowBoundaries(
-                gScanlineEffectRegBuffers[gScanlineEffect.srcBuffer].as_mut_ptr(),
+                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                    .cast::<CArray<CArray<u16, 960>, 2>>()
+                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
+                    .cast::<ScanlineEffect>()
+                    .cast_mut())
+                .srcBuffer]
+                    .as_mut_ptr(),
                 *data.at(1) as i32,
                 *data.at(2) as i32,
                 *data.at(3) as i32,
@@ -913,7 +871,13 @@ pub(crate) unsafe extern "C" fn UpdateFlashLevelEffect(taskId: u8) {
         }
         1 => {
             SetFlashScanlineEffectWindowBoundaries(
-                gScanlineEffectRegBuffers[gScanlineEffect.srcBuffer].as_mut_ptr(),
+                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                    .cast::<CArray<CArray<u16, 960>, 2>>()
+                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
+                    .cast::<ScanlineEffect>()
+                    .cast_mut())
+                .srcBuffer]
+                    .as_mut_ptr(),
                 *data.at(1) as i32,
                 *data.at(2) as i32,
                 *data.at(3) as i32,
@@ -936,12 +900,18 @@ pub(crate) unsafe extern "C" fn UpdateFlashLevelEffect(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn UpdateOrbFlashEffect(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn UpdateOrbFlashEffect(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         0 => {
             SetOrbFlashScanlineEffectWindowBoundaries(
-                gScanlineEffectRegBuffers[gScanlineEffect.srcBuffer].as_mut_ptr(),
+                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                    .cast::<CArray<CArray<u16, 960>, 2>>()
+                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
+                    .cast::<ScanlineEffect>()
+                    .cast_mut())
+                .srcBuffer]
+                    .as_mut_ptr(),
                 *data.at(1) as i32,
                 *data.at(2) as i32,
                 *data.at(3) as i32,
@@ -950,7 +920,13 @@ pub(crate) unsafe extern "C" fn UpdateOrbFlashEffect(taskId: u8) {
         }
         1 => {
             SetOrbFlashScanlineEffectWindowBoundaries(
-                gScanlineEffectRegBuffers[gScanlineEffect.srcBuffer].as_mut_ptr(),
+                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                    .cast::<CArray<CArray<u16, 960>, 2>>()
+                    .cast_mut())[(*(&raw const crate::scanline_effect::gScanlineEffect)
+                    .cast::<ScanlineEffect>()
+                    .cast_mut())
+                .srcBuffer]
+                    .as_mut_ptr(),
                 *data.at(1) as i32,
                 *data.at(2) as i32,
                 *data.at(3) as i32,
@@ -973,18 +949,18 @@ pub(crate) unsafe extern "C" fn UpdateOrbFlashEffect(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_WaitForFlashUpdate(taskId: u8) {
+pub(crate) unsafe fn Task_WaitForFlashUpdate(taskId: u8) {
     if FuncIsActiveTask(Some(UpdateFlashLevelEffect)) == 0 {
         ScriptContext_Enable();
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn StartWaitForFlashUpdate() {
+unsafe fn StartWaitForFlashUpdate() {
     if FuncIsActiveTask(Some(Task_WaitForFlashUpdate)) == 0 {
         CreateTask(Some(Task_WaitForFlashUpdate), 80);
     }
 }
-pub(crate) unsafe extern "C" fn StartUpdateFlashLevelEffect(
+unsafe fn StartUpdateFlashLevelEffect(
     centerX: i32,
     centerY: i32,
     initialFlashRadius: i32,
@@ -992,8 +968,8 @@ pub(crate) unsafe extern "C" fn StartUpdateFlashLevelEffect(
     clearScanlineEffect: i32,
     delta: u8,
 ) -> u8 {
-    let mut taskId: u8 = CreateTask(Some(UpdateFlashLevelEffect), 80);
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let taskId: u8 = CreateTask(Some(UpdateFlashLevelEffect), 80);
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(3) = initialFlashRadius as i16;
     *data.at(4) = destFlashRadius as i16;
     *data.at(1) = centerX as i16;
@@ -1004,9 +980,9 @@ pub(crate) unsafe extern "C" fn StartUpdateFlashLevelEffect(
     } else {
         *data.at(5) = -(delta as i16);
     }
-    return taskId;
+    taskId
 }
-pub(crate) unsafe extern "C" fn StartUpdateOrbFlashEffect(
+unsafe fn StartUpdateOrbFlashEffect(
     centerX: i32,
     centerY: i32,
     initialFlashRadius: i32,
@@ -1014,8 +990,8 @@ pub(crate) unsafe extern "C" fn StartUpdateOrbFlashEffect(
     clearScanlineEffect: i32,
     delta: u8,
 ) -> u8 {
-    let mut taskId: u8 = CreateTask(Some(UpdateOrbFlashEffect), 80);
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let taskId: u8 = CreateTask(Some(UpdateOrbFlashEffect), 80);
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(3) = initialFlashRadius as i16;
     *data.at(4) = destFlashRadius as i16;
     *data.at(1) = centerX as i16;
@@ -1026,11 +1002,10 @@ pub(crate) unsafe extern "C" fn StartUpdateOrbFlashEffect(
     } else {
         *data.at(5) = -(delta as i16);
     }
-    return taskId;
+    taskId
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AnimateFlash(newFlashLevel: u8) {
-    let mut curFlashLevel: u8 = GetFlashLevel();
+pub unsafe fn AnimateFlash(newFlashLevel: u8) {
+    let curFlashLevel: u8 = GetFlashLevel();
     let mut fullBrightness: u8 = FALSE;
     if newFlashLevel == 0 {
         fullBrightness = TRUE;
@@ -1046,73 +1021,81 @@ pub unsafe extern "C" fn AnimateFlash(newFlashLevel: u8) {
     StartWaitForFlashUpdate();
     LockPlayerFieldControls();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WriteFlashScanlineEffectBuffer(flashLevel: u8) {
+pub unsafe fn WriteFlashScanlineEffectBuffer(flashLevel: u8) {
     if flashLevel != 0 {
         SetFlashScanlineEffectWindowBoundaries(
-            &raw mut gScanlineEffectRegBuffers[0][0],
+            &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[0][0],
             120,
             80,
             sFlashLevelToRadius[flashLevel] as i32,
         );
         CpuFastSet(
-            &raw mut gScanlineEffectRegBuffers[0] as *mut c_void,
-            &raw mut gScanlineEffectRegBuffers[1] as *mut c_void,
+            &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[0] as *mut c_void,
+            &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                .cast::<CArray<CArray<u16, 960>, 2>>()
+                .cast_mut())[1] as *mut c_void,
             480,
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WriteBattlePyramidViewScanlineEffectBuffer() {
+pub unsafe fn WriteBattlePyramidViewScanlineEffectBuffer() {
     SetFlashScanlineEffectWindowBoundaries(
-        &raw mut gScanlineEffectRegBuffers[0][0],
+        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][0],
         120,
         80,
         (*gSaveBlock2Ptr).frontier.pyramidLightRadius as i32,
     );
     CpuFastSet(
-        &raw mut gScanlineEffectRegBuffers[0] as *mut c_void,
-        &raw mut gScanlineEffectRegBuffers[1] as *mut c_void,
+        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0] as *mut c_void,
+        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[1] as *mut c_void,
         480,
     );
 }
-pub(crate) unsafe extern "C" fn Task_SpinEnterWarp(taskId: u8) {
-    match gTasks[taskId].data[0] {
+pub(crate) unsafe fn Task_SpinEnterWarp(taskId: u8) {
+    match task_get(taskId, tState) {
         0 => {
             FreezeObjectEvents();
             LockPlayerFieldControls();
             DoPlayerSpinEntrance();
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
-        1 => {
-            if WaitForWeatherFadeIn() != 0 && IsPlayerSpinEntranceActive() != TRUE as u32 {
-                UnfreezeObjectEvents();
-                UnlockPlayerFieldControls();
-                DestroyTask(taskId);
-            }
+        1 if WaitForWeatherFadeIn() != 0 && IsPlayerSpinEntranceActive() != TRUE as u32 => {
+            UnfreezeObjectEvents();
+            UnlockPlayerFieldControls();
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_SpinExitWarp(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_SpinExitWarp(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         0 => {
             FreezeObjectEvents();
             LockPlayerFieldControls();
             PlaySE(SE_WARP_IN);
             DoPlayerSpinExit();
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
         1 => {
             if IsPlayerSpinExitActive() == 0 {
                 WarpFadeOutScreen();
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             }
         }
         2 => {
             if PaletteFadeActive() == 0 && BGMusicStopped() != 0 {
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             }
         }
         3 => {
@@ -1123,39 +1106,32 @@ pub(crate) unsafe extern "C" fn Task_SpinExitWarp(taskId: u8) {
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoSpinEnterWarp() {
+pub unsafe fn DoSpinEnterWarp() {
     LockPlayerFieldControls();
     CreateTask(Some(Task_WarpAndLoadMap), 10);
     gFieldCallback = Some(FieldCB_SpinEnterWarp);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoSpinExitWarp() {
+pub unsafe fn DoSpinExitWarp() {
     LockPlayerFieldControls();
     gFieldCallback = Some(FieldCB_DefaultWarpExit);
     CreateTask(Some(Task_SpinExitWarp), 10);
 }
-pub(crate) unsafe extern "C" fn LoadOrbEffectPalette(blueOrb: u8) {
-    let mut i: i32 = 0;
+unsafe fn LoadOrbEffectPalette(blueOrb: u8) {
     let mut color: CArray<u16, 1> = zeroed();
     if blueOrb == 0 {
         color[0] = 31;
     } else {
         color[0] = 31744;
     }
-    i = 0;
-    while i < 16 {
+    for i in 0..16i32 {
         LoadPalette(color.as_mut_ptr() as *mut c_void, 240 + i as u16, 2);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateOrbEffectBlend(shakeDir: u16) -> u8 {
-    let mut lo: u8 = (67108946 as usize as *mut u16).read_volatile() as u8 & 0xFF;
-    let mut hi: u8 = ((67108946 as usize as *mut u16).read_volatile() >> 8) as u8;
+unsafe fn UpdateOrbEffectBlend(shakeDir: u16) -> u8 {
+    let mut lo: u8 = (67108946_usize as *mut u16).read_volatile() as u8;
+    let mut hi: u8 = ((67108946_usize as *mut u16).read_volatile() >> 8) as u8;
     if shakeDir != 0 {
-        if lo != 0 {
-            lo -= 1;
-        }
+        lo = lo.saturating_sub(1);
     } else {
         if hi < 16 {
             hi += 1;
@@ -1169,34 +1145,44 @@ pub(crate) unsafe extern "C" fn UpdateOrbEffectBlend(shakeDir: u16) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn Task_OrbEffect(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_OrbEffect(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         0 => {
-            *data.at(6) = (0x4000000 as usize as *mut u16).read_volatile() as i16;
-            *data.at(7) = (67108944 as usize as *mut u16).read_volatile() as i16;
-            *data.at(8) = (67108946 as usize as *mut u16).read_volatile() as i16;
-            *data.at(9) = (67108936 as usize as *mut u16).read_volatile() as i16;
-            *data.at(10) = (67108938 as usize as *mut u16).read_volatile() as i16;
+            *data.at(6) = (0x4000000_usize as *mut u16).read_volatile() as i16;
+            *data.at(7) = (67108944_usize as *mut u16).read_volatile() as i16;
+            *data.at(8) = (67108946_usize as *mut u16).read_volatile() as i16;
+            *data.at(9) = (67108936_usize as *mut u16).read_volatile() as i16;
+            *data.at(10) = (67108938_usize as *mut u16).read_volatile() as i16;
             ClearGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN1_ON);
-            SetGpuRegBits(REG_OFFSET_BLDCNT, gOrbEffectBackgroundLayerFlags[0]);
+            SetGpuRegBits(
+                REG_OFFSET_BLDCNT,
+                (*(&raw const crate::io_reg::gOrbEffectBackgroundLayerFlags)
+                    .cast::<CArray<u16, 0>>())[0],
+            );
             SetGpuReg(REG_OFFSET_BLDALPHA, 1804);
             SetGpuReg(REG_OFFSET_WININ, 63);
             SetGpuReg(REG_OFFSET_WINOUT, 30);
             SetBgTilemapPalette(0, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT, 0xF);
             ScheduleBgCopyTilemapToVram(0);
             SetOrbFlashScanlineEffectWindowBoundaries(
-                &raw mut gScanlineEffectRegBuffers[0][0],
+                &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                    .cast::<CArray<CArray<u16, 960>, 2>>()
+                    .cast_mut())[0][0],
                 *data.at(2) as i32,
                 *data.at(3) as i32,
                 1,
             );
             CpuFastSet(
-                &raw mut gScanlineEffectRegBuffers[0] as *mut c_void,
-                &raw mut gScanlineEffectRegBuffers[1] as *mut c_void,
+                &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                    .cast::<CArray<CArray<u16, 960>, 2>>()
+                    .cast_mut())[0] as *mut c_void,
+                &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                    .cast::<CArray<CArray<u16, 960>, 2>>()
+                    .cast_mut())[1] as *mut c_void,
                 480,
             );
             ScanlineEffect_SetParams(*sFlashEffectParams);
@@ -1271,9 +1257,9 @@ pub(crate) unsafe extern "C" fn Task_OrbEffect(taskId: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoOrbEffect() {
-    let mut taskId: u8 = CreateTask(Some(Task_OrbEffect), 80);
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub unsafe fn DoOrbEffect() {
+    let taskId: u8 = CreateTask(Some(Task_OrbEffect), 80);
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if gSpecialVar_Result == 0 {
         *data.at(1) = FALSE as i16;
         *data.at(2) = 104;
@@ -1290,16 +1276,16 @@ pub unsafe extern "C" fn DoOrbEffect() {
     *data.at(3) = 80;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FadeOutOrbEffect() {
-    let mut taskId: u8 = FindTaskIdByFunc(Some(Task_OrbEffect));
-    gTasks[taskId].data[0] = 6;
+pub unsafe fn FadeOutOrbEffect() {
+    let taskId: u8 = FindTaskIdByFunc(Some(Task_OrbEffect));
+    task_set(taskId, tState, 6);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Script_FadeOutMapMusic() {
+pub unsafe fn Script_FadeOutMapMusic() {
     Overworld_FadeOutMapMusic();
     CreateTask(Some(Task_EnableScriptAfterMusicFade), 80);
 }
-pub(crate) unsafe extern "C" fn Task_EnableScriptAfterMusicFade(taskId: u8) {
+pub(crate) unsafe fn Task_EnableScriptAfterMusicFade(taskId: u8) {
     if BGMusicStopped() == TRUE {
         DestroyTask(taskId);
         ScriptContext_Enable();

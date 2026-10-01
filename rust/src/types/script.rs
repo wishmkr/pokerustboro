@@ -12,11 +12,11 @@ pub struct ScriptContext {
     pub stackDepth: u8,
     pub mode: u8,
     pub comparisonResult: u8,
-    pub nativePtr: Option<unsafe extern "C" fn() -> u8>,
+    pub nativePtr: Option<unsafe fn() -> u8>,
     pub scriptPtr: *mut u8,
     pub stack: CArray<*mut u8, 20>,
-    pub cmdTable: *mut Option<unsafe extern "C" fn(*mut ScriptContext) -> u8>,
-    pub cmdTableEnd: *mut Option<unsafe extern "C" fn(*mut ScriptContext) -> u8>,
+    pub cmdTable: *mut Option<unsafe fn(*mut ScriptContext) -> u8>,
+    pub cmdTableEnd: *mut Option<unsafe fn(*mut ScriptContext) -> u8>,
     pub data: CArray<u32, 4>,
 }
 

@@ -4,36 +4,6 @@
 
 use crate::ffi::{RomBytes, RomPtr};
 
-unsafe extern "C" {
-    static gText_AnabelDefeatGold: u8;
-    static gText_AnabelDefeatSilver: u8;
-    static gText_AnabelWonGold: u8;
-    static gText_AnabelWonSilver: u8;
-    static gText_BrandonDefeatGold: u8;
-    static gText_BrandonDefeatSilver: u8;
-    static gText_BrandonWonGold: u8;
-    static gText_BrandonWonSilver: u8;
-    static gText_GretaDefeatGold: u8;
-    static gText_GretaDefeatSilver: u8;
-    static gText_GretaWonGold: u8;
-    static gText_GretaWonSilver: u8;
-    static gText_LucyDefeatGold: u8;
-    static gText_LucyDefeatSilver: u8;
-    static gText_LucyWonGold: u8;
-    static gText_LucyWonSilver: u8;
-    static gText_NolandDefeatGold: u8;
-    static gText_NolandDefeatSilver: u8;
-    static gText_NolandWonGold: u8;
-    static gText_NolandWonSilver: u8;
-    static gText_SpenserDefeatGold: u8;
-    static gText_SpenserDefeatSilver: u8;
-    static gText_SpenserWonGold: u8;
-    static gText_SpenserWonSilver: u8;
-    static gText_TuckerDefeatGold: u8;
-    static gText_TuckerDefeatSilver: u8;
-    static gText_TuckerWonGold: u8;
-    static gText_TuckerWonSilver: u8;
-}
 
 pub(crate) static sFrontierBrainStreakAppearances: RomBytes<28> = RomBytes([35, 70, 35, 1, 4, 9, 5, 0, 21, 42, 21, 1, 28, 56, 28, 1, 21, 42, 21, 1, 28, 140, 56, 1, 21, 70, 35, 0]);
 
@@ -121,43 +91,43 @@ pub(crate) static sHallFacilityToRecordsText: [RomPtr<u8>; 10] = [
 pub(crate) static sFrontierBrainTrainerIds: RomBytes<14> = RomBytes([37, 3, 38, 3, 39, 3, 40, 3, 41, 3, 42, 3, 43, 3]);
 
 pub(crate) static sFrontierBrainPlayerLostSilverTexts: [RomPtr<u8>; 7] = [
-    RomPtr((&raw const gText_AnabelWonSilver)),
-    RomPtr((&raw const gText_TuckerWonSilver)),
-    RomPtr((&raw const gText_SpenserWonSilver)),
-    RomPtr((&raw const gText_GretaWonSilver)),
-    RomPtr((&raw const gText_NolandWonSilver)),
-    RomPtr((&raw const gText_LucyWonSilver)),
-    RomPtr((&raw const gText_BrandonWonSilver)),
+    RomPtr((&raw const (*crate::asmdata::gText_AnabelWonSilver.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_TuckerWonSilver.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_SpenserWonSilver.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_GretaWonSilver.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_NolandWonSilver.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_LucyWonSilver.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_BrandonWonSilver.cast::<u8>()))),
 ];
 
 pub(crate) static sFrontierBrainPlayerWonSilverTexts: [RomPtr<u8>; 7] = [
-    RomPtr((&raw const gText_AnabelDefeatSilver)),
-    RomPtr((&raw const gText_TuckerDefeatSilver)),
-    RomPtr((&raw const gText_SpenserDefeatSilver)),
-    RomPtr((&raw const gText_GretaDefeatSilver)),
-    RomPtr((&raw const gText_NolandDefeatSilver)),
-    RomPtr((&raw const gText_LucyDefeatSilver)),
-    RomPtr((&raw const gText_BrandonDefeatSilver)),
+    RomPtr((&raw const (*crate::asmdata::gText_AnabelDefeatSilver.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_TuckerDefeatSilver.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_SpenserDefeatSilver.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_GretaDefeatSilver.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_NolandDefeatSilver.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_LucyDefeatSilver.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_BrandonDefeatSilver.cast::<u8>()))),
 ];
 
 pub(crate) static sFrontierBrainPlayerLostGoldTexts: [RomPtr<u8>; 7] = [
-    RomPtr((&raw const gText_AnabelWonGold)),
-    RomPtr((&raw const gText_TuckerWonGold)),
-    RomPtr((&raw const gText_SpenserWonGold)),
-    RomPtr((&raw const gText_GretaWonGold)),
-    RomPtr((&raw const gText_NolandWonGold)),
-    RomPtr((&raw const gText_LucyWonGold)),
-    RomPtr((&raw const gText_BrandonWonGold)),
+    RomPtr((&raw const (*crate::asmdata::gText_AnabelWonGold.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_TuckerWonGold.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_SpenserWonGold.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_GretaWonGold.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_NolandWonGold.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_LucyWonGold.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_BrandonWonGold.cast::<u8>()))),
 ];
 
 pub(crate) static sFrontierBrainPlayerWonGoldTexts: [RomPtr<u8>; 7] = [
-    RomPtr((&raw const gText_AnabelDefeatGold)),
-    RomPtr((&raw const gText_TuckerDefeatGold)),
-    RomPtr((&raw const gText_SpenserDefeatGold)),
-    RomPtr((&raw const gText_GretaDefeatGold)),
-    RomPtr((&raw const gText_NolandDefeatGold)),
-    RomPtr((&raw const gText_LucyDefeatGold)),
-    RomPtr((&raw const gText_BrandonDefeatGold)),
+    RomPtr((&raw const (*crate::asmdata::gText_AnabelDefeatGold.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_TuckerDefeatGold.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_SpenserDefeatGold.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_GretaDefeatGold.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_NolandDefeatGold.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_LucyDefeatGold.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gText_BrandonDefeatGold.cast::<u8>()))),
 ];
 
 pub(crate) static sFrontierBrainPlayerLostTexts: [RomPtr<u8>; 2] = [

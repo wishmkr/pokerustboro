@@ -46,7 +46,7 @@ fn offset_8bpp(x: i32, y: i32, tiles_per_row: i32) -> isize {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BlitBitmapRect4BitWithoutColorKey(
+pub unsafe fn BlitBitmapRect4BitWithoutColorKey(
     src: *const u8,
     dst: *mut u8,
     src_x: u16,
@@ -72,7 +72,7 @@ pub unsafe extern "C" fn BlitBitmapRect4BitWithoutColorKey(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BlitBitmapRect4Bit(
+pub unsafe fn BlitBitmapRect4Bit(
     src: *const u8,
     dst: *mut u8,
     src_x: u16,
@@ -135,7 +135,7 @@ pub unsafe extern "C" fn BlitBitmapRect4Bit(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FillBitmapRect4Bit(
+pub unsafe fn FillBitmapRect4Bit(
     surface: *mut u8,
     x: u16,
     y: u16,
@@ -172,7 +172,7 @@ pub unsafe extern "C" fn FillBitmapRect4Bit(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BlitBitmapRect4BitTo8Bit(
+pub unsafe fn BlitBitmapRect4BitTo8Bit(
     src: *const u8,
     dst: *mut u8,
     src_x: u16,
@@ -252,7 +252,7 @@ pub unsafe extern "C" fn BlitBitmapRect4BitTo8Bit(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FillBitmapRect8Bit(
+pub unsafe fn FillBitmapRect8Bit(
     surface: *mut u8,
     x: u16,
     y: u16,

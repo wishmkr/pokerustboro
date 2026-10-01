@@ -55,9 +55,9 @@ pub struct STWIStatus {
     pub recoveryCount: u8,
     pub unk_16: u8,
     pub unk_17: u8,
-    pub callbackM: Option<unsafe extern "C" fn()>,
-    pub callbackS: Option<unsafe extern "C" fn(u16)>,
-    pub callbackID: Option<unsafe extern "C" fn()>,
+    pub callbackM: Option<unsafe fn()>,
+    pub callbackS: Option<unsafe fn(u16)>,
+    pub callbackID: Option<unsafe fn()>,
     pub txPacket: *mut RfuPacket,
     pub rxPacket: *mut RfuPacket,
     pub sending: u8,
@@ -192,8 +192,8 @@ unsafe impl Sync for RfuLinkStatus {}
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct RfuFixed {
-    pub reqCallback: Option<unsafe extern "C" fn(u16, u16)>,
-    pub fastCopyPtr: Option<unsafe extern "C" fn(*mut *mut u8, *mut *mut u8, i32)>,
+    pub reqCallback: Option<unsafe fn(u16, u16)>,
+    pub fastCopyPtr: Option<unsafe fn(*mut *mut u8, *mut *mut u8, i32)>,
     pub fastCopyBuffer: CArray<u16, 24>,
     pub fastCopyBuffer2: CArray<u32, 12>,
     pub LLFBuffer: CArray<u32, 29>,

@@ -3,29 +3,35 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    unused_assignments
 )]
 
+use crate::battle_anim_mons::{GetBattlerPosition, GetBattlerSide};
+use crate::battle_main::{
+    gBattleMons, gBattleMoveDamage, gBattleScripting, gBattleStruct, gBattleTypeFlags,
+    gBattlerAttacker, gBattlerTarget, gCurrentMove, gEffectBattler, gProtectStructs, gStatuses3,
+};
+use crate::battle_main::{
+    gBattleTextBuff1, gBattleTextBuff2, gBattlerPartyIndexes, gMoveSelectionCursor, gSideStatuses,
+};
+use crate::battle_message::gBattleMsgDataPtr;
+use crate::battle_script_commands::TypeCalc;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::pokemon::{
+    CalculateBaseDamage, GetLinkTrainerFlankId, GetMonData3, GetOpposingLinkMultiBattlerId,
+    gEnemyParty, gPlayerParty,
+};
+use crate::tv::{PutBattleUpdateOnTheAir, TryPutBattleSeminarOnAir};
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -89,74 +95,20 @@ static sSpecialBattleStrings: Table<CArray<u16, 18>> =
 static sVariableDmgMoves: Table<CArray<u16, 26>> =
     Table((&raw const crate::data::battle_tv::sVariableDmgMoves).cast());
 
-unsafe extern "C" {
-    static mut gBattleMons: CArray<BattlePokemon, 4>;
-    static mut gBattleMoveDamage: i32;
-    static gBattleMoves: CArray<BattleMove, 0>;
-    static mut gBattleMsgDataPtr: *mut BattleMsgData;
-    static mut gBattleScripting: BattleScripting;
-    static mut gBattleStruct: *mut BattleStruct;
-    static mut gBattleTextBuff1: CArray<u8, 16>;
-    static mut gBattleTextBuff2: CArray<u8, 16>;
-    static mut gBattleTypeFlags: u32;
-    static mut gBattlerAttacker: u8;
-    static mut gBattlerPartyIndexes: CArray<u16, 4>;
-    static mut gBattlerTarget: u8;
-    static mut gCurrentMove: u16;
-    static mut gEffectBattler: u8;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static mut gMoveSelectionCursor: CArray<u8, 4>;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gProtectStructs: CArray<ProtectStruct, 4>;
-    static mut gSideStatuses: CArray<u16, 2>;
-    static mut gStatuses3: CArray<u32, 4>;
-    fn CalculateBaseDamage(
-        a0: *mut BattlePokemon,
-        a1: *mut BattlePokemon,
-        a2: u32,
-        a3: u16,
-        a4: u16,
-        a5: u8,
-        a6: u8,
-        a7: u8,
-    ) -> i32;
-    fn GetBattlerPosition(a0: u8) -> u8;
-    fn GetBattlerSide(a0: u8) -> u8;
-    fn GetLinkTrainerFlankId(a0: u8) -> u16;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetOpposingLinkMultiBattlerId(a0: u8, a1: u8) -> u8;
-    fn PutBattleUpdateOnTheAir(a0: u8, a1: u16, a2: u16, a3: u16);
-    fn TryPutBattleSeminarOnAir(a0: u16, a1: u16, a2: u8, a3: *mut u16, a4: u16);
-    fn TypeCalc(a0: u16, a1: u8, a2: u8) -> u8;
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
-    let mut tvPtr: *mut BattleTv = null_mut();
-    let mut atkSide: u32 = 0;
-    let mut defSide: u32 = 0;
-    let mut effSide: u32 = 0;
-    let mut scriptingSide: u32 = 0;
+pub unsafe fn BattleTv_SetDataBasedOnString(stringId: u16) {
     let mut atkMon: *mut Pokemon = null_mut();
     let mut defMon: *mut Pokemon = null_mut();
-    let mut moveSlot: u8 = 0;
-    let mut atkFlank: u32 = 0;
-    let mut defFlank: u32 = 0;
-    let mut effFlank: u32 = 0;
-    let mut perishCount: *mut u8 = null_mut();
-    let mut statStringId: *mut u16 = null_mut();
-    let mut finishedMoveId: *mut u16 = null_mut();
     if gBattleTypeFlags & BATTLE_TYPE_LINK == 0
         && stringId != STRINGID_ITDOESNTAFFECT as u16
         && stringId != STRINGID_NOTVERYEFFECTIVE
     {
         return;
     }
-    tvPtr = &raw mut (*gBattleStruct).tv;
-    atkSide = GetBattlerSide(gBattlerAttacker) as u32;
-    defSide = GetBattlerSide(gBattlerTarget) as u32;
-    effSide = GetBattlerSide(gEffectBattler) as u32;
-    scriptingSide = GetBattlerSide((*gBattleMsgDataPtr).scrActive) as u32;
+    let tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
+    let atkSide: u32 = GetBattlerSide(gBattlerAttacker) as u32;
+    let defSide: u32 = GetBattlerSide(gBattlerTarget) as u32;
+    let effSide: u32 = GetBattlerSide(gEffectBattler) as u32;
+    let scriptingSide: u32 = GetBattlerSide((*gBattleMsgDataPtr).scrActive) as u32;
     if atkSide == B_SIDE_PLAYER as u32 {
         atkMon = &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerAttacker]];
     } else {
@@ -167,7 +119,7 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
     } else {
         defMon = &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]];
     }
-    moveSlot = GetBattlerMoveSlotId(gBattlerAttacker, (*gBattleMsgDataPtr).currentMove);
+    let moveSlot: u8 = GetBattlerMoveSlotId(gBattlerAttacker, (*gBattleMsgDataPtr).currentMove);
     if moveSlot >= MAX_MON_MOVES as u8
         && IsNotSpecialBattleString(stringId) != 0
         && stringId > BATTLESTRINGS_TABLE_START as u16
@@ -175,17 +127,16 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
         (*tvPtr).side[atkSide].set_faintCause(FNT_OTHER);
         return;
     }
-    perishCount = gBattleTextBuff1.as_mut_ptr().at(4);
-    statStringId = gBattleTextBuff2.as_mut_ptr().at(2) as *mut u16;
-    finishedMoveId = gBattleTextBuff1.as_mut_ptr().at(2) as *mut u16;
-    atkFlank = (GetBattlerPosition(gBattlerAttacker) as i32 / 2) as u32;
-    defFlank = (GetBattlerPosition(gBattlerTarget) as i32 / 2) as u32;
-    effFlank = (GetBattlerPosition(gEffectBattler) as i32 / 2) as u32;
+    let perishCount: *mut u8 = gBattleTextBuff1.as_mut_ptr().at(4);
+    let statStringId: *mut u16 = gBattleTextBuff2.as_mut_ptr().at(2) as *mut u16;
+    let finishedMoveId: *mut u16 = gBattleTextBuff1.as_mut_ptr().at(2) as *mut u16;
+    let atkFlank: u32 = (GetBattlerPosition(gBattlerAttacker) as i32 / 2) as u32;
+    let defFlank: u32 = (GetBattlerPosition(gBattlerTarget) as i32 / 2) as u32;
+    let effFlank: u32 = (GetBattlerPosition(gEffectBattler) as i32 / 2) as u32;
     'l1: {
         let sw1: u16 = stringId;
         let mut fall = false;
         if sw1 == 27 {
-            fall = true;
             AddMovePoints(PTS_EFFECTIVENESS, moveSlot as u16, 2, 0);
             if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
                 TrySetBattleSeminarShow();
@@ -193,7 +144,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_NOTVERYEFFECTIVE {
-            fall = true;
             AddMovePoints(PTS_EFFECTIVENESS, moveSlot as u16, 1, 0);
             if gBattleTypeFlags & BATTLE_TYPE_LINK == 0
                 && GetMonData3(defMon, MON_DATA_HP, null_mut()) != 0
@@ -203,26 +153,22 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == 222 {
-            fall = true;
             AddMovePoints(PTS_EFFECTIVENESS, moveSlot as u16, 0, 0);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNFORESAWATTACK {
-            fall = true;
             (*tvPtr).side[atkSide]
                 .set_futureSightMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).side[atkSide].set_futureSightMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNCHOSEXASDESTINY {
-            fall = true;
             (*tvPtr).side[atkSide]
                 .set_doomDesireMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).side[atkSide].set_doomDesireMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_FAINTINTHREE {
-            fall = true;
             (*tvPtr).side[atkSide]
                 .set_perishSongMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).side[atkSide].set_perishSongMoveSlot(moveSlot as u32);
@@ -230,14 +176,12 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNPERISHCOUNTFELL {
-            fall = true;
             if *perishCount == 0 {
                 (*tvPtr).side[atkSide].set_faintCause(FNT_PERISH_SONG);
             }
             break 'l1;
         }
         if sw1 == STRINGID_PKMNWISHCAMETRUE {
-            fall = true;
             if (*tvPtr).side[defSide].wishMonId() != 0 {
                 AddMovePoints(
                     PTS_SET_UP,
@@ -250,14 +194,12 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNWANTSGRUDGE {
-            fall = true;
             (*tvPtr).side[atkSide]
                 .set_grudgeMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).side[atkSide].set_grudgeMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNLOSTPPGRUDGE {
-            fall = true;
             if (*tvPtr).side[defSide].grudgeMonId() != 0 {
                 AddMovePoints(
                     PTS_SET_UP,
@@ -270,28 +212,24 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNTRYINGTOTAKEFOE {
-            fall = true;
             (*tvPtr).side[atkSide]
                 .set_destinyBondMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).side[atkSide].set_destinyBondMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNTOOKFOE {
-            fall = true;
             if (*tvPtr).side[defSide].destinyBondMonId() != 0 {
                 (*tvPtr).side[atkSide].set_faintCause(FNT_DESTINY_BOND);
             }
             break 'l1;
         }
         if sw1 == STRINGID_PKMNPLANTEDROOTS {
-            fall = true;
             (*tvPtr).pos[atkSide][atkFlank]
                 .set_ingrainMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).pos[atkSide][atkFlank].set_ingrainMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNABSORBEDNUTRIENTS {
-            fall = true;
             if (*tvPtr).pos[atkSide][atkFlank].ingrainMonId() != 0 {
                 AddMovePoints(
                     PTS_SET_UP,
@@ -304,7 +242,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNANCHOREDITSELF {
-            fall = true;
             if (*tvPtr).pos[defSide][defFlank].ingrainMonId() != 0 {
                 AddMovePoints(
                     PTS_SET_UP,
@@ -317,17 +254,14 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNTRANSFORMEDINTO {
-            fall = true;
             (*gBattleStruct).anyMonHasTransformed = TRUE;
             break 'l1;
         }
         if sw1 == STRINGID_CRITICALHIT {
-            fall = true;
             AddMovePoints(PTS_CRITICAL_HIT, moveSlot as u16, 0, 0);
             break 'l1;
         }
         if sw1 == STRINGID_ATTACKERSSTATROSE {
-            fall = true;
             if gBattleTextBuff1[2] != 0 {
                 if *statStringId == STRINGID_STATSHARPLY as u16 {
                     AddMovePoints(
@@ -348,7 +282,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_DEFENDERSSTATROSE {
-            fall = true;
             if gBattleTextBuff1[2] != 0 {
                 if gBattlerAttacker == gBattlerTarget {
                     if *statStringId == STRINGID_STATSHARPLY as u16 {
@@ -378,7 +311,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_ATTACKERSSTATFELL {
-            fall = true;
             if gBattleTextBuff1[2] != 0 {
                 AddMovePoints(
                     PTS_STAT_DECREASE_SELF,
@@ -390,7 +322,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_DEFENDERSSTATFELL {
-            fall = true;
             if gBattleTextBuff1[2] != 0 {
                 if *statStringId == STRINGID_STATHARSHLY as u16 {
                     AddMovePoints(
@@ -411,14 +342,12 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNLAIDCURSE {
-            fall = true;
             (*tvPtr).pos[defSide][defFlank]
                 .set_curseMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).pos[defSide][defFlank].set_curseMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNAFFLICTEDBYCURSE {
-            fall = true;
             if GetMonData3(atkMon, MON_DATA_HP, null_mut()) != 0
                 && (*tvPtr).pos[atkSide][atkFlank].curseMonId() != 0
             {
@@ -434,14 +363,12 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNSEEDED {
-            fall = true;
             (*tvPtr).pos[defSide][defFlank]
                 .set_leechSeedMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).pos[defSide][defFlank].set_leechSeedMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNSAPPEDBYLEECHSEED {
-            fall = true;
             if (*tvPtr).pos[atkSide][atkFlank].leechSeedMonId() != 0 {
                 AddMovePoints(
                     PTS_STATUS_DMG,
@@ -455,14 +382,12 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNFELLINTONIGHTMARE {
-            fall = true;
             (*tvPtr).pos[defSide][defFlank]
                 .set_nightmareMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).pos[defSide][defFlank].set_nightmareMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNLOCKEDINNIGHTMARE {
-            fall = true;
             if GetMonData3(atkMon, MON_DATA_HP, null_mut()) != 0
                 && (*tvPtr).pos[atkSide][atkFlank].nightmareMonId() != 0
             {
@@ -483,14 +408,12 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             || sw1 == STRINGID_PKMNCLAMPED
             || sw1 == STRINGID_PKMNTRAPPEDBYSANDTOMB
         {
-            fall = true;
             (*tvPtr).pos[defSide][defFlank]
                 .set_wrapMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).pos[defSide][defFlank].set_wrapMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNHURTBY {
-            fall = true;
             if GetMonData3(atkMon, MON_DATA_HP, null_mut()) != 0
                 && (*tvPtr).pos[atkSide][atkFlank].wrapMonId() != 0
             {
@@ -506,7 +429,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNWASBURNED {
-            fall = true;
             (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
                 .set_brnMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
@@ -514,7 +436,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNHURTBYBURN {
-            fall = true;
             if GetMonData3(atkMon, MON_DATA_HP, null_mut()) != 0 {
                 if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].brnMonId() != 0 {
                     AddMovePoints(
@@ -534,7 +455,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNWASPOISONED {
-            fall = true;
             (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
                 .set_psnMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
@@ -542,7 +462,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNBADLYPOISONED {
-            fall = true;
             (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
                 .set_badPsnMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
@@ -550,7 +469,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNHURTBYPOISON {
-            fall = true;
             if GetMonData3(atkMon, MON_DATA_HP, null_mut()) != 0 {
                 if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].psnMonId() != 0 {
                     AddMovePoints(
@@ -582,14 +500,12 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNFELLINLOVE {
-            fall = true;
             (*tvPtr).pos[defSide][defFlank]
                 .set_attractMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).pos[defSide][defFlank].set_attractMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNIMMOBILIZEDBYLOVE {
-            fall = true;
             if (*tvPtr).pos[atkSide][atkFlank].attractMonId() != 0 {
                 AddMovePoints(
                     PTS_STATUS,
@@ -601,7 +517,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNWASPARALYZED {
-            fall = true;
             (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
                 .set_prlzMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
@@ -609,7 +524,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNISPARALYZED {
-            fall = true;
             if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].prlzMonId() != 0 {
                 AddMovePoints(
                     PTS_STATUS,
@@ -623,7 +537,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNFELLASLEEP {
-            fall = true;
             (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
                 .set_slpMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
@@ -631,7 +544,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNFASTASLEEP {
-            fall = true;
             if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].slpMonId() != 0
                 && (*gBattleMsgDataPtr).currentMove != MOVE_SNORE
                 && (*gBattleMsgDataPtr).currentMove != MOVE_SLEEP_TALK
@@ -648,7 +560,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNWASFROZEN {
-            fall = true;
             (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
                 .set_frzMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).mon[effSide][gBattlerPartyIndexes[gEffectBattler]]
@@ -656,7 +567,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNISFROZEN {
-            fall = true;
             if (*tvPtr).mon[atkSide][gBattlerPartyIndexes[gBattlerAttacker]].frzMonId() != 0 {
                 AddMovePoints(
                     PTS_STATUS,
@@ -670,14 +580,12 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNWASCONFUSED {
-            fall = true;
             (*tvPtr).pos[effSide][effFlank]
                 .set_confusionMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).pos[effSide][effFlank].set_confusionMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_ITHURTCONFUSION {
-            fall = true;
             if (*tvPtr).pos[atkSide][atkFlank].confusionMonId() != 0 {
                 AddMovePoints(
                     PTS_STATUS,
@@ -690,14 +598,12 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_SPIKESSCATTERED {
-            fall = true;
             (*tvPtr).side[defSide]
                 .set_spikesMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).side[defSide].set_spikesMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNHURTBYSPIKES {
-            fall = true;
             if (*tvPtr).side[scriptingSide].spikesMonId() != 0 {
                 AddMovePoints(
                     PTS_SPIKES,
@@ -710,20 +616,17 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNBLEWAWAYSPIKES {
-            fall = true;
             (*tvPtr).side[atkSide].set_spikesMonId(0);
             (*tvPtr).side[atkSide].set_spikesMoveSlot(0);
             break 'l1;
         }
         if sw1 == STRINGID_FIREWEAKENED {
-            fall = true;
             (*tvPtr).pos[atkSide][atkFlank]
                 .set_waterSportMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).pos[atkSide][atkFlank].set_waterSportMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_ELECTRICITYWEAKENED {
-            fall = true;
             (*tvPtr).pos[atkSide][atkFlank]
                 .set_mudSportMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).pos[atkSide][atkFlank].set_mudSportMoveSlot(moveSlot as u32);
@@ -734,7 +637,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             AddPointsOnFainting(FALSE);
         }
         if fall || sw1 == STRINGID_RETURNMON {
-            fall = true;
             if (*tvPtr).pos[atkSide][atkFlank].waterSportMonId() != 0 {
                 (*tvPtr).pos[atkSide][atkFlank].set_waterSportMonId(0);
                 (*tvPtr).pos[atkSide][atkFlank].set_waterSportMoveSlot(0);
@@ -746,7 +648,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_TARGETFAINTED {
-            fall = true;
             AddPointsOnFainting(TRUE);
             if (*tvPtr).pos[atkSide][defFlank].waterSportMonId() != 0 {
                 (*tvPtr).pos[atkSide][defFlank].set_waterSportMonId(0);
@@ -759,21 +660,18 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNRAISEDDEF || sw1 == STRINGID_PKMNRAISEDDEFALITTLE {
-            fall = true;
             (*tvPtr).side[atkSide]
                 .set_reflectMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).side[atkSide].set_reflectMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNRAISEDSPDEF || sw1 == STRINGID_PKMNRAISEDSPDEFALITTLE {
-            fall = true;
             (*tvPtr).side[atkSide]
                 .set_lightScreenMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).side[atkSide].set_lightScreenMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNSXWOREOFF {
-            fall = true;
             if *finishedMoveId == MOVE_REFLECT {
                 (*tvPtr).side[atkSide].set_reflectMonId(0);
                 (*tvPtr).side[atkSide].set_reflectMoveSlot(0);
@@ -789,14 +687,12 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNCOVEREDBYVEIL {
-            fall = true;
             (*tvPtr).side[atkSide]
                 .set_safeguardMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).side[atkSide].set_safeguardMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNUSEDSAFEGUARD {
-            fall = true;
             if (*tvPtr).side[defSide].safeguardMonId() != 0 {
                 AddMovePoints(
                     PTS_SAFEGUARD,
@@ -808,19 +704,16 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNSAFEGUARDEXPIRED {
-            fall = true;
             (*tvPtr).side[atkSide].set_safeguardMonId(0);
             (*tvPtr).side[atkSide].set_safeguardMoveSlot(0);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNSHROUDEDINMIST {
-            fall = true;
             (*tvPtr).side[atkSide].set_mistMonId(gBattlerPartyIndexes[gBattlerAttacker] as u32 + 1);
             (*tvPtr).side[atkSide].set_mistMoveSlot(moveSlot as u32);
             break 'l1;
         }
         if sw1 == STRINGID_PKMNPROTECTEDBYMIST {
-            fall = true;
             if (*tvPtr).side[defSide].mistMonId() != 0 {
                 AddMovePoints(
                     PTS_MIST,
@@ -832,7 +725,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_THEWALLSHATTERED {
-            fall = true;
             (*tvPtr).side[defSide].set_reflectMonId(0);
             (*tvPtr).side[defSide].set_reflectMoveSlot(0);
             (*tvPtr).side[defSide].set_lightScreenMonId(0);
@@ -846,7 +738,6 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNFLINCHED {
-            fall = true;
             if (*tvPtr).pos[atkSide][0].attackedByMonId() != 0 {
                 AddMovePoints(
                     PTS_FLINCHED,
@@ -866,13 +757,12 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnString(stringId: u16) {
             break 'l1;
         }
         if sw1 == STRINGID_PKMNCRASHED || sw1 == STRINGID_PKMNHITWITHRECOIL {
-            fall = true;
             (*tvPtr).side[atkSide].set_faintCause(FNT_RECOIL);
             break 'l1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn IsNotSpecialBattleString(stringId: u16) -> u8 {
+fn IsNotSpecialBattleString(stringId: u16) -> u8 {
     let mut i: i32 = 0;
     loop {
         if sSpecialBattleStrings[i] == stringId {
@@ -890,26 +780,21 @@ pub(crate) unsafe extern "C" fn IsNotSpecialBattleString(stringId: u16) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleTv_SetDataBasedOnMove(
+pub unsafe fn BattleTv_SetDataBasedOnMove(
     r#move: u16,
     weatherFlags: u16,
     disableStructPtr: *mut DisableStruct,
 ) {
-    let mut tvPtr: *mut BattleTv = null_mut();
-    let mut atkSide: u32 = 0;
-    let mut defSide: u32 = 0;
-    let mut moveSlot: u8 = 0;
     if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
         return;
     }
-    tvPtr = &raw mut (*gBattleStruct).tv;
-    atkSide = GetBattlerSide(gBattlerAttacker) as u32;
-    defSide = GetBattlerSide(gBattlerTarget) as u32;
-    moveSlot = GetBattlerMoveSlotId(gBattlerAttacker, r#move);
+    let tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
+    let atkSide: u32 = GetBattlerSide(gBattlerAttacker) as u32;
+    let defSide: u32 = GetBattlerSide(gBattlerTarget) as u32;
+    let moveSlot: u8 = GetBattlerMoveSlotId(gBattlerAttacker, r#move);
     if moveSlot >= MAX_MON_MOVES as u8 {
         (*tvPtr).side[atkSide].set_faintCause(FNT_OTHER);
         return;
@@ -922,7 +807,8 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnMove(
     AddMovePoints(
         PTS_MOVE_EFFECT,
         moveSlot as u16,
-        gBattleMoves[r#move].effect,
+        (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())[r#move]
+            .effect,
         0,
     );
     AddPointsBasedOnWeather(weatherFlags, r#move, moveSlot);
@@ -942,28 +828,41 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnMove(
     }
     AddMovePoints(
         PTS_REFLECT,
-        gBattleMoves[r#move].r#type as u16,
-        gBattleMoves[r#move].power,
+        (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())[r#move]
+            .r#type as u16,
+        (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())[r#move]
+            .power,
         0,
     );
     AddMovePoints(
         PTS_LIGHT_SCREEN,
-        gBattleMoves[r#move].r#type as u16,
-        gBattleMoves[r#move].power,
+        (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())[r#move]
+            .r#type as u16,
+        (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())[r#move]
+            .power,
         0,
     );
-    AddMovePoints(PTS_WATER_SPORT, gBattleMoves[r#move].r#type as u16, 0, 0);
-    AddMovePoints(PTS_MUD_SPORT, gBattleMoves[r#move].r#type as u16, 0, 0);
+    AddMovePoints(
+        PTS_WATER_SPORT,
+        (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())[r#move]
+            .r#type as u16,
+        0,
+        0,
+    );
+    AddMovePoints(
+        PTS_MUD_SPORT,
+        (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())[r#move]
+            .r#type as u16,
+        0,
+        0,
+    );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleTv_SetDataBasedOnAnimation(animationId: u8) {
-    let mut tvPtr: *mut BattleTv = null_mut();
-    let mut atkSide: u32 = 0;
+pub unsafe fn BattleTv_SetDataBasedOnAnimation(animationId: u8) {
     if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
         return;
     }
-    tvPtr = &raw mut (*gBattleStruct).tv;
-    atkSide = GetBattlerSide(gBattlerAttacker) as u32;
+    let tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
+    let atkSide: u32 = GetBattlerSide(gBattlerAttacker) as u32;
     match animationId {
         B_ANIM_FUTURE_SIGHT_HIT => {
             if (*tvPtr).side[atkSide].futureSightMonId() != 0 {
@@ -977,45 +876,38 @@ pub unsafe extern "C" fn BattleTv_SetDataBasedOnAnimation(animationId: u8) {
                 (*tvPtr).side[atkSide].set_faintCause(FNT_FUTURE_SIGHT);
             }
         }
-        B_ANIM_DOOM_DESIRE_HIT => {
-            if (*tvPtr).side[atkSide].doomDesireMonId() != 0 {
-                AddMovePoints(
-                    PTS_SET_UP,
-                    1,
-                    atkSide as u8,
-                    ((*tvPtr).side[atkSide].doomDesireMonId() as u8 - 1) * 4
-                        + (*tvPtr).side[atkSide].doomDesireMoveSlot() as u8,
-                );
-                (*tvPtr).side[atkSide].set_faintCause(FNT_DOOM_DESIRE);
-            }
+        B_ANIM_DOOM_DESIRE_HIT if (*tvPtr).side[atkSide].doomDesireMonId() != 0 => {
+            AddMovePoints(
+                PTS_SET_UP,
+                1,
+                atkSide as u8,
+                ((*tvPtr).side[atkSide].doomDesireMonId() as u8 - 1) * 4
+                    + (*tvPtr).side[atkSide].doomDesireMoveSlot() as u8,
+            );
+            (*tvPtr).side[atkSide].set_faintCause(FNT_DOOM_DESIRE);
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryPutLinkBattleTvShowOnAir() {
+pub unsafe fn TryPutLinkBattleTvShowOnAir() {
     let mut playerBestSpecies: u16 = 0;
     let mut opponentBestSpecies: u16 = 0;
     let mut playerBestSum: i16 = 0;
     let mut opponentBestSum: i16 = 32767;
     let mut playerBestMonId: u8 = 0;
     let mut opponentBestMonId: u8 = 0;
-    let mut movePoints: *mut BattleTvMovePoints = null_mut();
     let mut countPlayer: u8 = 0;
     let mut countOpponent: u8 = 0;
     let mut sum: i16 = 0;
     let mut species: u16 = 0;
-    let mut r#move: u16 = MOVE_NONE;
-    let mut i: i32 = 0;
     let mut j: i32 = 0;
-    let mut zero: i32 = 0;
-    let mut one: i32 = 1;
+    let zero: i32 = 0;
+    let one: i32 = 1;
     if (*gBattleStruct).anyMonHasTransformed != 0 {
         return;
     }
-    movePoints = &raw mut (*gBattleStruct).tvMovePoints;
-    i = 0;
-    while i < PARTY_SIZE {
+    let movePoints: *mut BattleTvMovePoints = &raw mut (*gBattleStruct).tvMovePoints;
+    for i in 0..PARTY_SIZE {
         if GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut())
             != SPECIES_NONE as u32
         {
@@ -1025,22 +917,18 @@ pub unsafe extern "C" fn TryPutLinkBattleTvShowOnAir() {
         {
             countOpponent += 1;
         }
-        i += 1;
     }
     if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 || countPlayer != countOpponent {
         return;
     }
-    i = 0;
-    while i < PARTY_SIZE {
+    for i in 0..PARTY_SIZE {
         species = GetMonData3(&raw mut gPlayerParty[i], MON_DATA_SPECIES, null_mut()) as u16;
         if species != SPECIES_NONE
             && GetMonData3(&raw mut gPlayerParty[i], MON_DATA_IS_EGG, null_mut()) == 0
         {
             sum = 0;
-            j = 0;
-            while j < MAX_MON_MOVES {
+            for j in 0..MAX_MON_MOVES {
                 sum += (*movePoints).points[zero][i * 4 + j];
-                j += 1;
             }
             if playerBestSum < sum {
                 playerBestMonId = i as u8;
@@ -1053,10 +941,8 @@ pub unsafe extern "C" fn TryPutLinkBattleTvShowOnAir() {
             && GetMonData3(&raw mut gEnemyParty[i], MON_DATA_IS_EGG, null_mut()) == 0
         {
             sum = 0;
-            j = 0;
-            while j < MAX_MON_MOVES {
+            for j in 0..MAX_MON_MOVES {
                 sum += (*movePoints).points[one][i * 4 + j];
-                j += 1;
             }
             if opponentBestSum == sum {
                 if GetMonData3(&raw mut gEnemyParty[i], MON_DATA_EXP, null_mut())
@@ -1076,10 +962,9 @@ pub unsafe extern "C" fn TryPutLinkBattleTvShowOnAir() {
                 opponentBestSpecies = species;
             }
         }
-        i += 1;
     }
     sum = 0;
-    i = 0;
+    let mut i: i32 = 0;
     j = 0;
     while j < MAX_MON_MOVES {
         if sum < (*movePoints).points[zero][playerBestMonId as i32 * 4 + j] {
@@ -1088,7 +973,7 @@ pub unsafe extern "C" fn TryPutLinkBattleTvShowOnAir() {
         }
         j += 1;
     }
-    r#move = GetMonData3(
+    let r#move: u16 = GetMonData3(
         &raw mut gPlayerParty[playerBestMonId],
         MON_DATA_MOVE1 + i,
         null_mut(),
@@ -1123,11 +1008,11 @@ pub unsafe extern "C" fn TryPutLinkBattleTvShowOnAir() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, arg3: u8) {
-    let mut movePoints: *mut BattleTvMovePoints = &raw mut (*gBattleStruct).tvMovePoints;
-    let mut tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
-    let mut atkSide: u32 = GetBattlerSide(gBattlerAttacker) as u32;
-    let mut defSide: u32 = GetBattlerSide(gBattlerTarget) as u32;
+unsafe fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, arg3: u8) {
+    let movePoints: *mut BattleTvMovePoints = &raw mut (*gBattleStruct).tvMovePoints;
+    let tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
+    let atkSide: u32 = GetBattlerSide(gBattlerAttacker) as u32;
+    let defSide: u32 = GetBattlerSide(gBattlerTarget) as u32;
     let mut ptr: *mut u16 = null_mut();
     let mut i: i32 = 0;
     'l1: {
@@ -1143,7 +1028,6 @@ pub(crate) unsafe extern "C" fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, a
             || sw1 == PTS_STAT_DECREASE_2
             || sw1 == PTS_STAT_INCREASE_NOT_SELF
         {
-            fall = true;
             (*movePoints).points[atkSide]
                 [gBattlerPartyIndexes[gBattlerAttacker] as i32 * 4 + arg1 as i32] +=
                 *sPointsArray[caseId].at(arg2) as i16;
@@ -1155,7 +1039,6 @@ pub(crate) unsafe extern "C" fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, a
             || sw1 == PTS_HAIL
             || sw1 == PTS_ELECTRIC
         {
-            fall = true;
             i = 0;
             ptr = sPointsArray[caseId];
             loop {
@@ -1173,9 +1056,8 @@ pub(crate) unsafe extern "C" fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, a
             break 'l1;
         }
         if sw1 == PTS_FAINT {
-            fall = true;
             (*tvPtr).side[arg2 as i32 ^ 1].set_faintCause(FNT_NONE);
-            (*movePoints).points[arg2][0 + arg3 as i32] += *sPointsArray[caseId].at(arg1) as i16;
+            (*movePoints).points[arg2][arg3 as i32] += *sPointsArray[caseId].at(arg1) as i16;
             break 'l1;
         }
         if sw1 == PTS_FAINT_SET_UP {
@@ -1183,12 +1065,10 @@ pub(crate) unsafe extern "C" fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, a
             (*tvPtr).side[arg2].set_faintCause(FNT_NONE);
         }
         if fall || sw1 == PTS_SET_UP {
-            fall = true;
-            (*movePoints).points[arg2][0 + arg3 as i32] += *sPointsArray[caseId].at(arg1) as i16;
+            (*movePoints).points[arg2][arg3 as i32] += *sPointsArray[caseId].at(arg1) as i16;
             break 'l1;
         }
         if sw1 == PTS_BREAK_WALL {
-            fall = true;
             (*movePoints).points[atkSide][arg2 as i32 * 4 + arg3 as i32] +=
                 *sPointsArray[caseId].at(arg1) as i16;
             break 'l1;
@@ -1199,31 +1079,28 @@ pub(crate) unsafe extern "C" fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, a
             || sw1 == PTS_MIST
             || sw1 == PTS_FLINCHED
         {
-            fall = true;
             (*movePoints).points[atkSide ^ BIT_SIDE as u32][arg2 as i32 * 4 + arg3 as i32] +=
                 *sPointsArray[caseId].at(arg1) as i16;
             break 'l1;
         }
         if sw1 == PTS_SPIKES {
-            fall = true;
             (*movePoints).points[arg1][arg2 as i32 * 4 + arg3 as i32] +=
                 *sPointsArray[caseId] as i16;
             break 'l1;
         }
         if sw1 == PTS_WATER_SPORT {
-            fall = true;
             if (*tvPtr).pos[defSide][0].waterSportMonId()
                 != (*tvPtr).pos[defSide][1].waterSportMonId().wrapping_neg()
                 && arg1 == TYPE_FIRE as u16
             {
                 if (*tvPtr).pos[defSide][0].waterSportMonId() != 0 {
-                    let mut id: u32 = ((*tvPtr).pos[defSide][0].waterSportMonId() - 1) * 4;
+                    let id: u32 = ((*tvPtr).pos[defSide][0].waterSportMonId() - 1) * 4;
                     (*movePoints).points[defSide]
                         [id + (*tvPtr).pos[defSide][0].waterSportMoveSlot()] +=
                         *sPointsArray[caseId] as i16;
                 }
                 if (*tvPtr).pos[defSide][1].waterSportMonId() != 0 {
-                    let mut id: u32 = ((*tvPtr).pos[defSide][1].waterSportMonId() - 1) * 4;
+                    let id: u32 = ((*tvPtr).pos[defSide][1].waterSportMonId() - 1) * 4;
                     (*movePoints).points[defSide]
                         [id + (*tvPtr).pos[defSide][1].waterSportMoveSlot()] +=
                         *sPointsArray[caseId] as i16;
@@ -1232,19 +1109,18 @@ pub(crate) unsafe extern "C" fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, a
             break 'l1;
         }
         if sw1 == PTS_MUD_SPORT {
-            fall = true;
             if (*tvPtr).pos[defSide][0].mudSportMonId()
                 != (*tvPtr).pos[defSide][1].mudSportMonId().wrapping_neg()
                 && arg1 == TYPE_ELECTRIC as u16
             {
                 if (*tvPtr).pos[defSide][0].mudSportMonId() != 0 {
-                    let mut id: u32 = ((*tvPtr).pos[defSide][0].mudSportMonId() - 1) * 4;
+                    let id: u32 = ((*tvPtr).pos[defSide][0].mudSportMonId() - 1) * 4;
                     (*movePoints).points[defSide]
                         [id + (*tvPtr).pos[defSide][0].mudSportMoveSlot()] +=
                         *sPointsArray[caseId] as i16;
                 }
                 if (*tvPtr).pos[defSide][1].mudSportMonId() != 0 {
-                    let mut id: u32 = ((*tvPtr).pos[defSide][1].mudSportMonId() - 1) * 4;
+                    let id: u32 = ((*tvPtr).pos[defSide][1].mudSportMonId() - 1) * 4;
                     (*movePoints).points[defSide]
                         [id + (*tvPtr).pos[defSide][1].mudSportMoveSlot()] +=
                         *sPointsArray[caseId] as i16;
@@ -1253,18 +1129,16 @@ pub(crate) unsafe extern "C" fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, a
             break 'l1;
         }
         if sw1 == PTS_REFLECT {
-            fall = true;
             if arg1 < 9 && arg2 != 0 && (*tvPtr).side[defSide].reflectMonId() != 0 {
-                let mut id: u32 = ((*tvPtr).side[defSide].reflectMonId() - 1) * 4;
+                let id: u32 = ((*tvPtr).side[defSide].reflectMonId() - 1) * 4;
                 (*movePoints).points[defSide][id + (*tvPtr).side[defSide].reflectMoveSlot()] +=
                     *sPointsArray[caseId] as i16;
             }
             break 'l1;
         }
         if sw1 == PTS_LIGHT_SCREEN {
-            fall = true;
             if arg1 >= 9 && arg2 != 0 && (*tvPtr).side[defSide].lightScreenMonId() != 0 {
-                let mut id: u32 = ((*tvPtr).side[defSide].lightScreenMonId() - 1) * 4;
+                let id: u32 = ((*tvPtr).side[defSide].lightScreenMonId() - 1) * 4;
                 (*movePoints).points[defSide][id + (*tvPtr).side[defSide].lightScreenMoveSlot()] +=
                     *sPointsArray[caseId] as i16;
             }
@@ -1272,12 +1146,11 @@ pub(crate) unsafe extern "C" fn AddMovePoints(caseId: u8, arg1: u16, arg2: u8, a
         }
     }
 }
-pub(crate) unsafe extern "C" fn AddPointsOnFainting(targetFainted: u8) {
-    let mut tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
-    let mut atkSide: u32 = GetBattlerSide(gBattlerAttacker) as u32;
-    let mut defSide: u32 = GetBattlerSide(gBattlerTarget) as u32;
-    let mut atkArrId: u32 = (*tvPtr).side[atkSide].faintCauseMonId();
-    let mut i: i32 = 0;
+unsafe fn AddPointsOnFainting(targetFainted: u8) {
+    let tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
+    let atkSide: u32 = GetBattlerSide(gBattlerAttacker) as u32;
+    let defSide: u32 = GetBattlerSide(gBattlerTarget) as u32;
+    let atkArrId: u32 = (*tvPtr).side[atkSide].faintCauseMonId();
     if (*tvPtr).side[atkSide].faintCause() != FNT_NONE {
         match (*tvPtr).side[atkSide].faintCause() {
             FNT_CURSE => {
@@ -1423,8 +1296,7 @@ pub(crate) unsafe extern "C" fn AddPointsOnFainting(targetFainted: u8) {
                 }
             }
             FNT_CONFUSION => {
-                i = 0;
-                while i < 2 {
+                for i in 0..2i32 {
                     if (*tvPtr).pos[atkSide][i].confusionMonId() != 0 {
                         AddMovePoints(
                             PTS_FAINT,
@@ -1434,7 +1306,6 @@ pub(crate) unsafe extern "C" fn AddPointsOnFainting(targetFainted: u8) {
                                 + (*tvPtr).pos[atkSide][i].confusionMoveSlot() as u8,
                         );
                     }
-                    i += 1;
                 }
             }
             FNT_EXPLOSION => {
@@ -1493,11 +1364,9 @@ pub(crate) unsafe extern "C" fn AddPointsOnFainting(targetFainted: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn TrySetBattleSeminarShow() {
-    let mut i: i32 = 0;
+unsafe fn TrySetBattleSeminarShow() {
     let mut dmgByMove: CArray<i32, 4> = zeroed();
     let mut powerOverride: u16 = 0;
-    let mut currMoveSaved: u16 = 0;
     if gBattleTypeFlags & 0x2000003 != 0 {
         return;
     } else if GetBattlerSide(gBattlerAttacker) == B_SIDE_OPPONENT {
@@ -1510,15 +1379,16 @@ pub(crate) unsafe extern "C" fn TrySetBattleSeminarShow() {
         return;
     } else if gBattleTypeFlags & 0x320000 != 0 {
         return;
-    } else if gBattleMoves
+    } else if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
         [gBattleMons[gBattlerAttacker].moves[gMoveSelectionCursor[gBattlerAttacker]]]
         .power
         == 0
     {
         return;
     }
-    i = 0;
-    currMoveSaved = gBattleMons[gBattlerAttacker].moves[gMoveSelectionCursor[gBattlerAttacker]];
+    let mut i: i32 = 0;
+    let mut currMoveSaved: u16 =
+        gBattleMons[gBattlerAttacker].moves[gMoveSelectionCursor[gBattlerAttacker]];
     loop {
         if currMoveSaved == sVariableDmgMoves[i] {
             break;
@@ -1538,8 +1408,7 @@ pub(crate) unsafe extern "C" fn TrySetBattleSeminarShow() {
         gCurrentMove = gBattleMons[gBattlerAttacker].moves[i];
         powerOverride = 0;
         if ShouldCalculateDamage(gCurrentMove, &raw mut dmgByMove[i], &raw mut powerOverride) != 0 {
-            let mut moveResultFlags: u8 = 0;
-            let mut sideStatus: u16 = gSideStatuses[GetBattlerPosition(gBattlerTarget) as i32 & 1];
+            let sideStatus: u16 = gSideStatuses[GetBattlerPosition(gBattlerTarget) as i32 & 1];
             gBattleMoveDamage = CalculateBaseDamage(
                 &raw mut gBattleMons[gBattlerAttacker],
                 &raw mut gBattleMons[gBattlerTarget],
@@ -1551,14 +1420,17 @@ pub(crate) unsafe extern "C" fn TrySetBattleSeminarShow() {
                 gBattlerTarget,
             );
             if gStatuses3[gBattlerAttacker] & STATUS3_CHARGED_UP != 0
-                && gBattleMoves[gCurrentMove].r#type == TYPE_ELECTRIC
+                && (*(&raw const crate::data::pokemon::gBattleMoves)
+                    .cast::<CArray<BattleMove, 0>>())[gCurrentMove]
+                    .r#type
+                    == TYPE_ELECTRIC
             {
                 gBattleMoveDamage *= 2;
             }
             if gProtectStructs[gBattlerAttacker].helpingHand() != 0 {
                 gBattleMoveDamage = gBattleMoveDamage * 15 / 10;
             }
-            moveResultFlags = TypeCalc(gCurrentMove, gBattlerAttacker, gBattlerTarget);
+            let moveResultFlags: u8 = TypeCalc(gCurrentMove, gBattlerAttacker, gBattlerTarget);
             dmgByMove[i] = gBattleMoveDamage;
             if dmgByMove[i] == 0 && moveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0 {
                 dmgByMove[i] = 1;
@@ -1566,34 +1438,29 @@ pub(crate) unsafe extern "C" fn TrySetBattleSeminarShow() {
         }
         i += 1;
     }
-    i = 0;
-    while i < MAX_MON_MOVES {
+    for i in 0..MAX_MON_MOVES {
         if i != gMoveSelectionCursor[gBattlerAttacker] as i32
             && dmgByMove[i] > dmgByMove[gMoveSelectionCursor[gBattlerAttacker]]
         {
-            let mut opponentSpecies: u16 = 0;
-            let mut playerSpecies: u16 = 0;
             let mut bestMoveId: i32 = 0;
             if gMoveSelectionCursor[gBattlerAttacker] != 0 {
                 bestMoveId = 0;
             } else {
                 bestMoveId = 1;
             }
-            i = 0;
-            while i < MAX_MON_MOVES {
+            for i in 0..MAX_MON_MOVES {
                 if i != gMoveSelectionCursor[gBattlerAttacker] as i32
                     && dmgByMove[i] > dmgByMove[bestMoveId]
                 {
                     bestMoveId = i;
                 }
-                i += 1;
             }
-            opponentSpecies = GetMonData3(
+            let opponentSpecies: u16 = GetMonData3(
                 &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]],
                 MON_DATA_SPECIES,
                 null_mut(),
             ) as u16;
-            playerSpecies = GetMonData3(
+            let playerSpecies: u16 = GetMonData3(
                 &raw mut gPlayerParty[gBattlerPartyIndexes[gBattlerAttacker]],
                 MON_DATA_SPECIES,
                 null_mut(),
@@ -1607,17 +1474,15 @@ pub(crate) unsafe extern "C" fn TrySetBattleSeminarShow() {
             );
             break;
         }
-        i += 1;
     }
     gBattleMoveDamage = dmgByMove[gMoveSelectionCursor[gBattlerAttacker]];
     gCurrentMove = currMoveSaved;
 }
-pub(crate) unsafe extern "C" fn ShouldCalculateDamage(
-    r#move: u16,
-    dmg: *mut i32,
-    powerOverride: *mut u16,
-) -> u8 {
-    if gBattleMoves[r#move].power == 0 {
+unsafe fn ShouldCalculateDamage(r#move: u16, dmg: *mut i32, powerOverride: *mut u16) -> u8 {
+    if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())[r#move]
+        .power
+        == 0
+    {
         *dmg = 0;
         return FALSE;
     } else {
@@ -1636,7 +1501,7 @@ pub(crate) unsafe extern "C" fn ShouldCalculateDamage(
             return FALSE;
         } else if r#move == MOVE_PSYWAVE {
             *dmg = gBattleMons[gBattlerAttacker].level as i32;
-            *dmg = *dmg / 2;
+            *dmg /= 2;
             return FALSE;
         } else if r#move == MOVE_MAGNITUDE {
             *powerOverride = 10;
@@ -1647,13 +1512,12 @@ pub(crate) unsafe extern "C" fn ShouldCalculateDamage(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleTv_ClearExplosionFaintCause() {
+pub unsafe fn BattleTv_ClearExplosionFaintCause() {
     if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
-        let mut tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
+        let tvPtr: *mut BattleTv = &raw mut (*gBattleStruct).tv;
         (*tvPtr).side[0].set_faintCause(FNT_NONE);
         (*tvPtr).side[1].set_faintCause(FNT_NONE);
         (*tvPtr).side[0].set_faintCauseMonId(0);
@@ -1666,16 +1530,14 @@ pub unsafe extern "C" fn BattleTv_ClearExplosionFaintCause() {
         (*tvPtr).side[1].set_explosion(FALSE as u32);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBattlerMoveSlotId(battler: u8, r#move: u16) -> u8 {
-    let mut i: i32 = 0;
+pub unsafe fn GetBattlerMoveSlotId(battler: u8, r#move: u16) -> u8 {
     let mut party: *mut Pokemon = null_mut();
     if GetBattlerSide(battler) == B_SIDE_PLAYER {
         party = gPlayerParty.as_mut_ptr();
     } else {
         party = gEnemyParty.as_mut_ptr();
     }
-    i = 0;
+    let mut i: i32 = 0;
     loop {
         if i >= MAX_MON_MOVES {
             break;
@@ -1690,13 +1552,9 @@ pub unsafe extern "C" fn GetBattlerMoveSlotId(battler: u8, r#move: u16) -> u8 {
         }
         i += 1;
     }
-    return i as u8;
+    i as u8
 }
-pub(crate) unsafe extern "C" fn AddPointsBasedOnWeather(
-    weatherFlags: u16,
-    r#move: u16,
-    moveSlot: u8,
-) {
+unsafe fn AddPointsBasedOnWeather(weatherFlags: u16, r#move: u16, moveSlot: u8) {
     if weatherFlags as i32 & B_WEATHER_RAIN != 0 {
         AddMovePoints(PTS_RAIN, r#move, moveSlot, 0);
     } else if weatherFlags as i32 & B_WEATHER_SUN != 0 {

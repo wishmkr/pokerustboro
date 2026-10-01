@@ -96,42 +96,29 @@ static EXT_CTRL_CODE_LENGTHS: [u8; 25] = [
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gStringVar1: crate::ffi::Align4<[u8; 0x100]> = crate::ffi::Align4([0; 0x100]);
+pub static mut gStringVar1: crate::c::Aligned<crate::c::CArray<u8, 0x100>> =
+    crate::c::Aligned(crate::c::CArray([0; 0x100]));
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gStringVar2: crate::ffi::Align4<[u8; 0x100]> = crate::ffi::Align4([0; 0x100]);
+pub static mut gStringVar2: crate::c::Aligned<crate::c::CArray<u8, 0x100>> =
+    crate::c::Aligned(crate::c::CArray([0; 0x100]));
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gStringVar3: crate::ffi::Align4<[u8; 0x100]> = crate::ffi::Align4([0; 0x100]);
+pub static mut gStringVar3: crate::c::Aligned<crate::c::CArray<u8, 0x100>> =
+    crate::c::Aligned(crate::c::CArray([0; 0x100]));
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gStringVar4: crate::ffi::Align4<[u8; 0x3e8]> = crate::ffi::Align4([0; 0x3e8]);
+pub static mut gStringVar4: crate::c::Aligned<crate::c::CArray<u8, 0x3e8>> =
+    crate::c::Aligned(crate::c::CArray([0; 0x3e8]));
 
 #[unsafe(link_section = "ewram_data")]
 static mut UNKNOWN_STRING_VAR: [u8; 16] = [0; 16];
 
-unsafe extern "C" {
-    static mut gSaveBlock2Ptr: *mut u8;
-
-    static gText_ExpandedPlaceholder_Empty: u8;
-    static gText_ExpandedPlaceholder_Kun: u8;
-    static gText_ExpandedPlaceholder_Chan: u8;
-    static gText_ExpandedPlaceholder_Brendan: u8;
-    static gText_ExpandedPlaceholder_May: u8;
-    static gText_ExpandedPlaceholder_Emerald: u8;
-    static gText_ExpandedPlaceholder_Aqua: u8;
-    static gText_ExpandedPlaceholder_Magma: u8;
-    static gText_ExpandedPlaceholder_Archie: u8;
-    static gText_ExpandedPlaceholder_Maxie: u8;
-    static gText_ExpandedPlaceholder_Kyogre: u8;
-    static gText_ExpandedPlaceholder_Groudon: u8;
-}
-
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringCopy_Nickname(dest: *mut u8, src: *const u8) -> *mut u8 {
+pub unsafe fn StringCopy_Nickname(dest: *mut u8, src: *const u8) -> *mut u8 {
     let mut i = 0usize;
     while i < POKEMON_NAME_LENGTH {
         let c = unsafe { src.add(i).read() };
@@ -147,7 +134,7 @@ pub unsafe extern "C" fn StringCopy_Nickname(dest: *mut u8, src: *const u8) -> *
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringGet_Nickname(string: *mut u8) -> *mut u8 {
+pub unsafe fn StringGet_Nickname(string: *mut u8) -> *mut u8 {
     let mut i = 0usize;
     while i < POKEMON_NAME_LENGTH {
         if unsafe { string.add(i).read() } == EOS {
@@ -161,7 +148,7 @@ pub unsafe extern "C" fn StringGet_Nickname(string: *mut u8) -> *mut u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringCopy_PlayerName(dest: *mut u8, src: *const u8) -> *mut u8 {
+pub unsafe fn StringCopy_PlayerName(dest: *mut u8, src: *const u8) -> *mut u8 {
     let mut i = 0usize;
     while i < PLAYER_NAME_LENGTH {
         let c = unsafe { src.add(i).read() };
@@ -177,7 +164,7 @@ pub unsafe extern "C" fn StringCopy_PlayerName(dest: *mut u8, src: *const u8) ->
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringCopy(dest: *mut u8, src: *const u8) -> *mut u8 {
+pub unsafe fn StringCopy(dest: *mut u8, src: *const u8) -> *mut u8 {
     let mut dest = dest;
     let mut src = src;
     loop {
@@ -194,7 +181,7 @@ pub unsafe extern "C" fn StringCopy(dest: *mut u8, src: *const u8) -> *mut u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringAppend(dest: *mut u8, src: *const u8) -> *mut u8 {
+pub unsafe fn StringAppend(dest: *mut u8, src: *const u8) -> *mut u8 {
     let mut dest = dest;
     while unsafe { dest.read() } != EOS {
         dest = unsafe { dest.add(1) };
@@ -203,7 +190,7 @@ pub unsafe extern "C" fn StringAppend(dest: *mut u8, src: *const u8) -> *mut u8 
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringCopyN(dest: *mut u8, src: *const u8, n: u8) -> *mut u8 {
+pub unsafe fn StringCopyN(dest: *mut u8, src: *const u8, n: u8) -> *mut u8 {
     let mut i = 0usize;
     while i < n as usize {
         unsafe { dest.add(i).write(src.add(i).read()) };
@@ -213,7 +200,7 @@ pub unsafe extern "C" fn StringCopyN(dest: *mut u8, src: *const u8, n: u8) -> *m
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringAppendN(dest: *mut u8, src: *const u8, n: u8) -> *mut u8 {
+pub unsafe fn StringAppendN(dest: *mut u8, src: *const u8, n: u8) -> *mut u8 {
     let mut dest = dest;
     while unsafe { dest.read() } != EOS {
         dest = unsafe { dest.add(1) };
@@ -222,7 +209,7 @@ pub unsafe extern "C" fn StringAppendN(dest: *mut u8, src: *const u8, n: u8) -> 
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringLength(string: *const u8) -> u16 {
+pub unsafe fn StringLength(string: *const u8) -> u16 {
     let mut length = 0u16;
     while unsafe { string.add(length as usize).read() } != EOS {
         length += 1;
@@ -231,7 +218,7 @@ pub unsafe extern "C" fn StringLength(string: *const u8) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringCompare(str1: *const u8, str2: *const u8) -> i32 {
+pub unsafe fn StringCompare(str1: *const u8, str2: *const u8) -> i32 {
     let mut str1 = str1;
     let mut str2 = str2;
     while unsafe { str1.read() } == unsafe { str2.read() } {
@@ -245,7 +232,7 @@ pub unsafe extern "C" fn StringCompare(str1: *const u8, str2: *const u8) -> i32 
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringCompareN(str1: *const u8, str2: *const u8, n: u32) -> i32 {
+pub unsafe fn StringCompareN(str1: *const u8, str2: *const u8, n: u32) -> i32 {
     let mut str1 = str1;
     let mut str2 = str2;
     let mut n = n;
@@ -264,7 +251,7 @@ pub unsafe extern "C" fn StringCompareN(str1: *const u8, str2: *const u8, n: u32
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsStringLengthAtLeast(string: *const u8, n: i32) -> u8 {
+pub unsafe fn IsStringLengthAtLeast(string: *const u8, n: i32) -> u8 {
     let mut i = 0i32;
     while i < n {
         let c = unsafe { string.offset(i as isize).read() };
@@ -336,17 +323,12 @@ fn largest_power_of_ten(n: u8) -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConvertIntToDecimalStringN(
-    dest: *mut u8,
-    value: i32,
-    mode: c_int,
-    n: u8,
-) -> *mut u8 {
+pub unsafe fn ConvertIntToDecimalStringN(dest: *mut u8, value: i32, mode: c_int, n: u8) -> *mut u8 {
     unsafe { convert_to_string(dest, value as u32, mode, largest_power_of_ten(n), 10, 9) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConvertUIntToDecimalStringN(
+pub unsafe fn ConvertUIntToDecimalStringN(
     dest: *mut u8,
     value: u32,
     mode: c_int,
@@ -356,12 +338,7 @@ pub unsafe extern "C" fn ConvertUIntToDecimalStringN(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConvertIntToHexStringN(
-    dest: *mut u8,
-    value: i32,
-    mode: c_int,
-    n: u8,
-) -> *mut u8 {
+pub unsafe fn ConvertIntToHexStringN(dest: *mut u8, value: i32, mode: c_int, n: u8) -> *mut u8 {
     let mut largest = 1u32;
     let mut i = 1u8;
     while i < n {
@@ -372,7 +349,7 @@ pub unsafe extern "C" fn ConvertIntToHexStringN(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringExpandPlaceholders(dest: *mut u8, src: *const u8) -> *mut u8 {
+pub unsafe fn StringExpandPlaceholders(dest: *mut u8, src: *const u8) -> *mut u8 {
     let mut dest = dest;
     let mut src = src;
 
@@ -433,7 +410,7 @@ pub unsafe extern "C" fn StringExpandPlaceholders(dest: *mut u8, src: *const u8)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringBraille(dest: *mut u8, src: *const u8) -> *mut u8 {
+pub unsafe fn StringBraille(dest: *mut u8, src: *const u8) -> *mut u8 {
     let set_braille_font = [EXT_CTRL_CODE_BEGIN, EXT_CTRL_CODE_FONT, FONT_BRAILLE, EOS];
     let goto_line2 = [
         CHAR_NEWLINE,
@@ -471,8 +448,12 @@ pub unsafe extern "C" fn StringBraille(dest: *mut u8, src: *const u8) -> *mut u8
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetExpandedPlaceholder(id: u32) -> *const u8 {
-    let save = unsafe { gSaveBlock2Ptr };
+pub unsafe fn GetExpandedPlaceholder(id: u32) -> *const u8 {
+    let save = unsafe {
+        *(&raw const crate::load_save::gSaveBlock2Ptr)
+            .cast::<*mut u8>()
+            .cast_mut()
+    };
     let gender = unsafe { save.add(SAVE2_PLAYER_GENDER).read() };
 
     match id {
@@ -483,32 +464,60 @@ pub unsafe extern "C" fn GetExpandedPlaceholder(id: u32) -> *const u8 {
         4 => (&raw const gStringVar3).cast::<u8>(),
         5 => {
             if gender == MALE {
-                &raw const gText_ExpandedPlaceholder_Kun
+                &raw const (*(&raw const crate::data::strings::gText_ExpandedPlaceholder_Kun)
+                    .cast::<u8>())
             } else {
-                &raw const gText_ExpandedPlaceholder_Chan
+                &raw const (*(&raw const crate::data::strings::gText_ExpandedPlaceholder_Chan)
+                    .cast::<u8>())
             }
         }
         // The rival is the opposite gender to the player.
         6 => {
             if gender == MALE {
-                &raw const gText_ExpandedPlaceholder_May
+                &raw const (*(&raw const crate::data::strings::gText_ExpandedPlaceholder_May)
+                    .cast::<u8>())
             } else {
-                &raw const gText_ExpandedPlaceholder_Brendan
+                &raw const (*(&raw const crate::data::strings::gText_ExpandedPlaceholder_Brendan)
+                    .cast::<u8>())
             }
         }
-        7 => &raw const gText_ExpandedPlaceholder_Emerald,
-        8 => &raw const gText_ExpandedPlaceholder_Aqua,
-        9 => &raw const gText_ExpandedPlaceholder_Magma,
-        10 => &raw const gText_ExpandedPlaceholder_Archie,
-        11 => &raw const gText_ExpandedPlaceholder_Maxie,
-        12 => &raw const gText_ExpandedPlaceholder_Kyogre,
-        13 => &raw const gText_ExpandedPlaceholder_Groudon,
-        _ => &raw const gText_ExpandedPlaceholder_Empty,
+        7 => {
+            &raw const (*(&raw const crate::data::strings::gText_ExpandedPlaceholder_Emerald)
+                .cast::<u8>())
+        }
+        8 => {
+            &raw const (*(&raw const crate::data::strings::gText_ExpandedPlaceholder_Aqua)
+                .cast::<u8>())
+        }
+        9 => {
+            &raw const (*(&raw const crate::data::strings::gText_ExpandedPlaceholder_Magma)
+                .cast::<u8>())
+        }
+        10 => {
+            &raw const (*(&raw const crate::data::strings::gText_ExpandedPlaceholder_Archie)
+                .cast::<u8>())
+        }
+        11 => {
+            &raw const (*(&raw const crate::data::strings::gText_ExpandedPlaceholder_Maxie)
+                .cast::<u8>())
+        }
+        12 => {
+            &raw const (*(&raw const crate::data::strings::gText_ExpandedPlaceholder_Kyogre)
+                .cast::<u8>())
+        }
+        13 => {
+            &raw const (*(&raw const crate::data::strings::gText_ExpandedPlaceholder_Groudon)
+                .cast::<u8>())
+        }
+        _ => {
+            &raw const (*(&raw const crate::data::strings::gText_ExpandedPlaceholder_Empty)
+                .cast::<u8>())
+        }
     }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringFill(dest: *mut u8, c: u8, n: u16) -> *mut u8 {
+pub unsafe fn StringFill(dest: *mut u8, c: u8, n: u16) -> *mut u8 {
     let mut dest = dest;
     let mut i = 0u16;
     while i < n {
@@ -521,7 +530,7 @@ pub unsafe extern "C" fn StringFill(dest: *mut u8, c: u8, n: u16) -> *mut u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringCopyPadded(dest: *mut u8, src: *const u8, c: u8, n: u16) -> *mut u8 {
+pub unsafe fn StringCopyPadded(dest: *mut u8, src: *const u8, c: u8, n: u16) -> *mut u8 {
     let mut dest = dest;
     let mut src = src;
     let mut n = n;
@@ -549,12 +558,12 @@ pub unsafe extern "C" fn StringCopyPadded(dest: *mut u8, src: *const u8, c: u8, 
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringFillWithTerminator(dest: *mut u8, n: u16) -> *mut u8 {
+pub unsafe fn StringFillWithTerminator(dest: *mut u8, n: u16) -> *mut u8 {
     unsafe { StringFill(dest, EOS, n) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringCopyN_Multibyte(dest: *mut u8, src: *mut u8, n: u32) -> *mut u8 {
+pub unsafe fn StringCopyN_Multibyte(dest: *mut u8, src: *mut u8, n: u32) -> *mut u8 {
     let mut dest = dest;
     let mut src = src;
 
@@ -580,7 +589,7 @@ pub unsafe extern "C" fn StringCopyN_Multibyte(dest: *mut u8, src: *mut u8, n: u
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringLength_Multibyte(string: *const u8) -> u32 {
+pub unsafe fn StringLength_Multibyte(string: *const u8) -> u32 {
     let mut string = string;
     let mut length = 0u32;
 
@@ -596,11 +605,7 @@ pub unsafe extern "C" fn StringLength_Multibyte(string: *const u8) -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn WriteColorChangeControlCode(
-    dest: *mut u8,
-    color_type: u32,
-    color: u8,
-) -> *mut u8 {
+pub unsafe fn WriteColorChangeControlCode(dest: *mut u8, color_type: u32, color: u8) -> *mut u8 {
     let mut dest = dest;
     unsafe { dest.write(EXT_CTRL_CODE_BEGIN) };
     dest = unsafe { dest.add(1) };
@@ -623,7 +628,7 @@ pub unsafe extern "C" fn WriteColorChangeControlCode(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsStringJapanese(string: *mut u8) -> u32 {
+pub unsafe fn IsStringJapanese(string: *mut u8) -> u32 {
     let mut string = string;
     while unsafe { string.read() } != EOS {
         let c = unsafe { string.read() };
@@ -636,7 +641,7 @@ pub unsafe extern "C" fn IsStringJapanese(string: *mut u8) -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsStringNJapanese(string: *mut u8, n: i32) -> u32 {
+pub unsafe fn IsStringNJapanese(string: *mut u8, n: i32) -> u32 {
     let mut string = string;
     let mut i = 0i32;
     while unsafe { string.read() } != EOS && i < n {
@@ -651,7 +656,7 @@ pub unsafe extern "C" fn IsStringNJapanese(string: *mut u8, n: i32) -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetExtCtrlCodeLength(code: u8) -> u8 {
+pub unsafe fn GetExtCtrlCodeLength(code: u8) -> u8 {
     if (code as usize) < EXT_CTRL_CODE_LENGTHS.len() {
         EXT_CTRL_CODE_LENGTHS[code as usize]
     } else {
@@ -669,7 +674,7 @@ unsafe fn skip_ext_ctrl_code(string: *const u8) -> *const u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringCompareWithoutExtCtrlCodes(str1: *const u8, str2: *const u8) -> i32 {
+pub unsafe fn StringCompareWithoutExtCtrlCodes(str1: *const u8, str2: *const u8) -> i32 {
     let mut str1 = str1;
     let mut str2 = str2;
     let mut result = 0i32;
@@ -699,7 +704,7 @@ pub unsafe extern "C" fn StringCompareWithoutExtCtrlCodes(str1: *const u8, str2:
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConvertInternationalString(string: *mut u8, language: u8) {
+pub unsafe fn ConvertInternationalString(string: *mut u8, language: u8) {
     if language != LANGUAGE_JAPANESE {
         return;
     }
@@ -728,7 +733,7 @@ pub unsafe extern "C" fn ConvertInternationalString(string: *mut u8, language: u
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StripExtCtrlCodes(string: *mut u8) {
+pub unsafe fn StripExtCtrlCodes(string: *mut u8) {
     let mut src_index = 0usize;
     let mut dest_index = 0usize;
 

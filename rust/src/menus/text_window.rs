@@ -20,10 +20,12 @@ const WINDOW_HEIGHT: u8 = 4;
 /// `gSaveBlock2Ptr->optionsWindowFrameType`: bits 3..8 of the u16 at 0x14.
 const SB2_OPTIONS: usize = 0x14;
 
-unsafe extern "C" {
-    static gMessageBox_Gfx: u8;
-    static gMessageBox_Pal: u16;
-    fn LoadPalette(src: *const c_void, offset: u16, size: u16);
+/// `LoadPalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadPalette(a0: *const c_void, a1: u16, a2: u16) {
+    unsafe {
+        crate::palette::LoadPalette(a0 as _, a1, a2);
+    }
 }
 
 /// `struct TilesPal { const u8 *tiles; const u16 *pal; }`
@@ -99,13 +101,13 @@ fn frame(id: usize) -> &'static TilesPal {
 }
 
 unsafe fn user_frame_type() -> usize {
-    let sb2 = unsafe { (&raw const gSaveBlock2Ptr).read() };
+    let sb2 = unsafe { (&raw const gSaveBlock2Ptr).read().cast::<u8>() };
     let options = unsafe { sb2.add(SB2_OPTIONS).cast::<u16>().read() };
     usize::from((options >> 3) & 0x1f)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetWindowFrameTilesPal(id: u8) -> *const TilesPal {
+pub unsafe fn GetWindowFrameTilesPal(id: u8) -> *const TilesPal {
     let id = usize::from(id);
     if id >= WINDOW_FRAMES_COUNT {
         frame(0)
@@ -115,9 +117,16 @@ pub unsafe extern "C" fn GetWindowFrameTilesPal(id: u8) -> *const TilesPal {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadMessageBoxGfx(window_id: u8, dest_offset: u16, pal_offset: u8) {
+pub unsafe fn LoadMessageBoxGfx(window_id: u8, dest_offset: u16, pal_offset: u8) {
     let bg = unsafe { GetWindowAttribute(window_id, WINDOW_BG) } as u8;
-    unsafe { LoadBgTiles(bg, (&raw const gMessageBox_Gfx).cast(), 0x1c0, dest_offset) };
+    unsafe {
+        LoadBgTiles(
+            bg,
+            (&raw const (*(&raw const crate::data::graphics::gMessageBox_Gfx).cast::<u8>())).cast(),
+            0x1c0,
+            dest_offset,
+        )
+    };
     unsafe {
         LoadPalette(
             GetOverworldTextboxPalettePtr().cast(),
@@ -128,17 +137,12 @@ pub unsafe extern "C" fn LoadMessageBoxGfx(window_id: u8, dest_offset: u16, pal_
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadUserWindowBorderGfx_(window_id: u8, dest_offset: u16, pal_offset: u8) {
+pub unsafe fn LoadUserWindowBorderGfx_(window_id: u8, dest_offset: u16, pal_offset: u8) {
     unsafe { LoadUserWindowBorderGfx(window_id, dest_offset, pal_offset) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadWindowGfx(
-    window_id: u8,
-    frame_id: u8,
-    dest_offset: u16,
-    pal_offset: u8,
-) {
+pub unsafe fn LoadWindowGfx(window_id: u8, frame_id: u8, dest_offset: u16, pal_offset: u8) {
     // The original indexes without a bounds check; ids come from the options
     // menu, which never exceeds the table.
     let frame = frame(usize::from(frame_id));
@@ -148,7 +152,7 @@ pub unsafe extern "C" fn LoadWindowGfx(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadUserWindowBorderGfx(window_id: u8, dest_offset: u16, pal_offset: u8) {
+pub unsafe fn LoadUserWindowBorderGfx(window_id: u8, dest_offset: u16, pal_offset: u8) {
     let frame_type = unsafe { user_frame_type() } as u8;
     unsafe { LoadWindowGfx(window_id, frame_type, dest_offset, pal_offset) };
 }
@@ -222,17 +226,17 @@ unsafe fn draw_border(window_id: u8, tile_num: u16, pal_num: u8, inset: bool) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawTextBorderOuter(window_id: u8, tile_num: u16, pal_num: u8) {
+pub unsafe fn DrawTextBorderOuter(window_id: u8, tile_num: u16, pal_num: u8) {
     unsafe { draw_border(window_id, tile_num, pal_num, false) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawTextBorderInner(window_id: u8, tile_num: u16, pal_num: u8) {
+pub unsafe fn DrawTextBorderInner(window_id: u8, tile_num: u16, pal_num: u8) {
     unsafe { draw_border(window_id, tile_num, pal_num, true) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn rbox_fill_rectangle(window_id: u8) {
+pub unsafe fn rbox_fill_rectangle(window_id: u8) {
     let r = unsafe { window_rect(window_id) };
     unsafe {
         FillBgTilemapBufferRect(
@@ -248,19 +252,19 @@ pub unsafe extern "C" fn rbox_fill_rectangle(window_id: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetTextWindowPalette(id: u8) -> *const u16 {
+pub unsafe fn GetTextWindowPalette(id: u8) -> *const u16 {
     let index = if id < 4 { usize::from(id) } else { 4 };
     unsafe { TEXT_WINDOW_PALETTES.as_ptr().add(index * 32).cast() }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetOverworldTextboxPalettePtr() -> *const u16 {
-    &raw const gMessageBox_Pal
+pub unsafe fn GetOverworldTextboxPalettePtr() -> *const u16 {
+    &raw const (*(&raw const crate::data::graphics::gMessageBox_Pal).cast::<u16>())
 }
 
 /// `LoadUserWindowBorderGfx` for a background instead of a window on it.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadUserWindowBorderGfxOnBg(bg: u8, dest_offset: u16, pal_offset: u8) {
+pub unsafe fn LoadUserWindowBorderGfxOnBg(bg: u8, dest_offset: u16, pal_offset: u8) {
     let frame_type = unsafe { user_frame_type() };
     unsafe { LoadBgTiles(bg, frame(frame_type).tiles.0.cast(), 0x120, dest_offset) };
     let tiles_pal = unsafe { GetWindowFrameTilesPal(frame_type as u8) };

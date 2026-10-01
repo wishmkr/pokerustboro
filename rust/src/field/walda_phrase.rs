@@ -38,33 +38,85 @@ static WALDA_LETTERS: [u8; 1 << BITS_PER_LETTER] = [
     0xd0, 0xd1, 0xd4, 0xd6, 0xd7, 0xd8, 0xda, 0xdb, 0xdc, 0xde, 0xdf, 0xe1, 0xe2, 0xe4, 0xe5, 0xe7,
 ];
 
-type MainCallback = unsafe extern "C" fn();
+type MainCallback = unsafe fn();
 
-unsafe extern "C" {
-    static mut gSaveBlock2Ptr: *mut u8;
-    static mut gFieldCallback: Option<MainCallback>;
-    static gText_Peekaboo: u8;
-
-    fn GetTrainerId(trainer_id: *const u8) -> u16;
-    fn DoNamingScreen(
-        template_num: u8,
-        destination: *mut u8,
-        mon_species: u16,
-        mon_gender: u16,
-        personality: u32,
-        callback: MainCallback,
-    );
-    fn SetMainCallback2(callback: MainCallback);
-    fn CB2_ReturnToField();
-    fn FieldCB_ContinueScriptHandleMusic();
-
-    fn GetWaldaPhrasePtr() -> *mut u8;
-    fn IsWaldaPhraseEmpty() -> u32;
-    fn SetWaldaPhrase(phrase: *const u8);
-    fn SetWaldaWallpaperPatternId(pattern_id: u8);
-    fn SetWaldaWallpaperIconId(icon_id: u8);
-    fn SetWaldaWallpaperColors(background: u16, foreground: u16);
-    fn SetWaldaWallpaperLockedOrUnlocked(unlocked: u32);
+/// `GetTrainerId` with this module's view of its types.
+#[inline]
+unsafe fn GetTrainerId(a0: *const u8) -> u16 {
+    unsafe { crate::new_game::GetTrainerId(a0 as _) as u16 }
+}
+/// `DoNamingScreen` with this module's view of its types.
+#[inline]
+unsafe fn DoNamingScreen(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u32, a5: MainCallback) {
+    unsafe {
+        crate::naming_screen::DoNamingScreen(a0, a1 as _, a2, a3, a4, core::mem::transmute(a5));
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: MainCallback) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
+}
+/// `CB2_ReturnToField` with this module's view of its types.
+#[inline]
+unsafe fn CB2_ReturnToField() {
+    unsafe {
+        crate::overworld::CB2_ReturnToField();
+    }
+}
+/// `FieldCB_ContinueScriptHandleMusic` with this module's view of its types.
+#[inline]
+unsafe fn FieldCB_ContinueScriptHandleMusic() {
+    unsafe {
+        crate::field_screen_effect::FieldCB_ContinueScriptHandleMusic();
+    }
+}
+/// `GetWaldaPhrasePtr` with this module's view of its types.
+#[inline]
+unsafe fn GetWaldaPhrasePtr() -> *mut u8 {
+    unsafe { crate::pokemon_storage_system::GetWaldaPhrasePtr() as *mut u8 }
+}
+/// `IsWaldaPhraseEmpty` with this module's view of its types.
+#[inline]
+unsafe fn IsWaldaPhraseEmpty() -> u32 {
+    unsafe { crate::pokemon_storage_system::IsWaldaPhraseEmpty() }
+}
+/// `SetWaldaPhrase` with this module's view of its types.
+#[inline]
+unsafe fn SetWaldaPhrase(a0: *const u8) {
+    unsafe {
+        crate::pokemon_storage_system::SetWaldaPhrase(a0 as _);
+    }
+}
+/// `SetWaldaWallpaperPatternId` with this module's view of its types.
+#[inline]
+unsafe fn SetWaldaWallpaperPatternId(a0: u8) {
+    unsafe {
+        crate::pokemon_storage_system::SetWaldaWallpaperPatternId(a0);
+    }
+}
+/// `SetWaldaWallpaperIconId` with this module's view of its types.
+#[inline]
+unsafe fn SetWaldaWallpaperIconId(a0: u8) {
+    unsafe {
+        crate::pokemon_storage_system::SetWaldaWallpaperIconId(a0);
+    }
+}
+/// `SetWaldaWallpaperColors` with this module's view of its types.
+#[inline]
+unsafe fn SetWaldaWallpaperColors(a0: u16, a1: u16) {
+    unsafe {
+        crate::pokemon_storage_system::SetWaldaWallpaperColors(a0, a1);
+    }
+}
+/// `SetWaldaWallpaperLockedOrUnlocked` with this module's view of its types.
+#[inline]
+unsafe fn SetWaldaWallpaperLockedOrUnlocked(a0: u32) {
+    unsafe {
+        crate::pokemon_storage_system::SetWaldaWallpaperLockedOrUnlocked(a0);
+    }
 }
 
 /// Converts a position in the phrase to a bit number into the letter array.
@@ -217,7 +269,7 @@ unsafe fn try_calculate_wallpaper(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryBufferWaldaPhrase() -> u16 {
+pub unsafe fn TryBufferWaldaPhrase() -> u16 {
     if unsafe { IsWaldaPhraseEmpty() } != 0 {
         return 0;
     }
@@ -226,7 +278,7 @@ pub unsafe extern "C" fn TryBufferWaldaPhrase() -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoWaldaNamingScreen() {
+pub unsafe fn DoWaldaNamingScreen() {
     let buffer = (&raw mut gStringVar2).cast::<u8>();
     let _ = unsafe { StringCopy(buffer, GetWaldaPhrasePtr()) };
     unsafe {
@@ -251,7 +303,7 @@ unsafe fn walda_phrase_input_case(input: *mut u8) -> u16 {
     PHRASE_CHANGED
 }
 
-unsafe extern "C" fn cb2_handle_given_walda_phrase() {
+unsafe fn cb2_handle_given_walda_phrase() {
     let buffer = (&raw mut gStringVar2).cast::<u8>();
     let mut case = unsafe { walda_phrase_input_case(buffer) };
 
@@ -260,7 +312,12 @@ unsafe extern "C" fn cb2_handle_given_walda_phrase() {
             // Nothing typed: fall back to the default phrase only if there
             // is no saved one to keep.
             if unsafe { IsWaldaPhraseEmpty() } != 0 {
-                unsafe { SetWaldaPhrase(&raw const gText_Peekaboo) };
+                unsafe {
+                    SetWaldaPhrase(
+                        &raw const (*(&raw const crate::data::strings::gText_Peekaboo)
+                            .cast::<u8>()),
+                    )
+                };
             } else {
                 case = PHRASE_NO_CHANGE;
             }
@@ -271,13 +328,25 @@ unsafe extern "C" fn cb2_handle_given_walda_phrase() {
     unsafe { (&raw mut gSpecialVar_0x8004).write_volatile(case) };
 
     let _ = unsafe { StringCopy((&raw mut gStringVar1).cast::<u8>(), GetWaldaPhrasePtr()) };
-    unsafe { (&raw mut gFieldCallback).write(Some(FieldCB_ContinueScriptHandleMusic)) };
+    unsafe {
+        (&raw mut (*(&raw const crate::overworld::gFieldCallback)
+            .cast::<Option<MainCallback>>()
+            .cast_mut()))
+            .write(Some(FieldCB_ContinueScriptHandleMusic))
+    };
     unsafe { SetMainCallback2(CB2_ReturnToField) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryGetWallpaperWithWaldaPhrase() -> u16 {
-    let trainer_id = unsafe { GetTrainerId(gSaveBlock2Ptr.add(SAVE2_TRAINER_ID)) };
+pub unsafe fn TryGetWallpaperWithWaldaPhrase() -> u16 {
+    let trainer_id = unsafe {
+        GetTrainerId(
+            (*(&raw const crate::load_save::gSaveBlock2Ptr)
+                .cast::<*mut u8>()
+                .cast_mut())
+            .add(SAVE2_TRAINER_ID),
+        )
+    };
     let result = unsafe { try_calculate_wallpaper(trainer_id, GetWaldaPhrasePtr()) };
 
     let success = u16::from(result.is_some());

@@ -1,6 +1,7 @@
 //! The Mauville trader: four decorations offered for swap, each remembering
 //! who last traded it in.
 
+use crate::decoration::gCurDecorationItems;
 use crate::decoration_inventory::{
     DecorationAdd, DecorationRemove, GetFirstEmptyDecorSlot, GetNumOwnedDecorationsInCategory,
 };
@@ -49,35 +50,69 @@ const DECORATION_CATEGORY: usize = 19;
 /// The window id lives in task data slot 3.
 const T_WINDOW_ID: usize = 3;
 
-unsafe extern "C" {
-    static mut gSaveBlock1Ptr: *mut u8;
-    static mut gSaveBlock2Ptr: *mut u8;
-    static mut gCurDecorationItems: *mut u8;
-    static mut gCurDecorationIndex: u8;
-    static gDecorations: u8;
-
-    static gText_Tristan: u8;
-    static gText_Philip: u8;
-    static gText_Dennis: u8;
-    static gText_Roberto: u8;
-    static gText_Exit: u8;
-    static gText_FiveMarks: u8;
-
-    fn GetStringWidth(font_id: u8, string: *const u8, letter_spacing: i16) -> i32;
-    fn ConvertPixelWidthToTileWidth(width: c_int) -> c_int;
-    fn InitMenuInUpperLeftCornerNormal(window_id: u8, item_count: u8, initial_cursor: u8) -> u8;
-    fn Menu_ProcessInput() -> i8;
-    fn ScheduleBgCopyTilemapToVram(bg_id: u8);
-    fn ScriptContext_Enable();
-    fn CopyDecorationCategoryName(dest: *mut u8, category: u8);
-    fn ShowDecorationCategoriesWindow(task_id: u8);
-    fn IsSelectedDecorInThePC() -> u8;
+/// `GetStringWidth` with this module's view of its types.
+#[inline]
+unsafe fn GetStringWidth(a0: u8, a1: *const u8, a2: i16) -> i32 {
+    unsafe { crate::text::GetStringWidth(a0, a1 as _, a2) }
+}
+/// `ConvertPixelWidthToTileWidth` with this module's view of its types.
+#[inline]
+unsafe fn ConvertPixelWidthToTileWidth(a0: c_int) -> c_int {
+    unsafe { crate::script_menu::ConvertPixelWidthToTileWidth(a0) }
+}
+/// `InitMenuInUpperLeftCornerNormal` with this module's view of its types.
+#[inline]
+unsafe fn InitMenuInUpperLeftCornerNormal(a0: u8, a1: u8, a2: u8) -> u8 {
+    unsafe { crate::menu::InitMenuInUpperLeftCornerNormal(a0, a1, a2) }
+}
+/// `Menu_ProcessInput` with this module's view of its types.
+#[inline]
+unsafe fn Menu_ProcessInput() -> i8 {
+    unsafe { crate::menu::Menu_ProcessInput() }
+}
+/// `ScheduleBgCopyTilemapToVram` with this module's view of its types.
+#[inline]
+unsafe fn ScheduleBgCopyTilemapToVram(a0: u8) {
+    unsafe {
+        crate::menu::ScheduleBgCopyTilemapToVram(a0);
+    }
+}
+/// `ScriptContext_Enable` with this module's view of its types.
+#[inline]
+unsafe fn ScriptContext_Enable() {
+    unsafe {
+        crate::script::ScriptContext_Enable();
+    }
+}
+/// `CopyDecorationCategoryName` with this module's view of its types.
+#[inline]
+unsafe fn CopyDecorationCategoryName(a0: *mut u8, a1: u8) {
+    unsafe {
+        crate::decoration::CopyDecorationCategoryName(a0 as _, a1);
+    }
+}
+/// `ShowDecorationCategoriesWindow` with this module's view of its types.
+#[inline]
+unsafe fn ShowDecorationCategoriesWindow(a0: u8) {
+    unsafe {
+        crate::decoration::ShowDecorationCategoriesWindow(a0);
+    }
+}
+/// `IsSelectedDecorInThePC` with this module's view of its types.
+#[inline]
+unsafe fn IsSelectedDecorInThePC() -> u8 {
+    unsafe { crate::decoration::IsSelectedDecorInThePC() }
 }
 
 /// `&gSaveBlock1Ptr->oldMan.trader`
 #[inline]
 unsafe fn trader() -> *mut u8 {
-    unsafe { gSaveBlock1Ptr.add(SAVE1_TRADER_OFFSET) }
+    unsafe {
+        (*(&raw const crate::load_save::gSaveBlock1Ptr)
+            .cast::<*mut u8>()
+            .cast_mut())
+        .add(SAVE1_TRADER_OFFSET)
+    }
 }
 
 #[inline]
@@ -93,7 +128,10 @@ unsafe fn player_name(index: usize) -> *mut u8 {
 /// `&gDecorations[id]`
 #[inline]
 unsafe fn decoration(id: u16) -> *const u8 {
-    unsafe { (&raw const gDecorations).add(id as usize * DECORATION_STRIDE) }
+    unsafe {
+        (&raw const (*(&raw const crate::data::decoration::gDecorations).cast::<u8>()))
+            .add(id as usize * DECORATION_STRIDE)
+    }
 }
 
 #[inline]
@@ -113,16 +151,16 @@ unsafe fn window_id(task_id: u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TraderSetup() {
+pub unsafe fn TraderSetup() {
     let trader = unsafe { trader() };
     unsafe { trader.add(TRADER_ID).write_volatile(MAUVILLE_MAN_TRADER) };
     unsafe { trader.add(TRADER_ALREADY_TRADED).write_volatile(0) };
 
     let names = [
-        &raw const gText_Tristan,
-        &raw const gText_Philip,
-        &raw const gText_Dennis,
-        &raw const gText_Roberto,
+        &raw const (*(&raw const crate::data::strings::gText_Tristan).cast::<u8>()),
+        &raw const (*(&raw const crate::data::strings::gText_Philip).cast::<u8>()),
+        &raw const (*(&raw const crate::data::strings::gText_Dennis).cast::<u8>()),
+        &raw const (*(&raw const crate::data::strings::gText_Roberto).cast::<u8>()),
     ];
     let decorations = [
         DECOR_DUSKULL_DOLL,
@@ -147,12 +185,12 @@ pub unsafe extern "C" fn TraderSetup() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Trader_ResetFlag() {
+pub unsafe fn Trader_ResetFlag() {
     unsafe { trader().add(TRADER_ALREADY_TRADED).write_volatile(0) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateAvailableDecorationsMenu(task_id: u8) {
+pub unsafe fn CreateAvailableDecorationsMenu(task_id: u8) {
     let mut template = WindowTemplate {
         bg: 0,
         tilemap_left: 1,
@@ -164,8 +202,20 @@ pub unsafe extern "C" fn CreateAvailableDecorationsMenu(task_id: u8) {
     };
 
     // The window is only as wide as its widest entry.
-    let five_marks_width = unsafe { GetStringWidth(FONT_NORMAL, &raw const gText_FiveMarks, 0) };
-    let mut widest = unsafe { GetStringWidth(FONT_NORMAL, &raw const gText_Exit, 0) };
+    let five_marks_width = unsafe {
+        GetStringWidth(
+            FONT_NORMAL,
+            &raw const (*(&raw const crate::data::strings::gText_FiveMarks).cast::<u8>()),
+            0,
+        )
+    };
+    let mut widest = unsafe {
+        GetStringWidth(
+            FONT_NORMAL,
+            &raw const (*(&raw const crate::data::strings::gText_Exit).cast::<u8>()),
+            0,
+        )
+    };
     for i in 0..NUM_TRADER_ITEMS {
         let id = u16::from(unsafe { trader_decoration(i) });
         let width = if id > NUM_DECORATIONS {
@@ -187,7 +237,7 @@ pub unsafe extern "C" fn CreateAvailableDecorationsMenu(task_id: u8) {
         let id = u16::from(unsafe { trader_decoration(i) });
         // An id past the table means the slot has never been traded into.
         let text = if id > NUM_DECORATIONS {
-            &raw const gText_FiveMarks
+            &raw const (*(&raw const crate::data::strings::gText_FiveMarks).cast::<u8>())
         } else {
             unsafe { decoration_name(id) }
         };
@@ -207,7 +257,7 @@ pub unsafe extern "C" fn CreateAvailableDecorationsMenu(task_id: u8) {
         AddTextPrinterParameterized(
             window,
             FONT_NORMAL,
-            &raw const gText_Exit,
+            &raw const (*(&raw const crate::data::strings::gText_Exit).cast::<u8>()),
             8,
             (16 * NUM_TRADER_ITEMS + 1) as u8,
             TEXT_SKIP_DRAW,
@@ -220,7 +270,7 @@ pub unsafe extern "C" fn CreateAvailableDecorationsMenu(task_id: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Task_BufferDecorSelectionAndCloseWindow(task_id: u8, decoration_id: u8) {
+pub unsafe fn Task_BufferDecorSelectionAndCloseWindow(task_id: u8, decoration_id: u8) {
     let selected = if u16::from(decoration_id) > NUM_DECORATIONS {
         0xffff
     } else {
@@ -238,7 +288,7 @@ pub unsafe extern "C" fn Task_BufferDecorSelectionAndCloseWindow(task_id: u8, de
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Task_HandleGetDecorationMenuInput(task_id: u8) {
+pub unsafe fn Task_HandleGetDecorationMenuInput(task_id: u8) {
     let input = unsafe { Menu_ProcessInput() };
 
     if input == MENU_NOTHING_CHOSEN {
@@ -262,15 +312,15 @@ pub unsafe extern "C" fn Task_HandleGetDecorationMenuInput(task_id: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetTraderTradedFlag() {
+pub unsafe fn GetTraderTradedFlag() {
     let traded = unsafe { trader().add(TRADER_ALREADY_TRADED).read_volatile() };
     unsafe { (&raw mut gSpecialVar_Result).write_volatile(u16::from(traded)) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoesPlayerHaveNoDecorations() {
+pub unsafe fn DoesPlayerHaveNoDecorations() {
     for category in 0..DECORCAT_COUNT {
-        if unsafe { GetNumOwnedDecorationsInCategory(category) } != 0 {
+        if GetNumOwnedDecorationsInCategory(category) != 0 {
             unsafe { (&raw mut gSpecialVar_Result).write_volatile(0) };
             return;
         }
@@ -279,7 +329,7 @@ pub unsafe extern "C" fn DoesPlayerHaveNoDecorations() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsDecorationCategoryFull() {
+pub unsafe fn IsDecorationCategoryFull() {
     unsafe { (&raw mut gSpecialVar_Result).write_volatile(0) };
 
     let offered = unsafe { (&raw const gSpecialVar_0x8004).read_volatile() };
@@ -289,7 +339,7 @@ pub unsafe extern "C" fn IsDecorationCategoryFull() {
     // Only a problem when the trade would move the decoration into a
     // different, already full category.
     if offered_category != unsafe { decoration_category(owned) }
-        && unsafe { GetFirstEmptyDecorSlot(offered_category) } == -1
+        && GetFirstEmptyDecorSlot(offered_category) == -1
     {
         unsafe {
             CopyDecorationCategoryName((&raw mut gStringVar2).cast::<u8>(), offered_category)
@@ -299,15 +349,18 @@ pub unsafe extern "C" fn IsDecorationCategoryFull() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TraderShowDecorationMenu() {
+pub unsafe fn TraderShowDecorationMenu() {
     let callback: TaskFunc = ShowDecorationCategoriesWindow;
     unsafe { CreateTask(callback, 0) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DecorationItemsMenuAction_Trade(task_id: u8) {
+pub unsafe fn DecorationItemsMenuAction_Trade(task_id: u8) {
     if unsafe { IsSelectedDecorInThePC() } == 1 {
-        let index = unsafe { (&raw const gCurDecorationIndex).read_volatile() } as usize;
+        let index = unsafe {
+            (&raw const (*crate::decoration::gCurDecorationIndex.as_ptr().cast::<u8>()))
+                .read_volatile()
+        } as usize;
         let owned = unsafe { gCurDecorationItems.add(index).read_volatile() };
         unsafe { (&raw mut gSpecialVar_0x8006).write_volatile(u16::from(owned)) };
 
@@ -333,24 +386,31 @@ pub unsafe extern "C" fn DecorationItemsMenuAction_Trade(task_id: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ExitTraderMenu(task_id: u8) {
+pub unsafe fn ExitTraderMenu(task_id: u8) {
     unsafe { (&raw mut gSpecialVar_0x8006).write_volatile(0) };
     unsafe { DestroyTask(task_id) };
     unsafe { ScriptContext_Enable() };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TraderDoDecorationTrade() {
+pub unsafe fn TraderDoDecorationTrade() {
     let offered = unsafe { (&raw const gSpecialVar_0x8004).read_volatile() };
     let owned = unsafe { (&raw const gSpecialVar_0x8006).read_volatile() };
     let slot = unsafe { (&raw const gSpecialVar_0x8005).read_volatile() } as usize;
 
-    let _ = unsafe { DecorationRemove(owned as u8) };
-    let _ = unsafe { DecorationAdd(offered as u8) };
+    let _ = DecorationRemove(owned as u8);
+    let _ = DecorationAdd(offered as u8);
 
     // The trader now remembers the player as the previous owner.
     let trader = unsafe { trader() };
-    let _ = unsafe { StringCopy(player_name(slot), gSaveBlock2Ptr) };
+    let _ = unsafe {
+        StringCopy(
+            player_name(slot),
+            *(&raw const crate::load_save::gSaveBlock2Ptr)
+                .cast::<*mut u8>()
+                .cast_mut(),
+        )
+    };
     unsafe {
         trader
             .add(TRADER_DECORATIONS + slot)
@@ -365,7 +425,7 @@ pub unsafe extern "C" fn TraderDoDecorationTrade() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TraderMenuGetDecoration() {
+pub unsafe fn TraderMenuGetDecoration() {
     let task_id = unsafe { CreateTask(Task_HandleGetDecorationMenuInput, 0) };
     unsafe { CreateAvailableDecorationsMenu(task_id) };
 }

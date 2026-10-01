@@ -55,21 +55,18 @@ const SB1_LOCATION_MAP_GROUP: usize = 4;
 const SB1_LOCATION_MAP_NUM: usize = 5;
 const MAP_HEADER_MAP_SCRIPTS: usize = 8;
 
-type ScrCmdFunc = unsafe extern "C" fn(*mut u8) -> u8;
+type ScrCmdFunc = unsafe fn(*mut u8) -> u8;
 
-static mut GLOBAL_STATUS: u8 = 0;
+static GLOBAL_STATUS: crate::global::Global<u8> = crate::global::Global::new(0);
 static mut GLOBAL_CONTEXT: crate::ffi::Align4<[u8; CTX_SIZE]> = crate::ffi::Align4([0; CTX_SIZE]);
 static mut IMMEDIATE_CONTEXT: crate::ffi::Align4<[u8; CTX_SIZE]> =
     crate::ffi::Align4([0; CTX_SIZE]);
-static mut LOCK_FIELD_CONTROLS: u8 = 0;
+static LOCK_FIELD_CONTROLS: crate::global::Global<u8> = crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static mut gRamScriptRetAddr: *const u8;
-    static gNullScriptPtr: *const u8;
-    static gScriptCmdTable: u8;
-    static gScriptCmdTableEnd: u8;
-    static gMapHeader: u8;
-    fn ValidateSavedWonderCard() -> u32;
+/// `ValidateSavedWonderCard` with this module's view of its types.
+#[inline]
+unsafe fn ValidateSavedWonderCard() -> u32 {
+    unsafe { crate::mystery_gift::ValidateSavedWonderCard() }
 }
 
 #[inline]
@@ -89,15 +86,11 @@ unsafe fn script_ptr(ctx: *mut u8) -> *mut *const u8 {
 
 #[inline]
 fn set_global_status(status: u8) {
-    unsafe { (&raw mut GLOBAL_STATUS).write(status) };
+    unsafe { (GLOBAL_STATUS.as_ptr()).write(status) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitScriptContext(
-    ctx: *mut u8,
-    cmd_table: *const u8,
-    cmd_table_end: *const u8,
-) {
+pub unsafe fn InitScriptContext(ctx: *mut u8, cmd_table: *const u8, cmd_table_end: *const u8) {
     unsafe {
         ctx.add(CTX_MODE).write(SCRIPT_MODE_STOPPED);
         script_ptr(ctx).write(core::ptr::null());
@@ -115,27 +108,24 @@ pub unsafe extern "C" fn InitScriptContext(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetupBytecodeScript(ctx: *mut u8, ptr: *const u8) -> u8 {
+pub unsafe fn SetupBytecodeScript(ctx: *mut u8, ptr: *const u8) -> u8 {
     unsafe { script_ptr(ctx).write(ptr) };
     unsafe { ctx.add(CTX_MODE).write(SCRIPT_MODE_BYTECODE) };
     1
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetupNativeScript(
-    ctx: *mut u8,
-    ptr: Option<unsafe extern "C" fn() -> u8>,
-) {
+pub unsafe fn SetupNativeScript(ctx: *mut u8, ptr: Option<unsafe fn() -> u8>) {
     unsafe { ctx.add(CTX_MODE).write(SCRIPT_MODE_NATIVE) };
     unsafe {
         ctx.add(CTX_NATIVE_PTR)
-            .cast::<Option<unsafe extern "C" fn() -> u8>>()
+            .cast::<Option<unsafe fn() -> u8>>()
             .write(ptr)
     };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StopScript(ctx: *mut u8) {
+pub unsafe fn StopScript(ctx: *mut u8) {
     unsafe { ctx.add(CTX_MODE).write(SCRIPT_MODE_STOPPED) };
     unsafe { script_ptr(ctx).write(core::ptr::null()) };
 }
@@ -143,7 +133,7 @@ pub unsafe extern "C" fn StopScript(ctx: *mut u8) {
 /// Runs commands until one asks to yield. Returns FALSE once the script has
 /// stopped.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunScriptCommand(ctx: *mut u8) -> u8 {
+pub unsafe fn RunScriptCommand(ctx: *mut u8) -> u8 {
     match unsafe { ctx.add(CTX_MODE).read() } {
         SCRIPT_MODE_STOPPED => return 0,
         SCRIPT_MODE_NATIVE => {
@@ -151,7 +141,7 @@ pub unsafe extern "C" fn RunScriptCommand(ctx: *mut u8) -> u8 {
             // the missing function) says so.
             let native = unsafe {
                 ctx.add(CTX_NATIVE_PTR)
-                    .cast::<Option<unsafe extern "C" fn() -> u8>>()
+                    .cast::<Option<unsafe fn() -> u8>>()
                     .read()
             };
             if let Some(native) = native {
@@ -172,7 +162,12 @@ pub unsafe extern "C" fn RunScriptCommand(ctx: *mut u8) -> u8 {
             unsafe { ctx.add(CTX_MODE).write(SCRIPT_MODE_STOPPED) };
             return 0;
         }
-        if ptr == unsafe { (&raw const gNullScriptPtr).read() } {
+        if ptr
+            == unsafe {
+                (&raw const (*(&raw const crate::data::scrcmd::gNullScriptPtr).cast::<*const u8>()))
+                    .read()
+            }
+        {
             loop {
                 halt();
             }
@@ -233,18 +228,18 @@ unsafe fn script_pop(ctx: *mut u8) -> *const u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptJump(ctx: *mut u8, ptr: *const u8) {
+pub unsafe fn ScriptJump(ctx: *mut u8, ptr: *const u8) {
     unsafe { script_ptr(ctx).write(ptr) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptCall(ctx: *mut u8, ptr: *const u8) {
+pub unsafe fn ScriptCall(ctx: *mut u8, ptr: *const u8) {
     unsafe { script_push(ctx, script_ptr(ctx).read()) };
     unsafe { script_ptr(ctx).write(ptr) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptReturn(ctx: *mut u8) {
+pub unsafe fn ScriptReturn(ctx: *mut u8) {
     let ptr = unsafe { script_pop(ctx) };
     unsafe { script_ptr(ctx).write(ptr) };
 }
@@ -257,14 +252,14 @@ unsafe fn read_byte(ctx: *mut u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptReadHalfword(ctx: *mut u8) -> u16 {
+pub unsafe fn ScriptReadHalfword(ctx: *mut u8) -> u16 {
     let low = u16::from(unsafe { read_byte(ctx) });
     let high = u16::from(unsafe { read_byte(ctx) });
     low | (high << 8)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptReadWord(ctx: *mut u8) -> u32 {
+pub unsafe fn ScriptReadWord(ctx: *mut u8) -> u32 {
     let bytes = unsafe {
         [
             read_byte(ctx),
@@ -277,32 +272,32 @@ pub unsafe extern "C" fn ScriptReadWord(ctx: *mut u8) -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LockPlayerFieldControls() {
-    unsafe { (&raw mut LOCK_FIELD_CONTROLS).write(1) };
+pub unsafe fn LockPlayerFieldControls() {
+    unsafe { (LOCK_FIELD_CONTROLS.as_ptr()).write(1) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UnlockPlayerFieldControls() {
-    unsafe { (&raw mut LOCK_FIELD_CONTROLS).write(0) };
+pub unsafe fn UnlockPlayerFieldControls() {
+    unsafe { (LOCK_FIELD_CONTROLS.as_ptr()).write(0) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ArePlayerFieldControlsLocked() -> u8 {
-    unsafe { (&raw const LOCK_FIELD_CONTROLS).read() }
+pub unsafe fn ArePlayerFieldControlsLocked() -> u8 {
+    unsafe { (LOCK_FIELD_CONTROLS.as_ptr().cast_const()).read() }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptContext_IsEnabled() -> u8 {
-    u8::from(unsafe { (&raw const GLOBAL_STATUS).read() } == CONTEXT_RUNNING)
+pub unsafe fn ScriptContext_IsEnabled() -> u8 {
+    u8::from(unsafe { (GLOBAL_STATUS.as_ptr().cast_const()).read() } == CONTEXT_RUNNING)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptContext_Init() {
+pub unsafe fn ScriptContext_Init() {
     unsafe {
         InitScriptContext(
             global_context(),
-            &raw const gScriptCmdTable,
-            &raw const gScriptCmdTableEnd,
+            &raw const (*crate::asmdata::gScriptCmdTable.cast::<u8>()),
+            &raw const (*crate::asmdata::gScriptCmdTableEnd.cast::<u8>()),
         )
     };
     set_global_status(CONTEXT_SHUTDOWN);
@@ -311,8 +306,8 @@ pub unsafe extern "C" fn ScriptContext_Init() {
 /// Runs the global script until it waits. Returns TRUE if there is more to
 /// run, FALSE when it finished or is waiting/shut down.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptContext_RunScript() -> u8 {
-    let status = unsafe { (&raw const GLOBAL_STATUS).read() };
+pub unsafe fn ScriptContext_RunScript() -> u8 {
+    let status = unsafe { (GLOBAL_STATUS.as_ptr().cast_const()).read() };
     if status == CONTEXT_SHUTDOWN || status == CONTEXT_WAITING {
         return 0;
     }
@@ -326,12 +321,12 @@ pub unsafe extern "C" fn ScriptContext_RunScript() -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptContext_SetupScript(ptr: *const u8) {
+pub unsafe fn ScriptContext_SetupScript(ptr: *const u8) {
     unsafe {
         InitScriptContext(
             global_context(),
-            &raw const gScriptCmdTable,
-            &raw const gScriptCmdTableEnd,
+            &raw const (*crate::asmdata::gScriptCmdTable.cast::<u8>()),
+            &raw const (*crate::asmdata::gScriptCmdTableEnd.cast::<u8>()),
         )
     };
     unsafe { SetupBytecodeScript(global_context(), ptr) };
@@ -340,25 +335,25 @@ pub unsafe extern "C" fn ScriptContext_SetupScript(ptr: *const u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptContext_Stop() {
+pub unsafe fn ScriptContext_Stop() {
     set_global_status(CONTEXT_WAITING);
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptContext_Enable() {
+pub unsafe fn ScriptContext_Enable() {
     set_global_status(CONTEXT_RUNNING);
     unsafe { LockPlayerFieldControls() };
 }
 
 /// Runs a script to completion in its own context (map header scripts).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunScriptImmediately(ptr: *const u8) {
+pub unsafe fn RunScriptImmediately(ptr: *const u8) {
     let ctx = immediate_context();
     unsafe {
         InitScriptContext(
             ctx,
-            &raw const gScriptCmdTable,
-            &raw const gScriptCmdTableEnd,
+            &raw const (*crate::asmdata::gScriptCmdTable.cast::<u8>()),
+            &raw const (*crate::asmdata::gScriptCmdTableEnd.cast::<u8>()),
         )
     };
     unsafe { SetupBytecodeScript(ctx, ptr) };
@@ -372,9 +367,9 @@ unsafe fn read_unaligned_ptr(ptr: *const u8) -> *mut u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MapHeaderGetScriptTable(tag: u8) -> *mut u8 {
+pub unsafe fn MapHeaderGetScriptTable(tag: u8) -> *mut u8 {
     let mut scripts = unsafe {
-        (&raw const gMapHeader)
+        (&raw const (*(&raw const crate::fieldmap::gMapHeader).cast::<u8>()))
             .add(MAP_HEADER_MAP_SCRIPTS)
             .cast::<*const u8>()
             .read()
@@ -395,7 +390,7 @@ pub unsafe extern "C" fn MapHeaderGetScriptTable(tag: u8) -> *mut u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MapHeaderRunScriptType(tag: u8) {
+pub unsafe fn MapHeaderRunScriptType(tag: u8) {
     let ptr = unsafe { MapHeaderGetScriptTable(tag) };
     if !ptr.is_null() {
         unsafe { RunScriptImmediately(ptr) };
@@ -404,7 +399,7 @@ pub unsafe extern "C" fn MapHeaderRunScriptType(tag: u8) {
 
 /// Finds the first entry of a frame/warp table whose two vars are equal.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MapHeaderCheckScriptTable(tag: u8) -> *mut u8 {
+pub unsafe fn MapHeaderCheckScriptTable(tag: u8) -> *mut u8 {
     let mut ptr = unsafe { MapHeaderGetScriptTable(tag) }.cast_const();
     if ptr.is_null() {
         return core::ptr::null_mut();
@@ -423,32 +418,32 @@ pub unsafe extern "C" fn MapHeaderCheckScriptTable(tag: u8) -> *mut u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunOnLoadMapScript() {
+pub unsafe fn RunOnLoadMapScript() {
     unsafe { MapHeaderRunScriptType(MAP_SCRIPT_ON_LOAD) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunOnTransitionMapScript() {
+pub unsafe fn RunOnTransitionMapScript() {
     unsafe { MapHeaderRunScriptType(MAP_SCRIPT_ON_TRANSITION) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunOnResumeMapScript() {
+pub unsafe fn RunOnResumeMapScript() {
     unsafe { MapHeaderRunScriptType(MAP_SCRIPT_ON_RESUME) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunOnReturnToFieldMapScript() {
+pub unsafe fn RunOnReturnToFieldMapScript() {
     unsafe { MapHeaderRunScriptType(MAP_SCRIPT_ON_RETURN_TO_FIELD) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunOnDiveWarpMapScript() {
+pub unsafe fn RunOnDiveWarpMapScript() {
     unsafe { MapHeaderRunScriptType(MAP_SCRIPT_ON_DIVE_WARP) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryRunOnFrameMapScript() -> u8 {
+pub unsafe fn TryRunOnFrameMapScript() -> u8 {
     let ptr = unsafe { MapHeaderCheckScriptTable(MAP_SCRIPT_ON_FRAME_TABLE) };
     if ptr.is_null() {
         return 0;
@@ -458,7 +453,7 @@ pub unsafe extern "C" fn TryRunOnFrameMapScript() -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryRunOnWarpIntoMapScript() {
+pub unsafe fn TryRunOnWarpIntoMapScript() {
     let ptr = unsafe { MapHeaderCheckScriptTable(MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE) };
     if !ptr.is_null() {
         unsafe { RunScriptImmediately(ptr) };
@@ -467,7 +462,12 @@ pub unsafe extern "C" fn TryRunOnWarpIntoMapScript() {
 
 #[inline]
 unsafe fn ram_script() -> *mut u8 {
-    unsafe { (&raw const gSaveBlock1Ptr).read().add(SB1_RAM_SCRIPT) }
+    unsafe {
+        (&raw const gSaveBlock1Ptr)
+            .read()
+            .cast::<u8>()
+            .add(SB1_RAM_SCRIPT)
+    }
 }
 
 #[inline]
@@ -481,17 +481,17 @@ unsafe fn stored_checksum() -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CalculateRamScriptChecksum() -> u32 {
+pub unsafe fn CalculateRamScriptChecksum() -> u32 {
     u32::from(unsafe { CalcCRC16WithTable(ram_script_data(), RAM_SCRIPT_DATA_SIZE) })
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearRamScript() {
+pub unsafe fn ClearRamScript() {
     unsafe { ram_script().write_bytes(0, RAM_SCRIPT_SIZE) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitRamScript(
+pub unsafe fn InitRamScript(
     script: *const u8,
     script_size: u16,
     map_group: u8,
@@ -519,10 +519,15 @@ pub unsafe extern "C" fn InitRamScript(
 /// Replaces an object's script with the installed RAM script, if one is
 /// installed for this map and object and its checksum holds.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRamScript(local_id: u8, script: *const u8) -> *const u8 {
-    unsafe { (&raw mut gRamScriptRetAddr).write(core::ptr::null()) };
+pub unsafe fn GetRamScript(local_id: u8, script: *const u8) -> *const u8 {
+    unsafe {
+        (&raw mut (*(&raw const crate::scrcmd::gRamScriptRetAddr)
+            .cast::<*const u8>()
+            .cast_mut()))
+            .write(core::ptr::null())
+    };
     let data = unsafe { ram_script_data() };
-    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read() };
+    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read().cast::<u8>() };
     let matches = unsafe {
         data.add(DATA_MAGIC).read() == RAM_SCRIPT_MAGIC
             && data.add(DATA_MAP_GROUP).read() == sb1.add(SB1_LOCATION_MAP_GROUP).read()
@@ -536,7 +541,12 @@ pub unsafe extern "C" fn GetRamScript(local_id: u8, script: *const u8) -> *const
         unsafe { ClearRamScript() };
         return script;
     }
-    unsafe { (&raw mut gRamScriptRetAddr).write(script) };
+    unsafe {
+        (&raw mut (*(&raw const crate::scrcmd::gRamScriptRetAddr)
+            .cast::<*const u8>()
+            .cast_mut()))
+            .write(script)
+    };
     unsafe { data.add(DATA_SCRIPT) }
 }
 
@@ -550,7 +560,7 @@ unsafe fn is_unbound_ram_script(data: *const u8) -> bool {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ValidateSavedRamScript() -> u32 {
+pub unsafe fn ValidateSavedRamScript() -> u32 {
     let data = unsafe { ram_script_data() };
     let valid = unsafe { is_unbound_ram_script(data) }
         && unsafe { CalculateRamScriptChecksum() } == unsafe { stored_checksum() };
@@ -558,7 +568,7 @@ pub unsafe extern "C" fn ValidateSavedRamScript() -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSavedRamScriptIfValid() -> *mut u8 {
+pub unsafe fn GetSavedRamScriptIfValid() -> *mut u8 {
     let data = unsafe { ram_script_data() };
     if unsafe { ValidateSavedWonderCard() } == 0 || !unsafe { is_unbound_ram_script(data) } {
         return core::ptr::null_mut();
@@ -571,7 +581,7 @@ pub unsafe extern "C" fn GetSavedRamScriptIfValid() -> *mut u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitRamScript_NoObjectEvent(script: *const u8, script_size: u16) {
+pub unsafe fn InitRamScript_NoObjectEvent(script: *const u8, script_size: u16) {
     let size = script_size.min(RAM_SCRIPT_CAPACITY);
     unsafe {
         InitRamScript(

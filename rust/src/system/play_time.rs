@@ -1,158 +1,156 @@
-use core::ptr::{addr_of, addr_of_mut};
+//! The play time counter (was src/play_time.c).
+//!
+//! While it runs, the VBlank handler ticks the play time kept in the save
+//! (hours, minutes, seconds and frames) once a frame. It stops at 999:59:59.
 
-const STOPPED: u8 = 0;
-const RUNNING: u8 = 1;
-const MAXED_OUT: u8 = 2;
+use crate::global::Global;
+use crate::types::SaveBlock2;
 
-#[repr(C)]
-struct SaveBlock2TimePrefix {
-    player_name: [u8; 8],
-    player_gender: u8,
-    special_save_warp_flags: u8,
-    player_trainer_id: [u8; 4],
-    play_time_hours: u16,
-    play_time_minutes: u8,
-    play_time_seconds: u8,
-    play_time_vblanks: u8,
-}
+const MAX_HOURS: u16 = 999;
 
-unsafe extern "C" {
-    static mut gSaveBlock2Ptr: *mut SaveBlock2TimePrefix;
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+enum CounterState {
+    Stopped,
+    Running,
+    /// Reached 999:59:59 and won't move any more.
+    MaxedOut,
 }
 
 #[unsafe(link_section = ".bss")]
-static mut PLAY_TIME_COUNTER_STATE: u8 = STOPPED;
+static STATE: Global<CounterState> = Global::new(CounterState::Stopped);
 
-unsafe fn set_to_max(save: *mut SaveBlock2TimePrefix) {
-    unsafe { addr_of_mut!((*save).play_time_hours).write(999) };
-    unsafe { addr_of_mut!((*save).play_time_minutes).write(59) };
-    unsafe { addr_of_mut!((*save).play_time_seconds).write(59) };
-    unsafe { addr_of_mut!((*save).play_time_vblanks).write(59) };
+/// Advances the play time by one frame. Returns false when that goes past
+/// the maximum.
+fn tick(save: &mut SaveBlock2) -> bool {
+    save.playTimeVBlanks += 1;
+    if save.playTimeVBlanks < 60 {
+        return true;
+    }
+    save.playTimeVBlanks = 0;
+    save.playTimeSeconds += 1;
+    if save.playTimeSeconds < 60 {
+        return true;
+    }
+    save.playTimeSeconds = 0;
+    save.playTimeMinutes += 1;
+    if save.playTimeMinutes < 60 {
+        return true;
+    }
+    save.playTimeMinutes = 0;
+    save.playTimeHours += 1;
+    save.playTimeHours <= MAX_HOURS
 }
 
-unsafe fn update_counter(save: *mut SaveBlock2TimePrefix) {
-    let vblanks = unsafe { addr_of!((*save).play_time_vblanks).read() }.wrapping_add(1);
-    unsafe { addr_of_mut!((*save).play_time_vblanks).write(vblanks) };
-    if vblanks < 60 {
-        return;
-    }
+fn set_time(save: &mut SaveBlock2, hours: u16, minutes: u8, seconds: u8, vblanks: u8) {
+    save.playTimeHours = hours;
+    save.playTimeMinutes = minutes;
+    save.playTimeSeconds = seconds;
+    save.playTimeVBlanks = vblanks;
+}
 
-    unsafe { addr_of_mut!((*save).play_time_vblanks).write(0) };
-    let seconds = unsafe { addr_of!((*save).play_time_seconds).read() }.wrapping_add(1);
-    unsafe { addr_of_mut!((*save).play_time_seconds).write(seconds) };
-    if seconds < 60 {
-        return;
-    }
+/// Stops the counter and sets the time to 0:00:00.
+pub fn reset(save: &mut SaveBlock2) {
+    STATE.set(CounterState::Stopped);
+    set_time(save, 0, 0, 0, 0);
+}
 
-    unsafe { addr_of_mut!((*save).play_time_seconds).write(0) };
-    let minutes = unsafe { addr_of!((*save).play_time_minutes).read() }.wrapping_add(1);
-    unsafe { addr_of_mut!((*save).play_time_minutes).write(minutes) };
-    if minutes < 60 {
-        return;
+/// Starts counting (or pins the time at the maximum if it's already past).
+pub fn start(save: &mut SaveBlock2) {
+    STATE.set(CounterState::Running);
+    if save.playTimeHours > MAX_HOURS {
+        set_to_max(save);
     }
+}
 
-    unsafe { addr_of_mut!((*save).play_time_minutes).write(0) };
-    let hours = unsafe { addr_of!((*save).play_time_hours).read() }.wrapping_add(1);
-    unsafe { addr_of_mut!((*save).play_time_hours).write(hours) };
-    if hours > 999 {
-        unsafe { (&raw mut PLAY_TIME_COUNTER_STATE).write(MAXED_OUT) };
-        unsafe { set_to_max(save) };
+pub fn stop() {
+    STATE.set(CounterState::Stopped);
+}
+
+/// Counts one frame, if the counter is running.
+pub fn update(save: &mut SaveBlock2) {
+    if STATE.get() == CounterState::Running && !tick(save) {
+        set_to_max(save);
     }
+}
+
+/// Sets the time to 999:59:59 for good.
+pub fn set_to_max(save: &mut SaveBlock2) {
+    STATE.set(CounterState::MaxedOut);
+    set_time(save, MAX_HOURS, 59, 59, 59);
+}
+
+// ------------------------------------------------------------------ C names
+
+unsafe extern "C" {}
+
+/// # Safety
+/// The save blocks must be set up and not in use elsewhere meanwhile.
+unsafe fn save() -> &'static mut SaveBlock2 {
+    unsafe { crate::save_blocks::save_block2() }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayTimeCounter_Reset() {
-    unsafe { (&raw mut PLAY_TIME_COUNTER_STATE).write(STOPPED) };
-    let save = unsafe { gSaveBlock2Ptr };
-    unsafe { addr_of_mut!((*save).play_time_hours).write(0) };
-    unsafe { addr_of_mut!((*save).play_time_minutes).write(0) };
-    unsafe { addr_of_mut!((*save).play_time_seconds).write(0) };
-    unsafe { addr_of_mut!((*save).play_time_vblanks).write(0) };
+pub unsafe fn PlayTimeCounter_Reset() {
+    reset(unsafe { save() });
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayTimeCounter_Start() {
-    unsafe { (&raw mut PLAY_TIME_COUNTER_STATE).write(RUNNING) };
-    let save = unsafe { gSaveBlock2Ptr };
-    if unsafe { addr_of!((*save).play_time_hours).read() } > 999 {
-        unsafe { (&raw mut PLAY_TIME_COUNTER_STATE).write(MAXED_OUT) };
-        unsafe { set_to_max(save) };
-    }
+pub unsafe fn PlayTimeCounter_Start() {
+    start(unsafe { save() });
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayTimeCounter_Stop() {
-    unsafe { (&raw mut PLAY_TIME_COUNTER_STATE).write(STOPPED) };
+pub fn PlayTimeCounter_Stop() {
+    stop();
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayTimeCounter_Update() {
-    if unsafe { (&raw const PLAY_TIME_COUNTER_STATE).read() } != RUNNING {
-        return;
-    }
-    unsafe { update_counter(gSaveBlock2Ptr) };
+pub unsafe fn PlayTimeCounter_Update() {
+    update(unsafe { save() });
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayTimeCounter_SetToMax() {
-    unsafe { (&raw mut PLAY_TIME_COUNTER_STATE).write(MAXED_OUT) };
-    unsafe { set_to_max(gSaveBlock2Ptr) };
+pub unsafe fn PlayTimeCounter_SetToMax() {
+    set_to_max(unsafe { save() });
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn save(hours: u16, minutes: u8, seconds: u8, vblanks: u8) -> SaveBlock2TimePrefix {
-        SaveBlock2TimePrefix {
-            player_name: [0; 8],
-            player_gender: 0,
-            special_save_warp_flags: 0,
-            player_trainer_id: [0; 4],
-            play_time_hours: hours,
-            play_time_minutes: minutes,
-            play_time_seconds: seconds,
-            play_time_vblanks: vblanks,
-        }
+    fn save_at(hours: u16, minutes: u8, seconds: u8, vblanks: u8) -> SaveBlock2 {
+        // SAFETY: SaveBlock2 is plain data; all zeroes is a valid value.
+        let mut save: SaveBlock2 = unsafe { core::mem::zeroed() };
+        set_time(&mut save, hours, minutes, seconds, vblanks);
+        save
+    }
+
+    fn time(save: &SaveBlock2) -> (u16, u8, u8, u8) {
+        (
+            save.playTimeHours,
+            save.playTimeMinutes,
+            save.playTimeSeconds,
+            save.playTimeVBlanks,
+        )
     }
 
     #[test]
-    fn save_prefix_offsets_match_the_c_structure() {
-        assert_eq!(
-            core::mem::offset_of!(SaveBlock2TimePrefix, play_time_hours),
-            0x0e
-        );
-        assert_eq!(
-            core::mem::offset_of!(SaveBlock2TimePrefix, play_time_minutes),
-            0x10
-        );
-        assert_eq!(
-            core::mem::offset_of!(SaveBlock2TimePrefix, play_time_seconds),
-            0x11
-        );
-        assert_eq!(
-            core::mem::offset_of!(SaveBlock2TimePrefix, play_time_vblanks),
-            0x12
-        );
+    fn a_frame_carries_through_to_the_hours() {
+        let mut save = save_at(12, 59, 59, 59);
+        assert!(tick(&mut save));
+        assert_eq!(time(&save), (13, 0, 0, 0));
     }
 
     #[test]
-    fn update_carries_frames_through_hours() {
-        let mut value = save(12, 59, 59, 59);
-        unsafe { update_counter(&raw mut value) };
-        assert_eq!(value.play_time_hours, 13);
-        assert_eq!(value.play_time_minutes, 0);
-        assert_eq!(value.play_time_seconds, 0);
-        assert_eq!(value.play_time_vblanks, 0);
-    }
-
-    #[test]
-    fn maximum_time_is_saturated() {
-        let mut value = save(999, 59, 59, 59);
-        unsafe { update_counter(&raw mut value) };
-        assert_eq!(value.play_time_hours, 999);
-        assert_eq!(value.play_time_minutes, 59);
-        assert_eq!(value.play_time_seconds, 59);
-        assert_eq!(value.play_time_vblanks, 59);
+    fn the_time_stops_at_the_maximum() {
+        let mut save = save_at(999, 59, 59, 59);
+        STATE.set(CounterState::Running);
+        update(&mut save);
+        assert_eq!(time(&save), (999, 59, 59, 59));
+        assert!(STATE.get() == CounterState::MaxedOut);
+        // maxed out: no more counting
+        update(&mut save);
+        assert_eq!(time(&save), (999, 59, 59, 59));
     }
 }

@@ -3,37 +3,240 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::too_many_arguments,
+    clippy::type_complexity,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::apprentice::Apprentice_ScriptContext_Enable;
+use crate::battle_controller_player::CB2_SetUpReshowBattleScreenAfterMenu2;
+use crate::battle_pike::InBattlePike;
+use crate::battle_pyramid::CurrentBattlePyramidLocation;
+use crate::battle_pyramid_bag::GoToBattlePyramidBagMenu;
+use crate::berry_tag_screen::DoBerryTagScreen;
+use crate::bg::{
+    ChangeBgY_ScreenOff, FillBgTilemapBufferRect_Palette0, ResetBgsAndClearDma3BusyFlags, ShowBg,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_object_movement::FreezeObjectEvents;
+use crate::ffi::{gSpecialVar_0x8005, gSpecialVar_Result};
+use crate::field_player_avatar::{PlayerFreeze, StopPlayerAvatar, TestPlayerAvatarFlags};
+use crate::field_specials::InMultiPartnerRoom;
+use crate::gpu_regs::SetGpuReg;
+use crate::item::gBagPockets;
+use crate::item::{
+    AddBagItem, AddPCItem, BagGetItemIdByPocketPosition, BagGetQuantityByPocketPosition,
+    CheckBagHasItem, ClearItemSlots, CompactItemsInBagPocket, CopyItemName, GetItemBattleFunc,
+    GetItemBattleUsage, GetItemFieldFunc, GetItemImportance, GetItemPrice, GetItemType,
+    MoveItemSlotInList, RemoveBagItem, SortBerriesOrTMHMs,
+};
+use crate::item_menu_icons::{
+    AddBagItemIconSprite, AddBagVisualSprite, AddSwitchPocketRotatingBallSprite,
+    CreateItemMenuSwapLine, RemoveBagItemIconSprite, RemoveBagSprite, SetBagVisualPocketId,
+    SetItemMenuSwapLineInvisibility, ShakeBagSprite, UpdateItemMenuSwapLinePos,
+};
+use crate::item_use::ItemUseOutOfBattle_Berry;
+use crate::lilycove_lady::{
+    FieldCallback_FavorLadyEnableScriptContexts, FieldCallback_QuizLadyEnableScriptContexts,
+};
+use crate::list_menu::{
+    AddScrollIndicatorArrowPair, AddScrollIndicatorArrowPairParameterized, DestroyListMenuTask,
+    ListMenu_ProcessInput, ListMenuGetScrollAndRow, ListMenuGetYCoordForPrintingArrowCursor,
+    ListMenuInit, ListMenuSetTemplateField, RemoveScrollIndicatorArrowPair,
+    gMultiuseListMenuTemplate,
+};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::mail_data::ItemIsMail;
+use crate::map_name_popup::HideMapNamePopUpWindow;
+use crate::menu::{
+    AddTextPrinterParameterized4, BlitMenuInfoIcon, ChangeMenuGridCursorPosition,
+    ClearDialogWindowAndFrameToTransparent, ClearScheduledBgCopiesToVram,
+    ClearStdWindowAndFrameToTransparent, DecompressAndCopyTileDataToVram,
+    DoScheduledBgTilemapCopiesToVram, DrawStdFrameWithCustomTileAndPalette,
+    FreeTempTileDataBuffersIfPossible, GetPlayerTextSpeedDelay, InitMenuActionGrid,
+    InitMenuInUpperLeftCornerNormal, ListMenuLoadStdPalAt, Menu_GetCursorPos,
+    Menu_ProcessInputNoWrap, PrintMenuActionGrid, PrintMenuActionTexts, ResetTempTileDataBuffers,
+    ScheduleBgCopyTilemapToVram,
+};
+use crate::menu_helpers::{
+    AdjustQuantityAccordingToDPadInput, CreateYesNoMenuWithCallbacks,
+    DisplayMessageAndContinueTask, GetLRKeysPressed, IsHoldingItemAllowed, IsWritingMailAllowed,
+    LoadListMenuSwapLineGfx, MenuHelpers_IsLinkActive, MenuHelpers_ShouldWaitForLinkRecv,
+    ResetAllBgsCoordinates, ResetVramOamAndBgCntRegs, SetCursorScrollWithinListBounds,
+    SetCursorWithinListBounds, SetVBlankHBlankCallbacksToNull,
+};
+use crate::money::{
+    AddMoney, AddMoneyLabelObject, GetMoney, PrintMoneyAmount, PrintMoneyAmountInMoneyBox,
+    PrintMoneyAmountInMoneyBoxWithBorder, RemoveMoneyLabelObject,
+};
+use crate::overworld::{
+    CB2_ReturnToField, CB2_ReturnToFieldContinueScript, CB2_ReturnToFieldWithOpenMenu,
+    gFieldCallback,
+};
+use crate::palette::{
+    BeginNormalPaletteFade, BlendPalettes, LoadCompressedPalette, LoadPalette, ResetPaletteFade,
+    TransferPlttBuffer, UpdatePaletteFade, gPaletteFade,
+};
+use crate::party_menu::{CB2_ChooseMonToGiveItem, ItemIdToBattleMoveId};
+use crate::player_pc::CB2_PlayerPCExitBagMenu;
+use crate::pokemon::CalculatePlayerPartyCount;
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::script::LockPlayerFieldControls;
+use crate::shop::CB2_ExitSellMenu;
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData,
+};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar4};
+use crate::task::{DestroyTask, ResetTasks, RunTasks, SwitchTaskToFollowupFunc};
+use crate::task::{gTasks, task_func, task_set, task_set_func};
+use crate::text::{DeactivateAllTextPrinters, GetMenuCursorDimensionByFont};
+use crate::text_window::{LoadMessageBoxGfx, LoadUserWindowBorderGfx};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::union_room::InUnionRoom;
+use crate::window::{
+    ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect,
+    FreeAllWindowBuffers, GetWindowAttribute, PutWindowTilemap, RemoveWindow,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `BlitBitmapToWindow` with this module's view of its types.
+#[inline]
+unsafe fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16) {
+    unsafe {
+        crate::window::BlitBitmapToWindow(a0, a1 as _, a2, a3, a4, a5);
+    }
+}
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `GetStringCenterAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringCenterAlignXOffset(a0, a1 as _, a2) }
+}
+/// `GetStringRightAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringRightAlignXOffset(a0, a1 as _, a2) }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LZDecompressWram` with this module's view of its types.
+#[inline]
+unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::decompress::LZDecompressWram(a0 as _, a1 as _);
+    }
+}
+/// `LoadCompressedSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+    unsafe {
+        crate::decompress::LoadCompressedSpritePalette(a0 as _);
+    }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `ScriptContext_SetupScript` with this module's view of its types.
+#[inline]
+unsafe fn ScriptContext_SetupScript(a0: *mut u8) {
+    unsafe {
+        crate::script::ScriptContext_SetupScript(a0 as _);
+    }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SetTaskFuncWithFollowupFunc` with this module's view of its types.
+#[inline]
+unsafe fn SetTaskFuncWithFollowupFunc(
+    a0: u8,
+    a1: Option<unsafe fn(u8)>,
+    a2: Option<unsafe fn(u8)>,
+) {
+    unsafe {
+        crate::task::SetTaskFuncWithFollowupFunc(
+            a0,
+            core::mem::transmute(a1),
+            core::mem::transmute(a2),
+        );
+    }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringExpandPlaceholders(a0 as _, a1 as _) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const tListTaskId: usize = 0;
+const tNeverRead: usize = 3;
+const tUsingRegisteredKeyItem: usize = 3;
+const tItemCount: usize = 8;
 // Data tables (translate with cdata.py): sBgTemplates_ItemMenu sItemListMenu sItemMenuActions sContextMenuItems_ItemsPocket sContextMenuItems_KeyItemsPocket sContextMenuItems_BallsPocket sContextMenuItems_TmHmPocket sContextMenuItems_BerriesPocket sContextMenuItems_BattleUse sContextMenuItems_Give sContextMenuItems_Cancel sContextMenuItems_BerryBlenderCrush sContextMenuItems_Apprentice sContextMenuItems_FavorLady sContextMenuItems_QuizLady sContextMenuFuncs sYesNoTossFunctions sYesNoSellItemFunctions sBagScrollArrowsTemplate sRegisteredSelect_Gfx sFontColorTable sDefaultBagWindows sContextMenuWindowTemplates
 
 /// `struct ListBuffer1`
@@ -112,7 +315,7 @@ static sBagScrollArrowsTemplate: Table<ScrollArrowsTemplate> =
     Table((&raw const crate::data::item_menu::sBagScrollArrowsTemplate).cast());
 static sBgTemplates_ItemMenu: Table<CArray<BgTemplate, 3>> =
     Table((&raw const crate::data::item_menu::sBgTemplates_ItemMenu).cast());
-static sContextMenuFuncs: Table<CArray<Option<unsafe extern "C" fn(u8)>, 12>> =
+static sContextMenuFuncs: Table<CArray<Option<unsafe fn(u8)>, 12>> =
     Table((&raw const crate::data::item_menu::sContextMenuFuncs).cast());
 static sContextMenuItems_Apprentice: Table<CArray<u8, 2>> =
     Table((&raw const crate::data::item_menu::sContextMenuItems_Apprentice).cast());
@@ -155,10 +358,8 @@ static sYesNoSellItemFunctions: Table<YesNoFuncTable> =
 static sYesNoTossFunctions: Table<YesNoFuncTable> =
     Table((&raw const crate::data::item_menu::sYesNoTossFunctions).cast());
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBagMenu: *mut BagMenu = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBagPosition: BagPosition = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
@@ -171,315 +372,73 @@ pub static mut gSpecialVar_ItemId: u16 = 0;
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sTempWallyBag: *mut TempWallyBag = null_mut();
 
-unsafe extern "C" {
-    static EventScript_SelectWithoutRegisteredItem: CArray<u8, 0>;
-    static gBagFemaleSpriteSheet: CompressedSpriteSheet;
-    static gBagMaleSpriteSheet: CompressedSpriteSheet;
-    static gBagMenuHMIcon_Gfx: CArray<u8, 0>;
-    static gBagMenu_ReturnToStrings: CArray<*mut u8, 0>;
-    static gBagPaletteTable: CompressedSpritePalette;
-    static mut gBagPockets: CArray<BagPocket, 0>;
-    static gBagScreenFemale_Pal: CArray<u32, 0>;
-    static gBagScreenMale_Pal: CArray<u32, 0>;
-    static gBagScreen_Gfx: CArray<u32, 0>;
-    static gBagScreen_GfxTileMap: CArray<u32, 0>;
-    static gBattleMoves: CArray<BattleMove, 0>;
-    static mut gFieldCallback: Option<unsafe extern "C" fn()>;
-    static mut gMain: Main;
-    static gMoveNames: CArray<CArray<u8, 13>, 355>;
-    static mut gMultiuseListMenuTemplate: ListMenuTemplate;
-    static mut gPaletteFade: PaletteFadeControl;
-    static gPocketNamesStringsTable: CArray<*mut u8, 0>;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSpecialVar_0x8005: u16;
-    static mut gSpecialVar_Result: u16;
-    static mut gSprites: CArray<Sprite, 65>;
-    static gStandardMenuPalette: CArray<u16, 0>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_CantBuyKeyItem: CArray<u8, 0>;
-    static gText_CantStoreImportantItems: CArray<u8, 0>;
-    static gText_CantWriteMail: CArray<u8, 0>;
-    static gText_CloseBag: CArray<u8, 0>;
-    static gText_ConfirmTossItems: CArray<u8, 0>;
-    static gText_DepositHowManyVar1: CArray<u8, 0>;
-    static gText_DepositedVar2Var1s: CArray<u8, 0>;
-    static gText_HowManyToSell: CArray<u8, 0>;
-    static gText_ICanPayVar1: CArray<u8, 0>;
-    static gText_MoveVar1Where: CArray<u8, 0>;
-    static gText_NoPokemon: CArray<u8, 0>;
-    static gText_NoRoomForItems: CArray<u8, 0>;
-    static gText_NumberItem_HM: CArray<u8, 0>;
-    static gText_NumberItem_TMBerry: CArray<u8, 0>;
-    static gText_ReturnToVar1: CArray<u8, 0>;
-    static gText_SelectorArrow2: CArray<u8, 0>;
-    static gText_ThreeDashes: CArray<u8, 0>;
-    static gText_ThrewAwayVar2Var1s: CArray<u8, 0>;
-    static gText_TossHowManyVar1s: CArray<u8, 0>;
-    static gText_TurnedOverVar1ForVar2: CArray<u8, 0>;
-    static gText_Var1CantBeHeld: CArray<u8, 0>;
-    static gText_Var1CantBeHeldHere: CArray<u8, 0>;
-    static gText_Var1IsSelected: CArray<u8, 0>;
-    static gText_xVar1: CArray<u8, 0>;
-    fn AddBagItem(a0: u16, a1: u16) -> u8;
-    fn AddBagItemIconSprite(a0: u16, a1: u8);
-    fn AddBagVisualSprite(a0: u8);
-    fn AddMoney(a0: *mut u32, a1: u32);
-    fn AddMoneyLabelObject(a0: u16, a1: u16);
-    fn AddPCItem(a0: u16, a1: u16) -> u8;
-    fn AddScrollIndicatorArrowPair(a0: *mut ScrollArrowsTemplate, a1: *mut u16) -> u8;
-    fn AddScrollIndicatorArrowPairParameterized(
-        a0: u32,
-        a1: i32,
-        a2: i32,
-        a3: i32,
-        a4: i32,
-        a5: i32,
-        a6: i32,
-        a7: *mut u16,
-    ) -> u8;
-    fn AddSwitchPocketRotatingBallSprite(a0: i16);
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddTextPrinterParameterized4(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: i8,
-        a8: *mut u8,
-    );
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AdjustQuantityAccordingToDPadInput(a0: *mut i16, a1: u16) -> u8;
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn Apprentice_ScriptContext_Enable();
-    fn BagGetItemIdByPocketPosition(a0: u8, a1: u16) -> u16;
-    fn BagGetQuantityByPocketPosition(a0: u8, a1: u16) -> u16;
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn BlitMenuInfoIcon(a0: u8, a1: u8, a2: u16, a3: u16);
-    fn BuildOamBuffer();
-    fn CB2_ChooseMonToGiveItem();
-    fn CB2_ExitSellMenu();
-    fn CB2_PlayerPCExitBagMenu();
-    fn CB2_ReturnToField();
-    fn CB2_ReturnToFieldContinueScript();
-    fn CB2_ReturnToFieldWithOpenMenu();
-    fn CB2_SetUpReshowBattleScreenAfterMenu2();
-    fn CalculatePlayerPartyCount() -> u8;
-    fn ChangeBgY_ScreenOff(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeMenuGridCursorPosition(a0: i8, a1: i8) -> u8;
-    fn CheckBagHasItem(a0: u16, a1: u16) -> u8;
-    fn ClearDialogWindowAndFrameToTransparent(a0: u8, a1: u8);
-    fn ClearItemSlots(a0: *mut ItemSlot, a1: u8);
-    fn ClearScheduledBgCopiesToVram();
-    fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8);
-    fn ClearWindowTilemap(a0: u8);
-    fn CompactItemsInBagPocket(a0: *mut BagPocket);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyItemName(a0: u16, a1: *mut u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateItemMenuSwapLine();
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateYesNoMenuWithCallbacks(
-        a0: u8,
-        a1: *mut WindowTemplate,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u16,
-        a6: u8,
-        a7: *mut YesNoFuncTable,
-    );
-    fn CurrentBattlePyramidLocation() -> u8;
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DestroyListMenuTask(a0: u8, a1: *mut u16, a2: *mut u16);
-    fn DestroyTask(a0: u8);
-    fn DisplayMessageAndContinueTask(
-        a0: u8,
-        a1: u8,
-        a2: u16,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: *mut c_void,
-    );
-    fn DoBerryTagScreen();
-    fn DoScheduledBgTilemapCopiesToVram();
-    fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
-    fn FieldCallback_FavorLadyEnableScriptContexts();
-    fn FieldCallback_QuizLadyEnableScriptContexts();
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn FreezeObjectEvents();
-    fn GetItemBattleFunc(a0: u16) -> Option<unsafe extern "C" fn(u8)>;
-    fn GetItemBattleUsage(a0: u16) -> u8;
-    fn GetItemDescription(a0: u16) -> *mut u8;
-    fn GetItemFieldFunc(a0: u16) -> Option<unsafe extern "C" fn(u8)>;
-    fn GetItemImportance(a0: u16) -> u8;
-    fn GetItemPrice(a0: u16) -> u16;
-    fn GetItemType(a0: u16) -> u8;
-    fn GetLRKeysPressed() -> u8;
-    fn GetMenuCursorDimensionByFont(a0: u8, a1: u8) -> u8;
-    fn GetMoney(a0: *mut u32) -> u32;
-    fn GetPlayerTextSpeedDelay() -> u8;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetWindowAttribute(a0: u8, a1: u8) -> u32;
-    fn GoToBattlePyramidBagMenu(a0: u8, a1: Option<unsafe extern "C" fn()>);
-    fn HideMapNamePopUpWindow();
-    fn InBattlePike() -> u8;
-    fn InMultiPartnerRoom() -> u8;
-    fn InUnionRoom() -> u32;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitMenuActionGrid(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8) -> u8;
-    fn InitMenuInUpperLeftCornerNormal(a0: u8, a1: u8, a2: u8) -> u8;
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsHoldingItemAllowed(a0: u16) -> u8;
-    fn IsWritingMailAllowed(a0: u16) -> u8;
-    fn ItemIdToBattleMoveId(a0: u16) -> u16;
-    fn ItemIsMail(a0: u16) -> u8;
-    fn ItemUseOutOfBattle_Berry(a0: u8);
-    fn LZDecompressWram(a0: *mut u32, a1: *mut c_void);
-    fn ListMenuGetScrollAndRow(a0: u8, a1: *mut u16, a2: *mut u16);
-    fn ListMenuGetYCoordForPrintingArrowCursor(a0: u8) -> u16;
-    fn ListMenuInit(a0: *mut ListMenuTemplate, a1: u16, a2: u16) -> u8;
-    fn ListMenuLoadStdPalAt(a0: u8, a1: u8);
-    fn ListMenuSetTemplateField(a0: u8, a1: u8, a2: i32);
-    fn ListMenu_ProcessInput(a0: u8) -> i32;
-    fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette);
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadListMenuSwapLineGfx();
-    fn LoadMessageBoxGfx(a0: u8, a1: u16, a2: u8);
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn LockPlayerFieldControls();
-    fn MenuHelpers_IsLinkActive() -> u8;
-    fn MenuHelpers_ShouldWaitForLinkRecv() -> u8;
-    fn Menu_GetCursorPos() -> u8;
-    fn Menu_ProcessInputNoWrap() -> i8;
-    fn MoveItemSlotInList(a0: *mut ItemSlot, a1: u32, a2: u32);
-    fn PlaySE(a0: u16);
-    fn PlayerFreeze();
-    fn PrintMenuActionGrid(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-        a7: *mut MenuAction,
-        a8: *mut u8,
-    );
-    fn PrintMenuActionTexts(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-        a7: *mut MenuAction,
-        a8: *mut u8,
-    );
-    fn PrintMoneyAmount(a0: u8, a1: u8, a2: u8, a3: i32, a4: u8);
-    fn PrintMoneyAmountInMoneyBox(a0: u8, a1: i32, a2: u8);
-    fn PrintMoneyAmountInMoneyBoxWithBorder(a0: u8, a1: u16, a2: u8, a3: i32);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveBagItem(a0: u16, a1: u16) -> u8;
-    fn RemoveBagItemIconSprite(a0: u8);
-    fn RemoveBagSprite(a0: u8);
-    fn RemoveMoneyLabelObject();
-    fn RemoveScrollIndicatorArrowPair(a0: u8);
-    fn RemoveWindow(a0: u8);
-    fn ResetAllBgsCoordinates();
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn ResetTempTileDataBuffers();
-    fn ResetVramOamAndBgCntRegs();
-    fn RunTasks();
-    fn ScanlineEffect_Stop();
-    fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn ScriptContext_SetupScript(a0: *mut u8);
-    fn SetBagVisualPocketId(a0: u8, a1: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetCursorScrollWithinListBounds(a0: *mut u16, a1: *mut u16, a2: u8, a3: u8, a4: u8);
-    fn SetCursorWithinListBounds(a0: *mut u16, a1: *mut u16, a2: u8, a3: u8);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetItemMenuSwapLineInvisibility(a0: u8);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetTaskFuncWithFollowupFunc(
-        a0: u8,
-        a1: Option<unsafe extern "C" fn(u8)>,
-        a2: Option<unsafe extern "C" fn(u8)>,
-    );
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankHBlankCallbacksToNull();
-    fn ShakeBagSprite();
-    fn ShowBg(a0: u8);
-    fn SortBerriesOrTMHMs(a0: *mut BagPocket);
-    fn StopPlayerAvatar();
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn SwitchTaskToFollowupFunc(a0: u8);
-    fn TestPlayerAvatarFlags(a0: u8) -> u8;
-    fn TransferPlttBuffer();
-    fn UpdateItemMenuSwapLinePos(a0: u8);
-    fn UpdatePaletteFade() -> u8;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `GetItemDescription` with this module's view of its types.
+#[inline]
+unsafe fn GetItemDescription(a0: u16) -> *mut u8 {
+    crate::item::GetItemDescription(a0) as *mut u8
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetBagScrollPositions() {
+pub unsafe fn ResetBagScrollPositions() {
     gBagPosition.pocket = ITEMS_POCKET;
     memset(gBagPosition.cursorPosition.as_mut_ptr() as *mut u8, 0, 10);
     memset(gBagPosition.scrollPosition.as_mut_ptr() as *mut u8, 0, 10);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_BagMenuFromStartMenu() {
+pub unsafe fn CB2_BagMenuFromStartMenu() {
     GoToBagMenu(
         ITEMMENULOCATION_FIELD,
         POCKETS_COUNT,
         Some(CB2_ReturnToFieldWithOpenMenu),
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_BagMenuFromBattle() {
+pub unsafe fn CB2_BagMenuFromBattle() {
     if CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE {
         GoToBagMenu(
             ITEMMENULOCATION_BATTLE,
@@ -493,36 +452,31 @@ pub unsafe extern "C" fn CB2_BagMenuFromBattle() {
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ChooseBerry() {
+pub unsafe fn CB2_ChooseBerry() {
     GoToBagMenu(
         ITEMMENULOCATION_BERRY_TREE,
         BERRIES_POCKET,
         Some(CB2_ReturnToFieldContinueScript),
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ChooseBerryForMachine(exitCallback: Option<unsafe extern "C" fn()>) {
+pub unsafe fn ChooseBerryForMachine(exitCallback: Option<unsafe fn()>) {
     GoToBagMenu(
         ITEMMENULOCATION_BERRY_BLENDER_CRUSH,
         BERRIES_POCKET,
         exitCallback,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_GoToSellMenu() {
+pub unsafe fn CB2_GoToSellMenu() {
     GoToBagMenu(ITEMMENULOCATION_SHOP, POCKETS_COUNT, Some(CB2_ExitSellMenu));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_GoToItemDepositMenu() {
+pub unsafe fn CB2_GoToItemDepositMenu() {
     GoToBagMenu(
         ITEMMENULOCATION_ITEMPC,
         POCKETS_COUNT,
         Some(CB2_PlayerPCExitBagMenu),
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ApprenticeOpenBagMenu() {
+pub unsafe fn ApprenticeOpenBagMenu() {
     GoToBagMenu(
         ITEMMENULOCATION_APPRENTICE,
         POCKETS_COUNT,
@@ -531,8 +485,7 @@ pub unsafe extern "C" fn ApprenticeOpenBagMenu() {
     gSpecialVar_0x8005 = ITEM_NONE;
     gSpecialVar_Result = FALSE as u16;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FavorLadyOpenBagMenu() {
+pub unsafe fn FavorLadyOpenBagMenu() {
     GoToBagMenu(
         ITEMMENULOCATION_FAVOR_LADY,
         POCKETS_COUNT,
@@ -540,8 +493,7 @@ pub unsafe extern "C" fn FavorLadyOpenBagMenu() {
     );
     gSpecialVar_Result = FALSE as u16;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn QuizLadyOpenBagMenu() {
+pub unsafe fn QuizLadyOpenBagMenu() {
     GoToBagMenu(
         ITEMMENULOCATION_QUIZ_LADY,
         POCKETS_COUNT,
@@ -549,12 +501,7 @@ pub unsafe extern "C" fn QuizLadyOpenBagMenu() {
     );
     gSpecialVar_Result = FALSE as u16;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GoToBagMenu(
-    location: u8,
-    pocket: u8,
-    exitCallback: Option<unsafe extern "C" fn()>,
-) {
+pub unsafe fn GoToBagMenu(location: u8, pocket: u8, exitCallback: Option<unsafe fn()>) {
     gBagMenu = AllocZeroed(3144) as *mut BagMenu;
     if gBagMenu.is_null() {
         SetMainCallback2(exitCallback);
@@ -582,27 +529,25 @@ pub unsafe extern "C" fn GoToBagMenu(
         SetMainCallback2(Some(CB2_Bag));
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_BagMenuRun() {
+pub unsafe fn CB2_BagMenuRun() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
     DoScheduledBgTilemapCopiesToVram();
     UpdatePaletteFade();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn VBlankCB_BagMenuRun() {
+pub unsafe fn VBlankCB_BagMenuRun() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn CB2_Bag() {
+pub(crate) unsafe fn CB2_Bag() {
     while MenuHelpers_ShouldWaitForLinkRecv() != TRUE
         && SetupBagMenu() != TRUE
         && MenuHelpers_IsLinkActive() != TRUE
     {}
 }
-pub(crate) unsafe extern "C" fn SetupBagMenu() -> u8 {
+unsafe fn SetupBagMenu() -> u8 {
     let mut taskId: u8 = 0;
     'l1: {
         match gMain.state {
@@ -667,20 +612,31 @@ pub(crate) unsafe extern "C" fn SetupBagMenu() -> u8 {
                 gMain.state += 1;
             }
             13 => {
-                PrintPocketNames(gPocketNamesStringsTable[gBagPosition.pocket], null_mut());
+                PrintPocketNames(
+                    (*(&raw const crate::data::strings::gPocketNamesStringsTable).cast::<CArray<
+                        *mut u8,
+                        0,
+                    >>(
+                    ))[gBagPosition.pocket],
+                    null_mut(),
+                );
                 CopyPocketNameToWindow(0);
                 DrawPocketIndicatorSquare(gBagPosition.pocket, TRUE);
                 gMain.state += 1;
             }
             14 => {
                 taskId = CreateBagInputHandlerTask(gBagPosition.location);
-                gTasks[taskId].data[0] = ListMenuInit(
-                    &raw mut gMultiuseListMenuTemplate,
-                    gBagPosition.scrollPosition[gBagPosition.pocket],
-                    gBagPosition.cursorPosition[gBagPosition.pocket],
-                ) as i16;
-                gTasks[taskId].data[3] = 0;
-                gTasks[taskId].data[8] = 0;
+                task_set(
+                    taskId,
+                    tListTaskId,
+                    ListMenuInit(
+                        &raw mut gMultiuseListMenuTemplate,
+                        gBagPosition.scrollPosition[gBagPosition.pocket],
+                        gBagPosition.cursorPosition[gBagPosition.pocket],
+                    ) as i16,
+                );
+                task_set(taskId, tNeverRead, 0);
+                task_set(taskId, tItemCount, 0);
                 gMain.state += 1;
             }
             15 => {
@@ -716,9 +672,9 @@ pub(crate) unsafe extern "C" fn SetupBagMenu() -> u8 {
             }
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn BagMenu_InitBGs() {
+unsafe fn BagMenu_InitBGs() {
     ResetVramOamAndBgCntRegs();
     memset((*gBagMenu).tilemapBuffer.as_mut_ptr(), 0, 2048);
     ResetBgsAndClearDma3BusyFlags(0);
@@ -732,13 +688,15 @@ pub(crate) unsafe extern "C" fn BagMenu_InitBGs() {
     ShowBg(2);
     SetGpuReg(REG_OFFSET_BLDCNT, 0);
 }
-pub(crate) unsafe extern "C" fn LoadBagMenu_Graphics() -> u8 {
+unsafe fn LoadBagMenu_Graphics() -> u8 {
     match (*gBagMenu).graphicsLoadState {
         0 => {
             ResetTempTileDataBuffers();
             DecompressAndCopyTileDataToVram(
                 2,
-                gBagScreen_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gBagScreen_Gfx).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0,
                 0,
                 0,
@@ -748,7 +706,10 @@ pub(crate) unsafe extern "C" fn LoadBagMenu_Graphics() -> u8 {
         1 => {
             if FreeTempTileDataBuffersIfPossible() != TRUE {
                 LZDecompressWram(
-                    gBagScreen_GfxTileMap.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gBagScreen_GfxTileMap)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     (*gBagMenu).tilemapBuffer.as_mut_ptr() as *mut c_void,
                 );
                 (*gBagMenu).graphicsLoadState += 1;
@@ -756,22 +717,44 @@ pub(crate) unsafe extern "C" fn LoadBagMenu_Graphics() -> u8 {
         }
         2 => {
             if IsWallysBag() == 0 && (*gSaveBlock2Ptr).playerGender != MALE {
-                LoadCompressedPalette(gBagScreenFemale_Pal.as_ptr().cast_mut(), 0, 64);
+                LoadCompressedPalette(
+                    (*(&raw const crate::data::graphics::gBagScreenFemale_Pal)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0,
+                    64,
+                );
             } else {
-                LoadCompressedPalette(gBagScreenMale_Pal.as_ptr().cast_mut(), 0, 64);
+                LoadCompressedPalette(
+                    (*(&raw const crate::data::graphics::gBagScreenMale_Pal)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0,
+                    64,
+                );
             }
             (*gBagMenu).graphicsLoadState += 1;
         }
         3 => {
             if IsWallysBag() == TRUE || (*gSaveBlock2Ptr).playerGender == MALE {
-                LoadCompressedSpriteSheet((&raw const gBagMaleSpriteSheet).cast_mut());
+                LoadCompressedSpriteSheet(
+                    (&raw const (*(&raw const crate::data::item_menu_icons::gBagMaleSpriteSheet)
+                        .cast::<CompressedSpriteSheet>()))
+                        .cast_mut(),
+                );
             } else {
-                LoadCompressedSpriteSheet((&raw const gBagFemaleSpriteSheet).cast_mut());
+                LoadCompressedSpriteSheet((&raw const (*(&raw const crate::data::item_menu_icons::gBagFemaleSpriteSheet).cast::<CompressedSpriteSheet>())).cast_mut());
             }
             (*gBagMenu).graphicsLoadState += 1;
         }
         4 => {
-            LoadCompressedSpritePalette((&raw const gBagPaletteTable).cast_mut());
+            LoadCompressedSpritePalette(
+                (&raw const (*(&raw const crate::data::item_menu_icons::gBagPaletteTable)
+                    .cast::<CompressedSpritePalette>()))
+                    .cast_mut(),
+            );
             (*gBagMenu).graphicsLoadState += 1;
         }
         _ => {
@@ -780,24 +763,26 @@ pub(crate) unsafe extern "C" fn LoadBagMenu_Graphics() -> u8 {
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn CreateBagInputHandlerTask(location: u8) -> u8 {
+unsafe fn CreateBagInputHandlerTask(location: u8) -> u8 {
     let mut taskId: u8 = 0;
     if location == ITEMMENULOCATION_WALLY {
         taskId = CreateTask(Some(Task_WallyTutorialBagMenu), 0);
     } else {
         taskId = CreateTask(Some(Task_BagMenu_HandleInput), 0);
     }
-    return taskId;
+    taskId
 }
-pub(crate) unsafe extern "C" fn AllocateBagItemListBuffers() {
+unsafe fn AllocateBagItemListBuffers() {
     sListBuffer1 = Alloc(520) as *mut ListBuffer1;
     sListBuffer2 = Alloc(1560) as *mut ListBuffer2;
 }
-pub(crate) unsafe extern "C" fn LoadBagItemListBuffers(pocketId: u8) {
+unsafe fn LoadBagItemListBuffers(pocketId: u8) {
     let mut i: u16 = 0;
-    let mut pocket: *mut BagPocket = &raw mut gBagPockets[pocketId];
+    let pocket: *mut BagPocket = &raw mut (*(&raw const crate::item::gBagPockets)
+        .cast::<CArray<BagPocket, 0>>()
+        .cast_mut())[pocketId];
     let mut subBuffer: *mut ListMenuItem = null_mut();
     if (*gBagMenu).hideCloseBagText() == 0 {
         i = 0;
@@ -813,7 +798,9 @@ pub(crate) unsafe extern "C" fn LoadBagItemListBuffers(pocketId: u8) {
         }
         StringCopy(
             (*sListBuffer2).name[i].as_mut_ptr(),
-            gText_CloseBag.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_CloseBag).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         subBuffer = (*sListBuffer1).subBuffers.as_mut_ptr();
         (*subBuffer.at(i)).name = (*sListBuffer2).name[i].as_mut_ptr();
@@ -836,12 +823,15 @@ pub(crate) unsafe extern "C" fn LoadBagItemListBuffers(pocketId: u8) {
     gMultiuseListMenuTemplate.items = (*sListBuffer1).subBuffers.as_mut_ptr();
     gMultiuseListMenuTemplate.maxShowed = (*gBagMenu).numShownItems[pocketId] as u16;
 }
-pub(crate) unsafe extern "C" fn GetItemNameFromPocket(dest: *mut u8, itemId: u16) {
+unsafe fn GetItemNameFromPocket(dest: *mut u8, itemId: u16) {
     match gBagPosition.pocket {
         TMHM_POCKET => {
             StringCopy(
                 gStringVar2.as_mut_ptr(),
-                gMoveNames[ItemIdToBattleMoveId(itemId)].as_ptr().cast_mut(),
+                (*(&raw const crate::data::data_tables::gMoveNames)
+                    .cast::<CArray<CArray<u8, 13>, 355>>())[ItemIdToBattleMoveId(itemId)]
+                .as_ptr()
+                .cast_mut(),
             );
             if itemId >= ITEM_HM01 {
                 ConvertIntToDecimalStringN(
@@ -850,7 +840,13 @@ pub(crate) unsafe extern "C" fn GetItemNameFromPocket(dest: *mut u8, itemId: u16
                     STR_CONV_MODE_LEADING_ZEROS,
                     1,
                 );
-                StringExpandPlaceholders(dest, gText_NumberItem_HM.as_ptr().cast_mut());
+                StringExpandPlaceholders(
+                    dest,
+                    (*(&raw const crate::data::strings::gText_NumberItem_HM)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                );
             } else {
                 ConvertIntToDecimalStringN(
                     gStringVar1.as_mut_ptr(),
@@ -858,7 +854,13 @@ pub(crate) unsafe extern "C" fn GetItemNameFromPocket(dest: *mut u8, itemId: u16
                     STR_CONV_MODE_LEADING_ZEROS,
                     2,
                 );
-                StringExpandPlaceholders(dest, gText_NumberItem_TMBerry.as_ptr().cast_mut());
+                StringExpandPlaceholders(
+                    dest,
+                    (*(&raw const crate::data::strings::gText_NumberItem_TMBerry)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                );
             }
         }
         BERRIES_POCKET => {
@@ -869,18 +871,20 @@ pub(crate) unsafe extern "C" fn GetItemNameFromPocket(dest: *mut u8, itemId: u16
                 2,
             );
             CopyItemName(itemId, gStringVar2.as_mut_ptr());
-            StringExpandPlaceholders(dest, gText_NumberItem_TMBerry.as_ptr().cast_mut());
+            StringExpandPlaceholders(
+                dest,
+                (*(&raw const crate::data::strings::gText_NumberItem_TMBerry)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            );
         }
         _ => {
             CopyItemName(itemId, dest);
         }
     }
 }
-pub(crate) unsafe extern "C" fn BagMenu_MoveCursorCallback(
-    itemIndex: i32,
-    onInit: u8,
-    list: *mut ListMenu,
-) {
+pub(crate) unsafe fn BagMenu_MoveCursorCallback(itemIndex: i32, onInit: u8, list: *mut ListMenu) {
     if onInit != TRUE {
         PlaySE(SE_SELECT);
         ShakeBagSprite();
@@ -901,7 +905,7 @@ pub(crate) unsafe extern "C" fn BagMenu_MoveCursorCallback(
         }
     }
 }
-pub(crate) unsafe extern "C" fn BagMenu_ItemPrintCallback(windowId: u8, itemIndex: u32, y: u8) {
+pub(crate) unsafe fn BagMenu_ItemPrintCallback(windowId: u8, itemIndex: u32, y: u8) {
     let mut itemId: u16 = 0;
     let mut itemQuantity: u16 = 0;
     let mut offset: i32 = 0;
@@ -915,10 +919,12 @@ pub(crate) unsafe extern "C" fn BagMenu_ItemPrintCallback(windowId: u8, itemInde
         }
         itemId = BagGetItemIdByPocketPosition(gBagPosition.pocket + 1, itemIndex as u16);
         itemQuantity = BagGetQuantityByPocketPosition(gBagPosition.pocket + 1, itemIndex as u16);
-        if itemId >= ITEM_HM01 && itemId <= ITEM_HM08 {
+        if (ITEM_HM01..=ITEM_HM08).contains(&itemId) {
             BlitBitmapToWindow(
                 windowId,
-                gBagMenuHMIcon_Gfx.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gBagMenuHMIcon_Gfx).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 8,
                 y as u16 - 1,
                 16,
@@ -932,7 +938,12 @@ pub(crate) unsafe extern "C" fn BagMenu_ItemPrintCallback(windowId: u8, itemInde
                 STR_CONV_MODE_RIGHT_ALIGN,
                 BERRY_CAPACITY_DIGITS,
             );
-            StringExpandPlaceholders(gStringVar4.as_mut_ptr(), gText_xVar1.as_ptr().cast_mut());
+            StringExpandPlaceholders(
+                gStringVar4.as_mut_ptr(),
+                (*(&raw const crate::data::strings::gText_xVar1).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
             offset = GetStringRightAlignXOffset(FONT_NARROW as i32, gStringVar4.as_mut_ptr(), 119);
             BagMenu_Print(
                 windowId,
@@ -952,7 +963,12 @@ pub(crate) unsafe extern "C" fn BagMenu_ItemPrintCallback(windowId: u8, itemInde
                 STR_CONV_MODE_RIGHT_ALIGN,
                 BAG_ITEM_CAPACITY_DIGITS,
             );
-            StringExpandPlaceholders(gStringVar4.as_mut_ptr(), gText_xVar1.as_ptr().cast_mut());
+            StringExpandPlaceholders(
+                gStringVar4.as_mut_ptr(),
+                (*(&raw const crate::data::strings::gText_xVar1).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
             offset = GetStringRightAlignXOffset(FONT_NARROW as i32, gStringVar4.as_mut_ptr(), 119);
             BagMenu_Print(
                 windowId,
@@ -981,7 +997,7 @@ pub(crate) unsafe extern "C" fn BagMenu_ItemPrintCallback(windowId: u8, itemInde
         }
     }
 }
-pub(crate) unsafe extern "C" fn PrintItemDescription(itemIndex: i32) {
+pub(crate) unsafe fn PrintItemDescription(itemIndex: i32) {
     let mut str: *mut u8 = null_mut();
     if itemIndex != LIST_CANCEL {
         str = GetItemDescription(BagGetItemIdByPocketPosition(
@@ -991,11 +1007,14 @@ pub(crate) unsafe extern "C" fn PrintItemDescription(itemIndex: i32) {
     } else {
         StringCopy(
             gStringVar1.as_mut_ptr(),
-            gBagMenu_ReturnToStrings[gBagPosition.location],
+            (*(&raw const crate::data::strings::gBagMenu_ReturnToStrings)
+                .cast::<CArray<*mut u8, 0>>())[gBagPosition.location],
         );
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_ReturnToVar1.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_ReturnToVar1).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         str = gStringVar4.as_mut_ptr();
     }
@@ -1012,13 +1031,13 @@ pub(crate) unsafe extern "C" fn PrintItemDescription(itemIndex: i32) {
         COLORID_NORMAL,
     );
 }
-pub(crate) unsafe extern "C" fn BagMenu_PrintCursor(listTaskId: u8, colorIndex: u8) {
+unsafe fn BagMenu_PrintCursor(listTaskId: u8, colorIndex: u8) {
     BagMenu_PrintCursorAtPos(
         ListMenuGetYCoordForPrintingArrowCursor(listTaskId) as u8,
         colorIndex,
     );
 }
-pub(crate) unsafe extern "C" fn BagMenu_PrintCursorAtPos(y: u8, colorIndex: u8) {
+unsafe fn BagMenu_PrintCursorAtPos(y: u8, colorIndex: u8) {
     if colorIndex == COLORID_NONE {
         FillWindowPixelRect(
             WIN_ITEM_LIST,
@@ -1032,7 +1051,9 @@ pub(crate) unsafe extern "C" fn BagMenu_PrintCursorAtPos(y: u8, colorIndex: u8) 
         BagMenu_Print(
             WIN_ITEM_LIST,
             FONT_NORMAL,
-            gText_SelectorArrow2.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_SelectorArrow2).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             0,
             y,
             0,
@@ -1042,7 +1063,7 @@ pub(crate) unsafe extern "C" fn BagMenu_PrintCursorAtPos(y: u8, colorIndex: u8) 
         );
     }
 }
-pub(crate) unsafe extern "C" fn CreatePocketScrollArrowPair() {
+unsafe fn CreatePocketScrollArrowPair() {
     if (*gBagMenu).pocketScrollArrowsTask == TASK_NONE {
         (*gBagMenu).pocketScrollArrowsTask = AddScrollIndicatorArrowPairParameterized(
             SCROLL_ARROW_UP,
@@ -1057,15 +1078,14 @@ pub(crate) unsafe extern "C" fn CreatePocketScrollArrowPair() {
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BagDestroyPocketScrollArrowPair() {
+pub unsafe fn BagDestroyPocketScrollArrowPair() {
     if (*gBagMenu).pocketScrollArrowsTask != TASK_NONE {
         RemoveScrollIndicatorArrowPair((*gBagMenu).pocketScrollArrowsTask);
         (*gBagMenu).pocketScrollArrowsTask = TASK_NONE;
     }
     DestroyPocketSwitchArrowPair();
 }
-pub(crate) unsafe extern "C" fn CreatePocketSwitchArrowPair() {
+unsafe fn CreatePocketSwitchArrowPair() {
     if (*gBagMenu).pocketSwitchDisabled() != TRUE && (*gBagMenu).pocketSwitchArrowsTask == TASK_NONE
     {
         (*gBagMenu).pocketSwitchArrowsTask = AddScrollIndicatorArrowPair(
@@ -1074,25 +1094,24 @@ pub(crate) unsafe extern "C" fn CreatePocketSwitchArrowPair() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn DestroyPocketSwitchArrowPair() {
+unsafe fn DestroyPocketSwitchArrowPair() {
     if (*gBagMenu).pocketSwitchArrowsTask != TASK_NONE {
         RemoveScrollIndicatorArrowPair((*gBagMenu).pocketSwitchArrowsTask);
         (*gBagMenu).pocketSwitchArrowsTask = TASK_NONE;
     }
 }
-pub(crate) unsafe extern "C" fn FreeBagMenu() {
+unsafe fn FreeBagMenu() {
     Free(sListBuffer2 as *mut c_void);
     Free(sListBuffer1 as *mut c_void);
     FreeAllWindowBuffers();
     Free(gBagMenu as *mut c_void);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Task_FadeAndCloseBagMenu(taskId: u8) {
+pub unsafe fn Task_FadeAndCloseBagMenu(taskId: u8) {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-    gTasks[taskId].func = Some(Task_CloseBagMenu);
+    task_set_func(taskId, Some(Task_CloseBagMenu));
 }
-pub(crate) unsafe extern "C" fn Task_CloseBagMenu(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_CloseBagMenu(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if gPaletteFade.active() == 0 {
         DestroyListMenuTask(
             *data as u8,
@@ -1111,10 +1130,10 @@ pub(crate) unsafe extern "C" fn Task_CloseBagMenu(taskId: u8) {
         DestroyTask(taskId);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdatePocketItemList(pocketId: u8) {
-    let mut i: u16 = 0;
-    let mut pocket: *mut BagPocket = &raw mut gBagPockets[pocketId];
+pub unsafe fn UpdatePocketItemList(pocketId: u8) {
+    let pocket: *mut BagPocket = &raw mut (*(&raw const crate::item::gBagPockets)
+        .cast::<CArray<BagPocket, 0>>()
+        .cast_mut())[pocketId];
     match pocketId {
         TMHM_POCKET | BERRIES_POCKET => {
             SortBerriesOrTMHMs(pocket);
@@ -1124,7 +1143,7 @@ pub unsafe extern "C" fn UpdatePocketItemList(pocketId: u8) {
         }
     }
     (*gBagMenu).numItemStacks[pocketId] = 0;
-    i = 0;
+    let mut i: u16 = 0;
     while i < (*pocket).capacity as u16 && (*(*pocket).itemSlots.at(i)).itemId != 0 {
         (*gBagMenu).numItemStacks[pocketId] += 1;
         i += 1;
@@ -1138,16 +1157,12 @@ pub unsafe extern "C" fn UpdatePocketItemList(pocketId: u8) {
         (*gBagMenu).numShownItems[pocketId] = (*gBagMenu).numItemStacks[pocketId];
     }
 }
-pub(crate) unsafe extern "C" fn UpdatePocketItemLists() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < POCKETS_COUNT {
+unsafe fn UpdatePocketItemLists() {
+    for i in 0..POCKETS_COUNT {
         UpdatePocketItemList(i);
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdatePocketListPosition(pocketId: u8) {
+pub unsafe fn UpdatePocketListPosition(pocketId: u8) {
     SetCursorWithinListBounds(
         &raw mut gBagPosition.scrollPosition[pocketId],
         &raw mut gBagPosition.cursorPosition[pocketId],
@@ -1155,18 +1170,13 @@ pub unsafe extern "C" fn UpdatePocketListPosition(pocketId: u8) {
         (*gBagMenu).numItemStacks[pocketId],
     );
 }
-pub(crate) unsafe extern "C" fn InitPocketListPositions() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < POCKETS_COUNT {
+unsafe fn InitPocketListPositions() {
+    for i in 0..POCKETS_COUNT {
         UpdatePocketListPosition(i);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn InitPocketScrollPositions() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < POCKETS_COUNT {
+unsafe fn InitPocketScrollPositions() {
+    for i in 0..POCKETS_COUNT {
         SetCursorScrollWithinListBounds(
             &raw mut gBagPosition.scrollPosition[i],
             &raw mut gBagPosition.cursorPosition[i],
@@ -1174,22 +1184,19 @@ pub(crate) unsafe extern "C" fn InitPocketScrollPositions() {
             (*gBagMenu).numItemStacks[i],
             MAX_ITEMS_SHOWN,
         );
-        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemListPosition(pocketId: u8) -> u8 {
-    return gBagPosition.scrollPosition[pocketId] as u8
-        + gBagPosition.cursorPosition[pocketId] as u8;
+pub unsafe fn GetItemListPosition(pocketId: u8) -> u8 {
+    gBagPosition.scrollPosition[pocketId] as u8 + gBagPosition.cursorPosition[pocketId] as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DisplayItemMessage(
+pub unsafe fn DisplayItemMessage(
     taskId: u8,
     fontId: u8,
     str: *mut u8,
-    callback: Option<unsafe extern "C" fn(u8)>,
+    callback: Option<unsafe fn(u8)>,
 ) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(10) = AddItemMessageWindow(ITEMWIN_MESSAGE) as i16;
     FillWindowPixelBuffer(*data.at(10) as u8, 17);
     DisplayMessageAndContinueTask(
@@ -1200,15 +1207,14 @@ pub unsafe extern "C" fn DisplayItemMessage(
         fontId,
         GetPlayerTextSpeedDelay(),
         str,
-        core::mem::transmute::<Option<unsafe extern "C" fn(u8)>, *mut c_void>(callback),
+        core::mem::transmute::<Option<unsafe fn(u8)>, *mut c_void>(callback),
     );
     ScheduleBgCopyTilemapToVram(1);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CloseItemMessage(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[gBagPosition.pocket];
-    let mut cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[gBagPosition.pocket];
+pub unsafe fn CloseItemMessage(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[gBagPosition.pocket];
+    let cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[gBagPosition.pocket];
     RemoveItemMessageWindow(ITEMWIN_MESSAGE);
     DestroyListMenuTask(*data as u8, scrollPos, cursorPos);
     UpdatePocketItemList(gBagPosition.pocket);
@@ -1218,11 +1224,11 @@ pub unsafe extern "C" fn CloseItemMessage(taskId: u8) {
     ScheduleBgCopyTilemapToVram(0);
     ReturnToItemList(taskId);
 }
-pub(crate) unsafe extern "C" fn AddItemQuantityWindow(windowType: u8) {
+unsafe fn AddItemQuantityWindow(windowType: u8) {
     PrintItemQuantity(BagMenu_AddWindow(windowType), 1);
 }
-pub(crate) unsafe extern "C" fn PrintItemQuantity(windowId: u8, quantity: i16) {
-    let mut numDigits: u8 = (if gBagPosition.pocket == 3 {
+pub(crate) unsafe fn PrintItemQuantity(windowId: u8, quantity: i16) {
+    let numDigits: u8 = (if gBagPosition.pocket == 3 {
         3
     } else {
         BAG_ITEM_CAPACITY_DIGITS as i32
@@ -1233,7 +1239,12 @@ pub(crate) unsafe extern "C" fn PrintItemQuantity(windowId: u8, quantity: i16) {
         STR_CONV_MODE_LEADING_ZEROS,
         numDigits,
     );
-    StringExpandPlaceholders(gStringVar4.as_mut_ptr(), gText_xVar1.as_ptr().cast_mut());
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        (*(&raw const crate::data::strings::gText_xVar1).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
     AddTextPrinterParameterized(
         windowId,
         FONT_NORMAL,
@@ -1244,8 +1255,8 @@ pub(crate) unsafe extern "C" fn PrintItemQuantity(windowId: u8, quantity: i16) {
         None,
     );
 }
-pub(crate) unsafe extern "C" fn PrintItemSoldAmount(windowId: i32, numSold: i32, moneyEarned: i32) {
-    let mut numDigits: u8 = (if gBagPosition.pocket == 3 {
+unsafe fn PrintItemSoldAmount(windowId: i32, numSold: i32, moneyEarned: i32) {
+    let numDigits: u8 = (if gBagPosition.pocket == 3 {
         3
     } else {
         BAG_ITEM_CAPACITY_DIGITS as i32
@@ -1256,7 +1267,12 @@ pub(crate) unsafe extern "C" fn PrintItemSoldAmount(windowId: i32, numSold: i32,
         STR_CONV_MODE_LEADING_ZEROS,
         numDigits,
     );
-    StringExpandPlaceholders(gStringVar4.as_mut_ptr(), gText_xVar1.as_ptr().cast_mut());
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        (*(&raw const crate::data::strings::gText_xVar1).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
     AddTextPrinterParameterized(
         windowId as u8,
         FONT_NORMAL,
@@ -1268,10 +1284,10 @@ pub(crate) unsafe extern "C" fn PrintItemSoldAmount(windowId: i32, numSold: i32,
     );
     PrintMoneyAmount(windowId as u8, 38, 1, moneyEarned, 0);
 }
-pub(crate) unsafe extern "C" fn Task_BagMenu_HandleInput(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[gBagPosition.pocket];
-    let mut cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[gBagPosition.pocket];
+pub(crate) unsafe fn Task_BagMenu_HandleInput(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[gBagPosition.pocket];
+    let cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[gBagPosition.pocket];
     let mut listPosition: i32 = 0;
     if MenuHelpers_ShouldWaitForLinkRecv() != TRUE && gPaletteFade.active() == 0 {
         match GetSwitchBagPocketDirection() {
@@ -1310,7 +1326,7 @@ pub(crate) unsafe extern "C" fn Task_BagMenu_HandleInput(taskId: u8) {
                     }
                     PlaySE(SE_SELECT);
                     gSpecialVar_ItemId = ITEM_NONE;
-                    gTasks[taskId].func = Some(Task_FadeAndCloseBagMenu);
+                    task_set_func(taskId, Some(Task_FadeAndCloseBagMenu));
                 }
                 _ => {
                     PlaySE(SE_SELECT);
@@ -1329,21 +1345,20 @@ pub(crate) unsafe extern "C" fn Task_BagMenu_HandleInput(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn ReturnToItemList(taskId: u8) {
+unsafe fn ReturnToItemList(taskId: u8) {
     CreatePocketScrollArrowPair();
     CreatePocketSwitchArrowPair();
     ClearWindowTilemap(WIN_TMHM_INFO_ICONS);
     ClearWindowTilemap(WIN_TMHM_INFO);
     PutWindowTilemap(WIN_DESCRIPTION);
     ScheduleBgCopyTilemapToVram(0);
-    gTasks[taskId].func = Some(Task_BagMenu_HandleInput);
+    task_set_func(taskId, Some(Task_BagMenu_HandleInput));
 }
-pub(crate) unsafe extern "C" fn GetSwitchBagPocketDirection() -> u8 {
-    let mut LRKeys: u8 = 0;
+unsafe fn GetSwitchBagPocketDirection() -> u8 {
     if (*gBagMenu).pocketSwitchDisabled() != 0 {
         return SWITCH_POCKET_NONE;
     }
-    LRKeys = GetLRKeysPressed();
+    let LRKeys: u8 = GetLRKeysPressed();
     if gMain.newKeys as i32 & DPAD_LEFT != 0 || LRKeys == MENU_L_PRESSED {
         PlaySE(SE_SELECT);
         return SWITCH_POCKET_LEFT;
@@ -1352,9 +1367,9 @@ pub(crate) unsafe extern "C" fn GetSwitchBagPocketDirection() -> u8 {
         PlaySE(SE_SELECT);
         return SWITCH_POCKET_RIGHT;
     }
-    return SWITCH_POCKET_NONE;
+    SWITCH_POCKET_NONE
 }
-pub(crate) unsafe extern "C" fn ChangeBagPocketId(bagPocketId: *mut u8, deltaBagPocketId: i8) {
+unsafe fn ChangeBagPocketId(bagPocketId: *mut u8, deltaBagPocketId: i8) {
     if deltaBagPocketId == 1 && *bagPocketId == 4 {
         *bagPocketId = 0;
     } else if deltaBagPocketId == MENU_CURSOR_DELTA_LEFT && *bagPocketId == 0 {
@@ -1363,13 +1378,8 @@ pub(crate) unsafe extern "C" fn ChangeBagPocketId(bagPocketId: *mut u8, deltaBag
         *bagPocketId += deltaBagPocketId as u8;
     }
 }
-pub(crate) unsafe extern "C" fn SwitchBagPocket(
-    taskId: u8,
-    deltaBagPocketId: i16,
-    skipEraseList: u16,
-) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut newPocket: u8 = 0;
+unsafe fn SwitchBagPocket(taskId: u8, deltaBagPocketId: i16, skipEraseList: u16) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(13) = 0;
     *data.at(12) = 0;
     *data.at(11) = deltaBagPocketId;
@@ -1387,18 +1397,22 @@ pub(crate) unsafe extern "C" fn SwitchBagPocket(
             .set_invisible(1);
         BagDestroyPocketScrollArrowPair();
     }
-    newPocket = gBagPosition.pocket;
+    let mut newPocket: u8 = gBagPosition.pocket;
     ChangeBagPocketId(&raw mut newPocket, deltaBagPocketId as i8);
     if deltaBagPocketId == MENU_CURSOR_DELTA_RIGHT as i16 {
         PrintPocketNames(
-            gPocketNamesStringsTable[gBagPosition.pocket],
-            gPocketNamesStringsTable[newPocket],
+            (*(&raw const crate::data::strings::gPocketNamesStringsTable)
+                .cast::<CArray<*mut u8, 0>>())[gBagPosition.pocket],
+            (*(&raw const crate::data::strings::gPocketNamesStringsTable)
+                .cast::<CArray<*mut u8, 0>>())[newPocket],
         );
         CopyPocketNameToWindow(0);
     } else {
         PrintPocketNames(
-            gPocketNamesStringsTable[newPocket],
-            gPocketNamesStringsTable[gBagPosition.pocket],
+            (*(&raw const crate::data::strings::gPocketNamesStringsTable)
+                .cast::<CArray<*mut u8, 0>>())[newPocket],
+            (*(&raw const crate::data::strings::gPocketNamesStringsTable)
+                .cast::<CArray<*mut u8, 0>>())[gBagPosition.pocket],
         );
         CopyPocketNameToWindow(8);
     }
@@ -1409,10 +1423,10 @@ pub(crate) unsafe extern "C" fn SwitchBagPocket(
     SetBagVisualPocketId(newPocket, TRUE);
     RemoveBagSprite(ITEMMENUSPRITE_BALL);
     AddSwitchPocketRotatingBallSprite(deltaBagPocketId);
-    SetTaskFuncWithFollowupFunc(taskId, Some(Task_SwitchBagPocket), gTasks[taskId].func);
+    SetTaskFuncWithFollowupFunc(taskId, Some(Task_SwitchBagPocket), task_func(taskId));
 }
-pub(crate) unsafe extern "C" fn Task_SwitchBagPocket(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_SwitchBagPocket(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if MenuHelpers_IsLinkActive() == 0 && IsWallysBag() == 0 {
         match GetSwitchBagPocketDirection() {
             SWITCH_POCKET_LEFT => {
@@ -1468,11 +1482,11 @@ pub(crate) unsafe extern "C" fn Task_SwitchBagPocket(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn DrawItemListBgRow(y: u8) {
+unsafe fn DrawItemListBgRow(y: u8) {
     FillBgTilemapBufferRect_Palette0(2, 17, 14, y + 2, 15, 1);
     ScheduleBgCopyTilemapToVram(2);
 }
-pub(crate) unsafe extern "C" fn DrawPocketIndicatorSquare(x: u8, isCurrentPocket: u8) {
+unsafe fn DrawPocketIndicatorSquare(x: u8, isCurrentPocket: u8) {
     if isCurrentPocket == 0 {
         FillBgTilemapBufferRect_Palette0(2, 0x1017, x + 5, 3, 1, 1);
     } else {
@@ -1480,18 +1494,18 @@ pub(crate) unsafe extern "C" fn DrawPocketIndicatorSquare(x: u8, isCurrentPocket
     }
     ScheduleBgCopyTilemapToVram(2);
 }
-pub(crate) unsafe extern "C" fn CanSwapItems() -> u8 {
-    if gBagPosition.location == ITEMMENULOCATION_FIELD
-        || gBagPosition.location == ITEMMENULOCATION_BATTLE
+unsafe fn CanSwapItems() -> u8 {
+    if (gBagPosition.location == ITEMMENULOCATION_FIELD
+        || gBagPosition.location == ITEMMENULOCATION_BATTLE)
+        && gBagPosition.pocket != TMHM_POCKET
+        && gBagPosition.pocket != BERRIES_POCKET
     {
-        if gBagPosition.pocket != TMHM_POCKET && gBagPosition.pocket != BERRIES_POCKET {
-            return TRUE;
-        }
+        return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn StartItemSwap(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+unsafe fn StartItemSwap(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     ListMenuSetTemplateField(*data as u8, LISTFIELD_CURSORKIND, CURSOR_INVISIBLE);
     *data.at(1) = gBagPosition.scrollPosition[gBagPosition.pocket] as i16
         + gBagPosition.cursorPosition[gBagPosition.pocket] as i16;
@@ -1502,7 +1516,9 @@ pub(crate) unsafe extern "C" fn StartItemSwap(taskId: u8) {
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_MoveVar1Where.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_MoveVar1Where).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     FillWindowPixelBuffer(WIN_DESCRIPTION, 0);
     BagMenu_Print(
@@ -1519,10 +1535,10 @@ pub(crate) unsafe extern "C" fn StartItemSwap(taskId: u8) {
     UpdateItemMenuSwapLinePos(*data.at(1) as u8);
     DestroyPocketSwitchArrowPair();
     BagMenu_PrintCursor(*data as u8, COLORID_GRAY_CURSOR);
-    gTasks[taskId].func = Some(Task_HandleSwappingItemsInput);
+    task_set_func(taskId, Some(Task_HandleSwappingItemsInput));
 }
-pub(crate) unsafe extern "C" fn Task_HandleSwappingItemsInput(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_HandleSwappingItemsInput(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
         if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
             PlaySE(SE_SELECT);
@@ -1533,7 +1549,7 @@ pub(crate) unsafe extern "C" fn Task_HandleSwappingItemsInput(taskId: u8) {
             );
             DoItemSwap(taskId);
         } else {
-            let mut input: i32 = ListMenu_ProcessInput(*data as u8);
+            let input: i32 = ListMenu_ProcessInput(*data as u8);
             ListMenuGetScrollAndRow(
                 *data as u8,
                 &raw mut gBagPosition.scrollPosition[gBagPosition.pocket],
@@ -1559,11 +1575,11 @@ pub(crate) unsafe extern "C" fn Task_HandleSwappingItemsInput(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn DoItemSwap(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[gBagPosition.pocket];
-    let mut cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[gBagPosition.pocket];
-    let mut realPos: u16 = *scrollPos + *cursorPos;
+unsafe fn DoItemSwap(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[gBagPosition.pocket];
+    let cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[gBagPosition.pocket];
+    let realPos: u16 = *scrollPos + *cursorPos;
     if *data.at(1) as i32 == realPos as i32 || *data.at(1) as i32 == realPos as i32 - 1 {
         CancelItemSwap(taskId);
     } else {
@@ -1581,13 +1597,13 @@ pub(crate) unsafe extern "C" fn DoItemSwap(taskId: u8) {
         *data = ListMenuInit(&raw mut gMultiuseListMenuTemplate, *scrollPos, *cursorPos) as i16;
         SetItemMenuSwapLineInvisibility(TRUE);
         CreatePocketSwitchArrowPair();
-        gTasks[taskId].func = Some(Task_BagMenu_HandleInput);
+        task_set_func(taskId, Some(Task_BagMenu_HandleInput));
     }
 }
-pub(crate) unsafe extern "C" fn CancelItemSwap(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[gBagPosition.pocket];
-    let mut cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[gBagPosition.pocket];
+pub(crate) unsafe fn CancelItemSwap(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[gBagPosition.pocket];
+    let cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[gBagPosition.pocket];
     (*gBagMenu).toSwapPos = NOT_SWAPPING;
     DestroyListMenuTask(*data as u8, scrollPos, cursorPos);
     if (*data.at(1) as i32) < *scrollPos as i32 + *cursorPos as i32 {
@@ -1597,9 +1613,9 @@ pub(crate) unsafe extern "C" fn CancelItemSwap(taskId: u8) {
     *data = ListMenuInit(&raw mut gMultiuseListMenuTemplate, *scrollPos, *cursorPos) as i16;
     SetItemMenuSwapLineInvisibility(TRUE);
     CreatePocketSwitchArrowPair();
-    gTasks[taskId].func = Some(Task_BagMenu_HandleInput);
+    task_set_func(taskId, Some(Task_BagMenu_HandleInput));
 }
-pub(crate) unsafe extern "C" fn OpenContextMenu(taskId: u8) {
+pub(crate) unsafe fn OpenContextMenu(taskId: u8) {
     match gBagPosition.location {
         ITEMMENULOCATION_BATTLE | ITEMMENULOCATION_WALLY => {
             if GetItemBattleUsage(gSpecialVar_ItemId) != ITEM_B_USE_NONE {
@@ -1683,12 +1699,11 @@ pub(crate) unsafe extern "C" fn OpenContextMenu(taskId: u8) {
                         if (*gSaveBlock1Ptr).registeredItem == gSpecialVar_ItemId {
                             (*gBagMenu).contextMenuItemsBuffer[1] = ACTION_DESELECT;
                         }
-                        if gSpecialVar_ItemId == ITEM_MACH_BIKE
-                            || gSpecialVar_ItemId == ITEM_ACRO_BIKE
+                        if (gSpecialVar_ItemId == ITEM_MACH_BIKE
+                            || gSpecialVar_ItemId == ITEM_ACRO_BIKE)
+                            && TestPlayerAvatarFlags(6) != 0
                         {
-                            if TestPlayerAvatarFlags(6) != 0 {
-                                (*gBagMenu).contextMenuItemsBuffer[0] = ACTION_WALK;
-                            }
+                            (*gBagMenu).contextMenuItemsBuffer[0] = ACTION_WALK;
                         }
                     }
                     BALLS_POCKET => {
@@ -1721,7 +1736,9 @@ pub(crate) unsafe extern "C" fn OpenContextMenu(taskId: u8) {
         CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_Var1IsSelected.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_Var1IsSelected).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         FillWindowPixelBuffer(WIN_DESCRIPTION, 0);
         BagMenu_Print(
@@ -1746,7 +1763,7 @@ pub(crate) unsafe extern "C" fn OpenContextMenu(taskId: u8) {
         PrintContextMenuItemGrid(BagMenu_AddWindow(ITEMWIN_2x3), 2, 3);
     }
 }
-pub(crate) unsafe extern "C" fn PrintContextMenuItems(windowId: u8) {
+unsafe fn PrintContextMenuItems(windowId: u8) {
     PrintMenuActionTexts(
         windowId,
         FONT_NARROW,
@@ -1760,7 +1777,7 @@ pub(crate) unsafe extern "C" fn PrintContextMenuItems(windowId: u8) {
     );
     InitMenuInUpperLeftCornerNormal(windowId, (*gBagMenu).contextMenuNumItems, 0);
 }
-pub(crate) unsafe extern "C" fn PrintContextMenuItemGrid(windowId: u8, columns: u8, rows: u8) {
+unsafe fn PrintContextMenuItemGrid(windowId: u8, columns: u8, rows: u8) {
     PrintMenuActionGrid(
         windowId,
         FONT_NARROW,
@@ -1774,17 +1791,17 @@ pub(crate) unsafe extern "C" fn PrintContextMenuItemGrid(windowId: u8, columns: 
     );
     InitMenuActionGrid(windowId, 56, columns, rows, 0);
 }
-pub(crate) unsafe extern "C" fn Task_ItemContext_Normal(taskId: u8) {
+pub(crate) unsafe fn Task_ItemContext_Normal(taskId: u8) {
     OpenContextMenu(taskId);
     if (*gBagMenu).contextMenuNumItems <= 2 {
-        gTasks[taskId].func = Some(Task_ItemContext_SingleRow);
+        task_set_func(taskId, Some(Task_ItemContext_SingleRow));
     } else {
-        gTasks[taskId].func = Some(Task_ItemContext_MultipleRows);
+        task_set_func(taskId, Some(Task_ItemContext_MultipleRows));
     }
 }
-pub(crate) unsafe extern "C" fn Task_ItemContext_SingleRow(taskId: u8) {
+pub(crate) unsafe fn Task_ItemContext_SingleRow(taskId: u8) {
     if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
-        let mut selection: i8 = Menu_ProcessInputNoWrap();
+        let selection: i8 = Menu_ProcessInputNoWrap();
         match selection {
             MENU_NOTHING_CHOSEN => {}
             MENU_B_PRESSED => {
@@ -1801,9 +1818,9 @@ pub(crate) unsafe extern "C" fn Task_ItemContext_SingleRow(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_ItemContext_MultipleRows(taskId: u8) {
+pub(crate) unsafe fn Task_ItemContext_MultipleRows(taskId: u8) {
     if MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
-        let mut cursorPos: i8 = Menu_GetCursorPos() as i8;
+        let cursorPos: i8 = Menu_GetCursorPos() as i8;
         if gMain.newKeys as i32 & DPAD_UP != 0 {
             if cursorPos > 0 && IsValidContextMenuPos(cursorPos - 2) != 0 {
                 PlaySE(SE_SELECT);
@@ -1838,7 +1855,7 @@ pub(crate) unsafe extern "C" fn Task_ItemContext_MultipleRows(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn IsValidContextMenuPos(cursorPos: i8) -> u8 {
+unsafe fn IsValidContextMenuPos(cursorPos: i8) -> u8 {
     if cursorPos < 0 {
         return FALSE;
     }
@@ -1848,9 +1865,9 @@ pub(crate) unsafe extern "C" fn IsValidContextMenuPos(cursorPos: i8) -> u8 {
     if *(*gBagMenu).contextMenuItemsPtr.at(cursorPos) == ACTION_DUMMY {
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn RemoveContextWindow() {
+unsafe fn RemoveContextWindow() {
     if (*gBagMenu).contextMenuNumItems == 1 {
         BagMenu_RemoveWindow(ITEMWIN_1x1);
     } else if (*gBagMenu).contextMenuNumItems == 2 {
@@ -1861,7 +1878,7 @@ pub(crate) unsafe extern "C" fn RemoveContextWindow() {
         BagMenu_RemoveWindow(ITEMWIN_2x3);
     }
 }
-pub(crate) unsafe extern "C" fn ItemMenu_UseOutOfBattle(taskId: u8) {
+pub(crate) unsafe fn ItemMenu_UseOutOfBattle(taskId: u8) {
     if GetItemFieldFunc(gSpecialVar_ItemId).is_some() {
         RemoveContextWindow();
         if CalculatePlayerPartyCount() == 0
@@ -1879,8 +1896,8 @@ pub(crate) unsafe extern "C" fn ItemMenu_UseOutOfBattle(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn ItemMenu_Toss(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn ItemMenu_Toss(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     RemoveContextWindow();
     *data.at(8) = 1;
     if *data.at(2) == 1 {
@@ -1889,7 +1906,9 @@ pub(crate) unsafe extern "C" fn ItemMenu_Toss(taskId: u8) {
         CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_TossHowManyVar1s.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_TossHowManyVar1s).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         FillWindowPixelBuffer(WIN_DESCRIPTION, 0);
         BagMenu_Print(
@@ -1904,11 +1923,11 @@ pub(crate) unsafe extern "C" fn ItemMenu_Toss(taskId: u8) {
             COLORID_NORMAL,
         );
         AddItemQuantityWindow(ITEMWIN_QUANTITY);
-        gTasks[taskId].func = Some(Task_ChooseHowManyToToss);
+        task_set_func(taskId, Some(Task_ChooseHowManyToToss));
     }
 }
-pub(crate) unsafe extern "C" fn AskTossItems(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+unsafe fn AskTossItems(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
     ConvertIntToDecimalStringN(
         gStringVar2.as_mut_ptr(),
@@ -1918,7 +1937,9 @@ pub(crate) unsafe extern "C" fn AskTossItems(taskId: u8) {
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_ConfirmTossItems.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_ConfirmTossItems).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     FillWindowPixelBuffer(WIN_DESCRIPTION, 0);
     BagMenu_Print(
@@ -1938,14 +1959,14 @@ pub(crate) unsafe extern "C" fn AskTossItems(taskId: u8) {
         (&raw const *sYesNoTossFunctions).cast_mut(),
     );
 }
-pub(crate) unsafe extern "C" fn CancelToss(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn CancelToss(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     PrintItemDescription(*data.at(1) as i32);
     BagMenu_PrintCursor(*data as u8, COLORID_NORMAL);
     ReturnToItemList(taskId);
 }
-pub(crate) unsafe extern "C" fn Task_ChooseHowManyToToss(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_ChooseHowManyToToss(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if AdjustQuantityAccordingToDPadInput(data.at(8), *data.at(2) as u16) == TRUE {
         PrintItemQuantity((*gBagMenu).windowIds[7], *data.at(8));
     } else if gMain.newKeys as i32 & A_BUTTON != 0 {
@@ -1958,8 +1979,8 @@ pub(crate) unsafe extern "C" fn Task_ChooseHowManyToToss(taskId: u8) {
         CancelToss(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn ConfirmToss(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn ConfirmToss(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
     ConvertIntToDecimalStringN(
         gStringVar2.as_mut_ptr(),
@@ -1969,7 +1990,9 @@ pub(crate) unsafe extern "C" fn ConfirmToss(taskId: u8) {
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_ThrewAwayVar2Var1s.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_ThrewAwayVar2Var1s).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     FillWindowPixelBuffer(WIN_DESCRIPTION, 0);
     BagMenu_Print(
@@ -1983,12 +2006,12 @@ pub(crate) unsafe extern "C" fn ConfirmToss(taskId: u8) {
         0,
         COLORID_NORMAL,
     );
-    gTasks[taskId].func = Some(Task_RemoveItemFromBag);
+    task_set_func(taskId, Some(Task_RemoveItemFromBag));
 }
-pub(crate) unsafe extern "C" fn Task_RemoveItemFromBag(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[gBagPosition.pocket];
-    let mut cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[gBagPosition.pocket];
+pub(crate) unsafe fn Task_RemoveItemFromBag(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[gBagPosition.pocket];
+    let cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[gBagPosition.pocket];
     if gMain.newKeys as i32 & 3 != 0 {
         PlaySE(SE_SELECT);
         RemoveBagItem(gSpecialVar_ItemId, *data.at(8) as u16);
@@ -2001,10 +2024,10 @@ pub(crate) unsafe extern "C" fn Task_RemoveItemFromBag(taskId: u8) {
         ReturnToItemList(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn ItemMenu_Register(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[gBagPosition.pocket];
-    let mut cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[gBagPosition.pocket];
+pub(crate) unsafe fn ItemMenu_Register(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[gBagPosition.pocket];
+    let cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[gBagPosition.pocket];
     if (*gSaveBlock1Ptr).registeredItem == gSpecialVar_ItemId {
         (*gSaveBlock1Ptr).registeredItem = ITEM_NONE;
     } else {
@@ -2016,13 +2039,15 @@ pub(crate) unsafe extern "C" fn ItemMenu_Register(taskId: u8) {
     ScheduleBgCopyTilemapToVram(0);
     ItemMenu_Cancel(taskId);
 }
-pub(crate) unsafe extern "C" fn ItemMenu_Give(taskId: u8) {
+pub(crate) unsafe fn ItemMenu_Give(taskId: u8) {
     RemoveContextWindow();
     if IsWritingMailAllowed(gSpecialVar_ItemId) == 0 {
         DisplayItemMessage(
             taskId,
             FONT_NORMAL,
-            gText_CantWriteMail.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_CantWriteMail).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             Some(HandleErrorMessage),
         );
     } else if GetItemImportance(gSpecialVar_ItemId) == 0 {
@@ -2036,19 +2061,23 @@ pub(crate) unsafe extern "C" fn ItemMenu_Give(taskId: u8) {
         PrintItemCantBeHeld(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn PrintThereIsNoPokemon(taskId: u8) {
+unsafe fn PrintThereIsNoPokemon(taskId: u8) {
     DisplayItemMessage(
         taskId,
         FONT_NORMAL,
-        gText_NoPokemon.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_NoPokemon).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         Some(HandleErrorMessage),
     );
 }
-pub(crate) unsafe extern "C" fn PrintItemCantBeHeld(taskId: u8) {
+unsafe fn PrintItemCantBeHeld(taskId: u8) {
     CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_Var1CantBeHeld.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Var1CantBeHeld).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     DisplayItemMessage(
         taskId,
@@ -2057,18 +2086,18 @@ pub(crate) unsafe extern "C" fn PrintItemCantBeHeld(taskId: u8) {
         Some(HandleErrorMessage),
     );
 }
-pub(crate) unsafe extern "C" fn HandleErrorMessage(taskId: u8) {
+pub(crate) unsafe fn HandleErrorMessage(taskId: u8) {
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
         CloseItemMessage(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn ItemMenu_CheckTag(taskId: u8) {
+pub(crate) unsafe fn ItemMenu_CheckTag(taskId: u8) {
     (*gBagMenu).newScreenCallback = Some(DoBerryTagScreen);
     Task_FadeAndCloseBagMenu(taskId);
 }
-pub(crate) unsafe extern "C" fn ItemMenu_Cancel(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn ItemMenu_Cancel(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     RemoveContextWindow();
     PrintItemDescription(*data.at(1) as i32);
     ScheduleBgCopyTilemapToVram(0);
@@ -2076,29 +2105,32 @@ pub(crate) unsafe extern "C" fn ItemMenu_Cancel(taskId: u8) {
     BagMenu_PrintCursor(*data as u8, COLORID_NORMAL);
     ReturnToItemList(taskId);
 }
-pub(crate) unsafe extern "C" fn ItemMenu_UseInBattle(taskId: u8) {
+pub(crate) unsafe fn ItemMenu_UseInBattle(taskId: u8) {
     if GetItemBattleFunc(gSpecialVar_ItemId).is_some() {
         RemoveContextWindow();
         GetItemBattleFunc(gSpecialVar_ItemId).unwrap_unchecked()(taskId);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ReturnToBagMenuPocket() {
+pub unsafe fn CB2_ReturnToBagMenuPocket() {
     GoToBagMenu(ITEMMENULOCATION_LAST, POCKETS_COUNT, None);
 }
-pub(crate) unsafe extern "C" fn Task_ItemContext_GiveToParty(taskId: u8) {
+pub(crate) unsafe fn Task_ItemContext_GiveToParty(taskId: u8) {
     if IsWritingMailAllowed(gSpecialVar_ItemId) == 0 {
         DisplayItemMessage(
             taskId,
             FONT_NORMAL,
-            gText_CantWriteMail.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_CantWriteMail).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             Some(HandleErrorMessage),
         );
     } else if IsHoldingItemAllowed(gSpecialVar_ItemId) == 0 {
         CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_Var1CantBeHeldHere.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_Var1CantBeHeldHere).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         DisplayItemMessage(
             taskId,
@@ -2112,22 +2144,23 @@ pub(crate) unsafe extern "C" fn Task_ItemContext_GiveToParty(taskId: u8) {
         PrintItemCantBeHeld(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_ItemContext_GiveToPC(taskId: u8) {
+pub(crate) unsafe fn Task_ItemContext_GiveToPC(taskId: u8) {
     if ItemIsMail(gSpecialVar_ItemId) == TRUE {
         DisplayItemMessage(
             taskId,
             FONT_NORMAL,
-            gText_CantWriteMail.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_CantWriteMail).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             Some(HandleErrorMessage),
         );
     } else if gBagPosition.pocket != KEYITEMS_POCKET && GetItemImportance(gSpecialVar_ItemId) == 0 {
-        gTasks[taskId].func = Some(Task_FadeAndCloseBagMenu);
+        task_set_func(taskId, Some(Task_FadeAndCloseBagMenu));
     } else {
         PrintItemCantBeHeld(taskId);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UseRegisteredKeyItemOnField() -> u8 {
+pub unsafe fn UseRegisteredKeyItemOnField() -> u8 {
     let mut taskId: u8 = 0;
     if InUnionRoom() == TRUE as u32
         || CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE
@@ -2146,22 +2179,28 @@ pub unsafe extern "C" fn UseRegisteredKeyItemOnField() -> u8 {
             StopPlayerAvatar();
             gSpecialVar_ItemId = (*gSaveBlock1Ptr).registeredItem;
             taskId = CreateTask(GetItemFieldFunc((*gSaveBlock1Ptr).registeredItem), 8);
-            gTasks[taskId].data[3] = TRUE as i16;
+            task_set(taskId, tUsingRegisteredKeyItem, TRUE as i16);
             return TRUE;
         } else {
             (*gSaveBlock1Ptr).registeredItem = ITEM_NONE;
         }
     }
-    ScriptContext_SetupScript(EventScript_SelectWithoutRegisteredItem.as_ptr().cast_mut());
-    return TRUE;
+    ScriptContext_SetupScript(
+        (*crate::asmdata::EventScript_SelectWithoutRegisteredItem.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
+    TRUE
 }
-pub(crate) unsafe extern "C" fn Task_ItemContext_Sell(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_ItemContext_Sell(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if GetItemPrice(gSpecialVar_ItemId) == 0 {
         CopyItemName(gSpecialVar_ItemId, gStringVar2.as_mut_ptr());
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_CantBuyKeyItem.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_CantBuyKeyItem).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         DisplayItemMessage(
             taskId,
@@ -2178,7 +2217,9 @@ pub(crate) unsafe extern "C" fn Task_ItemContext_Sell(taskId: u8) {
             CopyItemName(gSpecialVar_ItemId, gStringVar2.as_mut_ptr());
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
-                gText_HowManyToSell.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_HowManyToSell).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
             );
             DisplayItemMessage(
                 taskId,
@@ -2189,8 +2230,8 @@ pub(crate) unsafe extern "C" fn Task_ItemContext_Sell(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn DisplaySellItemPriceAndConfirm(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+unsafe fn DisplaySellItemPriceAndConfirm(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
         GetItemPrice(gSpecialVar_ItemId) as i32 / 2 * *data.at(8) as i32,
@@ -2199,7 +2240,9 @@ pub(crate) unsafe extern "C" fn DisplaySellItemPriceAndConfirm(taskId: u8) {
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_ICanPayVar1.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_ICanPayVar1).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     DisplayItemMessage(
         taskId,
@@ -2208,33 +2251,33 @@ pub(crate) unsafe extern "C" fn DisplaySellItemPriceAndConfirm(taskId: u8) {
         Some(AskSellItems),
     );
 }
-pub(crate) unsafe extern "C" fn AskSellItems(taskId: u8) {
+pub(crate) unsafe fn AskSellItems(taskId: u8) {
     BagMenu_YesNo(
         taskId,
         ITEMWIN_YESNO_HIGH,
         (&raw const *sYesNoSellItemFunctions).cast_mut(),
     );
 }
-pub(crate) unsafe extern "C" fn CancelSell(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn CancelSell(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     RemoveMoneyWindow();
     RemoveItemMessageWindow(ITEMWIN_MESSAGE);
     BagMenu_PrintCursor(*data as u8, COLORID_NORMAL);
     ReturnToItemList(taskId);
 }
-pub(crate) unsafe extern "C" fn InitSellHowManyInput(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut windowId: u8 = BagMenu_AddWindow(ITEMWIN_QUANTITY_WIDE);
+pub(crate) unsafe fn InitSellHowManyInput(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let windowId: u8 = BagMenu_AddWindow(ITEMWIN_QUANTITY_WIDE);
     PrintItemSoldAmount(
         windowId as i32,
         1,
         GetItemPrice(gSpecialVar_ItemId) as i32 / 2 * *data.at(8) as i32,
     );
     DisplayCurrentMoneyWindow();
-    gTasks[taskId].func = Some(Task_ChooseHowManyToSell);
+    task_set_func(taskId, Some(Task_ChooseHowManyToSell));
 }
-pub(crate) unsafe extern "C" fn Task_ChooseHowManyToSell(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_ChooseHowManyToSell(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if AdjustQuantityAccordingToDPadInput(data.at(8), *data.at(2) as u16) == TRUE {
         PrintItemSoldAmount(
             (*gBagMenu).windowIds[8] as i32,
@@ -2254,8 +2297,8 @@ pub(crate) unsafe extern "C" fn Task_ChooseHowManyToSell(taskId: u8) {
         ReturnToItemList(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn ConfirmSell(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn ConfirmSell(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     CopyItemName(gSpecialVar_ItemId, gStringVar2.as_mut_ptr());
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
@@ -2265,7 +2308,9 @@ pub(crate) unsafe extern "C" fn ConfirmSell(taskId: u8) {
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_TurnedOverVar1ForVar2.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_TurnedOverVar1ForVar2).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     DisplayItemMessage(
         taskId,
@@ -2274,10 +2319,10 @@ pub(crate) unsafe extern "C" fn ConfirmSell(taskId: u8) {
         Some(SellItem),
     );
 }
-pub(crate) unsafe extern "C" fn SellItem(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[gBagPosition.pocket];
-    let mut cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[gBagPosition.pocket];
+pub(crate) unsafe fn SellItem(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let scrollPos: *mut u16 = &raw mut gBagPosition.scrollPosition[gBagPosition.pocket];
+    let cursorPos: *mut u16 = &raw mut gBagPosition.cursorPosition[gBagPosition.pocket];
     PlaySE(SE_SHOP);
     RemoveBagItem(gSpecialVar_ItemId, *data.at(8) as u16);
     AddMoney(
@@ -2295,17 +2340,17 @@ pub(crate) unsafe extern "C" fn SellItem(taskId: u8) {
         GetMoney(&raw mut (*gSaveBlock1Ptr).money) as i32,
         0,
     );
-    gTasks[taskId].func = Some(WaitAfterItemSell);
+    task_set_func(taskId, Some(WaitAfterItemSell));
 }
-pub(crate) unsafe extern "C" fn WaitAfterItemSell(taskId: u8) {
+pub(crate) unsafe fn WaitAfterItemSell(taskId: u8) {
     if gMain.newKeys as i32 & 3 != 0 {
         PlaySE(SE_SELECT);
         RemoveMoneyWindow();
         CloseItemMessage(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_ItemContext_Deposit(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_ItemContext_Deposit(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(8) = 1;
     if *data.at(2) == 1 {
         TryDepositItem(taskId);
@@ -2313,7 +2358,9 @@ pub(crate) unsafe extern "C" fn Task_ItemContext_Deposit(taskId: u8) {
         CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_DepositHowManyVar1.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_DepositHowManyVar1).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         FillWindowPixelBuffer(WIN_DESCRIPTION, 0);
         BagMenu_Print(
@@ -2328,11 +2375,11 @@ pub(crate) unsafe extern "C" fn Task_ItemContext_Deposit(taskId: u8) {
             COLORID_NORMAL,
         );
         AddItemQuantityWindow(ITEMWIN_QUANTITY);
-        gTasks[taskId].func = Some(Task_ChooseHowManyToDeposit);
+        task_set_func(taskId, Some(Task_ChooseHowManyToDeposit));
     }
 }
-pub(crate) unsafe extern "C" fn Task_ChooseHowManyToDeposit(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_ChooseHowManyToDeposit(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if AdjustQuantityAccordingToDPadInput(data.at(8), *data.at(2) as u16) == TRUE {
         PrintItemQuantity((*gBagMenu).windowIds[7], *data.at(8));
     } else if gMain.newKeys as i32 & A_BUTTON != 0 {
@@ -2347,14 +2394,17 @@ pub(crate) unsafe extern "C" fn Task_ChooseHowManyToDeposit(taskId: u8) {
         ReturnToItemList(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn TryDepositItem(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+unsafe fn TryDepositItem(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     FillWindowPixelBuffer(WIN_DESCRIPTION, 0);
     if GetItemImportance(gSpecialVar_ItemId) != 0 {
         BagMenu_Print(
             WIN_DESCRIPTION,
             FONT_NORMAL,
-            gText_CantStoreImportantItems.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_CantStoreImportantItems)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
             3,
             1,
             0,
@@ -2362,7 +2412,7 @@ pub(crate) unsafe extern "C" fn TryDepositItem(taskId: u8) {
             0,
             COLORID_NORMAL,
         );
-        gTasks[taskId].func = Some(WaitDepositErrorMessage);
+        task_set_func(taskId, Some(WaitDepositErrorMessage));
     } else if AddPCItem(gSpecialVar_ItemId, *data.at(8) as u16) == TRUE {
         CopyItemName(gSpecialVar_ItemId, gStringVar1.as_mut_ptr());
         ConvertIntToDecimalStringN(
@@ -2373,7 +2423,9 @@ pub(crate) unsafe extern "C" fn TryDepositItem(taskId: u8) {
         );
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_DepositedVar2Var1s.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_DepositedVar2Var1s).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         BagMenu_Print(
             WIN_DESCRIPTION,
@@ -2386,12 +2438,14 @@ pub(crate) unsafe extern "C" fn TryDepositItem(taskId: u8) {
             0,
             COLORID_NORMAL,
         );
-        gTasks[taskId].func = Some(Task_RemoveItemFromBag);
+        task_set_func(taskId, Some(Task_RemoveItemFromBag));
     } else {
         BagMenu_Print(
             WIN_DESCRIPTION,
             FONT_NORMAL,
-            gText_NoRoomForItems.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_NoRoomForItems).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             3,
             1,
             0,
@@ -2399,11 +2453,11 @@ pub(crate) unsafe extern "C" fn TryDepositItem(taskId: u8) {
             0,
             COLORID_NORMAL,
         );
-        gTasks[taskId].func = Some(WaitDepositErrorMessage);
+        task_set_func(taskId, Some(WaitDepositErrorMessage));
     }
 }
-pub(crate) unsafe extern "C" fn WaitDepositErrorMessage(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn WaitDepositErrorMessage(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if gMain.newKeys as i32 & 3 != 0 {
         PlaySE(SE_SELECT);
         PrintItemDescription(*data.at(1) as i32);
@@ -2411,14 +2465,13 @@ pub(crate) unsafe extern "C" fn WaitDepositErrorMessage(taskId: u8) {
         ReturnToItemList(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn IsWallysBag() -> u8 {
+unsafe fn IsWallysBag() -> u8 {
     if gBagPosition.location == ITEMMENULOCATION_WALLY {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn PrepareBagForWallyTutorial() {
-    let mut i: u32 = 0;
+unsafe fn PrepareBagForWallyTutorial() {
     sTempWallyBag = AllocZeroed(208) as *mut TempWallyBag;
     memcpy(
         (*sTempWallyBag).bagPocket_Items.as_mut_ptr() as *mut u8,
@@ -2431,11 +2484,9 @@ pub(crate) unsafe extern "C" fn PrepareBagForWallyTutorial() {
         64,
     );
     (*sTempWallyBag).pocket = gBagPosition.pocket as u16;
-    i = 0;
-    while i < POCKETS_COUNT as u32 {
+    for i in 0..(POCKETS_COUNT as u32) {
         (*sTempWallyBag).cursorPosition[i] = gBagPosition.cursorPosition[i];
         (*sTempWallyBag).scrollPosition[i] = gBagPosition.scrollPosition[i];
-        i += 1;
     }
     ClearItemSlots(
         (*gSaveBlock1Ptr).bagPocket_Items.as_mut_ptr(),
@@ -2447,8 +2498,7 @@ pub(crate) unsafe extern "C" fn PrepareBagForWallyTutorial() {
     );
     ResetBagScrollPositions();
 }
-pub(crate) unsafe extern "C" fn RestoreBagAfterWallyTutorial() {
-    let mut i: u32 = 0;
+unsafe fn RestoreBagAfterWallyTutorial() {
     memcpy(
         (*gSaveBlock1Ptr).bagPocket_Items.as_mut_ptr() as *mut u8,
         (*sTempWallyBag).bagPocket_Items.as_mut_ptr() as *mut u8,
@@ -2460,16 +2510,13 @@ pub(crate) unsafe extern "C" fn RestoreBagAfterWallyTutorial() {
         64,
     );
     gBagPosition.pocket = (*sTempWallyBag).pocket as u8;
-    i = 0;
-    while i < POCKETS_COUNT as u32 {
+    for i in 0..(POCKETS_COUNT as u32) {
         gBagPosition.cursorPosition[i] = (*sTempWallyBag).cursorPosition[i];
         gBagPosition.scrollPosition[i] = (*sTempWallyBag).scrollPosition[i];
-        i += 1;
     }
     Free(sTempWallyBag as *mut c_void);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoWallyTutorialBagMenu() {
+pub unsafe fn DoWallyTutorialBagMenu() {
     PrepareBagForWallyTutorial();
     AddBagItem(ITEM_POTION as u16, 1);
     AddBagItem(ITEM_POKE_BALL, 1);
@@ -2479,8 +2526,8 @@ pub unsafe extern "C" fn DoWallyTutorialBagMenu() {
         Some(CB2_SetUpReshowBattleScreenAfterMenu2),
     );
 }
-pub(crate) unsafe extern "C" fn Task_WallyTutorialBagMenu(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_WallyTutorialBagMenu(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if gPaletteFade.active() == 0 {
         match *data.at(8) {
             WALLY_BAG_DELAY => {
@@ -2508,45 +2555,43 @@ pub(crate) unsafe extern "C" fn Task_WallyTutorialBagMenu(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn ItemMenu_Show(taskId: u8) {
+pub(crate) unsafe fn ItemMenu_Show(taskId: u8) {
     gSpecialVar_0x8005 = gSpecialVar_ItemId;
     gSpecialVar_Result = TRUE as u16;
     RemoveContextWindow();
     Task_FadeAndCloseBagMenu(taskId);
 }
-pub(crate) unsafe extern "C" fn CB2_ApprenticeExitBagMenu() {
+pub(crate) unsafe fn CB2_ApprenticeExitBagMenu() {
     gFieldCallback = Some(Apprentice_ScriptContext_Enable);
     SetMainCallback2(Some(CB2_ReturnToField));
 }
-pub(crate) unsafe extern "C" fn ItemMenu_GiveFavorLady(taskId: u8) {
+pub(crate) unsafe fn ItemMenu_GiveFavorLady(taskId: u8) {
     RemoveBagItem(gSpecialVar_ItemId, 1);
     gSpecialVar_Result = TRUE as u16;
     RemoveContextWindow();
     Task_FadeAndCloseBagMenu(taskId);
 }
-pub(crate) unsafe extern "C" fn CB2_FavorLadyExitBagMenu() {
+pub(crate) unsafe fn CB2_FavorLadyExitBagMenu() {
     gFieldCallback = Some(FieldCallback_FavorLadyEnableScriptContexts);
     SetMainCallback2(Some(CB2_ReturnToField));
 }
-pub(crate) unsafe extern "C" fn ItemMenu_ConfirmQuizLady(taskId: u8) {
+pub(crate) unsafe fn ItemMenu_ConfirmQuizLady(taskId: u8) {
     gSpecialVar_Result = TRUE as u16;
     RemoveContextWindow();
     Task_FadeAndCloseBagMenu(taskId);
 }
-pub(crate) unsafe extern "C" fn CB2_QuizLadyExitBagMenu() {
+pub(crate) unsafe fn CB2_QuizLadyExitBagMenu() {
     gFieldCallback = Some(FieldCallback_QuizLadyEnableScriptContexts);
     SetMainCallback2(Some(CB2_ReturnToField));
 }
-pub(crate) unsafe extern "C" fn PrintPocketNames(pocketName1: *mut u8, pocketName2: *mut u8) {
+unsafe fn PrintPocketNames(pocketName1: *mut u8, pocketName2: *mut u8) {
     let mut window: WindowTemplate = zeroed();
     window.bg = 0;
-    let mut windowId: u16 = 0;
-    let mut offset: i32 = 0;
     window.width = 16;
     window.height = 2;
-    windowId = AddWindow(&raw mut window);
+    let windowId: u16 = AddWindow(&raw mut window);
     FillWindowPixelBuffer(windowId as u8, 0);
-    offset = GetStringCenterAlignXOffset(FONT_NORMAL as i32, pocketName1, 0x40);
+    let mut offset: i32 = GetStringCenterAlignXOffset(FONT_NORMAL as i32, pocketName1, 0x40);
     BagMenu_Print(
         windowId as u8,
         FONT_NORMAL,
@@ -2579,21 +2624,18 @@ pub(crate) unsafe extern "C" fn PrintPocketNames(pocketName1: *mut u8, pocketNam
     );
     RemoveWindow(windowId as u8);
 }
-pub(crate) unsafe extern "C" fn CopyPocketNameToWindow(mut a: u32) {
-    let mut tileDataBuffer: *mut CArray<CArray<u8, 32>, 32> = null_mut();
-    let mut windowTileData: *mut u8 = null_mut();
-    let mut b: i32 = 0;
+unsafe fn CopyPocketNameToWindow(mut a: u32) {
     if a > 8 {
         a = 8;
     }
-    tileDataBuffer = &raw mut (*gBagMenu).pocketNameBuffer;
-    windowTileData = GetWindowAttribute(2, WINDOW_TILE_DATA) as usize as *mut u8;
+    let tileDataBuffer: *mut CArray<CArray<u8, 32>, 32> = &raw mut (*gBagMenu).pocketNameBuffer;
+    let windowTileData: *mut u8 = GetWindowAttribute(2, WINDOW_TILE_DATA) as usize as *mut u8;
     CpuSet(
         &raw mut (*tileDataBuffer)[a] as *mut c_void,
         windowTileData as *mut c_void,
         0x4000040,
     );
-    b = a as i32 + 16;
+    let b: i32 = a as i32 + 16;
     CpuSet(
         &raw mut (*tileDataBuffer)[b] as *mut c_void,
         windowTileData.at(256) as *mut c_void,
@@ -2601,19 +2643,20 @@ pub(crate) unsafe extern "C" fn CopyPocketNameToWindow(mut a: u32) {
     );
     CopyWindowToVram(WIN_POCKET_NAME, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn LoadBagMenuTextWindows() {
-    let mut i: u8 = 0;
+unsafe fn LoadBagMenuTextWindows() {
     InitWindows(sDefaultBagWindows.as_ptr().cast_mut());
     DeactivateAllTextPrinters();
     LoadUserWindowBorderGfx(0, 1, 224);
     LoadMessageBoxGfx(0, 10, 208);
     ListMenuLoadStdPalAt(192, 1);
     LoadPalette(
-        (&raw const gStandardMenuPalette).cast_mut() as *mut c_void,
+        (&raw const (*(&raw const crate::data::menu::gStandardMenuPalette)
+            .cast::<CArray<u16, 0>>()))
+            .cast_mut() as *mut c_void,
         240,
         32,
     );
-    i = 0;
+    let mut i: u8 = 0;
     while i <= WIN_POCKET_NAME {
         FillWindowPixelBuffer(i, 0);
         PutWindowTilemap(i);
@@ -2622,7 +2665,7 @@ pub(crate) unsafe extern "C" fn LoadBagMenuTextWindows() {
     ScheduleBgCopyTilemapToVram(0);
     ScheduleBgCopyTilemapToVram(1);
 }
-pub(crate) unsafe extern "C" fn BagMenu_Print(
+unsafe fn BagMenu_Print(
     windowId: u8,
     fontId: u8,
     str: *mut u8,
@@ -2645,21 +2688,21 @@ pub(crate) unsafe extern "C" fn BagMenu_Print(
         str,
     );
 }
-pub(crate) unsafe extern "C" fn BagMenu_GetWindowId(windowType: u8) -> u8 {
-    return (*gBagMenu).windowIds[windowType];
+unsafe fn BagMenu_GetWindowId(windowType: u8) -> u8 {
+    (*gBagMenu).windowIds[windowType]
 }
-pub(crate) unsafe extern "C" fn BagMenu_AddWindow(windowType: u8) -> u8 {
-    let mut windowId: *mut u8 = &raw mut (*gBagMenu).windowIds[windowType];
+unsafe fn BagMenu_AddWindow(windowType: u8) -> u8 {
+    let windowId: *mut u8 = &raw mut (*gBagMenu).windowIds[windowType];
     if *windowId == WINDOW_NONE {
         *windowId =
             AddWindow((&raw const sContextMenuWindowTemplates[windowType]).cast_mut()) as u8;
         DrawStdFrameWithCustomTileAndPalette(*windowId, FALSE, 1, 14);
         ScheduleBgCopyTilemapToVram(1);
     }
-    return *windowId;
+    *windowId
 }
-pub(crate) unsafe extern "C" fn BagMenu_RemoveWindow(windowType: u8) {
-    let mut windowId: *mut u8 = &raw mut (*gBagMenu).windowIds[windowType];
+unsafe fn BagMenu_RemoveWindow(windowType: u8) {
+    let windowId: *mut u8 = &raw mut (*gBagMenu).windowIds[windowType];
     if *windowId != WINDOW_NONE {
         ClearStdWindowAndFrameToTransparent(*windowId, FALSE);
         ClearWindowTilemap(*windowId);
@@ -2668,16 +2711,16 @@ pub(crate) unsafe extern "C" fn BagMenu_RemoveWindow(windowType: u8) {
         *windowId = WINDOW_NONE;
     }
 }
-pub(crate) unsafe extern "C" fn AddItemMessageWindow(windowType: u8) -> u8 {
-    let mut windowId: *mut u8 = &raw mut (*gBagMenu).windowIds[windowType];
+unsafe fn AddItemMessageWindow(windowType: u8) -> u8 {
+    let windowId: *mut u8 = &raw mut (*gBagMenu).windowIds[windowType];
     if *windowId == WINDOW_NONE {
         *windowId =
             AddWindow((&raw const sContextMenuWindowTemplates[windowType]).cast_mut()) as u8;
     }
-    return *windowId;
+    *windowId
 }
-pub(crate) unsafe extern "C" fn RemoveItemMessageWindow(windowType: u8) {
-    let mut windowId: *mut u8 = &raw mut (*gBagMenu).windowIds[windowType];
+unsafe fn RemoveItemMessageWindow(windowType: u8) {
+    let windowId: *mut u8 = &raw mut (*gBagMenu).windowIds[windowType];
     if *windowId != WINDOW_NONE {
         ClearDialogWindowAndFrameToTransparent(*windowId, FALSE);
         ClearWindowTilemap(*windowId);
@@ -2686,8 +2729,7 @@ pub(crate) unsafe extern "C" fn RemoveItemMessageWindow(windowType: u8) {
         *windowId = WINDOW_NONE;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BagMenu_YesNo(taskId: u8, windowType: u8, funcTable: *mut YesNoFuncTable) {
+pub unsafe fn BagMenu_YesNo(taskId: u8, windowType: u8, funcTable: *mut YesNoFuncTable) {
     CreateYesNoMenuWithCallbacks(
         taskId,
         (&raw const sContextMenuWindowTemplates[windowType]).cast_mut(),
@@ -2699,8 +2741,8 @@ pub unsafe extern "C" fn BagMenu_YesNo(taskId: u8, windowType: u8, funcTable: *m
         funcTable,
     );
 }
-pub(crate) unsafe extern "C" fn DisplayCurrentMoneyWindow() {
-    let mut windowId: u8 = BagMenu_AddWindow(ITEMWIN_MONEY);
+unsafe fn DisplayCurrentMoneyWindow() {
+    let windowId: u8 = BagMenu_AddWindow(ITEMWIN_MONEY);
     PrintMoneyAmountInMoneyBoxWithBorder(
         windowId,
         1,
@@ -2709,11 +2751,11 @@ pub(crate) unsafe extern "C" fn DisplayCurrentMoneyWindow() {
     );
     AddMoneyLabelObject(19, 11);
 }
-pub(crate) unsafe extern "C" fn RemoveMoneyWindow() {
+unsafe fn RemoveMoneyWindow() {
     BagMenu_RemoveWindow(ITEMWIN_MONEY);
     RemoveMoneyLabelObject();
 }
-pub(crate) unsafe extern "C" fn PrepareTMHMMoveWindow() {
+unsafe fn PrepareTMHMMoveWindow() {
     FillWindowPixelBuffer(WIN_TMHM_INFO_ICONS, 0);
     BlitMenuInfoIcon(WIN_TMHM_INFO_ICONS, MENU_INFO_ICON_TYPE, 0, 0);
     BlitMenuInfoIcon(WIN_TMHM_INFO_ICONS, MENU_INFO_ICON_POWER, 0, 12);
@@ -2721,18 +2763,18 @@ pub(crate) unsafe extern "C" fn PrepareTMHMMoveWindow() {
     BlitMenuInfoIcon(WIN_TMHM_INFO_ICONS, MENU_INFO_ICON_PP, 0, 36);
     CopyWindowToVram(WIN_TMHM_INFO_ICONS, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn PrintTMHMMoveData(itemId: u16) {
-    let mut i: u8 = 0;
+unsafe fn PrintTMHMMoveData(itemId: u16) {
     let mut r#move: u16 = 0;
     let mut text: *mut u8 = null_mut();
     FillWindowPixelBuffer(WIN_TMHM_INFO, 0);
     if itemId == ITEM_NONE {
-        i = 0;
-        while i < 4 {
+        for i in 0..4u8 {
             BagMenu_Print(
                 WIN_TMHM_INFO,
                 FONT_NORMAL,
-                gText_ThreeDashes.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_ThreeDashes).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 7,
                 i * 12,
                 0,
@@ -2740,18 +2782,33 @@ pub(crate) unsafe extern "C" fn PrintTMHMMoveData(itemId: u16) {
                 TEXT_SKIP_DRAW,
                 COLORID_TMHM_INFO,
             );
-            i += 1;
         }
         CopyWindowToVram(WIN_TMHM_INFO, COPYWIN_GFX);
     } else {
         r#move = ItemIdToBattleMoveId(itemId);
-        BlitMenuInfoIcon(WIN_TMHM_INFO, gBattleMoves[r#move].r#type + 1, 0, 0);
-        if gBattleMoves[r#move].power <= 1 {
-            text = gText_ThreeDashes.as_ptr().cast_mut();
+        BlitMenuInfoIcon(
+            WIN_TMHM_INFO,
+            (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                [r#move]
+                .r#type
+                + 1,
+            0,
+            0,
+        );
+        if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+            [r#move]
+            .power
+            <= 1
+        {
+            text = (*(&raw const crate::data::strings::gText_ThreeDashes).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         } else {
             ConvertIntToDecimalStringN(
                 gStringVar1.as_mut_ptr(),
-                gBattleMoves[r#move].power as i32,
+                (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                    [r#move]
+                    .power as i32,
                 STR_CONV_MODE_RIGHT_ALIGN,
                 3,
             );
@@ -2768,12 +2825,20 @@ pub(crate) unsafe extern "C" fn PrintTMHMMoveData(itemId: u16) {
             TEXT_SKIP_DRAW,
             COLORID_TMHM_INFO,
         );
-        if gBattleMoves[r#move].accuracy == 0 {
-            text = gText_ThreeDashes.as_ptr().cast_mut();
+        if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+            [r#move]
+            .accuracy
+            == 0
+        {
+            text = (*(&raw const crate::data::strings::gText_ThreeDashes).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         } else {
             ConvertIntToDecimalStringN(
                 gStringVar1.as_mut_ptr(),
-                gBattleMoves[r#move].accuracy as i32,
+                (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                    [r#move]
+                    .accuracy as i32,
                 STR_CONV_MODE_RIGHT_ALIGN,
                 3,
             );
@@ -2792,7 +2857,9 @@ pub(crate) unsafe extern "C" fn PrintTMHMMoveData(itemId: u16) {
         );
         ConvertIntToDecimalStringN(
             gStringVar1.as_mut_ptr(),
-            gBattleMoves[r#move].pp as i32,
+            (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                [r#move]
+                .pp as i32,
             STR_CONV_MODE_RIGHT_ALIGN,
             3,
         );

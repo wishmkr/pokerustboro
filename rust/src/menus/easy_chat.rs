@@ -3,37 +3,242 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::explicit_counter_loop,
+    clippy::int_plus_one,
+    clippy::missing_transmute_annotations,
+    clippy::too_many_arguments,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_labels,
+    unused_variables
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect,
+    FillBgTilemapBufferRect_Palette0, GetBgY, HideBg, IsDma3ManagerBusyWithBgCopy,
+    ResetBgsAndClearDma3BusyFlags, ShowBg,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_Reset;
+use crate::event_data::{FlagGet, FlagSet, IsNationalPokedexEnabled};
+use crate::event_object_movement::CreateObjectGraphicsSprite;
+use crate::ffi::{gSpecialVar_0x8004, gSpecialVar_0x8006, gSpecialVar_Result};
+use crate::field_weather::FadeScreen;
+use crate::gpu_regs::SetGpuReg;
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::menu::{
+    AddTextPrinterParameterized3, CreateYesNoMenu, DecompressAndLoadBgGfxUsingHeap,
+    Menu_ProcessInputNoWrapClearOnChoose,
+};
+use crate::mystery_gift::GetQuestionnaireWordsPtr;
+use crate::overworld::{
+    CB2_ReturnToFieldContinueScript, CleanupOverworldWindowsAndTilemaps, IsOverworldLinkActive,
+};
+use crate::palette::{
+    BeginNormalPaletteFade, BlendPalettes, LoadPalette, ResetPaletteFade, TransferPlttBuffer,
+    UpdatePaletteFade, gPaletteFade,
+};
+use crate::pokedex::{GetNationalPokedexCount, GetSetPokedexFlag};
+use crate::pokemon::SpeciesToNationalPokedexNum;
+use crate::random::Random;
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData,
+};
+use crate::string_util::WriteColorChangeControlCode;
+use crate::string_util::{gStringVar2, gStringVar3, gStringVar4};
+use crate::task::{GetWordTaskArg, ResetTasks, RunTasks, SetWordTaskArg};
+use crate::task::{gTasks, task_set, task_set_func};
+use crate::text::DeactivateAllTextPrinters;
+use crate::text_window::{DrawTextBorderOuter, LoadUserWindowBorderGfx};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers,
+    PutWindowTilemap,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `CopyToBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBuffer(a0, a1 as _, a2, a3);
+    }
+}
+/// `CopyToBgTilemapBufferRect` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut c_void, a2: u8, a3: u8, a4: u8, a5: u8) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBufferRect(a0, a1 as _, a2, a3, a4, a5);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `DynamicPlaceholderTextUtil_ExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn DynamicPlaceholderTextUtil_ExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe {
+        crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_ExpandPlaceholders(
+            a0 as _, a1 as _,
+        ) as *mut u8
+    }
+}
+/// `DynamicPlaceholderTextUtil_SetPlaceholderPtr` with this module's view of its types.
+#[inline]
+unsafe fn DynamicPlaceholderTextUtil_SetPlaceholderPtr(a0: u8, a1: *mut u8) {
+    unsafe {
+        crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_SetPlaceholderPtr(
+            a0, a1 as _,
+        );
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `GetStringCenterAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringCenterAlignXOffset(a0, a1 as _, a2) }
+}
+/// `GetStringWidth` with this module's view of its types.
+#[inline]
+unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
+    unsafe { crate::text::GetStringWidth(a0, a1 as _, a2) }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `LoadSpritePalettes` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+    unsafe {
+        crate::sprite::LoadSpritePalettes(a0 as _);
+    }
+}
+/// `LoadSpriteSheets` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheets(a0: *mut SpriteSheet) {
+    unsafe {
+        crate::sprite::LoadSpriteSheets(a0 as _);
+    }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `ShowFieldAutoScrollMessage` with this module's view of its types.
+#[inline]
+unsafe fn ShowFieldAutoScrollMessage(a0: *mut u8) -> u8 {
+    unsafe { crate::field_message_box::ShowFieldAutoScrollMessage(a0 as _) }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StringAppend` with this module's view of its types.
+#[inline]
+unsafe fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringAppend(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringLength` with this module's view of its types.
+#[inline]
+unsafe fn StringLength(a0: *mut u8) -> u16 {
+    unsafe { crate::string_util::StringLength(a0 as _) }
+}
+/// `TVShowConvertInternationalString` with this module's view of its types.
+#[inline]
+unsafe fn TVShowConvertInternationalString(a0: *mut u8, a1: *mut u8, a2: i32) {
+    unsafe {
+        crate::international_string_util::TVShowConvertInternationalString(a0 as _, a1 as _, a2);
+    }
+}
+/// `TrySetTrendyPhrase` with this module's view of its types.
+#[inline]
+unsafe fn TrySetTrendyPhrase(a0: *mut u16) -> u8 {
+    unsafe { crate::dewford_trend::TrySetTrendyPhrase(a0 as _) }
+}
+// The C's names for task and sprite data slots.
+const sDelayTimer: usize = 0;
+const tState: usize = 0;
+const sAnimateCursor: usize = 1;
+const tType: usize = 1;
+const tPersonType: usize = 7;
 // Data tables (translate with cdata.py): sQuizLadyEasyChatScreens sEasyChatScreenTemplates sAlphabetGroupIdMap sMysteryGiftPhrase sBerryMasterWifePhrases sTriangleCursor_Pal sTriangleCursor_Gfx sScrollIndicator_Gfx sStartSelectButtons_Gfx sRSInterviewFrame_Pal sRSInterviewFrame_Gfx sTextInputFrameOrange_Pal sTextInputFrameGreen_Pal sTextInputFrame_Gfx sTitleText_Pal sText_Pal sPhraseFrameDimensions sEasyChatBgTemplates sEasyChatWindowTemplates sEasyChatYesNoWindowTemplate sText_Clear17 sEasyChatKeyboardAlphabet sSpriteSheets sSpritePalettes sCompressedSpriteSheets sAlphabetKeyboardColumnOffsets sOamData_TriangleCursor sSpriteTemplate_TriangleCursor sOamData_RectangleCursor sAnim_RectangleCursor_OnGroup sAnim_RectangleCursor_OnButton sAnim_RectangleCursor_OnOthers sAnim_RectangleCursor_OnLetter sAnims_RectangleCursor sSpriteTemplate_RectangleCursor sOamData_ModeWindow sAnim_ModeWindow_Hidden sAnim_ModeWindow_ToGroup sAnim_ModeWindow_ToAlphabet sAnim_ModeWindow_ToHidden sAnim_ModeWindow_Transition sAnims_ModeWindow sSpriteTemplate_ModeWindow sOamData_ButtonWindow sSpriteTemplate_ButtonWindow sOamData_StartSelectButton sOamData_ScrollIndicator sAnim_Frame0 sAnim_Frame1 sAnims_TwoFrame sSpriteTemplate_StartSelectButton sSpriteTemplate_ScrollIndicator sFooterOptionXOffsets sFooterTextOptions gEasyChatGroup_Pokemon gEasyChatWord_IChooseYou gEasyChatWord_Gotcha gEasyChatWord_Trade gEasyChatWord_Sapphire gEasyChatWord_Evolve gEasyChatWord_Encyclopedia gEasyChatWord_Nature gEasyChatWord_Center gEasyChatWord_Egg gEasyChatWord_Link gEasyChatWord_SpAbility gEasyChatWord_Trainer gEasyChatWord_Version gEasyChatWord_Pokenav gEasyChatWord_Pokemon gEasyChatWord_Get gEasyChatWord_Pokedex gEasyChatWord_Ruby gEasyChatWord_Level gEasyChatWord_Red gEasyChatWord_Green gEasyChatWord_Bag gEasyChatWord_Flame gEasyChatWord_Gold gEasyChatWord_Leaf gEasyChatWord_Silver gEasyChatWord_Emerald gEasyChatGroup_Trainer gEasyChatWord_Dark gEasyChatWord_Stench gEasyChatWord_ThickFat gEasyChatWord_RainDish gEasyChatWord_Drizzle gEasyChatWord_ArenaTrap gEasyChatWord_Intimidate gEasyChatWord_RockHead gEasyChatWord_Color gEasyChatWord_AltColor gEasyChatWord_Rock gEasyChatWord_Beautiful gEasyChatWord_Beauty gEasyChatWord_AirLock gEasyChatWord_Psychic gEasyChatWord_HyperCutter gEasyChatWord_Fighting gEasyChatWord_ShadowTag gEasyChatWord_Smart gEasyChatWord_Smartness gEasyChatWord_SpeedBoost gEasyChatWord_Cool gEasyChatWord_Coolness gEasyChatWord_BattleArmor gEasyChatWord_Cute gEasyChatWord_Cuteness gEasyChatWord_Sturdy gEasyChatWord_SuctionCups gEasyChatWord_Grass gEasyChatWord_ClearBody gEasyChatWord_Torrent gEasyChatWord_Ghost gEasyChatWord_Ice gEasyChatWord_Guts gEasyChatWord_RoughSkin gEasyChatWord_ShellArmor gEasyChatWord_NaturalCure gEasyChatWord_Damp gEasyChatWord_Ground gEasyChatWord_Limber gEasyChatWord_MagnetPull gEasyChatWord_WhiteSmoke gEasyChatWord_Synchronize gEasyChatWord_Overgrow gEasyChatWord_SwiftSwim gEasyChatWord_SandStream gEasyChatWord_SandVeil gEasyChatWord_KeenEye gEasyChatWord_InnerFocus gEasyChatWord_Static gEasyChatWord_Type gEasyChatWord_Tough gEasyChatWord_Toughness gEasyChatWord_ShedSkin gEasyChatWord_HugePower gEasyChatWord_VoltAbsorb gEasyChatWord_WaterAbsorb gEasyChatWord_Electric gEasyChatWord_Forecast gEasyChatWord_SereneGrace gEasyChatWord_Poison gEasyChatWord_PoisonPoint gEasyChatWord_Dragon gEasyChatWord_Trace gEasyChatWord_Oblivious gEasyChatWord_Truant gEasyChatWord_RunAway gEasyChatWord_StickyHold gEasyChatWord_CloudNine gEasyChatWord_Normal gEasyChatWord_Steel gEasyChatWord_Illuminate gEasyChatWord_EarlyBird gEasyChatWord_Hustle gEasyChatWord_Shine gEasyChatWord_Flying gEasyChatWord_Drought gEasyChatWord_Lightningrod gEasyChatWord_Compoundeyes gEasyChatWord_MarvelScale gEasyChatWord_WonderGuard gEasyChatWord_Insomnia gEasyChatWord_Levitate gEasyChatWord_Plus gEasyChatWord_Pressure gEasyChatWord_LiquidOoze gEasyChatWord_ColorChange gEasyChatWord_Soundproof gEasyChatWord_EffectSpore gEasyChatWord_Pkrs gEasyChatWord_Fire gEasyChatWord_FlameBody gEasyChatWord_Minus gEasyChatWord_OwnTempo gEasyChatWord_MagmaArmor gEasyChatWord_Water gEasyChatWord_WaterVeil gEasyChatWord_Bug gEasyChatWord_Swarm gEasyChatWord_CuteCharm gEasyChatWord_Immunity gEasyChatWord_Blaze gEasyChatWord_Pickup gEasyChatWord_Pattern gEasyChatWord_FlashFire gEasyChatWord_VitalSpirit gEasyChatWord_Chlorophyll gEasyChatWord_PurePower gEasyChatWord_ShieldDust gEasyChatGroup_Status gEasyChatWord_MatchUp gEasyChatWord_Go gEasyChatWord_No1 gEasyChatWord_Decide gEasyChatWord_LetMeWin gEasyChatWord_Wins gEasyChatWord_Win gEasyChatWord_Won gEasyChatWord_IfIWin gEasyChatWord_WhenIWin gEasyChatWord_CantWin gEasyChatWord_CanWin gEasyChatWord_NoMatch gEasyChatWord_Spirit gEasyChatWord_Decided gEasyChatWord_TrumpCard gEasyChatWord_TakeThat gEasyChatWord_ComeOn gEasyChatWord_Attack gEasyChatWord_Surrender gEasyChatWord_Gutsy gEasyChatWord_Talent gEasyChatWord_Strategy gEasyChatWord_Smite gEasyChatWord_Match gEasyChatWord_Victory gEasyChatWord_Offensive gEasyChatWord_Sense gEasyChatWord_Versus gEasyChatWord_Fights gEasyChatWord_Power gEasyChatWord_Challenge gEasyChatWord_Strong gEasyChatWord_TooStrong gEasyChatWord_GoEasy gEasyChatWord_Foe gEasyChatWord_Genius gEasyChatWord_Legend gEasyChatWord_Escape gEasyChatWord_Aim gEasyChatWord_Battle gEasyChatWord_Fight gEasyChatWord_Resuscitate gEasyChatWord_Points gEasyChatWord_Serious gEasyChatWord_GiveUp gEasyChatWord_Loss gEasyChatWord_IfILose gEasyChatWord_Lost gEasyChatWord_Lose gEasyChatWord_Guard gEasyChatWord_Partner gEasyChatWord_Reject gEasyChatWord_Accept gEasyChatWord_Invincible gEasyChatWord_Received gEasyChatWord_Easy gEasyChatWord_Weak gEasyChatWord_TooWeak gEasyChatWord_Pushover gEasyChatWord_Leader gEasyChatWord_Rule gEasyChatWord_Move gEasyChatGroup_Battle gEasyChatWord_Thanks gEasyChatWord_Yes gEasyChatWord_HereGoes gEasyChatWord_HereICome gEasyChatWord_HereItIs gEasyChatWord_Yeah gEasyChatWord_Welcome gEasyChatWord_Oi gEasyChatWord_HowDo gEasyChatWord_Congrats gEasyChatWord_GiveMe gEasyChatWord_Sorry gEasyChatWord_Apologize gEasyChatWord_Forgive gEasyChatWord_HeyThere gEasyChatWord_Hello gEasyChatWord_GoodBye gEasyChatWord_ThankYou gEasyChatWord_IveArrived gEasyChatWord_Pardon gEasyChatWord_Excuse gEasyChatWord_SeeYa gEasyChatWord_ExcuseMe gEasyChatWord_WellThen gEasyChatWord_GoAhead gEasyChatWord_Appreciate gEasyChatWord_HeyQues gEasyChatWord_WhatsUpQues gEasyChatWord_HuhQues gEasyChatWord_No gEasyChatWord_Hi gEasyChatWord_YeahYeah gEasyChatWord_ByeBye gEasyChatWord_MeetYou gEasyChatWord_Hey gEasyChatWord_Smell gEasyChatWord_Listening gEasyChatWord_HooHah gEasyChatWord_Yahoo gEasyChatWord_Yo gEasyChatWord_ComeOver gEasyChatWord_CountOn gEasyChatGroup_Greetings gEasyChatWord_Opponent gEasyChatWord_I gEasyChatWord_You gEasyChatWord_Yours gEasyChatWord_Son gEasyChatWord_Your gEasyChatWord_Youre gEasyChatWord_Youve gEasyChatWord_Mother gEasyChatWord_Grandfather gEasyChatWord_Uncle gEasyChatWord_Father gEasyChatWord_Boy gEasyChatWord_Adult gEasyChatWord_Brother gEasyChatWord_Sister gEasyChatWord_Grandmother gEasyChatWord_Aunt gEasyChatWord_Parent gEasyChatWord_Man gEasyChatWord_Me gEasyChatWord_Girl gEasyChatWord_Babe gEasyChatWord_Family gEasyChatWord_Her gEasyChatWord_Him gEasyChatWord_He gEasyChatWord_Place gEasyChatWord_Daughter gEasyChatWord_His gEasyChatWord_Hes gEasyChatWord_Arent gEasyChatWord_Siblings gEasyChatWord_Kid gEasyChatWord_Children gEasyChatWord_Mr gEasyChatWord_Mrs gEasyChatWord_Myself gEasyChatWord_IWas gEasyChatWord_ToMe gEasyChatWord_My gEasyChatWord_IAm gEasyChatWord_Ive gEasyChatWord_Who gEasyChatWord_Someone gEasyChatWord_WhoWas gEasyChatWord_ToWhom gEasyChatWord_Whose gEasyChatWord_WhoIs gEasyChatWord_Its gEasyChatWord_Lady gEasyChatWord_Friend gEasyChatWord_Ally gEasyChatWord_Person gEasyChatWord_Dude gEasyChatWord_They gEasyChatWord_TheyWere gEasyChatWord_ToThem gEasyChatWord_Their gEasyChatWord_Theyre gEasyChatWord_Theyve gEasyChatWord_We gEasyChatWord_Been gEasyChatWord_ToUs gEasyChatWord_Our gEasyChatWord_WeRe gEasyChatWord_Rival gEasyChatWord_Weve gEasyChatWord_Woman gEasyChatWord_She gEasyChatWord_SheWas gEasyChatWord_ToHer gEasyChatWord_Hers gEasyChatWord_SheIs gEasyChatWord_Some gEasyChatGroup_People gEasyChatWord_Excl gEasyChatWord_ExclExcl gEasyChatWord_QuesExcl gEasyChatWord_Ques gEasyChatWord_Ellipsis gEasyChatWord_EllipsisExcl gEasyChatWord_EllipsisEllipsisEllipsis gEasyChatWord_Dash gEasyChatWord_DashDashDash gEasyChatWord_UhOh gEasyChatWord_Waaah gEasyChatWord_Ahaha gEasyChatWord_OhQues gEasyChatWord_Nope gEasyChatWord_Urgh gEasyChatWord_Hmm gEasyChatWord_Whoah gEasyChatWord_WroooaarExcl gEasyChatWord_Wow gEasyChatWord_Giggle gEasyChatWord_Sigh gEasyChatWord_Unbelievable gEasyChatWord_Cries gEasyChatWord_Agree gEasyChatWord_EhQues gEasyChatWord_Cry gEasyChatWord_Ehehe gEasyChatWord_OiOiOi gEasyChatWord_OhYeah gEasyChatWord_Oh gEasyChatWord_Oops gEasyChatWord_Shocked gEasyChatWord_Eek gEasyChatWord_Graaah gEasyChatWord_Gwahahaha gEasyChatWord_Way gEasyChatWord_Tch gEasyChatWord_Hehe gEasyChatWord_Hah gEasyChatWord_Yup gEasyChatWord_Hahaha gEasyChatWord_Aiyeeh gEasyChatWord_Hiyah gEasyChatWord_Fufufu gEasyChatWord_Lol gEasyChatWord_Snort gEasyChatWord_Humph gEasyChatWord_Hehehe gEasyChatWord_Heh gEasyChatWord_Hohoho gEasyChatWord_UhHuh gEasyChatWord_OhDear gEasyChatWord_Arrgh gEasyChatWord_Mufufu gEasyChatWord_Mmm gEasyChatWord_OhKay gEasyChatWord_Okay gEasyChatWord_Lalala gEasyChatWord_Yay gEasyChatWord_Aww gEasyChatWord_Wowee gEasyChatWord_Gwah gEasyChatWord_Wahahaha gEasyChatGroup_Voices gEasyChatWord_Listen gEasyChatWord_NotVery gEasyChatWord_Mean gEasyChatWord_Lie gEasyChatWord_Lay gEasyChatWord_Recommend gEasyChatWord_Nitwit gEasyChatWord_Quite gEasyChatWord_From gEasyChatWord_Feeling gEasyChatWord_But gEasyChatWord_However gEasyChatWord_Case gEasyChatWord_The gEasyChatWord_Miss gEasyChatWord_How gEasyChatWord_Hit gEasyChatWord_Enough gEasyChatWord_ALot gEasyChatWord_ALittle gEasyChatWord_Absolutely gEasyChatWord_And gEasyChatWord_Only gEasyChatWord_Around gEasyChatWord_Probably gEasyChatWord_If gEasyChatWord_Very gEasyChatWord_ATinyBit gEasyChatWord_Wild gEasyChatWord_Thats gEasyChatWord_Just gEasyChatWord_EvenSo gEasyChatWord_MustBe gEasyChatWord_Naturally gEasyChatWord_ForNow gEasyChatWord_Understood gEasyChatWord_Joking gEasyChatWord_Ready gEasyChatWord_Something gEasyChatWord_Somehow gEasyChatWord_Although gEasyChatWord_Also gEasyChatWord_Perfect gEasyChatWord_AsMuchAs gEasyChatWord_Really gEasyChatWord_Truly gEasyChatWord_Seriously gEasyChatWord_Totally gEasyChatWord_Until gEasyChatWord_AsIf gEasyChatWord_Mood gEasyChatWord_Rather gEasyChatWord_Awfully gEasyChatWord_Mode gEasyChatWord_More gEasyChatWord_TooLate gEasyChatWord_Finally gEasyChatWord_Any gEasyChatWord_Instead gEasyChatWord_Fantastic gEasyChatGroup_Speech gEasyChatWord_Will gEasyChatWord_WillBeHere gEasyChatWord_Or gEasyChatWord_Times gEasyChatWord_Wonder gEasyChatWord_IsItQues gEasyChatWord_Be gEasyChatWord_Gimme gEasyChatWord_Could gEasyChatWord_LikelyTo gEasyChatWord_Would gEasyChatWord_Is gEasyChatWord_IsntItQues gEasyChatWord_Lets gEasyChatWord_Other gEasyChatWord_Are gEasyChatWord_Was gEasyChatWord_Were gEasyChatWord_Those gEasyChatWord_Isnt gEasyChatWord_Wont gEasyChatWord_Cant gEasyChatWord_Can gEasyChatWord_Dont gEasyChatWord_Do gEasyChatWord_Does gEasyChatWord_Whom gEasyChatWord_Which gEasyChatWord_Wasnt gEasyChatWord_Werent gEasyChatWord_Have gEasyChatWord_Havent gEasyChatWord_A gEasyChatWord_An gEasyChatWord_Not gEasyChatWord_There gEasyChatWord_OkQues gEasyChatWord_So gEasyChatWord_Maybe gEasyChatWord_About gEasyChatWord_Over gEasyChatWord_It gEasyChatWord_All gEasyChatWord_For gEasyChatWord_On gEasyChatWord_Off gEasyChatWord_As gEasyChatWord_To gEasyChatWord_With gEasyChatWord_Better gEasyChatWord_Ever gEasyChatWord_Since gEasyChatWord_Of gEasyChatWord_BelongsTo gEasyChatWord_At gEasyChatWord_In gEasyChatWord_Out gEasyChatWord_Too gEasyChatWord_Like gEasyChatWord_Did gEasyChatWord_Didnt gEasyChatWord_Doesnt gEasyChatWord_Without gEasyChatWord_After gEasyChatWord_Before gEasyChatWord_While gEasyChatWord_Than gEasyChatWord_Once gEasyChatWord_Anywhere gEasyChatGroup_Endings gEasyChatWord_Meet gEasyChatWord_Play gEasyChatWord_Hurried gEasyChatWord_Goes gEasyChatWord_Giddy gEasyChatWord_Happy gEasyChatWord_Happiness gEasyChatWord_Excite gEasyChatWord_Important gEasyChatWord_Funny gEasyChatWord_Got gEasyChatWord_GoHome gEasyChatWord_Disappointed gEasyChatWord_Disappoints gEasyChatWord_Sad gEasyChatWord_Try gEasyChatWord_Tries gEasyChatWord_Hears gEasyChatWord_Think gEasyChatWord_Hear gEasyChatWord_Wants gEasyChatWord_Misheard gEasyChatWord_Dislike gEasyChatWord_Angry gEasyChatWord_Anger gEasyChatWord_Scary gEasyChatWord_Lonesome gEasyChatWord_Disappoint gEasyChatWord_Joy gEasyChatWord_Gets gEasyChatWord_Never gEasyChatWord_Darn gEasyChatWord_Downcast gEasyChatWord_Incredible gEasyChatWord_Likes gEasyChatWord_Dislikes gEasyChatWord_Boring gEasyChatWord_Care gEasyChatWord_Cares gEasyChatWord_AllRight gEasyChatWord_Adore gEasyChatWord_Disaster gEasyChatWord_Enjoy gEasyChatWord_Enjoys gEasyChatWord_Eat gEasyChatWord_Lacking gEasyChatWord_Bad gEasyChatWord_Hard gEasyChatWord_Terrible gEasyChatWord_Should gEasyChatWord_Nice gEasyChatWord_Drink gEasyChatWord_Surprise gEasyChatWord_Fear gEasyChatWord_Want gEasyChatWord_Wait gEasyChatWord_Satisfied gEasyChatWord_See gEasyChatWord_Rare gEasyChatWord_Negative gEasyChatWord_Done gEasyChatWord_Danger gEasyChatWord_Defeated gEasyChatWord_Beat gEasyChatWord_Great gEasyChatWord_Romantic gEasyChatWord_Question gEasyChatWord_Understand gEasyChatWord_Understands gEasyChatGroup_Feelings gEasyChatWord_Hot gEasyChatWord_Exists gEasyChatWord_Excess gEasyChatWord_Approved gEasyChatWord_Has gEasyChatWord_Good gEasyChatWord_Less gEasyChatWord_Momentum gEasyChatWord_Going gEasyChatWord_Weird gEasyChatWord_Busy gEasyChatWord_Together gEasyChatWord_Full gEasyChatWord_Absent gEasyChatWord_Being gEasyChatWord_Need gEasyChatWord_Tasty gEasyChatWord_Skilled gEasyChatWord_Noisy gEasyChatWord_Big gEasyChatWord_Late gEasyChatWord_Close gEasyChatWord_Docile gEasyChatWord_Amusing gEasyChatWord_Entertaining gEasyChatWord_Perfection gEasyChatWord_Pretty gEasyChatWord_Healthy gEasyChatWord_Excellent gEasyChatWord_UpsideDown gEasyChatWord_Cold gEasyChatWord_Refreshing gEasyChatWord_Unavoidable gEasyChatWord_Much gEasyChatWord_Overwhelming gEasyChatWord_Fabulous gEasyChatWord_Else gEasyChatWord_Expensive gEasyChatWord_Correct gEasyChatWord_Impossible gEasyChatWord_Small gEasyChatWord_Different gEasyChatWord_Tired gEasyChatWord_Skill gEasyChatWord_Top gEasyChatWord_NonStop gEasyChatWord_Preposterous gEasyChatWord_None gEasyChatWord_Nothing gEasyChatWord_Natural gEasyChatWord_Becomes gEasyChatWord_Lukewarm gEasyChatWord_Fast gEasyChatWord_Low gEasyChatWord_Awful gEasyChatWord_Alone gEasyChatWord_Bored gEasyChatWord_Secret gEasyChatWord_Mystery gEasyChatWord_Lacks gEasyChatWord_Best gEasyChatWord_Lousy gEasyChatWord_Mistake gEasyChatWord_Kind gEasyChatWord_Well gEasyChatWord_Weakened gEasyChatWord_Simple gEasyChatWord_Seems gEasyChatWord_Badly gEasyChatGroup_Conditions gEasyChatWord_Meets gEasyChatWord_Concede gEasyChatWord_Give gEasyChatWord_Gives gEasyChatWord_Played gEasyChatWord_Plays gEasyChatWord_Collect gEasyChatWord_Walking gEasyChatWord_Walks gEasyChatWord_Says gEasyChatWord_Went gEasyChatWord_Said gEasyChatWord_WakeUp gEasyChatWord_WakesUp gEasyChatWord_Angers gEasyChatWord_Teach gEasyChatWord_Teaches gEasyChatWord_Please gEasyChatWord_Learn gEasyChatWord_Change gEasyChatWord_Story gEasyChatWord_Trust gEasyChatWord_Lavish gEasyChatWord_Listens gEasyChatWord_Hearing gEasyChatWord_Trains gEasyChatWord_Choose gEasyChatWord_Come gEasyChatWord_Came gEasyChatWord_Search gEasyChatWord_Make gEasyChatWord_Cause gEasyChatWord_Know gEasyChatWord_Knows gEasyChatWord_Refuse gEasyChatWord_Stores gEasyChatWord_Brag gEasyChatWord_Ignorant gEasyChatWord_Thinks gEasyChatWord_Believe gEasyChatWord_Slide gEasyChatWord_Eats gEasyChatWord_Use gEasyChatWord_Uses gEasyChatWord_Using gEasyChatWord_Couldnt gEasyChatWord_Capable gEasyChatWord_Disappear gEasyChatWord_Appear gEasyChatWord_Throw gEasyChatWord_Worry gEasyChatWord_Slept gEasyChatWord_Sleep gEasyChatWord_Release gEasyChatWord_Drinks gEasyChatWord_Runs gEasyChatWord_Run gEasyChatWord_Works gEasyChatWord_Working gEasyChatWord_Talking gEasyChatWord_Talk gEasyChatWord_Sink gEasyChatWord_Smack gEasyChatWord_Pretend gEasyChatWord_Praise gEasyChatWord_Overdo gEasyChatWord_Show gEasyChatWord_Looks gEasyChatWord_Sees gEasyChatWord_Seek gEasyChatWord_Own gEasyChatWord_Take gEasyChatWord_Allow gEasyChatWord_Forget gEasyChatWord_Forgets gEasyChatWord_Appears gEasyChatWord_Faint gEasyChatWord_Fainted gEasyChatGroup_Actions gEasyChatWord_Chores gEasyChatWord_Home gEasyChatWord_Money gEasyChatWord_Allowance gEasyChatWord_Bath gEasyChatWord_Conversation gEasyChatWord_School gEasyChatWord_Commemorate gEasyChatWord_Habit gEasyChatWord_Group gEasyChatWord_Word gEasyChatWord_Store gEasyChatWord_Service gEasyChatWord_Work gEasyChatWord_System gEasyChatWord_Train gEasyChatWord_Class gEasyChatWord_Lessons gEasyChatWord_Information gEasyChatWord_Living gEasyChatWord_Teacher gEasyChatWord_Tournament gEasyChatWord_Letter gEasyChatWord_Event gEasyChatWord_Digital gEasyChatWord_Test gEasyChatWord_DeptStore gEasyChatWord_Television gEasyChatWord_Phone gEasyChatWord_Item gEasyChatWord_Name gEasyChatWord_News gEasyChatWord_Popular gEasyChatWord_Party gEasyChatWord_Study gEasyChatWord_Machine gEasyChatWord_Mail gEasyChatWord_Message gEasyChatWord_Promise gEasyChatWord_Dream gEasyChatWord_Kindergarten gEasyChatWord_Life gEasyChatWord_Radio gEasyChatWord_Rental gEasyChatWord_World gEasyChatGroup_Lifestyle gEasyChatWord_Idol gEasyChatWord_Anime gEasyChatWord_Song gEasyChatWord_Movie gEasyChatWord_Sweets gEasyChatWord_Chat gEasyChatWord_ChildsPlay gEasyChatWord_Toys gEasyChatWord_Music gEasyChatWord_Cards gEasyChatWord_Shopping gEasyChatWord_Camera gEasyChatWord_Viewing gEasyChatWord_Spectator gEasyChatWord_Gourmet gEasyChatWord_Game gEasyChatWord_Rpg gEasyChatWord_Collection gEasyChatWord_Complete gEasyChatWord_Magazine gEasyChatWord_Walk gEasyChatWord_Bike gEasyChatWord_Hobby gEasyChatWord_Sports gEasyChatWord_Software gEasyChatWord_Songs gEasyChatWord_Diet gEasyChatWord_Treasure gEasyChatWord_Travel gEasyChatWord_Dance gEasyChatWord_Channel gEasyChatWord_Making gEasyChatWord_Fishing gEasyChatWord_Date gEasyChatWord_Design gEasyChatWord_Locomotive gEasyChatWord_PlushDoll gEasyChatWord_Pc gEasyChatWord_Flowers gEasyChatWord_Hero gEasyChatWord_Nap gEasyChatWord_Heroine gEasyChatWord_Fashion gEasyChatWord_Adventure gEasyChatWord_Board gEasyChatWord_Ball gEasyChatWord_Book gEasyChatWord_Festival gEasyChatWord_Comics gEasyChatWord_Holiday gEasyChatWord_Plans gEasyChatWord_Trendy gEasyChatWord_Vacation gEasyChatWord_Look gEasyChatGroup_Hobbies gEasyChatWord_Fall gEasyChatWord_Morning gEasyChatWord_Tomorrow gEasyChatWord_Last gEasyChatWord_Day gEasyChatWord_Sometime gEasyChatWord_Always gEasyChatWord_Current gEasyChatWord_Forever gEasyChatWord_Days gEasyChatWord_End gEasyChatWord_Tuesday gEasyChatWord_Yesterday gEasyChatWord_Today gEasyChatWord_Friday gEasyChatWord_Monday gEasyChatWord_Later gEasyChatWord_Earlier gEasyChatWord_Another gEasyChatWord_Time gEasyChatWord_Finish gEasyChatWord_Wednesday gEasyChatWord_Soon gEasyChatWord_Start gEasyChatWord_Month gEasyChatWord_Stop gEasyChatWord_Now gEasyChatWord_Final gEasyChatWord_Next gEasyChatWord_Age gEasyChatWord_Saturday gEasyChatWord_Summer gEasyChatWord_Sunday gEasyChatWord_Beginning gEasyChatWord_Spring gEasyChatWord_Daytime gEasyChatWord_Winter gEasyChatWord_Daily gEasyChatWord_Olden gEasyChatWord_Almost gEasyChatWord_Nearly gEasyChatWord_Thursday gEasyChatWord_Nighttime gEasyChatWord_Night gEasyChatWord_Week gEasyChatGroup_Time gEasyChatWord_Highs gEasyChatWord_Lows gEasyChatWord_Um gEasyChatWord_Rear gEasyChatWord_Things gEasyChatWord_Thing gEasyChatWord_Below gEasyChatWord_Above gEasyChatWord_Back gEasyChatWord_High gEasyChatWord_Here gEasyChatWord_Inside gEasyChatWord_Outside gEasyChatWord_Beside gEasyChatWord_ThisIsItExcl gEasyChatWord_This gEasyChatWord_Every gEasyChatWord_These gEasyChatWord_TheseWere gEasyChatWord_Down gEasyChatWord_That gEasyChatWord_ThoseAre gEasyChatWord_ThoseWere gEasyChatWord_ThatsItExcl gEasyChatWord_Am gEasyChatWord_ThatWas gEasyChatWord_Front gEasyChatWord_Up gEasyChatWord_Choice gEasyChatWord_Far gEasyChatWord_Away gEasyChatWord_Near gEasyChatWord_Where gEasyChatWord_When gEasyChatWord_What gEasyChatWord_Deep gEasyChatWord_Shallow gEasyChatWord_Why gEasyChatWord_Confused gEasyChatWord_Opposite gEasyChatWord_Left gEasyChatWord_Right gEasyChatGroup_Misc gEasyChatWord_Wandering gEasyChatWord_Rickety gEasyChatWord_RockSolid gEasyChatWord_Hungry gEasyChatWord_Tight gEasyChatWord_Ticklish gEasyChatWord_Twirling gEasyChatWord_Spiraling gEasyChatWord_Thirsty gEasyChatWord_Lolling gEasyChatWord_Silky gEasyChatWord_Sadly gEasyChatWord_Hopeless gEasyChatWord_Useless gEasyChatWord_Drooling gEasyChatWord_Exciting gEasyChatWord_Thick gEasyChatWord_Smooth gEasyChatWord_Slimy gEasyChatWord_Thin gEasyChatWord_Break gEasyChatWord_Voracious gEasyChatWord_Scatter gEasyChatWord_Awesome gEasyChatWord_Wimpy gEasyChatWord_Wobbly gEasyChatWord_Shaky gEasyChatWord_Ripped gEasyChatWord_Shredded gEasyChatWord_Increasing gEasyChatWord_Yet gEasyChatWord_Destroyed gEasyChatWord_Fiery gEasyChatWord_LoveyDovey gEasyChatWord_Happily gEasyChatWord_Anticipation gEasyChatGroup_Adjectives gEasyChatWord_Appeal gEasyChatWord_Events gEasyChatWord_StayAtHome gEasyChatWord_Berry gEasyChatWord_Contest gEasyChatWord_Mc gEasyChatWord_Judge gEasyChatWord_Super gEasyChatWord_Stage gEasyChatWord_HallOfFame gEasyChatWord_Evolution gEasyChatWord_Hyper gEasyChatWord_BattleTower gEasyChatWord_Leaders gEasyChatWord_BattleRoom gEasyChatWord_Hidden gEasyChatWord_SecretBase gEasyChatWord_Blend gEasyChatWord_POKEBLOCK gEasyChatWord_Master gEasyChatWord_Rank gEasyChatWord_Ribbon gEasyChatWord_Crush gEasyChatWord_Direct gEasyChatWord_Tower gEasyChatWord_Union gEasyChatWord_Room gEasyChatWord_Wireless gEasyChatWord_Frontier gEasyChatGroup_Events gEasyChatGroup_Move1 gEasyChatGroup_Move2 gEasyChatWord_KthxBye gEasyChatWord_YesSirExcl gEasyChatWord_AvantGarde gEasyChatWord_Couple gEasyChatWord_MuchObliged gEasyChatWord_YeehawExcl gEasyChatWord_Mega gEasyChatWord_1HitKOExcl gEasyChatWord_Destiny gEasyChatWord_Cancel gEasyChatWord_New gEasyChatWord_Flatten gEasyChatWord_Kidding gEasyChatWord_Loser gEasyChatWord_Losing gEasyChatWord_Happening gEasyChatWord_HipAnd gEasyChatWord_Shake gEasyChatWord_Shady gEasyChatWord_Upbeat gEasyChatWord_Modern gEasyChatWord_SmellYa gEasyChatWord_Bang gEasyChatWord_Knockout gEasyChatWord_Hassle gEasyChatWord_Winner gEasyChatWord_Fever gEasyChatWord_Wannabe gEasyChatWord_Baby gEasyChatWord_Heart gEasyChatWord_Old gEasyChatWord_Young gEasyChatWord_Ugly gEasyChatGroup_TrendySaying gEasyChatGroup_Pokemon2 gEasyChatGroups gEasyChatWordsByLetter_Others gEasyChatWordsByLetter_A gEasyChatWordsByLetter_B gEasyChatWordsByLetter_C gEasyChatWordsByLetter_D gEasyChatWordsByLetter_E gEasyChatWordsByLetter_F gEasyChatWordsByLetter_G gEasyChatWordsByLetter_H gEasyChatWordsByLetter_I gEasyChatWordsByLetter_J gEasyChatWordsByLetter_K gEasyChatWordsByLetter_L gEasyChatWordsByLetter_M gEasyChatWordsByLetter_N gEasyChatWordsByLetter_O gEasyChatWordsByLetter_P gEasyChatWordsByLetter_Q gEasyChatWordsByLetter_R gEasyChatWordsByLetter_S gEasyChatWordsByLetter_T gEasyChatWordsByLetter_U gEasyChatWordsByLetter_V gEasyChatWordsByLetter_W gEasyChatWordsByLetter_X gEasyChatWordsByLetter_Y gEasyChatWordsByLetter_Z gEasyChatWordsByLetter_UnusedJapaneseHi gEasyChatWordsByLetter_UnusedJapaneseFu gEasyChatWordsByLetter_UnusedJapaneseHe gEasyChatWordsByLetter_UnusedJapaneseHo gEasyChatWordsByLetter_UnusedJapaneseMa gEasyChatWordsByLetter_UnusedJapaneseMi gEasyChatWordsByLetter_UnusedJapaneseMu gEasyChatWordsByLetter_UnusedJapaneseMe gEasyChatWordsByLetter_UnusedJapaneseMo gEasyChatWordsByLetter_UnusedJapaneseYa gEasyChatWordsByLetter_UnusedJapaneseYu gEasyChatWordsByLetter_UnusedJapaneseYo gEasyChatWordsByLetter_UnusedJapaneseRa gEasyChatWordsByLetter_UnusedJapaneseRi gEasyChatWordsByLetter_UnusedJapaneseRu gEasyChatWordsByLetter_UnusedJapaneseRe gEasyChatWordsByLetter_UnusedJapaneseRo gEasyChatWordsByLetter_UnusedJapaneseWa gEasyChatWordsByLetterPointers sEasyChatGroupNamePointers sDefaultProfileWords sDefaultBattleStartWords sDefaultBattleWonWords sDefaultBattleLostWords sRestrictedWordSpecies
 
 /// `__typeof__(sQuizLadyEasyChatScreens[0])`
@@ -41,7 +246,7 @@ use core::ptr::null_mut;
 #[derive(Clone, Copy)]
 pub struct sQuizLadyEasyChatScreens_0_t {
     pub funcId: u16,
-    pub callback: Option<unsafe extern "C" fn()>,
+    pub callback: Option<unsafe fn()>,
 }
 
 unsafe impl Sync for sQuizLadyEasyChatScreens_0_t {}
@@ -253,167 +458,71 @@ pub(crate) static mut sScreenControl: *mut EasyChatScreenControl = null_mut();
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sWordData: *mut EasyChatScreenWordData = null_mut();
 
-unsafe extern "C" {
-    static gEasyChatMode_Pal: CArray<u16, 0>;
-    static gEasyChatWindow_Gfx: CArray<u32, 0>;
-    static gEasyChatWindow_Tilemap: CArray<u32, 0>;
-    static mut gMain: Main;
-    static gMoveNames: CArray<CArray<u8, 13>, 355>;
-    static gNumBardWords_Moves: u16;
-    static gNumBardWords_Species: u16;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_0x8005: u16;
-    static mut gSpecialVar_0x8006: u16;
-    static mut gSpecialVar_Result: u16;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar3: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_AllTextBeingEditedWill: CArray<u8, 0>;
-    static gText_BeDeletedThatOkay: CArray<u8, 0>;
-    static gText_ChallengeQuestionMark: CArray<u8, 0>;
-    static gText_CombineTwoWordsOrPhrases3: CArray<u8, 0>;
-    static gText_CreateAQuiz: CArray<u8, 0>;
-    static gText_F700sQuiz: CArray<u8, 0>;
-    static gText_Lady: CArray<u8, 0>;
-    static gText_LikeToQuitQuiz: CArray<u8, 0>;
-    static gText_LyricsCantBeDeleted: CArray<u8, 0>;
-    static gText_OnlyOnePhrase: CArray<u8, 0>;
-    static gText_OriginalSongWillBeUsed: CArray<u8, 0>;
-    static gText_QuitEditing: CArray<u8, 0>;
-    static gText_SectionMustBeCompleted: CArray<u8, 0>;
-    static gText_SelectTheAnswer: CArray<u8, 0>;
-    static gText_StopGivingPkmnMail: CArray<u8, 0>;
-    static gText_ThreeQuestionMarks: CArray<u8, 0>;
-    static gText_YouCannotQuitHere: CArray<u8, 0>;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddTextPrinterParameterized3(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: *mut u8,
-        a5: i8,
-        a6: *mut u8,
-    );
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn BuildOamBuffer();
-    fn CB2_ReturnToFieldContinueScript();
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CleanupOverworldWindowsAndTilemaps();
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut c_void, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateObjectGraphicsSprite(
-        a0: u16,
-        a1: Option<unsafe extern "C" fn(*mut Sprite)>,
-        a2: i16,
-        a3: i16,
-        a4: u8,
-    ) -> u8;
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateYesNoMenu(a0: *mut WindowTemplate, a1: u16, a2: u8, a3: u8);
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut c_void, a2: u32, a3: u16, a4: u8);
-    fn DestroySprite(a0: *mut Sprite);
-    fn DrawTextBorderOuter(a0: u8, a1: u16, a2: u8);
-    fn DynamicPlaceholderTextUtil_ExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn DynamicPlaceholderTextUtil_Reset();
-    fn DynamicPlaceholderTextUtil_SetPlaceholderPtr(a0: u8, a1: *mut u8);
-    fn FadeScreen(a0: u8, a1: i8);
-    fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn FlagGet(a0: u16) -> u8;
-    fn FlagSet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
-    fn GetBgY(a0: u8) -> i32;
-    fn GetNationalPokedexCount(a0: u8) -> u16;
-    fn GetQuestionnaireWordsPtr() -> *mut u16;
-    fn GetSetPokedexFlag(a0: u16, a1: u8) -> i8;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32;
-    fn GetWordTaskArg(a0: u8, a1: u8) -> u32;
-    fn HideBg(a0: u8);
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsDma3ManagerBusyWithBgCopy() -> u8;
-    fn IsNationalPokedexEnabled() -> u32;
-    fn IsOverworldLinkActive() -> u32;
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpritePalettes(a0: *mut SpritePalette);
-    fn LoadSpriteSheets(a0: *mut SpriteSheet);
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn PlaySE(a0: u16);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn Random() -> u16;
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn RunTasks();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetWordTaskArg(a0: u8, a1: u8, a2: u32);
-    fn ShowBg(a0: u8);
-    fn ShowFieldAutoScrollMessage(a0: *mut u8) -> u8;
-    fn SpeciesToNationalPokedexNum(a0: u16) -> u16;
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringLength(a0: *mut u8) -> u16;
-    fn TVShowConvertInternationalString(a0: *mut u8, a1: *mut u8, a2: i32);
-    fn TransferPlttBuffer();
-    fn TrySetTrendyPhrase(a0: *mut u16) -> u8;
-    fn UpdatePaletteFade() -> u8;
-    fn WriteColorChangeControlCode(a0: *mut u8, a1: u32, a2: u8) -> *mut u8;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `CpuFastSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuFastSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `GetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
+    unsafe { crate::bg::GetBgTilemapBuffer(a0) as *mut c_void }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoEasyChatScreen(
+pub unsafe fn DoEasyChatScreen(
     r#type: u8,
     words: *mut u16,
-    exitCallback: Option<unsafe extern "C" fn()>,
+    exitCallback: Option<unsafe fn()>,
     displayedPersonType: u8,
 ) {
-    let mut taskId: u8 = 0;
     ResetTasks();
-    taskId = CreateTask(Some(Task_InitEasyChatScreen), 0);
-    gTasks[taskId].data[1] = r#type as i16;
-    gTasks[taskId].data[7] = displayedPersonType as i16;
+    let taskId: u8 = CreateTask(Some(Task_InitEasyChatScreen), 0);
+    task_set(taskId, tType, r#type as i16);
+    task_set(taskId, tPersonType, displayedPersonType as i16);
     SetWordTaskArg(taskId, TASKIDX_WORDS, words as usize as u32);
     SetWordTaskArg(
         taskId,
@@ -422,25 +531,22 @@ pub unsafe extern "C" fn DoEasyChatScreen(
     );
     SetMainCallback2(Some(CB2_EasyChatScreen));
 }
-pub(crate) unsafe extern "C" fn CB2_EasyChatScreen() {
+pub(crate) unsafe fn CB2_EasyChatScreen() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn VBlankCB_EasyChatScreen() {
+pub(crate) unsafe fn VBlankCB_EasyChatScreen() {
     TransferPlttBuffer();
     LoadOam();
     ProcessSpriteCopyRequests();
 }
-pub(crate) unsafe extern "C" fn StartEasyChatScreen(
-    taskId: u8,
-    taskFunc: Option<unsafe extern "C" fn(u8)>,
-) {
-    gTasks[taskId].func = taskFunc;
-    gTasks[taskId].data[0] = MAINSTATE_FADE_IN;
+fn StartEasyChatScreen(taskId: u8, taskFunc: Option<unsafe fn(u8)>) {
+    task_set_func(taskId, taskFunc);
+    task_set(taskId, tState, MAINSTATE_FADE_IN);
 }
-pub(crate) unsafe extern "C" fn Task_InitEasyChatScreen(taskId: u8) {
+pub(crate) unsafe fn Task_InitEasyChatScreen(taskId: u8) {
     if IsOverworldLinkActive() == 0 {
         while InitEasyChatScreen(taskId) != 0 {}
     } else {
@@ -450,10 +556,10 @@ pub(crate) unsafe extern "C" fn Task_InitEasyChatScreen(taskId: u8) {
     }
     StartEasyChatScreen(taskId, Some(Task_EasyChatScreen));
 }
-pub(crate) unsafe extern "C" fn Task_EasyChatScreen(taskId: u8) {
+pub(crate) unsafe fn Task_EasyChatScreen(taskId: u8) {
     let mut funcId: u16 = 0;
     let mut data: *mut i16 = null_mut();
-    data = gTasks[taskId].data.as_mut_ptr();
+    data = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         MAINSTATE_FADE_IN => {
             SetVBlankCallback(Some(VBlankCB_EasyChatScreen));
@@ -488,26 +594,20 @@ pub(crate) unsafe extern "C" fn Task_EasyChatScreen(taskId: u8) {
         }
         MAINSTATE_EXIT => {
             if gPaletteFade.active() == 0 {
-                ExitEasyChatScreen(
-                    core::mem::transmute::<usize, Option<unsafe extern "C" fn()>>(GetWordTaskArg(
-                        taskId,
-                        TASKIDX_EXIT_CALLBACK,
-                    )
-                        as usize),
-                );
+                ExitEasyChatScreen(core::mem::transmute::<usize, Option<unsafe fn()>>(
+                    GetWordTaskArg(taskId, TASKIDX_EXIT_CALLBACK) as usize,
+                ));
             }
         }
-        MAINSTATE_WAIT_FADE_IN => {
-            if gPaletteFade.active() == 0 {
-                *data = MAINSTATE_HANDLE_INPUT;
-            }
+        MAINSTATE_WAIT_FADE_IN if gPaletteFade.active() == 0 => {
+            *data = MAINSTATE_HANDLE_INPUT;
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn InitEasyChatScreen(taskId: u8) -> u8 {
+unsafe fn InitEasyChatScreen(taskId: u8) -> u8 {
     let mut data: *mut i16 = null_mut();
-    data = gTasks[taskId].data.as_mut_ptr();
+    data = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         0 => {
             SetVBlankCallback(None);
@@ -517,13 +617,9 @@ pub(crate) unsafe extern "C" fn InitEasyChatScreen(taskId: u8) -> u8 {
         }
         1 => {
             if InitEasyChatScreenWordData() == 0 {
-                ExitEasyChatScreen(
-                    core::mem::transmute::<usize, Option<unsafe extern "C" fn()>>(GetWordTaskArg(
-                        taskId,
-                        TASKIDX_EXIT_CALLBACK,
-                    )
-                        as usize),
-                );
+                ExitEasyChatScreen(core::mem::transmute::<usize, Option<unsafe fn()>>(
+                    GetWordTaskArg(taskId, TASKIDX_EXIT_CALLBACK) as usize,
+                ));
             }
         }
         2 => {
@@ -533,24 +629,16 @@ pub(crate) unsafe extern "C" fn InitEasyChatScreen(taskId: u8) -> u8 {
                 *data.at(7) as u8,
             ) == 0
             {
-                ExitEasyChatScreen(
-                    core::mem::transmute::<usize, Option<unsafe extern "C" fn()>>(GetWordTaskArg(
-                        taskId,
-                        TASKIDX_EXIT_CALLBACK,
-                    )
-                        as usize),
-                );
+                ExitEasyChatScreen(core::mem::transmute::<usize, Option<unsafe fn()>>(
+                    GetWordTaskArg(taskId, TASKIDX_EXIT_CALLBACK) as usize,
+                ));
             }
         }
         3 => {
             if InitEasyChatScreenControl() == 0 {
-                ExitEasyChatScreen(
-                    core::mem::transmute::<usize, Option<unsafe extern "C" fn()>>(GetWordTaskArg(
-                        taskId,
-                        TASKIDX_EXIT_CALLBACK,
-                    )
-                        as usize),
-                );
+                ExitEasyChatScreen(core::mem::transmute::<usize, Option<unsafe fn()>>(
+                    GetWordTaskArg(taskId, TASKIDX_EXIT_CALLBACK) as usize,
+                ));
             }
         }
         4 => {
@@ -563,9 +651,9 @@ pub(crate) unsafe extern "C" fn InitEasyChatScreen(taskId: u8) -> u8 {
         }
     }
     *data += 1;
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ExitEasyChatScreen(callback: Option<unsafe extern "C" fn()>) {
+unsafe fn ExitEasyChatScreen(callback: Option<unsafe fn()>) {
     FreeEasyChatScreenControl();
     FreeEasyChatScreenStruct();
     FreeEasyChatScreenWordData();
@@ -573,12 +661,14 @@ pub(crate) unsafe extern "C" fn ExitEasyChatScreen(callback: Option<unsafe exter
     SetMainCallback2(callback);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowEasyChatScreen() {
-    let mut i: i32 = 0;
+pub unsafe fn ShowEasyChatScreen() {
     let mut words: *mut u16 = null_mut();
     let mut bard: *mut MauvilleManBard = null_mut();
     let mut displayedPersonType: u8 = EASY_CHAT_PERSON_DISPLAY_NONE;
-    match gSpecialVar_0x8004 {
+    match *(&raw const crate::ffi::gSpecialVar_0x8004)
+        .cast::<u16>()
+        .cast_mut()
+    {
         EASY_CHAT_TYPE_PROFILE => {
             words = (*gSaveBlock1Ptr).easyChatProfile.as_mut_ptr();
         }
@@ -592,37 +682,46 @@ pub unsafe extern "C" fn ShowEasyChatScreen() {
             words = (*gSaveBlock1Ptr).easyChatBattleLost.as_mut_ptr();
         }
         4 => {
-            words = (*gSaveBlock1Ptr).mail[gSpecialVar_0x8005]
-                .words
-                .as_mut_ptr();
+            words = (*gSaveBlock1Ptr).mail[*(&raw const crate::ffi::gSpecialVar_0x8005)
+                .cast::<u16>()
+                .cast_mut()]
+            .words
+            .as_mut_ptr();
         }
         6 => {
             bard = &raw mut (*gSaveBlock1Ptr).oldMan.bard;
-            i = 0;
-            while i < NUM_BARD_SONG_WORDS {
+            for i in 0..NUM_BARD_SONG_WORDS {
                 (*bard).newSongLyrics[i] = (*bard).songLyrics[i];
-                i += 1;
             }
             words = (*bard).newSongLyrics.as_mut_ptr();
         }
         EASY_CHAT_TYPE_INTERVIEW => {
-            words = (*gSaveBlock1Ptr).tvShows[gSpecialVar_0x8005]
-                .bravoTrainer
-                .words
-                .as_mut_ptr();
+            words = (*gSaveBlock1Ptr).tvShows[*(&raw const crate::ffi::gSpecialVar_0x8005)
+                .cast::<u16>()
+                .cast_mut()]
+            .bravoTrainer
+            .words
+            .as_mut_ptr();
             displayedPersonType = gSpecialVar_0x8006 as u8;
         }
         EASY_CHAT_TYPE_FAN_CLUB => {
-            words = &raw mut (*gSaveBlock1Ptr).tvShows[gSpecialVar_0x8005]
-                .fanclubOpinions
-                .words[gSpecialVar_0x8006];
+            words = &raw mut (*gSaveBlock1Ptr).tvShows
+                [*(&raw const crate::ffi::gSpecialVar_0x8005)
+                    .cast::<u16>()
+                    .cast_mut()]
+            .fanclubOpinions
+            .words[*(&raw const crate::ffi::gSpecialVar_0x8006)
+                .cast::<u16>()
+                .cast_mut()];
             displayedPersonType = EASY_CHAT_PERSON_REPORTER_FEMALE;
         }
         EASY_CHAT_TYPE_DUMMY_SHOW => {
-            words = (*gSaveBlock1Ptr).tvShows[gSpecialVar_0x8005]
-                .dummy
-                .words
-                .as_mut_ptr();
+            words = (*gSaveBlock1Ptr).tvShows[*(&raw const crate::ffi::gSpecialVar_0x8005)
+                .cast::<u16>()
+                .cast_mut()]
+            .dummy
+            .words
+            .as_mut_ptr();
             displayedPersonType = EASY_CHAT_PERSON_REPORTER_MALE;
         }
         9 => {
@@ -636,16 +735,23 @@ pub unsafe extern "C" fn ShowEasyChatScreen() {
             displayedPersonType = EASY_CHAT_PERSON_REPORTER_FEMALE;
         }
         11 => {
-            words = &raw mut (*gSaveBlock1Ptr).tvShows[gSpecialVar_0x8005]
-                .bravoTrainer
-                .words[gSpecialVar_0x8006];
+            words = &raw mut (*gSaveBlock1Ptr).tvShows
+                [*(&raw const crate::ffi::gSpecialVar_0x8005)
+                    .cast::<u16>()
+                    .cast_mut()]
+            .bravoTrainer
+            .words[*(&raw const crate::ffi::gSpecialVar_0x8006)
+                .cast::<u16>()
+                .cast_mut()];
             displayedPersonType = EASY_CHAT_PERSON_REPORTER_MALE;
         }
         EASY_CHAT_TYPE_BATTLE_TOWER_INTERVIEW => {
-            words = (*gSaveBlock1Ptr).tvShows[gSpecialVar_0x8005]
-                .bravoTrainerTower
-                .words
-                .as_mut_ptr();
+            words = (*gSaveBlock1Ptr).tvShows[*(&raw const crate::ffi::gSpecialVar_0x8005)
+                .cast::<u16>()
+                .cast_mut()]
+            .bravoTrainerTower
+            .words
+            .as_mut_ptr();
             displayedPersonType = EASY_CHAT_PERSON_REPORTER_FEMALE;
         }
         13 => {
@@ -653,10 +759,12 @@ pub unsafe extern "C" fn ShowEasyChatScreen() {
             InitializeEasyChatWordArray(words, 2);
         }
         EASY_CHAT_TYPE_FAN_QUESTION => {
-            words = (*gSaveBlock1Ptr).tvShows[gSpecialVar_0x8005]
-                .fanClubSpecial
-                .words
-                .as_mut_ptr();
+            words = (*gSaveBlock1Ptr).tvShows[*(&raw const crate::ffi::gSpecialVar_0x8005)
+                .cast::<u16>()
+                .cast_mut()]
+            .fanClubSpecial
+            .words
+            .as_mut_ptr();
             *words = EC_EMPTY_WORD;
             displayedPersonType = EASY_CHAT_PERSON_BOY;
         }
@@ -690,7 +798,7 @@ pub unsafe extern "C" fn ShowEasyChatScreen() {
         displayedPersonType,
     );
 }
-pub(crate) unsafe extern "C" fn CB2_QuizLadyQuestion() {
+pub(crate) unsafe fn CB2_QuizLadyQuestion() {
     let mut lilycoveLady: *mut LilycoveLady = null_mut();
     UpdatePaletteFade();
     match gMain.state {
@@ -711,34 +819,30 @@ pub(crate) unsafe extern "C" fn CB2_QuizLadyQuestion() {
     gMain.state += 1;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn QuizLadyShowQuizQuestion() {
+pub unsafe fn QuizLadyShowQuizQuestion() {
     SetMainCallback2(Some(CB2_QuizLadyQuestion));
 }
-pub(crate) unsafe extern "C" fn GetQuizLadyScreenByFuncId(funcId: u16) -> i32 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 4 {
+fn GetQuizLadyScreenByFuncId(funcId: u16) -> i32 {
+    for i in 0..4i32 {
         if funcId == sQuizLadyEasyChatScreens[i].funcId {
             return i;
         }
-        i += 1;
     }
-    return -1;
+    -1
 }
-pub(crate) unsafe extern "C" fn IsFuncIdForQuizLadyScreen(funcId: u16) -> u32 {
-    return (if GetQuizLadyScreenByFuncId(funcId) == -1 {
+fn IsFuncIdForQuizLadyScreen(funcId: u16) -> u32 {
+    (if GetQuizLadyScreenByFuncId(funcId) == -1 {
         FALSE as i32
     } else {
         1
-    }) as u32;
+    }) as u32
 }
-pub(crate) unsafe extern "C" fn EnterQuizLadyScreen(funcId: u16) {
-    let mut i: i32 = 0;
-    i = GetQuizLadyScreenByFuncId(funcId);
+unsafe fn EnterQuizLadyScreen(funcId: u16) {
+    let i: i32 = GetQuizLadyScreenByFuncId(funcId);
     ResetTasks();
     ExitEasyChatScreen(sQuizLadyEasyChatScreens[i].callback);
 }
-pub(crate) unsafe extern "C" fn DoQuizAnswerEasyChatScreen() {
+pub(crate) unsafe fn DoQuizAnswerEasyChatScreen() {
     DoEasyChatScreen(
         EASY_CHAT_TYPE_QUIZ_ANSWER,
         &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz.playerAnswer,
@@ -746,7 +850,7 @@ pub(crate) unsafe extern "C" fn DoQuizAnswerEasyChatScreen() {
         EASY_CHAT_PERSON_DISPLAY_NONE,
     );
 }
-pub(crate) unsafe extern "C" fn DoQuizQuestionEasyChatScreen() {
+pub(crate) unsafe fn DoQuizQuestionEasyChatScreen() {
     DoEasyChatScreen(
         EASY_CHAT_TYPE_QUIZ_QUESTION,
         (*gSaveBlock1Ptr).lilycoveLady.quiz.question.as_mut_ptr(),
@@ -754,7 +858,7 @@ pub(crate) unsafe extern "C" fn DoQuizQuestionEasyChatScreen() {
         EASY_CHAT_PERSON_DISPLAY_NONE,
     );
 }
-pub(crate) unsafe extern "C" fn DoQuizSetAnswerEasyChatScreen() {
+pub(crate) unsafe fn DoQuizSetAnswerEasyChatScreen() {
     DoEasyChatScreen(
         EASY_CHAT_TYPE_QUIZ_SET_ANSWER,
         &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz.correctAnswer,
@@ -762,7 +866,7 @@ pub(crate) unsafe extern "C" fn DoQuizSetAnswerEasyChatScreen() {
         EASY_CHAT_PERSON_DISPLAY_NONE,
     );
 }
-pub(crate) unsafe extern "C" fn DoQuizSetQuestionEasyChatScreen() {
+pub(crate) unsafe fn DoQuizSetQuestionEasyChatScreen() {
     DoEasyChatScreen(
         EASY_CHAT_TYPE_QUIZ_SET_QUESTION,
         (*gSaveBlock1Ptr).lilycoveLady.quiz.question.as_mut_ptr(),
@@ -770,12 +874,7 @@ pub(crate) unsafe extern "C" fn DoQuizSetQuestionEasyChatScreen() {
         EASY_CHAT_PERSON_DISPLAY_NONE,
     );
 }
-pub(crate) unsafe extern "C" fn InitEasyChatScreenStruct(
-    r#type: u8,
-    words: *mut u16,
-    displayedPersonType: u8,
-) -> u8 {
-    let mut templateId: u8 = 0;
+unsafe fn InitEasyChatScreenStruct(r#type: u8, words: *mut u16, displayedPersonType: u8) -> u8 {
     let mut i: i32 = 0;
     sEasyChatScreen = Alloc(80) as *mut EasyChatScreen;
     if sEasyChatScreen.is_null() {
@@ -788,7 +887,7 @@ pub(crate) unsafe extern "C" fn InitEasyChatScreenStruct(
     (*sEasyChatScreen).inAlphabetMode = FALSE;
     (*sEasyChatScreen).displayedPersonType = displayedPersonType;
     (*sEasyChatScreen).unused = 0;
-    templateId = GetEachChatScreenTemplateId(r#type);
+    let templateId: u8 = GetEachChatScreenTemplateId(r#type);
     if r#type == EASY_CHAT_TYPE_QUIZ_QUESTION {
         GetQuizTitle((*sEasyChatScreen).quizTitle.as_mut_ptr());
         (*sEasyChatScreen).titleText = (*sEasyChatScreen).quizTitle.as_mut_ptr();
@@ -808,7 +907,7 @@ pub(crate) unsafe extern "C" fn InitEasyChatScreenStruct(
         CpuSet(
             words as *mut c_void,
             (*sEasyChatScreen).currentPhrase.as_mut_ptr() as *mut c_void,
-            0x00000000 | (*sEasyChatScreen).maxWords as u32 * 2 / 2 & 0x1FFFFF,
+            ((*sEasyChatScreen).maxWords as u32 * 2 / 2) & 0x1FFFFF,
         );
     } else {
         i = 0;
@@ -820,15 +919,15 @@ pub(crate) unsafe extern "C" fn InitEasyChatScreenStruct(
     }
     (*sEasyChatScreen).keyboardLastRow =
         ((GetNumUnlockedEasyChatGroups() as i32 - 1) / 2) as u8 + 1;
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn FreeEasyChatScreenStruct() {
+unsafe fn FreeEasyChatScreenStruct() {
     if !sEasyChatScreen.is_null() {
         Free(sEasyChatScreen as *mut c_void);
         sEasyChatScreen = null_mut();
     }
 }
-pub(crate) unsafe extern "C" fn HandleEasyChatInput() -> u16 {
+unsafe fn HandleEasyChatInput() -> u16 {
     match (*sEasyChatScreen).inputState {
         INPUTSTATE_PHRASE => {
             return HandleEasyChatInput_Phrase();
@@ -865,18 +964,18 @@ pub(crate) unsafe extern "C" fn HandleEasyChatInput() -> u16 {
         }
         _ => {}
     }
-    return ECFUNC_NONE;
+    ECFUNC_NONE
 }
-pub(crate) unsafe extern "C" fn IsCurrentFrame2x5() -> u32 {
+unsafe fn IsCurrentFrame2x5() -> u32 {
     match GetEasyChatScreenFrameId() {
         FRAMEID_MAIL | 7 | FRAMEID_QUIZ_SET_QUESTION => {
             return TRUE as u32;
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn HandleEasyChatInput_Phrase() -> u16 {
+unsafe fn HandleEasyChatInput_Phrase() -> u16 {
     'l2: {
         if gMain.newKeys as i32 & A_BUTTON != 0 {
             ClearUnusedField();
@@ -937,9 +1036,9 @@ pub(crate) unsafe extern "C" fn HandleEasyChatInput_Phrase() -> u16 {
     {
         (*sEasyChatScreen).mainCursorColumn = 0;
     }
-    return ECFUNC_UPDATE_MAIN_CURSOR;
+    ECFUNC_UPDATE_MAIN_CURSOR
 }
-pub(crate) unsafe extern "C" fn HandleEasyChatInput_MainScreenButtons() -> u16 {
+unsafe fn HandleEasyChatInput_MainScreenButtons() -> u16 {
     'l2: {
         if gMain.newKeys as i32 & A_BUTTON != 0 {
             match (*sEasyChatScreen).mainCursorColumn {
@@ -980,7 +1079,7 @@ pub(crate) unsafe extern "C" fn HandleEasyChatInput_MainScreenButtons() -> u16 {
     if (*sEasyChatScreen).mainCursorRow as i32
         == sEasyChatScreenTemplates[(*sEasyChatScreen).templateId].numRows as i32
     {
-        let mut numFooterColumns: i32 = if FooterHasFourOptions() != 0 { 4 } else { 3 };
+        let numFooterColumns: i32 = if FooterHasFourOptions() != 0 { 4 } else { 3 };
         if (*sEasyChatScreen).mainCursorColumn < 0 {
             (*sEasyChatScreen).mainCursorColumn = numFooterColumns as i8 - 1;
         }
@@ -1002,9 +1101,9 @@ pub(crate) unsafe extern "C" fn HandleEasyChatInput_MainScreenButtons() -> u16 {
         (*sEasyChatScreen).mainCursorColumn = 0;
     }
     (*sEasyChatScreen).inputState = INPUTSTATE_PHRASE;
-    return ECFUNC_UPDATE_MAIN_CURSOR;
+    ECFUNC_UPDATE_MAIN_CURSOR
 }
-pub(crate) unsafe extern "C" fn HandleEasyChatInput_Keyboard() -> u16 {
+unsafe fn HandleEasyChatInput_Keyboard() -> u16 {
     if gMain.newKeys as i32 & B_BUTTON != 0 {
         return ExitKeyboardToMainScreen() as u16;
     }
@@ -1040,9 +1139,9 @@ pub(crate) unsafe extern "C" fn HandleEasyChatInput_Keyboard() -> u16 {
     if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 {
         return MoveKeyboardCursor(INPUT_RIGHT as i32);
     }
-    return ECFUNC_NONE;
+    ECFUNC_NONE
 }
-pub(crate) unsafe extern "C" fn HandleEasyChatInput_WordSelect() -> u16 {
+unsafe fn HandleEasyChatInput_WordSelect() -> u16 {
     if gMain.newKeys as i32 & B_BUTTON != 0 {
         (*sEasyChatScreen).inputState = INPUTSTATE_KEYBOARD;
         return ECFUNC_RETURN_TO_KEYBOARD;
@@ -1068,9 +1167,9 @@ pub(crate) unsafe extern "C" fn HandleEasyChatInput_WordSelect() -> u16 {
     if gMain.newAndRepeatedKeys as i32 & DPAD_RIGHT != 0 {
         return MoveWordSelectCursor(INPUT_RIGHT);
     }
-    return ECFUNC_NONE;
+    ECFUNC_NONE
 }
-pub(crate) unsafe extern "C" fn HandleEasyChatInput_ExitPrompt() -> u16 {
+unsafe fn HandleEasyChatInput_ExitPrompt() -> u16 {
     match Menu_ProcessInputNoWrapClearOnChoose() {
         MENU_B_PRESSED | 1 => {
             (*sEasyChatScreen).inputState = GetEasyChatBackupState();
@@ -1091,10 +1190,10 @@ pub(crate) unsafe extern "C" fn HandleEasyChatInput_ExitPrompt() -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn HandleEasyChatInput_ConfirmWordsYesNo() -> u16 {
+unsafe fn HandleEasyChatInput_ConfirmWordsYesNo() -> u16 {
     match Menu_ProcessInputNoWrapClearOnChoose() {
         MENU_B_PRESSED | 1 => {
             (*sEasyChatScreen).inputState = GetEasyChatBackupState();
@@ -1112,10 +1211,10 @@ pub(crate) unsafe extern "C" fn HandleEasyChatInput_ConfirmWordsYesNo() -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn HandleEasyChatInput_DeleteAllYesNo() -> u16 {
+unsafe fn HandleEasyChatInput_DeleteAllYesNo() -> u16 {
     match Menu_ProcessInputNoWrapClearOnChoose() {
         MENU_B_PRESSED | 1 => {
             (*sEasyChatScreen).inputState = INPUTSTATE_MAIN_SCREEN_BUTTONS;
@@ -1132,30 +1231,30 @@ pub(crate) unsafe extern "C" fn HandleEasyChatInput_DeleteAllYesNo() -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn HandleEasyChatInput_QuizQuestion() -> u16 {
+unsafe fn HandleEasyChatInput_QuizQuestion() -> u16 {
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         return ECFUNC_QUIZ_ANSWER;
     }
     if gMain.newKeys as i32 & B_BUTTON != 0 {
         return StartConfirmExitPrompt();
     }
-    return ECFUNC_NONE;
+    ECFUNC_NONE
 }
-pub(crate) unsafe extern "C" fn HandleEasyChatInput_WaitForMsg() -> u16 {
+unsafe fn HandleEasyChatInput_WaitForMsg() -> u16 {
     if gMain.newKeys as i32 & 3 != 0 {
         (*sEasyChatScreen).inputState = GetEasyChatBackupState();
         return ECFUNC_CLOSE_PROMPT;
     }
-    return ECFUNC_NONE;
+    ECFUNC_NONE
 }
-pub(crate) unsafe extern "C" fn HandleEasyChatInput_StartConfirmLyrics() -> u16 {
+unsafe fn HandleEasyChatInput_StartConfirmLyrics() -> u16 {
     (*sEasyChatScreen).inputState = INPUTSTATE_CONFIRM_LYRICS_YES_NO;
-    return ECFUNC_PROMPT_CONFIRM;
+    ECFUNC_PROMPT_CONFIRM
 }
-pub(crate) unsafe extern "C" fn HandleEasyChatInput_ConfirmLyricsYesNo() -> u16 {
+unsafe fn HandleEasyChatInput_ConfirmLyricsYesNo() -> u16 {
     match Menu_ProcessInputNoWrapClearOnChoose() {
         MENU_B_PRESSED | 1 => {
             ResetCurrentPhraseToSaved();
@@ -1174,10 +1273,10 @@ pub(crate) unsafe extern "C" fn HandleEasyChatInput_ConfirmLyricsYesNo() -> u16 
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn StartConfirmExitPrompt() -> u16 {
+unsafe fn StartConfirmExitPrompt() -> u16 {
     if (*sEasyChatScreen).r#type == EASY_CHAT_TYPE_APPRENTICE
         || (*sEasyChatScreen).r#type == EASY_CHAT_TYPE_CONTEST_INTERVIEW
     {
@@ -1191,10 +1290,10 @@ pub(crate) unsafe extern "C" fn StartConfirmExitPrompt() -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn DoDeleteAllButton() -> i32 {
+unsafe fn DoDeleteAllButton() -> i32 {
     (*sEasyChatScreen).inputStateBackup = (*sEasyChatScreen).inputState;
     if (*sEasyChatScreen).r#type != EASY_CHAT_TYPE_BARD_SONG {
         (*sEasyChatScreen).inputState = INPUTSTATE_DELETE_ALL_YES_NO;
@@ -1206,10 +1305,10 @@ pub(crate) unsafe extern "C" fn DoDeleteAllButton() -> i32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn TryConfirmWords() -> u16 {
+unsafe fn TryConfirmWords() -> u16 {
     (*sEasyChatScreen).inputStateBackup = (*sEasyChatScreen).inputState;
     if (*sEasyChatScreen).r#type == EASY_CHAT_TYPE_QUIZ_SET_QUESTION {
         if IsQuizQuestionEmpty() != 0 {
@@ -1264,10 +1363,10 @@ pub(crate) unsafe extern "C" fn TryConfirmWords() -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn DoQuizButton() -> i32 {
+unsafe fn DoQuizButton() -> i32 {
     (*sEasyChatScreen).inputStateBackup = (*sEasyChatScreen).inputState;
     match (*sEasyChatScreen).r#type {
         EASY_CHAT_TYPE_QUIZ_ANSWER => {
@@ -1287,21 +1386,20 @@ pub(crate) unsafe extern "C" fn DoQuizButton() -> i32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn GetEasyChatBackupState() -> u8 {
-    return (*sEasyChatScreen).inputStateBackup;
+unsafe fn GetEasyChatBackupState() -> u8 {
+    (*sEasyChatScreen).inputStateBackup
 }
-pub(crate) unsafe extern "C" fn SelectKeyboardGroup() -> i32 {
-    let mut numWords: u16 = 0;
+unsafe fn SelectKeyboardGroup() -> i32 {
     if (*sEasyChatScreen).inAlphabetMode == 0 {
-        let mut groupId: u8 = GetUnlockedEasyChatGroupId(GetSelectedGroupIndex() as u8);
+        let groupId: u8 = GetUnlockedEasyChatGroupId(GetSelectedGroupIndex() as u8);
         SetSelectedWordGroup(FALSE as u32, groupId as u16);
     } else {
         SetSelectedWordGroup(TRUE as u32, GetSelectedAlphabetGroupId() as u16);
     }
-    numWords = GetNumWordsInSelectedGroup();
+    let numWords: u16 = GetNumWordsInSelectedGroup();
     if numWords == 0 {
         return ECFUNC_NONE as i32;
     }
@@ -1310,13 +1408,13 @@ pub(crate) unsafe extern "C" fn SelectKeyboardGroup() -> i32 {
     (*sEasyChatScreen).wordSelectColumn = 0;
     (*sEasyChatScreen).wordSelectRow = 0;
     (*sEasyChatScreen).inputState = INPUTSTATE_WORD_SELECT;
-    return ECFUNC_OPEN_WORD_SELECT;
+    ECFUNC_OPEN_WORD_SELECT
 }
-pub(crate) unsafe extern "C" fn ExitKeyboardToMainScreen() -> i32 {
+unsafe fn ExitKeyboardToMainScreen() -> i32 {
     (*sEasyChatScreen).inputState = INPUTSTATE_PHRASE;
-    return ECFUNC_CLOSE_KEYBOARD;
+    ECFUNC_CLOSE_KEYBOARD
 }
-pub(crate) unsafe extern "C" fn StartSwitchKeyboardMode() -> i32 {
+unsafe fn StartSwitchKeyboardMode() -> i32 {
     (*sEasyChatScreen).keyboardColumn = 0;
     (*sEasyChatScreen).keyboardRow = 0;
     (*sEasyChatScreen).keyboardScrollOffset = 0;
@@ -1325,9 +1423,9 @@ pub(crate) unsafe extern "C" fn StartSwitchKeyboardMode() -> i32 {
     } else {
         (*sEasyChatScreen).inAlphabetMode = FALSE;
     }
-    return ECFUNC_SWITCH_KEYBOARD_MODE;
+    ECFUNC_SWITCH_KEYBOARD_MODE
 }
-pub(crate) unsafe extern "C" fn DeleteSelectedWord() -> i32 {
+unsafe fn DeleteSelectedWord() -> i32 {
     if (*sEasyChatScreen).r#type == EASY_CHAT_TYPE_BARD_SONG {
         PlaySE(SE_FAILURE);
         return ECFUNC_NONE as i32;
@@ -1337,11 +1435,11 @@ pub(crate) unsafe extern "C" fn DeleteSelectedWord() -> i32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn SelectNewWord() -> i32 {
-    let mut easyChatWord: u16 = GetWordFromSelectedGroup(GetSelectedWordIndex());
+unsafe fn SelectNewWord() -> i32 {
+    let easyChatWord: u16 = GetWordFromSelectedGroup(GetSelectedWordIndex());
     if DummyWordCheck(easyChatWord as i32) != 0 {
         PlaySE(SE_FAILURE);
         return ECFUNC_NONE as i32;
@@ -1357,49 +1455,43 @@ pub(crate) unsafe extern "C" fn SelectNewWord() -> i32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn SaveCurrentPhrase() {
+unsafe fn SaveCurrentPhrase() {
     let mut i: i32 = 0;
-    i = 0;
     while i < (*sEasyChatScreen).maxWords as i32 {
         *(*sEasyChatScreen).savedPhrase.at(i) = (*sEasyChatScreen).currentPhrase[i];
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ResetCurrentPhrase() {
+unsafe fn ResetCurrentPhrase() {
     let mut i: i32 = 0;
-    i = 0;
     while i < (*sEasyChatScreen).maxWords as i32 {
         (*sEasyChatScreen).currentPhrase[i] = EC_EMPTY_WORD;
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ResetCurrentPhraseToSaved() {
+unsafe fn ResetCurrentPhraseToSaved() {
     let mut i: i32 = 0;
-    i = 0;
     while i < (*sEasyChatScreen).maxWords as i32 {
         (*sEasyChatScreen).currentPhrase[i] = *(*sEasyChatScreen).savedPhrase.at(i);
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetSelectedWord(easyChatWord: u16) {
-    let mut index: u16 = GetWordIndexToReplace();
+unsafe fn SetSelectedWord(easyChatWord: u16) {
+    let index: u16 = GetWordIndexToReplace();
     (*sEasyChatScreen).currentPhrase[index] = easyChatWord;
 }
-pub(crate) unsafe extern "C" fn DidPhraseChange() -> u8 {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < (*sEasyChatScreen).maxWords as u16 {
+unsafe fn DidPhraseChange() -> u8 {
+    for i in 0..((*sEasyChatScreen).maxWords as u16) {
         if (*sEasyChatScreen).currentPhrase[i] != *(*sEasyChatScreen).savedPhrase.at(i) {
             return TRUE;
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn GetEasyChatCompleted() -> u32 {
+unsafe fn GetEasyChatCompleted() -> u32 {
     if (*sEasyChatScreen).r#type == EASY_CHAT_TYPE_QUIZ_SET_QUESTION
         || (*sEasyChatScreen).r#type == EASY_CHAT_TYPE_QUIZ_SET_ANSWER
     {
@@ -1415,10 +1507,10 @@ pub(crate) unsafe extern "C" fn GetEasyChatCompleted() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn MoveKeyboardCursor(input: i32) -> u16 {
+pub(crate) unsafe fn MoveKeyboardCursor(input: i32) -> u16 {
     if (*sEasyChatScreen).keyboardColumn != -1 {
         if (*sEasyChatScreen).inAlphabetMode == 0 {
             return MoveKeyboardCursor_GroupNames(input as u32) as u16;
@@ -1430,10 +1522,10 @@ pub(crate) unsafe extern "C" fn MoveKeyboardCursor(input: i32) -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn MoveKeyboardCursor_GroupNames(input: u32) -> i32 {
+unsafe fn MoveKeyboardCursor_GroupNames(input: u32) -> i32 {
     match input {
         INPUT_UP => {
             if (*sEasyChatScreen).keyboardRow as i32
@@ -1486,9 +1578,9 @@ pub(crate) unsafe extern "C" fn MoveKeyboardCursor_GroupNames(input: u32) -> i32
         }
         _ => {}
     }
-    return ECFUNC_NONE as i32;
+    ECFUNC_NONE as i32
 }
-pub(crate) unsafe extern "C" fn MoveKeyboardCursor_Alphabet(input: u32) -> i32 {
+unsafe fn MoveKeyboardCursor_Alphabet(input: u32) -> i32 {
     match input {
         INPUT_UP => {
             if (*sEasyChatScreen).keyboardRow > 0 {
@@ -1524,9 +1616,9 @@ pub(crate) unsafe extern "C" fn MoveKeyboardCursor_Alphabet(input: u32) -> i32 {
         }
         _ => {}
     }
-    return ECFUNC_NONE as i32;
+    ECFUNC_NONE as i32
 }
-pub(crate) unsafe extern "C" fn MoveKeyboardCursor_ButtonWindow(input: u32) -> i32 {
+unsafe fn MoveKeyboardCursor_ButtonWindow(input: u32) -> i32 {
     match input {
         INPUT_UP => {
             if (*sEasyChatScreen).keyboardRow != 0 {
@@ -1556,15 +1648,15 @@ pub(crate) unsafe extern "C" fn MoveKeyboardCursor_ButtonWindow(input: u32) -> i
         }
         _ => {}
     }
-    return ECFUNC_NONE as i32;
+    ECFUNC_NONE as i32
 }
-pub(crate) unsafe extern "C" fn SetKeyboardCursorInButtonWindow() {
+unsafe fn SetKeyboardCursorInButtonWindow() {
     (*sEasyChatScreen).keyboardColumn = -1;
     if (*sEasyChatScreen).keyboardRow != 0 {
         (*sEasyChatScreen).keyboardRow -= 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetKeyboardCursorToLastColumn() {
+unsafe fn SetKeyboardCursorToLastColumn() {
     if (*sEasyChatScreen).inAlphabetMode == 0 {
         (*sEasyChatScreen).keyboardColumn = 1;
         ReduceToValidKeyboardColumn();
@@ -1573,7 +1665,7 @@ pub(crate) unsafe extern "C" fn SetKeyboardCursorToLastColumn() {
             GetLastAlphabetColumn((*sEasyChatScreen).keyboardRow as u8) as i8;
     }
 }
-pub(crate) unsafe extern "C" fn MoveWordSelectCursor(input: u32) -> u16 {
+unsafe fn MoveWordSelectCursor(input: u32) -> u16 {
     let mut funcId: u16 = 0;
     match input {
         INPUT_UP => {
@@ -1638,54 +1730,53 @@ pub(crate) unsafe extern "C" fn MoveWordSelectCursor(input: u32) -> u16 {
                 return ECFUNC_WORD_SELECT_PAGE_UP;
             }
         }
-        INPUT_SELECT => {
+        INPUT_SELECT
             if (*sEasyChatScreen).wordSelectScrollOffset as i32
-                <= (*sEasyChatScreen).wordSelectLastRow as i32 - NUM_WORD_SELECT_ROWS as i32
+                <= (*sEasyChatScreen).wordSelectLastRow as i32 - NUM_WORD_SELECT_ROWS as i32 =>
+        {
+            (*sEasyChatScreen).wordSelectScrollOffset += NUM_WORD_SELECT_ROWS;
+            if (*sEasyChatScreen).wordSelectScrollOffset as i32
+                > (*sEasyChatScreen).wordSelectLastRow as i32 - NUM_WORD_SELECT_ROWS as i32 + 1
             {
-                (*sEasyChatScreen).wordSelectScrollOffset += NUM_WORD_SELECT_ROWS;
-                if (*sEasyChatScreen).wordSelectScrollOffset as i32
-                    > (*sEasyChatScreen).wordSelectLastRow as i32 - NUM_WORD_SELECT_ROWS as i32 + 1
-                {
-                    (*sEasyChatScreen).wordSelectScrollOffset =
-                        (*sEasyChatScreen).wordSelectLastRow - NUM_WORD_SELECT_ROWS + 1;
-                }
-                ReduceToValidWordSelectColumn();
-                return ECFUNC_WORD_SELECT_PAGE_DOWN;
+                (*sEasyChatScreen).wordSelectScrollOffset =
+                    (*sEasyChatScreen).wordSelectLastRow - NUM_WORD_SELECT_ROWS + 1;
             }
+            ReduceToValidWordSelectColumn();
+            return ECFUNC_WORD_SELECT_PAGE_DOWN;
         }
         _ => {}
     }
-    return ECFUNC_NONE;
+    ECFUNC_NONE
 }
-pub(crate) unsafe extern "C" fn GetWordIndexToReplace() -> u16 {
-    return (*sEasyChatScreen).mainCursorRow as u16 * (*sEasyChatScreen).numColumns as u16
-        + (*sEasyChatScreen).mainCursorColumn as u16;
+unsafe fn GetWordIndexToReplace() -> u16 {
+    (*sEasyChatScreen).mainCursorRow as u16 * (*sEasyChatScreen).numColumns as u16
+        + (*sEasyChatScreen).mainCursorColumn as u16
 }
-pub(crate) unsafe extern "C" fn GetSelectedGroupIndex() -> u16 {
-    return NUM_GROUP_NAME_COLUMNS
+unsafe fn GetSelectedGroupIndex() -> u16 {
+    NUM_GROUP_NAME_COLUMNS
         * ((*sEasyChatScreen).keyboardRow as u16 + (*sEasyChatScreen).keyboardScrollOffset as u16)
-        + (*sEasyChatScreen).keyboardColumn as u16;
+        + (*sEasyChatScreen).keyboardColumn as u16
 }
-pub(crate) unsafe extern "C" fn GetSelectedAlphabetGroupId() -> i32 {
-    let mut column: i32 = if ((*sEasyChatScreen).keyboardColumn as u8) < NUM_ALPHABET_COLUMNS {
+unsafe fn GetSelectedAlphabetGroupId() -> i32 {
+    let column: i32 = if ((*sEasyChatScreen).keyboardColumn as u8) < NUM_ALPHABET_COLUMNS {
         (*sEasyChatScreen).keyboardColumn as i32
     } else {
         0
     };
-    let mut row: i32 = if ((*sEasyChatScreen).keyboardRow as u8) < NUM_ALPHABET_ROWS {
+    let row: i32 = if ((*sEasyChatScreen).keyboardRow as u8) < NUM_ALPHABET_ROWS {
         (*sEasyChatScreen).keyboardRow as i32
     } else {
         0
     };
-    return sAlphabetGroupIdMap[row][column] as i32;
+    sAlphabetGroupIdMap[row][column] as i32
 }
-pub(crate) unsafe extern "C" fn GetSelectedWordIndex() -> u16 {
-    return NUM_WORD_SELECT_COLUMNS
+unsafe fn GetSelectedWordIndex() -> u16 {
+    NUM_WORD_SELECT_COLUMNS
         * ((*sEasyChatScreen).wordSelectRow as u16
             + (*sEasyChatScreen).wordSelectScrollOffset as u16)
-        + (*sEasyChatScreen).wordSelectColumn as u16;
+        + (*sEasyChatScreen).wordSelectColumn as u16
 }
-pub(crate) unsafe extern "C" fn GetLastAlphabetColumn(row: u8) -> u8 {
+unsafe fn GetLastAlphabetColumn(row: u8) -> u8 {
     match row {
         1 => {
             return 5;
@@ -1696,10 +1787,10 @@ pub(crate) unsafe extern "C" fn GetLastAlphabetColumn(row: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ReduceToValidKeyboardColumn() {
+unsafe fn ReduceToValidKeyboardColumn() {
     while IsSelectedKeyboardIndexInvalid() != 0 {
         if (*sEasyChatScreen).keyboardColumn != 0 {
             (*sEasyChatScreen).keyboardColumn -= 1;
@@ -1708,7 +1799,7 @@ pub(crate) unsafe extern "C" fn ReduceToValidKeyboardColumn() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn ReduceToValidWordSelectColumn() {
+unsafe fn ReduceToValidWordSelectColumn() {
     while IsSelectedWordIndexInvalid() != 0 {
         if (*sEasyChatScreen).wordSelectColumn != 0 {
             (*sEasyChatScreen).wordSelectColumn -= 1;
@@ -1717,7 +1808,7 @@ pub(crate) unsafe extern "C" fn ReduceToValidWordSelectColumn() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn IsSelectedKeyboardIndexInvalid() -> u8 {
+unsafe fn IsSelectedKeyboardIndexInvalid() -> u8 {
     if (*sEasyChatScreen).inAlphabetMode == 0 {
         return (if GetSelectedGroupIndex() >= GetNumUnlockedEasyChatGroups() as u16 {
             TRUE as i32
@@ -1735,102 +1826,111 @@ pub(crate) unsafe extern "C" fn IsSelectedKeyboardIndexInvalid() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn IsSelectedWordIndexInvalid() -> u8 {
-    return (if GetSelectedWordIndex() >= GetNumWordsInSelectedGroup() {
+unsafe fn IsSelectedWordIndexInvalid() -> u8 {
+    (if GetSelectedWordIndex() >= GetNumWordsInSelectedGroup() {
         TRUE as i32
     } else {
         FALSE as i32
-    }) as u8;
+    }) as u8
 }
-pub(crate) unsafe extern "C" fn FooterHasFourOptions() -> i32 {
-    return sEasyChatScreenTemplates[(*sEasyChatScreen).templateId].fourFooterOptions() as i32;
+unsafe fn FooterHasFourOptions() -> i32 {
+    sEasyChatScreenTemplates[(*sEasyChatScreen).templateId].fourFooterOptions() as i32
 }
-pub(crate) unsafe extern "C" fn GetEasyChatScreenType() -> u8 {
-    return (*sEasyChatScreen).r#type;
+unsafe fn GetEasyChatScreenType() -> u8 {
+    (*sEasyChatScreen).r#type
 }
-pub(crate) unsafe extern "C" fn GetEasyChatScreenFrameId() -> u8 {
-    return sEasyChatScreenTemplates[(*sEasyChatScreen).templateId].frameId();
+unsafe fn GetEasyChatScreenFrameId() -> u8 {
+    sEasyChatScreenTemplates[(*sEasyChatScreen).templateId].frameId()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetTitleText() -> *mut u8 {
-    return (*sEasyChatScreen).titleText;
+pub unsafe fn GetTitleText() -> *mut u8 {
+    (*sEasyChatScreen).titleText
 }
-pub(crate) unsafe extern "C" fn GetCurrentPhrase() -> *mut u16 {
-    return (*sEasyChatScreen).currentPhrase.as_mut_ptr();
+unsafe fn GetCurrentPhrase() -> *mut u16 {
+    (*sEasyChatScreen).currentPhrase.as_mut_ptr()
 }
-pub(crate) unsafe extern "C" fn GetNumRows() -> u8 {
-    return (*sEasyChatScreen).numRows;
+unsafe fn GetNumRows() -> u8 {
+    (*sEasyChatScreen).numRows
 }
-pub(crate) unsafe extern "C" fn GetNumColumns() -> u8 {
-    return (*sEasyChatScreen).numColumns;
+unsafe fn GetNumColumns() -> u8 {
+    (*sEasyChatScreen).numColumns
 }
-pub(crate) unsafe extern "C" fn GetMainCursorColumn() -> u8 {
-    return (*sEasyChatScreen).mainCursorColumn as u8;
+unsafe fn GetMainCursorColumn() -> u8 {
+    (*sEasyChatScreen).mainCursorColumn as u8
 }
-pub(crate) unsafe extern "C" fn GetMainCursorRow() -> u8 {
-    return (*sEasyChatScreen).mainCursorRow as u8;
+unsafe fn GetMainCursorRow() -> u8 {
+    (*sEasyChatScreen).mainCursorRow as u8
 }
-pub(crate) unsafe extern "C" fn GetEasyChatInstructionsText(
-    str1: *mut *mut u8,
-    str2: *mut *mut u8,
-) {
+unsafe fn GetEasyChatInstructionsText(str1: *mut *mut u8, str2: *mut *mut u8) {
     *str1 = sEasyChatScreenTemplates[(*sEasyChatScreen).templateId].instructionsText1;
     *str2 = sEasyChatScreenTemplates[(*sEasyChatScreen).templateId].instructionsText2;
 }
-pub(crate) unsafe extern "C" fn GetEasyChatConfirmText(str1: *mut *mut u8, str2: *mut *mut u8) {
+unsafe fn GetEasyChatConfirmText(str1: *mut *mut u8, str2: *mut *mut u8) {
     *str1 = sEasyChatScreenTemplates[(*sEasyChatScreen).templateId].confirmText1;
     *str2 = sEasyChatScreenTemplates[(*sEasyChatScreen).templateId].confirmText2;
 }
-pub(crate) unsafe extern "C" fn GetEasyChatConfirmExitText(str1: *mut *mut u8, str2: *mut *mut u8) {
+unsafe fn GetEasyChatConfirmExitText(str1: *mut *mut u8, str2: *mut *mut u8) {
     match (*sEasyChatScreen).r#type {
         EASY_CHAT_TYPE_MAIL => {
-            *str1 = gText_StopGivingPkmnMail.as_ptr().cast_mut();
+            *str1 = (*(&raw const crate::data::strings::gText_StopGivingPkmnMail)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
             *str2 = null_mut();
         }
         EASY_CHAT_TYPE_QUIZ_ANSWER | EASY_CHAT_TYPE_QUIZ_QUESTION => {
-            *str1 = gText_LikeToQuitQuiz.as_ptr().cast_mut();
-            *str2 = gText_ChallengeQuestionMark.as_ptr().cast_mut();
+            *str1 = (*(&raw const crate::data::strings::gText_LikeToQuitQuiz)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
+            *str2 = (*(&raw const crate::data::strings::gText_ChallengeQuestionMark)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         _ => {
-            *str1 = gText_QuitEditing.as_ptr().cast_mut();
+            *str1 = (*(&raw const crate::data::strings::gText_QuitEditing).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
             *str2 = null_mut();
         }
     }
 }
-pub(crate) unsafe extern "C" fn GetEasyChatConfirmDeletionText(
-    str1: *mut *mut u8,
-    str2: *mut *mut u8,
-) {
-    *str1 = gText_AllTextBeingEditedWill.as_ptr().cast_mut();
-    *str2 = gText_BeDeletedThatOkay.as_ptr().cast_mut();
+unsafe fn GetEasyChatConfirmDeletionText(str1: *mut *mut u8, str2: *mut *mut u8) {
+    *str1 = (*(&raw const crate::data::strings::gText_AllTextBeingEditedWill)
+        .cast::<CArray<u8, 0>>())
+    .as_ptr()
+    .cast_mut();
+    *str2 = (*(&raw const crate::data::strings::gText_BeDeletedThatOkay).cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
 }
-pub(crate) unsafe extern "C" fn GetKeyboardCursorColAndRow(column: *mut i8, row: *mut i8) {
+unsafe fn GetKeyboardCursorColAndRow(column: *mut i8, row: *mut i8) {
     *column = (*sEasyChatScreen).keyboardColumn;
     *row = (*sEasyChatScreen).keyboardRow;
 }
-pub(crate) unsafe extern "C" fn GetInAlphabetMode() -> u8 {
-    return (*sEasyChatScreen).inAlphabetMode;
+unsafe fn GetInAlphabetMode() -> u8 {
+    (*sEasyChatScreen).inAlphabetMode
 }
-pub(crate) unsafe extern "C" fn GetKeyboardScrollOffset() -> u8 {
-    return (*sEasyChatScreen).keyboardScrollOffset;
+unsafe fn GetKeyboardScrollOffset() -> u8 {
+    (*sEasyChatScreen).keyboardScrollOffset
 }
-pub(crate) unsafe extern "C" fn GetWordSelectColAndRow(column: *mut i8, row: *mut i8) {
+unsafe fn GetWordSelectColAndRow(column: *mut i8, row: *mut i8) {
     *column = (*sEasyChatScreen).wordSelectColumn;
     *row = (*sEasyChatScreen).wordSelectRow;
 }
-pub(crate) unsafe extern "C" fn GetWordSelectScrollOffset() -> u8 {
-    return (*sEasyChatScreen).wordSelectScrollOffset;
+unsafe fn GetWordSelectScrollOffset() -> u8 {
+    (*sEasyChatScreen).wordSelectScrollOffset
 }
-pub(crate) unsafe extern "C" fn GetWordSelectLastRow() -> u8 {
-    return (*sEasyChatScreen).wordSelectLastRow;
+unsafe fn GetWordSelectLastRow() -> u8 {
+    (*sEasyChatScreen).wordSelectLastRow
 }
-pub(crate) unsafe extern "C" fn UnusedDummy() -> u8 {
-    return FALSE;
+fn UnusedDummy() -> u8 {
+    FALSE
 }
-pub(crate) unsafe extern "C" fn CanScrollUp() -> u32 {
+unsafe fn CanScrollUp() -> u32 {
     match (*sEasyChatScreen).inputState {
         INPUTSTATE_KEYBOARD => {
             if (*sEasyChatScreen).inAlphabetMode == 0
@@ -1839,16 +1939,14 @@ pub(crate) unsafe extern "C" fn CanScrollUp() -> u32 {
                 return TRUE as u32;
             }
         }
-        INPUTSTATE_WORD_SELECT => {
-            if (*sEasyChatScreen).wordSelectScrollOffset != 0 {
-                return TRUE as u32;
-            }
+        INPUTSTATE_WORD_SELECT if (*sEasyChatScreen).wordSelectScrollOffset != 0 => {
+            return TRUE as u32;
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn CanScrollDown() -> u32 {
+unsafe fn CanScrollDown() -> u32 {
     match (*sEasyChatScreen).inputState {
         INPUTSTATE_KEYBOARD => {
             if (*sEasyChatScreen).inAlphabetMode == 0
@@ -1858,101 +1956,85 @@ pub(crate) unsafe extern "C" fn CanScrollDown() -> u32 {
                 return TRUE as u32;
             }
         }
-        INPUTSTATE_WORD_SELECT => {
+        INPUTSTATE_WORD_SELECT
             if (*sEasyChatScreen).wordSelectScrollOffset as i32 + NUM_WORD_SELECT_ROWS as i32
-                <= (*sEasyChatScreen).wordSelectLastRow as i32
-            {
-                return TRUE as u32;
-            }
+                <= (*sEasyChatScreen).wordSelectLastRow as i32 =>
+        {
+            return TRUE as u32;
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn FooterHasFourOptions_() -> i32 {
-    return FooterHasFourOptions();
+unsafe fn FooterHasFourOptions_() -> i32 {
+    FooterHasFourOptions()
 }
-pub(crate) unsafe extern "C" fn IsPhraseDifferentThanPlayerInput(
-    phrase: *mut u16,
-    phraseLength: u8,
-) -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < phraseLength {
+unsafe fn IsPhraseDifferentThanPlayerInput(phrase: *mut u16, phraseLength: u8) -> u8 {
+    for i in 0..phraseLength {
         if *phrase.at(i) != (*sEasyChatScreen).currentPhrase[i] {
             return TRUE;
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn GetDisplayedPersonType() -> u8 {
-    return (*sEasyChatScreen).displayedPersonType;
+unsafe fn GetDisplayedPersonType() -> u8 {
+    (*sEasyChatScreen).displayedPersonType
 }
-pub(crate) unsafe extern "C" fn GetEachChatScreenTemplateId(r#type: u8) -> u8 {
-    let mut i: u32 = 0;
-    i = 0;
-    while i < 21 {
+fn GetEachChatScreenTemplateId(r#type: u8) -> u8 {
+    for i in 0..21u32 {
         if sEasyChatScreenTemplates[i].r#type == r#type {
             return i as u8;
         }
-        i += 1;
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn IsCurrentPhraseEmpty() -> u32 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < (*sEasyChatScreen).maxWords as i32 {
+unsafe fn IsCurrentPhraseEmpty() -> u32 {
+    for i in 0..((*sEasyChatScreen).maxWords as i32) {
         if (*sEasyChatScreen).currentPhrase[i] != EC_EMPTY_WORD {
             return FALSE as u32;
         }
-        i += 1;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn IsCurrentPhraseFull() -> u32 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < (*sEasyChatScreen).maxWords as i32 {
+unsafe fn IsCurrentPhraseFull() -> u32 {
+    for i in 0..((*sEasyChatScreen).maxWords as i32) {
         if (*sEasyChatScreen).currentPhrase[i] == EC_EMPTY_WORD {
             return FALSE as u32;
         }
-        i += 1;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn IsQuizQuestionEmpty() -> i32 {
-    let mut i: i32 = 0;
-    let mut saveBlock1: *mut SaveBlock1 = null_mut();
+unsafe fn IsQuizQuestionEmpty() -> i32 {
     if (*sEasyChatScreen).r#type == EASY_CHAT_TYPE_QUIZ_SET_QUESTION {
         return IsCurrentPhraseEmpty() as i32;
     }
-    saveBlock1 = gSaveBlock1Ptr;
-    i = 0;
-    while i < QUIZ_QUESTION_LEN as i32 {
+    let saveBlock1: *mut SaveBlock1 = *(&raw const crate::load_save::gSaveBlock1Ptr)
+        .cast::<*mut SaveBlock1>()
+        .cast_mut();
+    for i in 0..(QUIZ_QUESTION_LEN as i32) {
         if (*saveBlock1).lilycoveLady.quiz.question[i] != EC_EMPTY_WORD {
             return FALSE as i32;
         }
-        i += 1;
     }
-    return TRUE as i32;
+    TRUE as i32
 }
-pub(crate) unsafe extern "C" fn IsQuizAnswerEmpty() -> i32 {
+unsafe fn IsQuizAnswerEmpty() -> i32 {
     let mut quiz: *mut LilycoveLadyQuiz = null_mut();
     if (*sEasyChatScreen).r#type == EASY_CHAT_TYPE_QUIZ_SET_ANSWER {
         return IsCurrentPhraseEmpty() as i32;
     }
     quiz = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
-    return if (*quiz).correctAnswer == EC_EMPTY_WORD {
+    if (*quiz).correctAnswer == EC_EMPTY_WORD {
         TRUE as i32
     } else {
         FALSE as i32
-    };
+    }
 }
-pub(crate) unsafe extern "C" fn GetQuizTitle(dst: *mut u8) {
+unsafe fn GetQuizTitle(dst: *mut u8) {
     let mut name: CArray<u8, 32> = zeroed();
-    let mut saveBlock1: *mut SaveBlock1 = gSaveBlock1Ptr;
+    let saveBlock1: *mut SaveBlock1 = *(&raw const crate::load_save::gSaveBlock1Ptr)
+        .cast::<*mut SaveBlock1>()
+        .cast_mut();
     DynamicPlaceholderTextUtil_Reset();
     if StringLength((*saveBlock1).lilycoveLady.quiz.playerName.as_mut_ptr()) != 0 {
         TVShowConvertInternationalString(
@@ -1962,17 +2044,24 @@ pub(crate) unsafe extern "C" fn GetQuizTitle(dst: *mut u8) {
         );
         DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, name.as_mut_ptr());
     } else {
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, gText_Lady.as_ptr().cast_mut());
+        DynamicPlaceholderTextUtil_SetPlaceholderPtr(
+            0,
+            (*(&raw const crate::data::strings::gText_Lady).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
     }
-    DynamicPlaceholderTextUtil_ExpandPlaceholders(dst, gText_F700sQuiz.as_ptr().cast_mut());
+    DynamicPlaceholderTextUtil_ExpandPlaceholders(
+        dst,
+        (*(&raw const crate::data::strings::gText_F700sQuiz).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
 }
-pub(crate) unsafe extern "C" fn BufferCurrentPhraseToStringVar2() {
+unsafe fn BufferCurrentPhraseToStringVar2() {
+    let mut phrase: *mut u16 = (*sEasyChatScreen).currentPhrase.as_mut_ptr();
+    let mut str: *mut u8 = gStringVar2.as_mut_ptr();
     let mut i: i32 = 0;
-    let mut phrase: *mut u16 = null_mut();
-    let mut str: *mut u8 = null_mut();
-    phrase = (*sEasyChatScreen).currentPhrase.as_mut_ptr();
-    str = gStringVar2.as_mut_ptr();
-    i = 0;
     while i < (*sEasyChatScreen).maxWords as i32 {
         str = CopyEasyChatWordPadded(str, *phrase, 0);
         *str = 0;
@@ -1983,7 +2072,7 @@ pub(crate) unsafe extern "C" fn BufferCurrentPhraseToStringVar2() {
     str = str.at(-1);
     *str = EOS;
 }
-pub(crate) unsafe extern "C" fn SetSpecialEasyChatResult() {
+unsafe fn SetSpecialEasyChatResult() {
     match (*sEasyChatScreen).r#type {
         0 => {
             FlagSet(FLAG_SYS_CHAT_USED);
@@ -2006,29 +2095,25 @@ pub(crate) unsafe extern "C" fn SetSpecialEasyChatResult() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn DidPlayerInputMysteryGiftPhrase() -> i32 {
-    return (IsPhraseDifferentThanPlayerInput(sMysteryGiftPhrase.as_ptr().cast_mut(), 4) == 0)
-        as i32;
+unsafe fn DidPlayerInputMysteryGiftPhrase() -> i32 {
+    (IsPhraseDifferentThanPlayerInput(sMysteryGiftPhrase.as_ptr().cast_mut(), 4) == 0) as i32
 }
-pub(crate) unsafe extern "C" fn DidPlayerInputABerryMasterWifePhrase() -> u16 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 5 {
+unsafe fn DidPlayerInputABerryMasterWifePhrase() -> u16 {
+    for i in 0..5i32 {
         if IsPhraseDifferentThanPlayerInput(sBerryMasterWifePhrases[i].as_ptr().cast_mut(), 2) == 0
         {
             return i as u16 + 1;
         }
-        i += 1;
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn ClearUnusedField() {
+unsafe fn ClearUnusedField() {
     (*sEasyChatScreen).unused = 0;
 }
-pub(crate) unsafe extern "C" fn DummyWordCheck(easyChatWord: i32) -> u32 {
-    return FALSE as u32;
+fn DummyWordCheck(easyChatWord: i32) -> u32 {
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn InitEasyChatScreenControl() -> u8 {
+unsafe fn InitEasyChatScreenControl() -> u8 {
     if InitEasyChatScreenControl_() == 0 {
         return FALSE;
     } else {
@@ -2036,10 +2121,10 @@ pub(crate) unsafe extern "C" fn InitEasyChatScreenControl() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn LoadEasyChatScreen() -> u8 {
+unsafe fn LoadEasyChatScreen() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             ResetBgsAndClearDma3BusyFlags(0);
@@ -2069,14 +2154,19 @@ pub(crate) unsafe extern "C" fn LoadEasyChatScreen() -> u8 {
         1 => {
             DecompressAndLoadBgGfxUsingHeap(
                 3,
-                gEasyChatWindow_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gEasyChatWindow_Gfx).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0,
                 0,
                 0,
             );
             CopyToBgTilemapBuffer(
                 3,
-                gEasyChatWindow_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gEasyChatWindow_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0,
                 0,
             );
@@ -2129,20 +2219,20 @@ pub(crate) unsafe extern "C" fn LoadEasyChatScreen() -> u8 {
         }
     }
     (*sScreenControl).funcState += 1;
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn FreeEasyChatScreenControl() {
+unsafe fn FreeEasyChatScreenControl() {
     if !sScreenControl.is_null() {
         Free(sScreenControl as *mut c_void);
         sScreenControl = null_mut();
     }
 }
-pub(crate) unsafe extern "C" fn StartEasyChatFunction(funcId: u16) {
+unsafe fn StartEasyChatFunction(funcId: u16) {
     (*sScreenControl).currentFuncId = funcId;
     (*sScreenControl).funcState = 0;
     RunEasyChatFunction();
 }
-pub(crate) unsafe extern "C" fn RunEasyChatFunction() -> u8 {
+unsafe fn RunEasyChatFunction() -> u8 {
     match (*sScreenControl).currentFuncId {
         ECFUNC_NONE => {
             return FALSE;
@@ -2255,10 +2345,10 @@ pub(crate) unsafe extern "C" fn RunEasyChatFunction() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ReprintPhrase() -> u8 {
+unsafe fn ReprintPhrase() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             PrintCurrentPhrase();
@@ -2269,30 +2359,20 @@ pub(crate) unsafe extern "C" fn ReprintPhrase() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn UpdateMainCursor() -> u8 {
-    let mut i: u8 = 0;
-    let mut currentPhrase: *mut u16 = null_mut();
-    let mut ecWord: *mut u16 = null_mut();
-    let mut frameId: u8 = 0;
-    let mut cursorColumn: u8 = 0;
-    let mut cursorRow: u8 = 0;
-    let mut numColumns: u8 = 0;
-    let mut x: i16 = 0;
+unsafe fn UpdateMainCursor() -> u8 {
     let mut stringWidth: i32 = 0;
     let mut trueStringWidth: i32 = 0;
-    let mut y: u8 = 0;
     let mut str: CArray<u8, 64> = zeroed();
-    currentPhrase = GetCurrentPhrase();
-    frameId = GetEasyChatScreenFrameId();
-    cursorColumn = GetMainCursorColumn();
-    cursorRow = GetMainCursorRow();
-    numColumns = GetNumColumns();
-    ecWord = currentPhrase.at(cursorRow as i32 * numColumns as i32);
-    x = 8 * sPhraseFrameDimensions[frameId].left() as i16 + 13;
-    i = 0;
-    while i < cursorColumn {
+    let currentPhrase: *mut u16 = GetCurrentPhrase();
+    let frameId: u8 = GetEasyChatScreenFrameId();
+    let cursorColumn: u8 = GetMainCursorColumn();
+    let cursorRow: u8 = GetMainCursorRow();
+    let numColumns: u8 = GetNumColumns();
+    let mut ecWord: *mut u16 = currentPhrase.at(cursorRow as i32 * numColumns as i32);
+    let mut x: i16 = 8 * sPhraseFrameDimensions[frameId].left() as i16 + 13;
+    for i in 0..cursorColumn {
         if *ecWord == EC_EMPTY_WORD {
             stringWidth = 72;
         } else {
@@ -2302,18 +2382,17 @@ pub(crate) unsafe extern "C" fn UpdateMainCursor() -> u8 {
         trueStringWidth = stringWidth + 17;
         x += trueStringWidth as i16;
         ecWord = ecWord.at(1);
-        i += 1;
     }
-    y = 8 * (sPhraseFrameDimensions[frameId].top() + cursorRow * 2);
+    let y: u8 = 8 * (sPhraseFrameDimensions[frameId].top() + cursorRow * 2);
     SetMainCursorPos(x as u8, y + 8);
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn UpdateMainCursorOnButtons() -> u8 {
-    let mut xOffset: u8 = GetFooterOptionXOffset(GetMainCursorColumn() as i32) as u8;
+unsafe fn UpdateMainCursorOnButtons() -> u8 {
+    let xOffset: u8 = GetFooterOptionXOffset(GetMainCursorColumn() as i32) as u8;
     SetMainCursorPos(xOffset, 96);
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn ShowConfirmExitPrompt() -> u8 {
+unsafe fn ShowConfirmExitPrompt() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             StopMainCursorAnim();
@@ -2326,9 +2405,9 @@ pub(crate) unsafe extern "C" fn ShowConfirmExitPrompt() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ShowConfirmPrompt() -> u8 {
+unsafe fn ShowConfirmPrompt() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             StopMainCursorAnim();
@@ -2341,9 +2420,9 @@ pub(crate) unsafe extern "C" fn ShowConfirmPrompt() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ShowConfirmDeleteAllPrompt() -> u8 {
+unsafe fn ShowConfirmDeleteAllPrompt() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             StopMainCursorAnim();
@@ -2356,9 +2435,9 @@ pub(crate) unsafe extern "C" fn ShowConfirmDeleteAllPrompt() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ClosePrompt() -> u8 {
+unsafe fn ClosePrompt() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             StartMainCursorAnim();
@@ -2372,9 +2451,9 @@ pub(crate) unsafe extern "C" fn ClosePrompt() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ClosePromptAfterDeleteAll() -> u8 {
+unsafe fn ClosePromptAfterDeleteAll() -> u8 {
     'l1: {
         let sw1: u16 = (*sScreenControl).funcState;
         let mut fall = false;
@@ -2386,13 +2465,12 @@ pub(crate) unsafe extern "C" fn ClosePromptAfterDeleteAll() -> u8 {
             (*sScreenControl).funcState += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             return IsDma3ManagerBusyWithBgCopy();
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn OpenKeyboard() -> u8 {
+unsafe fn OpenKeyboard() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             StopMainCursorAnim();
@@ -2431,14 +2509,13 @@ pub(crate) unsafe extern "C" fn OpenKeyboard() -> u8 {
             return FALSE;
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn CloseKeyboard() -> u8 {
+unsafe fn CloseKeyboard() -> u8 {
     'l1: {
         let sw1: u16 = (*sScreenControl).funcState;
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             DestroyRectangleCursorSprites();
             HideModeWindow();
             HideScrollIndicators();
@@ -2454,14 +2531,12 @@ pub(crate) unsafe extern "C" fn CloseKeyboard() -> u8 {
             (*sScreenControl).funcState += 1;
         }
         if fall || sw1 == 2 {
-            fall = true;
             if UpdateLowerWindowAnim() == 0 {
                 (*sScreenControl).funcState += 1;
             }
             break 'l1;
         }
         if sw1 == 3 {
-            fall = true;
             if IsDma3ManagerBusyWithBgCopy() == 0 {
                 StartMainCursorAnim();
                 ShowBg(0);
@@ -2470,13 +2545,12 @@ pub(crate) unsafe extern "C" fn CloseKeyboard() -> u8 {
             break 'l1;
         }
         if sw1 == 4 {
-            fall = true;
             return FALSE;
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn SwitchKeyboardMode() -> u8 {
+unsafe fn SwitchKeyboardMode() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             DestroyRectangleCursorSprites();
@@ -2511,13 +2585,13 @@ pub(crate) unsafe extern "C" fn SwitchKeyboardMode() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn UpdateKeyboardCursor() -> u8 {
+unsafe fn UpdateKeyboardCursor() -> u8 {
     UpdateRectangleCursorPos();
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn GroupNamesScrollDown() -> u8 {
+unsafe fn GroupNamesScrollDown() -> u8 {
     'l1: {
         let sw1: u16 = (*sScreenControl).funcState;
         let mut fall = false;
@@ -2527,7 +2601,6 @@ pub(crate) unsafe extern "C" fn GroupNamesScrollDown() -> u8 {
             (*sScreenControl).funcState += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             if UpdateLowerWindowScroll() == 0 {
                 UpdateRectangleCursorPos();
                 UpdateScrollIndicatorsVisibility();
@@ -2536,9 +2609,9 @@ pub(crate) unsafe extern "C" fn GroupNamesScrollDown() -> u8 {
             break 'l1;
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn GroupNamesScrollUp() -> u8 {
+unsafe fn GroupNamesScrollUp() -> u8 {
     'l1: {
         let sw1: u16 = (*sScreenControl).funcState;
         let mut fall = false;
@@ -2548,7 +2621,6 @@ pub(crate) unsafe extern "C" fn GroupNamesScrollUp() -> u8 {
             (*sScreenControl).funcState += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             if UpdateLowerWindowScroll() == 0 {
                 UpdateScrollIndicatorsVisibility();
                 (*sScreenControl).funcState += 1;
@@ -2557,13 +2629,12 @@ pub(crate) unsafe extern "C" fn GroupNamesScrollUp() -> u8 {
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             return FALSE;
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn OpenWordSelect() -> u8 {
+unsafe fn OpenWordSelect() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             DestroyRectangleCursorSprites();
@@ -2604,9 +2675,9 @@ pub(crate) unsafe extern "C" fn OpenWordSelect() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn CloseWordSelect() -> u8 {
+unsafe fn CloseWordSelect() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             PrintCurrentPhrase();
@@ -2643,9 +2714,9 @@ pub(crate) unsafe extern "C" fn CloseWordSelect() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ShowConfirmLyricsPrompt() -> u8 {
+unsafe fn ShowConfirmLyricsPrompt() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             PrintCurrentPhrase();
@@ -2688,9 +2759,9 @@ pub(crate) unsafe extern "C" fn ShowConfirmLyricsPrompt() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ReturnToKeyboard() -> u8 {
+unsafe fn ReturnToKeyboard() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             DestroyWordSelectCursorSprite();
@@ -2717,24 +2788,22 @@ pub(crate) unsafe extern "C" fn ReturnToKeyboard() -> u8 {
                 (*sScreenControl).funcState += 1;
             }
         }
-        4 => {
-            if ShowSideWindow() == 0 {
-                CreateRectangleCursorSprites();
-                SetScrollIndicatorXPos(FALSE as u32);
-                UpdateScrollIndicatorsVisibility();
-                (*sScreenControl).funcState += 1;
-                return FALSE;
-            }
+        4 if ShowSideWindow() == 0 => {
+            CreateRectangleCursorSprites();
+            SetScrollIndicatorXPos(FALSE as u32);
+            UpdateScrollIndicatorsVisibility();
+            (*sScreenControl).funcState += 1;
+            return FALSE;
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn UpdateWordSelectCursor() -> u8 {
+unsafe fn UpdateWordSelectCursor() -> u8 {
     UpdateWordSelectCursorPos();
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn WordSelectScrollDown() -> u8 {
+unsafe fn WordSelectScrollDown() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             PrintWordSelectNextRowDown();
@@ -2760,9 +2829,9 @@ pub(crate) unsafe extern "C" fn WordSelectScrollDown() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn WordSelectScrollUp() -> u8 {
+unsafe fn WordSelectScrollUp() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             PrintWordSelectNextRowUp();
@@ -2787,9 +2856,9 @@ pub(crate) unsafe extern "C" fn WordSelectScrollUp() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn WordSelectPageScrollDown() -> u8 {
+unsafe fn WordSelectPageScrollDown() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             PrintWordSelectRowsPageDown();
@@ -2797,7 +2866,7 @@ pub(crate) unsafe extern "C" fn WordSelectPageScrollDown() -> u8 {
         }
         1 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                let mut scrollChange: i16 =
+                let scrollChange: i16 =
                     GetWordSelectScrollOffset() as i16 - GetLowerWindowScrollOffset() as i16;
                 InitLowerWindowScroll(scrollChange, 8);
                 (*sScreenControl).funcState += 1;
@@ -2817,9 +2886,9 @@ pub(crate) unsafe extern "C" fn WordSelectPageScrollDown() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn WordSelectPageScrollUp() -> u8 {
+unsafe fn WordSelectPageScrollUp() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             PrintWordSelectRowsPageUp();
@@ -2827,7 +2896,7 @@ pub(crate) unsafe extern "C" fn WordSelectPageScrollUp() -> u8 {
         }
         1 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
-                let mut scrollChange: i16 =
+                let scrollChange: i16 =
                     GetWordSelectScrollOffset() as i16 - GetLowerWindowScrollOffset() as i16;
                 InitLowerWindowScroll(scrollChange, 8);
                 (*sScreenControl).funcState += 1;
@@ -2846,9 +2915,9 @@ pub(crate) unsafe extern "C" fn WordSelectPageScrollUp() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ShowCreateQuizMsg() -> u8 {
+unsafe fn ShowCreateQuizMsg() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             StopMainCursorAnim();
@@ -2860,9 +2929,9 @@ pub(crate) unsafe extern "C" fn ShowCreateQuizMsg() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ShowSelectAnswerMsg() -> u8 {
+unsafe fn ShowSelectAnswerMsg() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             StopMainCursorAnim();
@@ -2874,9 +2943,9 @@ pub(crate) unsafe extern "C" fn ShowSelectAnswerMsg() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ShowSongTooShortMsg() -> u8 {
+unsafe fn ShowSongTooShortMsg() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             StopMainCursorAnim();
@@ -2888,9 +2957,9 @@ pub(crate) unsafe extern "C" fn ShowSongTooShortMsg() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ShowCantDeleteLyricsMsg() -> u8 {
+unsafe fn ShowCantDeleteLyricsMsg() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             StopMainCursorAnim();
@@ -2902,9 +2971,9 @@ pub(crate) unsafe extern "C" fn ShowCantDeleteLyricsMsg() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ShowCombineTwoWordsMsg() -> u8 {
+unsafe fn ShowCombineTwoWordsMsg() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             StopMainCursorAnim();
@@ -2916,9 +2985,9 @@ pub(crate) unsafe extern "C" fn ShowCombineTwoWordsMsg() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ShowCantExitMsg() -> u8 {
+unsafe fn ShowCantExitMsg() -> u8 {
     match (*sScreenControl).funcState {
         0 => {
             StopMainCursorAnim();
@@ -2930,9 +2999,9 @@ pub(crate) unsafe extern "C" fn ShowCantExitMsg() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn InitEasyChatScreenControl_() -> u8 {
+unsafe fn InitEasyChatScreenControl_() -> u8 {
     sScreenControl = Alloc(4864) as *mut EasyChatScreenControl;
     if sScreenControl.is_null() {
         return FALSE;
@@ -2949,9 +3018,9 @@ pub(crate) unsafe extern "C" fn InitEasyChatScreenControl_() -> u8 {
     (*sScreenControl).startButtonSprite = null_mut();
     (*sScreenControl).selectButtonSprite = null_mut();
     (*sScreenControl).fourFooterOptions = FooterHasFourOptions_() as u8;
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn InitEasyChatBgs() {
+unsafe fn InitEasyChatBgs() {
     ChangeBgX(3, 0, BG_COORD_SET);
     ChangeBgY(3, 0, BG_COORD_SET);
     ChangeBgX(1, 0, BG_COORD_SET);
@@ -2962,9 +3031,15 @@ pub(crate) unsafe extern "C" fn InitEasyChatBgs() {
     ChangeBgY(0, 0, BG_COORD_SET);
     SetGpuReg(0x0, 12352);
 }
-pub(crate) unsafe extern "C" fn LoadEasyChatPalettes() {
+unsafe fn LoadEasyChatPalettes() {
     ResetPaletteFade();
-    LoadPalette(gEasyChatMode_Pal.as_ptr().cast_mut() as *mut c_void, 0, 32);
+    LoadPalette(
+        (*(&raw const crate::data::graphics::gEasyChatMode_Pal).cast::<CArray<u16, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
+        0,
+        32,
+    );
     LoadPalette(
         sTextInputFrameOrange_Pal.as_ptr().cast_mut() as *mut c_void,
         16,
@@ -2980,13 +3055,12 @@ pub(crate) unsafe extern "C" fn LoadEasyChatPalettes() {
     LoadPalette(sText_Pal.as_ptr().cast_mut() as *mut c_void, 240, 12);
     LoadPalette(sText_Pal.as_ptr().cast_mut() as *mut c_void, 48, 12);
 }
-pub(crate) unsafe extern "C" fn PrintTitle() {
-    let mut xOffset: i32 = 0;
-    let mut titleText: *mut u8 = GetTitleText();
+unsafe fn PrintTitle() {
+    let titleText: *mut u8 = GetTitleText();
     if titleText.is_null() {
         return;
     }
-    xOffset = GetStringCenterAlignXOffset(FONT_NORMAL as i32, titleText, 144);
+    let xOffset: i32 = GetStringCenterAlignXOffset(FONT_NORMAL as i32, titleText, 144);
     FillWindowPixelBuffer(WIN_TITLE, 0);
     PrintEasyChatTextWithColors(
         WIN_TITLE,
@@ -3002,18 +3076,18 @@ pub(crate) unsafe extern "C" fn PrintTitle() {
     PutWindowTilemap(WIN_TITLE);
     CopyWindowToVram(WIN_TITLE, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn PrintEasyChatText(
+unsafe fn PrintEasyChatText(
     windowId: u8,
     fontId: u8,
     str: *mut u8,
     x: u8,
     y: u8,
     speed: u8,
-    callback: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
+    callback: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
 ) {
     AddTextPrinterParameterized(windowId, fontId, str, x, y, speed, callback);
 }
-pub(crate) unsafe extern "C" fn PrintEasyChatTextWithColors(
+unsafe fn PrintEasyChatTextWithColors(
     windowId: u8,
     fontId: u8,
     str: *mut u8,
@@ -3038,7 +3112,7 @@ pub(crate) unsafe extern "C" fn PrintEasyChatTextWithColors(
         str,
     );
 }
-pub(crate) unsafe extern "C" fn PrintInitialInstructions() {
+unsafe fn PrintInitialInstructions() {
     FillBgTilemapBufferRect(0, 0, 0, 0, 32, 20, 17);
     LoadUserWindowBorderGfx(WIN_MSG, 1, 224);
     DrawTextBorderOuter(WIN_MSG, 1, 14);
@@ -3046,7 +3120,7 @@ pub(crate) unsafe extern "C" fn PrintInitialInstructions() {
     PutWindowTilemap(WIN_MSG);
     CopyBgTilemapBufferToVram(0);
 }
-pub(crate) unsafe extern "C" fn PrintEasyChatStdMessage(msgId: u8) {
+unsafe fn PrintEasyChatStdMessage(msgId: u8) {
     let mut text2: *mut u8 = null_mut();
     let mut text1: *mut u8 = null_mut();
     match msgId {
@@ -3063,24 +3137,47 @@ pub(crate) unsafe extern "C" fn PrintEasyChatStdMessage(msgId: u8) {
             GetEasyChatConfirmDeletionText(&raw mut text1, &raw mut text2);
         }
         MSG_CREATE_QUIZ => {
-            text1 = gText_CreateAQuiz.as_ptr().cast_mut();
+            text1 = (*(&raw const crate::data::strings::gText_CreateAQuiz).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         }
         MSG_SELECT_ANSWER => {
-            text1 = gText_SelectTheAnswer.as_ptr().cast_mut();
+            text1 = (*(&raw const crate::data::strings::gText_SelectTheAnswer)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         MSG_SONG_TOO_SHORT => {
-            text1 = gText_OnlyOnePhrase.as_ptr().cast_mut();
-            text2 = gText_OriginalSongWillBeUsed.as_ptr().cast_mut();
+            text1 = (*(&raw const crate::data::strings::gText_OnlyOnePhrase)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
+            text2 = (*(&raw const crate::data::strings::gText_OriginalSongWillBeUsed)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         MSG_CANT_DELETE_LYRICS => {
-            text1 = gText_LyricsCantBeDeleted.as_ptr().cast_mut();
+            text1 = (*(&raw const crate::data::strings::gText_LyricsCantBeDeleted)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         MSG_COMBINE_TWO_WORDS => {
-            text1 = gText_CombineTwoWordsOrPhrases3.as_ptr().cast_mut();
+            text1 = (*(&raw const crate::data::strings::gText_CombineTwoWordsOrPhrases3)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         MSG_CANT_QUIT => {
-            text1 = gText_YouCannotQuitHere.as_ptr().cast_mut();
-            text2 = gText_SectionMustBeCompleted.as_ptr().cast_mut();
+            text1 = (*(&raw const crate::data::strings::gText_YouCannotQuitHere)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
+            text2 = (*(&raw const crate::data::strings::gText_SectionMustBeCompleted)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         _ => {}
     }
@@ -3093,7 +3190,7 @@ pub(crate) unsafe extern "C" fn PrintEasyChatStdMessage(msgId: u8) {
     }
     CopyWindowToVram(WIN_MSG, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn CreateEasyChatYesNoMenu(initialCursorPos: u8) {
+unsafe fn CreateEasyChatYesNoMenu(initialCursorPos: u8) {
     CreateYesNoMenu(
         (&raw const *sEasyChatYesNoWindowTemplate).cast_mut(),
         1,
@@ -3101,10 +3198,9 @@ pub(crate) unsafe extern "C" fn CreateEasyChatYesNoMenu(initialCursorPos: u8) {
         initialCursorPos,
     );
 }
-pub(crate) unsafe extern "C" fn AddPhraseWindow() {
-    let mut frameId: u8 = 0;
+unsafe fn AddPhraseWindow() {
     let mut template: WindowTemplate = zeroed();
-    frameId = GetEasyChatScreenFrameId();
+    let frameId: u8 = GetEasyChatScreenFrameId();
     template.bg = 3;
     template.tilemapLeft = sPhraseFrameDimensions[frameId].left();
     template.tilemapTop = sPhraseFrameDimensions[frameId].top();
@@ -3115,28 +3211,19 @@ pub(crate) unsafe extern "C" fn AddPhraseWindow() {
     (*sScreenControl).windowId = AddWindow(&raw mut template);
     PutWindowTilemap((*sScreenControl).windowId as u8);
 }
-pub(crate) unsafe extern "C" fn PrintCurrentPhrase() {
+unsafe fn PrintCurrentPhrase() {
     let mut strClear: CArray<u8, 4> = zeroed();
-    let mut currentPhrase: *mut u16 = null_mut();
-    let mut numColumns: u8 = 0;
-    let mut numRows: u8 = 0;
     let mut str: *mut u8 = null_mut();
-    let mut frameId: i32 = 0;
-    let mut isQuizQuestion: u32 = 0;
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    let mut k: i32 = 0;
-    currentPhrase = GetCurrentPhrase();
-    numColumns = GetNumColumns();
-    numRows = GetNumRows();
-    frameId = GetEasyChatScreenFrameId() as i32;
-    isQuizQuestion = FALSE as u32;
+    let mut currentPhrase: *mut u16 = GetCurrentPhrase();
+    let numColumns: u8 = GetNumColumns();
+    let numRows: u8 = GetNumRows();
+    let frameId: i32 = GetEasyChatScreenFrameId() as i32;
+    let mut isQuizQuestion: u32 = FALSE as u32;
     if frameId == FRAMEID_QUIZ_QUESTION {
         isQuizQuestion = TRUE as u32;
     }
     FillWindowPixelBuffer((*sScreenControl).windowId as u8, 17);
-    i = 0;
-    while i < numRows as i32 {
+    for i in 0..(numRows as i32) {
         memcpy(strClear.as_mut_ptr(), sText_Clear17.as_ptr().cast_mut(), 4);
         if isQuizQuestion != 0 {
             strClear[2] = 6;
@@ -3144,8 +3231,7 @@ pub(crate) unsafe extern "C" fn PrintCurrentPhrase() {
         str = (*sScreenControl).phrasePrintBuffer.as_mut_ptr();
         (*sScreenControl).phrasePrintBuffer[0] = EOS;
         str = StringAppend(str, strClear.as_mut_ptr());
-        j = 0;
-        while j < numColumns as i32 {
+        for j in 0..(numColumns as i32) {
             if *currentPhrase != EC_EMPTY_WORD {
                 str = CopyEasyChatWord(str, *currentPhrase);
                 currentPhrase = currentPhrase.at(1);
@@ -3153,11 +3239,9 @@ pub(crate) unsafe extern "C" fn PrintCurrentPhrase() {
                 currentPhrase = currentPhrase.at(1);
                 if isQuizQuestion == 0 {
                     str = WriteColorChangeControlCode(str, 0, 4);
-                    k = 0;
-                    while k < 12 {
+                    for k in 0..12i32 {
                         *str = CHAR_HYPHEN;
                         str = str.at(1);
-                        k += 1;
                     }
                     str = WriteColorChangeControlCode(str, 0, 2);
                 }
@@ -3166,15 +3250,14 @@ pub(crate) unsafe extern "C" fn PrintCurrentPhrase() {
                 strClear[2] = 3;
             }
             str = StringAppend(str, strClear.as_mut_ptr());
-            if frameId == FRAMEID_MAIL as i32
+            if (frameId == FRAMEID_MAIL as i32
                 || frameId == FRAMEID_QUIZ_QUESTION
-                || frameId == FRAMEID_QUIZ_SET_QUESTION as i32
+                || frameId == FRAMEID_QUIZ_SET_QUESTION as i32)
+                && j == 0
+                && i == 4
             {
-                if j == 0 && i == 4 {
-                    break;
-                }
+                break;
             }
-            j += 1;
         }
         *str = EOS;
         PrintEasyChatText(
@@ -3186,17 +3269,15 @@ pub(crate) unsafe extern "C" fn PrintCurrentPhrase() {
             TEXT_SKIP_DRAW,
             None,
         );
-        i += 1;
     }
     CopyWindowToVram((*sScreenControl).windowId as u8, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn BufferFrameTilemap(mut tilemap: *mut u16) {
-    let mut frameId: u8 = 0;
+unsafe fn BufferFrameTilemap(tilemap: *mut u16) {
     let mut right: i32 = 0;
     let mut bottom: i32 = 0;
     let mut x: i32 = 0;
     let mut y: i32 = 0;
-    frameId = GetEasyChatScreenFrameId();
+    let frameId: u8 = GetEasyChatScreenFrameId();
     {
         let mut tmp: u32 = 0;
         volatile_write(&raw mut tmp, 0);
@@ -3211,8 +3292,7 @@ pub(crate) unsafe extern "C" fn BufferFrameTilemap(mut tilemap: *mut u16) {
             + sPhraseFrameDimensions[frameId].width as i32;
         bottom = sPhraseFrameDimensions[frameId].top() as i32
             + sPhraseFrameDimensions[frameId].height as i32;
-        y = sPhraseFrameDimensions[frameId].top() as i32;
-        while y < bottom {
+        for y in (sPhraseFrameDimensions[frameId].top() as i32)..bottom {
             x = sPhraseFrameDimensions[frameId].left() as i32 - 1;
             *tilemap.at(y * 32 + x) = 4101;
             x += 1;
@@ -3221,7 +3301,6 @@ pub(crate) unsafe extern "C" fn BufferFrameTilemap(mut tilemap: *mut u16) {
                 x += 1;
             }
             *tilemap.at(y * 32 + x) = 4103;
-            y += 1;
         }
     } else {
         y = sPhraseFrameDimensions[frameId].top() as i32 - 1;
@@ -3259,11 +3338,9 @@ pub(crate) unsafe extern "C" fn BufferFrameTilemap(mut tilemap: *mut u16) {
         *tilemap.at(y * 32 + x) = 4107;
     }
 }
-pub(crate) unsafe extern "C" fn AdjustBgTilemapForFooter() {
-    let mut frameId: u8 = 0;
-    let mut tilemap: *mut u16 = null_mut();
-    tilemap = GetBgTilemapBuffer(3) as *mut u16;
-    frameId = GetEasyChatScreenFrameId();
+unsafe fn AdjustBgTilemapForFooter() {
+    let mut tilemap: *mut u16 = GetBgTilemapBuffer(3) as *mut u16;
+    let frameId: u8 = GetEasyChatScreenFrameId();
     match sPhraseFrameDimensions[frameId].footerId {
         FOOTER_ANSWER => {
             tilemap = tilemap.at(672);
@@ -3279,11 +3356,11 @@ pub(crate) unsafe extern "C" fn AdjustBgTilemapForFooter() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn DrawLowerWindow() {
+unsafe fn DrawLowerWindow() {
     PutWindowTilemap(WIN_INPUT_SELECT);
     CopyBgTilemapBufferToVram(WIN_INPUT_SELECT);
 }
-pub(crate) unsafe extern "C" fn InitLowerWindowText(whichText: u32) {
+unsafe fn InitLowerWindowText(whichText: u32) {
     ResetLowerWindowScroll();
     FillWindowPixelBuffer(WIN_INPUT_SELECT, 17);
     match whichText {
@@ -3300,23 +3377,19 @@ pub(crate) unsafe extern "C" fn InitLowerWindowText(whichText: u32) {
     }
     CopyWindowToVram(WIN_INPUT_SELECT, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn PrintKeyboardText() {
+unsafe fn PrintKeyboardText() {
     if GetInAlphabetMode() == 0 {
         InitLowerWindowText(TEXT_GROUPS);
     } else {
         InitLowerWindowText(TEXT_ALPHABET);
     }
 }
-pub(crate) unsafe extern "C" fn PrintKeyboardGroupNames() {
+unsafe fn PrintKeyboardGroupNames() {
     let mut i: i32 = 0;
-    let mut x: i32 = 0;
-    let mut y: i32 = 0;
-    i = 0;
-    y = 97;
+    let mut y: i32 = 97;
     loop {
-        x = 0;
-        while x < 2 {
-            let mut groupId: u8 = GetUnlockedEasyChatGroupId(
+        for x in 0..2i32 {
+            let groupId: u8 = GetUnlockedEasyChatGroupId(
                 ({
                     let t1 = i;
                     i += 1;
@@ -3336,15 +3409,12 @@ pub(crate) unsafe extern "C" fn PrintKeyboardGroupNames() {
                 TEXT_SKIP_DRAW,
                 None,
             );
-            x += 1;
         }
         y += 16;
     }
 }
-pub(crate) unsafe extern "C" fn PrintKeyboardAlphabet() {
-    let mut i: u32 = 0;
-    i = 0;
-    while i < 4 {
+unsafe fn PrintKeyboardAlphabet() {
+    for i in 0..4u32 {
         PrintEasyChatText(
             WIN_INPUT_SELECT,
             FONT_NORMAL,
@@ -3354,57 +3424,50 @@ pub(crate) unsafe extern "C" fn PrintKeyboardAlphabet() {
             TEXT_SKIP_DRAW,
             None,
         );
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn PrintInitialWordSelectText() {
+unsafe fn PrintInitialWordSelectText() {
     PrintWordSelectText(0, NUM_WORD_SELECT_ROWS);
 }
-pub(crate) unsafe extern "C" fn PrintWordSelectNextRowDown() {
-    let mut wordScroll: u8 = GetWordSelectScrollOffset() + NUM_WORD_SELECT_ROWS - 1;
+unsafe fn PrintWordSelectNextRowDown() {
+    let wordScroll: u8 = GetWordSelectScrollOffset() + NUM_WORD_SELECT_ROWS - 1;
     EraseWordSelectRows(wordScroll, 1);
     PrintWordSelectText(wordScroll, 1);
 }
-pub(crate) unsafe extern "C" fn PrintWordSelectNextRowUp() {
-    let mut wordScroll: u8 = GetWordSelectScrollOffset();
+unsafe fn PrintWordSelectNextRowUp() {
+    let wordScroll: u8 = GetWordSelectScrollOffset();
     EraseWordSelectRows(wordScroll, 1);
     PrintWordSelectText(wordScroll, 1);
 }
-pub(crate) unsafe extern "C" fn PrintWordSelectRowsPageDown() {
-    let mut wordScroll: u8 = GetWordSelectScrollOffset();
+unsafe fn PrintWordSelectRowsPageDown() {
+    let wordScroll: u8 = GetWordSelectScrollOffset();
     let mut maxScroll: u8 = wordScroll + NUM_WORD_SELECT_ROWS;
-    let mut maxRows: u8 = GetWordSelectLastRow() + 1;
+    let maxRows: u8 = GetWordSelectLastRow() + 1;
     if maxScroll > maxRows {
         maxScroll = maxRows;
     }
     if wordScroll < maxScroll {
-        let mut numRows: u8 = maxScroll - wordScroll;
+        let numRows: u8 = maxScroll - wordScroll;
         EraseWordSelectRows(wordScroll, numRows);
         PrintWordSelectText(wordScroll, numRows);
     }
 }
-pub(crate) unsafe extern "C" fn PrintWordSelectRowsPageUp() {
-    let mut wordScroll: u8 = GetWordSelectScrollOffset();
-    let mut windowScroll: u8 = GetLowerWindowScrollOffset() as u8;
+unsafe fn PrintWordSelectRowsPageUp() {
+    let wordScroll: u8 = GetWordSelectScrollOffset();
+    let windowScroll: u8 = GetLowerWindowScrollOffset() as u8;
     if wordScroll < windowScroll {
-        let mut numRows: u8 = windowScroll - wordScroll;
+        let numRows: u8 = windowScroll - wordScroll;
         EraseWordSelectRows(wordScroll, numRows);
         PrintWordSelectText(wordScroll, numRows);
     }
 }
-pub(crate) unsafe extern "C" fn PrintWordSelectText(scrollOffset: u8, numRows: u8) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+unsafe fn PrintWordSelectText(scrollOffset: u8, numRows: u8) {
     let mut easyChatWord: u16 = 0;
-    let mut y: i32 = 0;
-    let mut wordIndex: i32 = 0;
-    wordIndex = scrollOffset as i32 * NUM_WORD_SELECT_COLUMNS as i32;
-    y = scrollOffset as i32 * 16 + 96 & 0xFF;
+    let mut wordIndex: i32 = scrollOffset as i32 * NUM_WORD_SELECT_COLUMNS as i32;
+    let mut y: i32 = (scrollOffset as i32 * 16 + 96) & 0xFF;
     y += 1;
-    i = 0;
-    while i < numRows as i32 {
-        j = 0;
-        while j < 2 {
+    for i in 0..(numRows as i32) {
+        for j in 0..2i32 {
             easyChatWord = GetWordFromSelectedGroup(
                 ({
                     let t1 = wordIndex;
@@ -3442,21 +3505,16 @@ pub(crate) unsafe extern "C" fn PrintWordSelectText(scrollOffset: u8, numRows: u
                     );
                 }
             }
-            j += 1;
         }
         y += 16;
-        i += 1;
     }
     CopyWindowToVram(WIN_INPUT_SELECT, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn EraseWordSelectRows(scrollOffset: u8, numRows: u8) {
-    let mut y: i32 = 0;
-    let mut var0: i32 = 0;
+unsafe fn EraseWordSelectRows(scrollOffset: u8, numRows: u8) {
     let mut var1: i32 = 0;
-    let mut var2: i32 = 0;
-    y = scrollOffset as i32 * 16 + 96 & 0xFF;
-    var2 = numRows as i32 * 16;
-    var0 = y + var2;
+    let y: i32 = (scrollOffset as i32 * 16 + 96) & 0xFF;
+    let mut var2: i32 = numRows as i32 * 16;
+    let var0: i32 = y + var2;
     if var0 > 255 {
         var1 = var0 - 256;
         var2 = 256 - y;
@@ -3468,11 +3526,11 @@ pub(crate) unsafe extern "C" fn EraseWordSelectRows(scrollOffset: u8, numRows: u
         FillWindowPixelRect(WIN_INPUT_SELECT, 17, 0, 0, 224, var1 as u16);
     }
 }
-pub(crate) unsafe extern "C" fn ClearWordSelectWindow() {
+unsafe fn ClearWordSelectWindow() {
     FillWindowPixelBuffer(WIN_INPUT_SELECT, 17);
     CopyWindowToVram(WIN_INPUT_SELECT, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn InitLowerWindowAnim(winAnimType: i32) {
+unsafe fn InitLowerWindowAnim(winAnimType: i32) {
     match winAnimType {
         WINANIM_OPEN_KEYBOARD => {
             (*sScreenControl).curWindowAnimState = 0;
@@ -3511,19 +3569,17 @@ pub(crate) unsafe extern "C" fn InitLowerWindowAnim(winAnimType: i32) {
             -1
         }) as i8;
 }
-pub(crate) unsafe extern "C" fn UpdateLowerWindowAnim() -> u8 {
-    let mut curState: u8 = 0;
-    let mut destState: u8 = 0;
+unsafe fn UpdateLowerWindowAnim() -> u8 {
     if (*sScreenControl).curWindowAnimState == (*sScreenControl).destWindowAnimState {
         return FALSE;
     }
     (*sScreenControl).curWindowAnimState += (*sScreenControl).windowAnimStateDir as u8;
     DrawLowerWindowFrame((*sScreenControl).curWindowAnimState);
-    curState = (*sScreenControl).curWindowAnimState;
-    destState = (*sScreenControl).destWindowAnimState;
-    return (curState as i32 ^ destState as i32 > 0) as u8;
+    let curState: u8 = (*sScreenControl).curWindowAnimState;
+    let destState: u8 = (*sScreenControl).destWindowAnimState;
+    (curState as i32 ^ destState as i32 > 0) as u8
 }
-pub(crate) unsafe extern "C" fn DrawLowerWindowFrame(r#type: u8) {
+unsafe fn DrawLowerWindowFrame(r#type: u8) {
     FillBgTilemapBufferRect_Palette0(1, 0, 0, 10, 30, 10);
     match r#type {
         0 => {}
@@ -3597,22 +3653,12 @@ pub(crate) unsafe extern "C" fn DrawLowerWindowFrame(r#type: u8) {
     }
     CopyBgTilemapBufferToVram(1);
 }
-pub(crate) unsafe extern "C" fn BufferLowerWindowFrame(
-    left: i32,
-    top: i32,
-    width: i32,
-    height: i32,
-) {
-    let mut tilemap: *mut u16 = null_mut();
-    let mut right: i32 = 0;
-    let mut bottom: i32 = 0;
-    let mut x: i32 = 0;
-    let mut y: i32 = 0;
-    tilemap = (*sScreenControl).bg1TilemapBuffer.as_mut_ptr();
-    right = left + width - 1;
-    bottom = top + height - 1;
-    x = left;
-    y = top;
+unsafe fn BufferLowerWindowFrame(left: i32, top: i32, width: i32, height: i32) {
+    let tilemap: *mut u16 = (*sScreenControl).bg1TilemapBuffer.as_mut_ptr();
+    let right: i32 = left + width - 1;
+    let bottom: i32 = top + height - 1;
+    let mut x: i32 = left;
+    let mut y: i32 = top;
     *tilemap.at(y * 32 + x) = 16385;
     x += 1;
     while x < right {
@@ -3645,16 +3691,14 @@ pub(crate) unsafe extern "C" fn BufferLowerWindowFrame(
         (height as u8 - 2) * 8,
     );
 }
-pub(crate) unsafe extern "C" fn ResetLowerWindowScroll() {
+unsafe fn ResetLowerWindowScroll() {
     ChangeBgY(2, 0x800, BG_COORD_SET);
     (*sScreenControl).scrollOffset = 0;
 }
-pub(crate) unsafe extern "C" fn InitLowerWindowScroll(scrollChange: i16, speed: u8) {
-    let mut bgY: i32 = 0;
-    let mut yChange: i16 = 0;
-    bgY = GetBgY(2);
+unsafe fn InitLowerWindowScroll(scrollChange: i16, speed: u8) {
+    let mut bgY: i32 = GetBgY(2);
     (*sScreenControl).scrollOffset += scrollChange as u16;
-    yChange = scrollChange * 16;
+    let yChange: i16 = scrollChange * 16;
     bgY += yChange as i32 * 256;
     if speed != 0 {
         (*sScreenControl).scrollDest = bgY;
@@ -3666,9 +3710,8 @@ pub(crate) unsafe extern "C" fn InitLowerWindowScroll(scrollChange: i16, speed: 
         ChangeBgY(2, bgY, BG_COORD_SET);
     }
 }
-pub(crate) unsafe extern "C" fn UpdateLowerWindowScroll() -> u8 {
-    let mut bgY: i32 = 0;
-    bgY = GetBgY(2);
+unsafe fn UpdateLowerWindowScroll() -> u8 {
+    let bgY: i32 = GetBgY(2);
     if bgY == (*sScreenControl).scrollDest {
         return FALSE;
     } else {
@@ -3677,74 +3720,70 @@ pub(crate) unsafe extern "C" fn UpdateLowerWindowScroll() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn GetLowerWindowScrollOffset() -> i32 {
-    return (*sScreenControl).scrollOffset as i32;
+unsafe fn GetLowerWindowScrollOffset() -> i32 {
+    (*sScreenControl).scrollOffset as i32
 }
-pub(crate) unsafe extern "C" fn SetWindowDimensions(left: u8, top: u8, width: u8, height: u8) {
-    let mut horizontalDimensions: u16 = (left as u16) << 8 | left as u16 + width as u16;
-    let mut verticalDimensions: u16 = (top as u16) << 8 | top as u16 + height as u16;
+unsafe fn SetWindowDimensions(left: u8, top: u8, width: u8, height: u8) {
+    let horizontalDimensions: u16 = ((left as u16) << 8) | (left as u16 + width as u16);
+    let verticalDimensions: u16 = ((top as u16) << 8) | (top as u16 + height as u16);
     SetGpuReg(REG_OFFSET_WIN0H, horizontalDimensions);
     SetGpuReg(REG_OFFSET_WIN0V, verticalDimensions);
 }
-pub(crate) unsafe extern "C" fn LoadEasyChatGfx() {
-    let mut i: u32 = 0;
+unsafe fn LoadEasyChatGfx() {
     LoadSpriteSheets(sSpriteSheets.as_ptr().cast_mut());
     LoadSpritePalettes(sSpritePalettes.as_ptr().cast_mut());
-    i = 0;
-    while i < 4 {
+    for i in 0..4u32 {
         LoadCompressedSpriteSheet((&raw const sCompressedSpriteSheets[i]).cast_mut());
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateMainCursorSprite() {
-    let mut frameId: u8 = GetEasyChatScreenFrameId();
-    let mut x: i32 = sPhraseFrameDimensions[frameId].left() as i32 * 8 + 13;
-    let mut y: i32 = sPhraseFrameDimensions[frameId].top() as i32 * 8 + 8;
-    let mut spriteId: u8 = CreateSprite(
+unsafe fn CreateMainCursorSprite() {
+    let frameId: u8 = GetEasyChatScreenFrameId();
+    let x: i32 = sPhraseFrameDimensions[frameId].left() as i32 * 8 + 13;
+    let y: i32 = sPhraseFrameDimensions[frameId].top() as i32 * 8 + 8;
+    let spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_TriangleCursor).cast_mut(),
         x as i16,
         y as i16,
         2,
     );
     (*sScreenControl).mainCursorSprite = &raw mut gSprites[spriteId];
-    gSprites[spriteId].data[1] = TRUE as i16;
+    gSprites[spriteId].data[sAnimateCursor] = TRUE as i16;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Cursor(sprite: *mut Sprite) {
-    if (*sprite).data[1] != 0 {
-        if ({
-            (*sprite).data[0] += 1;
-            (*sprite).data[0]
+pub(crate) unsafe fn SpriteCB_Cursor(sprite: *mut Sprite) {
+    if (*sprite).data[sAnimateCursor] != 0
+        && ({
+            (*sprite).data[sDelayTimer] += 1;
+            (*sprite).data[sDelayTimer]
         }) > 2
+    {
+        (*sprite).data[sDelayTimer] = 0;
+        if ({
+            (*sprite).x2 += 1;
+            (*sprite).x2
+        }) > 0
         {
-            (*sprite).data[0] = 0;
-            if ({
-                (*sprite).x2 += 1;
-                (*sprite).x2
-            }) > 0
-            {
-                (*sprite).x2 = -6;
-            }
+            (*sprite).x2 = -6;
         }
     }
 }
-pub(crate) unsafe extern "C" fn SetMainCursorPos(x: u8, y: u8) {
+unsafe fn SetMainCursorPos(x: u8, y: u8) {
     (*(*sScreenControl).mainCursorSprite).x = x as i16;
     (*(*sScreenControl).mainCursorSprite).y = y as i16;
     (*(*sScreenControl).mainCursorSprite).x2 = 0;
-    (*(*sScreenControl).mainCursorSprite).data[0] = 0;
+    (*(*sScreenControl).mainCursorSprite).data[sDelayTimer] = 0;
 }
-pub(crate) unsafe extern "C" fn StopMainCursorAnim() {
-    (*(*sScreenControl).mainCursorSprite).data[0] = 0;
-    (*(*sScreenControl).mainCursorSprite).data[1] = FALSE as i16;
+unsafe fn StopMainCursorAnim() {
+    (*(*sScreenControl).mainCursorSprite).data[sDelayTimer] = 0;
+    (*(*sScreenControl).mainCursorSprite).data[sAnimateCursor] = FALSE as i16;
     (*(*sScreenControl).mainCursorSprite).x2 = 0;
 }
-pub(crate) unsafe extern "C" fn StartMainCursorAnim() {
-    (*(*sScreenControl).mainCursorSprite).data[1] = TRUE as i16;
+unsafe fn StartMainCursorAnim() {
+    (*(*sScreenControl).mainCursorSprite).data[sAnimateCursor] = TRUE as i16;
 }
-pub(crate) unsafe extern "C" fn CreateRectangleCursorSprites() {
+unsafe fn CreateRectangleCursorSprites() {
     let mut spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_RectangleCursor).cast_mut(),
         0,
@@ -3764,13 +3803,13 @@ pub(crate) unsafe extern "C" fn CreateRectangleCursorSprites() {
     (*(*sScreenControl).rectangleCursorSpriteRight).set_hFlip(TRUE as u16);
     UpdateRectangleCursorPos();
 }
-pub(crate) unsafe extern "C" fn DestroyRectangleCursorSprites() {
+unsafe fn DestroyRectangleCursorSprites() {
     DestroySprite((*sScreenControl).rectangleCursorSpriteRight);
     (*sScreenControl).rectangleCursorSpriteRight = null_mut();
     DestroySprite((*sScreenControl).rectangleCursorSpriteLeft);
     (*sScreenControl).rectangleCursorSpriteLeft = null_mut();
 }
-pub(crate) unsafe extern "C" fn UpdateRectangleCursorPos() {
+unsafe fn UpdateRectangleCursorPos() {
     let mut column: i8 = 0;
     let mut row: i8 = 0;
     if !(*sScreenControl).rectangleCursorSpriteRight.is_null()
@@ -3784,7 +3823,7 @@ pub(crate) unsafe extern "C" fn UpdateRectangleCursorPos() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SetRectangleCursorPos_GroupMode(column: i8, row: i8) {
+unsafe fn SetRectangleCursorPos_GroupMode(column: i8, row: i8) {
     if column != -1 {
         StartSpriteAnim(
             (*sScreenControl).rectangleCursorSpriteRight,
@@ -3813,7 +3852,7 @@ pub(crate) unsafe extern "C" fn SetRectangleCursorPos_GroupMode(column: i8, row:
         (*(*sScreenControl).rectangleCursorSpriteLeft).y = row as i16 * 16 + 112;
     }
 }
-pub(crate) unsafe extern "C" fn SetRectangleCursorPos_AlphabetMode(column: i8, row: i8) {
+unsafe fn SetRectangleCursorPos_AlphabetMode(column: i8, row: i8) {
     let mut anim: i32 = 0;
     let mut x: i32 = 0;
     let mut y: i32 = 0;
@@ -3852,8 +3891,8 @@ pub(crate) unsafe extern "C" fn SetRectangleCursorPos_AlphabetMode(column: i8, r
         (*(*sScreenControl).rectangleCursorSpriteLeft).y = row as i16 * 16 + 112;
     }
 }
-pub(crate) unsafe extern "C" fn CreateWordSelectCursorSprite() {
-    let mut spriteId: u8 = CreateSprite(
+unsafe fn CreateWordSelectCursorSprite() {
+    let spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_TriangleCursor).cast_mut(),
         0,
         0,
@@ -3866,13 +3905,13 @@ pub(crate) unsafe extern "C" fn CreateWordSelectCursorSprite() {
         .set_priority(2);
     UpdateWordSelectCursorPos();
 }
-pub(crate) unsafe extern "C" fn SpriteCB_WordSelectCursor(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_WordSelectCursor(sprite: *mut Sprite) {
     if ({
-        (*sprite).data[0] += 1;
-        (*sprite).data[0]
+        (*sprite).data[sDelayTimer] += 1;
+        (*sprite).data[sDelayTimer]
     }) > 2
     {
-        (*sprite).data[0] = 0;
+        (*sprite).data[sDelayTimer] = 0;
         if ({
             (*sprite).x2 += 1;
             (*sprite).x2
@@ -3882,32 +3921,30 @@ pub(crate) unsafe extern "C" fn SpriteCB_WordSelectCursor(sprite: *mut Sprite) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn UpdateWordSelectCursorPos() {
+unsafe fn UpdateWordSelectCursorPos() {
     let mut column: i8 = 0;
     let mut row: i8 = 0;
-    let mut x: i8 = 0;
-    let mut y: i8 = 0;
     GetWordSelectColAndRow(&raw mut column, &raw mut row);
-    x = column * 13;
+    let mut x: i8 = column * 13;
     x = x * 8 + 28;
-    y = row * 16 + 96;
+    let y: i8 = row * 16 + 96;
     SetWordSelectCursorPos(x as u8, y as u8);
 }
-pub(crate) unsafe extern "C" fn SetWordSelectCursorPos(x: u8, y: u8) {
+unsafe fn SetWordSelectCursorPos(x: u8, y: u8) {
     if !(*sScreenControl).wordSelectCursorSprite.is_null() {
         (*(*sScreenControl).wordSelectCursorSprite).x = x as i16;
         (*(*sScreenControl).wordSelectCursorSprite).y = y as i16;
         (*(*sScreenControl).wordSelectCursorSprite).x2 = 0;
-        (*(*sScreenControl).wordSelectCursorSprite).data[0] = 0;
+        (*(*sScreenControl).wordSelectCursorSprite).data[sDelayTimer] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyWordSelectCursorSprite() {
+unsafe fn DestroyWordSelectCursorSprite() {
     if !(*sScreenControl).wordSelectCursorSprite.is_null() {
         DestroySprite((*sScreenControl).wordSelectCursorSprite);
         (*sScreenControl).wordSelectCursorSprite = null_mut();
     }
 }
-pub(crate) unsafe extern "C" fn CreateSideWindowSprites() {
+unsafe fn CreateSideWindowSprites() {
     let mut spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_ButtonWindow).cast_mut(),
         208,
@@ -3925,7 +3962,7 @@ pub(crate) unsafe extern "C" fn CreateSideWindowSprites() {
     (*sScreenControl).modeWindowSprite = &raw mut gSprites[spriteId];
     (*sScreenControl).modeWindowState = 0;
 }
-pub(crate) unsafe extern "C" fn ShowSideWindow() -> u8 {
+unsafe fn ShowSideWindow() -> u8 {
     match (*sScreenControl).modeWindowState {
         0 => {
             (*(*sScreenControl).buttonWindowSprite).x2 += 8;
@@ -3952,16 +3989,16 @@ pub(crate) unsafe extern "C" fn ShowSideWindow() -> u8 {
             return FALSE;
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn HideModeWindow() {
+unsafe fn HideModeWindow() {
     (*sScreenControl).modeWindowState = 0;
     StartSpriteAnim(
         (*sScreenControl).modeWindowSprite,
         MODEWINDOW_ANIM_TO_HIDDEN,
     );
 }
-pub(crate) unsafe extern "C" fn DestroySideWindowSprites() -> u8 {
+unsafe fn DestroySideWindowSprites() -> u8 {
     match (*sScreenControl).modeWindowState {
         0 => {
             if (*(*sScreenControl).modeWindowSprite).animEnded() != 0 {
@@ -3983,15 +4020,15 @@ pub(crate) unsafe extern "C" fn DestroySideWindowSprites() -> u8 {
             return FALSE;
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn SetModeWindowToTransition() {
+unsafe fn SetModeWindowToTransition() {
     StartSpriteAnim(
         (*sScreenControl).modeWindowSprite,
         MODEWINDOW_ANIM_TRANSITION,
     );
 }
-pub(crate) unsafe extern "C" fn UpdateModeWindowAnim() {
+unsafe fn UpdateModeWindowAnim() {
     if GetInAlphabetMode() == 0 {
         StartSpriteAnim((*sScreenControl).modeWindowSprite, MODEWINDOW_ANIM_TO_GROUP);
     } else {
@@ -4001,10 +4038,10 @@ pub(crate) unsafe extern "C" fn UpdateModeWindowAnim() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn IsModeWindowAnimActive() -> u8 {
-    return ((*(*sScreenControl).modeWindowSprite).animEnded() == 0) as u8;
+unsafe fn IsModeWindowAnimActive() -> u8 {
+    ((*(*sScreenControl).modeWindowSprite).animEnded() == 0) as u8
 }
-pub(crate) unsafe extern "C" fn CreateScrollIndicatorSprites() {
+unsafe fn CreateScrollIndicatorSprites() {
     let mut spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_ScrollIndicator).cast_mut(),
         96,
@@ -4026,15 +4063,15 @@ pub(crate) unsafe extern "C" fn CreateScrollIndicatorSprites() {
     }
     HideScrollIndicators();
 }
-pub(crate) unsafe extern "C" fn UpdateScrollIndicatorsVisibility() {
+unsafe fn UpdateScrollIndicatorsVisibility() {
     (*(*sScreenControl).scrollIndicatorUpSprite).set_invisible((CanScrollUp() == 0) as u16);
     (*(*sScreenControl).scrollIndicatorDownSprite).set_invisible((CanScrollDown() == 0) as u16);
 }
-pub(crate) unsafe extern "C" fn HideScrollIndicators() {
+unsafe fn HideScrollIndicators() {
     (*(*sScreenControl).scrollIndicatorUpSprite).set_invisible(TRUE as u16);
     (*(*sScreenControl).scrollIndicatorDownSprite).set_invisible(TRUE as u16);
 }
-pub(crate) unsafe extern "C" fn SetScrollIndicatorXPos(inWordSelect: u32) {
+unsafe fn SetScrollIndicatorXPos(inWordSelect: u32) {
     if inWordSelect == 0 {
         (*(*sScreenControl).scrollIndicatorUpSprite).x = 96;
         (*(*sScreenControl).scrollIndicatorDownSprite).x = 96;
@@ -4043,7 +4080,7 @@ pub(crate) unsafe extern "C" fn SetScrollIndicatorXPos(inWordSelect: u32) {
         (*(*sScreenControl).scrollIndicatorDownSprite).x = 120;
     }
 }
-pub(crate) unsafe extern "C" fn CreateStartSelectButtonSprites() {
+unsafe fn CreateStartSelectButtonSprites() {
     let mut spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_StartSelectButton).cast_mut(),
         220,
@@ -4065,17 +4102,16 @@ pub(crate) unsafe extern "C" fn CreateStartSelectButtonSprites() {
     }
     HideStartSelectButtons();
 }
-pub(crate) unsafe extern "C" fn UpdateStartSelectButtonsVisibility() {
+unsafe fn UpdateStartSelectButtonsVisibility() {
     (*(*sScreenControl).startButtonSprite).set_invisible((CanScrollUp() == 0) as u16);
     (*(*sScreenControl).selectButtonSprite).set_invisible((CanScrollDown() == 0) as u16);
 }
-pub(crate) unsafe extern "C" fn HideStartSelectButtons() {
+unsafe fn HideStartSelectButtons() {
     (*(*sScreenControl).startButtonSprite).set_invisible(TRUE as u16);
     (*(*sScreenControl).selectButtonSprite).set_invisible(TRUE as u16);
 }
-pub(crate) unsafe extern "C" fn TryAddInterviewObjectEvents() {
+unsafe fn TryAddInterviewObjectEvents() {
     let mut graphicsId: i32 = 0;
-    let mut spriteId: u8 = 0;
     match GetDisplayedPersonType() {
         EASY_CHAT_PERSON_REPORTER_MALE => {
             graphicsId = OBJ_EVENT_GFX_REPORTER_M;
@@ -4093,7 +4129,8 @@ pub(crate) unsafe extern "C" fn TryAddInterviewObjectEvents() {
     if GetEasyChatScreenFrameId() != FRAMEID_INTERVIEW_SHOW_PERSON {
         return;
     }
-    spriteId = CreateObjectGraphicsSprite(graphicsId as u16, Some(SpriteCallbackDummy), 76, 40, 0);
+    let mut spriteId: u8 =
+        CreateObjectGraphicsSprite(graphicsId as u16, Some(SpriteCallbackDummy), 76, 40, 0);
     if spriteId != MAX_SPRITES {
         gSprites[spriteId].oam.set_priority(0);
         StartSpriteAnim(&raw mut gSprites[spriteId], 2);
@@ -4114,9 +4151,8 @@ pub(crate) unsafe extern "C" fn TryAddInterviewObjectEvents() {
         StartSpriteAnim(&raw mut gSprites[spriteId], 3);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFooterIndex() -> i32 {
-    let mut frameId: u8 = GetEasyChatScreenFrameId();
+pub unsafe fn GetFooterIndex() -> i32 {
+    let frameId: u8 = GetEasyChatScreenFrameId();
     match sPhraseFrameDimensions[frameId].footerId {
         FOOTER_QUIZ => {
             return FOOTER_QUIZ as i32;
@@ -4133,11 +4169,11 @@ pub unsafe extern "C" fn GetFooterIndex() -> i32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn GetFooterOptionXOffset(option: i32) -> i32 {
-    let mut footerIndex: i32 = GetFooterIndex();
+unsafe fn GetFooterOptionXOffset(option: i32) -> i32 {
+    let footerIndex: i32 = GetFooterIndex();
     if footerIndex < NUM_FOOTER_TYPES {
         return sFooterOptionXOffsets[footerIndex][option] as i32 + 4;
     } else {
@@ -4145,14 +4181,12 @@ pub(crate) unsafe extern "C" fn GetFooterOptionXOffset(option: i32) -> i32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn AddMainScreenButtonWindow() {
-    let mut i: i32 = 0;
-    let mut windowId: u16 = 0;
+unsafe fn AddMainScreenButtonWindow() {
     let mut template: WindowTemplate = zeroed();
-    let mut footerIndex: i32 = GetFooterIndex();
+    let footerIndex: i32 = GetFooterIndex();
     if footerIndex == NUM_FOOTER_TYPES {
         return;
     }
@@ -4163,20 +4197,18 @@ pub(crate) unsafe extern "C" fn AddMainScreenButtonWindow() {
     template.height = 2;
     template.paletteNum = 11;
     template.baseBlock = 0x34;
-    windowId = AddWindow(&raw mut template);
+    let windowId: u16 = AddWindow(&raw mut template);
     FillWindowPixelBuffer(windowId as u8, 17);
-    i = 0;
-    while i < 4 {
-        let mut str: *mut u8 = sFooterTextOptions[footerIndex][i];
+    for i in 0..4i32 {
+        let str: *mut u8 = sFooterTextOptions[footerIndex][i];
         if !str.is_null() {
-            let mut x: i32 = sFooterOptionXOffsets[footerIndex][i] as i32;
+            let x: i32 = sFooterOptionXOffsets[footerIndex][i] as i32;
             PrintEasyChatText(windowId as u8, FONT_NORMAL, str, x as u8, 1, 0, None);
         }
-        i += 1;
     }
     PutWindowTilemap(windowId as u8);
 }
-pub(crate) unsafe extern "C" fn IsEasyChatGroupUnlocked(groupId: u8) -> u8 {
+unsafe fn IsEasyChatGroupUnlocked(groupId: u8) -> u8 {
     match groupId {
         EC_GROUP_TRENDY_SAYING => {
             return FlagGet(FLAG_UNLOCKED_TRENDY_SAYINGS);
@@ -4193,30 +4225,26 @@ pub(crate) unsafe extern "C" fn IsEasyChatGroupUnlocked(groupId: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn EasyChat_GetNumWordsInGroup(groupId: u8) -> u16 {
+pub unsafe fn EasyChat_GetNumWordsInGroup(groupId: u8) -> u16 {
     if groupId == EC_GROUP_POKEMON {
         return GetNationalPokedexCount(FLAG_GET_SEEN);
     }
     if IsEasyChatGroupUnlocked(groupId) != 0 {
         return gEasyChatGroups[groupId].numEnabledWords;
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn IsEasyChatWordInvalid(easyChatWord: u16) -> u8 {
-    let mut i: u16 = 0;
-    let mut groupId: u8 = 0;
-    let mut index: u32 = 0;
+unsafe fn IsEasyChatWordInvalid(easyChatWord: u16) -> u8 {
     let mut numWords: u16 = 0;
     let mut list: *mut u16 = null_mut();
     if easyChatWord == EC_EMPTY_WORD {
         return FALSE;
     }
-    groupId = (easyChatWord >> 9) as u8;
-    index = easyChatWord as u32 & 511;
+    let groupId: u8 = (easyChatWord >> 9) as u8;
+    let index: u32 = easyChatWord as u32 & 511;
     if groupId >= EC_NUM_GROUPS {
         return TRUE;
     }
@@ -4224,12 +4252,10 @@ pub(crate) unsafe extern "C" fn IsEasyChatWordInvalid(easyChatWord: u16) -> u8 {
     match groupId {
         EC_GROUP_POKEMON | EC_GROUP_POKEMON_NATIONAL | EC_GROUP_MOVE_1 | EC_GROUP_MOVE_2 => {
             list = gEasyChatGroups[groupId].wordData.valueList;
-            i = 0;
-            while i < numWords {
+            for i in 0..numWords {
                 if index == *list.at(i) as u32 {
                     return FALSE;
                 }
-                i += 1;
             }
             return TRUE;
         }
@@ -4242,23 +4268,25 @@ pub(crate) unsafe extern "C" fn IsEasyChatWordInvalid(easyChatWord: u16) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsBardWordInvalid(easyChatWord: u16) -> u8 {
+pub unsafe fn IsBardWordInvalid(easyChatWord: u16) -> u8 {
     let mut numWordsInGroup: i32 = 0;
-    let mut groupId: u8 = (easyChatWord >> 9) as u8;
-    let mut index: u32 = easyChatWord as u32 & 511;
+    let groupId: u8 = (easyChatWord >> 9) as u8;
+    let index: u32 = easyChatWord as u32 & 511;
     if groupId >= EC_NUM_GROUPS {
         return TRUE;
     }
     match groupId {
         EC_GROUP_POKEMON | EC_GROUP_POKEMON_NATIONAL => {
-            numWordsInGroup = gNumBardWords_Species as i32;
+            numWordsInGroup =
+                (*(&raw const crate::data::bard_music::gNumBardWords_Species).cast::<u16>()) as i32;
         }
         EC_GROUP_MOVE_1 | EC_GROUP_MOVE_2 => {
-            numWordsInGroup = gNumBardWords_Moves as i32;
+            numWordsInGroup =
+                (*(&raw const crate::data::bard_music::gNumBardWords_Moves).cast::<u16>()) as i32;
         }
         _ => {
             numWordsInGroup = gEasyChatGroups[groupId].numWords as i32;
@@ -4271,16 +4299,22 @@ pub unsafe extern "C" fn IsBardWordInvalid(easyChatWord: u16) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn GetEasyChatWord(groupId: u8, index: u16) -> *mut u8 {
+unsafe fn GetEasyChatWord(groupId: u8, index: u16) -> *mut u8 {
     match groupId {
         EC_GROUP_POKEMON | EC_GROUP_POKEMON_NATIONAL => {
-            return gSpeciesNames[index].as_ptr().cast_mut();
+            return (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())[index]
+                .as_ptr()
+                .cast_mut();
         }
         EC_GROUP_MOVE_1 | EC_GROUP_MOVE_2 => {
-            return gMoveNames[index].as_ptr().cast_mut();
+            return (*(&raw const crate::data::data_tables::gMoveNames)
+                .cast::<CArray<CArray<u8, 13>, 355>>())[index]
+                .as_ptr()
+                .cast_mut();
         }
         _ => {
             return (*gEasyChatGroups[groupId].wordData.words.at(index)).text;
@@ -4288,45 +4322,44 @@ pub(crate) unsafe extern "C" fn GetEasyChatWord(groupId: u8, index: u16) -> *mut
     }
     #[allow(unreachable_code)]
     {
-        return null_mut();
+        null_mut()
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyEasyChatWord(dest: *mut u8, easyChatWord: u16) -> *mut u8 {
+pub unsafe fn CopyEasyChatWord(dest: *mut u8, easyChatWord: u16) -> *mut u8 {
     let mut resultStr: *mut u8 = null_mut();
     if IsEasyChatWordInvalid(easyChatWord) != 0 {
-        resultStr = StringCopy(dest, gText_ThreeQuestionMarks.as_ptr().cast_mut());
+        resultStr = StringCopy(
+            dest,
+            (*(&raw const crate::data::strings::gText_ThreeQuestionMarks).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
     } else if easyChatWord != EC_EMPTY_WORD {
-        let mut index: u16 = easyChatWord & 511;
-        let mut groupId: u8 = (easyChatWord >> 9) as u8;
+        let index: u16 = easyChatWord & 511;
+        let groupId: u8 = (easyChatWord >> 9) as u8;
         resultStr = StringCopy(dest, GetEasyChatWord(groupId, index));
     } else {
         *dest = EOS;
         resultStr = dest;
     }
-    return resultStr;
+    resultStr
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConvertEasyChatWordsToString(
+pub unsafe fn ConvertEasyChatWordsToString(
     mut dest: *mut u8,
     mut src: *mut u16,
     columns: u16,
     rows: u16,
 ) -> *mut u8 {
-    let mut i: u16 = 0;
-    let mut j: u16 = 0;
-    let mut numColumns: u16 = columns - 1;
-    i = 0;
-    while i < rows {
-        j = 0;
-        while j < numColumns {
+    let numColumns: u16 = columns - 1;
+    for i in 0..rows {
+        for j in 0..numColumns {
             dest = CopyEasyChatWord(dest, *src);
             if *src != EC_EMPTY_WORD {
                 *dest = CHAR_SPACE;
                 dest = dest.at(1);
             }
             src = src.at(1);
-            j += 1;
         }
         dest = CopyEasyChatWord(
             dest,
@@ -4338,52 +4371,41 @@ pub unsafe extern "C" fn ConvertEasyChatWordsToString(
         );
         *dest = CHAR_NEWLINE;
         dest = dest.at(1);
-        i += 1;
     }
     dest = dest.at(-1);
     *dest = EOS;
-    return dest;
+    dest
 }
-pub(crate) unsafe extern "C" fn UnusedConvertEasyChatWordsToString(
+unsafe fn UnusedConvertEasyChatWordsToString(
     mut dest: *mut u8,
     mut src: *mut u16,
     mut columns: u16,
     rows: u16,
 ) -> *mut u8 {
-    let mut i: u16 = 0;
-    let mut j: u16 = 0;
-    let mut k: u16 = 0;
-    let mut numColumns: u16 = 0;
     let mut notEmpty: i32 = 0;
+    let numColumns: u16 = columns;
     let mut lineNumber: i32 = 0;
-    numColumns = columns;
-    lineNumber = 0;
     columns -= 1;
-    i = 0;
-    while i < rows {
+    for i in 0..rows {
         'l1: {
-            let mut str: *mut u16 = src;
+            let str: *mut u16 = src;
             notEmpty = FALSE as i32;
-            j = 0;
-            while j < numColumns {
+            for j in 0..numColumns {
                 if *str.at(j) != EC_EMPTY_WORD {
                     notEmpty = TRUE as i32;
                 }
-                j += 1;
             }
             if notEmpty == 0 {
                 src = src.at(numColumns);
                 break 'l1;
             }
-            k = 0;
-            while k < columns {
+            for k in 0..columns {
                 dest = CopyEasyChatWord(dest, *src);
                 if *src != EC_EMPTY_WORD {
                     *dest = CHAR_SPACE;
                     dest = dest.at(1);
                 }
                 src = src.at(1);
-                k += 1;
             }
             dest = CopyEasyChatWord(
                 dest,
@@ -4401,41 +4423,40 @@ pub(crate) unsafe extern "C" fn UnusedConvertEasyChatWordsToString(
             dest = dest.at(1);
             lineNumber += 1;
         }
-        i += 1;
     }
     dest = dest.at(-1);
     *dest = EOS;
-    return dest;
+    dest
 }
-pub(crate) unsafe extern "C" fn GetEasyChatWordStringLength(easyChatWord: u16) -> u16 {
+unsafe fn GetEasyChatWordStringLength(easyChatWord: u16) -> u16 {
     if easyChatWord == EC_EMPTY_WORD {
         return 0;
     }
     if IsEasyChatWordInvalid(easyChatWord) != 0 {
-        return StringLength(gText_ThreeQuestionMarks.as_ptr().cast_mut());
+        return StringLength(
+            (*(&raw const crate::data::strings::gText_ThreeQuestionMarks).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
     } else {
-        let mut index: u16 = easyChatWord & 511;
-        let mut groupId: u8 = (easyChatWord >> 9) as u8;
+        let index: u16 = easyChatWord & 511;
+        let groupId: u8 = (easyChatWord >> 9) as u8;
         return StringLength(GetEasyChatWord(groupId, index));
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn CanPhraseFitInXRowsYCols(
+unsafe fn CanPhraseFitInXRowsYCols(
     mut easyChatWords: *mut u16,
     numRows: u8,
     numColumns: u8,
     maxLength: u16,
 ) -> u8 {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
-    i = 0;
-    while i < numColumns {
+    for i in 0..numColumns {
         let mut totalLength: u16 = numRows as u16 - 1;
-        j = 0;
-        while j < numRows {
+        for j in 0..numRows {
             totalLength += GetEasyChatWordStringLength(
                 *({
                     let t2 = easyChatWords;
@@ -4443,17 +4464,15 @@ pub(crate) unsafe extern "C" fn CanPhraseFitInXRowsYCols(
                     t2
                 }),
             );
-            j += 1;
         }
         if totalLength > maxLength {
             return TRUE;
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRandomEasyChatWordFromGroup(groupId: u16) -> u16 {
+pub unsafe fn GetRandomEasyChatWordFromGroup(groupId: u16) -> u16 {
     let mut index: u16 = rem_i32(Random() as i32, gEasyChatGroups[groupId].numWords as i32) as u16;
     if groupId == EC_GROUP_POKEMON as u16
         || groupId == EC_GROUP_POKEMON_NATIONAL as u16
@@ -4462,24 +4481,26 @@ pub unsafe extern "C" fn GetRandomEasyChatWordFromGroup(groupId: u16) -> u16 {
     {
         index = *gEasyChatGroups[groupId].wordData.valueList.at(index);
     }
-    return (groupId & 127) << 9 | index & 511;
+    (groupId & 127) << 9 | index & 511
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRandomEasyChatWordFromUnlockedGroup(groupId: u16) -> u16 {
+pub unsafe fn GetRandomEasyChatWordFromUnlockedGroup(groupId: u16) -> u16 {
     if IsEasyChatGroupUnlocked(groupId as u8) == 0 {
         return EC_EMPTY_WORD;
     }
     if groupId == EC_GROUP_POKEMON as u16 {
         return GetRandomUnlockedEasyChatPokemon();
     }
-    return GetRandomEasyChatWordFromGroup(groupId);
+    GetRandomEasyChatWordFromGroup(groupId)
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowEasyChatProfile() {
+pub unsafe fn ShowEasyChatProfile() {
     let mut easyChatWords: *mut u16 = null_mut();
     let mut columns: i32 = 0;
     let mut rows: i32 = 0;
-    match gSpecialVar_0x8004 {
+    match *(&raw const crate::ffi::gSpecialVar_0x8004)
+        .cast::<u16>()
+        .cast_mut()
+    {
         0 => {
             easyChatWords = (*gSaveBlock1Ptr).easyChatProfile.as_mut_ptr();
             columns = 2;
@@ -4524,59 +4545,51 @@ pub unsafe extern "C" fn ShowEasyChatProfile() {
     ShowFieldAutoScrollMessage(gStringVar4.as_mut_ptr());
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferDeepLinkPhrase() {
-    let mut groupId: i32 = if Random() as i32 & 1 != 0 {
+pub unsafe fn BufferDeepLinkPhrase() {
+    let groupId: i32 = if Random() as i32 & 1 != 0 {
         EC_GROUP_HOBBIES
     } else {
         EC_GROUP_LIFESTYLE
     };
-    let mut easyChatWord: u16 = GetRandomEasyChatWordFromUnlockedGroup(groupId as u16);
+    let easyChatWord: u16 = GetRandomEasyChatWordFromUnlockedGroup(groupId as u16);
     CopyEasyChatWord(gStringVar2.as_mut_ptr(), easyChatWord);
 }
-pub(crate) unsafe extern "C" fn IsTrendySayingUnlocked(wordIndex: u8) -> u8 {
-    let mut byteOffset: i32 = wordIndex as i32 / 8;
-    let mut shift: i32 = wordIndex as i32 % 8;
-    return shr_i32(
+unsafe fn IsTrendySayingUnlocked(wordIndex: u8) -> u8 {
+    let byteOffset: i32 = wordIndex as i32 / 8;
+    let shift: i32 = wordIndex as i32 % 8;
+    shr_i32(
         (*gSaveBlock1Ptr).unlockedTrendySayings[byteOffset] as i32,
         shift as u32,
     ) as u8
-        & 1;
+        & 1
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UnlockTrendySaying(wordIndex: u8) {
+pub unsafe fn UnlockTrendySaying(wordIndex: u8) {
     if wordIndex < NUM_TRENDY_SAYINGS {
-        let mut byteOffset: i32 = wordIndex as i32 / 8;
-        let mut shift: i32 = wordIndex as i32 % 8;
+        let byteOffset: i32 = wordIndex as i32 / 8;
+        let shift: i32 = wordIndex as i32 % 8;
         (*gSaveBlock1Ptr).unlockedTrendySayings[byteOffset] |= shl_i32(1, shift as u32) as u8;
     }
 }
-pub(crate) unsafe extern "C" fn GetNumTrendySayingsUnlocked() -> u8 {
-    let mut i: u8 = 0;
+unsafe fn GetNumTrendySayingsUnlocked() -> u8 {
     let mut numUnlocked: u8 = 0;
-    i = 0;
-    numUnlocked = 0;
-    while i < NUM_TRENDY_SAYINGS {
+    for i in 0..NUM_TRENDY_SAYINGS {
         if IsTrendySayingUnlocked(i) != 0 {
             numUnlocked += 1;
         }
-        i += 1;
     }
-    return numUnlocked;
+    numUnlocked
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UnlockRandomTrendySaying() -> u16 {
-    let mut i: u16 = 0;
-    let mut numToSkip: u16 = 0;
-    let mut numUnlocked: u8 = GetNumTrendySayingsUnlocked();
+pub unsafe fn UnlockRandomTrendySaying() -> u16 {
+    let numUnlocked: u8 = GetNumTrendySayingsUnlocked();
     if numUnlocked == NUM_TRENDY_SAYINGS {
         return EC_EMPTY_WORD;
     }
-    numToSkip = rem_i32(
+    let mut numToSkip: u16 = rem_i32(
         Random() as i32,
         NUM_TRENDY_SAYINGS as i32 - numUnlocked as i32,
     ) as u16;
-    i = 0;
-    while i < NUM_TRENDY_SAYINGS as u16 {
+    for i in 0..(NUM_TRENDY_SAYINGS as u16) {
         if IsTrendySayingUnlocked(i as u8) == 0 {
             if numToSkip != 0 {
                 numToSkip -= 1;
@@ -4585,19 +4598,16 @@ pub unsafe extern "C" fn UnlockRandomTrendySaying() -> u16 {
                 return 10240 | i & 511;
             }
         }
-        i += 1;
     }
-    return EC_EMPTY_WORD;
+    EC_EMPTY_WORD
 }
-pub(crate) unsafe extern "C" fn GetRandomUnlockedTrendySaying() -> u16 {
-    let mut i: u16 = 0;
+unsafe fn GetRandomUnlockedTrendySaying() -> u16 {
     let mut n: u16 = GetNumTrendySayingsUnlocked() as u16;
     if n == 0 {
         return EC_EMPTY_WORD;
     }
     n = rem_i32(Random() as i32, n as i32) as u16;
-    i = 0;
-    while i < NUM_TRENDY_SAYINGS as u16 {
+    for i in 0..(NUM_TRENDY_SAYINGS as u16) {
         if IsTrendySayingUnlocked(i as u8) != 0 {
             if n != 0 {
                 n -= 1;
@@ -4605,27 +4615,23 @@ pub(crate) unsafe extern "C" fn GetRandomUnlockedTrendySaying() -> u16 {
                 return 10240 | i & 511;
             }
         }
-        i += 1;
     }
-    return EC_EMPTY_WORD;
+    EC_EMPTY_WORD
 }
-pub(crate) unsafe extern "C" fn EasyChatIsNationalPokedexEnabled() -> u8 {
-    return IsNationalPokedexEnabled() as u8;
+fn EasyChatIsNationalPokedexEnabled() -> u8 {
+    IsNationalPokedexEnabled() as u8
 }
-pub(crate) unsafe extern "C" fn GetRandomUnlockedEasyChatPokemon() -> u16 {
-    let mut i: u16 = 0;
+unsafe fn GetRandomUnlockedEasyChatPokemon() -> u16 {
     let mut numWords: u16 = 0;
-    let mut species: *mut u16 = null_mut();
     let mut index: u16 = EasyChat_GetNumWordsInGroup(EC_GROUP_POKEMON);
     if index == 0 {
         return EC_EMPTY_WORD;
     }
     index = rem_i32(Random() as i32, index as i32) as u16;
-    species = gEasyChatGroups[0].wordData.valueList;
+    let mut species: *mut u16 = gEasyChatGroups[0].wordData.valueList;
     numWords = gEasyChatGroups[0].numWords;
-    i = 0;
-    while i < numWords {
-        let mut dexNum: u16 = SpeciesToNationalPokedexNum(*species);
+    for i in 0..numWords {
+        let dexNum: u16 = SpeciesToNationalPokedexNum(*species);
         if GetSetPokedexFlag(dexNum, FLAG_GET_SEEN) != 0 {
             if index != 0 {
                 index -= 1;
@@ -4634,66 +4640,50 @@ pub(crate) unsafe extern "C" fn GetRandomUnlockedEasyChatPokemon() -> u16 {
             }
         }
         species = species.at(1);
-        i += 1;
     }
-    return EC_EMPTY_WORD;
+    EC_EMPTY_WORD
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitEasyChatPhrases() {
-    let mut i: u16 = 0;
-    let mut j: u16 = 0;
-    i = 0;
-    while i < 4 {
+pub unsafe fn InitEasyChatPhrases() {
+    for i in 0..4u16 {
         (*gSaveBlock1Ptr).easyChatProfile[i] = sDefaultProfileWords[i];
-        i += 1;
     }
-    i = 0;
+    let mut i: u16 = 0;
     while i < EASY_CHAT_BATTLE_WORDS_COUNT as u16 {
         (*gSaveBlock1Ptr).easyChatBattleStart[i] = sDefaultBattleStartWords[i];
         i += 1;
     }
-    i = 0;
-    while i < EASY_CHAT_BATTLE_WORDS_COUNT as u16 {
+    for i in 0..(EASY_CHAT_BATTLE_WORDS_COUNT as u16) {
         (*gSaveBlock1Ptr).easyChatBattleWon[i] = sDefaultBattleWonWords[i];
-        i += 1;
     }
-    i = 0;
-    while i < EASY_CHAT_BATTLE_WORDS_COUNT as u16 {
+    for i in 0..(EASY_CHAT_BATTLE_WORDS_COUNT as u16) {
         (*gSaveBlock1Ptr).easyChatBattleLost[i] = sDefaultBattleLostWords[i];
-        i += 1;
     }
-    i = 0;
-    while i < MAIL_COUNT as u16 {
-        j = 0;
-        while j < MAIL_WORDS_COUNT {
+    for i in 0..(MAIL_COUNT as u16) {
+        for j in 0..MAIL_WORDS_COUNT {
             (*gSaveBlock1Ptr).mail[i].words[j] = EC_EMPTY_WORD;
-            j += 1;
         }
-        i += 1;
     }
-    i = 0;
-    while i < 5 {
+    for i in 0..5u16 {
         (*gSaveBlock1Ptr).unlockedTrendySayings[i] = 0;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn InitEasyChatScreenWordData() -> u8 {
+unsafe fn InitEasyChatScreenWordData() -> u8 {
     sWordData = Alloc(15268) as *mut EasyChatScreenWordData;
     if sWordData.is_null() {
         return FALSE;
     }
     SetUnlockedEasyChatGroups();
     SetUnlockedWordsByAlphabet();
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn FreeEasyChatScreenWordData() {
+unsafe fn FreeEasyChatScreenWordData() {
     if !sWordData.is_null() {
         Free(sWordData as *mut c_void);
         sWordData = null_mut();
     }
 }
-pub(crate) unsafe extern "C" fn SetUnlockedEasyChatGroups() {
-    let mut i: i32 = 0;
+unsafe fn SetUnlockedEasyChatGroups() {
     (*sWordData).numUnlockedGroups = 0;
     if GetNationalPokedexCount(FLAG_GET_SEEN) != 0 {
         (*sWordData).unlockedGroupIds[{
@@ -4702,7 +4692,7 @@ pub(crate) unsafe extern "C" fn SetUnlockedEasyChatGroups() {
             t1
         }] = EC_GROUP_POKEMON as u16;
     }
-    i = EC_GROUP_TRAINER;
+    let mut i: i32 = EC_GROUP_TRAINER;
     while i <= EC_GROUP_ADJECTIVES {
         (*sWordData).unlockedGroupIds[{
             let t2 = (*sWordData).numUnlockedGroups;
@@ -4743,10 +4733,10 @@ pub(crate) unsafe extern "C" fn SetUnlockedEasyChatGroups() {
         }] = EC_GROUP_POKEMON_NATIONAL as u16;
     }
 }
-pub(crate) unsafe extern "C" fn GetNumUnlockedEasyChatGroups() -> u8 {
-    return (*sWordData).numUnlockedGroups as u8;
+unsafe fn GetNumUnlockedEasyChatGroups() -> u8 {
+    (*sWordData).numUnlockedGroups as u8
 }
-pub(crate) unsafe extern "C" fn GetUnlockedEasyChatGroupId(index: u8) -> u8 {
+unsafe fn GetUnlockedEasyChatGroupId(index: u8) -> u8 {
     if index as u16 >= (*sWordData).numUnlockedGroups {
         return EC_NUM_GROUPS;
     } else {
@@ -4754,54 +4744,37 @@ pub(crate) unsafe extern "C" fn GetUnlockedEasyChatGroupId(index: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn BufferEasyChatWordGroupName(
-    dest: *mut u8,
-    groupId: u8,
-    totalChars: u16,
-) -> *mut u8 {
-    let mut i: u16 = 0;
+unsafe fn BufferEasyChatWordGroupName(dest: *mut u8, groupId: u8, totalChars: u16) -> *mut u8 {
     let mut str: *mut u8 = StringCopy(dest, sEasyChatGroupNamePointers[groupId]);
-    i = (str as usize).wrapping_sub(dest as usize) as i32 as u16;
-    while i < totalChars {
+    for i in ((str as usize).wrapping_sub(dest as usize) as i32 as u16)..totalChars {
         *str = CHAR_SPACE;
         str = str.at(1);
-        i += 1;
     }
     *str = EOS;
-    return str;
+    str
 }
-pub(crate) unsafe extern "C" fn GetEasyChatWordGroupName(groupId: u8) -> *mut u8 {
-    return sEasyChatGroupNamePointers[groupId];
+unsafe fn GetEasyChatWordGroupName(groupId: u8) -> *mut u8 {
+    sEasyChatGroupNamePointers[groupId]
 }
-pub(crate) unsafe extern "C" fn CopyEasyChatWordPadded(
-    dest: *mut u8,
-    easyChatWord: u16,
-    totalChars: u16,
-) -> *mut u8 {
-    let mut i: u16 = 0;
+unsafe fn CopyEasyChatWordPadded(dest: *mut u8, easyChatWord: u16, totalChars: u16) -> *mut u8 {
     let mut str: *mut u8 = CopyEasyChatWord(dest, easyChatWord);
-    i = (str as usize).wrapping_sub(dest as usize) as i32 as u16;
-    while i < totalChars {
+    for i in ((str as usize).wrapping_sub(dest as usize) as i32 as u16)..totalChars {
         *str = CHAR_SPACE;
         str = str.at(1);
-        i += 1;
     }
     *str = EOS;
-    return str;
+    str
 }
-pub(crate) unsafe extern "C" fn SetUnlockedWordsByAlphabet() {
-    let mut i: i32 = 0;
+unsafe fn SetUnlockedWordsByAlphabet() {
     let mut j: i32 = 0;
-    let mut k: i32 = 0;
     let mut numWords: i32 = 0;
     let mut words: *mut u16 = null_mut();
     let mut numToProcess: u16 = 0;
     let mut index: i32 = 0;
-    i = 0;
-    while i < EC_NUM_ALPHABET_GROUPS {
+    for i in 0..EC_NUM_ALPHABET_GROUPS {
         numWords = gEasyChatWordsByLetterPointers[i].numWords;
         words = gEasyChatWordsByLetterPointers[i].words;
         (*sWordData).numUnlockedAlphabetWords[i] = 0;
@@ -4816,8 +4789,7 @@ pub(crate) unsafe extern "C" fn SetUnlockedWordsByAlphabet() {
             } else {
                 numToProcess = 1;
             }
-            k = 0;
-            while k < numToProcess as i32 {
+            for k in 0..(numToProcess as i32) {
                 if IsEasyChatWordUnlocked(*words.at(k)) != 0 {
                     (*sWordData).unlockedAlphabetWords[i][{
                         let t1 = index;
@@ -4827,22 +4799,20 @@ pub(crate) unsafe extern "C" fn SetUnlockedWordsByAlphabet() {
                     (*sWordData).numUnlockedAlphabetWords[i] += 1;
                     break;
                 }
-                k += 1;
             }
             words = words.at(numToProcess);
             j += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetSelectedWordGroup(inAlphabetMode: u32, groupId: u16) {
+unsafe fn SetSelectedWordGroup(inAlphabetMode: u32, groupId: u16) {
     if inAlphabetMode == 0 {
         (*sWordData).numSelectedGroupWords = SetSelectedWordGroup_GroupMode(groupId);
     } else {
         (*sWordData).numSelectedGroupWords = SetSelectedWordGroup_AlphabetMode(groupId);
     }
 }
-pub(crate) unsafe extern "C" fn GetWordFromSelectedGroup(index: u16) -> u16 {
+unsafe fn GetWordFromSelectedGroup(index: u16) -> u16 {
     if index >= (*sWordData).numSelectedGroupWords {
         return EC_EMPTY_WORD;
     } else {
@@ -4850,27 +4820,25 @@ pub(crate) unsafe extern "C" fn GetWordFromSelectedGroup(index: u16) -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn GetNumWordsInSelectedGroup() -> u16 {
-    return (*sWordData).numSelectedGroupWords;
+unsafe fn GetNumWordsInSelectedGroup() -> u16 {
+    (*sWordData).numSelectedGroupWords
 }
-pub(crate) unsafe extern "C" fn SetSelectedWordGroup_GroupMode(groupId: u16) -> u16 {
-    let mut i: u32 = 0;
+unsafe fn SetSelectedWordGroup_GroupMode(groupId: u16) -> u16 {
     let mut totalWords: i32 = 0;
     let mut list: *mut u16 = null_mut();
     let mut wordInfo: *mut EasyChatWordInfo = null_mut();
-    let mut numWords: u16 = gEasyChatGroups[groupId].numWords;
+    let numWords: u16 = gEasyChatGroups[groupId].numWords;
     if groupId == EC_GROUP_POKEMON as u16
         || groupId == EC_GROUP_POKEMON_NATIONAL as u16
         || groupId == EC_GROUP_MOVE_1 as u16
         || groupId == EC_GROUP_MOVE_2 as u16
     {
         list = gEasyChatGroups[groupId].wordData.valueList;
-        i = 0;
         totalWords = 0;
-        while i < numWords as u32 {
+        for i in 0..(numWords as u32) {
             if IsEasyChatIndexAndGroupUnlocked(*list.at(i), groupId as u8) != 0 {
                 (*sWordData).selectedGroupWords[{
                     let t1 = totalWords;
@@ -4878,15 +4846,13 @@ pub(crate) unsafe extern "C" fn SetSelectedWordGroup_GroupMode(groupId: u16) -> 
                     t1
                 }] = (groupId & 127) << 9 | *list.at(i) & 511;
             }
-            i += 1;
         }
         return totalWords as u16;
     } else {
         wordInfo = gEasyChatGroups[groupId].wordData.words;
-        i = 0;
         totalWords = 0;
-        while i < numWords as u32 {
-            let mut alphabeticalOrder: u16 = (*wordInfo.at(i)).alphabeticalOrder as u16;
+        for i in 0..(numWords as u32) {
+            let alphabeticalOrder: u16 = (*wordInfo.at(i)).alphabeticalOrder as u16;
             if IsEasyChatIndexAndGroupUnlocked(alphabeticalOrder, groupId as u8) != 0 {
                 (*sWordData).selectedGroupWords[{
                     let t2 = totalWords;
@@ -4894,20 +4860,17 @@ pub(crate) unsafe extern "C" fn SetSelectedWordGroup_GroupMode(groupId: u16) -> 
                     t2
                 }] = (groupId & 127) << 9 | alphabeticalOrder & 511;
             }
-            i += 1;
         }
         return totalWords as u16;
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn SetSelectedWordGroup_AlphabetMode(groupId: u16) -> u16 {
+unsafe fn SetSelectedWordGroup_AlphabetMode(groupId: u16) -> u16 {
     let mut i: u16 = 0;
     let mut totalWords: u16 = 0;
-    i = 0;
-    totalWords = 0;
     while i < (*sWordData).numUnlockedAlphabetWords[groupId] {
         (*sWordData).selectedGroupWords[{
             let t1 = totalWords;
@@ -4916,20 +4879,17 @@ pub(crate) unsafe extern "C" fn SetSelectedWordGroup_AlphabetMode(groupId: u16) 
         }] = (*sWordData).unlockedAlphabetWords[groupId][i];
         i += 1;
     }
-    return totalWords;
+    totalWords
 }
-pub(crate) unsafe extern "C" fn IsEasyChatGroupUnlocked2(groupId: u8) -> u8 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < (*sWordData).numUnlockedGroups as i32 {
+unsafe fn IsEasyChatGroupUnlocked2(groupId: u8) -> u8 {
+    for i in 0..((*sWordData).numUnlockedGroups as i32) {
         if (*sWordData).unlockedGroupIds[i] == groupId as u16 {
             return TRUE;
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn IsEasyChatIndexAndGroupUnlocked(wordIndex: u16, groupId: u8) -> u8 {
+unsafe fn IsEasyChatIndexAndGroupUnlocked(wordIndex: u16, groupId: u8) -> u8 {
     match groupId {
         EC_GROUP_POKEMON => {
             return GetSetPokedexFlag(SpeciesToNationalPokedexNum(wordIndex), FLAG_GET_SEEN) as u8;
@@ -4952,23 +4912,20 @@ pub(crate) unsafe extern "C" fn IsEasyChatIndexAndGroupUnlocked(wordIndex: u16, 
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn IsRestrictedWordSpecies(species: u16) -> i32 {
-    let mut i: u32 = 0;
-    i = 0;
-    while i < 1 {
+fn IsRestrictedWordSpecies(species: u16) -> i32 {
+    for i in 0..1u32 {
         if sRestrictedWordSpecies[i] == species {
             return TRUE as i32;
         }
-        i += 1;
     }
-    return FALSE as i32;
+    FALSE as i32
 }
-pub(crate) unsafe extern "C" fn IsEasyChatWordUnlocked(easyChatWord: u16) -> u8 {
-    let mut groupId: u8 = (easyChatWord >> 9) as u8;
-    let mut index: u32 = easyChatWord as u32 & 511;
+unsafe fn IsEasyChatWordUnlocked(easyChatWord: u16) -> u8 {
+    let groupId: u8 = (easyChatWord >> 9) as u8;
+    let index: u32 = easyChatWord as u32 & 511;
     if IsEasyChatGroupUnlocked2(groupId) == 0 {
         return FALSE;
     } else {
@@ -4976,13 +4933,11 @@ pub(crate) unsafe extern "C" fn IsEasyChatWordUnlocked(easyChatWord: u16) -> u8 
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitializeEasyChatWordArray(mut words: *mut u16, length: u16) {
-    let mut i: u16 = 0;
-    i = length - 1;
+pub unsafe fn InitializeEasyChatWordArray(mut words: *mut u16, length: u16) {
+    let mut i: u16 = length - 1;
     while i != EC_EMPTY_WORD {
         *({
             let t1 = words;
@@ -4992,21 +4947,16 @@ pub unsafe extern "C" fn InitializeEasyChatWordArray(mut words: *mut u16, length
         i -= 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitQuestionnaireWords() {
-    let mut i: i32 = 0;
-    let mut words: *mut u16 = GetQuestionnaireWordsPtr();
-    i = 0;
-    while i < NUM_QUESTIONNAIRE_WORDS {
+pub unsafe fn InitQuestionnaireWords() {
+    let words: *mut u16 = GetQuestionnaireWordsPtr();
+    for i in 0..NUM_QUESTIONNAIRE_WORDS {
         *words.at(i) = EC_EMPTY_WORD;
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsEasyChatAnswerUnlocked(easyChatWord: i32) -> u32 {
-    let mut groupId: i32 = easyChatWord >> 9;
-    let mut mask: i32 = EC_MASK_GROUP;
-    let mut index: i32 = easyChatWord & 511;
+pub unsafe fn IsEasyChatAnswerUnlocked(easyChatWord: i32) -> u32 {
+    let groupId: i32 = easyChatWord >> 9;
+    let mask: i32 = EC_MASK_GROUP;
+    let index: i32 = easyChatWord & 511;
     if IsEasyChatGroupUnlocked(groupId as u8 & mask as u8) == 0 {
         return FALSE as u32;
     } else {
@@ -5014,6 +4964,6 @@ pub unsafe extern "C" fn IsEasyChatAnswerUnlocked(easyChatWord: i32) -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }

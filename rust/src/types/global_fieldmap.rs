@@ -15,7 +15,7 @@ pub struct Tileset {
     pub palettes: *mut CArray<u16, 16>,
     pub metatiles: *mut u16,
     pub metatileAttributes: *mut u16,
-    pub callback: Option<unsafe extern "C" fn()>,
+    pub callback: Option<unsafe fn()>,
 }
 
 unsafe impl Sync for Tileset {}

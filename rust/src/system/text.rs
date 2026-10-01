@@ -4,6 +4,7 @@
 
 use core::ffi::c_void;
 
+use crate::battle_main::gBattleTypeFlags;
 use crate::blit::FillBitmapRect4Bit;
 use crate::braille::{FontFunc_Braille, GetGlyphWidth_Braille};
 use crate::data::text::{
@@ -162,9 +163,9 @@ const WINDOW_WIDTH: usize = 3;
 const WINDOW_HEIGHT: usize = 4;
 const WINDOW_TILE_DATA: usize = 8;
 
-type TextPrinterCallback = unsafe extern "C" fn(*mut u8, u16);
-type FontFunction = unsafe extern "C" fn(*mut u8) -> u16;
-type GlyphWidthFunction = unsafe extern "C" fn(u16, u32) -> u32;
+type TextPrinterCallback = unsafe fn(*mut u8, u16);
+type FontFunction = unsafe fn(*mut u8) -> u16;
+type GlyphWidthFunction = unsafe fn(u16, u32) -> u32;
 
 /// `struct FontInfo`, 12 bytes on the GBA.
 #[repr(C, align(4))]
@@ -241,9 +242,9 @@ static mut TEXT_PRINTERS: Align4<[[u8; PRINTER_SIZE]; WINDOWS_MAX]> =
     Align4([[0; PRINTER_SIZE]; WINDOWS_MAX]);
 
 static mut FONT_HALF_ROW_LOOKUP_TABLE: Align4<[u16; 0x51]> = Align4([0; 0x51]);
-static mut LAST_TEXT_BG_COLOR: u16 = 0;
-static mut LAST_TEXT_FG_COLOR: u16 = 0;
-static mut LAST_TEXT_SHADOW_COLOR: u16 = 0;
+static LAST_TEXT_BG_COLOR: crate::global::Global<u16> = crate::global::Global::new(0);
+static LAST_TEXT_FG_COLOR: crate::global::Global<u16> = crate::global::Global::new(0);
+static LAST_TEXT_SHADOW_COLOR: crate::global::Global<u16> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
@@ -251,7 +252,7 @@ pub static mut gFonts: *const FontInfo = core::ptr::null();
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gDisableTextPrinters: u8 = 0;
+pub static gDisableTextPrinters: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
@@ -261,30 +262,36 @@ pub static mut gCurGlyph: Align4<[u8; GLYPH_SIZE]> = Align4([0; GLYPH_SIZE]);
 #[unsafe(link_section = "common_data")]
 pub static mut gTextFlags: u8 = 0;
 
-unsafe extern "C" {
-    static gBattleTypeFlags: u32;
-    static mut gMPlayInfo_BGM: u8;
-
-    static gFontNormalLatinGlyphs: u16;
-    static gFontNormalLatinGlyphWidths: u8;
-    static gFontNormalJapaneseGlyphs: u16;
-    static gFontSmallLatinGlyphs: u16;
-    static gFontSmallLatinGlyphWidths: u8;
-    static gFontSmallJapaneseGlyphs: u16;
-    static gFontShortLatinGlyphs: u16;
-    static gFontShortLatinGlyphWidths: u8;
-    static gFontShortJapaneseGlyphs: u16;
-    static gFontShortJapaneseGlyphWidths: u8;
-    static gFontNarrowLatinGlyphs: u16;
-    static gFontNarrowLatinGlyphWidths: u8;
-    static gFontSmallNarrowLatinGlyphs: u16;
-    static gFontSmallNarrowLatinGlyphWidths: u8;
-
-    fn GetPlayerTextSpeed() -> u32;
-    fn IsSEPlaying() -> u8;
-    fn PlayBGM(song: u16);
-    fn m4aMPlayStop(info: *mut u8);
-    fn m4aMPlayContinue(info: *mut u8);
+/// `GetPlayerTextSpeed` with this module's view of its types.
+#[inline]
+unsafe fn GetPlayerTextSpeed() -> u32 {
+    unsafe { crate::menu::GetPlayerTextSpeed() }
+}
+/// `IsSEPlaying` with this module's view of its types.
+#[inline]
+unsafe fn IsSEPlaying() -> u8 {
+    unsafe { crate::sound::IsSEPlaying() }
+}
+/// `PlayBGM` with this module's view of its types.
+#[inline]
+unsafe fn PlayBGM(a0: u16) {
+    unsafe {
+        crate::sound::PlayBGM(a0);
+    }
+}
+/// `m4aMPlayStop` with this module's view of its types.
+#[inline]
+unsafe fn m4aMPlayStop(a0: *mut u8) {
+    unsafe {
+        crate::m4a::m4aMPlayStop(a0 as _);
+    }
+}
+/// `m4aMPlayContinue` with this module's view of its types.
+#[inline]
+unsafe fn m4aMPlayContinue(a0: *mut u8) {
+    unsafe {
+        crate::m4a::m4aMPlayContinue(a0 as _);
+    }
 }
 
 // ---------------------------------------------------------------- helpers
@@ -463,14 +470,14 @@ unsafe fn window_base(window_id: u8) -> *mut u8 {
 // ------------------------------------------------------------- public API
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DeactivateAllTextPrinters() {
+pub unsafe fn DeactivateAllTextPrinters() {
     for i in 0..WINDOWS_MAX {
         unsafe { set(printer_slot(i), P_ACTIVE, 0) };
     }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddTextPrinterParameterized(
+pub unsafe fn AddTextPrinterParameterized(
     window_id: u8,
     font_id: u8,
     string: *const u8,
@@ -500,7 +507,7 @@ pub unsafe extern "C" fn AddTextPrinterParameterized(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddTextPrinter(
+pub unsafe fn AddTextPrinter(
     template: *mut u8,
     speed: u8,
     callback: Option<TextPrinterCallback>,
@@ -545,13 +552,13 @@ pub unsafe extern "C" fn AddTextPrinter(
         }
         unsafe { set(slot, P_ACTIVE, 0) };
     }
-    unsafe { (&raw mut gDisableTextPrinters).write(0) };
+    unsafe { (gDisableTextPrinters.as_ptr()).write(0) };
     1
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunTextPrinters() {
-    if unsafe { (&raw const gDisableTextPrinters).read() } != 0 {
+pub unsafe fn RunTextPrinters() {
+    if unsafe { (gDisableTextPrinters.as_ptr().cast_const()).read() } != 0 {
         return;
     }
     for i in 0..WINDOWS_MAX {
@@ -582,7 +589,7 @@ pub unsafe extern "C" fn RunTextPrinters() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsTextPrinterActive(id: u8) -> u16 {
+pub unsafe fn IsTextPrinterActive(id: u8) -> u16 {
     u16::from(unsafe { get(printer_slot(usize::from(id)), P_ACTIVE) })
 }
 
@@ -601,14 +608,10 @@ unsafe fn render_font(printer: *mut u8) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GenerateFontHalfRowLookupTable(
-    fg_color: u8,
-    bg_color: u8,
-    shadow_color: u8,
-) {
-    unsafe { (&raw mut LAST_TEXT_BG_COLOR).write(u16::from(bg_color)) };
-    unsafe { (&raw mut LAST_TEXT_FG_COLOR).write(u16::from(fg_color)) };
-    unsafe { (&raw mut LAST_TEXT_SHADOW_COLOR).write(u16::from(shadow_color)) };
+pub unsafe fn GenerateFontHalfRowLookupTable(fg_color: u8, bg_color: u8, shadow_color: u8) {
+    unsafe { (LAST_TEXT_BG_COLOR.as_ptr()).write(u16::from(bg_color)) };
+    unsafe { (LAST_TEXT_FG_COLOR.as_ptr()).write(u16::from(fg_color)) };
+    unsafe { (LAST_TEXT_SHADOW_COLOR.as_ptr()).write(u16::from(shadow_color)) };
 
     let (fg, bg, shadow) = (
         u32::from(fg_color),
@@ -634,22 +637,14 @@ pub unsafe extern "C" fn GenerateFontHalfRowLookupTable(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SaveTextColors(
-    fg_color: *mut u8,
-    bg_color: *mut u8,
-    shadow_color: *mut u8,
-) {
-    unsafe { bg_color.write((&raw const LAST_TEXT_BG_COLOR).read() as u8) };
-    unsafe { fg_color.write((&raw const LAST_TEXT_FG_COLOR).read() as u8) };
-    unsafe { shadow_color.write((&raw const LAST_TEXT_SHADOW_COLOR).read() as u8) };
+pub unsafe fn SaveTextColors(fg_color: *mut u8, bg_color: *mut u8, shadow_color: *mut u8) {
+    unsafe { bg_color.write((LAST_TEXT_BG_COLOR.as_ptr().cast_const()).read() as u8) };
+    unsafe { fg_color.write((LAST_TEXT_FG_COLOR.as_ptr().cast_const()).read() as u8) };
+    unsafe { shadow_color.write((LAST_TEXT_SHADOW_COLOR.as_ptr().cast_const()).read() as u8) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RestoreTextColors(
-    fg_color: *mut u8,
-    bg_color: *mut u8,
-    shadow_color: *mut u8,
-) {
+pub unsafe fn RestoreTextColors(fg_color: *mut u8, bg_color: *mut u8, shadow_color: *mut u8) {
     unsafe {
         GenerateFontHalfRowLookupTable(fg_color.read(), bg_color.read(), shadow_color.read())
     };
@@ -670,7 +665,7 @@ unsafe fn half_row(byte: u32) -> u32 {
 /// Expands one 8x8 1bpp-ish font tile (two bits a pixel) into 4bpp pixels
 /// using the current colour lookup table.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DecompressGlyphTile(src: *const c_void, dest: *mut c_void) {
+pub unsafe fn DecompressGlyphTile(src: *const c_void, dest: *mut c_void) {
     let src = src.cast::<u16>();
     let dest = dest.cast::<u32>();
     for row in 0..8 {
@@ -715,7 +710,7 @@ unsafe fn glyph_copy(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyGlyphToWindow(printer: *mut u8) {
+pub unsafe fn CopyGlyphToWindow(printer: *mut u8) {
     let window = unsafe { window_base(get(printer, T_WINDOW_ID)) };
     let win_width = i32::from(unsafe { get(window, WINDOW_WIDTH) });
     let win_height = i32::from(unsafe { get(window, WINDOW_HEIGHT) });
@@ -776,8 +771,8 @@ struct Bitmap {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearTextSpan(printer: *mut u8, width: u32) {
-    let bg = unsafe { (&raw const LAST_TEXT_BG_COLOR).read() };
+pub unsafe fn ClearTextSpan(printer: *mut u8, width: u32) {
+    let bg = unsafe { (LAST_TEXT_BG_COLOR.as_ptr().cast_const()).read() };
     if bg == TEXT_COLOR_TRANSPARENT {
         return;
     }
@@ -810,42 +805,42 @@ unsafe fn font_func(printer: *mut u8, font_id: u8) -> u16 {
     unsafe { render_text(printer) }
 }
 
-unsafe extern "C" fn font_func_small(printer: *mut u8) -> u16 {
+unsafe fn font_func_small(printer: *mut u8) -> u16 {
     unsafe { font_func(printer, FONT_SMALL) }
 }
 
-unsafe extern "C" fn font_func_normal(printer: *mut u8) -> u16 {
+unsafe fn font_func_normal(printer: *mut u8) -> u16 {
     unsafe { font_func(printer, FONT_NORMAL) }
 }
 
-unsafe extern "C" fn font_func_short(printer: *mut u8) -> u16 {
+unsafe fn font_func_short(printer: *mut u8) -> u16 {
     unsafe { font_func(printer, FONT_SHORT) }
 }
 
-unsafe extern "C" fn font_func_short_copy1(printer: *mut u8) -> u16 {
+unsafe fn font_func_short_copy1(printer: *mut u8) -> u16 {
     unsafe { font_func(printer, FONT_SHORT_COPY_1) }
 }
 
-unsafe extern "C" fn font_func_short_copy2(printer: *mut u8) -> u16 {
+unsafe fn font_func_short_copy2(printer: *mut u8) -> u16 {
     unsafe { font_func(printer, FONT_SHORT_COPY_2) }
 }
 
-unsafe extern "C" fn font_func_short_copy3(printer: *mut u8) -> u16 {
+unsafe fn font_func_short_copy3(printer: *mut u8) -> u16 {
     unsafe { font_func(printer, FONT_SHORT_COPY_3) }
 }
 
-unsafe extern "C" fn font_func_narrow(printer: *mut u8) -> u16 {
+unsafe fn font_func_narrow(printer: *mut u8) -> u16 {
     unsafe { font_func(printer, FONT_NARROW) }
 }
 
-unsafe extern "C" fn font_func_small_narrow(printer: *mut u8) -> u16 {
+unsafe fn font_func_small_narrow(printer: *mut u8) -> u16 {
     unsafe { font_func(printer, FONT_SMALL_NARROW) }
 }
 
 // ------------------------------------------------------------- down arrow
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TextPrinterInitDownArrowCounters(printer: *mut u8) {
+pub unsafe fn TextPrinterInitDownArrowCounters(printer: *mut u8) {
     if text_flag(FLAG_AUTO_SCROLL) {
         unsafe { set_auto_scroll_delay(printer, 0) };
     } else {
@@ -869,7 +864,7 @@ fn arrow_tiles() -> *const u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TextPrinterDrawDownArrow(printer: *mut u8) {
+pub unsafe fn TextPrinterDrawDownArrow(printer: *mut u8) {
     if text_flag(FLAG_AUTO_SCROLL) {
         return;
     }
@@ -915,7 +910,7 @@ pub unsafe extern "C" fn TextPrinterDrawDownArrow(printer: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TextPrinterClearDownArrow(printer: *mut u8) {
+pub unsafe fn TextPrinterClearDownArrow(printer: *mut u8) {
     let window_id = unsafe { get(printer, T_WINDOW_ID) };
     unsafe {
         FillWindowPixelRect(
@@ -931,7 +926,7 @@ pub unsafe extern "C" fn TextPrinterClearDownArrow(printer: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TextPrinterWaitAutoMode(printer: *mut u8) -> u8 {
+pub unsafe fn TextPrinterWaitAutoMode(printer: *mut u8) -> u8 {
     let delay = unsafe { get(printer, P_SUB + 2) };
     if delay == 49 {
         1
@@ -951,7 +946,7 @@ unsafe fn a_or_b_pressed() -> bool {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TextPrinterWaitWithDownArrow(printer: *mut u8) -> u16 {
+pub unsafe fn TextPrinterWaitWithDownArrow(printer: *mut u8) -> u16 {
     if text_flag(FLAG_AUTO_SCROLL) {
         u16::from(unsafe { TextPrinterWaitAutoMode(printer) })
     } else {
@@ -961,7 +956,7 @@ pub unsafe extern "C" fn TextPrinterWaitWithDownArrow(printer: *mut u8) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TextPrinterWait(printer: *mut u8) -> u16 {
+pub unsafe fn TextPrinterWait(printer: *mut u8) -> u16 {
     if text_flag(FLAG_AUTO_SCROLL) {
         u16::from(unsafe { TextPrinterWaitAutoMode(printer) })
     } else {
@@ -970,7 +965,7 @@ pub unsafe extern "C" fn TextPrinterWait(printer: *mut u8) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawDownArrow(
+pub unsafe fn DrawDownArrow(
     window_id: u8,
     x: u16,
     y: u16,
@@ -1103,11 +1098,23 @@ unsafe fn render_ext_ctrl_code(printer: *mut u8, char_: &mut u16) -> Option<u16>
             RENDER_REPEAT
         }
         EXT_CTRL_CODE_PAUSE_MUSIC => {
-            unsafe { m4aMPlayStop(&raw mut gMPlayInfo_BGM) };
+            unsafe {
+                m4aMPlayStop(
+                    &raw mut (*(&raw const crate::m4a::gMPlayInfo_BGM)
+                        .cast::<u8>()
+                        .cast_mut()),
+                )
+            };
             RENDER_REPEAT
         }
         EXT_CTRL_CODE_RESUME_MUSIC => {
-            unsafe { m4aMPlayContinue(&raw mut gMPlayInfo_BGM) };
+            unsafe {
+                m4aMPlayContinue(
+                    &raw mut (*(&raw const crate::m4a::gMPlayInfo_BGM)
+                        .cast::<u8>()
+                        .cast_mut()),
+                )
+            };
             RENDER_REPEAT
         }
         EXT_CTRL_CODE_CLEAR => {
@@ -1377,11 +1384,7 @@ fn glyph_width_func(font_id: u8) -> Option<GlyphWidthFunction> {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetStringWidth(
-    font_id: u8,
-    mut string: *const u8,
-    letter_spacing: i16,
-) -> i32 {
+pub unsafe fn GetStringWidth(font_id: u8, mut string: *const u8, letter_spacing: i16) -> i32 {
     let mut is_japanese = 0u32;
     let mut min_glyph_width = 0i32;
 
@@ -1534,11 +1537,7 @@ pub unsafe extern "C" fn GetStringWidth(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RenderTextHandleBold(
-    mut pixels: *mut u8,
-    mut font_id: u8,
-    string: *const u8,
-) -> u8 {
+pub unsafe fn RenderTextHandleBold(mut pixels: *mut u8, mut font_id: u8, string: *const u8) -> u8 {
     let mut backup = [0u8; 3];
     unsafe { SaveTextColors(&raw mut backup[0], &raw mut backup[1], &raw mut backup[2]) };
 
@@ -1629,7 +1628,7 @@ unsafe fn keypad_icon(id: u8) -> *const u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawKeypadIcon(window_id: u8, keypad_icon_id: u8, x: u16, y: u16) -> u8 {
+pub unsafe fn DrawKeypadIcon(window_id: u8, keypad_icon_id: u8, x: u16, y: u16) -> u8 {
     let icon = unsafe { keypad_icon(keypad_icon_id) };
     let tile_offset = usize::from(unsafe { icon.cast::<u16>().read() });
     let width = unsafe { icon.add(2).read() };
@@ -1652,27 +1651,27 @@ pub unsafe extern "C" fn DrawKeypadIcon(window_id: u8, keypad_icon_id: u8, x: u1
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetKeypadIconTileOffset(keypad_icon_id: u8) -> u8 {
+pub unsafe fn GetKeypadIconTileOffset(keypad_icon_id: u8) -> u8 {
     unsafe { keypad_icon(keypad_icon_id).cast::<u16>().read() as u8 }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetKeypadIconWidth(keypad_icon_id: u8) -> u8 {
+pub unsafe fn GetKeypadIconWidth(keypad_icon_id: u8) -> u8 {
     unsafe { keypad_icon(keypad_icon_id).add(2).read() }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetKeypadIconHeight(keypad_icon_id: u8) -> u8 {
+pub unsafe fn GetKeypadIconHeight(keypad_icon_id: u8) -> u8 {
     unsafe { keypad_icon(keypad_icon_id).add(3).read() }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetDefaultFontsPointer() {
+pub unsafe fn SetDefaultFontsPointer() {
     unsafe { (&raw mut gFonts).write(FONT_INFOS.as_ptr()) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFontAttribute(font_id: u8, attribute_id: u8) -> u8 {
+pub unsafe fn GetFontAttribute(font_id: u8, attribute_id: u8) -> u8 {
     let info = FONT_INFOS.as_ptr().wrapping_add(usize::from(font_id));
     let info = unsafe { &*info };
     match attribute_id {
@@ -1689,7 +1688,7 @@ pub unsafe extern "C" fn GetFontAttribute(font_id: u8, attribute_id: u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMenuCursorDimensionByFont(font_id: u8, which_dimension: u8) -> u8 {
+pub unsafe fn GetMenuCursorDimensionByFont(font_id: u8, which_dimension: u8) -> u8 {
     let index = usize::from(font_id) * 2 + usize::from(which_dimension);
     unsafe { sMenuCursorDimensions.as_ptr().add(index).read() }
 }
@@ -1749,12 +1748,21 @@ unsafe fn decompress_japanese(glyphs: *const u16, glyph_id: u16, width: u8, heig
 
 unsafe fn decompress_glyph_small(glyph_id: u16, is_japanese: u32) {
     if is_japanese == 1 {
-        unsafe { decompress_japanese(&raw const gFontSmallJapaneseGlyphs, glyph_id, 8, 12) };
+        unsafe {
+            decompress_japanese(
+                &raw const (*(&raw const crate::data::fonts::gFontSmallJapaneseGlyphs)
+                    .cast::<u16>()),
+                glyph_id,
+                8,
+                12,
+            )
+        };
     } else {
         unsafe {
             decompress_latin(
-                &raw const gFontSmallLatinGlyphs,
-                &raw const gFontSmallLatinGlyphWidths,
+                &raw const (*(&raw const crate::data::fonts::gFontSmallLatinGlyphs).cast::<u16>()),
+                &raw const (*(&raw const crate::data::fonts::gFontSmallLatinGlyphWidths)
+                    .cast::<u8>()),
                 glyph_id,
                 13,
             )
@@ -1764,12 +1772,21 @@ unsafe fn decompress_glyph_small(glyph_id: u16, is_japanese: u32) {
 
 unsafe fn decompress_glyph_narrow(glyph_id: u16, is_japanese: u32) {
     if is_japanese == 1 {
-        unsafe { decompress_japanese(&raw const gFontNormalJapaneseGlyphs, glyph_id, 8, 15) };
+        unsafe {
+            decompress_japanese(
+                &raw const (*(&raw const crate::data::fonts::gFontNormalJapaneseGlyphs)
+                    .cast::<u16>()),
+                glyph_id,
+                8,
+                15,
+            )
+        };
     } else {
         unsafe {
             decompress_latin(
-                &raw const gFontNarrowLatinGlyphs,
-                &raw const gFontNarrowLatinGlyphWidths,
+                &raw const (*(&raw const crate::data::fonts::gFontNarrowLatinGlyphs).cast::<u16>()),
+                &raw const (*(&raw const crate::data::fonts::gFontNarrowLatinGlyphWidths)
+                    .cast::<u8>()),
                 glyph_id,
                 15,
             )
@@ -1779,12 +1796,22 @@ unsafe fn decompress_glyph_narrow(glyph_id: u16, is_japanese: u32) {
 
 unsafe fn decompress_glyph_small_narrow(glyph_id: u16, is_japanese: u32) {
     if is_japanese == 1 {
-        unsafe { decompress_japanese(&raw const gFontSmallJapaneseGlyphs, glyph_id, 8, 12) };
+        unsafe {
+            decompress_japanese(
+                &raw const (*(&raw const crate::data::fonts::gFontSmallJapaneseGlyphs)
+                    .cast::<u16>()),
+                glyph_id,
+                8,
+                12,
+            )
+        };
     } else {
         unsafe {
             decompress_latin(
-                &raw const gFontSmallNarrowLatinGlyphs,
-                &raw const gFontSmallNarrowLatinGlyphWidths,
+                &raw const (*(&raw const crate::data::fonts::gFontSmallNarrowLatinGlyphs)
+                    .cast::<u16>()),
+                &raw const (*(&raw const crate::data::fonts::gFontSmallNarrowLatinGlyphWidths)
+                    .cast::<u8>()),
                 glyph_id,
                 12,
             )
@@ -1795,16 +1822,23 @@ unsafe fn decompress_glyph_small_narrow(glyph_id: u16, is_japanese: u32) {
 unsafe fn decompress_glyph_short(glyph_id: u16, is_japanese: u32) {
     if is_japanese == 1 {
         let id = usize::from(glyph_id);
-        let base =
-            (&raw const gFontShortJapaneseGlyphs).wrapping_add(0x100 * (id >> 3) + 0x10 * (id & 7));
+        let base = (&raw const (*(&raw const crate::data::fonts::gFontShortJapaneseGlyphs)
+            .cast::<u16>()))
+            .wrapping_add(0x100 * (id >> 3) + 0x10 * (id & 7));
         unsafe { decompress_wide(base, 0x8, 0x80, 0x88) };
-        let width = unsafe { (&raw const gFontShortJapaneseGlyphWidths).add(id).read() };
+        let width = unsafe {
+            (&raw const (*(&raw const crate::data::fonts::gFontShortJapaneseGlyphWidths)
+                .cast::<u8>()))
+                .add(id)
+                .read()
+        };
         unsafe { set_glyph_size(width, 14) };
     } else {
         unsafe {
             decompress_latin(
-                &raw const gFontShortLatinGlyphs,
-                &raw const gFontShortLatinGlyphWidths,
+                &raw const (*(&raw const crate::data::fonts::gFontShortLatinGlyphs).cast::<u16>()),
+                &raw const (*(&raw const crate::data::fonts::gFontShortLatinGlyphWidths)
+                    .cast::<u8>()),
                 glyph_id,
                 14,
             )
@@ -1814,12 +1848,21 @@ unsafe fn decompress_glyph_short(glyph_id: u16, is_japanese: u32) {
 
 unsafe fn decompress_glyph_normal(glyph_id: u16, is_japanese: u32) {
     if is_japanese == 1 {
-        unsafe { decompress_japanese(&raw const gFontNormalJapaneseGlyphs, glyph_id, 8, 15) };
+        unsafe {
+            decompress_japanese(
+                &raw const (*(&raw const crate::data::fonts::gFontNormalJapaneseGlyphs)
+                    .cast::<u16>()),
+                glyph_id,
+                8,
+                15,
+            )
+        };
     } else {
         unsafe {
             decompress_latin(
-                &raw const gFontNormalLatinGlyphs,
-                &raw const gFontNormalLatinGlyphWidths,
+                &raw const (*(&raw const crate::data::fonts::gFontNormalLatinGlyphs).cast::<u16>()),
+                &raw const (*(&raw const crate::data::fonts::gFontNormalLatinGlyphWidths)
+                    .cast::<u8>()),
                 glyph_id,
                 15,
             )
@@ -1831,57 +1874,60 @@ unsafe fn decompress_glyph_bold(glyph_id: u16) {
     unsafe { decompress_japanese(sFontBoldJapaneseGlyphs.as_ptr().cast(), glyph_id, 8, 12) };
 }
 
-unsafe extern "C" fn glyph_width_small(glyph_id: u16, is_japanese: u32) -> u32 {
+unsafe fn glyph_width_small(glyph_id: u16, is_japanese: u32) -> u32 {
     if is_japanese == 1 {
         8
     } else {
         u32::from(unsafe {
-            (&raw const gFontSmallLatinGlyphWidths)
+            (&raw const (*(&raw const crate::data::fonts::gFontSmallLatinGlyphWidths).cast::<u8>()))
                 .add(usize::from(glyph_id))
                 .read()
         })
     }
 }
 
-unsafe extern "C" fn glyph_width_narrow(glyph_id: u16, is_japanese: u32) -> u32 {
+unsafe fn glyph_width_narrow(glyph_id: u16, is_japanese: u32) -> u32 {
     if is_japanese == 1 {
         8
     } else {
         u32::from(unsafe {
-            (&raw const gFontNarrowLatinGlyphWidths)
+            (&raw const (*(&raw const crate::data::fonts::gFontNarrowLatinGlyphWidths)
+                .cast::<u8>()))
                 .add(usize::from(glyph_id))
                 .read()
         })
     }
 }
 
-unsafe extern "C" fn glyph_width_small_narrow(glyph_id: u16, is_japanese: u32) -> u32 {
+unsafe fn glyph_width_small_narrow(glyph_id: u16, is_japanese: u32) -> u32 {
     if is_japanese == 1 {
         8
     } else {
         u32::from(unsafe {
-            (&raw const gFontSmallNarrowLatinGlyphWidths)
+            (&raw const (*(&raw const crate::data::fonts::gFontSmallNarrowLatinGlyphWidths)
+                .cast::<u8>()))
                 .add(usize::from(glyph_id))
                 .read()
         })
     }
 }
 
-unsafe extern "C" fn glyph_width_short(glyph_id: u16, is_japanese: u32) -> u32 {
+unsafe fn glyph_width_short(glyph_id: u16, is_japanese: u32) -> u32 {
     let widths = if is_japanese == 1 {
-        &raw const gFontShortJapaneseGlyphWidths
+        &raw const (*(&raw const crate::data::fonts::gFontShortJapaneseGlyphWidths).cast::<u8>())
     } else {
-        &raw const gFontShortLatinGlyphWidths
+        &raw const (*(&raw const crate::data::fonts::gFontShortLatinGlyphWidths).cast::<u8>())
     };
     u32::from(unsafe { widths.add(usize::from(glyph_id)).read() })
 }
 
-unsafe extern "C" fn glyph_width_normal(glyph_id: u16, is_japanese: u32) -> u32 {
+unsafe fn glyph_width_normal(glyph_id: u16, is_japanese: u32) -> u32 {
     if is_japanese == 1 {
         8
     } else {
         u32::from(unsafe {
-            (&raw const gFontNormalLatinGlyphWidths)
+            (&raw const (*(&raw const crate::data::fonts::gFontNormalLatinGlyphWidths)
+                .cast::<u8>()))
                 .add(usize::from(glyph_id))
                 .read()
         })

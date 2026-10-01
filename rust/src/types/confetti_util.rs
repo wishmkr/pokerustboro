@@ -22,7 +22,7 @@ pub struct ConfettiUtil {
     pub animNum: u8,
     bits_25: u8,
     pub data: CArray<i16, 8>,
-    pub callback: Option<unsafe extern "C" fn(*mut ConfettiUtil)>,
+    pub callback: Option<unsafe fn(*mut ConfettiUtil)>,
 }
 
 impl ConfettiUtil {

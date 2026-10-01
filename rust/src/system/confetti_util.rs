@@ -41,7 +41,7 @@ const FLAG_DUMMIED: u8 = 1 << 2;
 const PRIORITY_SHIFT: u32 = 3;
 const PRIORITY_MASK: u8 = 0b11 << PRIORITY_SHIFT;
 
-type ConfettiCallback = unsafe extern "C" fn(*mut u8);
+type ConfettiCallback = unsafe fn(*mut u8);
 
 /// The anonymous `{ u8 count; struct ConfettiUtil *array; }` work block.
 /// The pointer is four-byte aligned, so `array` starts at byte 4.
@@ -52,13 +52,20 @@ const WORK_SIZE: usize = 8;
 #[unsafe(link_section = "ewram_data")]
 static mut WORK: *mut u8 = core::ptr::null_mut();
 
-unsafe extern "C" {
-    static mut gMain: u8;
-    static gDummyOamData: u8;
-
-    fn GetSpriteTileStartByTag(tag: u16) -> u16;
-    fn GetTilesPerImage(shape: u8, size: u8) -> u8;
-    fn IndexOfSpritePaletteTag(tag: u16) -> u8;
+/// `GetSpriteTileStartByTag` with this module's view of its types.
+#[inline]
+unsafe fn GetSpriteTileStartByTag(a0: u16) -> u16 {
+    unsafe { crate::sprite::GetSpriteTileStartByTag(a0) }
+}
+/// `GetTilesPerImage` with this module's view of its types.
+#[inline]
+unsafe fn GetTilesPerImage(a0: u8, a1: u8) -> u8 {
+    unsafe { crate::digit_obj_util::GetTilesPerImage(a0 as _, a1 as _) }
+}
+/// `IndexOfSpritePaletteTag` with this module's view of its types.
+#[inline]
+unsafe fn IndexOfSpritePaletteTag(a0: u16) -> u8 {
+    unsafe { crate::sprite::IndexOfSpritePaletteTag(a0) }
 }
 
 #[inline]
@@ -80,14 +87,19 @@ unsafe fn entry(index: usize) -> *mut u8 {
 #[inline]
 unsafe fn oam_slot(slot: usize) -> *mut u8 {
     unsafe {
-        (&raw mut gMain).add(MAIN_OAM_BUFFER_OFFSET + (slot + OAM_SLOT_BASE) * OAM_ENTRY_SIZE)
+        (&raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
+            .add(MAIN_OAM_BUFFER_OFFSET + (slot + OAM_SLOT_BASE) * OAM_ENTRY_SIZE)
     }
 }
 
 #[inline]
 unsafe fn copy_dummy_oam_to(destination: *mut u8) {
     unsafe {
-        core::ptr::copy_nonoverlapping(&raw const gDummyOamData, destination, OAM_ENTRY_SIZE)
+        core::ptr::copy_nonoverlapping(
+            &raw const (*(&raw const crate::sprite::gDummyOamData).cast::<u8>()),
+            destination,
+            OAM_ENTRY_SIZE,
+        )
     };
 }
 
@@ -108,7 +120,7 @@ unsafe fn read_i16(confetti: *mut u8, offset: usize) -> i16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConfettiUtil_Init(count: u8) -> u32 {
+pub unsafe fn ConfettiUtil_Init(count: u8) -> u32 {
     if count == 0 {
         return 0;
     }
@@ -140,7 +152,7 @@ pub unsafe extern "C" fn ConfettiUtil_Init(count: u8) -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConfettiUtil_Free() -> u32 {
+pub unsafe fn ConfettiUtil_Free() -> u32 {
     if unsafe { (&raw const WORK).read() }.is_null() {
         return 0;
     }
@@ -169,7 +181,7 @@ pub unsafe extern "C" fn ConfettiUtil_Free() -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConfettiUtil_Update() -> u32 {
+pub unsafe fn ConfettiUtil_Update() -> u32 {
     if unsafe { (&raw const WORK).read() }.is_null() || unsafe { work_array() }.is_null() {
         return 0;
     }
@@ -257,7 +269,7 @@ unsafe fn set_anim_and_tile_num(confetti: *mut u8, anim_num: u8) -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConfettiUtil_SetCallback(id: u8, func: Option<ConfettiCallback>) -> u8 {
+pub unsafe fn ConfettiUtil_SetCallback(id: u8, func: Option<ConfettiCallback>) -> u8 {
     if unsafe { (&raw const WORK).read() }.is_null() || id >= unsafe { work_count() } {
         return 0xff;
     }
@@ -275,7 +287,7 @@ pub unsafe extern "C" fn ConfettiUtil_SetCallback(id: u8, func: Option<ConfettiC
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConfettiUtil_SetData(id: u8, data_array_id: u8, data_value: i16) -> u8 {
+pub unsafe fn ConfettiUtil_SetData(id: u8, data_array_id: u8, data_value: i16) -> u8 {
     if unsafe { (&raw const WORK).read() }.is_null() || id >= unsafe { work_count() } {
         return 0xff;
     }
@@ -296,7 +308,7 @@ pub unsafe extern "C" fn ConfettiUtil_SetData(id: u8, data_array_id: u8, data_va
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConfettiUtil_AddNew(
+pub unsafe fn ConfettiUtil_AddNew(
     oam: *const u8,
     tile_tag: u16,
     pal_tag: u16,
@@ -357,7 +369,7 @@ pub unsafe extern "C" fn ConfettiUtil_AddNew(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConfettiUtil_Remove(id: u8) -> u8 {
+pub unsafe fn ConfettiUtil_Remove(id: u8) -> u8 {
     // The original does not range-check `id` here, only the work block.
     if unsafe { (&raw const WORK).read() }.is_null()
         || unsafe { flags(id as usize) } & FLAG_ACTIVE == 0

@@ -415,7 +415,7 @@ pub const fn anim_loop(count: u32) -> AnimCmd {
     AnimCmd(0xfffe | count << 16)
 }
 
-pub type SpriteCallback = unsafe extern "C" fn(*mut u8);
+pub type SpriteCallback = unsafe fn(*mut u8);
 
 /// `struct SpriteTemplate`, 24 bytes.
 #[repr(C)]
@@ -510,21 +510,20 @@ pub const MAIN_NEW_KEYS_OFFSET: usize = 0x2e;
 pub const A_BUTTON: u16 = 0x0001;
 pub const B_BUTTON: u16 = 0x0002;
 
-unsafe extern "C" {
-    pub static mut gMain: u8;
-}
-
 /// `&gMain.state`
 #[inline]
 pub unsafe fn main_state() -> *mut u8 {
-    unsafe { (&raw mut gMain).add(MAIN_STATE_OFFSET) }
+    unsafe {
+        (&raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
+            .add(MAIN_STATE_OFFSET)
+    }
 }
 
 /// `JOY_NEW(mask)`
 #[inline]
 pub unsafe fn joy_new(mask: u16) -> bool {
     let keys = unsafe {
-        (&raw const gMain)
+        (&raw const (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
             .add(MAIN_NEW_KEYS_OFFSET)
             .cast::<u16>()
             .read_volatile()
@@ -536,7 +535,7 @@ pub unsafe fn joy_new(mask: u16) -> bool {
 #[inline]
 pub unsafe fn joy_held(mask: u16) -> bool {
     let keys = unsafe {
-        (&raw const gMain)
+        (&raw const (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
             .add(MAIN_HELD_KEYS_OFFSET)
             .cast::<u16>()
             .read_volatile()
@@ -564,75 +563,146 @@ pub const SAVE2_POKEDEX_OFFSET: usize = 0x18;
 
 // --------------------------------------------------------------- callbacks
 
-pub type TaskFunc = unsafe extern "C" fn(u8);
-pub type MainCallback = unsafe extern "C" fn();
+pub type TaskFunc = unsafe fn(u8);
+pub type MainCallback = unsafe fn();
 /// `bool8 (*)(void)` field-move setup callbacks.
-pub type FieldCallback = unsafe extern "C" fn() -> u8;
-pub type MenuFieldCallback = unsafe extern "C" fn();
+pub type FieldCallback = unsafe fn() -> u8;
+pub type MenuFieldCallback = unsafe fn();
 
-unsafe extern "C" {
-    pub static mut gPlayerParty: u8;
-    pub static mut gEnemyParty: u8;
-    pub static mut gObjectEvents: u8;
-    pub static mut gPlayerAvatar: u8;
-    pub static mut gPaletteFade: u8;
-    pub static mut gPlttBufferUnfaded: [u16; PLTT_BUFFER_SIZE];
-    pub static mut gPlttBufferFaded: [u16; PLTT_BUFFER_SIZE];
-    pub static mut gSelectedObjectEvent: u8;
-
-    pub fn CreateTask(func: TaskFunc, priority: u8) -> u8;
-    pub fn DestroyTask(task_id: u8);
-    pub fn FuncIsActiveTask(func: TaskFunc) -> u8;
-    pub fn FindTaskIdByFunc(func: TaskFunc) -> u8;
-
-    pub fn GetMonData2(mon: *mut u8, field: c_int) -> u32;
-    pub fn GetMonData3(mon: *mut u8, field: c_int, destination: *mut u8) -> u32;
-    pub fn SetMonData(mon: *mut u8, field: c_int, value: *const c_void);
-    pub fn GetBoxMonData2(mon: *mut u8, field: c_int) -> u32;
-    pub fn GetBoxMonData3(mon: *mut u8, field: c_int, destination: *mut u8) -> u32;
-    pub fn GetMonNickname(mon: *mut u8, destination: *mut u8) -> *mut u8;
-
-    pub fn PlaySE(song: u16);
-
-    pub fn CpuSet(src: *const core::ffi::c_void, dest: *mut core::ffi::c_void, control: u32);
-    pub fn CpuFastSet(src: *const core::ffi::c_void, dest: *mut core::ffi::c_void, control: u32);
-
-    pub fn AddTextPrinterParameterized(
-        window_id: u8,
-        font_id: u8,
-        string: *const u8,
-        x: u8,
-        y: u8,
-        speed: u8,
-        callback: Option<unsafe extern "C" fn(*mut u8, u16)>,
-    ) -> u16;
-
-    pub fn SetWindowTemplateFields(
-        template: *mut WindowTemplate,
-        bg: u8,
-        left: u8,
-        top: u8,
-        width: u8,
-        height: u8,
-        palette_num: u8,
-        base_block: u16,
-    );
-    pub fn DrawStdFrameWithCustomTileAndPalette(
-        window_id: u8,
-        copy_to_vram: u8,
-        base_tile_num: u16,
-        palette_num: u8,
-    );
-    pub fn ClearStdWindowAndFrameToTransparent(window_id: u8, copy_to_vram: u8);
-
+unsafe extern "C" {}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+pub unsafe fn CreateTask(a0: TaskFunc, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroyTask` with this module's view of its types.
+#[inline]
+pub unsafe fn DestroyTask(a0: u8) {
+    {
+        crate::task::DestroyTask(a0);
+    }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+pub unsafe fn FuncIsActiveTask(a0: TaskFunc) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+pub unsafe fn FindTaskIdByFunc(a0: TaskFunc) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
+/// `GetMonData2` with this module's view of its types.
+#[inline]
+pub unsafe fn GetMonData2(a0: *mut u8, a1: c_int) -> u32 {
+    unsafe { crate::pokemon::GetMonData2(a0 as _, a1) }
+}
+/// `GetMonData3` with this module's view of its types.
+#[inline]
+pub unsafe fn GetMonData3(a0: *mut u8, a1: c_int, a2: *mut u8) -> u32 {
+    unsafe { crate::pokemon::GetMonData3(a0 as _, a1, a2 as _) }
+}
+/// `SetMonData` with this module's view of its types.
+#[inline]
+pub unsafe fn SetMonData(a0: *mut u8, a1: c_int, a2: *const c_void) {
+    unsafe {
+        crate::pokemon::SetMonData(a0 as _, a1, a2 as _);
+    }
+}
+/// `GetBoxMonData2` with this module's view of its types.
+#[inline]
+pub unsafe fn GetBoxMonData2(a0: *mut u8, a1: c_int) -> u32 {
+    unsafe { crate::box_mon::GetBoxMonData2(a0 as _, a1) }
+}
+/// `GetBoxMonData3` with this module's view of its types.
+#[inline]
+pub unsafe fn GetBoxMonData3(a0: *mut u8, a1: c_int, a2: *mut u8) -> u32 {
+    unsafe { crate::box_mon::GetBoxMonData3(a0 as _, a1, a2 as _) }
+}
+/// `GetMonNickname` with this module's view of its types.
+#[inline]
+pub unsafe fn GetMonNickname(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::party_menu::GetMonNickname(a0 as _, a1 as _) as *mut u8 }
+}
+/// `PlaySE` with this module's view of its types.
+#[inline]
+pub unsafe fn PlaySE(a0: u16) {
+    unsafe {
+        crate::sound::PlaySE(a0);
+    }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+pub unsafe fn CpuSet(a0: *const core::ffi::c_void, a1: *mut core::ffi::c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `CpuFastSet` with this module's view of its types.
+#[inline]
+pub unsafe fn CpuFastSet(a0: *const core::ffi::c_void, a1: *mut core::ffi::c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuFastSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+pub unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *const u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut u8, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `SetWindowTemplateFields` with this module's view of its types.
+#[inline]
+pub unsafe fn SetWindowTemplateFields(
+    a0: *mut WindowTemplate,
+    a1: u8,
+    a2: u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: u8,
+    a7: u16,
+) {
+    unsafe {
+        crate::menu::SetWindowTemplateFields(a0 as _, a1, a2, a3, a4, a5, a6, a7);
+    }
+}
+/// `DrawStdFrameWithCustomTileAndPalette` with this module's view of its types.
+#[inline]
+pub unsafe fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8) {
+    unsafe {
+        crate::menu::DrawStdFrameWithCustomTileAndPalette(a0, a1, a2, a3);
+    }
+}
+/// `ClearStdWindowAndFrameToTransparent` with this module's view of its types.
+#[inline]
+pub unsafe fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8) {
+    unsafe {
+        crate::menu::ClearStdWindowAndFrameToTransparent(a0, a1);
+    }
 }
 
 #[allow(unused_imports)]
 pub use crate::bg::{GetBgAttribute, ShowBg};
 pub use crate::decompress::{LoadCompressedSpritePalette, LoadCompressedSpriteSheet};
-pub use crate::event_data::{
-    ClearDailyFlags, FlagClear, FlagGet, FlagSet, GetVarPointer, VarGet, VarSet,
-};
+pub use crate::event_data::{FlagClear, FlagGet, FlagSet, GetVarPointer, VarGet, VarSet};
 #[allow(unused_imports)]
 pub use crate::malloc::{Alloc, AllocZeroed, Free};
 #[allow(unused_imports)]
@@ -756,7 +826,7 @@ pub unsafe fn set_oam_palette_num(oam: *mut u8, palette_num: u8) {
 #[inline]
 pub unsafe fn task(task_id: u8) -> *mut u8 {
     unsafe {
-        (&raw mut gTasks)
+        (&raw mut (*gTasks.as_ptr()))
             .cast::<u8>()
             .add(task_id as usize * TASK_SIZE)
     }
@@ -801,13 +871,23 @@ pub unsafe fn set_field_move_callback(task_id: u8, callback: MenuFieldCallback) 
 /// `&gPlayerParty[index]`
 #[inline]
 pub unsafe fn party_mon(index: usize) -> *mut u8 {
-    unsafe { (&raw mut gPlayerParty).add(index * POKEMON_SIZE) }
+    unsafe {
+        (&raw mut (*(&raw const crate::pokemon::gPlayerParty)
+            .cast::<u8>()
+            .cast_mut()))
+            .add(index * POKEMON_SIZE)
+    }
 }
 
 /// `&gObjectEvents[index]`
 #[inline]
 pub unsafe fn object_event(index: usize) -> *mut u8 {
-    unsafe { (&raw mut gObjectEvents).add(index * OBJECT_EVENT_SIZE) }
+    unsafe {
+        (&raw mut (*(&raw const crate::field_player_avatar::gObjectEvents)
+            .cast::<u8>()
+            .cast_mut()))
+            .add(index * OBJECT_EVENT_SIZE)
+    }
 }
 
 /// `gObjectEvents[index].singleMovementActive`
@@ -862,7 +942,9 @@ pub unsafe fn sprite_palette_num(index: usize) -> u8 {
 #[inline]
 pub unsafe fn palette_fade_active() -> bool {
     unsafe {
-        (&raw const gPaletteFade)
+        (&raw const (*(&raw const crate::palette::gPaletteFade)
+            .cast::<u8>()
+            .cast_mut()))
             .add(PALETTE_FADE_ACTIVE_OFFSET)
             .read_volatile()
             & PALETTE_FADE_ACTIVE_BIT
@@ -874,7 +956,9 @@ pub unsafe fn palette_fade_active() -> bool {
 #[inline]
 pub unsafe fn player_avatar_tile_transition_state() -> u8 {
     unsafe {
-        (&raw const gPlayerAvatar)
+        (&raw const (*(&raw const crate::field_player_avatar::gPlayerAvatar)
+            .cast::<u8>()
+            .cast_mut()))
             .add(PLAYER_AVATAR_TILE_TRANSITION_OFFSET)
             .read_volatile()
     }

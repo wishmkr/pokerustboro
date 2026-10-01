@@ -3,31 +3,65 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::eq_op,
+    clippy::if_same_then_else,
+    clippy::missing_transmute_annotations,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::battle_anim_mons::{GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide};
+use crate::battle_main::{
+    GetBattleWindowTemplatePixelWidth, gActiveBattler, gBattleResources, gBattleScripting,
+    gBattleStruct, gBattleTypeFlags, gBattlerAttacker, gBattlerTarget, gEffectBattler,
+    gEnigmaBerries, gLastUsedAbility, gLastUsedItem, gPotentialItemEffectBattler,
+};
+use crate::battle_main::{
+    gBattleBufferA, gBattleTextBuff1, gBattleTextBuff2, gBattleTextBuff3, gBattlerPartyIndexes,
+    gDisplayedStringBattle, gMoveSelectionCursor,
+};
+use crate::battle_setup::{
+    GetTrainerALoseText, GetTrainerBLoseText, gPartnerTrainerId, gTrainerBattleOpponent_A,
+    gTrainerBattleOpponent_B,
+};
+use crate::battle_tower::{
+    GetEreaderTrainerClassId, GetEreaderTrainerName, GetFrontierOpponentClass,
+    GetFrontierTrainerName,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::FlagGet;
+use crate::frontier_util::{
+    CopyFrontierBrainTrainerName, CopyFrontierTrainerText, GetFrontierBrainTrainerClass,
+};
+use crate::international_string_util::GetStringCenterAlignXOffsetWithLetterSpacing;
+use crate::item::CopyItemName;
+use crate::link::{GetMultiplayerId, gLinkPlayers};
+use crate::load_save::gSaveBlock2Ptr;
+use crate::menu::GetPlayerTextSpeedDelay;
+use crate::palette::{gPlttBufferFaded, gPlttBufferUnfaded};
+use crate::pokemon::{
+    GetBattlerMultiplayerId, GetMonData3, GetSecretBaseTrainerClass, GetSpeciesName,
+    GetUnionRoomTrainerClass, gEnemyParty, gPlayerParty,
+};
+use crate::recorded_battle::{GetTextSpeedInRecordedBattle, gRecordedBattleMultiplayerId};
+use crate::string_util::{ConvertIntToDecimalStringN, StringAppend, StringCopy};
+use crate::string_util::{ConvertInternationalString, StringGet_Nickname};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar3, gStringVar4};
+use crate::trainer_hill::{
+    CopyTrainerHillTrainerText, GetTrainerHillOpponentClass, GetTrainerHillTrainerName,
+};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{CopyWindowToVram, FillWindowPixelBuffer, PutWindowTilemap};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
@@ -226,113 +260,40 @@ static sText_YourFoesWeakGetEmPkmn: Table<CArray<u8, 30>> =
 
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sBattlerAbilities: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattleMsgDataPtr: *mut BattleMsgData = null_mut();
 
-unsafe extern "C" {
-    static gAbilityNames: CArray<CArray<u8, 13>, 0>;
-    static mut gActiveBattler: u8;
-    static mut gBattleBufferA: CArray<CArray<u8, 512>, 4>;
-    static mut gBattleResources: *mut BattleResources;
-    static mut gBattleScripting: BattleScripting;
-    static mut gBattleStruct: *mut BattleStruct;
-    static mut gBattleTextBuff1: CArray<u8, 16>;
-    static mut gBattleTextBuff2: CArray<u8, 16>;
-    static mut gBattleTextBuff3: CArray<u8, 16>;
-    static mut gBattleTypeFlags: u32;
-    static mut gBattlerAttacker: u8;
-    static mut gBattlerPartyIndexes: CArray<u16, 4>;
-    static mut gBattlerTarget: u8;
-    static mut gDisplayedStringBattle: CArray<u8, 300>;
-    static mut gEffectBattler: u8;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static mut gEnigmaBerries: CArray<BattleEnigmaBerry, 4>;
-    static mut gLastUsedAbility: u8;
-    static mut gLastUsedItem: u16;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static gMoveNames: CArray<CArray<u8, 13>, 355>;
-    static mut gMoveSelectionCursor: CArray<u8, 4>;
-    static gPPTextPalette: CArray<u16, 0>;
-    static mut gPartnerTrainerId: u16;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gPlttBufferFaded: CArray<u16, 512>;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static mut gPotentialItemEffectBattler: u8;
-    static mut gRecordedBattleMultiplayerId: u8;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static gStatusConditionStringsTable: CArray<CArray<*mut u8, 2>, 7>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar3: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTextFlags: TextFlags;
-    static mut gTrainerBattleOpponent_A: u16;
-    static mut gTrainerBattleOpponent_B: u16;
-    static gTrainerClassNames: CArray<CArray<u8, 13>, 0>;
-    static gTrainers: CArray<Trainer, 0>;
-    static gTypeNames: CArray<CArray<u8, 7>, 18>;
-    fn AddTextPrinter(
-        a0: *mut TextPrinterTemplate,
-        a1: u8,
-        a2: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn ConvertInternationalString(a0: *mut u8, a1: u8);
-    fn CopyFrontierBrainTrainerName(a0: *mut u8);
-    fn CopyFrontierTrainerText(a0: u8, a1: u16);
-    fn CopyItemName(a0: u16, a1: *mut u8);
-    fn CopyTrainerHillTrainerText(a0: u8, a1: u16);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FlagGet(a0: u16) -> u8;
-    fn GetBattleWindowTemplatePixelWidth(a0: u32, a1: u32) -> u32;
-    fn GetBattlerAtPosition(a0: u8) -> u8;
-    fn GetBattlerMultiplayerId(a0: u16) -> i32;
-    fn GetBattlerPosition(a0: u8) -> u8;
-    fn GetBattlerSide(a0: u8) -> u8;
-    fn GetEreaderTrainerClassId() -> u8;
-    fn GetEreaderTrainerName(a0: *mut u8);
-    fn GetFrontierBrainTrainerClass() -> u8;
-    fn GetFrontierOpponentClass(a0: u16) -> u8;
-    fn GetFrontierTrainerName(a0: *mut u8, a1: u16);
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetMultiplayerId() -> u8;
-    fn GetPlayerTextSpeedDelay() -> u8;
-    fn GetSecretBaseTrainerClass() -> u8;
-    fn GetSpeciesName(a0: *mut u8, a1: u16);
-    fn GetStringCenterAlignXOffsetWithLetterSpacing(a0: i32, a1: *mut u8, a2: i32, a3: i32) -> i32;
-    fn GetTextSpeedInRecordedBattle() -> u8;
-    fn GetTrainerALoseText() -> *mut u8;
-    fn GetTrainerBLoseText() -> *mut u8;
-    fn GetTrainerHillOpponentClass(a0: u16) -> u8;
-    fn GetTrainerHillTrainerName(a0: *mut u8, a1: u16);
-    fn GetUnionRoomTrainerClass() -> u16;
-    fn PutWindowTilemap(a0: u8);
-    fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringGet_Nickname(a0: *mut u8) -> *mut u8;
+/// `AddTextPrinter` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinter(
+    a0: *mut TextPrinterTemplate,
+    a1: u8,
+    a2: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe { crate::text::AddTextPrinter(a0 as _, a1, core::mem::transmute(a2)) }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferStringBattle(stringID: u16) {
-    let mut i: i32 = 0;
+pub unsafe fn BufferStringBattle(stringID: u16) {
     let mut stringPtr: *mut u8 = null_mut();
     gBattleMsgDataPtr = &raw mut gBattleBufferA[gActiveBattler][4] as *mut BattleMsgData;
     gLastUsedItem = (*gBattleMsgDataPtr).lastItem;
     gLastUsedAbility = (*gBattleMsgDataPtr).lastAbility;
     gBattleScripting.battler = (*gBattleMsgDataPtr).scrActive;
-    *(&raw mut (*gBattleStruct).scriptPartyIdx) = (*gBattleMsgDataPtr).bakScriptPartyIdx;
-    *(&raw mut (*gBattleStruct).hpScale) = (*gBattleMsgDataPtr).hpScale;
+    (*gBattleStruct).scriptPartyIdx = (*gBattleMsgDataPtr).bakScriptPartyIdx;
+    (*gBattleStruct).hpScale = (*gBattleMsgDataPtr).hpScale;
     gPotentialItemEffectBattler = (*gBattleMsgDataPtr).itemEffectBattler;
-    *(&raw mut (*gBattleStruct).stringMoveType) = (*gBattleMsgDataPtr).moveType;
-    i = 0;
-    while i < MAX_BATTLERS_COUNT as i32 {
+    (*gBattleStruct).stringMoveType = (*gBattleMsgDataPtr).moveType;
+    for i in 0..(MAX_BATTLERS_COUNT as i32) {
         sBattlerAbilities[i] = (*gBattleMsgDataPtr).abilities[i];
-        i += 1;
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i
         < (if 16 >= (if 14 >= 11 { 14 } else { 11 }) {
             16
@@ -428,11 +389,11 @@ pub unsafe extern "C" fn BufferStringBattle(stringID: u16) {
         }
         STRINGID_RETURNMON => {
             if GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER {
-                if *(&raw mut (*gBattleStruct).hpScale) == 0 {
+                if (*gBattleStruct).hpScale == 0 {
                     stringPtr = sText_PkmnThatsEnough.as_ptr().cast_mut();
-                } else if *(&raw mut (*gBattleStruct).hpScale) == 1 || gBattleTypeFlags & 1 != 0 {
+                } else if (*gBattleStruct).hpScale == 1 || gBattleTypeFlags & 1 != 0 {
                     stringPtr = sText_PkmnComeBack.as_ptr().cast_mut();
-                } else if *(&raw mut (*gBattleStruct).hpScale) == 2 {
+                } else if (*gBattleStruct).hpScale == 2 {
                     stringPtr = sText_PkmnOkComeBack.as_ptr().cast_mut();
                 } else {
                     stringPtr = sText_PkmnGoodComeBack.as_ptr().cast_mut();
@@ -453,13 +414,11 @@ pub unsafe extern "C" fn BufferStringBattle(stringID: u16) {
         }
         STRINGID_SWITCHINMON => {
             if GetBattlerSide(gBattleScripting.battler) == B_SIDE_PLAYER {
-                if *(&raw mut (*gBattleStruct).hpScale) == 0
-                    || gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
-                {
+                if (*gBattleStruct).hpScale == 0 || gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
                     stringPtr = sText_GoPkmn2.as_ptr().cast_mut();
-                } else if *(&raw mut (*gBattleStruct).hpScale) == 1 {
+                } else if (*gBattleStruct).hpScale == 1 {
                     stringPtr = sText_DoItPkmn.as_ptr().cast_mut();
-                } else if *(&raw mut (*gBattleStruct).hpScale) == 2 {
+                } else if (*gBattleStruct).hpScale == 2 {
                     stringPtr = sText_GoForItPkmn.as_ptr().cast_mut();
                 } else {
                     stringPtr = sText_YourFoesWeakGetEmPkmn.as_ptr().cast_mut();
@@ -499,14 +458,15 @@ pub unsafe extern "C" fn BufferStringBattle(stringID: u16) {
             if (*gBattleMsgDataPtr).currentMove >= MOVES_COUNT {
                 StringCopy(
                     gBattleTextBuff2.as_mut_ptr(),
-                    sATypeMove_Table[*(&raw mut (*gBattleStruct).stringMoveType)]
+                    sATypeMove_Table[(*gBattleStruct).stringMoveType]
                         .as_ptr()
                         .cast_mut(),
                 );
             } else {
                 StringCopy(
                     gBattleTextBuff2.as_mut_ptr(),
-                    gMoveNames[(*gBattleMsgDataPtr).currentMove]
+                    (*(&raw const crate::data::data_tables::gMoveNames)
+                        .cast::<CArray<CArray<u8, 13>, 355>>())[(*gBattleMsgDataPtr).currentMove]
                         .as_ptr()
                         .cast_mut(),
                 );
@@ -592,47 +552,43 @@ pub unsafe extern "C" fn BufferStringBattle(stringID: u16) {
     }
     BattleStringExpandPlaceholdersToDisplayedString(stringPtr);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleStringExpandPlaceholdersToDisplayedString(src: *mut u8) -> u32 {
-    return BattleStringExpandPlaceholders(src, gDisplayedStringBattle.as_mut_ptr());
+pub unsafe fn BattleStringExpandPlaceholdersToDisplayedString(src: *mut u8) -> u32 {
+    BattleStringExpandPlaceholders(src, gDisplayedStringBattle.as_mut_ptr())
 }
-pub(crate) unsafe extern "C" fn TryGetStatusString(mut src: *mut u8) -> *mut u8 {
-    let mut i: u32 = 0;
+unsafe fn TryGetStatusString(mut src: *mut u8) -> *mut u8 {
     let mut status: CArray<u8, 8> = zeroed();
-    let mut chars1: u32 = 0;
-    let mut chars2: u32 = 0;
-    let mut statusPtr: *mut u8 = null_mut();
     memcpy(
         status.as_mut_ptr(),
         sText_EmptyStatus.as_ptr().cast_mut(),
         if 8 < 8 { 8 } else { 8 },
     );
-    statusPtr = status.as_mut_ptr();
-    i = 0;
-    while i < 8 {
+    let mut statusPtr: *mut u8 = status.as_mut_ptr();
+    for i in 0..8u32 {
         if *src == EOS {
             break;
         }
         *statusPtr = *src;
         src = src.at(1);
         statusPtr = statusPtr.at(1);
-        i += 1;
     }
-    chars1 = *(&raw mut status[0] as *mut u32);
-    chars2 = *(&raw mut status[4] as *mut u32);
-    i = 0;
-    while i < 7 {
-        if chars1 == *(gStatusConditionStringsTable[i][0] as *mut u32)
-            && chars2 == *(gStatusConditionStringsTable[i][0].at(4) as *mut u32)
+    let chars1: u32 = *(&raw mut status[0] as *mut u32);
+    let chars2: u32 = *(&raw mut status[4] as *mut u32);
+    for i in 0..7u32 {
+        if chars1
+            == *((*(&raw const crate::data::battle_main::gStatusConditionStringsTable)
+                .cast::<CArray<CArray<*mut u8, 2>, 7>>())[i][0] as *mut u32)
+            && chars2
+                == *((*(&raw const crate::data::battle_main::gStatusConditionStringsTable)
+                    .cast::<CArray<CArray<*mut u8, 2>, 7>>())[i][0]
+                    .at(4) as *mut u32)
         {
-            return gStatusConditionStringsTable[i][1];
+            return (*(&raw const crate::data::battle_main::gStatusConditionStringsTable)
+                .cast::<CArray<CArray<*mut u8, 2>, 7>>())[i][1];
         }
-        i += 1;
     }
-    return null_mut();
+    null_mut()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleStringExpandPlaceholders(mut src: *mut u8, mut dst: *mut u8) -> u32 {
+pub unsafe fn BattleStringExpandPlaceholders(mut src: *mut u8, dst: *mut u8) -> u32 {
     let mut dstID: u32 = 0;
     let mut toCpy: *mut u8 = null_mut();
     let mut text: CArray<u8, 32> = zeroed();
@@ -966,7 +922,11 @@ pub unsafe extern "C" fn BattleStringExpandPlaceholders(mut src: *mut u8, mut ds
                             .as_ptr()
                             .cast_mut();
                     } else {
-                        toCpy = gMoveNames[(*gBattleMsgDataPtr).currentMove]
+                        toCpy = (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<
+                            CArray<u8, 13>,
+                            355,
+                        >>(
+                        ))[(*gBattleMsgDataPtr).currentMove]
                             .as_ptr()
                             .cast_mut();
                     }
@@ -977,7 +937,11 @@ pub unsafe extern "C" fn BattleStringExpandPlaceholders(mut src: *mut u8, mut ds
                             .as_ptr()
                             .cast_mut();
                     } else {
-                        toCpy = gMoveNames[(*gBattleMsgDataPtr).originallyUsedMove]
+                        toCpy = (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<
+                            CArray<u8, 13>,
+                            355,
+                        >>(
+                        ))[(*gBattleMsgDataPtr).originallyUsedMove]
                             .as_ptr()
                             .cast_mut();
                     }
@@ -1034,58 +998,89 @@ pub unsafe extern "C" fn BattleStringExpandPlaceholders(mut src: *mut u8, mut ds
                     }
                 }
                 B_TXT_LAST_ABILITY => {
-                    toCpy = gAbilityNames[gLastUsedAbility].as_ptr().cast_mut();
+                    toCpy = (*(&raw const crate::data::battle_main::gAbilityNames).cast::<CArray<
+                        CArray<u8, 13>,
+                        0,
+                    >>(
+                    ))[gLastUsedAbility]
+                        .as_ptr()
+                        .cast_mut();
                 }
                 B_TXT_ATK_ABILITY => {
-                    toCpy = gAbilityNames[sBattlerAbilities[gBattlerAttacker]]
+                    toCpy = (*(&raw const crate::data::battle_main::gAbilityNames).cast::<CArray<
+                        CArray<u8, 13>,
+                        0,
+                    >>(
+                    ))[sBattlerAbilities[gBattlerAttacker]]
                         .as_ptr()
                         .cast_mut();
                 }
                 B_TXT_DEF_ABILITY => {
-                    toCpy = gAbilityNames[sBattlerAbilities[gBattlerTarget]]
+                    toCpy = (*(&raw const crate::data::battle_main::gAbilityNames).cast::<CArray<
+                        CArray<u8, 13>,
+                        0,
+                    >>(
+                    ))[sBattlerAbilities[gBattlerTarget]]
                         .as_ptr()
                         .cast_mut();
                 }
                 B_TXT_SCR_ACTIVE_ABILITY => {
-                    toCpy = gAbilityNames[sBattlerAbilities[gBattleScripting.battler]]
+                    toCpy = (*(&raw const crate::data::battle_main::gAbilityNames).cast::<CArray<
+                        CArray<u8, 13>,
+                        0,
+                    >>(
+                    ))[sBattlerAbilities[gBattleScripting.battler]]
                         .as_ptr()
                         .cast_mut();
                 }
                 B_TXT_EFF_ABILITY => {
-                    toCpy = gAbilityNames[sBattlerAbilities[gEffectBattler]]
+                    toCpy = (*(&raw const crate::data::battle_main::gAbilityNames).cast::<CArray<
+                        CArray<u8, 13>,
+                        0,
+                    >>(
+                    ))[sBattlerAbilities[gEffectBattler]]
                         .as_ptr()
                         .cast_mut();
                 }
                 B_TXT_TRAINER1_CLASS => {
                     if gBattleTypeFlags & BATTLE_TYPE_SECRET_BASE != 0 {
-                        toCpy = gTrainerClassNames[GetSecretBaseTrainerClass()]
-                            .as_ptr()
-                            .cast_mut();
+                        toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
+                            .cast::<CArray<CArray<u8, 13>, 0>>())[GetSecretBaseTrainerClass()]
+                        .as_ptr()
+                        .cast_mut();
                     } else if gTrainerBattleOpponent_A == TRAINER_UNION_ROOM {
-                        toCpy = gTrainerClassNames[GetUnionRoomTrainerClass()]
-                            .as_ptr()
-                            .cast_mut();
+                        toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
+                            .cast::<CArray<CArray<u8, 13>, 0>>())[GetUnionRoomTrainerClass()]
+                        .as_ptr()
+                        .cast_mut();
                     } else if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
-                        toCpy = gTrainerClassNames[GetFrontierBrainTrainerClass()]
-                            .as_ptr()
-                            .cast_mut();
+                        toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
+                            .cast::<CArray<CArray<u8, 13>, 0>>())[GetFrontierBrainTrainerClass()]
+                        .as_ptr()
+                        .cast_mut();
                     } else if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
-                        toCpy = gTrainerClassNames
+                        toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
+                            .cast::<CArray<CArray<u8, 13>, 0>>())
                             [GetFrontierOpponentClass(gTrainerBattleOpponent_A)]
                         .as_ptr()
                         .cast_mut();
                     } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
-                        toCpy = gTrainerClassNames
+                        toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
+                            .cast::<CArray<CArray<u8, 13>, 0>>())
                             [GetTrainerHillOpponentClass(gTrainerBattleOpponent_A)]
                         .as_ptr()
                         .cast_mut();
                     } else if gBattleTypeFlags & BATTLE_TYPE_EREADER_TRAINER != 0 {
-                        toCpy = gTrainerClassNames[GetEreaderTrainerClassId()]
-                            .as_ptr()
-                            .cast_mut();
+                        toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
+                            .cast::<CArray<CArray<u8, 13>, 0>>())[GetEreaderTrainerClassId()]
+                        .as_ptr()
+                        .cast_mut();
                     } else {
-                        toCpy = gTrainerClassNames
-                            [gTrainers[gTrainerBattleOpponent_A].trainerClass]
+                        toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
+                            .cast::<CArray<CArray<u8, 13>, 0>>())
+                            [(*(&raw const crate::data::data_tables::gTrainers)
+                                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
+                                .trainerClass]
                             .as_ptr()
                             .cast_mut();
                     }
@@ -1120,10 +1115,12 @@ pub unsafe extern "C" fn BattleStringExpandPlaceholders(mut src: *mut u8, mut ds
                         GetEreaderTrainerName(text.as_mut_ptr());
                         toCpy = text.as_mut_ptr();
                     } else {
-                        toCpy = gTrainers[gTrainerBattleOpponent_A]
-                            .trainerName
-                            .as_ptr()
-                            .cast_mut();
+                        toCpy =
+                            (*(&raw const crate::data::data_tables::gTrainers)
+                                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
+                                .trainerName
+                                .as_ptr()
+                                .cast_mut();
                     }
                 }
                 B_TXT_LINK_PLAYER_NAME => {
@@ -1201,13 +1198,13 @@ pub unsafe extern "C" fn BattleStringExpandPlaceholders(mut src: *mut u8, mut ds
                             toCpy = toCpy.at(1);
                         }
                         GetMonData3(
-                            &raw mut gEnemyParty[*(&raw mut (*gBattleStruct).scriptPartyIdx)],
+                            &raw mut gEnemyParty[(*gBattleStruct).scriptPartyIdx],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
                     } else {
                         GetMonData3(
-                            &raw mut gPlayerParty[*(&raw mut (*gBattleStruct).scriptPartyIdx)],
+                            &raw mut gPlayerParty[(*gBattleStruct).scriptPartyIdx],
                             MON_DATA_NICKNAME,
                             text.as_mut_ptr(),
                         );
@@ -1266,18 +1263,23 @@ pub unsafe extern "C" fn BattleStringExpandPlaceholders(mut src: *mut u8, mut ds
                 }
                 B_TXT_TRAINER2_CLASS => {
                     if gBattleTypeFlags & BATTLE_TYPE_FRONTIER != 0 {
-                        toCpy = gTrainerClassNames
+                        toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
+                            .cast::<CArray<CArray<u8, 13>, 0>>())
                             [GetFrontierOpponentClass(gTrainerBattleOpponent_B)]
                         .as_ptr()
                         .cast_mut();
                     } else if gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL != 0 {
-                        toCpy = gTrainerClassNames
+                        toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
+                            .cast::<CArray<CArray<u8, 13>, 0>>())
                             [GetTrainerHillOpponentClass(gTrainerBattleOpponent_B)]
                         .as_ptr()
                         .cast_mut();
                     } else {
-                        toCpy = gTrainerClassNames
-                            [gTrainers[gTrainerBattleOpponent_B].trainerClass]
+                        toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
+                            .cast::<CArray<CArray<u8, 13>, 0>>())
+                            [(*(&raw const crate::data::data_tables::gTrainers)
+                                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_B]
+                                .trainerClass]
                             .as_ptr()
                             .cast_mut();
                     }
@@ -1290,10 +1292,12 @@ pub unsafe extern "C" fn BattleStringExpandPlaceholders(mut src: *mut u8, mut ds
                         GetTrainerHillTrainerName(text.as_mut_ptr(), gTrainerBattleOpponent_B);
                         toCpy = text.as_mut_ptr();
                     } else {
-                        toCpy = gTrainers[gTrainerBattleOpponent_B]
-                            .trainerName
-                            .as_ptr()
-                            .cast_mut();
+                        toCpy =
+                            (*(&raw const crate::data::data_tables::gTrainers)
+                                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_B]
+                                .trainerName
+                                .as_ptr()
+                                .cast_mut();
                     }
                 }
                 B_TXT_TRAINER2_LOSE_TEXT => {
@@ -1326,9 +1330,11 @@ pub unsafe extern "C" fn BattleStringExpandPlaceholders(mut src: *mut u8, mut ds
                     }
                 }
                 B_TXT_PARTNER_CLASS => {
-                    toCpy = gTrainerClassNames[GetFrontierOpponentClass(gPartnerTrainerId)]
-                        .as_ptr()
-                        .cast_mut();
+                    toCpy = (*(&raw const crate::data::data_tables::gTrainerClassNames)
+                        .cast::<CArray<CArray<u8, 13>, 0>>())
+                        [GetFrontierOpponentClass(gPartnerTrainerId)]
+                    .as_ptr()
+                    .cast_mut();
                 }
                 B_TXT_PARTNER_NAME => {
                     GetFrontierTrainerName(text.as_mut_ptr(), gPartnerTrainerId);
@@ -1359,9 +1365,9 @@ pub unsafe extern "C" fn BattleStringExpandPlaceholders(mut src: *mut u8, mut ds
     }
     *dst.at(dstID) = *src;
     dstID += 1;
-    return dstID;
+    dstID
 }
-pub(crate) unsafe extern "C" fn ExpandBattleTextBuffPlaceholders(mut src: *mut u8, dst: *mut u8) {
+unsafe fn ExpandBattleTextBuffPlaceholders(src: *mut u8, dst: *mut u8) {
     let mut srcID: u32 = 1;
     let mut value: u32 = 0;
     let mut nickname: CArray<u8, 11> = zeroed();
@@ -1404,14 +1410,22 @@ pub(crate) unsafe extern "C" fn ExpandBattleTextBuffPlaceholders(mut src: *mut u
             B_BUFF_MOVE => {
                 StringAppend(
                     dst,
-                    gMoveNames[*src.at(srcID + 1) as i32 | (*src.at(srcID + 1).at(1) as i32) << 8]
+                    (*(&raw const crate::data::data_tables::gMoveNames)
+                        .cast::<CArray<CArray<u8, 13>, 355>>())
+                        [*src.at(srcID + 1) as i32 | (*src.at(srcID + 1).at(1) as i32) << 8]
                         .as_ptr()
                         .cast_mut(),
                 );
                 srcID += 3;
             }
             B_BUFF_TYPE => {
-                StringAppend(dst, gTypeNames[*src.at(srcID + 1)].as_ptr().cast_mut());
+                StringAppend(
+                    dst,
+                    (*(&raw const crate::data::battle_main::gTypeNames)
+                        .cast::<CArray<CArray<u8, 7>, 18>>())[*src.at(srcID + 1)]
+                    .as_ptr()
+                    .cast_mut(),
+                );
                 srcID += 2;
             }
             B_BUFF_MON_NICK_WITH_PREFIX => {
@@ -1470,7 +1484,13 @@ pub(crate) unsafe extern "C" fn ExpandBattleTextBuffPlaceholders(mut src: *mut u
                 srcID += 2;
             }
             B_BUFF_ABILITY => {
-                StringAppend(dst, gAbilityNames[*src.at(srcID + 1)].as_ptr().cast_mut());
+                StringAppend(
+                    dst,
+                    (*(&raw const crate::data::battle_main::gAbilityNames)
+                        .cast::<CArray<CArray<u8, 13>, 0>>())[*src.at(srcID + 1)]
+                    .as_ptr()
+                    .cast_mut(),
+                );
                 srcID += 2;
             }
             B_BUFF_ITEM => {
@@ -1502,7 +1522,7 @@ pub(crate) unsafe extern "C" fn ExpandBattleTextBuffPlaceholders(mut src: *mut u
         }
     }
 }
-pub(crate) unsafe extern "C" fn ChooseMoveUsedParticle(textBuff: *mut u8) {
+unsafe fn ChooseMoveUsedParticle(textBuff: *mut u8) {
     let mut counter: i32 = 0;
     let mut i: u32 = 0;
     while counter != MAX_MON_MOVES {
@@ -1526,7 +1546,7 @@ pub(crate) unsafe extern "C" fn ChooseMoveUsedParticle(textBuff: *mut u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn ChooseTypeOfMoveUsedString(mut dst: *mut u8) {
+unsafe fn ChooseTypeOfMoveUsedString(mut dst: *mut u8) {
     let mut counter: i32 = 0;
     let mut i: i32 = 0;
     while *dst != EOS {
@@ -1564,10 +1584,8 @@ pub(crate) unsafe extern "C" fn ChooseTypeOfMoveUsedString(mut dst: *mut u8) {
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattlePutTextOnWindow(text: *mut u8, mut windowId: u8) {
-    let mut textInfo: *mut BattleWindowText =
-        sBattleTextOnWindowsInfo[gBattleScripting.windowsType];
+pub unsafe fn BattlePutTextOnWindow(text: *mut u8, mut windowId: u8) {
+    let textInfo: *mut BattleWindowText = sBattleTextOnWindowsInfo[gBattleScripting.windowsType];
     let mut copyToVram: u32 = 0;
     let mut printerTemplate: TextPrinterTemplate = zeroed();
     let mut speed: u8 = 0;
@@ -1592,9 +1610,9 @@ pub unsafe extern "C" fn BattlePutTextOnWindow(text: *mut u8, mut windowId: u8) 
     printerTemplate.set_bgColor((*textInfo.at(windowId)).bgColor);
     printerTemplate.set_shadowColor((*textInfo.at(windowId)).shadowColor);
     if printerTemplate.x == 0xFF {
-        let mut width: u32 =
+        let width: u32 =
             GetBattleWindowTemplatePixelWidth(gBattleScripting.windowsType as u32, windowId as u32);
-        let mut alignX: i32 = GetStringCenterAlignXOffsetWithLetterSpacing(
+        let alignX: i32 = GetStringCenterAlignXOffsetWithLetterSpacing(
             printerTemplate.fontId as i32,
             printerTemplate.currentChar,
             width as i32,
@@ -1606,14 +1624,26 @@ pub unsafe extern "C" fn BattlePutTextOnWindow(text: *mut u8, mut windowId: u8) 
         };
     }
     if windowId == ARENA_WIN_JUDGMENT_TEXT {
-        gTextFlags.set_useAlternateDownArrow(FALSE);
+        (*(&raw const crate::text::gTextFlags)
+            .cast::<TextFlags>()
+            .cast_mut())
+        .set_useAlternateDownArrow(FALSE);
     } else {
-        gTextFlags.set_useAlternateDownArrow(TRUE);
+        (*(&raw const crate::text::gTextFlags)
+            .cast::<TextFlags>()
+            .cast_mut())
+        .set_useAlternateDownArrow(TRUE);
     }
     if gBattleTypeFlags & 0x1000002 != 0 {
-        gTextFlags.set_autoScroll(TRUE);
+        (*(&raw const crate::text::gTextFlags)
+            .cast::<TextFlags>()
+            .cast_mut())
+        .set_autoScroll(TRUE);
     } else {
-        gTextFlags.set_autoScroll(FALSE);
+        (*(&raw const crate::text::gTextFlags)
+            .cast::<TextFlags>()
+            .cast_mut())
+        .set_autoScroll(FALSE);
     }
     if windowId == B_WIN_MSG || windowId == ARENA_WIN_JUDGMENT_TEXT {
         if gBattleTypeFlags & 0x2000002 != 0 {
@@ -1623,10 +1653,16 @@ pub unsafe extern "C" fn BattlePutTextOnWindow(text: *mut u8, mut windowId: u8) 
         } else {
             speed = GetPlayerTextSpeedDelay();
         }
-        gTextFlags.set_canABSpeedUpPrint(1);
+        (*(&raw const crate::text::gTextFlags)
+            .cast::<TextFlags>()
+            .cast_mut())
+        .set_canABSpeedUpPrint(1);
     } else {
         speed = (*textInfo.at(windowId)).speed;
-        gTextFlags.set_canABSpeedUpPrint(0);
+        (*(&raw const crate::text::gTextFlags)
+            .cast::<TextFlags>()
+            .cast_mut())
+        .set_canABSpeedUpPrint(0);
     }
     AddTextPrinter(&raw mut printerTemplate, speed, None);
     if copyToVram != 0 {
@@ -1634,16 +1670,18 @@ pub unsafe extern "C" fn BattlePutTextOnWindow(text: *mut u8, mut windowId: u8) 
         CopyWindowToVram(windowId, COPYWIN_FULL);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetPPNumbersPaletteInMoveSelection() {
-    let mut chooseMoveStruct: *mut ChooseMoveStruct =
+pub unsafe fn SetPPNumbersPaletteInMoveSelection() {
+    let chooseMoveStruct: *mut ChooseMoveStruct =
         &raw mut gBattleBufferA[gActiveBattler][4] as *mut ChooseMoveStruct;
-    let mut palPtr: *mut u16 = gPPTextPalette.as_ptr().cast_mut();
-    let mut var: u8 = GetCurrentPPToMaxPPState(
+    let palPtr: *mut u16 = (*(&raw const crate::data::graphics::gPPTextPalette)
+        .cast::<CArray<u16, 0>>())
+    .as_ptr()
+    .cast_mut();
+    let var: u8 = GetCurrentPPToMaxPPState(
         (*chooseMoveStruct).currentPP[gMoveSelectionCursor[gActiveBattler]],
         (*chooseMoveStruct).maxPP[gMoveSelectionCursor[gActiveBattler]],
     );
-    gPlttBufferUnfaded[92] = *palPtr.at(var as i32 * 2 + 0);
+    gPlttBufferUnfaded[92] = *palPtr.at(var as i32 * 2);
     gPlttBufferUnfaded[91] = *palPtr.at(var as i32 * 2 + 1);
     CpuSet(
         &raw mut gPlttBufferUnfaded[92] as *mut c_void,
@@ -1656,8 +1694,7 @@ pub unsafe extern "C" fn SetPPNumbersPaletteInMoveSelection() {
         1,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetCurrentPPToMaxPPState(currentPP: u8, maxPP: u8) -> u8 {
+pub unsafe fn GetCurrentPPToMaxPPState(currentPP: u8, maxPP: u8) -> u8 {
     if maxPP == currentPP {
         return 3;
     } else if maxPP <= 2 {
@@ -1683,5 +1720,5 @@ pub unsafe extern "C" fn GetCurrentPPToMaxPPState(currentPP: u8, maxPP: u8) -> u
             return 3;
         }
     }
-    return 0;
+    0
 }

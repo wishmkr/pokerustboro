@@ -3,37 +3,99 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gGameLanguage;
+use crate::agb_main::gMain;
+use crate::battle_tower::{CalcApprenticeChecksum, FrontierSpeechToString};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::VarSet;
+use crate::event_object_movement::FreezeObjectEvents;
+use crate::ffi::{gSpecialVar_0x8004, gSpecialVar_0x8005, gSpecialVar_0x8006, gSpecialVar_Result};
+use crate::field_player_avatar::{PlayerFreeze, StopPlayerAvatar};
+use crate::international_string_util::TVShowConvertInternationalString;
+use crate::item_menu::ApprenticeOpenBagMenu;
+use crate::load_save::gSaveBlock2Ptr;
+use crate::menu::{
+    AddTextPrinterForMessage, ClearStdWindowAndFrameToTransparent, CreateWindowTemplate,
+    DrawDialogueFrame, InitMenuInUpperLeftCornerNormal, Menu_ProcessInput, Menu_ProcessInputNoWrap,
+    RunTextPrintersAndIsPrinter0Active, SetStandardWindowBorderStyle,
+};
+use crate::new_game::GetTrainerId;
+use crate::party_menu::ItemIdToBattleMoveId;
+use crate::pokemon::CanSpeciesLearnTMHM;
+use crate::random::Random;
+use crate::script::{LockPlayerFieldControls, ScriptContext_Enable};
+use crate::script_menu::{ConvertPixelWidthToTileWidth, ScriptMenu_AdjustLeftCoordFromWidth};
+use crate::sound::PlaySE;
+use crate::string_util::ConvertInternationalString;
+use crate::string_util::{
+    ConvertIntToDecimalStringN, StringCopy, StringCopy_PlayerName, StringExpandPlaceholders,
+};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar3, gStringVar4};
+use crate::task::gTasks;
+use crate::task::{DestroyTask, SwitchTaskToFollowupFunc};
+use crate::task::{task_get, task_set};
+use crate::text::GetStringWidth;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{CopyWindowToVram, PutWindowTilemap, RemoveWindow};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `SetTaskFuncWithFollowupFunc` with this module's view of its types.
+#[inline]
+unsafe fn SetTaskFuncWithFollowupFunc(
+    a0: u8,
+    a1: Option<unsafe fn(u8)>,
+    a2: Option<unsafe fn(u8)>,
+) {
+    unsafe {
+        crate::task::SetTaskFuncWithFollowupFunc(
+            a0,
+            core::mem::transmute(a1),
+            core::mem::transmute(a2),
+        );
+    }
+}
+// The C's names for task and sprite data slots.
+const tNoBButton: usize = 4;
+const tWrapAround: usize = 5;
+const tWindowId: usize = 6;
 // Data tables (translate with cdata.py): gApprentices sApprenticeFirstMeetingTexts sApprenticeWhichMonTexts sApprenticeHeldItemTexts sApprenticeWhichMoveTexts sApprenticeWhichMonFirstTexts sApprenticePickWinSpeechTexts sApprenticeChallengeTexts sValidApprenticeMoves sQuestionPossibilities sApprenticeFunctions sInitialApprenticeIds
 
 /// `struct ApprenticePartyMovesData`
@@ -80,7 +142,7 @@ static sApprenticeChallengeTexts: Table<CArray<*mut u8, 16>> =
     Table((&raw const crate::data::apprentice::sApprenticeChallengeTexts).cast());
 static sApprenticeFirstMeetingTexts: Table<CArray<CArray<*mut u8, 4>, 16>> =
     Table((&raw const crate::data::apprentice::sApprenticeFirstMeetingTexts).cast());
-static sApprenticeFunctions: Table<CArray<Option<unsafe extern "C" fn()>, 26>> =
+static sApprenticeFunctions: Table<CArray<Option<unsafe fn()>, 26>> =
     Table((&raw const crate::data::apprentice::sApprenticeFunctions).cast());
 static sApprenticeHeldItemTexts: Table<CArray<CArray<*mut u8, 5>, 16>> =
     Table((&raw const crate::data::apprentice::sApprenticeHeldItemTexts).cast());
@@ -99,115 +161,50 @@ static sQuestionPossibilities: Table<CArray<u8, 10>> =
 static sValidApprenticeMoves: Table<CArray<u8, 355>> =
     Table((&raw const crate::data::apprentice::sValidApprenticeMoves).cast());
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gApprenticePartyMovesData: *mut ApprenticePartyMovesData = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gApprenticeQuestionData: *mut ApprenticeQuestionData = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gApprenticeFunc: Option<unsafe extern "C" fn()> = None;
+pub static mut gApprenticeFunc: Option<unsafe fn()> = None;
 
-unsafe extern "C" {
-    static gGameLanguage: u8;
-    static gLevelUpLearnsets: CArray<*mut u16, 0>;
-    static mut gMain: Main;
-    static gMoveNames: CArray<CArray<u8, 13>, 355>;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_0x8005: u16;
-    static mut gSpecialVar_0x8006: u16;
-    static mut gSpecialVar_Result: u16;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar3: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_Give: CArray<u8, 0>;
-    static gText_Lv50: CArray<u8, 0>;
-    static gText_No: CArray<u8, 0>;
-    static gText_NoNeed: CArray<u8, 0>;
-    static gText_OpenLevel: CArray<u8, 0>;
-    static gText_Yes: CArray<u8, 0>;
-    static gTowerFemaleFacilityClasses: CArray<u8, 20>;
-    static gTowerFemaleTrainerGfxIds: CArray<u8, 20>;
-    static gTowerMaleFacilityClasses: CArray<u8, 30>;
-    static gTowerMaleTrainerGfxIds: CArray<u8, 30>;
-    fn AddTextPrinterForMessage(a0: u8);
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn ApprenticeOpenBagMenu();
-    fn CalcApprenticeChecksum(a0: *mut Apprentice);
-    fn CanSpeciesLearnTMHM(a0: u16, a1: u8) -> u32;
-    fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn ConvertInternationalString(a0: *mut u8, a1: u8);
-    fn ConvertPixelWidthToTileWidth(a0: i32) -> i32;
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateWindowTemplate(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u16,
-    ) -> WindowTemplate;
-    fn DestroyTask(a0: u8);
-    fn DrawDialogueFrame(a0: u8, a1: u8);
-    fn Free(a0: *mut c_void);
-    fn FreezeObjectEvents();
-    fn FrontierSpeechToString(a0: *mut u16);
-    fn GetItemName(a0: u16) -> *mut u8;
-    fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32;
-    fn GetTrainerId(a0: *mut u8) -> u32;
-    fn InitMenuInUpperLeftCornerNormal(a0: u8, a1: u8, a2: u8) -> u8;
-    fn ItemIdToBattleMoveId(a0: u16) -> u16;
-    fn LockPlayerFieldControls();
-    fn Menu_ProcessInput() -> i8;
-    fn Menu_ProcessInputNoWrap() -> i8;
-    fn PlaySE(a0: u16);
-    fn PlayerFreeze();
-    fn PutWindowTilemap(a0: u8);
-    fn Random() -> u16;
-    fn RemoveWindow(a0: u8);
-    fn RunTextPrintersAndIsPrinter0Active() -> u16;
-    fn ScriptContext_Enable();
-    fn ScriptMenu_AdjustLeftCoordFromWidth(a0: i32, a1: i32) -> i32;
-    fn SetStandardWindowBorderStyle(a0: u8, a1: u8);
-    fn SetTaskFuncWithFollowupFunc(
-        a0: u8,
-        a1: Option<unsafe extern "C" fn(u8)>,
-        a2: Option<unsafe extern "C" fn(u8)>,
-    );
-    fn StopPlayerAvatar();
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy_PlayerName(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn SwitchTaskToFollowupFunc(a0: u8);
-    fn TVShowConvertInternationalString(a0: *mut u8, a1: *mut u8, a2: i32);
-    fn VarSet(a0: u16, a1: u16) -> u8;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `GetItemName` with this module's view of its types.
+#[inline]
+unsafe fn GetItemName(a0: u16) -> *mut u8 {
+    crate::item::GetItemName(a0) as *mut u8
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferApprenticeChallengeText(saveApprenticeId: u8) {
+pub unsafe fn BufferApprenticeChallengeText(saveApprenticeId: u8) {
+    let mut num: u8 = (*gSaveBlock2Ptr).apprentices[saveApprenticeId].number;
     let mut i: u8 = 0;
-    let mut num: u8 = 0;
-    let mut challengeText: *mut u8 = null_mut();
-    num = (*gSaveBlock2Ptr).apprentices[saveApprenticeId].number;
-    i = 0;
     while num != 0 && i < APPRENTICE_COUNT as u8 {
         num = (num as i32 / 10) as u8;
         i += 1;
@@ -228,31 +225,25 @@ pub unsafe extern "C" fn BufferApprenticeChallengeText(saveApprenticeId: u8) {
         STR_CONV_MODE_RIGHT_ALIGN,
         i,
     );
-    challengeText = sApprenticeChallengeTexts[(*gSaveBlock2Ptr).apprentices[saveApprenticeId].id()];
+    let challengeText: *mut u8 =
+        sApprenticeChallengeTexts[(*gSaveBlock2Ptr).apprentices[saveApprenticeId].id()];
     StringExpandPlaceholders(gStringVar4.as_mut_ptr(), challengeText);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Apprentice_ScriptContext_Enable() {
+pub unsafe fn Apprentice_ScriptContext_Enable() {
     ScriptContext_Enable();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetApprenticeStruct(apprentice: *mut Apprentice) {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 6 {
+pub unsafe fn ResetApprenticeStruct(apprentice: *mut Apprentice) {
+    for i in 0..6u8 {
         (*apprentice).speechWon[i] = EC_EMPTY_WORD;
-        i += 1;
     }
     (*apprentice).playerName[0] = EOS;
     (*apprentice).set_id(NUM_APPRENTICES);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetAllApprenticeData() {
-    let mut i: u8 = 0;
+pub unsafe fn ResetAllApprenticeData() {
     let mut j: u8 = 0;
     (*gSaveBlock2Ptr).playerApprentice.set_saveId(0);
-    i = 0;
-    while i < APPRENTICE_COUNT as u8 {
+    for i in 0..(APPRENTICE_COUNT as u8) {
         j = 0;
         while j < 6 {
             (*gSaveBlock2Ptr).apprentices[i].speechWon[j] = EC_EMPTY_WORD;
@@ -263,21 +254,18 @@ pub unsafe extern "C" fn ResetAllApprenticeData() {
         (*gSaveBlock2Ptr).apprentices[i].set_lvlMode(0);
         (*gSaveBlock2Ptr).apprentices[i].number = 0;
         (*gSaveBlock2Ptr).apprentices[i].numQuestions = 0;
-        j = 0;
-        while j < TRAINER_ID_LENGTH {
+        for j in 0..TRAINER_ID_LENGTH {
             (*gSaveBlock2Ptr).apprentices[i].playerId[j] = 0;
-            j += 1;
         }
         (*gSaveBlock2Ptr).apprentices[i].language = gGameLanguage;
         (*gSaveBlock2Ptr).apprentices[i].checksum = 0;
-        i += 1;
     }
     Script_ResetPlayerApprentice();
 }
-pub(crate) unsafe extern "C" fn GivenApprenticeLvlMode() -> u8 {
-    return ((*gSaveBlock2Ptr).playerApprentice.lvlMode() != 0) as u8;
+unsafe fn GivenApprenticeLvlMode() -> u8 {
+    ((*gSaveBlock2Ptr).playerApprentice.lvlMode() != 0) as u8
 }
-pub(crate) unsafe extern "C" fn SetApprenticeId() {
+unsafe fn SetApprenticeId() {
     if (*gSaveBlock2Ptr).apprentices[0].number == 0 {
         loop {
             (*gSaveBlock2Ptr).playerApprentice.id = sInitialApprenticeIds[Random() % 8];
@@ -294,52 +282,39 @@ pub(crate) unsafe extern "C" fn SetApprenticeId() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SetPlayersApprenticeLvlMode(mode: u8) {
+unsafe fn SetPlayersApprenticeLvlMode(mode: u8) {
     (*gSaveBlock2Ptr).playerApprentice.set_lvlMode(mode);
 }
-pub(crate) unsafe extern "C" fn ShuffleApprenticeSpecies() {
+pub(crate) unsafe fn ShuffleApprenticeSpecies() {
     let mut species: CArray<u8, 10> = zeroed();
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 10 {
+    for i in 0..10u8 {
         species[i] = i;
-        i += 1;
     }
-    i = 0;
+    let mut i: u8 = 0;
     while i < 50 {
-        let mut temp: u8 = 0;
-        let mut rand1: u8 = (Random() % 10) as u8;
-        let mut rand2: u8 = (Random() % 10) as u8;
-        temp = species[rand1];
+        let rand1: u8 = (Random() % 10) as u8;
+        let rand2: u8 = (Random() % 10) as u8;
+        let temp: u8 = species[rand1];
         species[rand1] = species[rand2];
         species[rand2] = temp;
         i += 1;
     }
-    i = 0;
-    while i < MULTI_PARTY_SIZE as u8 {
+    for i in 0..(MULTI_PARTY_SIZE as u8) {
         (*gSaveBlock2Ptr).playerApprentice.speciesIds[i] =
             (species[i as i32 * 2] & 0xF) << 4 | species[i as i32 * 2 + 1] & 0xF;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn GetMonIdForQuestion(
-    questionId: u8,
-    party: *mut u8,
-    partySlot: *mut u8,
-) -> u8 {
-    let mut i: u8 = 0;
+unsafe fn GetMonIdForQuestion(questionId: u8, party: *mut u8, partySlot: *mut u8) -> u8 {
     let mut count: u8 = 0;
     let mut monId: u8 = 0;
     if questionId == QUESTION_ID_WHICH_MOVE {
         loop {
             monId = (Random() as i32 % 3) as u8;
             count = 0;
-            i = 0;
-            while i < NUM_WHICH_MOVE_QUESTIONS {
+            for i in 0..NUM_WHICH_MOVE_QUESTIONS {
                 if (*gApprenticePartyMovesData).moves[monId][i] != MOVE_NONE {
                     count += 1;
                 }
-                i += 1;
             }
             if count <= MULTI_PARTY_SIZE as u8 {
                 break;
@@ -349,61 +324,48 @@ pub(crate) unsafe extern "C" fn GetMonIdForQuestion(
         monId = *party.at(*partySlot);
         *partySlot += 1;
     }
-    return monId;
+    monId
 }
-pub(crate) unsafe extern "C" fn SetRandomQuestionData() {
+unsafe fn SetRandomQuestionData() {
     let mut questionOrder: CArray<u8, 10> = zeroed();
     let mut partyOrder: CArray<u8, 3> = zeroed();
-    let mut partySlot: u8 = 0;
-    let mut i: u8 = 0;
     let mut j: u8 = 0;
     let mut rand1: u8 = 0;
     let mut rand2: u8 = 0;
     let mut id: u8 = 0;
-    i = 0;
-    while i < 3 {
+    for i in 0..3u8 {
         partyOrder[i] = i;
-        i += 1;
     }
-    i = 0;
+    let mut i: u8 = 0;
     while i < 10 {
-        let mut temp: u8 = 0;
         rand1 = (Random() % 3) as u8;
         rand2 = (Random() % 3) as u8;
-        temp = partyOrder[rand1];
+        let temp: u8 = partyOrder[rand1];
         partyOrder[rand1] = partyOrder[rand2];
         partyOrder[rand2] = temp;
         i += 1;
     }
-    i = 0;
-    while i < 10 {
+    for i in 0..10u8 {
         questionOrder[i] = sQuestionPossibilities[i];
-        i += 1;
     }
-    i = 0;
-    while i < 50 {
-        let mut temp: u8 = 0;
+    for i in 0..50u8 {
         rand1 = (Random() % 10) as u8;
         rand2 = (Random() % 10) as u8;
-        temp = questionOrder[rand1];
+        let temp: u8 = questionOrder[rand1];
         questionOrder[rand1] = questionOrder[rand2];
         questionOrder[rand2] = temp;
-        i += 1;
     }
     gApprenticePartyMovesData = AllocZeroed(48) as *mut ApprenticePartyMovesData;
     (*gApprenticePartyMovesData).moveCounter = 0;
     i = 0;
     while i < NUM_WHICH_MOVE_QUESTIONS {
-        j = 0;
-        while j < MULTI_PARTY_SIZE as u8 {
+        for j in 0..(MULTI_PARTY_SIZE as u8) {
             (*gApprenticePartyMovesData).moveSlots[j][i] = MAX_MON_MOVES as u8;
-            j += 1;
         }
         i += 1;
     }
-    partySlot = 0;
-    i = 0;
-    while i < APPRENTICE_MAX_QUESTIONS {
+    let mut partySlot: u8 = 0;
+    for i in 0..APPRENTICE_MAX_QUESTIONS {
         (*gSaveBlock2Ptr).playerApprentice.questions[i].set_questionId(questionOrder[i]);
         if questionOrder[i] != QUESTION_ID_WHICH_FIRST {
             (*gSaveBlock2Ptr).playerApprentice.questions[i].set_monId(GetMonIdForQuestion(
@@ -433,23 +395,17 @@ pub(crate) unsafe extern "C" fn SetRandomQuestionData() {
                     GetRandomAlternateMove((*gSaveBlock2Ptr).playerApprentice.questions[i].monId());
             }
         }
-        i += 1;
     }
     Free(gApprenticePartyMovesData as *mut c_void);
     gApprenticePartyMovesData = null_mut();
 }
-pub(crate) unsafe extern "C" fn GetRandomAlternateMove(monId: u8) -> u16 {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
-    let mut id: u8 = 0;
-    let mut numLearnsetMoves: u8 = 0;
+unsafe fn GetRandomAlternateMove(monId: u8) -> u16 {
     let mut species: u16 = 0;
-    let mut learnset: *mut u16 = null_mut();
     let mut needTMs: u32 = FALSE as u32;
     let mut r#move: u16 = MOVE_NONE;
     let mut shouldUseMove: u32 = 0;
     let mut level: u8 = 0;
-    id = (if monId < 3 {
+    let mut id: u8 = (if monId < 3 {
         shr_i32(
             (*gSaveBlock2Ptr).playerApprentice.speciesIds[monId] as i32,
             (shr_i32(
@@ -463,22 +419,22 @@ pub(crate) unsafe extern "C" fn GetRandomAlternateMove(monId: u8) -> u16 {
         0
     }) as u8;
     species = gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].species[id];
-    learnset = gLevelUpLearnsets[species];
-    j = 0;
+    let learnset: *mut u16 = (*(&raw const crate::data::pokemon::gLevelUpLearnsets)
+        .cast::<CArray<*mut u16, 0>>())[species];
     if (*gSaveBlock2Ptr).playerApprentice.lvlMode() == APPRENTICE_LVL_MODE_50 {
         level = FRONTIER_MAX_LEVEL_50;
     } else {
         level = 60;
     }
-    j = 0;
+    let mut j: u8 = 0;
     while *learnset.at(j) != LEVEL_UP_END {
         if *learnset.at(j) as i32 & LEVEL_UP_MOVE_LV > (level as i32) << 9 {
             break;
         }
         j += 1;
     }
-    numLearnsetMoves = j;
-    i = 0;
+    let numLearnsetMoves: u8 = j;
+    let mut i: u8 = 0;
     while i < 5 {
         if Random() as i32 % 2 == 0 || needTMs == TRUE as u32 {
             loop {
@@ -513,17 +469,15 @@ pub(crate) unsafe extern "C" fn GetRandomAlternateMove(monId: u8) -> u16 {
                 continue;
             } else {
                 loop {
-                    let mut learnsetId: u8 =
+                    let learnsetId: u8 =
                         rem_i32(Random() as i32, numLearnsetMoves as i32 - MAX_MON_MOVES) as u8;
                     r#move = *learnset.at(learnsetId) & LEVEL_UP_MOVE_ID;
                     shouldUseMove = TRUE as u32;
-                    j = numLearnsetMoves - MAX_MON_MOVES as u8;
-                    while j < numLearnsetMoves {
+                    for j in (numLearnsetMoves - MAX_MON_MOVES as u8)..numLearnsetMoves {
                         if *learnset.at(j) as i32 & LEVEL_UP_MOVE_ID as i32 == r#move as i32 {
                             shouldUseMove = FALSE as u32;
                             break;
                         }
-                        j += 1;
                     }
                     if shouldUseMove == TRUE as u32 {
                         break;
@@ -539,58 +493,48 @@ pub(crate) unsafe extern "C" fn GetRandomAlternateMove(monId: u8) -> u16 {
         }
     }
     (*gApprenticePartyMovesData).moveCounter += 1;
-    return r#move;
+    r#move
 }
-pub(crate) unsafe extern "C" fn TrySetMove(monId: u8, r#move: u16) -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < NUM_WHICH_MOVE_QUESTIONS {
+unsafe fn TrySetMove(monId: u8, r#move: u16) -> u8 {
+    for i in 0..NUM_WHICH_MOVE_QUESTIONS {
         if (*gApprenticePartyMovesData).moves[monId][i] == r#move {
             return FALSE;
         }
-        i += 1;
     }
     (*gApprenticePartyMovesData).moves[monId][(*gApprenticePartyMovesData).moveCounter] = r#move;
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn GetLatestLearnedMoves(species: u16, mut moves: *mut u16) {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
+unsafe fn GetLatestLearnedMoves(species: u16, moves: *mut u16) {
     let mut level: u8 = 0;
-    let mut numLearnsetMoves: u8 = 0;
-    let mut learnset: *mut u16 = null_mut();
     if (*gSaveBlock2Ptr).playerApprentice.lvlMode() == APPRENTICE_LVL_MODE_50 {
         level = FRONTIER_MAX_LEVEL_50;
     } else {
         level = 60;
     }
-    learnset = gLevelUpLearnsets[species];
-    i = 0;
+    let learnset: *mut u16 = (*(&raw const crate::data::pokemon::gLevelUpLearnsets)
+        .cast::<CArray<*mut u16, 0>>())[species];
+    let mut i: u8 = 0;
     while *learnset.at(i) != LEVEL_UP_END {
         if *learnset.at(i) as i32 & LEVEL_UP_MOVE_LV > (level as i32) << 9 {
             break;
         }
         i += 1;
     }
-    numLearnsetMoves = i;
+    let mut numLearnsetMoves: u8 = i;
     if numLearnsetMoves > MAX_MON_MOVES as u8 {
         numLearnsetMoves = MAX_MON_MOVES as u8;
     }
-    j = 0;
-    while j < numLearnsetMoves {
+    for j in 0..numLearnsetMoves {
         *moves.at(j) = *learnset.at(i as i32 - 1 - j as i32) & LEVEL_UP_MOVE_ID;
-        j += 1;
     }
 }
-pub(crate) unsafe extern "C" fn GetDefaultMove(monId: u8, speciesArrayId: u8, moveSlot: u8) -> u16 {
+unsafe fn GetDefaultMove(monId: u8, speciesArrayId: u8, moveSlot: u8) -> u16 {
     let mut moves: CArray<u16, 4> = zeroed();
-    let mut i: u8 = 0;
-    let mut numQuestions: u8 = 0;
     if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() < NUM_WHICH_MON_QUESTIONS {
         return MOVE_NONE;
     }
-    numQuestions = 0;
-    i = 0;
+    let mut numQuestions: u8 = 0;
+    let mut i: u8 = 0;
     while i < APPRENTICE_MAX_QUESTIONS
         && (*gSaveBlock2Ptr).playerApprentice.questions[i].questionId() != 0
     {
@@ -614,32 +558,25 @@ pub(crate) unsafe extern "C" fn GetDefaultMove(monId: u8, speciesArrayId: u8, mo
         }
         i += 1;
     }
-    return moves[moveSlot];
+    moves[moveSlot]
 }
-pub(crate) unsafe extern "C" fn SaveApprenticeParty(numQuestions: u8) {
+unsafe fn SaveApprenticeParty(numQuestions: u8) {
     let mut apprenticeMons: CArray<*mut ApprenticeMon, 3> = zeroed();
-    let mut i: u8 = 0;
     let mut j: u8 = 0;
     let mut speciesTableId: u32 = 0;
-    i = 0;
-    while i < MULTI_PARTY_SIZE as u8 {
+    for i in 0..(MULTI_PARTY_SIZE as u8) {
         (*gSaveBlock2Ptr).apprentices[0].party[i].species = 0;
         (*gSaveBlock2Ptr).apprentices[0].party[i].item = ITEM_NONE;
-        j = 0;
-        while j < MAX_MON_MOVES as u8 {
+        for j in 0..(MAX_MON_MOVES as u8) {
             (*gSaveBlock2Ptr).apprentices[0].party[i].moves[j] = 0;
-            j += 1;
         }
-        i += 1;
     }
     j = (*gSaveBlock2Ptr).playerApprentice.leadMonId();
-    i = 0;
-    while i < MULTI_PARTY_SIZE as u8 {
+    for i in 0..(MULTI_PARTY_SIZE as u8) {
         apprenticeMons[j] = &raw mut (*gSaveBlock2Ptr).apprentices[0].party[i];
         j = ((j as i32 + 1) % 3) as u8;
-        i += 1;
     }
-    i = 0;
+    let mut i: u8 = 0;
     while i < MULTI_PARTY_SIZE as u8 {
         speciesTableId = (if i < 3 {
             shr_i32(
@@ -658,51 +595,49 @@ pub(crate) unsafe extern "C" fn SaveApprenticeParty(numQuestions: u8) {
         );
         i += 1;
     }
-    i = 0;
-    while i < numQuestions {
-        let mut questionId: u8 = (*gSaveBlock2Ptr).playerApprentice.questions[i].questionId();
-        let mut monId: u8 = (*gSaveBlock2Ptr).playerApprentice.questions[i].monId();
+    for i in 0..numQuestions {
+        let questionId: u8 = (*gSaveBlock2Ptr).playerApprentice.questions[i].questionId();
+        let monId: u8 = (*gSaveBlock2Ptr).playerApprentice.questions[i].monId();
         if questionId == QUESTION_ID_WHAT_ITEM {
             if (*gSaveBlock2Ptr).playerApprentice.questions[i].suggestedChange() != 0 {
                 (*apprenticeMons[monId]).item =
                     (*gSaveBlock2Ptr).playerApprentice.questions[i].data;
             }
-        } else if questionId == QUESTION_ID_WHICH_MOVE {
-            if (*gSaveBlock2Ptr).playerApprentice.questions[i].suggestedChange() != 0 {
-                let mut moveSlot: u32 =
-                    (*gSaveBlock2Ptr).playerApprentice.questions[i].moveSlot() as u32;
-                (*apprenticeMons[monId]).moves[moveSlot] =
-                    (*gSaveBlock2Ptr).playerApprentice.questions[i].data;
-            }
+        } else if questionId == QUESTION_ID_WHICH_MOVE
+            && (*gSaveBlock2Ptr).playerApprentice.questions[i].suggestedChange() != 0
+        {
+            let moveSlot: u32 = (*gSaveBlock2Ptr).playerApprentice.questions[i].moveSlot() as u32;
+            (*apprenticeMons[monId]).moves[moveSlot] =
+                (*gSaveBlock2Ptr).playerApprentice.questions[i].data;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateApprenticeMenu(menu: u8) {
+unsafe fn CreateApprenticeMenu(menu: u8) {
     let mut i: u8 = 0;
-    let mut windowId: u8 = 0;
     let mut strings: CArray<*mut u8, 3> = zeroed();
     let mut count: u8 = 2;
     let mut width: u8 = 0;
     let mut left: u8 = 0;
     let mut top: u8 = 0;
-    let mut pixelWidth: i32 = 0;
     match menu {
         APPRENTICE_ASK_WHICH_LEVEL => {
             left = 18;
             top = 8;
-            strings[0] = gText_Lv50.as_ptr().cast_mut();
-            strings[1] = gText_OpenLevel.as_ptr().cast_mut();
+            strings[0] = (*(&raw const crate::data::strings::gText_Lv50).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
+            strings[1] = (*(&raw const crate::data::strings::gText_OpenLevel)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         APPRENTICE_ASK_3SPECIES => {
             count = MULTI_PARTY_SIZE as u8;
             left = 18;
             top = 6;
-            i = 0;
-            while i < MULTI_PARTY_SIZE as u8 {
+            for i in 0..(MULTI_PARTY_SIZE as u8) {
                 let mut species: u16 = 0;
-                let mut speciesTableId: u32 = 0;
-                speciesTableId = (if i < 3 {
+                let speciesTableId: u32 = (if i < 3 {
                     shr_i32(
                         (*gSaveBlock2Ptr).playerApprentice.speciesIds[i] as i32,
                         (shr_i32((*gSaveBlock2Ptr).playerApprentice.party() as i32, i as u32)
@@ -715,8 +650,11 @@ pub(crate) unsafe extern "C" fn CreateApprenticeMenu(menu: u8) {
                 }) as u32;
                 species =
                     gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].species[speciesTableId];
-                strings[i] = gSpeciesNames[species].as_ptr().cast_mut();
-                i += 1;
+                strings[i] =
+                    (*(&raw const crate::data::data_tables::gSpeciesNames)
+                        .cast::<CArray<CArray<u8, 11>, 0>>())[species]
+                        .as_ptr()
+                        .cast_mut();
             }
         }
         APPRENTICE_ASK_2SPECIES => {
@@ -725,45 +663,55 @@ pub(crate) unsafe extern "C" fn CreateApprenticeMenu(menu: u8) {
             if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() >= NUM_WHICH_MON_QUESTIONS {
                 return;
             }
-            strings[1] = gSpeciesNames[(*gApprenticeQuestionData).altSpeciesId]
+            strings[1] = (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())[(*gApprenticeQuestionData).altSpeciesId]
                 .as_ptr()
                 .cast_mut();
-            strings[0] = gSpeciesNames[(*gApprenticeQuestionData).speciesId]
+            strings[0] = (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())[(*gApprenticeQuestionData).speciesId]
                 .as_ptr()
                 .cast_mut();
         }
         APPRENTICE_ASK_MOVES => {
             left = 17;
             top = 8;
-            strings[0] = gMoveNames[(*gApprenticeQuestionData).move1]
+            strings[0] = (*(&raw const crate::data::data_tables::gMoveNames)
+                .cast::<CArray<CArray<u8, 13>, 355>>())[(*gApprenticeQuestionData).move1]
                 .as_ptr()
                 .cast_mut();
-            strings[1] = gMoveNames[(*gApprenticeQuestionData).move2]
+            strings[1] = (*(&raw const crate::data::data_tables::gMoveNames)
+                .cast::<CArray<CArray<u8, 13>, 355>>())[(*gApprenticeQuestionData).move2]
                 .as_ptr()
                 .cast_mut();
         }
         APPRENTICE_ASK_GIVE => {
             left = 18;
             top = 8;
-            strings[0] = gText_Give.as_ptr().cast_mut();
-            strings[1] = gText_NoNeed.as_ptr().cast_mut();
+            strings[0] = (*(&raw const crate::data::strings::gText_Give).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
+            strings[1] = (*(&raw const crate::data::strings::gText_NoNeed).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         }
         APPRENTICE_ASK_YES_NO => {
             left = 20;
             top = 8;
-            strings[0] = gText_Yes.as_ptr().cast_mut();
-            strings[1] = gText_No.as_ptr().cast_mut();
+            strings[0] = (*(&raw const crate::data::strings::gText_Yes).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
+            strings[1] = (*(&raw const crate::data::strings::gText_No).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         }
         _ => {
-            left = 0;
-            top = 0;
             return;
         }
     }
-    pixelWidth = 0;
+    let mut pixelWidth: i32 = 0;
     i = 0;
     while i < count {
-        let mut width: i32 = GetStringWidth(FONT_NORMAL, strings[i], 0);
+        let width: i32 = GetStringWidth(FONT_NORMAL, strings[i], 0);
         if width > pixelWidth {
             pixelWidth = width;
         }
@@ -771,10 +719,9 @@ pub(crate) unsafe extern "C" fn CreateApprenticeMenu(menu: u8) {
     }
     width = ConvertPixelWidthToTileWidth(pixelWidth) as u8;
     left = ScriptMenu_AdjustLeftCoordFromWidth(left as i32, width as i32) as u8;
-    windowId = CreateAndShowWindow(left, top, width, count * 2);
+    let windowId: u8 = CreateAndShowWindow(left, top, width, count * 2);
     SetStandardWindowBorderStyle(windowId, FALSE);
-    i = 0;
-    while i < count {
+    for i in 0..count {
         AddTextPrinterParameterized(
             windowId,
             FONT_NORMAL,
@@ -784,14 +731,13 @@ pub(crate) unsafe extern "C" fn CreateApprenticeMenu(menu: u8) {
             TEXT_SKIP_DRAW,
             None,
         );
-        i += 1;
     }
     InitMenuInUpperLeftCornerNormal(windowId, count, 0);
     CreateChooseAnswerTask(TRUE, count, windowId);
 }
-pub(crate) unsafe extern "C" fn Task_ChooseAnswer(taskId: u8) {
+pub(crate) unsafe fn Task_ChooseAnswer(taskId: u8) {
     let mut input: i8 = 0;
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data.at(5) == 0 {
         input = Menu_ProcessInputNoWrap();
     } else {
@@ -816,86 +762,80 @@ pub(crate) unsafe extern "C" fn Task_ChooseAnswer(taskId: u8) {
     DestroyTask(taskId);
     ScriptContext_Enable();
 }
-pub(crate) unsafe extern "C" fn CreateAndShowWindow(
-    left: u8,
-    top: u8,
-    width: u8,
-    height: u8,
-) -> u8 {
-    let mut windowId: u8 = 0;
-    let mut winTemplate: WindowTemplate = zeroed();
-    winTemplate = CreateWindowTemplate(0, left + 1, top + 1, width, height, 15, 100);
-    windowId = AddWindow(&raw mut winTemplate) as u8;
+unsafe fn CreateAndShowWindow(left: u8, top: u8, width: u8, height: u8) -> u8 {
+    let mut winTemplate: WindowTemplate =
+        CreateWindowTemplate(0, left + 1, top + 1, width, height, 15, 100);
+    let windowId: u8 = AddWindow(&raw mut winTemplate) as u8;
     PutWindowTilemap(windowId);
     CopyWindowToVram(windowId, COPYWIN_FULL);
-    return windowId;
+    windowId
 }
-pub(crate) unsafe extern "C" fn RemoveAndHideWindow(windowId: u8) {
+unsafe fn RemoveAndHideWindow(windowId: u8) {
     ClearStdWindowAndFrameToTransparent(windowId, TRUE);
     RemoveWindow(windowId);
 }
-pub(crate) unsafe extern "C" fn CreateChooseAnswerTask(noBButton: u8, answers: u8, windowId: u8) {
-    let mut taskId: u8 = CreateTask(Some(Task_ChooseAnswer), 80);
-    gTasks[taskId].data[4] = noBButton as i16;
+unsafe fn CreateChooseAnswerTask(noBButton: u8, answers: u8, windowId: u8) {
+    let taskId: u8 = CreateTask(Some(Task_ChooseAnswer), 80);
+    task_set(taskId, tNoBButton, noBButton as i16);
     if answers > 3 {
-        gTasks[taskId].data[5] = TRUE as i16;
+        task_set(taskId, tWrapAround, TRUE as i16);
     } else {
-        gTasks[taskId].data[5] = FALSE as i16;
+        task_set(taskId, tWrapAround, FALSE as i16);
     }
-    gTasks[taskId].data[6] = windowId as i16;
+    task_set(taskId, tWindowId, windowId as i16);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CallApprenticeFunction() {
-    sApprenticeFunctions[gSpecialVar_0x8004].unwrap_unchecked()();
+pub unsafe fn CallApprenticeFunction() {
+    sApprenticeFunctions[*(&raw const crate::ffi::gSpecialVar_0x8004)
+        .cast::<u16>()
+        .cast_mut()]
+    .unwrap_unchecked()();
 }
-pub(crate) unsafe extern "C" fn Script_ResetPlayerApprentice() {
-    let mut i: u8 = 0;
+pub(crate) unsafe fn Script_ResetPlayerApprentice() {
     SetApprenticeId();
     (*gSaveBlock2Ptr).playerApprentice.set_lvlMode(0);
     (*gSaveBlock2Ptr).playerApprentice.set_questionsAnswered(0);
     (*gSaveBlock2Ptr).playerApprentice.set_leadMonId(0);
     (*gSaveBlock2Ptr).playerApprentice.set_party(0);
-    i = 0;
+    let mut i: u8 = 0;
     while i < MULTI_PARTY_SIZE as u8 {
         (*gSaveBlock2Ptr).playerApprentice.speciesIds[i] = 0;
         i += 1;
     }
-    i = 0;
-    while i < APPRENTICE_MAX_QUESTIONS {
+    for i in 0..APPRENTICE_MAX_QUESTIONS {
         (*gSaveBlock2Ptr).playerApprentice.questions[i].set_questionId(0);
         (*gSaveBlock2Ptr).playerApprentice.questions[i].set_monId(0);
         (*gSaveBlock2Ptr).playerApprentice.questions[i].set_moveSlot(0);
         (*gSaveBlock2Ptr).playerApprentice.questions[i].set_suggestedChange(0);
         (*gSaveBlock2Ptr).playerApprentice.questions[i].data = 0;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn Script_GivenApprenticeLvlMode() {
+pub(crate) unsafe fn Script_GivenApprenticeLvlMode() {
     if GivenApprenticeLvlMode() == 0 {
         gSpecialVar_Result = FALSE as u16;
     } else {
         gSpecialVar_Result = TRUE as u16;
     }
 }
-pub(crate) unsafe extern "C" fn Script_SetApprenticeLvlMode() {
+pub(crate) unsafe fn Script_SetApprenticeLvlMode() {
     SetPlayersApprenticeLvlMode(gSpecialVar_0x8005 as u8);
 }
-pub(crate) unsafe extern "C" fn Script_SetApprenticeId() {
+pub(crate) unsafe fn Script_SetApprenticeId() {
     SetApprenticeId();
 }
-pub(crate) unsafe extern "C" fn Script_SetRandomQuestionData() {
+pub(crate) unsafe fn Script_SetRandomQuestionData() {
     SetRandomQuestionData();
 }
-pub(crate) unsafe extern "C" fn IncrementQuestionsAnswered() {
+pub(crate) unsafe fn IncrementQuestionsAnswered() {
     (*gSaveBlock2Ptr)
         .playerApprentice
         .set_questionsAnswered((*gSaveBlock2Ptr).playerApprentice.questionsAnswered() + 1);
 }
-pub(crate) unsafe extern "C" fn GetNumApprenticePartyMonsAssigned() {
+pub(crate) unsafe fn GetNumApprenticePartyMonsAssigned() {
     gSpecialVar_Result = (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as u16;
 }
-pub(crate) unsafe extern "C" fn IsFinalQuestion() {
-    let mut questionNum: i32 = (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3;
+pub(crate) unsafe fn IsFinalQuestion() {
+    let questionNum: i32 = (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3;
     if questionNum < 0 {
         gSpecialVar_Result = FALSE as u16;
     } else {
@@ -911,10 +851,10 @@ pub(crate) unsafe extern "C" fn IsFinalQuestion() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Script_CreateApprenticeMenu() {
+pub(crate) unsafe fn Script_CreateApprenticeMenu() {
     CreateApprenticeMenu(gSpecialVar_0x8005 as u8);
 }
-pub(crate) unsafe extern "C" fn Task_WaitForPrintingMessage(taskId: u8) {
+pub(crate) unsafe fn Task_WaitForPrintingMessage(taskId: u8) {
     if RunTextPrintersAndIsPrinter0Active() == 0 {
         DestroyTask(taskId);
         if gSpecialVar_0x8005 != 0 {
@@ -924,7 +864,7 @@ pub(crate) unsafe extern "C" fn Task_WaitForPrintingMessage(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn PrintApprenticeMessage() {
+unsafe fn PrintApprenticeMessage() {
     let mut string: *mut u8 = null_mut();
     if gSpecialVar_0x8006 == APPRENTICE_MSG_WHICH_MON {
         string = sApprenticeWhichMonTexts[(*gSaveBlock2Ptr).playerApprentice.id][0];
@@ -968,7 +908,7 @@ pub(crate) unsafe extern "C" fn PrintApprenticeMessage() {
     AddTextPrinterForMessage(TRUE);
     CreateTask(Some(Task_WaitForPrintingMessage), 1);
 }
-pub(crate) unsafe extern "C" fn Script_PrintApprenticeMessage() {
+pub(crate) unsafe fn Script_PrintApprenticeMessage() {
     LockPlayerFieldControls();
     FreezeObjectEvents();
     PlayerFreeze();
@@ -976,13 +916,13 @@ pub(crate) unsafe extern "C" fn Script_PrintApprenticeMessage() {
     DrawDialogueFrame(0, TRUE);
     PrintApprenticeMessage();
 }
-pub(crate) unsafe extern "C" fn ApprenticeGetQuestion() {
+pub(crate) unsafe fn ApprenticeGetQuestion() {
     if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() < NUM_WHICH_MON_QUESTIONS {
         gSpecialVar_Result = APPRENTICE_QUESTION_WHICH_MON;
     } else if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() > 11 {
         gSpecialVar_Result = APPRENTICE_QUESTION_WIN_SPEECH;
     } else {
-        let mut id: i32 = (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3;
+        let id: i32 = (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3;
         match (*gSaveBlock2Ptr).playerApprentice.questions[id].questionId() {
             QUESTION_ID_WHAT_ITEM => {
                 gSpecialVar_Result = APPRENTICE_QUESTION_WHAT_ITEM;
@@ -999,17 +939,17 @@ pub(crate) unsafe extern "C" fn ApprenticeGetQuestion() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SetApprenticePartyMon() {
+pub(crate) unsafe fn SetApprenticePartyMon() {
     if gSpecialVar_0x8005 != 0 {
-        let mut partySlot: u8 = gSpecialVar_0x8006 as u8;
+        let partySlot: u8 = gSpecialVar_0x8006 as u8;
         (*gSaveBlock2Ptr).playerApprentice.set_party(
             (*gSaveBlock2Ptr).playerApprentice.party() | shl_i32(1, partySlot as u32) as u8,
         );
     }
 }
-pub(crate) unsafe extern "C" fn SetApprenticeMonMove() {
+pub(crate) unsafe fn SetApprenticeMonMove() {
     if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() >= NUM_WHICH_MON_QUESTIONS {
-        let mut id: u8 = (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() - 3;
+        let id: u8 = (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() - 3;
         if gSpecialVar_0x8005 != 0 {
             (*gSaveBlock2Ptr).playerApprentice.questions[id].set_suggestedChange(TRUE);
         } else {
@@ -1017,12 +957,11 @@ pub(crate) unsafe extern "C" fn SetApprenticeMonMove() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn InitQuestionData() {
-    let mut i: u8 = 0;
+pub(crate) unsafe fn InitQuestionData() {
     let mut count: u8 = 0;
     let mut id1: u8 = 0;
     let mut id2: u8 = 0;
-    i = 0;
+    let mut i: u8 = 0;
     while i < APPRENTICE_MAX_QUESTIONS
         && (*gSaveBlock2Ptr).playerApprentice.questions[i].questionId() != 0
     {
@@ -1078,42 +1017,44 @@ pub(crate) unsafe extern "C" fn InitQuestionData() {
                 [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
                 .data;
         }
-    } else if gSpecialVar_0x8005 == APPRENTICE_QUESTION_WHAT_ITEM {
-        if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() >= NUM_WHICH_MON_QUESTIONS
-            && ((*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32)
-                < count as i32 + NUM_WHICH_MON_QUESTIONS as i32
-            && (*gSaveBlock2Ptr).playerApprentice.questions
-                [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
-                .questionId()
-                == QUESTION_ID_WHAT_ITEM
-        {
-            count = (*gSaveBlock2Ptr).playerApprentice.questions
-                [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
-                .monId();
-            id2 = shr_i32(
-                (*gSaveBlock2Ptr).playerApprentice.party() as i32,
-                count as u32,
-            ) as u8
-                & 1;
-            id2 = shr_i32(
-                (*gSaveBlock2Ptr).playerApprentice.speciesIds[count] as i32,
-                (id2 as u32) << 2,
-            ) as u8
-                & 0xF;
-            (*gApprenticeQuestionData).speciesId =
-                gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].species[id2];
-        }
+    } else if gSpecialVar_0x8005 == APPRENTICE_QUESTION_WHAT_ITEM
+        && (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() >= NUM_WHICH_MON_QUESTIONS
+        && ((*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32)
+            < count as i32 + NUM_WHICH_MON_QUESTIONS as i32
+        && (*gSaveBlock2Ptr).playerApprentice.questions
+            [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
+            .questionId()
+            == QUESTION_ID_WHAT_ITEM
+    {
+        count = (*gSaveBlock2Ptr).playerApprentice.questions
+            [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
+            .monId();
+        id2 = shr_i32(
+            (*gSaveBlock2Ptr).playerApprentice.party() as i32,
+            count as u32,
+        ) as u8
+            & 1;
+        id2 = shr_i32(
+            (*gSaveBlock2Ptr).playerApprentice.speciesIds[count] as i32,
+            (id2 as u32) << 2,
+        ) as u8
+            & 0xF;
+        (*gApprenticeQuestionData).speciesId =
+            gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].species[id2];
     }
 }
-pub(crate) unsafe extern "C" fn FreeQuestionData() {
+pub(crate) unsafe fn FreeQuestionData() {
     Free(gApprenticeQuestionData as *mut c_void);
     gApprenticeQuestionData = null_mut();
 }
-pub(crate) unsafe extern "C" fn ApprenticeBufferString() {
+pub(crate) unsafe fn ApprenticeBufferString() {
     let mut stringDst: *mut u8 = null_mut();
     let mut text: CArray<u8, 16> = zeroed();
     let mut speciesArrayId: u32 = 0;
-    match gSpecialVar_0x8005 {
+    match *(&raw const crate::ffi::gSpecialVar_0x8005)
+        .cast::<u16>()
+        .cast_mut()
+    {
         0 => {
             stringDst = gStringVar1.as_mut_ptr();
         }
@@ -1127,11 +1068,15 @@ pub(crate) unsafe extern "C" fn ApprenticeBufferString() {
             return;
         }
     }
-    match gSpecialVar_0x8006 {
+    match *(&raw const crate::ffi::gSpecialVar_0x8006)
+        .cast::<u16>()
+        .cast_mut()
+    {
         APPRENTICE_BUFF_SPECIES1 => {
             StringCopy(
                 stringDst,
-                gSpeciesNames[(*gApprenticeQuestionData).speciesId]
+                (*(&raw const crate::data::data_tables::gSpeciesNames)
+                    .cast::<CArray<CArray<u8, 11>, 0>>())[(*gApprenticeQuestionData).speciesId]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -1139,7 +1084,8 @@ pub(crate) unsafe extern "C" fn ApprenticeBufferString() {
         APPRENTICE_BUFF_SPECIES2 => {
             StringCopy(
                 stringDst,
-                gSpeciesNames[(*gApprenticeQuestionData).altSpeciesId]
+                (*(&raw const crate::data::data_tables::gSpeciesNames)
+                    .cast::<CArray<CArray<u8, 11>, 0>>())[(*gApprenticeQuestionData).altSpeciesId]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -1147,7 +1093,8 @@ pub(crate) unsafe extern "C" fn ApprenticeBufferString() {
         APPRENTICE_BUFF_SPECIES3 => {
             StringCopy(
                 stringDst,
-                gSpeciesNames[(*gApprenticeQuestionData).speciesId]
+                (*(&raw const crate::data::data_tables::gSpeciesNames)
+                    .cast::<CArray<CArray<u8, 11>, 0>>())[(*gApprenticeQuestionData).speciesId]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -1155,7 +1102,8 @@ pub(crate) unsafe extern "C" fn ApprenticeBufferString() {
         APPRENTICE_BUFF_MOVE1 => {
             StringCopy(
                 stringDst,
-                gMoveNames[(*gApprenticeQuestionData).move1]
+                (*(&raw const crate::data::data_tables::gMoveNames)
+                    .cast::<CArray<CArray<u8, 13>, 355>>())[(*gApprenticeQuestionData).move1]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -1163,7 +1111,8 @@ pub(crate) unsafe extern "C" fn ApprenticeBufferString() {
         APPRENTICE_BUFF_MOVE2 => {
             StringCopy(
                 stringDst,
-                gMoveNames[(*gApprenticeQuestionData).move2]
+                (*(&raw const crate::data::data_tables::gMoveNames)
+                    .cast::<CArray<CArray<u8, 13>, 355>>())[(*gApprenticeQuestionData).move2]
                     .as_ptr()
                     .cast_mut(),
             );
@@ -1191,9 +1140,19 @@ pub(crate) unsafe extern "C" fn ApprenticeBufferString() {
         }
         APPRENTICE_BUFF_LEVEL => {
             if (*gSaveBlock2Ptr).playerApprentice.lvlMode() == APPRENTICE_LVL_MODE_50 {
-                StringCopy(stringDst, gText_Lv50.as_ptr().cast_mut());
+                StringCopy(
+                    stringDst,
+                    (*(&raw const crate::data::strings::gText_Lv50).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                );
             } else {
-                StringCopy(stringDst, gText_OpenLevel.as_ptr().cast_mut());
+                StringCopy(
+                    stringDst,
+                    (*(&raw const crate::data::strings::gText_OpenLevel).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                );
             }
         }
         APPRENTICE_BUFF_WIN_SPEECH => {
@@ -1217,7 +1176,8 @@ pub(crate) unsafe extern "C" fn ApprenticeBufferString() {
             }) as u32;
             StringCopy(
                 stringDst,
-                gSpeciesNames
+                (*(&raw const crate::data::data_tables::gSpeciesNames)
+                    .cast::<CArray<CArray<u8, 11>, 0>>())
                     [gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].species[speciesArrayId]]
                     .as_ptr()
                     .cast_mut(),
@@ -1226,32 +1186,26 @@ pub(crate) unsafe extern "C" fn ApprenticeBufferString() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SetLeadApprenticeMon() {
+pub(crate) unsafe fn SetLeadApprenticeMon() {
     (*gSaveBlock2Ptr)
         .playerApprentice
         .set_leadMonId(gSpecialVar_0x8005 as u8);
 }
-pub(crate) unsafe extern "C" fn Script_ApprenticeOpenBagMenu() {
+pub(crate) unsafe fn Script_ApprenticeOpenBagMenu() {
     ApprenticeOpenBagMenu();
 }
-pub(crate) unsafe extern "C" fn TrySetApprenticeHeldItem() {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
-    let mut count: u8 = 0;
+pub(crate) unsafe fn TrySetApprenticeHeldItem() {
     if (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() < NUM_WHICH_MON_QUESTIONS {
         return;
     }
-    count = 0;
-    j = 0;
-    while j < APPRENTICE_MAX_QUESTIONS {
+    let mut count: u8 = 0;
+    for j in 0..APPRENTICE_MAX_QUESTIONS {
         if (*gSaveBlock2Ptr).playerApprentice.questions[j].questionId() == QUESTION_ID_WIN_SPEECH {
             break;
         }
         count += 1;
-        j += 1;
     }
-    i = 0;
-    'l3: while i < count {
+    'l3: for i in 0..count {
         'l2: {
             if i as i32 >= (*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3 {
                 break 'l3;
@@ -1267,29 +1221,29 @@ pub(crate) unsafe extern "C" fn TrySetApprenticeHeldItem() {
                     .set_suggestedChange(FALSE);
                 (*gSaveBlock2Ptr).playerApprentice.questions
                     [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
-                    .data = gSpecialVar_0x8005;
+                    .data = *(&raw const crate::ffi::gSpecialVar_0x8005)
+                    .cast::<u16>()
+                    .cast_mut();
                 gSpecialVar_Result = FALSE as u16;
                 return;
             }
         }
-        i += 1;
     }
     (*gSaveBlock2Ptr).playerApprentice.questions
         [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
         .set_suggestedChange(TRUE);
     (*gSaveBlock2Ptr).playerApprentice.questions
         [(*gSaveBlock2Ptr).playerApprentice.questionsAnswered() as i32 - 3]
-        .data = gSpecialVar_0x8005;
+        .data = *(&raw const crate::ffi::gSpecialVar_0x8005)
+        .cast::<u16>()
+        .cast_mut();
     gSpecialVar_Result = TRUE as u16;
 }
-pub(crate) unsafe extern "C" fn ShiftSavedApprentices() {
-    let mut i: i32 = 0;
-    let mut apprenticeNum: i32 = 0;
-    let mut apprenticeIdx: i32 = 0;
+pub(crate) unsafe fn ShiftSavedApprentices() {
     if (*gSaveBlock2Ptr).apprentices[0].playerName[0] == EOS {
         return;
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i < 3 {
         if (*gSaveBlock2Ptr).apprentices[i + 1].playerName[0] == EOS {
             (*gSaveBlock2Ptr).apprentices[i + 1] = (*gSaveBlock2Ptr).apprentices[0];
@@ -1297,10 +1251,9 @@ pub(crate) unsafe extern "C" fn ShiftSavedApprentices() {
         }
         i += 1;
     }
-    apprenticeNum = 0xFFFF;
-    apprenticeIdx = -1;
-    i = 1;
-    while i < APPRENTICE_COUNT {
+    let mut apprenticeNum: i32 = 0xFFFF;
+    let mut apprenticeIdx: i32 = -1;
+    for i in 1..APPRENTICE_COUNT {
         if GetTrainerId((*gSaveBlock2Ptr).apprentices[i].playerId.as_mut_ptr())
             == GetTrainerId((*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr())
             && ((*gSaveBlock2Ptr).apprentices[i].number as i32) < apprenticeNum
@@ -1308,31 +1261,26 @@ pub(crate) unsafe extern "C" fn ShiftSavedApprentices() {
             apprenticeNum = (*gSaveBlock2Ptr).apprentices[i].number as i32;
             apprenticeIdx = i;
         }
-        i += 1;
     }
     if apprenticeIdx > 0 {
         (*gSaveBlock2Ptr).apprentices[apprenticeIdx] = (*gSaveBlock2Ptr).apprentices[0];
     }
 }
-pub(crate) unsafe extern "C" fn SaveApprentice() {
-    let mut i: u8 = 0;
+pub(crate) unsafe fn SaveApprentice() {
     (*gSaveBlock2Ptr).apprentices[0].set_id((*gSaveBlock2Ptr).playerApprentice.id);
     (*gSaveBlock2Ptr).apprentices[0].set_lvlMode((*gSaveBlock2Ptr).playerApprentice.lvlMode());
-    i = 0;
+    let mut i: u8 = 0;
     while i < APPRENTICE_MAX_QUESTIONS
         && (*gSaveBlock2Ptr).playerApprentice.questions[i].questionId() != 0
     {
         i += 1;
     }
     (*gSaveBlock2Ptr).apprentices[0].numQuestions = i;
-    if (*gSaveBlock2Ptr).apprentices[0].number < 255 {
-        (*gSaveBlock2Ptr).apprentices[0].number += 1;
-    }
+    (*gSaveBlock2Ptr).apprentices[0].number =
+        (*gSaveBlock2Ptr).apprentices[0].number.saturating_add(1);
     SaveApprenticeParty((*gSaveBlock2Ptr).apprentices[0].numQuestions);
-    i = 0;
-    while i < TRAINER_ID_LENGTH {
+    for i in 0..TRAINER_ID_LENGTH {
         (*gSaveBlock2Ptr).apprentices[0].playerId[i] = (*gSaveBlock2Ptr).playerTrainerId[i];
-        i += 1;
     }
     StringCopy(
         (*gSaveBlock2Ptr).apprentices[0].playerName.as_mut_ptr(),
@@ -1341,59 +1289,76 @@ pub(crate) unsafe extern "C" fn SaveApprentice() {
     (*gSaveBlock2Ptr).apprentices[0].language = gGameLanguage;
     CalcApprenticeChecksum(&raw mut (*gSaveBlock2Ptr).apprentices[0]);
 }
-pub(crate) unsafe extern "C" fn SetSavedApprenticeTrainerGfxId() {
-    let mut i: u8 = 0;
+pub(crate) unsafe fn SetSavedApprenticeTrainerGfxId() {
     let mut objectEventGfxId: u8 = 0;
-    let mut class: u8 = gApprentices[(*gSaveBlock2Ptr).apprentices[0].id()].facilityClass;
-    i = 0;
-    while i < 30 && gTowerMaleFacilityClasses[i] != class {
+    let class: u8 = gApprentices[(*gSaveBlock2Ptr).apprentices[0].id()].facilityClass;
+    let mut i: u8 = 0;
+    while i < 30
+        && (*(&raw const crate::data::battle_tower::gTowerMaleFacilityClasses)
+            .cast::<CArray<u8, 30>>())[i]
+            != class
+    {
         i += 1;
     }
     if i != 30 {
-        objectEventGfxId = gTowerMaleTrainerGfxIds[i];
+        objectEventGfxId = (*(&raw const crate::data::battle_tower::gTowerMaleTrainerGfxIds)
+            .cast::<CArray<u8, 30>>())[i];
         VarSet(VAR_OBJ_GFX_ID_0, objectEventGfxId as u16);
         return;
     }
     i = 0;
-    while i < 20 && gTowerFemaleFacilityClasses[i] != class {
+    while i < 20
+        && (*(&raw const crate::data::battle_tower::gTowerFemaleFacilityClasses)
+            .cast::<CArray<u8, 20>>())[i]
+            != class
+    {
         i += 1;
     }
     if i != 20 {
-        objectEventGfxId = gTowerFemaleTrainerGfxIds[i];
+        objectEventGfxId = (*(&raw const crate::data::battle_tower::gTowerFemaleTrainerGfxIds)
+            .cast::<CArray<u8, 20>>())[i];
         VarSet(VAR_OBJ_GFX_ID_0, objectEventGfxId as u16);
     }
 }
-pub(crate) unsafe extern "C" fn SetPlayerApprenticeTrainerGfxId() {
-    let mut i: u8 = 0;
+pub(crate) unsafe fn SetPlayerApprenticeTrainerGfxId() {
     let mut objectEventGfxId: u8 = 0;
-    let mut class: u8 = gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].facilityClass;
-    i = 0;
-    while i < 30 && gTowerMaleFacilityClasses[i] != class {
+    let class: u8 = gApprentices[(*gSaveBlock2Ptr).playerApprentice.id].facilityClass;
+    let mut i: u8 = 0;
+    while i < 30
+        && (*(&raw const crate::data::battle_tower::gTowerMaleFacilityClasses)
+            .cast::<CArray<u8, 30>>())[i]
+            != class
+    {
         i += 1;
     }
     if i != 30 {
-        objectEventGfxId = gTowerMaleTrainerGfxIds[i];
+        objectEventGfxId = (*(&raw const crate::data::battle_tower::gTowerMaleTrainerGfxIds)
+            .cast::<CArray<u8, 30>>())[i];
         VarSet(VAR_OBJ_GFX_ID_0, objectEventGfxId as u16);
         return;
     }
     i = 0;
-    while i < 20 && gTowerFemaleFacilityClasses[i] != class {
+    while i < 20
+        && (*(&raw const crate::data::battle_tower::gTowerFemaleFacilityClasses)
+            .cast::<CArray<u8, 20>>())[i]
+            != class
+    {
         i += 1;
     }
     if i != 20 {
-        objectEventGfxId = gTowerFemaleTrainerGfxIds[i];
+        objectEventGfxId = (*(&raw const crate::data::battle_tower::gTowerFemaleTrainerGfxIds)
+            .cast::<CArray<u8, 20>>())[i];
         VarSet(VAR_OBJ_GFX_ID_0, objectEventGfxId as u16);
     }
 }
-pub(crate) unsafe extern "C" fn GetShouldCheckApprenticeGone() {
+pub(crate) unsafe fn GetShouldCheckApprenticeGone() {
     gSpecialVar_0x8004 = TRUE as u16;
 }
-pub(crate) unsafe extern "C" fn GetShouldApprenticeLeave() {
+pub(crate) unsafe fn GetShouldApprenticeLeave() {
     gSpecialVar_0x8004 = TRUE as u16;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetApprenticeNameInLanguage(apprenticeId: u32, language: i32) -> *mut u8 {
-    let mut apprentice: *mut ApprenticeTrainer = (&raw const gApprentices[apprenticeId]).cast_mut();
+pub unsafe fn GetApprenticeNameInLanguage(apprenticeId: u32, language: i32) -> *mut u8 {
+    let apprentice: *mut ApprenticeTrainer = (&raw const gApprentices[apprenticeId]).cast_mut();
     match language {
         1 => {
             return (*apprentice).name[0].as_mut_ptr();
@@ -1416,33 +1381,39 @@ pub unsafe extern "C" fn GetApprenticeNameInLanguage(apprenticeId: u32, language
     }
     #[allow(unreachable_code)]
     {
-        return null_mut();
+        null_mut()
     }
 }
-pub(crate) unsafe extern "C" fn Task_SwitchToFollowupFuncAfterButtonPress(taskId: u8) {
+pub(crate) unsafe fn Task_SwitchToFollowupFuncAfterButtonPress(taskId: u8) {
     if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
         SwitchTaskToFollowupFunc(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_ExecuteFuncAfterButtonPress(taskId: u8) {
+pub(crate) unsafe fn Task_ExecuteFuncAfterButtonPress(taskId: u8) {
     if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
-        gApprenticeFunc = core::mem::transmute::<_, Option<unsafe extern "C" fn()>>(
-            (gTasks[taskId].data[0] as u16 as u32 | (gTasks[taskId].data[1] as u32) << 16) as usize
+        gApprenticeFunc = core::mem::transmute::<_, Option<unsafe fn()>>(
+            (task_get(taskId, 0) as u16 as u32 | (task_get(taskId, 1) as u32) << 16) as usize
                 as *mut c_void,
         );
         gApprenticeFunc.unwrap_unchecked()();
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn ExecuteFuncAfterButtonPress(func: Option<unsafe extern "C" fn()>) {
-    let mut taskId: u8 = CreateTask(Some(Task_ExecuteFuncAfterButtonPress), 1);
-    gTasks[taskId].data[0] = core::mem::transmute::<_, usize>(func) as u32 as i16;
-    gTasks[taskId].data[1] = (core::mem::transmute::<_, usize>(func) as u32 >> 16) as i16;
+unsafe fn ExecuteFuncAfterButtonPress(func: Option<unsafe fn()>) {
+    let taskId: u8 = CreateTask(Some(Task_ExecuteFuncAfterButtonPress), 1);
+    task_set(
+        taskId,
+        0,
+        core::mem::transmute::<_, usize>(func) as u32 as i16,
+    );
+    task_set(
+        taskId,
+        1,
+        (core::mem::transmute::<_, usize>(func) as u32 >> 16) as i16,
+    );
 }
-pub(crate) unsafe extern "C" fn ExecuteFollowupFuncAfterButtonPress(
-    task: Option<unsafe extern "C" fn(u8)>,
-) {
-    let mut taskId: u8 = CreateTask(Some(Task_SwitchToFollowupFuncAfterButtonPress), 1);
+unsafe fn ExecuteFollowupFuncAfterButtonPress(task: Option<unsafe fn(u8)>) {
+    let taskId: u8 = CreateTask(Some(Task_SwitchToFollowupFuncAfterButtonPress), 1);
     SetTaskFuncWithFollowupFunc(
         taskId,
         Some(Task_SwitchToFollowupFuncAfterButtonPress),

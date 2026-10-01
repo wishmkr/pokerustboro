@@ -3,29 +3,36 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    clippy::missing_transmute_annotations,
+    dead_code
 )]
 
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::{FlagClear, FlagGet, FlagSet, VarGet, VarSet};
+use crate::field_camera::{
+    DrawWholeMapView, InstallCameraPanAheadCallback, SetCameraPanning, SetCameraPanningCallback,
+};
+use crate::field_effect::{FieldEffectActiveListRemove, FieldEffectStart, gFieldEffectArguments};
+use crate::fieldmap::MapGridSetMetatileIdAt;
+use crate::fldeff_rocksmash::CreateFieldMoveTask;
+use crate::load_save::gSaveBlock1Ptr;
+use crate::party_menu::GetCursorSelectionMonId;
+use crate::pokemon::{CalculatePlayerPartyCount, GetMonData3, gPlayerParty, gPlayerPartyCount};
+use crate::script::{ScriptContext_Enable, UnlockPlayerFieldControls};
+use crate::sound::PlaySE;
+use crate::task::DestroyTask;
+use crate::task::gTasks;
+use crate::task::task_set;
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,45 +41,27 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+// The C's names for task and sprite data slots.
+const tDelayCounter: usize = 1;
+const tShakeCounter: usize = 2;
+const tVerticalPan: usize = 4;
+const tDelay: usize = 5;
+const tNumShakes: usize = 6;
 // Data tables (translate with cdata.py): sRegicePathCoords
 
 static sRegicePathCoords: Table<CArray<CArray<u8, 2>, 36>> =
     Table((&raw const crate::data::braille_puzzles::sRegicePathCoords).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sIsRegisteelPuzzle: u8 = 0;
-
-unsafe extern "C" {
-    static mut gFieldEffectArguments: CArray<i32, 8>;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gPlayerPartyCount: u8;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gTasks: CArray<Task, 0>;
-    fn CalculatePlayerPartyCount() -> u8;
-    fn CreateFieldMoveTask() -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DestroyTask(a0: u8);
-    fn DrawWholeMapView();
-    fn FieldEffectActiveListRemove(a0: u8);
-    fn FieldEffectStart(a0: u8) -> u32;
-    fn FlagClear(a0: u16) -> u8;
-    fn FlagGet(a0: u16) -> u8;
-    fn FlagSet(a0: u16) -> u8;
-    fn GetCursorSelectionMonId() -> u8;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn InstallCameraPanAheadCallback();
-    fn MapGridSetMetatileIdAt(a0: i32, a1: i32, a2: u16);
-    fn PlaySE(a0: u16);
-    fn ScriptContext_Enable();
-    fn SetCameraPanning(a0: i16, a1: i16);
-    fn SetCameraPanningCallback(a0: Option<unsafe extern "C" fn()>);
-    fn UnlockPlayerFieldControls();
-    fn VarGet(a0: u16) -> u16;
-    fn VarSet(a0: u16, a1: u16) -> u8;
-}
+pub(crate) static sIsRegisteelPuzzle: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShouldDoBrailleDigEffect() -> u8 {
+pub unsafe fn ShouldDoBrailleDigEffect() -> u8 {
     if FlagGet(FLAG_SYS_BRAILLE_DIG) == 0
         && ((*gSaveBlock1Ptr).location.mapGroup == 24 && (*gSaveBlock1Ptr).location.mapNum == 71)
     {
@@ -86,10 +75,10 @@ pub unsafe extern "C" fn ShouldDoBrailleDigEffect() -> u8 {
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoBrailleDigEffect() {
+pub unsafe fn DoBrailleDigEffect() {
     MapGridSetMetatileIdAt(16, 8, METATILE_Cave_SealedChamberEntrance_TopLeft);
     MapGridSetMetatileIdAt(17, 8, METATILE_Cave_SealedChamberEntrance_TopMid);
     MapGridSetMetatileIdAt(18, 8, METATILE_Cave_SealedChamberEntrance_TopRight);
@@ -102,7 +91,7 @@ pub unsafe extern "C" fn DoBrailleDigEffect() {
     UnlockPlayerFieldControls();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckRelicanthWailord() -> u8 {
+pub unsafe fn CheckRelicanthWailord() -> u8 {
     if GetMonData3(
         &raw mut gPlayerParty[0],
         MON_DATA_SPECIES_OR_EGG,
@@ -119,39 +108,43 @@ pub unsafe extern "C" fn CheckRelicanthWailord() -> u8 {
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShouldDoBrailleRegirockEffectOld() {}
+pub fn ShouldDoBrailleRegirockEffectOld() {}
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoSealedChamberShakingEffect_Long() {
-    let mut taskId: u8 = CreateTask(Some(Task_SealedChamberShakingEffect), 9);
-    gTasks[taskId].data[1] = 0;
-    gTasks[taskId].data[2] = 0;
-    gTasks[taskId].data[4] = 2;
-    gTasks[taskId].data[5] = 5;
-    gTasks[taskId].data[6] = 50;
+pub unsafe fn DoSealedChamberShakingEffect_Long() {
+    let taskId: u8 = CreateTask(Some(Task_SealedChamberShakingEffect), 9);
+    task_set(taskId, tDelayCounter, 0);
+    task_set(taskId, tShakeCounter, 0);
+    task_set(taskId, tVerticalPan, 2);
+    task_set(taskId, tDelay, 5);
+    task_set(taskId, tNumShakes, 50);
     SetCameraPanningCallback(None);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoSealedChamberShakingEffect_Short() {
-    let mut taskId: u8 = CreateTask(Some(Task_SealedChamberShakingEffect), 9);
-    gTasks[taskId].data[1] = 0;
-    gTasks[taskId].data[2] = 0;
-    gTasks[taskId].data[4] = 3;
-    gTasks[taskId].data[5] = 5;
-    gTasks[taskId].data[6] = 2;
+pub unsafe fn DoSealedChamberShakingEffect_Short() {
+    let taskId: u8 = CreateTask(Some(Task_SealedChamberShakingEffect), 9);
+    task_set(taskId, tDelayCounter, 0);
+    task_set(taskId, tShakeCounter, 0);
+    task_set(taskId, tVerticalPan, 3);
+    task_set(taskId, tDelay, 5);
+    task_set(taskId, tNumShakes, 2);
     SetCameraPanningCallback(None);
 }
-pub(crate) unsafe extern "C" fn Task_SealedChamberShakingEffect(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    (*task).data[1] += 1;
-    if rem_i32((*task).data[1] as i32, (*task).data[5] as i32) == 0 {
-        (*task).data[1] = 0;
-        (*task).data[2] += 1;
-        (*task).data[4] = -(*task).data[4];
-        SetCameraPanning(0, (*task).data[4]);
-        if (*task).data[2] == (*task).data[6] {
+pub(crate) unsafe fn Task_SealedChamberShakingEffect(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    (*task).data[tDelayCounter] += 1;
+    if rem_i32(
+        (*task).data[tDelayCounter] as i32,
+        (*task).data[tDelay] as i32,
+    ) == 0
+    {
+        (*task).data[tDelayCounter] = 0;
+        (*task).data[tShakeCounter] += 1;
+        (*task).data[tVerticalPan] = -(*task).data[tVerticalPan];
+        SetCameraPanning(0, (*task).data[tVerticalPan]);
+        if (*task).data[tShakeCounter] == (*task).data[tNumShakes] {
             DestroyTask(taskId);
             ScriptContext_Enable();
             InstallCameraPanAheadCallback();
@@ -159,35 +152,34 @@ pub(crate) unsafe extern "C" fn Task_SealedChamberShakingEffect(taskId: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShouldDoBrailleRegirockEffect() -> u8 {
+pub unsafe fn ShouldDoBrailleRegirockEffect() -> u8 {
     if FlagGet(FLAG_SYS_REGIROCK_PUZZLE_COMPLETED) == 0
         && (*gSaveBlock1Ptr).location.mapGroup == 24
         && (*gSaveBlock1Ptr).location.mapNum == 6
     {
         if (*gSaveBlock1Ptr).pos.x == 6 && (*gSaveBlock1Ptr).pos.y == 23 {
-            sIsRegisteelPuzzle = FALSE;
+            sIsRegisteelPuzzle.set(FALSE);
             return TRUE;
         } else if (*gSaveBlock1Ptr).pos.x == 5 && (*gSaveBlock1Ptr).pos.y == 23 {
-            sIsRegisteelPuzzle = FALSE;
+            sIsRegisteelPuzzle.set(FALSE);
             return TRUE;
         } else if (*gSaveBlock1Ptr).pos.x == 7 && (*gSaveBlock1Ptr).pos.y == 23 {
-            sIsRegisteelPuzzle = FALSE;
+            sIsRegisteelPuzzle.set(FALSE);
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetUpPuzzleEffectRegirock() {
+pub unsafe fn SetUpPuzzleEffectRegirock() {
     gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
     FieldEffectStart(FLDEFF_USE_TOMB_PUZZLE_EFFECT);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UseRegirockHm_Callback() {
+pub unsafe fn UseRegirockHm_Callback() {
     FieldEffectActiveListRemove(FLDEFF_USE_TOMB_PUZZLE_EFFECT);
     DoBrailleRegirockEffect();
 }
-pub(crate) unsafe extern "C" fn DoBrailleRegirockEffect() {
+unsafe fn DoBrailleRegirockEffect() {
     MapGridSetMetatileIdAt(14, 26, METATILE_Cave_SealedChamberEntrance_TopLeft);
     MapGridSetMetatileIdAt(15, 26, METATILE_Cave_SealedChamberEntrance_TopMid);
     MapGridSetMetatileIdAt(16, 26, METATILE_Cave_SealedChamberEntrance_TopRight);
@@ -199,29 +191,26 @@ pub(crate) unsafe extern "C" fn DoBrailleRegirockEffect() {
     FlagSet(FLAG_SYS_REGIROCK_PUZZLE_COMPLETED);
     UnlockPlayerFieldControls();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShouldDoBrailleRegisteelEffect() -> u8 {
+pub unsafe fn ShouldDoBrailleRegisteelEffect() -> u8 {
     if FlagGet(FLAG_SYS_REGISTEEL_PUZZLE_COMPLETED) == 0
         && ((*gSaveBlock1Ptr).location.mapGroup == 24 && (*gSaveBlock1Ptr).location.mapNum == 68)
+        && (*gSaveBlock1Ptr).pos.x == 8
+        && (*gSaveBlock1Ptr).pos.y == 25
     {
-        if (*gSaveBlock1Ptr).pos.x == 8 && (*gSaveBlock1Ptr).pos.y == 25 {
-            sIsRegisteelPuzzle = TRUE;
-            return TRUE;
-        }
+        sIsRegisteelPuzzle.set(TRUE);
+        return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetUpPuzzleEffectRegisteel() {
+pub unsafe fn SetUpPuzzleEffectRegisteel() {
     gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
     FieldEffectStart(FLDEFF_USE_TOMB_PUZZLE_EFFECT);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UseRegisteelHm_Callback() {
+pub unsafe fn UseRegisteelHm_Callback() {
     FieldEffectActiveListRemove(FLDEFF_USE_TOMB_PUZZLE_EFFECT);
     DoBrailleRegisteelEffect();
 }
-pub(crate) unsafe extern "C" fn DoBrailleRegisteelEffect() {
+unsafe fn DoBrailleRegisteelEffect() {
     MapGridSetMetatileIdAt(14, 26, METATILE_Cave_SealedChamberEntrance_TopLeft);
     MapGridSetMetatileIdAt(15, 26, METATILE_Cave_SealedChamberEntrance_TopMid);
     MapGridSetMetatileIdAt(16, 26, METATILE_Cave_SealedChamberEntrance_TopRight);
@@ -233,23 +222,37 @@ pub(crate) unsafe extern "C" fn DoBrailleRegisteelEffect() {
     FlagSet(FLAG_SYS_REGISTEEL_PUZZLE_COMPLETED);
     UnlockPlayerFieldControls();
 }
-pub(crate) unsafe extern "C" fn DoBrailleWait() {}
+fn DoBrailleWait() {}
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FldEff_UsePuzzleEffect() -> u8 {
-    let mut taskId: u8 = CreateFieldMoveTask();
-    if sIsRegisteelPuzzle == TRUE {
-        gTasks[taskId].data[8] =
-            (UseRegisteelHm_Callback as *const () as usize as u32 >> 16) as i16;
-        gTasks[taskId].data[9] = UseRegisteelHm_Callback as *const () as usize as u32 as i16;
+pub unsafe fn FldEff_UsePuzzleEffect() -> u8 {
+    let taskId: u8 = CreateFieldMoveTask();
+    if sIsRegisteelPuzzle.get() == TRUE {
+        task_set(
+            taskId,
+            8,
+            (UseRegisteelHm_Callback as *const () as usize as u32 >> 16) as i16,
+        );
+        task_set(
+            taskId,
+            9,
+            UseRegisteelHm_Callback as *const () as usize as u32 as i16,
+        );
     } else {
-        gTasks[taskId].data[8] = (UseRegirockHm_Callback as *const () as usize as u32 >> 16) as i16;
-        gTasks[taskId].data[9] = UseRegirockHm_Callback as *const () as usize as u32 as i16;
+        task_set(
+            taskId,
+            8,
+            (UseRegirockHm_Callback as *const () as usize as u32 >> 16) as i16,
+        );
+        task_set(
+            taskId,
+            9,
+            UseRegirockHm_Callback as *const () as usize as u32 as i16,
+        );
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShouldDoBrailleRegicePuzzle() -> u8 {
-    let mut i: u8 = 0;
+pub unsafe fn ShouldDoBrailleRegicePuzzle() -> u8 {
     if (*gSaveBlock1Ptr).location.mapGroup == 24 && (*gSaveBlock1Ptr).location.mapNum == 67 {
         if FlagGet(FLAG_SYS_BRAILLE_REGICE_COMPLETED) != 0 {
             return FALSE;
@@ -260,10 +263,9 @@ pub unsafe extern "C" fn ShouldDoBrailleRegicePuzzle() -> u8 {
         if FlagGet(FLAG_TEMP_REGICE_PUZZLE_FAILED) == TRUE {
             return FALSE;
         }
-        i = 0;
-        while i < 36 {
-            let mut xPos: u8 = sRegicePathCoords[i][0];
-            let mut yPos: u8 = sRegicePathCoords[i][1];
+        for i in 0..36u8 {
+            let xPos: u8 = sRegicePathCoords[i][0];
+            let yPos: u8 = sRegicePathCoords[i][1];
             if (*gSaveBlock1Ptr).pos.x == xPos as i16 && (*gSaveBlock1Ptr).pos.y == yPos as i16 {
                 if i < 16 {
                     let mut val: u16 = VarGet(VAR_REGICE_STEPS_1);
@@ -290,10 +292,9 @@ pub unsafe extern "C" fn ShouldDoBrailleRegicePuzzle() -> u8 {
                     return FALSE;
                 }
             }
-            i += 1;
         }
         FlagSet(FLAG_TEMP_REGICE_PUZZLE_FAILED);
         FlagClear(FLAG_TEMP_REGICE_PUZZLE_STARTED);
     }
-    return FALSE;
+    FALSE
 }

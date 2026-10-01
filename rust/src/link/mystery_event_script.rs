@@ -3,9 +3,10 @@
 //! command table; addresses inside the received script are relative to the
 //! sender's base and get rebased onto our buffer.
 
-use crate::ffi::{POKEMON_SIZE, VarSet, gPlayerParty, gStringVar1, gStringVar2, gStringVar4};
+use crate::ffi::{POKEMON_SIZE, VarSet, gStringVar1, gStringVar2, gStringVar4};
 use crate::gift_ribbon::GiveGiftRibbonToParty;
 use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::pokemon::gPlayerPartyCount;
 use crate::string_util::{StringCompare, StringCopyN, StringExpandPlaceholders};
 use crate::util::{CalcByteArraySum, CalcCRC16};
 
@@ -50,51 +51,126 @@ const EREADER_TRAINER_SIZE: usize = 0xbc;
 static mut CONTEXT: crate::ffi::Align4<[u8; SCRIPT_CONTEXT_SIZE]> =
     crate::ffi::Align4([0; SCRIPT_CONTEXT_SIZE]);
 
-unsafe extern "C" {
-    static gMysteryEventScriptCmdTable: u8;
-    static gMysteryEventScriptCmdTableEnd: u8;
-    static gText_MysteryEventCantBeUsed: u8;
-    static gText_MysteryEventBerry: u8;
-    static gText_MysteryEventBerryTransform: u8;
-    static gText_MysteryEventBerryObtained: u8;
-    static gText_MysteryEventSpecialRibbon: u8;
-    static gText_MysteryEventNationalDex: u8;
-    static gText_MysteryEventRareWord: u8;
-    static gText_EggNickname: u8;
-    static gText_Pokemon: u8;
-    static gText_MysteryEventFullParty: u8;
-    static gText_MysteryEventSentOver: u8;
-    static gText_MysteryEventNewTrainer: u8;
-    static gText_InGameClockUsable: u8;
-    static gPlayerPartyCount: u8;
-
-    fn InitScriptContext(ctx: *mut u8, cmd_table: *const u8, cmd_table_end: *const u8);
-    fn SetupBytecodeScript(ctx: *mut u8, ptr: *const u8) -> u8;
-    fn RunScriptCommand(ctx: *mut u8) -> u8;
-    fn StopScript(ctx: *mut u8);
-    fn ScriptReadWord(ctx: *mut u8) -> u32;
-    fn ScriptReadHalfword(ctx: *mut u8) -> u16;
-    fn RunScriptImmediately(script: *const u8);
-    fn IsEnigmaBerryValid() -> u32;
-    fn SetEnigmaBerry(src: *mut u8);
-    fn InitRamScript(
-        script: *const u8,
-        script_size: u16,
-        map_group: u8,
-        map_num: u8,
-        object_id: u8,
-    ) -> u8;
-    fn EnableNationalPokedex();
-    fn UnlockTrendySaying(word_index: u8);
-    fn GetMonData2(mon: *mut u8, field: i32) -> u32;
-    fn SpeciesToNationalPokedexNum(species: u16) -> u16;
-    fn GetSetPokedexFlag(national_dex_number: u16, case_id: u8) -> i8;
-    fn ItemIsMail(item_id: u16) -> u8;
-    fn GiveMailToMon(mon: *mut u8, mail: *mut u8) -> u8;
-    fn CompactPartySlots() -> i16;
-    fn CalculatePlayerPartyCount() -> u8;
-    fn ValidateEReaderTrainer();
-    fn EnableResetRTC();
+/// `InitScriptContext` with this module's view of its types.
+#[inline]
+unsafe fn InitScriptContext(a0: *mut u8, a1: *const u8, a2: *const u8) {
+    unsafe {
+        crate::script::InitScriptContext(a0 as _, a1 as _, a2 as _);
+    }
+}
+/// `SetupBytecodeScript` with this module's view of its types.
+#[inline]
+unsafe fn SetupBytecodeScript(a0: *mut u8, a1: *const u8) -> u8 {
+    unsafe { crate::script::SetupBytecodeScript(a0 as _, a1 as _) }
+}
+/// `RunScriptCommand` with this module's view of its types.
+#[inline]
+unsafe fn RunScriptCommand(a0: *mut u8) -> u8 {
+    unsafe { crate::script::RunScriptCommand(a0 as _) }
+}
+/// `StopScript` with this module's view of its types.
+#[inline]
+unsafe fn StopScript(a0: *mut u8) {
+    unsafe {
+        crate::script::StopScript(a0 as _);
+    }
+}
+/// `ScriptReadWord` with this module's view of its types.
+#[inline]
+unsafe fn ScriptReadWord(a0: *mut u8) -> u32 {
+    unsafe { crate::script::ScriptReadWord(a0 as _) }
+}
+/// `ScriptReadHalfword` with this module's view of its types.
+#[inline]
+unsafe fn ScriptReadHalfword(a0: *mut u8) -> u16 {
+    unsafe { crate::script::ScriptReadHalfword(a0 as _) }
+}
+/// `RunScriptImmediately` with this module's view of its types.
+#[inline]
+unsafe fn RunScriptImmediately(a0: *const u8) {
+    unsafe {
+        crate::script::RunScriptImmediately(a0 as _);
+    }
+}
+/// `IsEnigmaBerryValid` with this module's view of its types.
+#[inline]
+unsafe fn IsEnigmaBerryValid() -> u32 {
+    unsafe { crate::berry::IsEnigmaBerryValid() }
+}
+/// `SetEnigmaBerry` with this module's view of its types.
+#[inline]
+unsafe fn SetEnigmaBerry(a0: *mut u8) {
+    unsafe {
+        crate::berry::SetEnigmaBerry(a0 as _);
+    }
+}
+/// `InitRamScript` with this module's view of its types.
+#[inline]
+unsafe fn InitRamScript(a0: *const u8, a1: u16, a2: u8, a3: u8, a4: u8) -> u8 {
+    unsafe { crate::script::InitRamScript(a0 as _, a1, a2, a3, a4) }
+}
+/// `EnableNationalPokedex` with this module's view of its types.
+#[inline]
+unsafe fn EnableNationalPokedex() {
+    {
+        crate::event_data::EnableNationalPokedex();
+    }
+}
+/// `UnlockTrendySaying` with this module's view of its types.
+#[inline]
+unsafe fn UnlockTrendySaying(a0: u8) {
+    unsafe {
+        crate::easy_chat::UnlockTrendySaying(a0);
+    }
+}
+/// `GetMonData2` with this module's view of its types.
+#[inline]
+unsafe fn GetMonData2(a0: *mut u8, a1: i32) -> u32 {
+    unsafe { crate::pokemon::GetMonData2(a0 as _, a1) }
+}
+/// `SpeciesToNationalPokedexNum` with this module's view of its types.
+#[inline]
+unsafe fn SpeciesToNationalPokedexNum(a0: u16) -> u16 {
+    unsafe { crate::pokemon::SpeciesToNationalPokedexNum(a0) }
+}
+/// `GetSetPokedexFlag` with this module's view of its types.
+#[inline]
+unsafe fn GetSetPokedexFlag(a0: u16, a1: u8) -> i8 {
+    unsafe { crate::pokedex::GetSetPokedexFlag(a0, a1) }
+}
+/// `ItemIsMail` with this module's view of its types.
+#[inline]
+unsafe fn ItemIsMail(a0: u16) -> u8 {
+    unsafe { crate::mail_data::ItemIsMail(a0) }
+}
+/// `GiveMailToMon` with this module's view of its types.
+#[inline]
+unsafe fn GiveMailToMon(a0: *mut u8, a1: *mut u8) -> u8 {
+    unsafe { crate::mail_data::GiveMailToMon(a0 as _, a1 as _) }
+}
+/// `CompactPartySlots` with this module's view of its types.
+#[inline]
+unsafe fn CompactPartySlots() -> i16 {
+    unsafe { crate::pokemon_storage_system::CompactPartySlots() }
+}
+/// `CalculatePlayerPartyCount` with this module's view of its types.
+#[inline]
+unsafe fn CalculatePlayerPartyCount() -> u8 {
+    unsafe { crate::pokemon::CalculatePlayerPartyCount() }
+}
+/// `ValidateEReaderTrainer` with this module's view of its types.
+#[inline]
+unsafe fn ValidateEReaderTrainer() {
+    unsafe {
+        crate::battle_tower::ValidateEReaderTrainer();
+    }
+}
+/// `EnableResetRTC` with this module's view of its types.
+#[inline]
+unsafe fn EnableResetRTC() {
+    {
+        crate::event_data::EnableResetRTC();
+    }
 }
 
 #[inline]
@@ -144,8 +220,8 @@ unsafe fn init_mystery_event_script(ctx: *mut u8, script: *mut u8) {
     unsafe {
         InitScriptContext(
             ctx,
-            &raw const gMysteryEventScriptCmdTable,
-            &raw const gMysteryEventScriptCmdTableEnd,
+            &raw const (*crate::asmdata::gMysteryEventScriptCmdTable.cast::<u8>()),
+            &raw const (*crate::asmdata::gMysteryEventScriptCmdTableEnd.cast::<u8>()),
         )
     };
     unsafe { SetupBytecodeScript(ctx, script) };
@@ -161,12 +237,12 @@ unsafe fn run_command(ctx: *mut u8) -> bool {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitMysteryEventScriptContext(script: *mut u8) {
+pub unsafe fn InitMysteryEventScriptContext(script: *mut u8) {
     unsafe { init_mystery_event_script(context(), script) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunMysteryEventScriptContextCommand(status: *mut u32) -> u32 {
+pub unsafe fn RunMysteryEventScriptContextCommand(status: *mut u32) -> u32 {
     let ctx = context();
     let running = unsafe { run_command(ctx) };
     unsafe { status.write(data(ctx, STATUS).read()) };
@@ -174,7 +250,7 @@ pub unsafe extern "C" fn RunMysteryEventScriptContextCommand(status: *mut u32) -
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunMysteryEventScript(script: *mut u8) -> u32 {
+pub unsafe fn RunMysteryEventScript(script: *mut u8) -> u32 {
     let ctx = context();
     unsafe { init_mystery_event_script(ctx, script) };
     while unsafe { run_command(ctx) } {}
@@ -182,7 +258,7 @@ pub unsafe extern "C" fn RunMysteryEventScript(script: *mut u8) -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetMysteryEventScriptStatus(status: u32) {
+pub unsafe fn SetMysteryEventScriptStatus(status: u32) {
     unsafe { set_status(context(), status) };
 }
 
@@ -191,6 +267,7 @@ unsafe fn gift() -> *mut u8 {
     unsafe {
         (&raw const gSaveBlock1Ptr)
             .read()
+            .cast::<u8>()
             .add(SB1_RECORD_MIXING_GIFT)
     }
 }
@@ -207,7 +284,7 @@ unsafe fn clear_record_mixing_gift() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRecordMixingGift() -> u16 {
+pub unsafe fn GetRecordMixingGift() -> u16 {
     let g = unsafe { gift() };
     let data = unsafe { g.add(GIFT_DATA) };
     let checksum = unsafe { gift_checksum() };
@@ -238,13 +315,13 @@ pub unsafe extern "C" fn GetRecordMixingGift() -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_end(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_end(ctx: *mut u8) -> u8 {
     unsafe { StopScript(ctx) };
     1
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_checkcompat(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_checkcompat(ctx: *mut u8) -> u8 {
     let offset = unsafe { ScriptReadWord(ctx) };
     unsafe { data(ctx, OFFSET).write(offset) };
     let unk0 = unsafe { ScriptReadHalfword(ctx) };
@@ -254,26 +331,28 @@ pub unsafe extern "C" fn MEScrCmd_checkcompat(ctx: *mut u8) -> u8 {
     if check_compatibility(unk0, unk1, unk2, version) {
         unsafe { data(ctx, VALID).write(1) };
     } else {
-        unsafe { expand(&raw const gText_MysteryEventCantBeUsed) };
+        unsafe {
+            expand(&raw const (*(&raw const crate::data::mystery_event_msg::gText_MysteryEventCantBeUsed).cast::<u8>()))
+        };
         unsafe { set_status(context(), MEVENT_STATUS_FAILURE) };
     }
     1
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_nop(_ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_nop(_ctx: *mut u8) -> u8 {
     0
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_setstatus(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_setstatus(ctx: *mut u8) -> u8 {
     let status = unsafe { read_byte(ctx) };
     unsafe { set_status(ctx, u32::from(status)) };
     0
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_setmsg(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_setmsg(ctx: *mut u8) -> u8 {
     let status = unsafe { read_byte(ctx) };
     let message = unsafe { read_pointer(ctx) };
     if status == MEVENT_STATUS_FF || u32::from(status) == unsafe { data(ctx, STATUS).read() } {
@@ -283,19 +362,20 @@ pub unsafe extern "C" fn MEScrCmd_setmsg(ctx: *mut u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_runscript(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_runscript(ctx: *mut u8) -> u8 {
     let script = unsafe { read_pointer(ctx) };
     unsafe { RunScriptImmediately(script) };
     0
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_setenigmaberry(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_setenigmaberry(ctx: *mut u8) -> u8 {
     let had_berry = unsafe { IsEnigmaBerryValid() } != 0;
     let berry = unsafe { read_pointer(ctx) };
     let name = unsafe {
         (&raw const gSaveBlock1Ptr)
             .read()
+            .cast::<u8>()
             .add(SB1_ENIGMA_BERRY_NAME)
     };
     let var1 = (&raw mut gStringVar1).cast::<u8>();
@@ -305,11 +385,14 @@ pub unsafe extern "C" fn MEScrCmd_setenigmaberry(ctx: *mut u8) -> u8 {
     unsafe { StringCopyN(var2, name, BERRY_NAME_LENGTH + 1) };
 
     let message = if !had_berry {
-        &raw const gText_MysteryEventBerry
+        &raw const (*(&raw const crate::data::mystery_event_msg::gText_MysteryEventBerry)
+            .cast::<u8>())
     } else if unsafe { StringCompare(var1, var2) } != 0 {
-        &raw const gText_MysteryEventBerryTransform
+        &raw const (*(&raw const crate::data::mystery_event_msg::gText_MysteryEventBerryTransform)
+            .cast::<u8>())
     } else {
-        &raw const gText_MysteryEventBerryObtained
+        &raw const (*(&raw const crate::data::mystery_event_msg::gText_MysteryEventBerryObtained)
+            .cast::<u8>())
     };
     unsafe { expand(message) };
     unsafe { set_status(ctx, MEVENT_STATUS_SUCCESS) };
@@ -322,17 +405,19 @@ pub unsafe extern "C" fn MEScrCmd_setenigmaberry(ctx: *mut u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_giveribbon(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_giveribbon(ctx: *mut u8) -> u8 {
     let index = unsafe { read_byte(ctx) };
     let ribbon_id = unsafe { read_byte(ctx) };
-    unsafe { GiveGiftRibbonToParty(index, ribbon_id) };
-    unsafe { expand(&raw const gText_MysteryEventSpecialRibbon) };
+    GiveGiftRibbonToParty(index, ribbon_id);
+    unsafe {
+        expand(&raw const (*(&raw const crate::data::mystery_event_msg::gText_MysteryEventSpecialRibbon).cast::<u8>()))
+    };
     unsafe { set_status(ctx, MEVENT_STATUS_SUCCESS) };
     0
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_initramscript(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_initramscript(ctx: *mut u8) -> u8 {
     let map_group = unsafe { read_byte(ctx) };
     let map_num = unsafe { read_byte(ctx) };
     let object_id = unsafe { read_byte(ctx) };
@@ -344,24 +429,31 @@ pub unsafe extern "C" fn MEScrCmd_initramscript(ctx: *mut u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_givenationaldex(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_givenationaldex(ctx: *mut u8) -> u8 {
     unsafe { EnableNationalPokedex() };
-    unsafe { expand(&raw const gText_MysteryEventNationalDex) };
+    unsafe {
+        expand(&raw const (*(&raw const crate::data::mystery_event_msg::gText_MysteryEventNationalDex).cast::<u8>()))
+    };
     unsafe { set_status(ctx, MEVENT_STATUS_SUCCESS) };
     0
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_addrareword(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_addrareword(ctx: *mut u8) -> u8 {
     let word = unsafe { read_byte(ctx) };
     unsafe { UnlockTrendySaying(word) };
-    unsafe { expand(&raw const gText_MysteryEventRareWord) };
+    unsafe {
+        expand(
+            &raw const (*(&raw const crate::data::mystery_event_msg::gText_MysteryEventRareWord)
+                .cast::<u8>()),
+        )
+    };
     unsafe { set_status(ctx, MEVENT_STATUS_SUCCESS) };
     0
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_setrecordmixinggift(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_setrecordmixinggift(ctx: *mut u8) -> u8 {
     let unk = unsafe { read_byte(ctx) };
     let quantity = unsafe { read_byte(ctx) };
     let item_id = unsafe { ScriptReadHalfword(ctx) };
@@ -383,27 +475,31 @@ pub unsafe extern "C" fn MEScrCmd_setrecordmixinggift(ctx: *mut u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_givepokemon(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_givepokemon(ctx: *mut u8) -> u8 {
     let source = unsafe { read_pointer(ctx) };
     let mut pokemon = crate::ffi::Align4([0u8; POKEMON_SIZE]);
     let mut mail = crate::ffi::Align4([0u8; MAIL_SIZE]);
     unsafe { core::ptr::copy_nonoverlapping(source, pokemon.0.as_mut_ptr(), POKEMON_SIZE) };
     let species = unsafe { GetMonData2(pokemon.0.as_mut_ptr(), MON_DATA_SPECIES_OR_EGG) } as u16;
     let name = if species == SPECIES_EGG {
-        &raw const gText_EggNickname
+        &raw const (*(&raw const crate::data::strings::gText_EggNickname).cast::<u8>())
     } else {
-        &raw const gText_Pokemon
+        &raw const (*(&raw const crate::data::strings::gText_Pokemon).cast::<u8>())
     };
     unsafe { StringCopyN((&raw mut gStringVar1).cast(), name, POKEMON_NAME_LENGTH + 1) };
 
     if unsafe { (&raw const gPlayerPartyCount).read() } == PARTY_SIZE {
-        unsafe { expand(&raw const gText_MysteryEventFullParty) };
+        unsafe {
+            expand(&raw const (*(&raw const crate::data::mystery_event_msg::gText_MysteryEventFullParty).cast::<u8>()))
+        };
         unsafe { set_status(ctx, MEVENT_STATUS_FAILURE) };
         return 0;
     }
 
     let last = unsafe {
-        (&raw mut gPlayerParty)
+        (&raw mut (*(&raw const crate::pokemon::gPlayerParty)
+            .cast::<u8>()
+            .cast_mut()))
             .cast::<u8>()
             .add((PARTY_SIZE as usize - 1) * POKEMON_SIZE)
     };
@@ -422,26 +518,45 @@ pub unsafe extern "C" fn MEScrCmd_givepokemon(ctx: *mut u8) -> u8 {
     }
     unsafe { CompactPartySlots() };
     unsafe { CalculatePlayerPartyCount() };
-    unsafe { expand(&raw const gText_MysteryEventSentOver) };
+    unsafe {
+        expand(
+            &raw const (*(&raw const crate::data::mystery_event_msg::gText_MysteryEventSentOver)
+                .cast::<u8>()),
+        )
+    };
     unsafe { set_status(ctx, MEVENT_STATUS_SUCCESS) };
     0
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_addtrainer(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_addtrainer(ctx: *mut u8) -> u8 {
     let source = unsafe { read_pointer(ctx) };
-    let dest = unsafe { (&raw const gSaveBlock2Ptr).read().add(SB2_EREADER_TRAINER) };
+    let dest = unsafe {
+        (&raw const gSaveBlock2Ptr)
+            .read()
+            .cast::<u8>()
+            .add(SB2_EREADER_TRAINER)
+    };
     unsafe { core::ptr::copy_nonoverlapping(source, dest, EREADER_TRAINER_SIZE) };
     unsafe { ValidateEReaderTrainer() };
-    unsafe { expand(&raw const gText_MysteryEventNewTrainer) };
+    unsafe {
+        expand(
+            &raw const (*(&raw const crate::data::mystery_event_msg::gText_MysteryEventNewTrainer)
+                .cast::<u8>()),
+        )
+    };
     unsafe { set_status(ctx, MEVENT_STATUS_SUCCESS) };
     0
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_enableresetrtc(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_enableresetrtc(ctx: *mut u8) -> u8 {
     unsafe { EnableResetRTC() };
-    unsafe { expand(&raw const gText_InGameClockUsable) };
+    unsafe {
+        expand(
+            &raw const (*(&raw const crate::data::strings::gText_InGameClockUsable).cast::<u8>()),
+        )
+    };
     unsafe { set_status(ctx, MEVENT_STATUS_SUCCESS) };
     0
 }
@@ -453,7 +568,7 @@ unsafe fn read_range(ctx: *mut u8) -> (*mut u8, usize) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_checksum(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_checksum(ctx: *mut u8) -> u8 {
     let expected = unsafe { ScriptReadWord(ctx) } as i32;
     let (start, length) = unsafe { read_range(ctx) };
     if expected != unsafe { CalcByteArraySum(start, length as u32) } as i32 {
@@ -464,7 +579,7 @@ pub unsafe extern "C" fn MEScrCmd_checksum(ctx: *mut u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MEScrCmd_crc(ctx: *mut u8) -> u8 {
+pub unsafe fn MEScrCmd_crc(ctx: *mut u8) -> u8 {
     let expected = unsafe { ScriptReadWord(ctx) } as i32;
     let (start, length) = unsafe { read_range(ctx) };
     if expected != i32::from(unsafe { CalcCRC16(start, length as i32) }) {

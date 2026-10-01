@@ -3,29 +3,22 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::type_complexity,
+    improper_ctypes_definitions,
+    unused_assignments
 )]
 
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::librfu_stwi::gSTWIStatus;
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,10 +27,6 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
-
-unsafe extern "C" {
-    static mut gSTWIStatus: *mut STWIStatus;
-}
 
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 #[unsafe(no_mangle)]
@@ -55,23 +44,22 @@ pub unsafe extern "C" fn IntrSIO32() {
     }
 }
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
-pub(crate) unsafe extern "C" fn sio32intr_clock_master() {
-    let mut regSIODATA32: u32 = 0;
+unsafe fn sio32intr_clock_master() {
     let mut ackLen: u32 = 0;
     STWI_set_timer_in_RAM(80);
-    regSIODATA32 = (67109152 as usize as *mut u32).read_volatile();
+    let regSIODATA32: u32 = (67109152_usize as *mut u32).read_volatile();
     if (&raw mut (*gSTWIStatus).state).read_volatile() == 0 {
         if regSIODATA32 == 0x80000000 {
             if (*gSTWIStatus).reqNext <= (*gSTWIStatus).reqLength {
                 volatile_write(
-                    67109152 as usize as *mut u32,
+                    67109152_usize as *mut u32,
                     *((*(*gSTWIStatus).txPacket).rfuPacket8.data.as_mut_ptr() as *mut u32)
                         .at((*gSTWIStatus).reqNext),
                 );
                 (*gSTWIStatus).reqNext += 1;
             } else {
                 volatile_write(&raw mut (*gSTWIStatus).state, 1);
-                volatile_write(67109152 as usize as *mut u32, 0x80000000);
+                volatile_write(67109152_usize as *mut u32, 0x80000000);
             }
         } else {
             STWI_stop_timer_in_RAM();
@@ -94,7 +82,7 @@ pub(crate) unsafe extern "C" fn sio32intr_clock_master() {
             }) >= (*gSTWIStatus).ackNext as u32
             {
                 volatile_write(&raw mut (*gSTWIStatus).state, 2);
-                volatile_write(67109152 as usize as *mut u32, 0x80000000);
+                volatile_write(67109152_usize as *mut u32, 0x80000000);
             } else {
                 volatile_write(&raw mut (*gSTWIStatus).state, 3);
             }
@@ -109,13 +97,13 @@ pub(crate) unsafe extern "C" fn sio32intr_clock_master() {
         if (*gSTWIStatus).ackLength < (*gSTWIStatus).ackNext {
             volatile_write(&raw mut (*gSTWIStatus).state, 3);
         } else {
-            volatile_write(67109152 as usize as *mut u32, 0x80000000);
+            volatile_write(67109152_usize as *mut u32, 0x80000000);
         }
     }
     if handshake_wait(1) == 1 {
         return;
     }
-    volatile_write(67109160 as usize as *mut u16, 20491);
+    volatile_write(67109160_usize as *mut u16, 20491);
     if handshake_wait(0) == 1 {
         return;
     }
@@ -127,17 +115,17 @@ pub(crate) unsafe extern "C" fn sio32intr_clock_master() {
             || (*gSTWIStatus).ackActiveCommand == 183
         {
             volatile_write(&raw mut (*gSTWIStatus).msMode, AGB_CLK_SLAVE);
-            volatile_write(67109152 as usize as *mut u32, 0x80000000);
-            volatile_write(67109160 as usize as *mut u16, 20482);
-            volatile_write(67109160 as usize as *mut u16, 20610);
+            volatile_write(67109152_usize as *mut u32, 0x80000000);
+            volatile_write(67109160_usize as *mut u16, 20482);
+            volatile_write(67109160_usize as *mut u16, 20610);
             volatile_write(&raw mut (*gSTWIStatus).state, 5);
         } else {
             if (*gSTWIStatus).ackActiveCommand == 0xEE {
-                volatile_write(67109160 as usize as *mut u16, 20483);
+                volatile_write(67109160_usize as *mut u16, 20483);
                 volatile_write(&raw mut (*gSTWIStatus).state, 4);
                 volatile_write(&raw mut (*gSTWIStatus).error, ERR_REQ_CMD_ACK_REJECTION);
             } else {
-                volatile_write(67109160 as usize as *mut u16, 20483);
+                volatile_write(67109160_usize as *mut u16, 20483);
                 volatile_write(&raw mut (*gSTWIStatus).state, 4);
             }
         }
@@ -150,13 +138,12 @@ pub(crate) unsafe extern "C" fn sio32intr_clock_master() {
             );
         }
     } else {
-        volatile_write(67109160 as usize as *mut u16, 20483);
-        volatile_write(67109160 as usize as *mut u16, 20611);
+        volatile_write(67109160_usize as *mut u16, 20483);
+        volatile_write(67109160_usize as *mut u16, 20611);
     }
 }
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
-pub(crate) unsafe extern "C" fn sio32intr_clock_slave() {
-    let mut regSIODATA32: u32 = 0;
+unsafe fn sio32intr_clock_slave() {
     let mut r0: u32 = 0;
     let mut reqLen: u32 = 0;
     volatile_write(&raw mut (*gSTWIStatus).timerActive, 0);
@@ -164,8 +151,8 @@ pub(crate) unsafe extern "C" fn sio32intr_clock_slave() {
     if handshake_wait(0) == 1 {
         return;
     }
-    volatile_write(67109160 as usize as *mut u16, 20490);
-    regSIODATA32 = (67109152 as usize as *mut u32).read_volatile();
+    volatile_write(67109160_usize as *mut u16, 20490);
+    let regSIODATA32: u32 = (67109152_usize as *mut u32).read_volatile();
     if (&raw mut (*gSTWIStatus).state).read_volatile() == 5 {
         *((*gSTWIStatus).rxPacket as *mut u32) = regSIODATA32;
         (*gSTWIStatus).reqNext = 1;
@@ -177,7 +164,7 @@ pub(crate) unsafe extern "C" fn sio32intr_clock_slave() {
                 reqLen
             }) as u8;
             (*gSTWIStatus).reqActiveCommand = ({
-                reqLen = regSIODATA32 >> 0;
+                reqLen = regSIODATA32;
                 reqLen
             }) as u8;
             if (*gSTWIStatus).reqLength == 0 {
@@ -203,13 +190,13 @@ pub(crate) unsafe extern "C" fn sio32intr_clock_slave() {
                     volatile_write(&raw mut (*gSTWIStatus).error, ERR_REQ_CMD_ACK_REJECTION);
                 }
                 volatile_write(
-                    67109152 as usize as *mut u32,
+                    67109152_usize as *mut u32,
                     *((*gSTWIStatus).txPacket as *mut u32),
                 );
                 (*gSTWIStatus).ackNext = 1;
                 volatile_write(&raw mut (*gSTWIStatus).state, 7);
             } else {
-                volatile_write(67109152 as usize as *mut u32, 0x80000000);
+                volatile_write(67109152_usize as *mut u32, 0x80000000);
                 (*gSTWIStatus).reqNext = 1;
                 volatile_write(&raw mut (*gSTWIStatus).state, 6);
             }
@@ -243,13 +230,13 @@ pub(crate) unsafe extern "C" fn sio32intr_clock_slave() {
                 volatile_write(&raw mut (*gSTWIStatus).error, ERR_REQ_CMD_ACK_REJECTION);
             }
             volatile_write(
-                67109152 as usize as *mut u32,
+                67109152_usize as *mut u32,
                 *((*gSTWIStatus).txPacket as *mut u32),
             );
             (*gSTWIStatus).ackNext = 1;
             volatile_write(&raw mut (*gSTWIStatus).state, 7);
         } else {
-            volatile_write(67109152 as usize as *mut u32, 0x80000000);
+            volatile_write(67109152_usize as *mut u32, 0x80000000);
         }
     } else if (&raw mut (*gSTWIStatus).state).read_volatile() == 7 {
         if regSIODATA32 == 0x80000000 {
@@ -257,7 +244,7 @@ pub(crate) unsafe extern "C" fn sio32intr_clock_slave() {
                 volatile_write(&raw mut (*gSTWIStatus).state, 8);
             } else {
                 volatile_write(
-                    67109152 as usize as *mut u32,
+                    67109152_usize as *mut u32,
                     *((*gSTWIStatus).txPacket as *mut u32).at((*gSTWIStatus).ackNext),
                 );
                 (*gSTWIStatus).ackNext += 1;
@@ -272,7 +259,7 @@ pub(crate) unsafe extern "C" fn sio32intr_clock_slave() {
         return;
     }
     if (&raw mut (*gSTWIStatus).state).read_volatile() == 8 {
-        volatile_write(67109160 as usize as *mut u16, 20482);
+        volatile_write(67109160_usize as *mut u16, 20482);
         STWI_stop_timer_in_RAM();
         if (&raw mut (*gSTWIStatus).error).read_volatile() == ERR_REQ_CMD_ACK_REJECTION {
             STWI_init_slave();
@@ -280,9 +267,9 @@ pub(crate) unsafe extern "C" fn sio32intr_clock_slave() {
                 Callback_Dummy_S(0x1EE, (*gSTWIStatus).callbackS);
             }
         } else {
-            volatile_write(67109152 as usize as *mut u32, 0);
-            volatile_write(67109160 as usize as *mut u16, 0);
-            volatile_write(67109160 as usize as *mut u16, 20483);
+            volatile_write(67109152_usize as *mut u32, 0);
+            volatile_write(67109160_usize as *mut u16, 0);
+            volatile_write(67109160_usize as *mut u16, 20483);
             volatile_write(&raw mut (*gSTWIStatus).msMode, AGB_CLK_MASTER);
             volatile_write(&raw mut (*gSTWIStatus).state, 0);
             if (*gSTWIStatus).callbackS.is_some() {
@@ -293,41 +280,40 @@ pub(crate) unsafe extern "C" fn sio32intr_clock_slave() {
             }
         }
     } else {
-        volatile_write(67109384 as usize as *mut u16, 0);
-        if (67109122 as usize as *mut u16).read_volatile() as i32 & TIMER_ENABLE as i32 != 0 {
-            if (67109122 as usize as *mut u16).read_volatile() as i32 & 0x03 == TIMER_1CLK {
-                while (0x4000100 as usize as *mut u16).read_volatile() > 0xFF9B {}
+        volatile_write(67109384_usize as *mut u16, 0);
+        if (67109122_usize as *mut u16).read_volatile() as i32 & TIMER_ENABLE as i32 != 0 {
+            if (67109122_usize as *mut u16).read_volatile() as i32 & 0x03 == TIMER_1CLK {
+                while (0x4000100_usize as *mut u16).read_volatile() > 0xFF9B {}
             } else {
-                while (0x4000100 as usize as *mut u16).read_volatile() > 0xFFFE {}
+                while (0x4000100_usize as *mut u16).read_volatile() > 0xFFFE {}
             }
         }
-        volatile_write(67109160 as usize as *mut u16, 20482);
-        volatile_write(67109160 as usize as *mut u16, 20610);
-        volatile_write(67109384 as usize as *mut u16, 1);
+        volatile_write(67109160_usize as *mut u16, 20482);
+        volatile_write(67109160_usize as *mut u16, 20610);
+        volatile_write(67109384_usize as *mut u16, 1);
     }
 }
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
-pub(crate) unsafe extern "C" fn handshake_wait(slot: u16) -> u16 {
+unsafe fn handshake_wait(slot: u16) -> u16 {
     loop {
         if (&raw mut (*gSTWIStatus).timerActive).read_volatile() as i32 & 0xFF == 1 {
             volatile_write(&raw mut (*gSTWIStatus).timerActive, 0);
             return 1;
         }
-        if (67109160 as usize as *mut u16).read_volatile() as i32 & SIO_MULTI_SI
-            == (slot as i32) << 2
+        if (67109160_usize as *mut u16).read_volatile() as i32 & SIO_MULTI_SI == (slot as i32) << 2
         {
             break;
         }
     }
-    return 0;
+    0
 }
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
-pub(crate) unsafe extern "C" fn STWI_set_timer_in_RAM(count: u8) {
-    let mut regTMCNTL: *mut u16 =
+unsafe fn STWI_set_timer_in_RAM(count: u8) {
+    let regTMCNTL: *mut u16 =
         (0x4000100 + (*gSTWIStatus).timerSelect as i32 * 4) as usize as *mut u16;
-    let mut regTMCNTH: *mut u16 =
+    let regTMCNTH: *mut u16 =
         (67109122 + (*gSTWIStatus).timerSelect as i32 * 4) as usize as *mut u16;
-    volatile_write(67109384 as usize as *mut u16, 0);
+    volatile_write(67109384_usize as *mut u16, 0);
     match count {
         50 => {
             volatile_write(regTMCNTL, 0xFCCB);
@@ -349,13 +335,13 @@ pub(crate) unsafe extern "C" fn STWI_set_timer_in_RAM(count: u8) {
     }
     volatile_write(regTMCNTH, 195);
     volatile_write(
-        67109378 as usize as *mut u16,
+        67109378_usize as *mut u16,
         shl_i32(INTR_FLAG_TIMER0, (*gSTWIStatus).timerSelect as u32) as u16,
     );
-    volatile_write(67109384 as usize as *mut u16, 1);
+    volatile_write(67109384_usize as *mut u16, 1);
 }
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
-pub(crate) unsafe extern "C" fn STWI_stop_timer_in_RAM() {
+unsafe fn STWI_stop_timer_in_RAM() {
     (*gSTWIStatus).timerState = 0;
     volatile_write(
         (0x4000100 + (*gSTWIStatus).timerSelect as i32 * 4) as usize as *mut u16,
@@ -367,7 +353,7 @@ pub(crate) unsafe extern "C" fn STWI_stop_timer_in_RAM() {
     );
 }
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
-pub(crate) unsafe extern "C" fn STWI_init_slave() {
+unsafe fn STWI_init_slave() {
     volatile_write(&raw mut (*gSTWIStatus).state, 5);
     volatile_write(&raw mut (*gSTWIStatus).msMode, AGB_CLK_SLAVE);
     (*gSTWIStatus).reqLength = 0;
@@ -380,7 +366,7 @@ pub(crate) unsafe extern "C" fn STWI_init_slave() {
     volatile_write(&raw mut (*gSTWIStatus).timerActive, 0);
     volatile_write(&raw mut (*gSTWIStatus).error, 0);
     (*gSTWIStatus).recoveryCount = 0;
-    volatile_write(67109160 as usize as *mut u16, 20610);
+    volatile_write(67109160_usize as *mut u16, 20610);
 }
 // hand-written: tools/rustport/overrides/librfu_intr/Callback_Dummy_M.rs
 /// `Callback_Dummy_M`: a naked `bx r2` in C, i.e. a tail call of `callbackM`
@@ -388,10 +374,10 @@ pub(crate) unsafe extern "C" fn STWI_init_slave() {
 unsafe extern "C" fn Callback_Dummy_M(
     req_command_id: i32,
     error: i32,
-    callback_m: Option<unsafe extern "C" fn()>,
+    callback_m: Option<unsafe fn()>,
 ) {
     unsafe {
-        let f: unsafe extern "C" fn(i32, i32, Option<unsafe extern "C" fn()>) =
+        let f: unsafe fn(i32, i32, Option<unsafe fn()>) =
             core::mem::transmute(callback_m.unwrap_unchecked());
         f(req_command_id, error, callback_m)
     }
@@ -399,12 +385,9 @@ unsafe extern "C" fn Callback_Dummy_M(
 
 // hand-written: tools/rustport/overrides/librfu_intr/Callback_Dummy_S.rs
 /// `Callback_Dummy_S`: a naked `bx r1`, i.e. `callbackS(reqCommandId)`.
-unsafe extern "C" fn Callback_Dummy_S(
-    req_command_id: u16,
-    callback_s: Option<unsafe extern "C" fn(u16)>,
-) {
+unsafe extern "C" fn Callback_Dummy_S(req_command_id: u16, callback_s: Option<unsafe fn(u16)>) {
     unsafe {
-        let f: unsafe extern "C" fn(u16, Option<unsafe extern "C" fn(u16)>) =
+        let f: unsafe fn(u16, Option<unsafe fn(u16)>) =
             core::mem::transmute(callback_s.unwrap_unchecked());
         f(req_command_id, callback_s)
     }
@@ -412,9 +395,9 @@ unsafe extern "C" fn Callback_Dummy_S(
 
 // hand-written: tools/rustport/overrides/librfu_intr/Callback_Dummy_ID.rs
 /// `Callback_Dummy_ID`: a naked `bx r0`, i.e. `callbackId()`.
-unsafe extern "C" fn Callback_Dummy_ID(callback_id: Option<unsafe extern "C" fn()>) {
+unsafe extern "C" fn Callback_Dummy_ID(callback_id: Option<unsafe fn()>) {
     unsafe {
-        let f: unsafe extern "C" fn(Option<unsafe extern "C" fn()>) =
+        let f: unsafe fn(Option<unsafe fn()>) =
             core::mem::transmute(callback_id.unwrap_unchecked());
         f(callback_id)
     }

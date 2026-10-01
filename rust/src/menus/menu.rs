@@ -3,37 +3,151 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::too_many_arguments,
+    clippy::type_complexity,
+    clippy::unnecessary_cast,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect, GetBgAttribute,
+    IsDma3ManagerBusyWithBgCopy,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::dma3_manager::CheckForSpaceForDma3Request;
+use crate::event_data::{FlagGet, IsNationalPokedexEnabled};
+use crate::fieldmap::gMapHeader;
+use crate::load_save::gSaveBlock2Ptr;
+use crate::menu_helpers::{
+    DisplayMessageAndContinueTask, GetLRKeysPressed, GetLRKeysPressedAndHeld,
+};
+use crate::palette::LoadPalette;
+use crate::pokedex::{GetHoennPokedexCount, GetNationalPokedexCount};
+use crate::pokemon_icon::{GetMonIconPtr, GetValidMonIconPalettePtr};
+use crate::region_map::GetMapNameGeneric;
+use crate::sound::PlaySE;
+use crate::string_util::gStringVar4;
+use crate::task::{DestroyTask, GetWordTaskArg, SetWordTaskArg};
+use crate::task::{task_get, task_set};
+use crate::text::{
+    DeactivateAllTextPrinters, GetFontAttribute, GetMenuCursorDimensionByFont, IsTextPrinterActive,
+    RunTextPrinters,
+};
+use crate::text_window::{LoadMessageBoxGfx, LoadUserWindowBorderGfx};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect,
+    FreeAllWindowBuffers, GetWindowAttribute, PutWindowTilemap, RemoveWindow,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `BlitBitmapRectToWindow` with this module's view of its types.
+#[inline]
+unsafe fn BlitBitmapRectToWindow(
+    a0: u8,
+    a1: *mut u8,
+    a2: u16,
+    a3: u16,
+    a4: u16,
+    a5: i32,
+    a6: u16,
+    a7: u16,
+    a8: u16,
+    a9: u16,
+) {
+    unsafe {
+        crate::window::BlitBitmapRectToWindow(a0, a1 as _, a2, a3, a4, a5, a6, a7, a8, a9);
+    }
+}
+/// `BlitBitmapToWindow` with this module's view of its types.
+#[inline]
+unsafe fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16) {
+    unsafe {
+        crate::window::BlitBitmapToWindow(a0, a1 as _, a2, a3, a4, a5);
+    }
+}
+/// `CallWindowFunction` with this module's view of its types.
+#[inline]
+unsafe fn CallWindowFunction(a0: u8, a1: Option<unsafe fn(u8, u8, u8, u8, u8, u8)>) {
+    unsafe {
+        crate::window::CallWindowFunction(a0, core::mem::transmute(a1));
+    }
+}
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `GetStringWidth` with this module's view of its types.
+#[inline]
+unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
+    unsafe { crate::text::GetStringWidth(a0, a1 as _, a2) }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LoadBgTilemap` with this module's view of its types.
+#[inline]
+unsafe fn LoadBgTilemap(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
+    unsafe { crate::bg::LoadBgTilemap(a0, a1 as _, a2, a3) }
+}
+/// `LoadBgTiles` with this module's view of its types.
+#[inline]
+unsafe fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
+    unsafe { crate::bg::LoadBgTiles(a0, a1 as _, a2, a3) }
+}
+/// `RequestDma3Fill` with this module's view of its types.
+#[inline]
+unsafe fn RequestDma3Fill(a0: i32, a1: *mut c_void, a2: u16, a3: u8) -> i16 {
+    unsafe { crate::dma3_manager::RequestDma3Fill(a0, a1 as _, a2, a3) }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringExpandPlaceholders(a0 as _, a1 as _) as *mut u8 }
+}
 // Data tables (translate with cdata.py): gStandardMenuPalette sTextSpeedFrameDelays sStandardTextBox_WindowTemplates sYesNo_WindowTemplates sHofPC_TopBar_Pal sTextColors sMenuInfoIcons
 
 /// `struct Menu`
@@ -111,161 +225,105 @@ static sYesNo_WindowTemplates: Table<WindowTemplate> =
     Table((&raw const crate::data::menu::sYesNo_WindowTemplates).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sStartMenuWindowId: u8 = 0;
+pub(crate) static sStartMenuWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMapNamePopupWindowId: u8 = 0;
+pub(crate) static sMapNamePopupWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sMenu: Menu = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTileNum: u16 = 0;
+pub(crate) static sTileNum: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPaletteNum: u8 = 0;
+pub(crate) static sPaletteNum: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sYesNoWindowId: u8 = 0;
+pub(crate) static sYesNoWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sHofPCTopBarWindowId: u8 = 0;
+pub(crate) static sHofPCTopBarWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sFiller: u16 = 0;
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sScheduledBgCopiesToVram: Aligned<CArray<u8, 4>> =
     Aligned(unsafe { zeroed() });
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTempTileDataBufferIdx: u16 = 0;
+pub(crate) static sTempTileDataBufferIdx: crate::global::Global<u16> =
+    crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sTempTileDataBuffer: CArray<*mut c_void, 32> = unsafe { zeroed() };
 
-unsafe extern "C" {
-    static mut gMain: Main;
-    static mut gMapHeader: MapHeader;
-    static gMenuInfoElements1_Pal: CArray<u16, 16>;
-    static gMenuInfoElements2_Pal: CArray<u16, 16>;
-    static gMenuInfoElements3_Pal: CArray<u16, 16>;
-    static gMenuInfoElements_Gfx: CArray<u8, 0>;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static mut gTextFlags: TextFlags;
-    static gText_SelectorArrow3: CArray<u8, 0>;
-    static gText_YesNo: CArray<u8, 0>;
-    fn AddTextPrinter(
-        a0: *mut TextPrinterTemplate,
-        a1: u8,
-        a2: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn BlitBitmapRectToWindow(
-        a0: u8,
-        a1: *mut u8,
-        a2: u16,
-        a3: u16,
-        a4: u16,
-        a5: i32,
-        a6: u16,
-        a7: u16,
-        a8: u16,
-        a9: u16,
-    );
-    fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn CallWindowFunction(a0: u8, a1: Option<unsafe extern "C" fn(u8, u8, u8, u8, u8, u8)>);
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CheckForSpaceForDma3Request(a0: i16) -> i16;
-    fn ClearWindowTilemap(a0: u8);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DeactivateAllTextPrinters();
-    fn DestroyTask(a0: u8);
-    fn DisplayMessageAndContinueTask(
-        a0: u8,
-        a1: u8,
-        a2: u16,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: *mut c_void,
-    );
-    fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeAllWindowBuffers();
-    fn GetBgAttribute(a0: u8, a1: u8) -> u16;
-    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
-    fn GetFontAttribute(a0: u8, a1: u8) -> u8;
-    fn GetHoennPokedexCount(a0: u8) -> u16;
-    fn GetLRKeysPressed() -> u8;
-    fn GetLRKeysPressedAndHeld() -> u8;
-    fn GetMapNameGeneric(a0: *mut u8, a1: u16) -> *mut u8;
-    fn GetMenuCursorDimensionByFont(a0: u8, a1: u8) -> u8;
-    fn GetMonIconPtr(a0: u16, a1: u32, a2: u32) -> *mut u8;
-    fn GetNationalPokedexCount(a0: u8) -> u16;
-    fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32;
-    fn GetValidMonIconPalettePtr(a0: u16) -> *mut u16;
-    fn GetWindowAttribute(a0: u8, a1: u8) -> u32;
-    fn GetWordTaskArg(a0: u8, a1: u8) -> u32;
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsDma3ManagerBusyWithBgCopy() -> u8;
-    fn IsNationalPokedexEnabled() -> u32;
-    fn IsTextPrinterActive(a0: u8) -> u16;
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadBgTilemap(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadMessageBoxGfx(a0: u8, a1: u16, a2: u8);
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn PlaySE(a0: u16);
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveWindow(a0: u8);
-    fn RequestDma3Fill(a0: i32, a1: *mut c_void, a2: u16, a3: u8) -> i16;
-    fn RunTextPrinters();
-    fn SetWordTaskArg(a0: u8, a1: u8, a2: u32);
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
+/// `AddTextPrinter` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinter(
+    a0: *mut TextPrinterTemplate,
+    a1: u8,
+    a2: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe { crate::text::AddTextPrinter(a0 as _, a1, core::mem::transmute(a2)) }
+}
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `GetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
+    unsafe { crate::bg::GetBgTilemapBuffer(a0) as *mut c_void }
+}
+/// `LZ77UnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitStandardTextBoxWindows() {
+pub unsafe fn InitStandardTextBoxWindows() {
     InitWindows(sStandardTextBox_WindowTemplates.as_ptr().cast_mut());
-    sStartMenuWindowId = WINDOW_NONE;
-    sMapNamePopupWindowId = WINDOW_NONE;
+    sStartMenuWindowId.set(WINDOW_NONE);
+    sMapNamePopupWindowId.set(WINDOW_NONE);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeAllOverworldWindowBuffers() {
+pub unsafe fn FreeAllOverworldWindowBuffers() {
     FreeAllWindowBuffers();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTextBoxGfxAndPrinters() {
+pub unsafe fn InitTextBoxGfxAndPrinters() {
     ChangeBgX(0, 0, BG_COORD_SET);
     ChangeBgY(0, 0, BG_COORD_SET);
     DeactivateAllTextPrinters();
     LoadMessageBoxAndBorderGfx();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunTextPrintersAndIsPrinter0Active() -> u16 {
+pub unsafe fn RunTextPrintersAndIsPrinter0Active() -> u16 {
     RunTextPrinters();
-    return IsTextPrinterActive(0);
+    IsTextPrinterActive(0)
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddTextPrinterParameterized2(
+pub unsafe fn AddTextPrinterParameterized2(
     windowId: u8,
     fontId: u8,
     str: *mut u8,
     speed: u8,
-    callback: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
+    callback: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
     fgColor: u8,
     bgColor: u8,
     shadowColor: u8,
@@ -284,13 +342,19 @@ pub unsafe extern "C" fn AddTextPrinterParameterized2(
     printer.set_fgColor(fgColor);
     printer.set_bgColor(bgColor);
     printer.set_shadowColor(shadowColor);
-    gTextFlags.set_useAlternateDownArrow(0);
-    return AddTextPrinter(&raw mut printer, speed, callback);
+    (*(&raw const crate::text::gTextFlags)
+        .cast::<TextFlags>()
+        .cast_mut())
+    .set_useAlternateDownArrow(0);
+    AddTextPrinter(&raw mut printer, speed, callback)
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddTextPrinterForMessage(allowSkippingDelayWithButtonPress: u8) {
-    let mut callback: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)> = None;
-    gTextFlags.set_canABSpeedUpPrint(allowSkippingDelayWithButtonPress);
+pub unsafe fn AddTextPrinterForMessage(allowSkippingDelayWithButtonPress: u8) {
+    let callback: Option<unsafe fn(*mut TextPrinterTemplate, u16)> = None;
+    (*(&raw const crate::text::gTextFlags)
+        .cast::<TextFlags>()
+        .cast_mut())
+    .set_canABSpeedUpPrint(allowSkippingDelayWithButtonPress);
     AddTextPrinterParameterized2(
         0,
         FONT_NORMAL,
@@ -302,9 +366,11 @@ pub unsafe extern "C" fn AddTextPrinterForMessage(allowSkippingDelayWithButtonPr
         TEXT_COLOR_LIGHT_GRAY,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddTextPrinterForMessage_2(allowSkippingDelayWithButtonPress: u8) {
-    gTextFlags.set_canABSpeedUpPrint(allowSkippingDelayWithButtonPress);
+pub unsafe fn AddTextPrinterForMessage_2(allowSkippingDelayWithButtonPress: u8) {
+    (*(&raw const crate::text::gTextFlags)
+        .cast::<TextFlags>()
+        .cast_mut())
+    .set_canABSpeedUpPrint(allowSkippingDelayWithButtonPress);
     AddTextPrinterParameterized2(
         0,
         FONT_NORMAL,
@@ -316,12 +382,14 @@ pub unsafe extern "C" fn AddTextPrinterForMessage_2(allowSkippingDelayWithButton
         TEXT_COLOR_LIGHT_GRAY,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddTextPrinterWithCustomSpeedForMessage(
+pub unsafe fn AddTextPrinterWithCustomSpeedForMessage(
     allowSkippingDelayWithButtonPress: u8,
     speed: u8,
 ) {
-    gTextFlags.set_canABSpeedUpPrint(allowSkippingDelayWithButtonPress);
+    (*(&raw const crate::text::gTextFlags)
+        .cast::<TextFlags>()
+        .cast_mut())
+    .set_canABSpeedUpPrint(allowSkippingDelayWithButtonPress);
     AddTextPrinterParameterized2(
         0,
         FONT_NORMAL,
@@ -334,12 +402,12 @@ pub unsafe extern "C" fn AddTextPrinterWithCustomSpeedForMessage(
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadMessageBoxAndBorderGfx() {
+pub unsafe fn LoadMessageBoxAndBorderGfx() {
     LoadMessageBoxGfx(0, DLG_WINDOW_BASE_TILE_NUM, 240);
     LoadUserWindowBorderGfx(0, STD_WINDOW_BASE_TILE_NUM, 224);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawDialogueFrame(windowId: u8, copyToVram: u8) {
+pub unsafe fn DrawDialogueFrame(windowId: u8, copyToVram: u8) {
     CallWindowFunction(windowId, Some(WindowFunc_DrawDialogueFrame));
     FillWindowPixelBuffer(windowId, 17);
     PutWindowTilemap(windowId);
@@ -347,8 +415,7 @@ pub unsafe extern "C" fn DrawDialogueFrame(windowId: u8, copyToVram: u8) {
         CopyWindowToVram(windowId, COPYWIN_FULL);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawStdWindowFrame(windowId: u8, copyToVram: u8) {
+pub unsafe fn DrawStdWindowFrame(windowId: u8, copyToVram: u8) {
     CallWindowFunction(windowId, Some(WindowFunc_DrawStandardFrame));
     FillWindowPixelBuffer(windowId, 17);
     PutWindowTilemap(windowId);
@@ -357,7 +424,7 @@ pub unsafe extern "C" fn DrawStdWindowFrame(windowId: u8, copyToVram: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearDialogWindowAndFrame(windowId: u8, copyToVram: u8) {
+pub unsafe fn ClearDialogWindowAndFrame(windowId: u8, copyToVram: u8) {
     CallWindowFunction(windowId, Some(WindowFunc_ClearDialogWindowAndFrame));
     FillWindowPixelBuffer(windowId, 17);
     ClearWindowTilemap(windowId);
@@ -366,7 +433,7 @@ pub unsafe extern "C" fn ClearDialogWindowAndFrame(windowId: u8, copyToVram: u8)
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearStdWindowAndFrame(windowId: u8, copyToVram: u8) {
+pub unsafe fn ClearStdWindowAndFrame(windowId: u8, copyToVram: u8) {
     CallWindowFunction(windowId, Some(WindowFunc_ClearStdWindowAndFrame));
     FillWindowPixelBuffer(windowId, 17);
     ClearWindowTilemap(windowId);
@@ -374,7 +441,7 @@ pub unsafe extern "C" fn ClearStdWindowAndFrame(windowId: u8, copyToVram: u8) {
         CopyWindowToVram(windowId, COPYWIN_FULL);
     }
 }
-pub(crate) unsafe extern "C" fn WindowFunc_DrawStandardFrame(
+pub(crate) unsafe fn WindowFunc_DrawStandardFrame(
     bg: u8,
     tilemapLeft: u8,
     tilemapTop: u8,
@@ -382,7 +449,6 @@ pub(crate) unsafe extern "C" fn WindowFunc_DrawStandardFrame(
     height: u8,
     paletteNum: u8,
 ) {
-    let mut i: i32 = 0;
     FillBgTilemapBufferRect(
         bg,
         STD_WINDOW_BASE_TILE_NUM,
@@ -410,8 +476,7 @@ pub(crate) unsafe extern "C" fn WindowFunc_DrawStandardFrame(
         1,
         STD_WINDOW_PALETTE_NUM,
     );
-    i = tilemapTop as i32;
-    while i < tilemapTop as i32 + height as i32 {
+    for i in (tilemapTop as i32)..(tilemapTop as i32 + height as i32) {
         FillBgTilemapBufferRect(
             bg,
             535,
@@ -430,7 +495,6 @@ pub(crate) unsafe extern "C" fn WindowFunc_DrawStandardFrame(
             1,
             STD_WINDOW_PALETTE_NUM,
         );
-        i += 1;
     }
     FillBgTilemapBufferRect(
         bg,
@@ -460,7 +524,7 @@ pub(crate) unsafe extern "C" fn WindowFunc_DrawStandardFrame(
         STD_WINDOW_PALETTE_NUM,
     );
 }
-pub(crate) unsafe extern "C" fn WindowFunc_DrawDialogueFrame(
+pub(crate) unsafe fn WindowFunc_DrawDialogueFrame(
     bg: u8,
     tilemapLeft: u8,
     tilemapTop: u8,
@@ -586,7 +650,7 @@ pub(crate) unsafe extern "C" fn WindowFunc_DrawDialogueFrame(
         DLG_WINDOW_PALETTE_NUM,
     );
 }
-pub(crate) unsafe extern "C" fn WindowFunc_ClearStdWindowAndFrame(
+pub(crate) unsafe fn WindowFunc_ClearStdWindowAndFrame(
     bg: u8,
     tilemapLeft: u8,
     tilemapTop: u8,
@@ -604,7 +668,7 @@ pub(crate) unsafe extern "C" fn WindowFunc_ClearStdWindowAndFrame(
         STD_WINDOW_PALETTE_NUM,
     );
 }
-pub(crate) unsafe extern "C" fn WindowFunc_ClearDialogWindowAndFrame(
+pub(crate) unsafe fn WindowFunc_ClearDialogWindowAndFrame(
     bg: u8,
     tilemapLeft: u8,
     tilemapTop: u8,
@@ -622,8 +686,7 @@ pub(crate) unsafe extern "C" fn WindowFunc_ClearDialogWindowAndFrame(
         STD_WINDOW_PALETTE_NUM,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetStandardWindowBorderStyle(windowId: u8, copyToVram: u8) {
+pub unsafe fn SetStandardWindowBorderStyle(windowId: u8, copyToVram: u8) {
     DrawStdFrameWithCustomTileAndPalette(
         windowId,
         copyToVram,
@@ -631,8 +694,7 @@ pub unsafe extern "C" fn SetStandardWindowBorderStyle(windowId: u8, copyToVram: 
         STD_WINDOW_PALETTE_NUM,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadMessageBoxAndFrameGfx(windowId: u8, copyToVram: u8) {
+pub unsafe fn LoadMessageBoxAndFrameGfx(windowId: u8, copyToVram: u8) {
     LoadMessageBoxGfx(windowId, DLG_WINDOW_BASE_TILE_NUM, 240);
     DrawDialogFrameWithCustomTileAndPalette(
         windowId,
@@ -642,7 +704,7 @@ pub unsafe extern "C" fn LoadMessageBoxAndFrameGfx(windowId: u8, copyToVram: u8)
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Menu_LoadStdPal() {
+pub unsafe fn Menu_LoadStdPal() {
     LoadPalette(
         gStandardMenuPalette.as_ptr().cast_mut() as *mut c_void,
         224,
@@ -650,27 +712,26 @@ pub unsafe extern "C" fn Menu_LoadStdPal() {
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Menu_LoadStdPalAt(offset: u16) {
+pub unsafe fn Menu_LoadStdPalAt(offset: u16) {
     LoadPalette(
         gStandardMenuPalette.as_ptr().cast_mut() as *mut c_void,
         offset,
         20,
     );
 }
-pub(crate) unsafe extern "C" fn Menu_GetStdPal() -> *mut u16 {
-    return gStandardMenuPalette.as_ptr().cast_mut();
+fn Menu_GetStdPal() -> *mut u16 {
+    gStandardMenuPalette.as_ptr().cast_mut()
 }
-pub(crate) unsafe extern "C" fn Menu_GetStdPalColor(mut colorNum: u8) -> u16 {
+fn Menu_GetStdPalColor(mut colorNum: u8) -> u16 {
     if colorNum > 15 {
         colorNum = 0;
     }
-    return gStandardMenuPalette[colorNum];
+    gStandardMenuPalette[colorNum]
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DisplayItemMessageOnField(
+pub unsafe fn DisplayItemMessageOnField(
     taskId: u8,
     string: *mut u8,
-    callback: Option<unsafe extern "C" fn(u8)>,
+    callback: Option<unsafe fn(u8)>,
 ) {
     LoadMessageBoxAndBorderGfx();
     DisplayMessageAndContinueTask(
@@ -681,12 +742,11 @@ pub unsafe extern "C" fn DisplayItemMessageOnField(
         FONT_NORMAL,
         GetPlayerTextSpeedDelay(),
         string,
-        core::mem::transmute::<Option<unsafe extern "C" fn(u8)>, *mut c_void>(callback),
+        core::mem::transmute::<Option<unsafe fn(u8)>, *mut c_void>(callback),
     );
     CopyWindowToVram(0, COPYWIN_FULL);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DisplayYesNoMenuDefaultYes() {
+pub unsafe fn DisplayYesNoMenuDefaultYes() {
     CreateYesNoMenu(
         (&raw const *sYesNo_WindowTemplates).cast_mut(),
         STD_WINDOW_BASE_TILE_NUM,
@@ -694,8 +754,7 @@ pub unsafe extern "C" fn DisplayYesNoMenuDefaultYes() {
         0,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DisplayYesNoMenuWithDefault(initialCursorPos: u8) {
+pub unsafe fn DisplayYesNoMenuWithDefault(initialCursorPos: u8) {
     CreateYesNoMenu(
         (&raw const *sYesNo_WindowTemplates).cast_mut(),
         STD_WINDOW_BASE_TILE_NUM,
@@ -704,70 +763,72 @@ pub unsafe extern "C" fn DisplayYesNoMenuWithDefault(initialCursorPos: u8) {
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerTextSpeed() -> u32 {
-    if gTextFlags.forceMidTextSpeed() != 0 {
+pub unsafe fn GetPlayerTextSpeed() -> u32 {
+    if (*(&raw const crate::text::gTextFlags)
+        .cast::<TextFlags>()
+        .cast_mut())
+    .forceMidTextSpeed()
+        != 0
+    {
         return OPTIONS_TEXT_SPEED_MID as u32;
     }
-    return (*gSaveBlock2Ptr).optionsTextSpeed() as u32;
+    (*gSaveBlock2Ptr).optionsTextSpeed() as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerTextSpeedDelay() -> u8 {
-    let mut speed: u32 = 0;
+pub unsafe fn GetPlayerTextSpeedDelay() -> u8 {
     if (*gSaveBlock2Ptr).optionsTextSpeed() > OPTIONS_TEXT_SPEED_FAST {
         (*gSaveBlock2Ptr).set_optionsTextSpeed(OPTIONS_TEXT_SPEED_MID);
     }
-    speed = GetPlayerTextSpeed();
-    return sTextSpeedFrameDelays[speed];
+    let speed: u32 = GetPlayerTextSpeed();
+    sTextSpeedFrameDelays[speed]
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddStartMenuWindow(numActions: u8) -> u8 {
-    if sStartMenuWindowId == WINDOW_NONE {
-        sStartMenuWindowId =
-            AddWindowParameterized(0, 22, 1, 7, numActions * 2 + 2, 15, 0x139) as u8;
+pub unsafe fn AddStartMenuWindow(numActions: u8) -> u8 {
+    if sStartMenuWindowId.get() == WINDOW_NONE {
+        sStartMenuWindowId
+            .set(AddWindowParameterized(0, 22, 1, 7, numActions * 2 + 2, 15, 0x139) as u8);
     }
-    return sStartMenuWindowId;
+    sStartMenuWindowId.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetStartMenuWindowId() -> u8 {
-    return sStartMenuWindowId;
+pub unsafe fn GetStartMenuWindowId() -> u8 {
+    sStartMenuWindowId.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RemoveStartMenuWindow() {
-    if sStartMenuWindowId != WINDOW_NONE {
-        RemoveWindow(sStartMenuWindowId);
-        sStartMenuWindowId = WINDOW_NONE;
+pub unsafe fn RemoveStartMenuWindow() {
+    if sStartMenuWindowId.get() != WINDOW_NONE {
+        RemoveWindow(sStartMenuWindowId.get());
+        sStartMenuWindowId.set(WINDOW_NONE);
     }
 }
-pub(crate) unsafe extern "C" fn GetDialogFrameBaseTileNum() -> u16 {
-    return DLG_WINDOW_BASE_TILE_NUM;
+fn GetDialogFrameBaseTileNum() -> u16 {
+    DLG_WINDOW_BASE_TILE_NUM
 }
-pub(crate) unsafe extern "C" fn GetStandardFrameBaseTileNum() -> u16 {
-    return STD_WINDOW_BASE_TILE_NUM;
+fn GetStandardFrameBaseTileNum() -> u16 {
+    STD_WINDOW_BASE_TILE_NUM
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddMapNamePopUpWindow() -> u8 {
-    if sMapNamePopupWindowId == WINDOW_NONE {
-        sMapNamePopupWindowId = AddWindowParameterized(0, 1, 1, 10, 3, 14, 0x107) as u8;
+pub unsafe fn AddMapNamePopUpWindow() -> u8 {
+    if sMapNamePopupWindowId.get() == WINDOW_NONE {
+        sMapNamePopupWindowId.set(AddWindowParameterized(0, 1, 1, 10, 3, 14, 0x107) as u8);
     }
-    return sMapNamePopupWindowId;
+    sMapNamePopupWindowId.get()
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMapNamePopUpWindowId() -> u8 {
-    return sMapNamePopupWindowId;
+pub fn GetMapNamePopUpWindowId() -> u8 {
+    sMapNamePopupWindowId.get()
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RemoveMapNamePopUpWindow() {
-    if sMapNamePopupWindowId != WINDOW_NONE {
-        RemoveWindow(sMapNamePopupWindowId);
-        sMapNamePopupWindowId = WINDOW_NONE;
+pub unsafe fn RemoveMapNamePopUpWindow() {
+    if sMapNamePopupWindowId.get() != WINDOW_NONE {
+        RemoveWindow(sMapNamePopupWindowId.get());
+        sMapNamePopupWindowId.set(WINDOW_NONE);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddTextPrinterWithCallbackForMessage(
+pub unsafe fn AddTextPrinterWithCallbackForMessage(
     canSpeedUp: u8,
-    callback: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
+    callback: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
 ) {
-    gTextFlags.set_canABSpeedUpPrint(canSpeedUp);
+    (*(&raw const crate::text::gTextFlags)
+        .cast::<TextFlags>()
+        .cast_mut())
+    .set_canABSpeedUpPrint(canSpeedUp);
     AddTextPrinterParameterized2(
         0,
         FONT_NORMAL,
@@ -779,22 +840,20 @@ pub unsafe extern "C" fn AddTextPrinterWithCallbackForMessage(
         TEXT_COLOR_LIGHT_GRAY,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn EraseFieldMessageBox(copyToVram: u8) {
+pub unsafe fn EraseFieldMessageBox(copyToVram: u8) {
     FillBgTilemapBufferRect(0, 0, 0, 0, 32, 32, 17);
     if copyToVram == TRUE {
         CopyBgTilemapBufferToVram(0);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawDialogFrameWithCustomTileAndPalette(
+pub unsafe fn DrawDialogFrameWithCustomTileAndPalette(
     windowId: u8,
     copyToVram: u8,
     tileNum: u16,
     paletteNum: u8,
 ) {
-    sTileNum = tileNum;
-    sPaletteNum = paletteNum;
+    sTileNum.set(tileNum);
+    sPaletteNum.set(paletteNum);
     CallWindowFunction(
         windowId,
         Some(WindowFunc_DrawDialogFrameWithCustomTileAndPalette),
@@ -805,13 +864,9 @@ pub unsafe extern "C" fn DrawDialogFrameWithCustomTileAndPalette(
         CopyWindowToVram(windowId, COPYWIN_FULL);
     }
 }
-pub(crate) unsafe extern "C" fn DrawDialogFrameWithCustomTile(
-    windowId: u8,
-    copyToVram: u8,
-    tileNum: u16,
-) {
-    sTileNum = tileNum;
-    sPaletteNum = GetWindowAttribute(windowId, WINDOW_PALETTE_NUM) as u8;
+unsafe fn DrawDialogFrameWithCustomTile(windowId: u8, copyToVram: u8, tileNum: u16) {
+    sTileNum.set(tileNum);
+    sPaletteNum.set(GetWindowAttribute(windowId, WINDOW_PALETTE_NUM) as u8);
     CallWindowFunction(
         windowId,
         Some(WindowFunc_DrawDialogFrameWithCustomTileAndPalette),
@@ -822,7 +877,7 @@ pub(crate) unsafe extern "C" fn DrawDialogFrameWithCustomTile(
         CopyWindowToVram(windowId, COPYWIN_FULL);
     }
 }
-pub(crate) unsafe extern "C" fn WindowFunc_DrawDialogFrameWithCustomTileAndPalette(
+pub(crate) unsafe fn WindowFunc_DrawDialogFrameWithCustomTileAndPalette(
     bg: u8,
     tilemapLeft: u8,
     tilemapTop: u8,
@@ -832,124 +887,123 @@ pub(crate) unsafe extern "C" fn WindowFunc_DrawDialogFrameWithCustomTileAndPalet
 ) {
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 1,
+        sTileNum.get() + 1,
         tilemapLeft - 2,
         tilemapTop - 1,
         1,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 3,
+        sTileNum.get() + 3,
         tilemapLeft - 1,
         tilemapTop - 1,
         1,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 4,
+        sTileNum.get() + 4,
         tilemapLeft,
         tilemapTop - 1,
         width - 1,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 5,
+        sTileNum.get() + 5,
         tilemapLeft + width - 1,
         tilemapTop - 1,
         1,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 6,
+        sTileNum.get() + 6,
         tilemapLeft + width,
         tilemapTop - 1,
         1,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 7,
+        sTileNum.get() + 7,
         tilemapLeft - 2,
         tilemapTop,
         1,
         5,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 9,
+        sTileNum.get() + 9,
         tilemapLeft - 1,
         tilemapTop,
         width + 1,
         5,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 10,
+        sTileNum.get() + 10,
         tilemapLeft + width,
         tilemapTop,
         1,
         5,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        0x800 + (sTileNum + 1),
+        0x800 + (sTileNum.get() + 1),
         tilemapLeft - 2,
         tilemapTop + height,
         1,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        0x800 + (sTileNum + 3),
+        0x800 + (sTileNum.get() + 3),
         tilemapLeft - 1,
         tilemapTop + height,
         1,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        0x800 + (sTileNum + 4),
+        0x800 + (sTileNum.get() + 4),
         tilemapLeft,
         tilemapTop + height,
         width - 1,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        0x800 + (sTileNum + 5),
+        0x800 + (sTileNum.get() + 5),
         tilemapLeft + width - 1,
         tilemapTop + height,
         1,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        0x800 + (sTileNum + 6),
+        0x800 + (sTileNum.get() + 6),
         tilemapLeft + width,
         tilemapTop + height,
         1,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearDialogWindowAndFrameToTransparent(windowId: u8, copyToVram: u8) {
+pub unsafe fn ClearDialogWindowAndFrameToTransparent(windowId: u8, copyToVram: u8) {
     CallWindowFunction(
         windowId,
         Some(WindowFunc_ClearDialogWindowAndFrameNullPalette),
@@ -960,7 +1014,7 @@ pub unsafe extern "C" fn ClearDialogWindowAndFrameToTransparent(windowId: u8, co
         CopyWindowToVram(windowId, COPYWIN_FULL);
     }
 }
-pub(crate) unsafe extern "C" fn WindowFunc_ClearDialogWindowAndFrameNullPalette(
+pub(crate) unsafe fn WindowFunc_ClearDialogWindowAndFrameNullPalette(
     bg: u8,
     tilemapLeft: u8,
     tilemapTop: u8,
@@ -979,14 +1033,14 @@ pub(crate) unsafe extern "C" fn WindowFunc_ClearDialogWindowAndFrameNullPalette(
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawStdFrameWithCustomTileAndPalette(
+pub unsafe fn DrawStdFrameWithCustomTileAndPalette(
     windowId: u8,
     copyToVram: u8,
     baseTileNum: u16,
     paletteNum: u8,
 ) {
-    sTileNum = baseTileNum;
-    sPaletteNum = paletteNum;
+    sTileNum.set(baseTileNum);
+    sPaletteNum.set(paletteNum);
     CallWindowFunction(
         windowId,
         Some(WindowFunc_DrawStdFrameWithCustomTileAndPalette),
@@ -997,14 +1051,9 @@ pub unsafe extern "C" fn DrawStdFrameWithCustomTileAndPalette(
         CopyWindowToVram(windowId, COPYWIN_FULL);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawStdFrameWithCustomTile(
-    windowId: u8,
-    copyToVram: u8,
-    baseTileNum: u16,
-) {
-    sTileNum = baseTileNum;
-    sPaletteNum = GetWindowAttribute(windowId, WINDOW_PALETTE_NUM) as u8;
+pub unsafe fn DrawStdFrameWithCustomTile(windowId: u8, copyToVram: u8, baseTileNum: u16) {
+    sTileNum.set(baseTileNum);
+    sPaletteNum.set(GetWindowAttribute(windowId, WINDOW_PALETTE_NUM) as u8);
     CallWindowFunction(
         windowId,
         Some(WindowFunc_DrawStdFrameWithCustomTileAndPalette),
@@ -1015,7 +1064,7 @@ pub unsafe extern "C" fn DrawStdFrameWithCustomTile(
         CopyWindowToVram(windowId, COPYWIN_FULL);
     }
 }
-pub(crate) unsafe extern "C" fn WindowFunc_DrawStdFrameWithCustomTileAndPalette(
+pub(crate) unsafe fn WindowFunc_DrawStdFrameWithCustomTileAndPalette(
     bg: u8,
     tilemapLeft: u8,
     tilemapTop: u8,
@@ -1025,79 +1074,79 @@ pub(crate) unsafe extern "C" fn WindowFunc_DrawStdFrameWithCustomTileAndPalette(
 ) {
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 0,
+        sTileNum.get(),
         tilemapLeft - 1,
         tilemapTop - 1,
         1,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 1,
+        sTileNum.get() + 1,
         tilemapLeft,
         tilemapTop - 1,
         width,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 2,
+        sTileNum.get() + 2,
         tilemapLeft + width,
         tilemapTop - 1,
         1,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 3,
+        sTileNum.get() + 3,
         tilemapLeft - 1,
         tilemapTop,
         1,
         height,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 5,
+        sTileNum.get() + 5,
         tilemapLeft + width,
         tilemapTop,
         1,
         height,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 6,
+        sTileNum.get() + 6,
         tilemapLeft - 1,
         tilemapTop + height,
         1,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 7,
+        sTileNum.get() + 7,
         tilemapLeft,
         tilemapTop + height,
         width,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
     FillBgTilemapBufferRect(
         bg,
-        sTileNum + 8,
+        sTileNum.get() + 8,
         tilemapLeft + width,
         tilemapTop + height,
         1,
         1,
-        sPaletteNum,
+        sPaletteNum.get(),
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearStdWindowAndFrameToTransparent(windowId: u8, copyToVram: u8) {
+pub unsafe fn ClearStdWindowAndFrameToTransparent(windowId: u8, copyToVram: u8) {
     CallWindowFunction(
         windowId,
         Some(WindowFunc_ClearStdWindowAndFrameToTransparent),
@@ -1108,7 +1157,7 @@ pub unsafe extern "C" fn ClearStdWindowAndFrameToTransparent(windowId: u8, copyT
         CopyWindowToVram(windowId, COPYWIN_FULL);
     }
 }
-pub(crate) unsafe extern "C" fn WindowFunc_ClearStdWindowAndFrameToTransparent(
+pub(crate) unsafe fn WindowFunc_ClearStdWindowAndFrameToTransparent(
     bg: u8,
     tilemapLeft: u8,
     tilemapTop: u8,
@@ -1126,8 +1175,7 @@ pub(crate) unsafe extern "C" fn WindowFunc_ClearStdWindowAndFrameToTransparent(
         0,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HofPCTopBar_AddWindow(
+pub unsafe fn HofPCTopBar_AddWindow(
     bg: u8,
     xPos: u8,
     yPos: u8,
@@ -1147,30 +1195,29 @@ pub unsafe extern "C" fn HofPCTopBar_AddWindow(
     window.width = xPos;
     window.paletteNum = palette;
     window.baseBlock = baseTile;
-    sHofPCTopBarWindowId = AddWindow(&raw mut window) as u8;
+    sHofPCTopBarWindowId.set(AddWindow(&raw mut window) as u8);
     if palette > 15 {
         palette = 240;
     } else {
-        palette = 0x000 + palette * 16;
+        palette *= 16;
     }
     LoadPalette(
         sHofPC_TopBar_Pal.as_ptr().cast_mut() as *mut c_void,
         palette as u16,
         32,
     );
-    return sHofPCTopBarWindowId;
+    sHofPCTopBarWindowId.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HofPCTopBar_Print(string: *mut u8, left: u8, copyToVram: u8) {
+pub unsafe fn HofPCTopBar_Print(string: *mut u8, left: u8, copyToVram: u8) {
     let mut width: u16 = 0;
-    if sHofPCTopBarWindowId != WINDOW_NONE {
-        PutWindowTilemap(sHofPCTopBarWindowId);
-        FillWindowPixelBuffer(sHofPCTopBarWindowId, 255);
+    if sHofPCTopBarWindowId.get() != WINDOW_NONE {
+        PutWindowTilemap(sHofPCTopBarWindowId.get());
+        FillWindowPixelBuffer(sHofPCTopBarWindowId.get(), 255);
         width = GetStringWidth(FONT_SMALL, string, 0) as u16;
         AddTextPrinterParameterized3(
-            sHofPCTopBarWindowId,
+            sHofPCTopBarWindowId.get(),
             FONT_SMALL,
-            236 - GetWindowAttribute(sHofPCTopBarWindowId, WINDOW_TILEMAP_LEFT) as u8 * 8
+            236 - GetWindowAttribute(sHofPCTopBarWindowId.get(), WINDOW_TILEMAP_LEFT) as u8 * 8
                 - left
                 - width as u8,
             1,
@@ -1179,12 +1226,11 @@ pub unsafe extern "C" fn HofPCTopBar_Print(string: *mut u8, left: u8, copyToVram
             string,
         );
         if copyToVram != 0 {
-            CopyWindowToVram(sHofPCTopBarWindowId, COPYWIN_FULL);
+            CopyWindowToVram(sHofPCTopBarWindowId.get(), COPYWIN_FULL);
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HofPCTopBar_PrintPair(
+pub unsafe fn HofPCTopBar_PrintPair(
     string: *mut u8,
     string2: *mut u8,
     noBg: u8,
@@ -1193,7 +1239,7 @@ pub unsafe extern "C" fn HofPCTopBar_PrintPair(
 ) {
     let mut color: CArray<u8, 3> = zeroed();
     let mut width: u16 = 0;
-    if sHofPCTopBarWindowId != WINDOW_NONE {
+    if sHofPCTopBarWindowId.get() != WINDOW_NONE {
         if noBg != 0 {
             color[0] = 0x0;
             color[1] = 0x1;
@@ -1203,14 +1249,14 @@ pub unsafe extern "C" fn HofPCTopBar_PrintPair(
             color[1] = 0x1;
             color[2] = 0x2;
         }
-        PutWindowTilemap(sHofPCTopBarWindowId);
-        FillWindowPixelBuffer(sHofPCTopBarWindowId, 255);
+        PutWindowTilemap(sHofPCTopBarWindowId.get());
+        FillWindowPixelBuffer(sHofPCTopBarWindowId.get(), 255);
         if !string2.is_null() {
             width = GetStringWidth(FONT_SMALL, string2, 0) as u16;
             AddTextPrinterParameterized3(
-                sHofPCTopBarWindowId,
+                sHofPCTopBarWindowId.get(),
                 FONT_SMALL,
-                236 - GetWindowAttribute(sHofPCTopBarWindowId, WINDOW_TILEMAP_LEFT) as u8 * 8
+                236 - GetWindowAttribute(sHofPCTopBarWindowId.get(), WINDOW_TILEMAP_LEFT) as u8 * 8
                     - left
                     - width as u8,
                 1,
@@ -1220,7 +1266,7 @@ pub unsafe extern "C" fn HofPCTopBar_PrintPair(
             );
         }
         AddTextPrinterParameterized4(
-            sHofPCTopBarWindowId,
+            sHofPCTopBarWindowId.get(),
             FONT_NORMAL,
             4,
             1,
@@ -1231,32 +1277,31 @@ pub unsafe extern "C" fn HofPCTopBar_PrintPair(
             string,
         );
         if copyToVram != 0 {
-            CopyWindowToVram(sHofPCTopBarWindowId, COPYWIN_FULL);
+            CopyWindowToVram(sHofPCTopBarWindowId.get(), COPYWIN_FULL);
         }
     }
 }
-pub(crate) unsafe extern "C" fn HofPCTopBar_CopyToVram() {
-    if sHofPCTopBarWindowId != WINDOW_NONE {
-        CopyWindowToVram(sHofPCTopBarWindowId, COPYWIN_FULL);
+unsafe fn HofPCTopBar_CopyToVram() {
+    if sHofPCTopBarWindowId.get() != WINDOW_NONE {
+        CopyWindowToVram(sHofPCTopBarWindowId.get(), COPYWIN_FULL);
     }
 }
-pub(crate) unsafe extern "C" fn HofPCTopBar_Clear() {
-    if sHofPCTopBarWindowId != WINDOW_NONE {
-        FillWindowPixelBuffer(sHofPCTopBarWindowId, 255);
-        CopyWindowToVram(sHofPCTopBarWindowId, COPYWIN_FULL);
+unsafe fn HofPCTopBar_Clear() {
+    if sHofPCTopBarWindowId.get() != WINDOW_NONE {
+        FillWindowPixelBuffer(sHofPCTopBarWindowId.get(), 255);
+        CopyWindowToVram(sHofPCTopBarWindowId.get(), COPYWIN_FULL);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HofPCTopBar_RemoveWindow() {
-    if sHofPCTopBarWindowId != WINDOW_NONE {
-        FillWindowPixelBuffer(sHofPCTopBarWindowId, 0);
-        ClearWindowTilemap(sHofPCTopBarWindowId);
-        CopyWindowToVram(sHofPCTopBarWindowId, COPYWIN_FULL);
-        RemoveWindow(sHofPCTopBarWindowId);
-        sHofPCTopBarWindowId = WINDOW_NONE;
+pub unsafe fn HofPCTopBar_RemoveWindow() {
+    if sHofPCTopBarWindowId.get() != WINDOW_NONE {
+        FillWindowPixelBuffer(sHofPCTopBarWindowId.get(), 0);
+        ClearWindowTilemap(sHofPCTopBarWindowId.get());
+        CopyWindowToVram(sHofPCTopBarWindowId.get(), COPYWIN_FULL);
+        RemoveWindow(sHofPCTopBarWindowId.get());
+        sHofPCTopBarWindowId.set(WINDOW_NONE);
     }
 }
-pub(crate) unsafe extern "C" fn InitMenu(
+pub(crate) unsafe fn InitMenu(
     windowId: u8,
     fontId: u8,
     left: u8,
@@ -1266,7 +1311,6 @@ pub(crate) unsafe extern "C" fn InitMenu(
     initialCursorPos: u8,
     muteAPress: u8,
 ) -> u8 {
-    let mut pos: i32 = 0;
     sMenu.left = left;
     sMenu.top = top;
     sMenu.minCursorPos = 0;
@@ -1275,17 +1319,16 @@ pub(crate) unsafe extern "C" fn InitMenu(
     sMenu.fontId = fontId;
     sMenu.optionHeight = cursorHeight;
     sMenu.APressMuted = muteAPress;
-    pos = initialCursorPos as i32;
+    let pos: i32 = initialCursorPos as i32;
     if pos < 0 || pos > sMenu.maxCursorPos as i32 {
         sMenu.cursorPos = 0;
     } else {
         sMenu.cursorPos = pos as i8;
     }
     Menu_MoveCursor(0);
-    return sMenu.cursorPos as u8;
+    sMenu.cursorPos as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitMenuNormal(
+pub unsafe fn InitMenuNormal(
     windowId: u8,
     fontId: u8,
     left: u8,
@@ -1294,7 +1337,7 @@ pub unsafe extern "C" fn InitMenuNormal(
     numChoices: u8,
     initialCursorPos: u8,
 ) -> u8 {
-    return InitMenu(
+    InitMenu(
         windowId,
         fontId,
         left,
@@ -1303,9 +1346,9 @@ pub unsafe extern "C" fn InitMenuNormal(
         numChoices,
         initialCursorPos,
         FALSE,
-    );
+    )
 }
-pub(crate) unsafe extern "C" fn InitMenuDefaultCursorHeight(
+unsafe fn InitMenuDefaultCursorHeight(
     windowId: u8,
     fontId: u8,
     left: u8,
@@ -1313,8 +1356,8 @@ pub(crate) unsafe extern "C" fn InitMenuDefaultCursorHeight(
     numChoices: u8,
     initialCursorPos: u8,
 ) -> u8 {
-    let mut cursorHeight: u8 = GetMenuCursorDimensionByFont(fontId, 1);
-    return InitMenuNormal(
+    let cursorHeight: u8 = GetMenuCursorDimensionByFont(fontId, 1);
+    InitMenuNormal(
         windowId,
         fontId,
         left,
@@ -1322,14 +1365,11 @@ pub(crate) unsafe extern "C" fn InitMenuDefaultCursorHeight(
         cursorHeight,
         numChoices,
         initialCursorPos,
-    );
+    )
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RedrawMenuCursor(oldPos: u8, newPos: u8) {
-    let mut width: u8 = 0;
-    let mut height: u8 = 0;
-    width = GetMenuCursorDimensionByFont(sMenu.fontId, 0);
-    height = GetMenuCursorDimensionByFont(sMenu.fontId, 1);
+pub unsafe fn RedrawMenuCursor(oldPos: u8, newPos: u8) {
+    let width: u8 = GetMenuCursorDimensionByFont(sMenu.fontId, 0);
+    let height: u8 = GetMenuCursorDimensionByFont(sMenu.fontId, 1);
     FillWindowPixelRect(
         sMenu.windowId,
         17,
@@ -1341,17 +1381,18 @@ pub unsafe extern "C" fn RedrawMenuCursor(oldPos: u8, newPos: u8) {
     AddTextPrinterParameterized(
         sMenu.windowId,
         sMenu.fontId,
-        gText_SelectorArrow3.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_SelectorArrow3).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         sMenu.left,
         sMenu.optionHeight * newPos + sMenu.top,
         0,
         None,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Menu_MoveCursor(cursorDelta: i8) -> u8 {
-    let mut oldPos: u8 = sMenu.cursorPos as u8;
-    let mut newPos: i32 = sMenu.cursorPos as i32 + cursorDelta as i32;
+pub unsafe fn Menu_MoveCursor(cursorDelta: i8) -> u8 {
+    let oldPos: u8 = sMenu.cursorPos as u8;
+    let newPos: i32 = sMenu.cursorPos as i32 + cursorDelta as i32;
     if newPos < sMenu.minCursorPos as i32 {
         sMenu.cursorPos = sMenu.maxCursorPos;
     } else if newPos > sMenu.maxCursorPos as i32 {
@@ -1360,12 +1401,11 @@ pub unsafe extern "C" fn Menu_MoveCursor(cursorDelta: i8) -> u8 {
         sMenu.cursorPos += cursorDelta;
     }
     RedrawMenuCursor(oldPos, sMenu.cursorPos as u8);
-    return sMenu.cursorPos as u8;
+    sMenu.cursorPos as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Menu_MoveCursorNoWrapAround(cursorDelta: i8) -> u8 {
-    let mut oldPos: u8 = sMenu.cursorPos as u8;
-    let mut newPos: i32 = sMenu.cursorPos as i32 + cursorDelta as i32;
+pub unsafe fn Menu_MoveCursorNoWrapAround(cursorDelta: i8) -> u8 {
+    let oldPos: u8 = sMenu.cursorPos as u8;
+    let newPos: i32 = sMenu.cursorPos as i32 + cursorDelta as i32;
     if newPos < sMenu.minCursorPos as i32 {
         sMenu.cursorPos = sMenu.minCursorPos;
     } else if newPos > sMenu.maxCursorPos as i32 {
@@ -1374,14 +1414,13 @@ pub unsafe extern "C" fn Menu_MoveCursorNoWrapAround(cursorDelta: i8) -> u8 {
         sMenu.cursorPos += cursorDelta;
     }
     RedrawMenuCursor(oldPos, sMenu.cursorPos as u8);
-    return sMenu.cursorPos as u8;
+    sMenu.cursorPos as u8
+}
+pub unsafe fn Menu_GetCursorPos() -> u8 {
+    sMenu.cursorPos as u8
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Menu_GetCursorPos() -> u8 {
-    return sMenu.cursorPos as u8;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Menu_ProcessInput() -> i8 {
+pub unsafe fn Menu_ProcessInput() -> i8 {
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         if sMenu.APressMuted == 0 {
             PlaySE(SE_SELECT);
@@ -1398,11 +1437,10 @@ pub unsafe extern "C" fn Menu_ProcessInput() -> i8 {
         Menu_MoveCursor(1);
         return MENU_NOTHING_CHOSEN;
     }
-    return MENU_NOTHING_CHOSEN;
+    MENU_NOTHING_CHOSEN
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Menu_ProcessInputNoWrap() -> i8 {
-    let mut oldPos: u8 = sMenu.cursorPos as u8;
+pub unsafe fn Menu_ProcessInputNoWrap() -> i8 {
+    let oldPos: u8 = sMenu.cursorPos as u8;
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         if sMenu.APressMuted == 0 {
             PlaySE(SE_SELECT);
@@ -1421,10 +1459,9 @@ pub unsafe extern "C" fn Menu_ProcessInputNoWrap() -> i8 {
         }
         return MENU_NOTHING_CHOSEN;
     }
-    return MENU_NOTHING_CHOSEN;
+    MENU_NOTHING_CHOSEN
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ProcessMenuInput_other() -> i8 {
+pub unsafe fn ProcessMenuInput_other() -> i8 {
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         if sMenu.APressMuted == 0 {
             PlaySE(SE_SELECT);
@@ -1441,11 +1478,10 @@ pub unsafe extern "C" fn ProcessMenuInput_other() -> i8 {
         Menu_MoveCursor(1);
         return MENU_NOTHING_CHOSEN;
     }
-    return MENU_NOTHING_CHOSEN;
+    MENU_NOTHING_CHOSEN
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Menu_ProcessInputNoWrapAround_other() -> i8 {
-    let mut oldPos: u8 = sMenu.cursorPos as u8;
+pub unsafe fn Menu_ProcessInputNoWrapAround_other() -> i8 {
+    let oldPos: u8 = sMenu.cursorPos as u8;
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         if sMenu.APressMuted == 0 {
             PlaySE(SE_SELECT);
@@ -1464,10 +1500,9 @@ pub unsafe extern "C" fn Menu_ProcessInputNoWrapAround_other() -> i8 {
         }
         return MENU_NOTHING_CHOSEN;
     }
-    return MENU_NOTHING_CHOSEN;
+    MENU_NOTHING_CHOSEN
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintMenuActionTextsAtPos(
+pub unsafe fn PrintMenuActionTextsAtPos(
     windowId: u8,
     fontId: u8,
     left: u8,
@@ -1476,9 +1511,7 @@ pub unsafe extern "C" fn PrintMenuActionTextsAtPos(
     itemCount: u8,
     menuActions: *mut MenuAction,
 ) {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < itemCount {
+    for i in 0..itemCount {
         AddTextPrinterParameterized(
             windowId,
             fontId,
@@ -1488,11 +1521,10 @@ pub unsafe extern "C" fn PrintMenuActionTextsAtPos(
             TEXT_SKIP_DRAW,
             None,
         );
-        i += 1;
     }
     CopyWindowToVram(windowId, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn PrintMenuActionTextsWithSpacing(
+unsafe fn PrintMenuActionTextsWithSpacing(
     windowId: u8,
     fontId: u8,
     left: u8,
@@ -1503,9 +1535,7 @@ pub(crate) unsafe extern "C" fn PrintMenuActionTextsWithSpacing(
     letterSpacing: u8,
     lineSpacing: u8,
 ) {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < itemCount {
+    for i in 0..itemCount {
         AddTextPrinterParameterized5(
             windowId,
             fontId,
@@ -1517,11 +1547,10 @@ pub(crate) unsafe extern "C" fn PrintMenuActionTextsWithSpacing(
             letterSpacing,
             lineSpacing,
         );
-        i += 1;
     }
     CopyWindowToVram(windowId, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn PrintMenuActionTextsAtTop(
+unsafe fn PrintMenuActionTextsAtTop(
     windowId: u8,
     fontId: u8,
     lineHeight: u8,
@@ -1538,8 +1567,7 @@ pub(crate) unsafe extern "C" fn PrintMenuActionTextsAtTop(
         menuActions,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintMenuActionTexts(
+pub unsafe fn PrintMenuActionTexts(
     windowId: u8,
     fontId: u8,
     left: u8,
@@ -1550,7 +1578,6 @@ pub unsafe extern "C" fn PrintMenuActionTexts(
     menuActions: *mut MenuAction,
     actionIds: *mut u8,
 ) {
-    let mut i: u8 = 0;
     let mut printer: TextPrinterTemplate = zeroed();
     printer.windowId = windowId;
     printer.fontId = fontId;
@@ -1562,17 +1589,15 @@ pub unsafe extern "C" fn PrintMenuActionTexts(
     printer.lineSpacing = GetFontAttribute(fontId, FONTATTR_LINE_SPACING);
     printer.x = left;
     printer.currentX = left;
-    i = 0;
-    while i < itemCount {
+    for i in 0..itemCount {
         printer.currentChar = (*menuActions.at(*actionIds.at(i))).text;
         printer.y = lineHeight * i + top;
         printer.currentY = printer.y;
         AddTextPrinter(&raw mut printer, TEXT_SKIP_DRAW, None);
-        i += 1;
     }
     CopyWindowToVram(windowId, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn PrintMenuActionTextsAtTopById(
+unsafe fn PrintMenuActionTextsAtTopById(
     windowId: u8,
     fontId: u8,
     lineHeight: u8,
@@ -1593,7 +1618,7 @@ pub(crate) unsafe extern "C" fn PrintMenuActionTextsAtTopById(
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWindowTemplateFields(
+pub unsafe fn SetWindowTemplateFields(
     template: *mut WindowTemplate,
     bg: u8,
     left: u8,
@@ -1611,8 +1636,7 @@ pub unsafe extern "C" fn SetWindowTemplateFields(
     (*template).paletteNum = paletteNum;
     (*template).baseBlock = baseBlock;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateWindowTemplate(
+pub unsafe fn CreateWindowTemplate(
     bg: u8,
     left: u8,
     top: u8,
@@ -1632,10 +1656,9 @@ pub unsafe extern "C" fn CreateWindowTemplate(
         paletteNum,
         baseBlock,
     );
-    return template;
+    template
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddWindowParameterized(
+pub unsafe fn AddWindowParameterized(
     bg: u8,
     left: u8,
     top: u8,
@@ -1655,9 +1678,9 @@ pub unsafe extern "C" fn AddWindowParameterized(
         paletteNum,
         baseBlock,
     );
-    return AddWindow(&raw mut template);
+    AddWindow(&raw mut template)
 }
-pub(crate) unsafe extern "C" fn CreateYesNoMenuAtPos(
+unsafe fn CreateYesNoMenuAtPos(
     window: *mut WindowTemplate,
     fontId: u8,
     left: u8,
@@ -1667,10 +1690,12 @@ pub(crate) unsafe extern "C" fn CreateYesNoMenuAtPos(
     initialCursorPos: u8,
 ) {
     let mut printer: TextPrinterTemplate = zeroed();
-    sYesNoWindowId = AddWindow(window) as u8;
-    DrawStdFrameWithCustomTileAndPalette(sYesNoWindowId, TRUE, baseTileNum, paletteNum);
-    printer.currentChar = gText_YesNo.as_ptr().cast_mut();
-    printer.windowId = sYesNoWindowId;
+    sYesNoWindowId.set(AddWindow(window) as u8);
+    DrawStdFrameWithCustomTileAndPalette(sYesNoWindowId.get(), TRUE, baseTileNum, paletteNum);
+    printer.currentChar = (*(&raw const crate::data::strings::gText_YesNo).cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
+    printer.windowId = sYesNoWindowId.get();
     printer.fontId = fontId;
     printer.x = GetFontAttribute(fontId, FONTATTR_MAX_LETTER_WIDTH) + left;
     printer.y = top;
@@ -1684,7 +1709,7 @@ pub(crate) unsafe extern "C" fn CreateYesNoMenuAtPos(
     printer.lineSpacing = GetFontAttribute(fontId, FONTATTR_LINE_SPACING);
     AddTextPrinter(&raw mut printer, TEXT_SKIP_DRAW, None);
     InitMenuNormal(
-        sYesNoWindowId,
+        sYesNoWindowId.get(),
         fontId,
         left,
         top,
@@ -1693,7 +1718,7 @@ pub(crate) unsafe extern "C" fn CreateYesNoMenuAtPos(
         initialCursorPos,
     );
 }
-pub(crate) unsafe extern "C" fn CreateYesNoMenuInTopLeft(
+unsafe fn CreateYesNoMenuInTopLeft(
     window: *mut WindowTemplate,
     fontId: u8,
     baseTileNum: u16,
@@ -1702,19 +1727,18 @@ pub(crate) unsafe extern "C" fn CreateYesNoMenuInTopLeft(
     CreateYesNoMenuAtPos(window, fontId, 0, 1, baseTileNum, paletteNum, 0);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Menu_ProcessInputNoWrapClearOnChoose() -> i8 {
-    let mut result: i8 = Menu_ProcessInputNoWrap();
+pub unsafe fn Menu_ProcessInputNoWrapClearOnChoose() -> i8 {
+    let result: i8 = Menu_ProcessInputNoWrap();
     if result != MENU_NOTHING_CHOSEN {
         EraseYesNoWindow();
     }
-    return result;
+    result
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn EraseYesNoWindow() {
-    ClearStdWindowAndFrameToTransparent(sYesNoWindowId, TRUE);
-    RemoveWindow(sYesNoWindowId);
+pub unsafe fn EraseYesNoWindow() {
+    ClearStdWindowAndFrameToTransparent(sYesNoWindowId.get(), TRUE);
+    RemoveWindow(sYesNoWindowId.get());
 }
-pub(crate) unsafe extern "C" fn PrintMenuActionGridText(
+unsafe fn PrintMenuActionGridText(
     windowId: u8,
     fontId: u8,
     left: u8,
@@ -1725,12 +1749,8 @@ pub(crate) unsafe extern "C" fn PrintMenuActionGridText(
     rows: u8,
     menuActions: *mut MenuAction,
 ) {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
-    i = 0;
-    while i < rows {
-        j = 0;
-        while j < columns {
+    for i in 0..rows {
+        for j in 0..columns {
             AddTextPrinterParameterized(
                 windowId,
                 fontId,
@@ -1740,13 +1760,11 @@ pub(crate) unsafe extern "C" fn PrintMenuActionGridText(
                 TEXT_SKIP_DRAW,
                 None,
             );
-            j += 1;
         }
-        i += 1;
     }
     CopyWindowToVram(windowId, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn PrintMenuActionGridTextAtTop(
+unsafe fn PrintMenuActionGridTextAtTop(
     windowId: u8,
     fontId: u8,
     width: u8,
@@ -1767,8 +1785,7 @@ pub(crate) unsafe extern "C" fn PrintMenuActionGridTextAtTop(
         menuActions,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintMenuActionGrid(
+pub unsafe fn PrintMenuActionGrid(
     windowId: u8,
     fontId: u8,
     left: u8,
@@ -1779,8 +1796,6 @@ pub unsafe extern "C" fn PrintMenuActionGrid(
     menuActions: *mut MenuAction,
     actionIds: *mut u8,
 ) {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
     let mut printer: TextPrinterTemplate = zeroed();
     printer.windowId = windowId;
     printer.fontId = fontId;
@@ -1790,10 +1805,8 @@ pub unsafe extern "C" fn PrintMenuActionGrid(
     printer.set_unk(GetFontAttribute(fontId, FONTATTR_UNKNOWN));
     printer.letterSpacing = GetFontAttribute(fontId, FONTATTR_LETTER_SPACING);
     printer.lineSpacing = GetFontAttribute(fontId, FONTATTR_LINE_SPACING);
-    i = 0;
-    while i < verticalCount {
-        j = 0;
-        while j < horizontalCount {
+    for i in 0..verticalCount {
+        for j in 0..horizontalCount {
             printer.currentChar =
                 (*menuActions.at(*actionIds.at(horizontalCount as i32 * i as i32 + j as i32))).text;
             printer.x = optionWidth * j + left;
@@ -1801,13 +1814,11 @@ pub unsafe extern "C" fn PrintMenuActionGrid(
             printer.currentX = printer.x;
             printer.currentY = printer.y;
             AddTextPrinter(&raw mut printer, TEXT_SKIP_DRAW, None);
-            j += 1;
         }
-        i += 1;
     }
     CopyWindowToVram(windowId, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn PrintMenuActionGrid_TopLeft(
+unsafe fn PrintMenuActionGrid_TopLeft(
     windowId: u8,
     fontId: u8,
     optionWidth: u8,
@@ -1829,7 +1840,7 @@ pub(crate) unsafe extern "C" fn PrintMenuActionGrid_TopLeft(
         actionIds,
     );
 }
-pub(crate) unsafe extern "C" fn InitMenuGrid(
+unsafe fn InitMenuGrid(
     windowId: u8,
     fontId: u8,
     left: u8,
@@ -1841,7 +1852,6 @@ pub(crate) unsafe extern "C" fn InitMenuGrid(
     numChoices: u8,
     cursorPos: u8,
 ) -> u8 {
-    let mut pos: i32 = 0;
     sMenu.left = left;
     sMenu.top = top;
     sMenu.minCursorPos = 0;
@@ -1852,16 +1862,16 @@ pub(crate) unsafe extern "C" fn InitMenuGrid(
     sMenu.optionHeight = optionHeight;
     sMenu.columns = columns;
     sMenu.rows = rows;
-    pos = cursorPos as i32;
+    let pos: i32 = cursorPos as i32;
     if pos < 0 || pos > sMenu.maxCursorPos as i32 {
         sMenu.cursorPos = 0;
     } else {
         sMenu.cursorPos = pos as i8;
     }
     ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_NONE, MENU_CURSOR_DELTA_NONE);
-    return sMenu.cursorPos as u8;
+    sMenu.cursorPos as u8
 }
-pub(crate) unsafe extern "C" fn InitMenuGridDefaultCursorHeight(
+unsafe fn InitMenuGridDefaultCursorHeight(
     windowId: u8,
     fontId: u8,
     left: u8,
@@ -1871,9 +1881,9 @@ pub(crate) unsafe extern "C" fn InitMenuGridDefaultCursorHeight(
     rows: u8,
     cursorPos: u8,
 ) -> u8 {
-    let mut cursorHeight: u8 = GetMenuCursorDimensionByFont(fontId, 1);
-    let mut numChoices: u8 = columns * rows;
-    return InitMenuGrid(
+    let cursorHeight: u8 = GetMenuCursorDimensionByFont(fontId, 1);
+    let numChoices: u8 = columns * rows;
+    InitMenuGrid(
         windowId,
         fontId,
         left,
@@ -1884,11 +1894,11 @@ pub(crate) unsafe extern "C" fn InitMenuGridDefaultCursorHeight(
         rows,
         numChoices,
         cursorPos,
-    );
+    )
 }
-pub(crate) unsafe extern "C" fn MoveMenuGridCursor(oldCursorPos: u8, newCursorPos: u8) {
-    let mut cursorWidth: u8 = GetMenuCursorDimensionByFont(sMenu.fontId, 0);
-    let mut cursorHeight: u8 = GetMenuCursorDimensionByFont(sMenu.fontId, 1);
+unsafe fn MoveMenuGridCursor(oldCursorPos: u8, newCursorPos: u8) {
+    let cursorWidth: u8 = GetMenuCursorDimensionByFont(sMenu.fontId, 0);
+    let cursorHeight: u8 = GetMenuCursorDimensionByFont(sMenu.fontId, 1);
     let mut xPos: u8 =
         rem_i32(oldCursorPos as i32, sMenu.columns as i32) as u8 * sMenu.optionWidth + sMenu.left;
     let mut yPos: u8 =
@@ -1908,16 +1918,17 @@ pub(crate) unsafe extern "C" fn MoveMenuGridCursor(oldCursorPos: u8, newCursorPo
     AddTextPrinterParameterized(
         sMenu.windowId,
         sMenu.fontId,
-        gText_SelectorArrow3.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_SelectorArrow3).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         xPos,
         yPos,
         0,
         None,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ChangeMenuGridCursorPosition(deltaX: i8, deltaY: i8) -> u8 {
-    let mut oldPos: u8 = sMenu.cursorPos as u8;
+pub unsafe fn ChangeMenuGridCursorPosition(deltaX: i8, deltaY: i8) -> u8 {
+    let oldPos: u8 = sMenu.cursorPos as u8;
     if deltaX != 0 {
         if (rem_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaX as i32) < 0 {
             sMenu.cursorPos += sMenu.columns as i8 - 1;
@@ -1950,27 +1961,24 @@ pub unsafe extern "C" fn ChangeMenuGridCursorPosition(deltaX: i8, deltaY: i8) ->
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ChangeGridMenuCursorPosition(deltaX: i8, deltaY: i8) -> u8 {
-    let mut oldPos: u8 = sMenu.cursorPos as u8;
-    if deltaX != 0 {
-        if rem_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaX as i32 >= 0
-            && (rem_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaX as i32)
-                < sMenu.columns as i32
-        {
-            sMenu.cursorPos += deltaX;
-        }
+pub unsafe fn ChangeGridMenuCursorPosition(deltaX: i8, deltaY: i8) -> u8 {
+    let oldPos: u8 = sMenu.cursorPos as u8;
+    if deltaX != 0
+        && rem_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaX as i32 >= 0
+        && (rem_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaX as i32)
+            < sMenu.columns as i32
+    {
+        sMenu.cursorPos += deltaX;
     }
-    if deltaY != 0 {
-        if div_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaY as i32 >= 0
-            && (div_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaY as i32)
-                < sMenu.rows as i32
-        {
-            sMenu.cursorPos += sMenu.columns as i8 * deltaY;
-        }
+    if deltaY != 0
+        && div_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaY as i32 >= 0
+        && (div_i32(sMenu.cursorPos as i32, sMenu.columns as i32) + deltaY as i32)
+            < sMenu.rows as i32
+    {
+        sMenu.cursorPos += sMenu.columns as i8 * deltaY;
     }
     if sMenu.cursorPos > sMenu.maxCursorPos {
         sMenu.cursorPos = oldPos as i8;
@@ -1981,10 +1989,10 @@ pub unsafe extern "C" fn ChangeGridMenuCursorPosition(deltaX: i8, deltaY: i8) ->
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn Menu_ProcessGridInput_NoSoundLimit() -> i8 {
+unsafe fn Menu_ProcessGridInput_NoSoundLimit() -> i8 {
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
         return sMenu.cursorPos;
@@ -2007,11 +2015,10 @@ pub(crate) unsafe extern "C" fn Menu_ProcessGridInput_NoSoundLimit() -> i8 {
         ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_RIGHT, MENU_CURSOR_DELTA_NONE);
         return MENU_NOTHING_CHOSEN;
     }
-    return MENU_NOTHING_CHOSEN;
+    MENU_NOTHING_CHOSEN
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Menu_ProcessGridInput() -> i8 {
-    let mut oldPos: u8 = sMenu.cursorPos as u8;
+pub unsafe fn Menu_ProcessGridInput() -> i8 {
+    let oldPos: u8 = sMenu.cursorPos as u8;
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
         return sMenu.cursorPos;
@@ -2038,9 +2045,9 @@ pub unsafe extern "C" fn Menu_ProcessGridInput() -> i8 {
         }
         return MENU_NOTHING_CHOSEN;
     }
-    return MENU_NOTHING_CHOSEN;
+    MENU_NOTHING_CHOSEN
 }
-pub(crate) unsafe extern "C" fn Menu_ProcessGridInputRepeat_NoSoundLimit() -> i8 {
+unsafe fn Menu_ProcessGridInputRepeat_NoSoundLimit() -> i8 {
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
         return sMenu.cursorPos;
@@ -2067,10 +2074,10 @@ pub(crate) unsafe extern "C" fn Menu_ProcessGridInputRepeat_NoSoundLimit() -> i8
         ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_RIGHT, MENU_CURSOR_DELTA_NONE);
         return MENU_NOTHING_CHOSEN;
     }
-    return MENU_NOTHING_CHOSEN;
+    MENU_NOTHING_CHOSEN
 }
-pub(crate) unsafe extern "C" fn Menu_ProcessGridInputRepeat() -> i8 {
-    let mut oldPos: u8 = sMenu.cursorPos as u8;
+unsafe fn Menu_ProcessGridInputRepeat() -> i8 {
+    let oldPos: u8 = sMenu.cursorPos as u8;
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
         return sMenu.cursorPos;
@@ -2101,16 +2108,14 @@ pub(crate) unsafe extern "C" fn Menu_ProcessGridInputRepeat() -> i8 {
         }
         return MENU_NOTHING_CHOSEN;
     }
-    return MENU_NOTHING_CHOSEN;
+    MENU_NOTHING_CHOSEN
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitMenuInUpperLeftCorner(
+pub unsafe fn InitMenuInUpperLeftCorner(
     windowId: u8,
     itemCount: u8,
     initialCursorPos: u8,
     APressMuted: u8,
 ) -> u8 {
-    let mut pos: i32 = 0;
     sMenu.left = 0;
     sMenu.top = 1;
     sMenu.minCursorPos = 0;
@@ -2119,27 +2124,24 @@ pub unsafe extern "C" fn InitMenuInUpperLeftCorner(
     sMenu.fontId = FONT_NORMAL;
     sMenu.optionHeight = 16;
     sMenu.APressMuted = APressMuted;
-    pos = initialCursorPos as i32;
+    let pos: i32 = initialCursorPos as i32;
     if pos < 0 || pos > sMenu.maxCursorPos as i32 {
         sMenu.cursorPos = 0;
     } else {
         sMenu.cursorPos = pos as i8;
     }
-    return Menu_MoveCursor(0);
+    Menu_MoveCursor(0)
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitMenuInUpperLeftCornerNormal(
+pub unsafe fn InitMenuInUpperLeftCornerNormal(
     windowId: u8,
     itemCount: u8,
     initialCursorPos: u8,
 ) -> u8 {
-    return InitMenuInUpperLeftCorner(windowId, itemCount, initialCursorPos, FALSE);
+    InitMenuInUpperLeftCorner(windowId, itemCount, initialCursorPos, FALSE)
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintMenuTable(windowId: u8, itemCount: u8, menuActions: *mut MenuAction) {
-    let mut i: u32 = 0;
-    i = 0;
-    while i < itemCount as u32 {
+pub unsafe fn PrintMenuTable(windowId: u8, itemCount: u8, menuActions: *mut MenuAction) {
+    for i in 0..(itemCount as u32) {
         AddTextPrinterParameterized(
             windowId,
             1,
@@ -2149,18 +2151,15 @@ pub unsafe extern "C" fn PrintMenuTable(windowId: u8, itemCount: u8, menuActions
             TEXT_SKIP_DRAW,
             None,
         );
-        i += 1;
     }
     CopyWindowToVram(windowId, COPYWIN_GFX);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintMenuActionTextsInUpperLeftCorner(
+pub unsafe fn PrintMenuActionTextsInUpperLeftCorner(
     windowId: u8,
     itemCount: u8,
     menuActions: *mut MenuAction,
     actionIds: *mut u8,
 ) {
-    let mut i: u8 = 0;
     let mut printer: TextPrinterTemplate = zeroed();
     printer.windowId = windowId;
     printer.fontId = FONT_NORMAL;
@@ -2172,28 +2171,28 @@ pub unsafe extern "C" fn PrintMenuActionTextsInUpperLeftCorner(
     printer.lineSpacing = 0;
     printer.x = 8;
     printer.currentX = 8;
-    i = 0;
-    while i < itemCount {
+    for i in 0..itemCount {
         printer.currentChar = (*menuActions.at(*actionIds.at(i))).text;
         printer.y = i * 16 + 1;
         printer.currentY = i * 16 + 1;
         AddTextPrinter(&raw mut printer, TEXT_SKIP_DRAW, None);
-        i += 1;
     }
     CopyWindowToVram(windowId, COPYWIN_GFX);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateYesNoMenu(
+pub unsafe fn CreateYesNoMenu(
     window: *mut WindowTemplate,
     baseTileNum: u16,
     paletteNum: u8,
     initialCursorPos: u8,
 ) {
     let mut printer: TextPrinterTemplate = zeroed();
-    sYesNoWindowId = AddWindow(window) as u8;
-    DrawStdFrameWithCustomTileAndPalette(sYesNoWindowId, TRUE, baseTileNum, paletteNum);
-    printer.currentChar = gText_YesNo.as_ptr().cast_mut();
-    printer.windowId = sYesNoWindowId;
+    sYesNoWindowId.set(AddWindow(window) as u8);
+    DrawStdFrameWithCustomTileAndPalette(sYesNoWindowId.get(), TRUE, baseTileNum, paletteNum);
+    printer.currentChar = (*(&raw const crate::data::strings::gText_YesNo).cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
+    printer.windowId = sYesNoWindowId.get();
     printer.fontId = FONT_NORMAL;
     printer.x = 8;
     printer.y = 1;
@@ -2206,22 +2205,17 @@ pub unsafe extern "C" fn CreateYesNoMenu(
     printer.letterSpacing = 0;
     printer.lineSpacing = 0;
     AddTextPrinter(&raw mut printer, TEXT_SKIP_DRAW, None);
-    InitMenuInUpperLeftCornerNormal(sYesNoWindowId, 2, initialCursorPos);
+    InitMenuInUpperLeftCornerNormal(sYesNoWindowId.get(), 2, initialCursorPos);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintMenuGridTable(
+pub unsafe fn PrintMenuGridTable(
     windowId: u8,
     optionWidth: u8,
     columns: u8,
     rows: u8,
     menuActions: *mut MenuAction,
 ) {
-    let mut i: u32 = 0;
-    let mut j: u32 = 0;
-    i = 0;
-    while i < rows as u32 {
-        j = 0;
-        while j < columns as u32 {
+    for i in 0..(rows as u32) {
+        for j in 0..(columns as u32) {
             AddTextPrinterParameterized(
                 windowId,
                 1,
@@ -2231,13 +2225,11 @@ pub unsafe extern "C" fn PrintMenuGridTable(
                 TEXT_SKIP_DRAW,
                 None,
             );
-            j += 1;
         }
-        i += 1;
     }
     CopyWindowToVram(windowId, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn PrintMenuActionGridTextNoSpacing(
+unsafe fn PrintMenuActionGridTextNoSpacing(
     windowId: u8,
     optionWidth: u8,
     columns: u8,
@@ -2245,8 +2237,6 @@ pub(crate) unsafe extern "C" fn PrintMenuActionGridTextNoSpacing(
     menuActions: *mut MenuAction,
     actionIds: *mut u8,
 ) {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
     let mut printer: TextPrinterTemplate = zeroed();
     printer.windowId = windowId;
     printer.fontId = FONT_NORMAL;
@@ -2256,10 +2246,8 @@ pub(crate) unsafe extern "C" fn PrintMenuActionGridTextNoSpacing(
     printer.set_unk(GetFontAttribute(FONT_NORMAL, FONTATTR_UNKNOWN));
     printer.letterSpacing = 0;
     printer.lineSpacing = 0;
-    i = 0;
-    while i < rows {
-        j = 0;
-        while j < columns {
+    for i in 0..rows {
+        for j in 0..columns {
             printer.currentChar =
                 (*menuActions.at(*actionIds.at(columns as i32 * i as i32 + j as i32))).text;
             printer.x = optionWidth * j + 8;
@@ -2267,21 +2255,17 @@ pub(crate) unsafe extern "C" fn PrintMenuActionGridTextNoSpacing(
             printer.currentX = printer.x;
             printer.currentY = printer.y;
             AddTextPrinter(&raw mut printer, TEXT_SKIP_DRAW, None);
-            j += 1;
         }
-        i += 1;
     }
     CopyWindowToVram(windowId, COPYWIN_GFX);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitMenuActionGrid(
+pub unsafe fn InitMenuActionGrid(
     windowId: u8,
     optionWidth: u8,
     columns: u8,
     rows: u8,
     initialCursorPos: u8,
 ) -> u8 {
-    let mut pos: i32 = 0;
     sMenu.left = 0;
     sMenu.top = 1;
     sMenu.minCursorPos = 0;
@@ -2292,25 +2276,25 @@ pub unsafe extern "C" fn InitMenuActionGrid(
     sMenu.optionHeight = 16;
     sMenu.columns = columns;
     sMenu.rows = rows;
-    pos = initialCursorPos as i32;
+    let pos: i32 = initialCursorPos as i32;
     if pos < 0 || pos > sMenu.maxCursorPos as i32 {
         sMenu.cursorPos = 0;
     } else {
         sMenu.cursorPos = pos as i8;
     }
     ChangeMenuGridCursorPosition(MENU_CURSOR_DELTA_NONE, MENU_CURSOR_DELTA_NONE);
-    return sMenu.cursorPos as u8;
+    sMenu.cursorPos as u8
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearScheduledBgCopiesToVram() {
+pub unsafe fn ClearScheduledBgCopiesToVram() {
     memset(sScheduledBgCopiesToVram.as_mut_ptr(), 0, 4);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScheduleBgCopyTilemapToVram(bgId: u8) {
+pub unsafe fn ScheduleBgCopyTilemapToVram(bgId: u8) {
     sScheduledBgCopiesToVram[bgId] = TRUE;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoScheduledBgTilemapCopiesToVram() {
+pub unsafe fn DoScheduledBgTilemapCopiesToVram() {
     if sScheduledBgCopiesToVram[0] == TRUE {
         CopyBgTilemapBufferToVram(0);
         sScheduledBgCopiesToVram[0] = 0;
@@ -2329,27 +2313,24 @@ pub unsafe extern "C" fn DoScheduledBgTilemapCopiesToVram() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetTempTileDataBuffers() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 32 {
+pub unsafe fn ResetTempTileDataBuffers() {
+    for i in 0..32i32 {
         sTempTileDataBuffer[i] = null_mut();
-        i += 1;
     }
-    sTempTileDataBufferIdx = 0;
+    sTempTileDataBufferIdx.set(0);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeTempTileDataBuffersIfPossible() -> u8 {
+pub unsafe fn FreeTempTileDataBuffersIfPossible() -> u8 {
     let mut i: i32 = 0;
     if IsDma3ManagerBusyWithBgCopy() == 0 {
-        if sTempTileDataBufferIdx != 0 {
+        if sTempTileDataBufferIdx.get() != 0 {
             i = 0;
-            while i < sTempTileDataBufferIdx as i32 {
+            while i < sTempTileDataBufferIdx.get() as i32 {
                 Free(sTempTileDataBuffer[i]);
                 sTempTileDataBuffer[i] = null_mut();
                 i += 1;
             }
-            sTempTileDataBufferIdx = 0;
+            sTempTileDataBufferIdx.set(0);
         }
         return FALSE;
     } else {
@@ -2357,11 +2338,11 @@ pub unsafe extern "C" fn FreeTempTileDataBuffersIfPossible() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DecompressAndCopyTileDataToVram(
+pub unsafe fn DecompressAndCopyTileDataToVram(
     bgId: u8,
     src: *mut c_void,
     mut size: u32,
@@ -2369,25 +2350,24 @@ pub unsafe extern "C" fn DecompressAndCopyTileDataToVram(
     mode: u8,
 ) -> *mut c_void {
     let mut sizeOut: u32 = 0;
-    if sTempTileDataBufferIdx < 32 {
-        let mut ptr: *mut c_void = malloc_and_decompress(src, &raw mut sizeOut);
+    if sTempTileDataBufferIdx.get() < 32 {
+        let ptr: *mut c_void = malloc_and_decompress(src, &raw mut sizeOut);
         if size == 0 {
             size = sizeOut;
         }
         if !ptr.is_null() {
             copy_decompressed_tile_data_to_vram(bgId, ptr, size as u16, offset, mode);
             sTempTileDataBuffer[{
-                let t1 = sTempTileDataBufferIdx;
-                sTempTileDataBufferIdx += 1;
+                let t1 = sTempTileDataBufferIdx.get();
+                sTempTileDataBufferIdx.set(sTempTileDataBufferIdx.get() + 1);
                 t1
             }] = ptr;
         }
         return ptr;
     }
-    return null_mut();
+    null_mut()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DecompressAndLoadBgGfxUsingHeap(
+pub unsafe fn DecompressAndLoadBgGfxUsingHeap(
     bgId: u8,
     src: *mut c_void,
     mut size: u32,
@@ -2395,41 +2375,40 @@ pub unsafe extern "C" fn DecompressAndLoadBgGfxUsingHeap(
     mode: u8,
 ) {
     let mut sizeOut: u32 = 0;
-    let mut ptr: *mut c_void = malloc_and_decompress(src, &raw mut sizeOut);
+    let ptr: *mut c_void = malloc_and_decompress(src, &raw mut sizeOut);
     if size == 0 {
         size = sizeOut;
     }
     if !ptr.is_null() {
-        let mut taskId: u8 = CreateTask(Some(task_free_buf_after_copying_tile_data_to_vram), 0);
-        gTasks[taskId].data[0] =
-            copy_decompressed_tile_data_to_vram(bgId, ptr, size as u16, offset, mode) as i16;
+        let taskId: u8 = CreateTask(Some(task_free_buf_after_copying_tile_data_to_vram), 0);
+        task_set(
+            taskId,
+            0,
+            copy_decompressed_tile_data_to_vram(bgId, ptr, size as u16, offset, mode) as i16,
+        );
         SetWordTaskArg(taskId, 1, ptr as usize as u32);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn task_free_buf_after_copying_tile_data_to_vram(taskId: u8) {
-    if CheckForSpaceForDma3Request(gTasks[taskId].data[0]) == 0 {
+pub unsafe fn task_free_buf_after_copying_tile_data_to_vram(taskId: u8) {
+    if CheckForSpaceForDma3Request(task_get(taskId, 0)) == 0 {
         Free(GetWordTaskArg(taskId, 1) as usize as *mut c_void);
         DestroyTask(taskId);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn malloc_and_decompress(src: *mut c_void, size: *mut u32) -> *mut c_void {
-    let mut ptr: *mut c_void = null_mut();
-    let mut sizeAsBytes: *mut u8 = size as *mut u8;
-    let mut srcAsBytes: *mut u8 = src as *mut u8;
+pub unsafe fn malloc_and_decompress(src: *mut c_void, size: *mut u32) -> *mut c_void {
+    let sizeAsBytes: *mut u8 = size as *mut u8;
+    let srcAsBytes: *mut u8 = src as *mut u8;
     *sizeAsBytes = *srcAsBytes.at(1);
     *sizeAsBytes.at(1) = *srcAsBytes.at(2);
     *sizeAsBytes.at(2) = *srcAsBytes.at(3);
     *sizeAsBytes.at(3) = 0;
-    ptr = Alloc(*size);
+    let ptr: *mut c_void = Alloc(*size);
     if !ptr.is_null() {
         LZ77UnCompWram(src as *mut u32, ptr);
     }
-    return ptr;
+    ptr
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn copy_decompressed_tile_data_to_vram(
+pub unsafe fn copy_decompressed_tile_data_to_vram(
     bgId: u8,
     src: *mut c_void,
     size: u16,
@@ -2449,22 +2428,13 @@ pub unsafe extern "C" fn copy_decompressed_tile_data_to_vram(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBgTilemapPalette(
-    bgId: u8,
-    left: u8,
-    top: u8,
-    width: u8,
-    height: u8,
-    palette: u8,
-) {
-    let mut i: u8 = 0;
+pub unsafe fn SetBgTilemapPalette(bgId: u8, left: u8, top: u8, width: u8, height: u8, palette: u8) {
     let mut j: u8 = 0;
-    let mut ptr: *mut u16 = GetBgTilemapBuffer(bgId) as *mut u16;
-    i = top;
+    let ptr: *mut u16 = GetBgTilemapBuffer(bgId) as *mut u16;
+    let mut i: u8 = top;
     while (i as i32) < top as i32 + height as i32 {
         j = left;
         while (j as i32) < left as i32 + width as i32 {
@@ -2475,57 +2445,44 @@ pub unsafe extern "C" fn SetBgTilemapPalette(
         i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyToBufferFromBgTilemap(
+pub unsafe fn CopyToBufferFromBgTilemap(
     bgId: u8,
-    mut dest: *mut u16,
+    dest: *mut u16,
     left: u8,
     top: u8,
     width: u8,
     height: u8,
 ) {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
-    let mut src: *mut u16 = GetBgTilemapBuffer(bgId) as *mut u16;
-    i = 0;
-    while i < height {
-        j = 0;
-        while j < width {
+    let src: *mut u16 = GetBgTilemapBuffer(bgId) as *mut u16;
+    for i in 0..height {
+        for j in 0..width {
             *dest.at(i as i32 * width as i32 + j as i32) =
                 *src.at((i as i32 + top as i32) * 32 + j as i32 + left as i32);
-            j += 1;
         }
-        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddValToTilemapBuffer(
+pub unsafe fn AddValToTilemapBuffer(
     ptr: *mut c_void,
     delta: i32,
     width: i32,
     height: i32,
     isAffine: u32,
 ) {
-    let mut i: i32 = 0;
-    let mut area: i32 = width * height;
+    let area: i32 = width * height;
     if isAffine == TRUE as u32 {
-        let mut as8BPP: *mut u8 = ptr as *mut u8;
-        i = 0;
-        while i < area {
+        let as8BPP: *mut u8 = ptr as *mut u8;
+        for i in 0..area {
             *as8BPP.at(i) += delta as u8;
-            i += 1;
         }
     } else {
-        let mut as4BPP: *mut u16 = ptr as *mut u16;
-        i = 0;
-        while i < area {
-            *as4BPP.at(i) = *as4BPP.at(i) & 0xFC00 | *as4BPP.at(i) + delta as u16 & 0x3FF;
-            i += 1;
+        let as4BPP: *mut u16 = ptr as *mut u16;
+        for i in 0..area {
+            *as4BPP.at(i) = *as4BPP.at(i) & 0xFC00 | (*as4BPP.at(i) + delta as u16) & 0x3FF;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetBgPositions() {
+pub unsafe fn ResetBgPositions() {
     ChangeBgX(0, 0, BG_COORD_SET);
     ChangeBgX(1, 0, BG_COORD_SET);
     ChangeBgX(2, 0, BG_COORD_SET);
@@ -2535,14 +2492,13 @@ pub unsafe extern "C" fn ResetBgPositions() {
     ChangeBgY(2, 0, BG_COORD_SET);
     ChangeBgY(3, 0, BG_COORD_SET);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BgDmaFill(bg: u32, value: u8, offset: i32, size: i32) {
-    let mut temp: i32 = if GetBgAttribute(bg as u8, BG_ATTR_PALETTEMODE) == 0 {
+pub unsafe fn BgDmaFill(bg: u32, value: u8, offset: i32, size: i32) {
+    let temp: i32 = if GetBgAttribute(bg as u8, BG_ATTR_PALETTEMODE) == 0 {
         32
     } else {
         64
     };
-    let mut addr: *mut c_void = (GetBgAttribute(bg as u8, BG_ATTR_CHARBASEINDEX) as i32 * 0x4000
+    let addr: *mut c_void = (GetBgAttribute(bg as u8, BG_ATTR_CHARBASEINDEX) as i32 * 0x4000
         + (GetBgAttribute(bg as u8, BG_ATTR_BASETILE) as i32 + offset) * temp)
         as usize as *mut c_void;
     RequestDma3Fill(
@@ -2552,8 +2508,7 @@ pub unsafe extern "C" fn BgDmaFill(bg: u32, value: u8, offset: i32, size: i32) {
         1,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddTextPrinterParameterized3(
+pub unsafe fn AddTextPrinterParameterized3(
     windowId: u8,
     fontId: u8,
     left: u8,
@@ -2579,7 +2534,7 @@ pub unsafe extern "C" fn AddTextPrinterParameterized3(
     AddTextPrinter(&raw mut printer, speed as u8, None);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddTextPrinterParameterized4(
+pub unsafe fn AddTextPrinterParameterized4(
     windowId: u8,
     fontId: u8,
     left: u8,
@@ -2606,15 +2561,14 @@ pub unsafe extern "C" fn AddTextPrinterParameterized4(
     printer.set_shadowColor(*color.at(2));
     AddTextPrinter(&raw mut printer, speed as u8, None);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddTextPrinterParameterized5(
+pub unsafe fn AddTextPrinterParameterized5(
     windowId: u8,
     fontId: u8,
     str: *mut u8,
     left: u8,
     top: u8,
     speed: u8,
-    callback: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
+    callback: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
     letterSpacing: u8,
     lineSpacing: u8,
 ) {
@@ -2634,8 +2588,7 @@ pub unsafe extern "C" fn AddTextPrinterParameterized5(
     printer.set_shadowColor(GetFontAttribute(fontId, FONTATTR_COLOR_SHADOW));
     AddTextPrinter(&raw mut printer, speed, callback);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintPlayerNameOnWindow(windowId: u8, src: *mut u8, x: u16, y: u16) {
+pub unsafe fn PrintPlayerNameOnWindow(windowId: u8, src: *mut u8, x: u16, y: u16) {
     let mut count: i32 = 0;
     while (*gSaveBlock2Ptr).playerName[count] != EOS {
         count += 1;
@@ -2651,7 +2604,7 @@ pub unsafe extern "C" fn PrintPlayerNameOnWindow(windowId: u8, src: *mut u8, x: 
         None,
     );
 }
-pub(crate) unsafe extern "C" fn UnusedBlitBitmapRect(
+unsafe fn UnusedBlitBitmapRect(
     src: *mut Bitmap,
     dst: *mut Bitmap,
     srcX: u16,
@@ -2661,14 +2614,10 @@ pub(crate) unsafe extern "C" fn UnusedBlitBitmapRect(
     width: u16,
     height: u16,
 ) {
-    let mut loopSrcY: i32 = 0;
-    let mut loopDstY: i32 = 0;
     let mut loopSrcX: i32 = 0;
     let mut loopDstX: i32 = 0;
     let mut xEnd: i32 = 0;
     let mut yEnd: i32 = 0;
-    let mut multiplierSrcY: i32 = 0;
-    let mut multiplierDstY: i32 = 0;
     let mut pixelsSrc: *mut u8 = null_mut();
     let mut pixelsDst: *mut u8 = null_mut();
     let mut toOrr: u16 = 0;
@@ -2682,10 +2631,10 @@ pub(crate) unsafe extern "C" fn UnusedBlitBitmapRect(
     } else {
         yEnd = srcY as i32 + height as i32;
     }
-    multiplierSrcY = ((*src).width() + (*src).width() % 8 >> 3) as i32;
-    multiplierDstY = ((*dst).width() + (*dst).width() % 8 >> 3) as i32;
-    loopSrcY = srcY as i32;
-    loopDstY = dstY as i32;
+    let multiplierSrcY: i32 = (((*src).width() + (*src).width() % 8) >> 3) as i32;
+    let multiplierDstY: i32 = (((*dst).width() + (*dst).width() % 8) >> 3) as i32;
+    let mut loopSrcY: i32 = srcY as i32;
+    let mut loopDstY: i32 = dstY as i32;
     while loopSrcY < yEnd {
         loopSrcX = srcX as i32;
         loopDstX = dstX as i32;
@@ -2694,12 +2643,12 @@ pub(crate) unsafe extern "C" fn UnusedBlitBitmapRect(
                 .pixels
                 .at(loopSrcX >> 1 & 3)
                 .at(loopSrcX >> 3 << 5)
-                .at((loopSrcY >> 3) * multiplierSrcY << 5)
+                .at(((loopSrcY >> 3) * multiplierSrcY) << 5)
                 .at((loopSrcY as u32) << 29 >> 27);
             pixelsDst = (((((*dst).pixels as *mut c_void as *mut u8).at(loopDstX >> 1 & 3)
                 as *mut c_void as *mut u8)
                 .at(loopDstX >> 3 << 5) as *mut c_void as *mut u8)
-                .at((loopDstY >> 3) * multiplierDstY << 5) as *mut c_void
+                .at(((loopDstY >> 3) * multiplierDstY) << 5) as *mut c_void
                 as *mut u8)
                 .at((loopDstY as u32) << 29 >> 27) as *mut c_void
                 as *mut u8;
@@ -2727,7 +2676,7 @@ pub(crate) unsafe extern "C" fn UnusedBlitBitmapRect(
                     toOrr = (pixelsDst as *mut u16).read_volatile();
                     toOrr &= 0xff0f;
                     if loopSrcX & 1 != 0 {
-                        toOrr |= (*pixelsSrc as u16 & 0xf0) << 0;
+                        toOrr |= *pixelsSrc as u16 & 0xf0;
                     } else {
                         toOrr |= (*pixelsSrc as u16 & 0x0f) << 4;
                     }
@@ -2737,7 +2686,7 @@ pub(crate) unsafe extern "C" fn UnusedBlitBitmapRect(
                     if loopSrcX & 1 != 0 {
                         toOrr |= ((*pixelsSrc as i32 & 0xf0) >> 4) as u16;
                     } else {
-                        toOrr |= ((*pixelsSrc as i32 & 0x0f) >> 0) as u16;
+                        toOrr |= (*pixelsSrc as i32 & 0x0f) as u16;
                     }
                 }
             }
@@ -2749,20 +2698,14 @@ pub(crate) unsafe extern "C" fn UnusedBlitBitmapRect(
         loopDstY += 1;
     }
 }
-pub(crate) unsafe extern "C" fn LoadMonIconPalAtOffset(palOffset: u8, speciesId: u16) {
+unsafe fn LoadMonIconPalAtOffset(palOffset: u8, speciesId: u16) {
     LoadPalette(
         GetValidMonIconPalettePtr(speciesId) as *mut c_void,
         palOffset as u16,
         32,
     );
 }
-pub(crate) unsafe extern "C" fn DrawMonIconAtPos(
-    windowId: u8,
-    speciesId: u16,
-    personality: u32,
-    x: u16,
-    y: u16,
-) {
+unsafe fn DrawMonIconAtPos(windowId: u8, speciesId: u16, personality: u32, x: u16, y: u16) {
     BlitBitmapToWindow(
         windowId,
         GetMonIconPtr(speciesId, personality, 1),
@@ -2772,27 +2715,36 @@ pub(crate) unsafe extern "C" fn DrawMonIconAtPos(
         32,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ListMenuLoadStdPalAt(palOffset: u8, palId: u8) {
+pub unsafe fn ListMenuLoadStdPalAt(palOffset: u8, palId: u8) {
     let mut palette: *mut u16 = null_mut();
     match palId {
         1 => {
-            palette = gMenuInfoElements2_Pal.as_ptr().cast_mut();
+            palette = (*(&raw const crate::data::graphics::gMenuInfoElements2_Pal)
+                .cast::<CArray<u16, 16>>())
+            .as_ptr()
+            .cast_mut();
         }
         2 => {
-            palette = gMenuInfoElements3_Pal.as_ptr().cast_mut();
+            palette = (*(&raw const crate::data::graphics::gMenuInfoElements3_Pal)
+                .cast::<CArray<u16, 16>>())
+            .as_ptr()
+            .cast_mut();
         }
         _ => {
-            palette = gMenuInfoElements1_Pal.as_ptr().cast_mut();
+            palette = (*(&raw const crate::data::graphics::gMenuInfoElements1_Pal)
+                .cast::<CArray<u16, 16>>())
+            .as_ptr()
+            .cast_mut();
         }
     }
     LoadPalette(palette as *mut c_void, palOffset as u16, 32);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BlitMenuInfoIcon(windowId: u8, iconId: u8, x: u16, y: u16) {
+pub unsafe fn BlitMenuInfoIcon(windowId: u8, iconId: u8, x: u16, y: u16) {
     BlitBitmapRectToWindow(
         windowId,
-        (&raw const gMenuInfoElements_Gfx[sMenuInfoIcons[iconId].offset as i32 * 32]).cast_mut(),
+        (&raw const (*(&raw const crate::data::graphics::gMenuInfoElements_Gfx)
+            .cast::<CArray<u8, 0>>())[sMenuInfoIcons[iconId].offset as i32 * 32])
+            .cast_mut(),
         0,
         0,
         128,
@@ -2803,9 +2755,7 @@ pub unsafe extern "C" fn BlitMenuInfoIcon(windowId: u8, iconId: u8, x: u16, y: u
         sMenuInfoIcons[iconId].height as u16,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferSaveMenuText(textId: u8, dest: *mut u8, color: u8) {
-    let mut curFlag: i32 = 0;
+pub unsafe fn BufferSaveMenuText(textId: u8, dest: *mut u8, color: u8) {
     let mut flagCount: i32 = 0;
     let mut endOfString: *mut u8 = null_mut();
     let mut string: *mut u8 = dest;
@@ -2884,14 +2834,12 @@ pub unsafe extern "C" fn BufferSaveMenuText(textId: u8, dest: *mut u8, color: u8
             GetMapNameGeneric(string, gMapHeader.regionMapSectionId as u16);
         }
         SAVE_MENU_BADGES => {
-            curFlag = FLAG_BADGE01_GET as i32;
             flagCount = 0;
             endOfString = string.at(1);
-            while curFlag < 2159 {
+            for curFlag in (FLAG_BADGE01_GET as i32)..2159 {
                 if FlagGet(curFlag as u16) != 0 {
                     flagCount += 1;
                 }
-                curFlag += 1;
             }
             *string = flagCount as u8 + CHAR_0;
             *endOfString = EOS;

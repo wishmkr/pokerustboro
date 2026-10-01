@@ -241,7 +241,7 @@ static mut SPRITE_PALETTE_TAGS: [u16; 16] = [0; 16];
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gOamMatrixAllocBitmap: u32 = 0;
+pub static gOamMatrixAllocBitmap: crate::global::Global<u32> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
@@ -249,8 +249,10 @@ pub static mut gReservedSpritePaletteCount: u8 = 0;
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gSprites: crate::ffi::Align4<[[u8; SPRITE_SIZE]; MAX_SPRITES + 1]> =
-    crate::ffi::Align4([[0; SPRITE_SIZE]; MAX_SPRITES + 1]);
+/// The sprites, and one more (MAX_SPRITES + 1) that stays unused, as in C.
+pub static mut gSprites: crate::c::CArray<crate::types::Sprite, 65> =
+    unsafe { core::mem::zeroed() };
+const _: () = assert!(MAX_SPRITES + 1 == 65);
 
 #[unsafe(link_section = "ewram_data")]
 static mut SPRITE_PRIORITIES: [u16; MAX_SPRITES] = [0; MAX_SPRITES];
@@ -260,10 +262,11 @@ static mut SPRITE_ORDER: crate::ffi::Align4<[u8; MAX_SPRITES]> =
     crate::ffi::Align4([0; MAX_SPRITES]);
 
 #[unsafe(link_section = "ewram_data")]
-static mut SHOULD_PROCESS_SPRITE_COPY_REQUESTS: u8 = 0;
+static SHOULD_PROCESS_SPRITE_COPY_REQUESTS: crate::global::Global<u8> =
+    crate::global::Global::new(0);
 
 #[unsafe(link_section = "ewram_data")]
-static mut SPRITE_COPY_REQUEST_COUNT: u8 = 0;
+static SPRITE_COPY_REQUEST_COUNT: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[unsafe(link_section = "ewram_data")]
 static mut SPRITE_COPY_REQUESTS: SpriteCopyRequestStorage =
@@ -297,11 +300,19 @@ pub static mut gOamMatrices: crate::ffi::Align4<[[i16; 4]; OAM_MATRIX_COUNT]> =
 #[unsafe(link_section = "ewram_data")]
 pub static mut gAffineAnimsDisabled: u8 = 0;
 
-unsafe extern "C" {
-    static mut gMain: u8;
-
-    fn ObjAffineSet(src: *const u8, dest: *mut u8, count: i32, offset: i32);
-    fn LoadPalette(src: *const c_void, offset: u16, size: u16);
+/// `ObjAffineSet` with this module's view of its types.
+#[inline]
+unsafe fn ObjAffineSet(a0: *const u8, a1: *mut u8, a2: i32, a3: i32) {
+    unsafe {
+        crate::syscall::ObjAffineSet(a0 as _, a1 as _, a2, a3);
+    }
+}
+/// `LoadPalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadPalette(a0: *const c_void, a1: u16, a2: u16) {
+    unsafe {
+        crate::palette::LoadPalette(a0 as _, a1, a2);
+    }
 }
 
 // -------------------------------------------------------------- accessors
@@ -430,7 +441,10 @@ unsafe fn affine_state(matrix_num: u8) -> *mut u8 {
 
 #[inline]
 unsafe fn oam_buffer_entry(index: usize) -> *mut u8 {
-    unsafe { (&raw mut gMain).add(MAIN_OAM_BUFFER + index * 8) }
+    unsafe {
+        (&raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
+            .add(MAIN_OAM_BUFFER + index * 8)
+    }
 }
 
 /// `sSpriteTileAllocBitmap` helpers.
@@ -486,10 +500,10 @@ unsafe fn cpu_copy32(src: *const u8, dest: *mut u8, size: u32) {
 // ------------------------------------------------------------------- API
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCallbackDummy(_sprite: *mut u8) {}
+pub unsafe fn SpriteCallbackDummy(_sprite: *mut u8) {}
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetSpriteData() {
+pub unsafe fn ResetSpriteData() {
     unsafe { ResetOamRange(0, 128) };
     unsafe { reset_all_sprites() };
     unsafe { ClearSpriteCopyRequests() };
@@ -503,7 +517,7 @@ pub unsafe extern "C" fn ResetSpriteData() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AnimateSprites() {
+pub unsafe fn AnimateSprites() {
     for i in 0..MAX_SPRITES {
         let sprite = unsafe { sprite_at(i) };
         if !unsafe { flag(sprite, S_FLAGS0, F_IN_USE) } {
@@ -520,13 +534,16 @@ pub unsafe extern "C" fn AnimateSprites() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BuildOamBuffer() {
+pub unsafe fn BuildOamBuffer() {
     unsafe { UpdateOamCoords() };
     unsafe { BuildSpritePriorities() };
     unsafe { SortSprites() };
 
     // OAM loading is suppressed while the buffer is rebuilt.
-    let disabled_slot = unsafe { (&raw mut gMain).add(MAIN_OAM_LOAD_DISABLED_BYTE) };
+    let disabled_slot = unsafe {
+        (&raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
+            .add(MAIN_OAM_LOAD_DISABLED_BYTE)
+    };
     let saved = unsafe { disabled_slot.read_volatile() };
     unsafe { disabled_slot.write_volatile(saved | MAIN_OAM_LOAD_DISABLED_BIT) };
 
@@ -534,11 +551,11 @@ pub unsafe extern "C" fn BuildOamBuffer() {
     unsafe { CopyMatricesToOamBuffer() };
 
     unsafe { disabled_slot.write_volatile(saved) };
-    unsafe { (&raw mut SHOULD_PROCESS_SPRITE_COPY_REQUESTS).write_volatile(1) };
+    unsafe { (SHOULD_PROCESS_SPRITE_COPY_REQUESTS.as_ptr()).write_volatile(1) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateOamCoords() {
+pub unsafe fn UpdateOamCoords() {
     let offset_x = unsafe { (&raw const gSpriteCoordOffsetX).read_volatile() };
     let offset_y = unsafe { (&raw const gSpriteCoordOffsetY).read_volatile() };
 
@@ -575,7 +592,7 @@ pub unsafe extern "C" fn UpdateOamCoords() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BuildSpritePriorities() {
+pub unsafe fn BuildSpritePriorities() {
     for i in 0..MAX_SPRITES {
         let sprite = unsafe { sprite_at(i) };
         let priority = u16::from(unsafe { u8_at(sprite, S_SUBPRIORITY) })
@@ -640,7 +657,7 @@ unsafe fn sort_y(sprite: *mut u8) -> i16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SortSprites() {
+pub unsafe fn SortSprites() {
     // Insertion sort by priority, then by screen position.
     for i in 1..MAX_SPRITES {
         let mut j = i;
@@ -674,7 +691,7 @@ pub unsafe extern "C" fn SortSprites() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyMatricesToOamBuffer() {
+pub unsafe fn CopyMatricesToOamBuffer() {
     // Each matrix component rides in the affineParam of four OAM entries.
     for i in 0..OAM_MATRIX_COUNT {
         let source = unsafe { matrix(i) };
@@ -687,7 +704,7 @@ pub unsafe extern "C" fn CopyMatricesToOamBuffer() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddSpritesToOamBuffer() {
+pub unsafe fn AddSpritesToOamBuffer() {
     let mut oam_index = 0u8;
 
     let mut i = 0usize;
@@ -717,12 +734,7 @@ pub unsafe extern "C" fn AddSpritesToOamBuffer() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateSprite(
-    template: *const SpriteTemplate,
-    x: i16,
-    y: i16,
-    subpriority: u8,
-) -> u8 {
+pub unsafe fn CreateSprite(template: *const SpriteTemplate, x: i16, y: i16, subpriority: u8) -> u8 {
     for i in 0..MAX_SPRITES {
         if !unsafe { flag(sprite_at(i), S_FLAGS0, F_IN_USE) } {
             return unsafe { create_sprite_at(i as u8, template, x, y, subpriority) };
@@ -732,7 +744,7 @@ pub unsafe extern "C" fn CreateSprite(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateSpriteAtEnd(
+pub unsafe fn CreateSpriteAtEnd(
     template: *const SpriteTemplate,
     x: i16,
     y: i16,
@@ -749,7 +761,7 @@ pub unsafe extern "C" fn CreateSpriteAtEnd(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateInvisibleSprite(callback: SpriteCallback) -> u8 {
+pub unsafe fn CreateInvisibleSprite(callback: SpriteCallback) -> u8 {
     let index = unsafe { CreateSprite(&raw const gDummySpriteTemplate, 0, 0, 31) };
     if index == MAX_SPRITES as u8 {
         return MAX_SPRITES as u8;
@@ -864,7 +876,7 @@ unsafe fn create_sprite_at(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateSpriteAndAnimate(
+pub unsafe fn CreateSpriteAndAnimate(
     template: *const SpriteTemplate,
     x: i16,
     y: i16,
@@ -893,7 +905,7 @@ pub unsafe extern "C" fn CreateSpriteAndAnimate(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DestroySprite(sprite: *mut u8) {
+pub unsafe fn DestroySprite(sprite: *mut u8) {
     if !unsafe { flag(sprite, S_FLAGS0, F_IN_USE) } {
         return;
     }
@@ -914,7 +926,7 @@ pub unsafe extern "C" fn DestroySprite(sprite: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetOamRange(start: u8, end: u8) {
+pub unsafe fn ResetOamRange(start: u8, end: u8) {
     let mut i = start;
     while i < end {
         unsafe {
@@ -929,9 +941,9 @@ pub unsafe extern "C" fn ResetOamRange(start: u8, end: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadOam() {
+pub unsafe fn LoadOam() {
     let disabled = unsafe {
-        (&raw const gMain)
+        (&raw const (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
             .add(MAIN_OAM_LOAD_DISABLED_BYTE)
             .read_volatile()
     };
@@ -951,9 +963,9 @@ unsafe fn copy_request(index: usize) -> *mut u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearSpriteCopyRequests() {
-    unsafe { (&raw mut SHOULD_PROCESS_SPRITE_COPY_REQUESTS).write_volatile(0) };
-    unsafe { (&raw mut SPRITE_COPY_REQUEST_COUNT).write_volatile(0) };
+pub unsafe fn ClearSpriteCopyRequests() {
+    unsafe { (SHOULD_PROCESS_SPRITE_COPY_REQUESTS.as_ptr()).write_volatile(0) };
+    unsafe { (SPRITE_COPY_REQUEST_COUNT.as_ptr()).write_volatile(0) };
 
     for i in 0..MAX_SPRITE_COPY_REQUESTS {
         unsafe { core::ptr::write_bytes(copy_request(i), 0, COPY_REQUEST_STRIDE) };
@@ -961,7 +973,7 @@ pub unsafe extern "C" fn ClearSpriteCopyRequests() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetOamMatrices() {
+pub unsafe fn ResetOamMatrices() {
     for i in 0..OAM_MATRIX_COUNT {
         let slot = unsafe { matrix(i) };
         // The identity matrix in 8.8 fixed point.
@@ -973,7 +985,7 @@ pub unsafe extern "C" fn ResetOamMatrices() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetOamMatrix(matrix_num: u8, a: u16, b: u16, c: u16, d: u16) {
+pub unsafe fn SetOamMatrix(matrix_num: u8, a: u16, b: u16, c: u16, d: u16) {
     let slot = unsafe { matrix(matrix_num as usize) };
     unsafe { slot.write_volatile(a as i16) };
     unsafe { slot.add(1).write_volatile(b as i16) };
@@ -1008,7 +1020,7 @@ unsafe fn reset_sprite(sprite: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetSprite(sprite: *mut u8) {
+pub unsafe fn ResetSprite(sprite: *mut u8) {
     unsafe { reset_sprite(sprite) };
 }
 
@@ -1022,12 +1034,7 @@ unsafe fn reset_all_sprites() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CalcCenterToCornerVec(
-    sprite: *mut u8,
-    shape: u8,
-    size: u8,
-    affine_mode: u8,
-) {
+pub unsafe fn CalcCenterToCornerVec(sprite: *mut u8, shape: u8, size: u8, affine_mode: u8) {
     let entry = CENTER_TO_CORNER_VEC_TABLE[(shape & 3).min(2) as usize][(size & 3) as usize];
     // The originals are negative values held in a u8 and doubled there, so
     // the doubling wraps rather than sign-extending.
@@ -1042,7 +1049,7 @@ pub unsafe extern "C" fn CalcCenterToCornerVec(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AllocSpriteTiles(tile_count: u16) -> i16 {
+pub unsafe fn AllocSpriteTiles(tile_count: u16) -> i16 {
     let reserved = unsafe { (&raw const gReservedSpriteTileCount).read_volatile() };
 
     if tile_count == 0 {
@@ -1095,7 +1102,7 @@ pub unsafe extern "C" fn AllocSpriteTiles(tile_count: u16) -> i16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteTileAllocBitmapOp(bit: u16, op: u8) -> u8 {
+pub unsafe fn SpriteTileAllocBitmapOp(bit: u16, op: u8) -> u8 {
     let index = (bit / 8) as usize;
     let shift = (bit % 8) as u8;
     let slot = unsafe { (&raw mut SPRITE_TILE_ALLOC_BITMAP).cast::<u8>().add(index) };
@@ -1114,13 +1121,13 @@ pub unsafe extern "C" fn SpriteTileAllocBitmapOp(bit: u16, op: u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ProcessSpriteCopyRequests() {
-    if unsafe { (&raw const SHOULD_PROCESS_SPRITE_COPY_REQUESTS).read_volatile() } == 0 {
+pub unsafe fn ProcessSpriteCopyRequests() {
+    if unsafe { (SHOULD_PROCESS_SPRITE_COPY_REQUESTS.as_ptr().cast_const()).read_volatile() } == 0 {
         return;
     }
 
     let mut i = 0usize;
-    while unsafe { (&raw const SPRITE_COPY_REQUEST_COUNT).read_volatile() } > 0 {
+    while unsafe { (SPRITE_COPY_REQUEST_COUNT.as_ptr().cast_const()).read_volatile() } > 0 {
         let request = unsafe { copy_request(i) };
         unsafe {
             cpu_copy16(
@@ -1129,16 +1136,16 @@ pub unsafe extern "C" fn ProcessSpriteCopyRequests() {
                 request.add(COPY_SIZE).cast::<u16>().read(),
             )
         };
-        let count = unsafe { (&raw const SPRITE_COPY_REQUEST_COUNT).read_volatile() };
-        unsafe { (&raw mut SPRITE_COPY_REQUEST_COUNT).write_volatile(count - 1) };
+        let count = unsafe { (SPRITE_COPY_REQUEST_COUNT.as_ptr().cast_const()).read_volatile() };
+        unsafe { (SPRITE_COPY_REQUEST_COUNT.as_ptr()).write_volatile(count - 1) };
         i += 1;
     }
 
-    unsafe { (&raw mut SHOULD_PROCESS_SPRITE_COPY_REQUESTS).write_volatile(0) };
+    unsafe { (SHOULD_PROCESS_SPRITE_COPY_REQUESTS.as_ptr()).write_volatile(0) };
 }
 
 unsafe fn request_sprite_frame_image_copy(index: u16, tile_num: u16, images: *const u8) {
-    let count = unsafe { (&raw const SPRITE_COPY_REQUEST_COUNT).read_volatile() };
+    let count = unsafe { (SPRITE_COPY_REQUEST_COUNT.as_ptr().cast_const()).read_volatile() };
     if count as usize >= MAX_SPRITE_COPY_REQUESTS {
         return;
     }
@@ -1163,12 +1170,12 @@ unsafe fn request_sprite_frame_image_copy(index: u16, tile_num: u16, images: *co
             .cast::<u16>()
             .write(image.add(IMAGE_SIZE).cast::<u16>().read())
     };
-    unsafe { (&raw mut SPRITE_COPY_REQUEST_COUNT).write_volatile(count + 1) };
+    unsafe { (SPRITE_COPY_REQUEST_COUNT.as_ptr()).write_volatile(count + 1) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RequestSpriteCopy(src: *const u8, dest: *mut u8, size: u16) {
-    let count = unsafe { (&raw const SPRITE_COPY_REQUEST_COUNT).read_volatile() };
+pub unsafe fn RequestSpriteCopy(src: *const u8, dest: *mut u8, size: u16) {
+    let count = unsafe { (SPRITE_COPY_REQUEST_COUNT.as_ptr().cast_const()).read_volatile() };
     if count as usize >= MAX_SPRITE_COPY_REQUESTS {
         return;
     }
@@ -1177,26 +1184,26 @@ pub unsafe extern "C" fn RequestSpriteCopy(src: *const u8, dest: *mut u8, size: 
     unsafe { request.add(COPY_SRC).cast::<*const u8>().write(src) };
     unsafe { request.add(COPY_DEST).cast::<*mut u8>().write(dest) };
     unsafe { request.add(COPY_SIZE).cast::<u16>().write(size) };
-    unsafe { (&raw mut SPRITE_COPY_REQUEST_COUNT).write_volatile(count + 1) };
+    unsafe { (SPRITE_COPY_REQUEST_COUNT.as_ptr()).write_volatile(count + 1) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyFromSprites(dest: *mut u8) {
+pub unsafe fn CopyFromSprites(dest: *mut u8) {
     unsafe { core::ptr::copy_nonoverlapping(sprite_at(0), dest, SPRITE_SIZE * MAX_SPRITES) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyToSprites(src: *const u8) {
+pub unsafe fn CopyToSprites(src: *const u8) {
     unsafe { core::ptr::copy_nonoverlapping(src, sprite_at(0), SPRITE_SIZE * MAX_SPRITES) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetAllSprites() {
+pub unsafe fn ResetAllSprites() {
     unsafe { reset_all_sprites() };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeSpriteTiles(sprite: *mut u8) {
+pub unsafe fn FreeSpriteTiles(sprite: *mut u8) {
     let template = unsafe { ptr_at(sprite, S_TEMPLATE) };
     let tile_tag = unsafe { template.cast::<u16>().read() };
     if tile_tag != TAG_NONE {
@@ -1205,14 +1212,14 @@ pub unsafe extern "C" fn FreeSpriteTiles(sprite: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeSpritePalette(sprite: *mut u8) {
+pub unsafe fn FreeSpritePalette(sprite: *mut u8) {
     let template = unsafe { ptr_at(sprite, S_TEMPLATE) };
     let palette_tag = unsafe { template.add(2).cast::<u16>().read() };
     unsafe { FreeSpritePaletteByTag(palette_tag) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeSpriteOamMatrix(sprite: *mut u8) {
+pub unsafe fn FreeSpriteOamMatrix(sprite: *mut u8) {
     if unsafe { oam_affine_mode(sprite) } & ST_OAM_AFFINE_ON_MASK != 0 {
         unsafe { FreeOamMatrix(oam_matrix_num(sprite)) };
         let oam = unsafe { oam_of(sprite) };
@@ -1225,7 +1232,7 @@ pub unsafe extern "C" fn FreeSpriteOamMatrix(sprite: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DestroySpriteAndFreeResources(sprite: *mut u8) {
+pub unsafe fn DestroySpriteAndFreeResources(sprite: *mut u8) {
     unsafe { FreeSpriteTiles(sprite) };
     unsafe { FreeSpritePalette(sprite) };
     unsafe { FreeSpriteOamMatrix(sprite) };
@@ -1233,7 +1240,7 @@ pub unsafe extern "C" fn DestroySpriteAndFreeResources(sprite: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AnimateSprite(sprite: *mut u8) {
+pub unsafe fn AnimateSprite(sprite: *mut u8) {
     if unsafe { flag(sprite, S_FLAGS1, F_ANIM_BEGINNING) } {
         unsafe { begin_anim(sprite) };
     } else {
@@ -1732,7 +1739,7 @@ unsafe fn copy_oam_matrix(dest_matrix_index: u8, src: &OamMatrixStorage) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConvertScaleParam(scale: i16) -> i16 {
+pub unsafe fn ConvertScaleParam(scale: i16) -> i16 {
     // The original divides without a guard, which traps on some emulators.
     if scale == 0 {
         return 0;
@@ -1741,7 +1748,7 @@ pub unsafe extern "C" fn ConvertScaleParam(scale: i16) -> i16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSpriteMatrixNum(sprite: *mut u8) -> u8 {
+pub unsafe fn GetSpriteMatrixNum(sprite: *mut u8) -> u8 {
     if unsafe { oam_affine_mode(sprite) } & ST_OAM_AFFINE_ON_MASK != 0 {
         unsafe { oam_matrix_num(sprite) }
     } else {
@@ -1752,7 +1759,7 @@ pub unsafe extern "C" fn GetSpriteMatrixNum(sprite: *mut u8) -> u8 {
 /// Shifts a sprite as it scales so a chosen edge stays put. Only the minigame
 /// countdown uses it, so the digits do not slide while they squash.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetSpriteMatrixAnchor(sprite: *mut u8, x: i16, y: i16) {
+pub unsafe fn SetSpriteMatrixAnchor(sprite: *mut u8, x: i16, y: i16) {
     unsafe { set_i16_at(sprite, S_DATA + ANCHOR_X_SLOT * 2, x) };
     unsafe { set_i16_at(sprite, S_DATA + ANCHOR_Y_SLOT * 2, y) };
     unsafe { set_flag(sprite, S_FLAGS1, F_ANCHORED, true) };
@@ -1798,7 +1805,7 @@ unsafe fn update_sprite_matrix_anchor_pos(sprite: *mut u8) {
 /// Bits 3 and 4 of `matrixNum` double as the flip flags when the sprite is
 /// not affine.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetSpriteOamFlipBits(sprite: *mut u8, h_flip: u8, v_flip: u8) {
+pub unsafe fn SetSpriteOamFlipBits(sprite: *mut u8, h_flip: u8, v_flip: u8) {
     let sprite_h = u8::from(unsafe { flag(sprite, S_FLAGS1, F_H_FLIP) });
     let sprite_v = u8::from(unsafe { flag(sprite, S_FLAGS1, F_V_FLIP) });
     let value = (unsafe { oam_matrix_num(sprite) } & 0x7)
@@ -1824,26 +1831,26 @@ unsafe fn affine_anim_state_start(matrix_num: u8, anim_num: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AffineAnimStateReset(matrix_num: u8) {
+pub unsafe fn AffineAnimStateReset(matrix_num: u8) {
     unsafe { affine_anim_state_start(matrix_num, 0) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartSpriteAnim(sprite: *mut u8, anim_num: u8) {
+pub unsafe fn StartSpriteAnim(sprite: *mut u8, anim_num: u8) {
     unsafe { set_u8_at(sprite, S_ANIM_NUM, anim_num) };
     unsafe { set_flag(sprite, S_FLAGS1, F_ANIM_BEGINNING, true) };
     unsafe { set_flag(sprite, S_FLAGS1, F_ANIM_ENDED, false) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartSpriteAnimIfDifferent(sprite: *mut u8, anim_num: u8) {
+pub unsafe fn StartSpriteAnimIfDifferent(sprite: *mut u8, anim_num: u8) {
     if unsafe { u8_at(sprite, S_ANIM_NUM) } != anim_num {
         unsafe { StartSpriteAnim(sprite, anim_num) };
     }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SeekSpriteAnim(sprite: *mut u8, anim_cmd_index: u8) {
+pub unsafe fn SeekSpriteAnim(sprite: *mut u8, anim_cmd_index: u8) {
     let paused = unsafe { flag(sprite, S_ANIM_STATE, ANIM_PAUSED_BIT) };
     unsafe { set_u8_at(sprite, S_ANIM_CMD_INDEX, anim_cmd_index.wrapping_sub(1)) };
     unsafe { set_anim_delay_counter(sprite, 0) };
@@ -1858,7 +1865,7 @@ pub unsafe extern "C" fn SeekSpriteAnim(sprite: *mut u8, anim_cmd_index: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartSpriteAffineAnim(sprite: *mut u8, anim_num: u8) {
+pub unsafe fn StartSpriteAffineAnim(sprite: *mut u8, anim_num: u8) {
     let matrix_num = unsafe { GetSpriteMatrixNum(sprite) };
     unsafe { affine_anim_state_start(matrix_num, anim_num) };
     unsafe { set_flag(sprite, S_FLAGS1, F_AFFINE_ANIM_BEGINNING, true) };
@@ -1866,7 +1873,7 @@ pub unsafe extern "C" fn StartSpriteAffineAnim(sprite: *mut u8, anim_num: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartSpriteAffineAnimIfDifferent(sprite: *mut u8, anim_num: u8) {
+pub unsafe fn StartSpriteAffineAnimIfDifferent(sprite: *mut u8, anim_num: u8) {
     let matrix_num = unsafe { GetSpriteMatrixNum(sprite) };
     let current = unsafe { affine_state(matrix_num).add(AAS_ANIM_NUM).read_volatile() };
     if current != anim_num {
@@ -1875,7 +1882,7 @@ pub unsafe extern "C" fn StartSpriteAffineAnimIfDifferent(sprite: *mut u8, anim_
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ChangeSpriteAffineAnim(sprite: *mut u8, anim_num: u8) {
+pub unsafe fn ChangeSpriteAffineAnim(sprite: *mut u8, anim_num: u8) {
     let matrix_num = unsafe { GetSpriteMatrixNum(sprite) };
     unsafe {
         affine_state(matrix_num)
@@ -1887,7 +1894,7 @@ pub unsafe extern "C" fn ChangeSpriteAffineAnim(sprite: *mut u8, anim_num: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ChangeSpriteAffineAnimIfDifferent(sprite: *mut u8, anim_num: u8) {
+pub unsafe fn ChangeSpriteAffineAnimIfDifferent(sprite: *mut u8, anim_num: u8) {
     let matrix_num = unsafe { GetSpriteMatrixNum(sprite) };
     let current = unsafe { affine_state(matrix_num).add(AAS_ANIM_NUM).read_volatile() };
     if current != anim_num {
@@ -1896,7 +1903,7 @@ pub unsafe extern "C" fn ChangeSpriteAffineAnimIfDifferent(sprite: *mut u8, anim
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetSpriteSheetFrameTileNum(sprite: *mut u8) {
+pub unsafe fn SetSpriteSheetFrameTileNum(sprite: *mut u8) {
     if !unsafe { flag(sprite, S_FLAGS1, F_USING_SHEET) } {
         return;
     }
@@ -1910,9 +1917,9 @@ pub unsafe extern "C" fn SetSpriteSheetFrameTileNum(sprite: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetAffineAnimData() {
+pub unsafe fn ResetAffineAnimData() {
     unsafe { (&raw mut gAffineAnimsDisabled).write_volatile(0) };
-    unsafe { (&raw mut gOamMatrixAllocBitmap).write_volatile(0) };
+    unsafe { (gOamMatrixAllocBitmap.as_ptr()).write_volatile(0) };
     unsafe { ResetOamMatrices() };
     for i in 0..OAM_MATRIX_COUNT {
         unsafe { AffineAnimStateReset(i as u8) };
@@ -1920,14 +1927,14 @@ pub unsafe extern "C" fn ResetAffineAnimData() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AllocOamMatrix() -> u8 {
-    let bitmap = unsafe { (&raw const gOamMatrixAllocBitmap).read_volatile() };
+pub unsafe fn AllocOamMatrix() -> u8 {
+    let bitmap = unsafe { (gOamMatrixAllocBitmap.as_ptr().cast_const()).read_volatile() };
     let mut i = 0u8;
     let mut bit = 1u32;
 
     while (i as usize) < OAM_MATRIX_COUNT {
         if bitmap & bit == 0 {
-            unsafe { (&raw mut gOamMatrixAllocBitmap).write_volatile(bitmap | bit) };
+            unsafe { (gOamMatrixAllocBitmap.as_ptr()).write_volatile(bitmap | bit) };
             return i;
         }
         i += 1;
@@ -1938,15 +1945,15 @@ pub unsafe extern "C" fn AllocOamMatrix() -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeOamMatrix(matrix_num: u8) {
+pub unsafe fn FreeOamMatrix(matrix_num: u8) {
     let bit = 1u32 << matrix_num;
-    let bitmap = unsafe { (&raw const gOamMatrixAllocBitmap).read_volatile() };
-    unsafe { (&raw mut gOamMatrixAllocBitmap).write_volatile(bitmap & !bit) };
+    let bitmap = unsafe { (gOamMatrixAllocBitmap.as_ptr().cast_const()).read_volatile() };
+    unsafe { (gOamMatrixAllocBitmap.as_ptr()).write_volatile(bitmap & !bit) };
     unsafe { SetOamMatrix(matrix_num, 0x100, 0, 0, 0x100) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitSpriteAffineAnim(sprite: *mut u8) {
+pub unsafe fn InitSpriteAffineAnim(sprite: *mut u8) {
     let matrix_num = unsafe { AllocOamMatrix() };
     if matrix_num == 0xff {
         return;
@@ -1966,7 +1973,7 @@ pub unsafe extern "C" fn InitSpriteAffineAnim(sprite: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetOamMatrixRotationScaling(
+pub unsafe fn SetOamMatrixRotationScaling(
     matrix_num: u8,
     x_scale: i16,
     y_scale: i16,
@@ -1983,7 +1990,7 @@ pub unsafe extern "C" fn SetOamMatrixRotationScaling(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadSpriteSheet(sheet: *const u8) -> u16 {
+pub unsafe fn LoadSpriteSheet(sheet: *const u8) -> u16 {
     let size = unsafe { sheet.add(SHEET_SIZE).cast::<u16>().read() };
     let tile_start = unsafe { AllocSpriteTiles(size / TILE_SIZE_4BPP) };
     if tile_start < 0 {
@@ -2003,7 +2010,7 @@ pub unsafe extern "C" fn LoadSpriteSheet(sheet: *const u8) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadSpriteSheets(sheets: *const u8) {
+pub unsafe fn LoadSpriteSheets(sheets: *const u8) {
     let mut i = 0usize;
     loop {
         let sheet = unsafe { sheets.add(i * SPRITE_SHEET_STRIDE) };
@@ -2016,7 +2023,7 @@ pub unsafe extern "C" fn LoadSpriteSheets(sheets: *const u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeSpriteTilesByTag(tag: u16) {
+pub unsafe fn FreeSpriteTilesByTag(tag: u16) {
     let index = unsafe { IndexOfSpriteTileTag(tag) };
     if index == 0xff {
         return;
@@ -2045,7 +2052,7 @@ pub unsafe extern "C" fn FreeSpriteTilesByTag(tag: u16) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeSpriteTileRanges() {
+pub unsafe fn FreeSpriteTileRanges() {
     for i in 0..MAX_SPRITES {
         unsafe {
             (&raw mut SPRITE_TILE_RANGE_TAGS)
@@ -2060,7 +2067,7 @@ pub unsafe extern "C" fn FreeSpriteTileRanges() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSpriteTileStartByTag(tag: u16) -> u16 {
+pub unsafe fn GetSpriteTileStartByTag(tag: u16) -> u16 {
     let index = unsafe { IndexOfSpriteTileTag(tag) };
     if index == 0xff {
         return 0xffff;
@@ -2074,7 +2081,7 @@ pub unsafe extern "C" fn GetSpriteTileStartByTag(tag: u16) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IndexOfSpriteTileTag(tag: u16) -> u8 {
+pub unsafe fn IndexOfSpriteTileTag(tag: u16) -> u8 {
     for i in 0..MAX_SPRITES {
         let stored = unsafe {
             (&raw const SPRITE_TILE_RANGE_TAGS)
@@ -2090,7 +2097,7 @@ pub unsafe extern "C" fn IndexOfSpriteTileTag(tag: u16) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSpriteTileTagByTileStart(start: u16) -> u16 {
+pub unsafe fn GetSpriteTileTagByTileStart(start: u16) -> u16 {
     for i in 0..MAX_SPRITES {
         let tag = unsafe {
             (&raw const SPRITE_TILE_RANGE_TAGS)
@@ -2112,7 +2119,7 @@ pub unsafe extern "C" fn GetSpriteTileTagByTileStart(start: u16) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AllocSpriteTileRange(tag: u16, start: u16, count: u16) {
+pub unsafe fn AllocSpriteTileRange(tag: u16, start: u16, count: u16) {
     let free_index = unsafe { IndexOfSpriteTileTag(TAG_NONE) } as usize;
     unsafe {
         (&raw mut SPRITE_TILE_RANGE_TAGS)
@@ -2130,7 +2137,7 @@ pub unsafe extern "C" fn AllocSpriteTileRange(tag: u16, start: u16, count: u16) 
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeAllSpritePalettes() {
+pub unsafe fn FreeAllSpritePalettes() {
     unsafe { (&raw mut gReservedSpritePaletteCount).write_volatile(0) };
     for i in 0..16 {
         unsafe {
@@ -2143,7 +2150,7 @@ pub unsafe extern "C" fn FreeAllSpritePalettes() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadSpritePalette(palette: *const u8) -> u8 {
+pub unsafe fn LoadSpritePalette(palette: *const u8) -> u8 {
     let tag = unsafe { palette.add(PALETTE_TAG).cast::<u16>().read() };
     let index = unsafe { IndexOfSpritePaletteTag(tag) };
     if index != 0xff {
@@ -2173,7 +2180,7 @@ pub unsafe extern "C" fn LoadSpritePalette(palette: *const u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadSpritePalettes(palettes: *const u8) {
+pub unsafe fn LoadSpritePalettes(palettes: *const u8) {
     let mut i = 0usize;
     loop {
         let palette = unsafe { palettes.add(i * SPRITE_PALETTE_STRIDE) };
@@ -2188,7 +2195,7 @@ pub unsafe extern "C" fn LoadSpritePalettes(palettes: *const u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AllocSpritePalette(tag: u16) -> u8 {
+pub unsafe fn AllocSpritePalette(tag: u16) -> u8 {
     let index = unsafe { IndexOfSpritePaletteTag(TAG_NONE) };
     if index == 0xff {
         return 0xff;
@@ -2203,7 +2210,7 @@ pub unsafe extern "C" fn AllocSpritePalette(tag: u16) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IndexOfSpritePaletteTag(tag: u16) -> u8 {
+pub unsafe fn IndexOfSpritePaletteTag(tag: u16) -> u8 {
     let reserved = unsafe { (&raw const gReservedSpritePaletteCount).read_volatile() };
     let mut i = reserved as usize;
     while i < 16 {
@@ -2222,7 +2229,7 @@ pub unsafe extern "C" fn IndexOfSpritePaletteTag(tag: u16) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSpritePaletteTagByPaletteNum(palette_num: u8) -> u16 {
+pub unsafe fn GetSpritePaletteTagByPaletteNum(palette_num: u8) -> u16 {
     unsafe {
         (&raw const SPRITE_PALETTE_TAGS)
             .cast::<u16>()
@@ -2232,7 +2239,7 @@ pub unsafe extern "C" fn GetSpritePaletteTagByPaletteNum(palette_num: u8) -> u16
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeSpritePaletteByTag(tag: u16) {
+pub unsafe fn FreeSpritePaletteByTag(tag: u16) {
     let index = unsafe { IndexOfSpritePaletteTag(tag) };
     if index != 0xff {
         unsafe {
@@ -2245,7 +2252,7 @@ pub unsafe extern "C" fn FreeSpritePaletteByTag(tag: u16) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetSubspriteTables(sprite: *mut u8, tables: *const u8) {
+pub unsafe fn SetSubspriteTables(sprite: *mut u8, tables: *const u8) {
     unsafe { set_ptr_at(sprite, S_SUBSPRITE_TABLES, tables) };
     let state = unsafe { u8_at(sprite, S_SUBSPRITE_STATE) };
     unsafe {
@@ -2271,7 +2278,7 @@ unsafe fn subsprite_mode(sprite: *mut u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddSpriteToOamBuffer(sprite: *mut u8, oam_index: *mut u8) -> u8 {
+pub unsafe fn AddSpriteToOamBuffer(sprite: *mut u8, oam_index: *mut u8) -> u8 {
     let index = unsafe { oam_index.read() };
     if index >= unsafe { (&raw const gOamLimit).read_volatile() } {
         return 1;
@@ -2290,7 +2297,7 @@ pub unsafe extern "C" fn AddSpriteToOamBuffer(sprite: *mut u8, oam_index: *mut u
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddSubspritesToOamBuffer(
+pub unsafe fn AddSubspritesToOamBuffer(
     sprite: *mut u8,
     dest_oam: *mut u8,
     oam_index: *mut u8,

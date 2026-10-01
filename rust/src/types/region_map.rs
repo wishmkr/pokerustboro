@@ -13,7 +13,7 @@ pub struct RegionMap {
     pub mapSecType: u8,
     pub posWithinMapSec: u8,
     pub mapSecName: CArray<u8, 20>,
-    pub inputCallback: Option<unsafe extern "C" fn() -> u8>,
+    pub inputCallback: Option<unsafe fn() -> u8>,
     pub cursorSprite: *mut Sprite,
     pub playerIconSprite: *mut Sprite,
     pub bg2x: i32,

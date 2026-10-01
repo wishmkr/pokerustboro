@@ -3,37 +3,171 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::eq_op,
+    clippy::if_same_then_else,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    clippy::useless_transmute,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::bg::LoadBgTiles;
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect,
+    FillBgTilemapBufferRect_Palette0, HideBg, ResetBgsAndClearDma3BusyFlags, ShowBg,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::{FlagGet, IsMysteryGiftEnabled, IsNationalPokedexEnabled};
+use crate::field_effect::{AddNewGameBirchObject, CreateTrainerSprite};
+use crate::gpu_regs::{EnableInterrupts, SetGpuReg};
+use crate::international_string_util::GetStringRightAlignXOffset;
+use crate::link::IsWirelessAdapterConnected;
+use crate::list_menu::{
+    AddScrollIndicatorArrowPair, RemoveScrollIndicatorArrowPair,
+    Task_ScrollIndicatorArrowPairOnMainMenu,
+};
+use crate::load_save::gSaveBlock2Ptr;
+use crate::menu::{
+    AddTextPrinterForMessage, AddTextPrinterParameterized3, AddTextPrinterWithCallbackForMessage,
+    ClearStdWindowAndFrame, CreateWindowTemplate, CreateYesNoMenu, InitMenuInUpperLeftCornerNormal,
+    Menu_GetCursorPos, Menu_ProcessInputNoWrap, Menu_ProcessInputNoWrapClearOnChoose,
+    PrintMenuTable, RunTextPrintersAndIsPrinter0Active,
+};
+use crate::mystery_event_menu::CB2_InitMysteryEventMenu;
+use crate::mystery_gift_menu::{CB2_InitEReader, CB2_InitMysteryGift};
+use crate::naming_screen::DoNamingScreen;
+use crate::option_menu::CB2_InitOptionMenu;
+use crate::overworld::{CB2_ContinueSavedGame, CB2_NewGame};
+use crate::palette::{
+    BeginNormalPaletteFade, LoadPalette, ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade,
+    gPaletteFade,
+};
+use crate::palette::{gPlttBufferFaded, gPlttBufferUnfaded};
+use crate::pokeball::CreatePokeballSpriteToReleaseMon;
+use crate::pokedex::{GetHoennPokedexCount, GetNationalPokedexCount};
+use crate::pokemon::FacilityClassToPicIndex;
+use crate::random::Random;
+use crate::rtc::RtcGetErrorStatus;
+use crate::save::gSaveFileStatus;
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::sound::{FadeOutBGM, PlayBGM, PlaySE};
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData,
+};
+use crate::string_util::gStringVar4;
+use crate::string_util::{ConvertIntToDecimalStringN, StringExpandPlaceholders};
+use crate::task::gTasks;
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::task::{task_get, task_set, task_set_func};
+use crate::text::{
+    DeactivateAllTextPrinters, GetFontAttribute, IsTextPrinterActive, RunTextPrinters,
+};
+use crate::text_window::LoadMessageBoxGfx;
+use crate::title_screen::CB2_InitTitleScreen;
+use crate::trainer_pokemon_sprites::{
+    CreateMonPicSprite_Affine, FreeAndDestroyMonPicSprite, ResetAllPicSprites,
+};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect,
+    FreeAllWindowBuffers, GetWindowAttribute, PutWindowTilemap,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CallWindowFunction` with this module's view of its types.
+#[inline]
+unsafe fn CallWindowFunction(a0: u8, a1: Option<unsafe fn(u8, u8, u8, u8, u8, u8)>) {
+    unsafe {
+        crate::window::CallWindowFunction(a0, core::mem::transmute(a1));
+    }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `InitBgFromTemplate` with this module's view of its types.
+#[inline]
+unsafe fn InitBgFromTemplate(a0: *mut BgTemplate) {
+    unsafe {
+        crate::bg::InitBgFromTemplate(a0 as _);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn InitSpriteAffineAnim(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::InitSpriteAffineAnim(a0 as _);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAffineAnim(a0 as _, a1);
+    }
+}
+// The C's names for task and sprite data slots.
+const tMainTask: usize = 0;
+const tMenuType: usize = 0;
+const tAlphaCoeff1: usize = 1;
+const tCurrItem: usize = 1;
+const tPalIndex: usize = 1;
+const tAlphaCoeff2: usize = 2;
+const tDelayBefore: usize = 2;
+const tPlayerSpriteId: usize = 2;
+const tDelay: usize = 3;
+const tBG1HOFS: usize = 4;
+const tDelayTimer: usize = 4;
+const tIsDoneFadingSprites: usize = 5;
+const tPlayerGender: usize = 6;
+const tTimer: usize = 7;
+const tBirchSpriteId: usize = 8;
+const tLotadSpriteId: usize = 9;
+const tBrendanSpriteId: usize = 10;
+const tMaySpriteId: usize = 11;
+const tScrollArrowTaskId: usize = 13;
+const tIsScrolled: usize = 14;
+const tArrowTaskIsScrolled: usize = 15;
+const tWirelessAdapterConnected: usize = 15;
 // Data tables (translate with cdata.py): sBirchSpeechBgPals sBirchSpeechShadowGfx sBirchSpeechBgMap sBirchSpeechBgGradientPal sWindowTemplates_MainMenu sNewGameBirchSpeechTextWindows sMainMenuBgPal sMainMenuTextPal sTextColor_Headers sTextColor_MenuInfo sMainMenuBgTemplates sBirchBgTemplate sScrollArrowsTemplate_MainMenu sSpriteAffineAnim_PlayerShrink sSpriteAffineAnimTable_PlayerShrink sMenuActions_Gender sMalePresetNames sFemalePresetNames
 
 const ACTION_CONTINUE: u8 = 1;
@@ -87,218 +221,73 @@ static sWindowTemplates_MainMenu: Table<CArray<WindowTemplate, 9>> =
     Table((&raw const crate::data::main_menu::sWindowTemplates_MainMenu).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sStartedPokeBallTask: u8 = 0;
+pub(crate) static sStartedPokeBallTask: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCurrItemAndOptionMenuCheck: u16 = 0;
-pub(crate) static mut sBirchSpeechMainTaskId: u8 = 0;
+pub(crate) static sCurrItemAndOptionMenuCheck: crate::global::Global<u16> =
+    crate::global::Global::new(0);
+pub(crate) static sBirchSpeechMainTaskId: crate::global::Global<u8> = crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static mut gDecompressionBuffer: CArray<u8, 16384>;
-    static gJPText_No1MSubCircuit: CArray<u8, 0>;
-    static mut gMain: Main;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlttBufferFaded: CArray<u16, 512>;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSaveFileStatus: u16;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_BatteryRunDry: CArray<u8, 0>;
-    static gText_Birch_AndYouAre: CArray<u8, 0>;
-    static gText_Birch_AreYouReady: CArray<u8, 0>;
-    static gText_Birch_BoyOrGirl: CArray<u8, 0>;
-    static gText_Birch_MainSpeech: CArray<u8, 0>;
-    static gText_Birch_SoItsPlayer: CArray<u8, 0>;
-    static gText_Birch_Welcome: CArray<u8, 0>;
-    static gText_Birch_WhatsYourName: CArray<u8, 0>;
-    static gText_Birch_YourePlayer: CArray<u8, 0>;
-    static gText_ContinueMenuBadges: CArray<u8, 0>;
-    static gText_ContinueMenuPlayer: CArray<u8, 0>;
-    static gText_ContinueMenuPokedex: CArray<u8, 0>;
-    static gText_ContinueMenuTime: CArray<u8, 0>;
-    static gText_MainMenuContinue: CArray<u8, 0>;
-    static gText_MainMenuMysteryEvents: CArray<u8, 0>;
-    static gText_MainMenuMysteryGift: CArray<u8, 0>;
-    static gText_MainMenuMysteryGift2: CArray<u8, 0>;
-    static gText_MainMenuNewGame: CArray<u8, 0>;
-    static gText_MainMenuOption: CArray<u8, 0>;
-    static gText_MysteryEventsCantUse: CArray<u8, 0>;
-    static gText_MysteryGiftCantUse: CArray<u8, 0>;
-    static gText_SaveFileCorrupted: CArray<u8, 0>;
-    static gText_SaveFileErased: CArray<u8, 0>;
-    static gText_ThisIsAPokemon: CArray<u8, 0>;
-    static gText_WirelessNotConnected: CArray<u8, 0>;
-    fn AddNewGameBirchObject(a0: i16, a1: i16, a2: u8) -> u8;
-    fn AddScrollIndicatorArrowPair(a0: *mut ScrollArrowsTemplate, a1: *mut u16) -> u8;
-    fn AddTextPrinterForMessage(a0: u8);
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddTextPrinterParameterized3(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: *mut u8,
-        a5: i8,
-        a6: *mut u8,
-    );
-    fn AddTextPrinterWithCallbackForMessage(
-        a0: u8,
-        a1: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    );
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BuildOamBuffer();
-    fn CB2_ContinueSavedGame();
-    fn CB2_InitEReader();
-    fn CB2_InitMysteryEventMenu();
-    fn CB2_InitMysteryGift();
-    fn CB2_InitOptionMenu();
-    fn CB2_InitTitleScreen();
-    fn CB2_NewGame();
-    fn CallWindowFunction(a0: u8, a1: Option<unsafe extern "C" fn(u8, u8, u8, u8, u8, u8)>);
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ClearStdWindowAndFrame(a0: u8, a1: u8);
-    fn ClearWindowTilemap(a0: u8);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateMonPicSprite_Affine(
-        a0: u16,
-        a1: u32,
-        a2: u32,
-        a3: u8,
-        a4: i16,
-        a5: i16,
-        a6: u8,
-        a7: u16,
-    ) -> u16;
-    fn CreatePokeballSpriteToReleaseMon(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-        a7: u32,
-        a8: u16,
-    );
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateTrainerSprite(a0: u8, a1: i16, a2: i16, a3: u8, a4: *mut u8) -> u8;
-    fn CreateWindowTemplate(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u16,
-    ) -> WindowTemplate;
-    fn CreateYesNoMenu(a0: *mut WindowTemplate, a1: u16, a2: u8, a3: u8);
-    fn DeactivateAllTextPrinters();
-    fn DestroyTask(a0: u8);
-    fn DoNamingScreen(
-        a0: u8,
-        a1: *mut u8,
-        a2: u16,
-        a3: u16,
-        a4: u32,
-        a5: Option<unsafe extern "C" fn()>,
-    );
-    fn EnableInterrupts(a0: u16);
-    fn FacilityClassToPicIndex(a0: u16) -> u16;
-    fn FadeOutBGM(a0: u8);
-    fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn FlagGet(a0: u16) -> u8;
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeAndDestroyMonPicSprite(a0: u16) -> u16;
-    fn GetFontAttribute(a0: u8, a1: u8) -> u8;
-    fn GetHoennPokedexCount(a0: u8) -> u16;
-    fn GetNationalPokedexCount(a0: u8) -> u16;
-    fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetWindowAttribute(a0: u8, a1: u8) -> u32;
-    fn GetWindowFrameTilesPal(a0: u8) -> *mut TilesPal;
-    fn HideBg(a0: u8);
-    fn InitBgFromTemplate(a0: *mut BgTemplate);
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitMenuInUpperLeftCornerNormal(a0: u8, a1: u8, a2: u8) -> u8;
-    fn InitSpriteAffineAnim(a0: *mut Sprite);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsMysteryGiftEnabled() -> u32;
-    fn IsNationalPokedexEnabled() -> u32;
-    fn IsTextPrinterActive(a0: u8) -> u16;
-    fn IsWirelessAdapterConnected() -> u8;
-    fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void);
-    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadMessageBoxGfx(a0: u8, a1: u16, a2: u8);
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn Menu_GetCursorPos() -> u8;
-    fn Menu_ProcessInputNoWrap() -> i8;
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn PlayBGM(a0: u16);
-    fn PlaySE(a0: u16);
-    fn PrintMenuTable(a0: u8, a1: u8, a2: *mut MenuAction);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn Random() -> u16;
-    fn RemoveScrollIndicatorArrowPair(a0: u8);
-    fn ResetAllPicSprites() -> u16;
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn RtcGetErrorStatus() -> u16;
-    fn RunTasks();
-    fn RunTextPrinters();
-    fn RunTextPrintersAndIsPrinter0Active() -> u16;
-    fn ScanlineEffect_Stop();
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn Task_ScrollIndicatorArrowPairOnMainMenu(a0: u8);
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `GetWindowFrameTilesPal` with this module's view of its types.
+#[inline]
+unsafe fn GetWindowFrameTilesPal(a0: u8) -> *mut TilesPal {
+    unsafe { crate::text_window::GetWindowFrameTilesPal(a0) as *mut TilesPal }
+}
+/// `LZ77UnCompVram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn CB2_MainMenu() {
+pub(crate) unsafe fn CB2_MainMenu() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn VBlankCB_MainMenu() {
+pub(crate) unsafe fn VBlankCB_MainMenu() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_InitMainMenu() {
+pub unsafe fn CB2_InitMainMenu() {
     InitMainMenu(FALSE);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ReinitMainMenu() {
+pub unsafe fn CB2_ReinitMainMenu() {
     InitMainMenu(TRUE);
 }
-pub(crate) unsafe extern "C" fn InitMainMenu(returningFromOptionsMenu: u8) -> u32 {
+unsafe fn InitMainMenu(returningFromOptionsMenu: u8) -> u32 {
     SetVBlankCallback(None);
     SetGpuReg(0x0, 0);
     SetGpuReg(REG_OFFSET_BG2CNT, 0);
@@ -316,7 +305,7 @@ pub(crate) unsafe extern "C" fn InitMainMenu(returningFromOptionsMenu: u8) -> u3
             volatile_write(&raw mut tmp, 0);
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                     volatile_write(dmaRegs.at(1), VRAM as usize as *mut c_void as usize as u32);
                     volatile_write(dmaRegs.at(2), 0x8100c000);
@@ -331,7 +320,7 @@ pub(crate) unsafe extern "C" fn InitMainMenu(returningFromOptionsMenu: u8) -> u3
             volatile_write(&raw mut tmp, 0);
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                     volatile_write(
                         dmaRegs.at(1),
@@ -349,12 +338,9 @@ pub(crate) unsafe extern "C" fn InitMainMenu(returningFromOptionsMenu: u8) -> u3
             volatile_write(&raw mut tmp, 0);
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
-                    volatile_write(
-                        dmaRegs.at(1),
-                        83886082 as usize as *mut c_void as usize as u32,
-                    );
+                    volatile_write(dmaRegs.at(1), 83886082_usize as *mut c_void as usize as u32);
                     volatile_write(dmaRegs.at(2), 0x810001ff);
                     let _ = (dmaRegs.at(2)).read_volatile();
                 }
@@ -396,10 +382,10 @@ pub(crate) unsafe extern "C" fn InitMainMenu(returningFromOptionsMenu: u8) -> u3
     ShowBg(0);
     HideBg(1);
     CreateTask(Some(Task_MainMenuCheckSaveFile), 0);
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn Task_MainMenuCheckSaveFile(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_MainMenuCheckSaveFile(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if gPaletteFade.active() == 0 {
         SetGpuReg(REG_OFFSET_WIN0H, 0);
         SetGpuReg(REG_OFFSET_WIN0V, 0);
@@ -417,59 +403,74 @@ pub(crate) unsafe extern "C" fn Task_MainMenuCheckSaveFile(taskId: u8) {
                 if IsMysteryGiftEnabled() != 0 {
                     *data += 1;
                 }
-                gTasks[taskId].func = Some(Task_MainMenuCheckBattery);
+                task_set_func(taskId, Some(Task_MainMenuCheckBattery));
             }
             SAVE_STATUS_CORRUPT => {
-                CreateMainMenuErrorWindow(gText_SaveFileErased.as_ptr().cast_mut());
+                CreateMainMenuErrorWindow(
+                    (*(&raw const crate::data::strings::gText_SaveFileErased)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                );
                 *data = HAS_NO_SAVED_GAME;
-                gTasks[taskId].func = Some(Task_WaitForSaveFileErrorWindow);
+                task_set_func(taskId, Some(Task_WaitForSaveFileErrorWindow));
             }
             255 => {
-                CreateMainMenuErrorWindow(gText_SaveFileCorrupted.as_ptr().cast_mut());
-                gTasks[taskId].func = Some(Task_WaitForSaveFileErrorWindow);
+                CreateMainMenuErrorWindow(
+                    (*(&raw const crate::data::strings::gText_SaveFileCorrupted)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                );
+                task_set_func(taskId, Some(Task_WaitForSaveFileErrorWindow));
                 *data = HAS_SAVED_GAME;
                 if IsMysteryGiftEnabled() == TRUE as u32 {
                     *data += 1;
                 }
             }
             SAVE_STATUS_NO_FLASH => {
-                CreateMainMenuErrorWindow(gJPText_No1MSubCircuit.as_ptr().cast_mut());
-                gTasks[taskId].data[0] = HAS_NO_SAVED_GAME;
-                gTasks[taskId].func = Some(Task_WaitForSaveFileErrorWindow);
+                CreateMainMenuErrorWindow(
+                    (*(&raw const crate::data::strings::gJPText_No1MSubCircuit)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                );
+                task_set(taskId, tMenuType, HAS_NO_SAVED_GAME);
+                task_set_func(taskId, Some(Task_WaitForSaveFileErrorWindow));
             }
             _ => {
                 *data = HAS_NO_SAVED_GAME;
-                gTasks[taskId].func = Some(Task_MainMenuCheckBattery);
+                task_set_func(taskId, Some(Task_MainMenuCheckBattery));
             }
         }
-        if sCurrItemAndOptionMenuCheck as i32 & OPTION_MENU_FLAG != 0 {
+        if sCurrItemAndOptionMenuCheck.get() as i32 & OPTION_MENU_FLAG != 0 {
             match *data {
                 HAS_NO_SAVED_GAME | HAS_SAVED_GAME => {
-                    sCurrItemAndOptionMenuCheck = *data as u16 + 1;
+                    sCurrItemAndOptionMenuCheck.set(*data as u16 + 1);
                 }
                 HAS_MYSTERY_GIFT => {
-                    sCurrItemAndOptionMenuCheck = 3;
+                    sCurrItemAndOptionMenuCheck.set(3);
                 }
                 HAS_MYSTERY_EVENTS => {
-                    sCurrItemAndOptionMenuCheck = 4;
+                    sCurrItemAndOptionMenuCheck.set(4);
                 }
                 _ => {}
             }
         }
-        sCurrItemAndOptionMenuCheck &= 32767;
-        *data.at(1) = sCurrItemAndOptionMenuCheck as i16;
+        sCurrItemAndOptionMenuCheck.set(sCurrItemAndOptionMenuCheck.get() & 32767);
+        *data.at(1) = sCurrItemAndOptionMenuCheck.get() as i16;
         *data.at(12) = *data + 2;
     }
 }
-pub(crate) unsafe extern "C" fn Task_WaitForSaveFileErrorWindow(taskId: u8) {
+pub(crate) unsafe fn Task_WaitForSaveFileErrorWindow(taskId: u8) {
     RunTextPrinters();
     if IsTextPrinterActive(7) == 0 && gMain.newKeys as i32 & A_BUTTON != 0 {
         ClearWindowTilemap(7);
         ClearMainMenuWindowTilemap((&raw const sWindowTemplates_MainMenu[7]).cast_mut());
-        gTasks[taskId].func = Some(Task_MainMenuCheckBattery);
+        task_set_func(taskId, Some(Task_MainMenuCheckBattery));
     }
 }
-pub(crate) unsafe extern "C" fn Task_MainMenuCheckBattery(taskId: u8) {
+pub(crate) unsafe fn Task_MainMenuCheckBattery(taskId: u8) {
     if gPaletteFade.active() == 0 {
         SetGpuReg(REG_OFFSET_WIN0H, 0);
         SetGpuReg(REG_OFFSET_WIN0V, 0);
@@ -479,23 +480,27 @@ pub(crate) unsafe extern "C" fn Task_MainMenuCheckBattery(taskId: u8) {
         SetGpuReg(REG_OFFSET_BLDALPHA, 0);
         SetGpuReg(REG_OFFSET_BLDY, 7);
         if RtcGetErrorStatus() as i32 & RTC_ERR_FLAG_MASK == 0 {
-            gTasks[taskId].func = Some(Task_DisplayMainMenu);
+            task_set_func(taskId, Some(Task_DisplayMainMenu));
         } else {
-            CreateMainMenuErrorWindow(gText_BatteryRunDry.as_ptr().cast_mut());
-            gTasks[taskId].func = Some(Task_WaitForBatteryDryErrorWindow);
+            CreateMainMenuErrorWindow(
+                (*(&raw const crate::data::strings::gText_BatteryRunDry).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
+            task_set_func(taskId, Some(Task_WaitForBatteryDryErrorWindow));
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_WaitForBatteryDryErrorWindow(taskId: u8) {
+pub(crate) unsafe fn Task_WaitForBatteryDryErrorWindow(taskId: u8) {
     RunTextPrinters();
     if IsTextPrinterActive(7) == 0 && gMain.newKeys as i32 & A_BUTTON != 0 {
         ClearWindowTilemap(7);
         ClearMainMenuWindowTilemap((&raw const sWindowTemplates_MainMenu[7]).cast_mut());
-        gTasks[taskId].func = Some(Task_DisplayMainMenu);
+        task_set_func(taskId, Some(Task_DisplayMainMenu));
     }
 }
-pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_DisplayMainMenu(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     let mut palette: u16 = 0;
     if gPaletteFade.active() == 0 {
         SetGpuReg(REG_OFFSET_WIN0H, 0);
@@ -520,7 +525,7 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
             palette = 21631;
             LoadPalette(&raw mut palette as *mut c_void, 241, 2);
         }
-        match gTasks[taskId].data[0] {
+        match task_get(taskId, tMenuType) {
             HAS_SAVED_GAME => {
                 FillWindowPixelBuffer(2, 170);
                 FillWindowPixelBuffer(3, 170);
@@ -532,7 +537,10 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                     1,
                     sTextColor_Headers.as_ptr().cast_mut(),
                     TEXT_SKIP_DRAW as i8,
-                    gText_MainMenuContinue.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MainMenuContinue)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 AddTextPrinterParameterized3(
                     3,
@@ -541,7 +549,10 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                     1,
                     sTextColor_Headers.as_ptr().cast_mut(),
                     TEXT_SKIP_DRAW as i8,
-                    gText_MainMenuNewGame.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MainMenuNewGame)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 AddTextPrinterParameterized3(
                     4,
@@ -550,7 +561,10 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                     1,
                     sTextColor_Headers.as_ptr().cast_mut(),
                     TEXT_SKIP_DRAW as i8,
-                    gText_MainMenuOption.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MainMenuOption)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 MainMenu_FormatSavegameText();
                 PutWindowTilemap(2);
@@ -584,7 +598,10 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                     1,
                     sTextColor_Headers.as_ptr().cast_mut(),
                     TEXT_SKIP_DRAW as i8,
-                    gText_MainMenuContinue.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MainMenuContinue)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 AddTextPrinterParameterized3(
                     3,
@@ -593,7 +610,10 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                     1,
                     sTextColor_Headers.as_ptr().cast_mut(),
                     TEXT_SKIP_DRAW as i8,
-                    gText_MainMenuNewGame.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MainMenuNewGame)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 AddTextPrinterParameterized3(
                     4,
@@ -602,7 +622,10 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                     1,
                     sTextColor_Headers.as_ptr().cast_mut(),
                     TEXT_SKIP_DRAW as i8,
-                    gText_MainMenuMysteryGift.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MainMenuMysteryGift)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 AddTextPrinterParameterized3(
                     5,
@@ -611,7 +634,10 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                     1,
                     sTextColor_Headers.as_ptr().cast_mut(),
                     TEXT_SKIP_DRAW as i8,
-                    gText_MainMenuOption.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MainMenuOption)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 MainMenu_FormatSavegameText();
                 PutWindowTilemap(2);
@@ -652,7 +678,10 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                     1,
                     sTextColor_Headers.as_ptr().cast_mut(),
                     TEXT_SKIP_DRAW as i8,
-                    gText_MainMenuContinue.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MainMenuContinue)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 AddTextPrinterParameterized3(
                     3,
@@ -661,7 +690,10 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                     1,
                     sTextColor_Headers.as_ptr().cast_mut(),
                     TEXT_SKIP_DRAW as i8,
-                    gText_MainMenuNewGame.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MainMenuNewGame)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 AddTextPrinterParameterized3(
                     4,
@@ -670,7 +702,10 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                     1,
                     sTextColor_Headers.as_ptr().cast_mut(),
                     TEXT_SKIP_DRAW as i8,
-                    gText_MainMenuMysteryGift2.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MainMenuMysteryGift2)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 AddTextPrinterParameterized3(
                     5,
@@ -679,7 +714,10 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                     1,
                     sTextColor_Headers.as_ptr().cast_mut(),
                     TEXT_SKIP_DRAW as i8,
-                    gText_MainMenuMysteryEvents.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MainMenuMysteryEvents)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 AddTextPrinterParameterized3(
                     6,
@@ -688,7 +726,10 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                     1,
                     sTextColor_Headers.as_ptr().cast_mut(),
                     TEXT_SKIP_DRAW as i8,
-                    gText_MainMenuOption.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MainMenuOption)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 MainMenu_FormatSavegameText();
                 PutWindowTilemap(2);
@@ -723,14 +764,14 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                 );
                 *data.at(13) = AddScrollIndicatorArrowPair(
                     (&raw const *sScrollArrowsTemplate_MainMenu).cast_mut(),
-                    &raw mut sCurrItemAndOptionMenuCheck,
+                    sCurrItemAndOptionMenuCheck.as_ptr(),
                 ) as i16;
-                gTasks[*data.at(13)].func = Some(Task_ScrollIndicatorArrowPairOnMainMenu);
-                if sCurrItemAndOptionMenuCheck == 4 {
+                task_set_func(*data.at(13), Some(Task_ScrollIndicatorArrowPairOnMainMenu));
+                if sCurrItemAndOptionMenuCheck.get() == 4 {
                     ChangeBgY(0, 0x2000, BG_COORD_ADD);
                     ChangeBgY(1, 0x2000, BG_COORD_ADD);
                     *data.at(14) = TRUE as i16;
-                    gTasks[*data.at(13)].data[15] = TRUE as i16;
+                    task_set(*data.at(13), tArrowTaskIsScrolled, TRUE as i16);
                 }
             }
             _ => {
@@ -743,7 +784,10 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                     1,
                     sTextColor_Headers.as_ptr().cast_mut(),
                     TEXT_SKIP_DRAW as i8,
-                    gText_MainMenuNewGame.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MainMenuNewGame)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 AddTextPrinterParameterized3(
                     1,
@@ -752,7 +796,10 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                     1,
                     sTextColor_Headers.as_ptr().cast_mut(),
                     TEXT_SKIP_DRAW as i8,
-                    gText_MainMenuOption.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MainMenuOption)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 PutWindowTilemap(0);
                 PutWindowTilemap(1);
@@ -768,41 +815,41 @@ pub(crate) unsafe extern "C" fn Task_DisplayMainMenu(taskId: u8) {
                 );
             }
         }
-        gTasks[taskId].func = Some(Task_HighlightSelectedMainMenuItem);
+        task_set_func(taskId, Some(Task_HighlightSelectedMainMenuItem));
     }
 }
-pub(crate) unsafe extern "C" fn Task_HighlightSelectedMainMenuItem(taskId: u8) {
+pub(crate) unsafe fn Task_HighlightSelectedMainMenuItem(taskId: u8) {
     HighlightSelectedMainMenuItem(
-        gTasks[taskId].data[0] as u8,
-        gTasks[taskId].data[1] as u8,
-        gTasks[taskId].data[14],
+        task_get(taskId, tMenuType) as u8,
+        task_get(taskId, tCurrItem) as u8,
+        task_get(taskId, tIsScrolled),
     );
-    gTasks[taskId].func = Some(Task_HandleMainMenuInput);
+    task_set_func(taskId, Some(Task_HandleMainMenuInput));
 }
-pub(crate) unsafe extern "C" fn HandleMainMenuInput(taskId: u8) -> u8 {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn HandleMainMenuInput(taskId: u8) -> u8 {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         PlaySE(SE_SELECT);
         IsWirelessAdapterConnected();
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-        gTasks[taskId].func = Some(Task_HandleMainMenuAPressed);
+        task_set_func(taskId, Some(Task_HandleMainMenuAPressed));
     } else if gMain.newKeys as i32 & B_BUTTON != 0 {
         PlaySE(SE_SELECT);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 65535);
         SetGpuReg(REG_OFFSET_WIN0H, DISPLAY_WIDTH);
         SetGpuReg(REG_OFFSET_WIN0V, DISPLAY_HEIGHT);
-        gTasks[taskId].func = Some(Task_HandleMainMenuBPressed);
+        task_set_func(taskId, Some(Task_HandleMainMenuBPressed));
     } else if gMain.newKeys as i32 & DPAD_UP != 0 && *data.at(1) > 0 {
         if *data == HAS_MYSTERY_EVENTS && *data.at(14) == 1 && *data.at(1) == 1 {
             ChangeBgY(0, 0x2000, BG_COORD_SUB);
             ChangeBgY(1, 0x2000, BG_COORD_SUB);
-            gTasks[*data.at(13)].data[15] = {
+            task_set(*data.at(13), tArrowTaskIsScrolled, {
                 *data.at(14) = FALSE as i16;
                 *data.at(14)
-            };
+            });
         }
         *data.at(1) -= 1;
-        sCurrItemAndOptionMenuCheck = *data.at(1) as u16;
+        sCurrItemAndOptionMenuCheck.set(*data.at(1) as u16);
         return TRUE;
     } else if gMain.newKeys as i32 & DPAD_DOWN != 0
         && (*data.at(1) as i32) < *data.at(12) as i32 - 1
@@ -810,28 +857,28 @@ pub(crate) unsafe extern "C" fn HandleMainMenuInput(taskId: u8) -> u8 {
         if *data == HAS_MYSTERY_EVENTS && *data.at(1) == 3 && *data.at(14) == FALSE as i16 {
             ChangeBgY(0, 0x2000, BG_COORD_ADD);
             ChangeBgY(1, 0x2000, BG_COORD_ADD);
-            gTasks[*data.at(13)].data[15] = {
+            task_set(*data.at(13), tArrowTaskIsScrolled, {
                 *data.at(14) = TRUE as i16;
                 *data.at(14)
-            };
+            });
         }
         *data.at(1) += 1;
-        sCurrItemAndOptionMenuCheck = *data.at(1) as u16;
+        sCurrItemAndOptionMenuCheck.set(*data.at(1) as u16);
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Task_HandleMainMenuInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandleMainMenuInput(taskId: u8) {
     if HandleMainMenuInput(taskId) != 0 {
-        gTasks[taskId].func = Some(Task_HighlightSelectedMainMenuItem);
+        task_set_func(taskId, Some(Task_HighlightSelectedMainMenuItem));
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleMainMenuAPressed(taskId: u8) {
+pub(crate) unsafe fn Task_HandleMainMenuAPressed(taskId: u8) {
     let mut wirelessAdapterConnected: u8 = 0;
     let mut action: u8 = 0;
     if gPaletteFade.active() == 0 {
-        if gTasks[taskId].data[0] == HAS_MYSTERY_EVENTS {
-            RemoveScrollIndicatorArrowPair(gTasks[taskId].data[13] as u8);
+        if task_get(taskId, tMenuType) == HAS_MYSTERY_EVENTS {
+            RemoveScrollIndicatorArrowPair(task_get(taskId, tScrollArrowTaskId) as u8);
         }
         ClearStdWindowAndFrame(0, TRUE);
         ClearStdWindowAndFrame(1, 1);
@@ -842,8 +889,8 @@ pub(crate) unsafe extern "C" fn Task_HandleMainMenuAPressed(taskId: u8) {
         ClearStdWindowAndFrame(6, TRUE);
         ClearStdWindowAndFrame(7, TRUE);
         wirelessAdapterConnected = IsWirelessAdapterConnected();
-        match gTasks[taskId].data[0] {
-            HAS_SAVED_GAME => match gTasks[taskId].data[1] {
+        match task_get(taskId, tMenuType) {
+            HAS_SAVED_GAME => match task_get(taskId, tCurrItem) {
                 1 => {
                     action = ACTION_NEW_GAME;
                 }
@@ -854,7 +901,7 @@ pub(crate) unsafe extern "C" fn Task_HandleMainMenuAPressed(taskId: u8) {
                     action = ACTION_CONTINUE;
                 }
             },
-            HAS_MYSTERY_GIFT => match gTasks[taskId].data[1] {
+            HAS_MYSTERY_GIFT => match task_get(taskId, tCurrItem) {
                 1 => {
                     action = ACTION_NEW_GAME;
                 }
@@ -862,7 +909,7 @@ pub(crate) unsafe extern "C" fn Task_HandleMainMenuAPressed(taskId: u8) {
                     action = ACTION_MYSTERY_GIFT;
                     if wirelessAdapterConnected == 0 {
                         action = ACTION_INVALID;
-                        gTasks[taskId].data[0] = HAS_NO_SAVED_GAME;
+                        task_set(taskId, tMenuType, HAS_NO_SAVED_GAME);
                     }
                 }
                 3 => {
@@ -872,20 +919,20 @@ pub(crate) unsafe extern "C" fn Task_HandleMainMenuAPressed(taskId: u8) {
                     action = ACTION_CONTINUE;
                 }
             },
-            HAS_MYSTERY_EVENTS => match gTasks[taskId].data[1] {
+            HAS_MYSTERY_EVENTS => match task_get(taskId, tCurrItem) {
                 1 => {
                     action = ACTION_NEW_GAME;
                 }
                 2 => {
-                    if gTasks[taskId].data[15] != 0 {
+                    if task_get(taskId, tWirelessAdapterConnected) != 0 {
                         action = ACTION_MYSTERY_GIFT;
                         if wirelessAdapterConnected == 0 {
                             action = ACTION_INVALID;
-                            gTasks[taskId].data[0] = HAS_NO_SAVED_GAME;
+                            task_set(taskId, tMenuType, HAS_NO_SAVED_GAME);
                         }
                     } else if wirelessAdapterConnected != 0 {
                         action = ACTION_INVALID;
-                        gTasks[taskId].data[0] = HAS_SAVED_GAME;
+                        task_set(taskId, tMenuType, HAS_SAVED_GAME);
                     } else {
                         action = ACTION_EREADER;
                     }
@@ -893,7 +940,7 @@ pub(crate) unsafe extern "C" fn Task_HandleMainMenuAPressed(taskId: u8) {
                 3 => {
                     if wirelessAdapterConnected != 0 {
                         action = ACTION_INVALID;
-                        gTasks[taskId].data[0] = HAS_MYSTERY_GIFT;
+                        task_set(taskId, tMenuType, HAS_MYSTERY_GIFT);
                     } else {
                         action = ACTION_MYSTERY_EVENTS;
                     }
@@ -905,7 +952,7 @@ pub(crate) unsafe extern "C" fn Task_HandleMainMenuAPressed(taskId: u8) {
                     action = ACTION_CONTINUE;
                 }
             },
-            _ => match gTasks[taskId].data[1] {
+            _ => match task_get(taskId, tCurrItem) {
                 1 => {
                     action = ACTION_OPTION;
                 }
@@ -941,8 +988,8 @@ pub(crate) unsafe extern "C" fn Task_HandleMainMenuAPressed(taskId: u8) {
                 DestroyTask(taskId);
             }
             ACTION_INVALID => {
-                gTasks[taskId].data[1] = 0;
-                gTasks[taskId].func = Some(Task_DisplayMainMenuInvalidActionError);
+                task_set(taskId, tCurrItem, 0);
+                task_set_func(taskId, Some(Task_DisplayMainMenuInvalidActionError));
                 gPlttBufferUnfaded[241] = 32767;
                 gPlttBufferFaded[241] = 32767;
                 SetGpuReg(REG_OFFSET_BG2HOFS, 0);
@@ -957,72 +1004,82 @@ pub(crate) unsafe extern "C" fn Task_HandleMainMenuAPressed(taskId: u8) {
             _ => {
                 gPlttBufferUnfaded[0] = 0;
                 gPlttBufferFaded[0] = 0;
-                gTasks[taskId].func = Some(Task_NewGameBirchSpeech_Init);
+                task_set_func(taskId, Some(Task_NewGameBirchSpeech_Init));
             }
         }
         FreeAllWindowBuffers();
         if action != ACTION_OPTION {
-            sCurrItemAndOptionMenuCheck = 0;
+            sCurrItemAndOptionMenuCheck.set(0);
         } else {
-            sCurrItemAndOptionMenuCheck |= OPTION_MENU_FLAG as u16;
+            sCurrItemAndOptionMenuCheck
+                .set(sCurrItemAndOptionMenuCheck.get() | (OPTION_MENU_FLAG as u16));
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleMainMenuBPressed(taskId: u8) {
+pub(crate) unsafe fn Task_HandleMainMenuBPressed(taskId: u8) {
     if gPaletteFade.active() == 0 {
-        if gTasks[taskId].data[0] == HAS_MYSTERY_EVENTS {
-            RemoveScrollIndicatorArrowPair(gTasks[taskId].data[13] as u8);
+        if task_get(taskId, tMenuType) == HAS_MYSTERY_EVENTS {
+            RemoveScrollIndicatorArrowPair(task_get(taskId, tScrollArrowTaskId) as u8);
         }
-        sCurrItemAndOptionMenuCheck = 0;
+        sCurrItemAndOptionMenuCheck.set(0);
         FreeAllWindowBuffers();
         SetMainCallback2(Some(CB2_InitTitleScreen));
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_DisplayMainMenuInvalidActionError(taskId: u8) {
-    match gTasks[taskId].data[1] {
+pub(crate) unsafe fn Task_DisplayMainMenuInvalidActionError(taskId: u8) {
+    match task_get(taskId, tCurrItem) {
         0 => {
             FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, DISPLAY_TILE_WIDTH, DISPLAY_TILE_HEIGHT);
-            match gTasks[taskId].data[0] {
+            match task_get(taskId, tMenuType) {
                 0 => {
-                    CreateMainMenuErrorWindow(gText_WirelessNotConnected.as_ptr().cast_mut());
+                    CreateMainMenuErrorWindow(
+                        (*(&raw const crate::data::strings::gText_WirelessNotConnected)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                    );
                 }
                 1 => {
-                    CreateMainMenuErrorWindow(gText_MysteryGiftCantUse.as_ptr().cast_mut());
+                    CreateMainMenuErrorWindow(
+                        (*(&raw const crate::data::strings::gText_MysteryGiftCantUse)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                    );
                 }
                 2 => {
-                    CreateMainMenuErrorWindow(gText_MysteryEventsCantUse.as_ptr().cast_mut());
+                    CreateMainMenuErrorWindow(
+                        (*(&raw const crate::data::strings::gText_MysteryEventsCantUse)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                    );
                 }
                 _ => {}
             }
-            gTasks[taskId].data[1] += 1;
+            task_set(taskId, tCurrItem, task_get(taskId, tCurrItem) + 1);
         }
         1 => {
             if gPaletteFade.active() == 0 {
-                gTasks[taskId].data[1] += 1;
+                task_set(taskId, tCurrItem, task_get(taskId, tCurrItem) + 1);
             }
         }
         2 => {
             RunTextPrinters();
             if IsTextPrinterActive(7) == 0 {
-                gTasks[taskId].data[1] += 1;
+                task_set(taskId, tCurrItem, task_get(taskId, tCurrItem) + 1);
             }
         }
-        3 => {
-            if gMain.newKeys as i32 & 3 != 0 {
-                PlaySE(SE_SELECT);
-                BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-                gTasks[taskId].func = Some(Task_HandleMainMenuBPressed);
-            }
+        3 if gMain.newKeys as i32 & 3 != 0 => {
+            PlaySE(SE_SELECT);
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
+            task_set_func(taskId, Some(Task_HandleMainMenuBPressed));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn HighlightSelectedMainMenuItem(
-    menuType: u8,
-    selectedMenuItem: u8,
-    isScrolled: i16,
-) {
+unsafe fn HighlightSelectedMainMenuItem(menuType: u8, selectedMenuItem: u8, isScrolled: i16) {
     SetGpuReg(REG_OFFSET_WIN0H, 2535);
     match menuType {
         1 => match selectedMenuItem {
@@ -1089,7 +1146,7 @@ pub(crate) unsafe extern "C" fn HighlightSelectedMainMenuItem(
         },
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_Init(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_Init(taskId: u8) {
     SetGpuReg(0x0, 0);
     SetGpuReg(REG_OFFSET_DISPCNT, 4160);
     InitBgFromTemplate((&raw const *sBirchBgTemplate).cast_mut());
@@ -1106,7 +1163,7 @@ pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_Init(taskId: u8) {
     );
     LZ77UnCompVram(
         sBirchSpeechBgMap.as_ptr().cast_mut(),
-        0x6003800 as usize as *mut c_void,
+        0x6003800_usize as *mut c_void,
     );
     LoadPalette(sBirchSpeechBgPals.as_ptr().cast_mut() as *mut c_void, 0, 64);
     LoadPalette(
@@ -1120,38 +1177,41 @@ pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_Init(taskId: u8) {
     ResetAllPicSprites();
     AddBirchSpeechObjects(taskId);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-    gTasks[taskId].data[4] = 0;
-    gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitToShowBirch);
-    gTasks[taskId].data[2] = SPRITE_NONE as i16;
-    gTasks[taskId].data[3] = 0xFF;
-    gTasks[taskId].data[7] = 0xD8;
+    task_set(taskId, tBG1HOFS, 0);
+    task_set_func(taskId, Some(Task_NewGameBirchSpeech_WaitToShowBirch));
+    task_set(taskId, tPlayerSpriteId, SPRITE_NONE as i16);
+    task_set(taskId, 3, 0xFF);
+    task_set(taskId, tTimer, 0xD8);
     PlayBGM(MUS_ROUTE122);
     ShowBg(0);
     ShowBg(1);
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitToShowBirch(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_WaitToShowBirch(taskId: u8) {
     let mut spriteId: u8 = 0;
-    if gTasks[taskId].data[7] != 0 {
-        gTasks[taskId].data[7] -= 1;
+    if task_get(taskId, tTimer) != 0 {
+        task_set(taskId, tTimer, task_get(taskId, tTimer) - 1);
     } else {
-        spriteId = gTasks[taskId].data[8] as u8;
+        spriteId = task_get(taskId, tBirchSpriteId) as u8;
         gSprites[spriteId].x = 136;
         gSprites[spriteId].y = 60;
         gSprites[spriteId].set_invisible(FALSE as u16);
         gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_BLEND);
         NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 10);
         NewGameBirchSpeech_StartFadePlatformOut(taskId, 20);
-        gTasks[taskId].data[7] = 80;
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitForSpriteFadeInWelcome);
+        task_set(taskId, tTimer, 80);
+        task_set_func(
+            taskId,
+            Some(Task_NewGameBirchSpeech_WaitForSpriteFadeInWelcome),
+        );
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitForSpriteFadeInWelcome(taskId: u8) {
-    if gTasks[taskId].data[5] != 0 {
-        gSprites[gTasks[taskId].data[8]]
+pub(crate) unsafe fn Task_NewGameBirchSpeech_WaitForSpriteFadeInWelcome(taskId: u8) {
+    if task_get(taskId, tIsDoneFadingSprites) != 0 {
+        gSprites[task_get(taskId, tBirchSpriteId)]
             .oam
             .set_objMode(ST_OAM_OBJ_NORMAL as u32);
-        if gTasks[taskId].data[7] != 0 {
-            gTasks[taskId].data[7] -= 1;
+        if task_get(taskId, tTimer) != 0 {
+            task_set(taskId, tTimer, task_get(taskId, tTimer) - 1);
         } else {
             InitWindows(sNewGameBirchSpeechTextWindows.as_ptr().cast_mut());
             LoadMainMenuWindowFrameTiles(0, 0xF3);
@@ -1162,39 +1222,45 @@ pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitForSpriteFadeInWelco
             NewGameBirchSpeech_ClearWindow(0);
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
-                gText_Birch_Welcome.as_ptr().cast_mut(),
+                (*crate::asmdata::gText_Birch_Welcome.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
             );
             AddTextPrinterForMessage(TRUE);
-            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_ThisIsAPokemon);
+            task_set_func(taskId, Some(Task_NewGameBirchSpeech_ThisIsAPokemon));
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_ThisIsAPokemon(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_ThisIsAPokemon(taskId: u8) {
     if gPaletteFade.active() == 0 && RunTextPrintersAndIsPrinter0Active() == 0 {
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_MainSpeech);
+        task_set_func(taskId, Some(Task_NewGameBirchSpeech_MainSpeech));
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_ThisIsAPokemon.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_ThisIsAPokemon).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         AddTextPrinterWithCallbackForMessage(
             TRUE,
             Some(NewGameBirchSpeech_WaitForThisIsPokemonText),
         );
-        sBirchSpeechMainTaskId = taskId;
+        sBirchSpeechMainTaskId.set(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_MainSpeech(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_MainSpeech(taskId: u8) {
     if RunTextPrintersAndIsPrinter0Active() == 0 {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_Birch_MainSpeech.as_ptr().cast_mut(),
+            (*crate::asmdata::gText_Birch_MainSpeech.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         AddTextPrinterForMessage(TRUE);
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_AndYouAre);
+        task_set_func(taskId, Some(Task_NewGameBirchSpeech_AndYouAre));
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeechSub_InitPokeBall(taskId: u8) {
-    let mut spriteId: u8 = gTasks[sBirchSpeechMainTaskId].data[9] as u8;
+pub(crate) unsafe fn Task_NewGameBirchSpeechSub_InitPokeBall(taskId: u8) {
+    let spriteId: u8 = task_get(sBirchSpeechMainTaskId.get(), tLotadSpriteId) as u8;
     gSprites[spriteId].x = 100;
     gSprites[spriteId].y = 75;
     gSprites[spriteId].set_invisible(FALSE as u16);
@@ -1210,25 +1276,29 @@ pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeechSub_InitPokeBall(taskId: 
         PALETTES_BG,
         SPECIES_LOTAD,
     );
-    gTasks[taskId].func = Some(Task_NewGameBirchSpeechSub_WaitForLotad);
-    gTasks[sBirchSpeechMainTaskId].data[7] = 0;
+    task_set_func(taskId, Some(Task_NewGameBirchSpeechSub_WaitForLotad));
+    task_set(sBirchSpeechMainTaskId.get(), tTimer, 0);
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeechSub_WaitForLotad(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut sprite: *mut Sprite = &raw mut gSprites[gTasks[sBirchSpeechMainTaskId].data[9]];
+pub(crate) unsafe fn Task_NewGameBirchSpeechSub_WaitForLotad(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let sprite: *mut Sprite =
+        &raw mut gSprites[task_get(sBirchSpeechMainTaskId.get(), tLotadSpriteId)];
     match *data {
         0 => {
-            if (*sprite).callback != Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
-            {
+            if (*sprite).callback != Some(SpriteCallbackDummy as unsafe fn(*mut Sprite)) {
                 return;
             }
             (*sprite).oam.set_affineMode(ST_OAM_AFFINE_OFF);
         }
         1 => {
-            if gTasks[sBirchSpeechMainTaskId].data[7] >= 96 {
+            if task_get(sBirchSpeechMainTaskId.get(), tTimer) >= 96 {
                 DestroyTask(taskId);
-                if gTasks[sBirchSpeechMainTaskId].data[7] < 0x4000 {
-                    gTasks[sBirchSpeechMainTaskId].data[7] += 1;
+                if task_get(sBirchSpeechMainTaskId.get(), tTimer) < 0x4000 {
+                    task_set(
+                        sBirchSpeechMainTaskId.get(),
+                        tTimer,
+                        task_get(sBirchSpeechMainTaskId.get(), tTimer) + 1,
+                    );
                 }
             }
             return;
@@ -1236,171 +1306,192 @@ pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeechSub_WaitForLotad(taskId: 
         _ => {}
     }
     *data += 1;
-    if gTasks[sBirchSpeechMainTaskId].data[7] < 0x4000 {
-        gTasks[sBirchSpeechMainTaskId].data[7] += 1;
+    if task_get(sBirchSpeechMainTaskId.get(), tTimer) < 0x4000 {
+        task_set(
+            sBirchSpeechMainTaskId.get(),
+            tTimer,
+            task_get(sBirchSpeechMainTaskId.get(), tTimer) + 1,
+        );
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_AndYouAre(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_AndYouAre(taskId: u8) {
     if RunTextPrintersAndIsPrinter0Active() == 0 {
-        sStartedPokeBallTask = FALSE;
+        sStartedPokeBallTask.set(FALSE);
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_Birch_AndYouAre.as_ptr().cast_mut(),
+            (*crate::asmdata::gText_Birch_AndYouAre.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         AddTextPrinterForMessage(TRUE);
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_StartBirchLotadPlatformFade);
+        task_set_func(
+            taskId,
+            Some(Task_NewGameBirchSpeech_StartBirchLotadPlatformFade),
+        );
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_StartBirchLotadPlatformFade(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_StartBirchLotadPlatformFade(taskId: u8) {
     if RunTextPrintersAndIsPrinter0Active() == 0 {
-        gSprites[gTasks[taskId].data[8]]
+        gSprites[task_get(taskId, tBirchSpriteId)]
             .oam
             .set_objMode(ST_OAM_OBJ_BLEND);
-        gSprites[gTasks[taskId].data[9]]
+        gSprites[task_get(taskId, tLotadSpriteId)]
             .oam
             .set_objMode(ST_OAM_OBJ_BLEND);
         NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId, 2);
         NewGameBirchSpeech_StartFadePlatformIn(taskId, 1);
-        gTasks[taskId].data[7] = 64;
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_SlidePlatformAway);
+        task_set(taskId, tTimer, 64);
+        task_set_func(taskId, Some(Task_NewGameBirchSpeech_SlidePlatformAway));
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_SlidePlatformAway(taskId: u8) {
-    if gTasks[taskId].data[4] != -60 {
-        gTasks[taskId].data[4] -= 2;
-        SetGpuReg(REG_OFFSET_BG1HOFS, gTasks[taskId].data[4] as u16);
+pub(crate) unsafe fn Task_NewGameBirchSpeech_SlidePlatformAway(taskId: u8) {
+    if task_get(taskId, tBG1HOFS) != -60 {
+        task_set(taskId, tBG1HOFS, task_get(taskId, tBG1HOFS) - 2);
+        SetGpuReg(REG_OFFSET_BG1HOFS, task_get(taskId, tBG1HOFS) as u16);
     } else {
-        gTasks[taskId].data[4] = -60;
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_StartPlayerFadeIn);
+        task_set(taskId, tBG1HOFS, -60);
+        task_set_func(taskId, Some(Task_NewGameBirchSpeech_StartPlayerFadeIn));
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_StartPlayerFadeIn(taskId: u8) {
-    if gTasks[taskId].data[5] != 0 {
-        gSprites[gTasks[taskId].data[8]].set_invisible(TRUE as u16);
-        gSprites[gTasks[taskId].data[9]].set_invisible(TRUE as u16);
-        if gTasks[taskId].data[7] != 0 {
-            gTasks[taskId].data[7] -= 1;
+pub(crate) unsafe fn Task_NewGameBirchSpeech_StartPlayerFadeIn(taskId: u8) {
+    if task_get(taskId, tIsDoneFadingSprites) != 0 {
+        gSprites[task_get(taskId, tBirchSpriteId)].set_invisible(TRUE as u16);
+        gSprites[task_get(taskId, tLotadSpriteId)].set_invisible(TRUE as u16);
+        if task_get(taskId, tTimer) != 0 {
+            task_set(taskId, tTimer, task_get(taskId, tTimer) - 1);
         } else {
-            let mut spriteId: u8 = gTasks[taskId].data[10] as u8;
+            let spriteId: u8 = task_get(taskId, tBrendanSpriteId) as u8;
             gSprites[spriteId].x = 180;
             gSprites[spriteId].y = 60;
             gSprites[spriteId].set_invisible(FALSE as u16);
             gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_BLEND);
-            gTasks[taskId].data[2] = spriteId as i16;
-            gTasks[taskId].data[6] = MALE as i16;
+            task_set(taskId, tPlayerSpriteId, spriteId as i16);
+            task_set(taskId, tPlayerGender, MALE as i16);
             NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 2);
             NewGameBirchSpeech_StartFadePlatformOut(taskId, 1);
-            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitForPlayerFadeIn);
+            task_set_func(taskId, Some(Task_NewGameBirchSpeech_WaitForPlayerFadeIn));
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitForPlayerFadeIn(taskId: u8) {
-    if gTasks[taskId].data[5] != 0 {
-        gSprites[gTasks[taskId].data[2]]
+pub(crate) unsafe fn Task_NewGameBirchSpeech_WaitForPlayerFadeIn(taskId: u8) {
+    if task_get(taskId, tIsDoneFadingSprites) != 0 {
+        gSprites[task_get(taskId, tPlayerSpriteId)]
             .oam
             .set_objMode(ST_OAM_OBJ_NORMAL as u32);
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_BoyOrGirl);
+        task_set_func(taskId, Some(Task_NewGameBirchSpeech_BoyOrGirl));
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_BoyOrGirl(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_BoyOrGirl(taskId: u8) {
     NewGameBirchSpeech_ClearWindow(0);
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_Birch_BoyOrGirl.as_ptr().cast_mut(),
+        (*crate::asmdata::gText_Birch_BoyOrGirl.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     AddTextPrinterForMessage(TRUE);
-    gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitToShowGenderMenu);
+    task_set_func(taskId, Some(Task_NewGameBirchSpeech_WaitToShowGenderMenu));
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitToShowGenderMenu(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_WaitToShowGenderMenu(taskId: u8) {
     if RunTextPrintersAndIsPrinter0Active() == 0 {
         NewGameBirchSpeech_ShowGenderMenu();
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_ChooseGender);
+        task_set_func(taskId, Some(Task_NewGameBirchSpeech_ChooseGender));
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_ChooseGender(taskId: u8) {
-    let mut gender: i32 = NewGameBirchSpeech_ProcessGenderMenuInput() as i32;
-    let mut gender2: i32 = 0;
+pub(crate) unsafe fn Task_NewGameBirchSpeech_ChooseGender(taskId: u8) {
+    let gender: i32 = NewGameBirchSpeech_ProcessGenderMenuInput() as i32;
     match gender {
         0 => {
             PlaySE(SE_SELECT);
             (*gSaveBlock2Ptr).playerGender = gender as u8;
             NewGameBirchSpeech_ClearGenderWindow(1, 1);
-            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WhatsYourName);
+            task_set_func(taskId, Some(Task_NewGameBirchSpeech_WhatsYourName));
         }
         1 => {
             PlaySE(SE_SELECT);
             (*gSaveBlock2Ptr).playerGender = gender as u8;
             NewGameBirchSpeech_ClearGenderWindow(1, 1);
-            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WhatsYourName);
+            task_set_func(taskId, Some(Task_NewGameBirchSpeech_WhatsYourName));
         }
         _ => {}
     }
-    gender2 = Menu_GetCursorPos() as i32;
-    if gender2 != gTasks[taskId].data[6] as i32 {
-        gTasks[taskId].data[6] = gender2 as i16;
-        gSprites[gTasks[taskId].data[2]]
+    let gender2: i32 = Menu_GetCursorPos() as i32;
+    if gender2 != task_get(taskId, tPlayerGender) as i32 {
+        task_set(taskId, tPlayerGender, gender2 as i16);
+        gSprites[task_get(taskId, tPlayerSpriteId)]
             .oam
             .set_objMode(ST_OAM_OBJ_BLEND);
         NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId, 0);
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_SlideOutOldGenderSprite);
+        task_set_func(
+            taskId,
+            Some(Task_NewGameBirchSpeech_SlideOutOldGenderSprite),
+        );
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_SlideOutOldGenderSprite(taskId: u8) {
-    let mut spriteId: u8 = gTasks[taskId].data[2] as u8;
-    if gTasks[taskId].data[5] == 0 {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_SlideOutOldGenderSprite(taskId: u8) {
+    let mut spriteId: u8 = task_get(taskId, tPlayerSpriteId) as u8;
+    if task_get(taskId, tIsDoneFadingSprites) == 0 {
         gSprites[spriteId].x += 4;
     } else {
         gSprites[spriteId].set_invisible(TRUE as u16);
-        if gTasks[taskId].data[6] != MALE as i16 {
-            spriteId = gTasks[taskId].data[11] as u8;
+        if task_get(taskId, tPlayerGender) != MALE as i16 {
+            spriteId = task_get(taskId, tMaySpriteId) as u8;
         } else {
-            spriteId = gTasks[taskId].data[10] as u8;
+            spriteId = task_get(taskId, tBrendanSpriteId) as u8;
         }
         gSprites[spriteId].x = DISPLAY_WIDTH as i16;
         gSprites[spriteId].y = 60;
         gSprites[spriteId].set_invisible(FALSE as u16);
-        gTasks[taskId].data[2] = spriteId as i16;
+        task_set(taskId, tPlayerSpriteId, spriteId as i16);
         gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_BLEND);
         NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 0);
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_SlideInNewGenderSprite);
+        task_set_func(taskId, Some(Task_NewGameBirchSpeech_SlideInNewGenderSprite));
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_SlideInNewGenderSprite(taskId: u8) {
-    let mut spriteId: u8 = gTasks[taskId].data[2] as u8;
+pub(crate) unsafe fn Task_NewGameBirchSpeech_SlideInNewGenderSprite(taskId: u8) {
+    let spriteId: u8 = task_get(taskId, tPlayerSpriteId) as u8;
     if gSprites[spriteId].x > 180 {
         gSprites[spriteId].x -= 4;
     } else {
         gSprites[spriteId].x = 180;
-        if gTasks[taskId].data[5] != 0 {
+        if task_get(taskId, tIsDoneFadingSprites) != 0 {
             gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_NORMAL as u32);
-            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_ChooseGender);
+            task_set_func(taskId, Some(Task_NewGameBirchSpeech_ChooseGender));
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WhatsYourName(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_WhatsYourName(taskId: u8) {
     NewGameBirchSpeech_ClearWindow(0);
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_Birch_WhatsYourName.as_ptr().cast_mut(),
+        (*crate::asmdata::gText_Birch_WhatsYourName.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     AddTextPrinterForMessage(TRUE);
-    gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitForWhatsYourNameToPrint);
+    task_set_func(
+        taskId,
+        Some(Task_NewGameBirchSpeech_WaitForWhatsYourNameToPrint),
+    );
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitForWhatsYourNameToPrint(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_WaitForWhatsYourNameToPrint(taskId: u8) {
     if RunTextPrintersAndIsPrinter0Active() == 0 {
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitPressBeforeNameChoice);
+        task_set_func(
+            taskId,
+            Some(Task_NewGameBirchSpeech_WaitPressBeforeNameChoice),
+        );
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitPressBeforeNameChoice(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_WaitPressBeforeNameChoice(taskId: u8) {
     if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_StartNamingScreen);
+        task_set_func(taskId, Some(Task_NewGameBirchSpeech_StartNamingScreen));
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_StartNamingScreen(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_StartNamingScreen(taskId: u8) {
     if gPaletteFade.active() == 0 {
         FreeAllWindowBuffers();
-        FreeAndDestroyMonPicSprite(gTasks[taskId].data[9] as u16);
+        FreeAndDestroyMonPicSprite(task_get(taskId, tLotadSpriteId) as u16);
         NewGameBirchSpeech_SetDefaultPlayerName(rem_u32(
             Random() as u32,
             if 20 < 20 { 20 } else { 20 },
@@ -1416,58 +1507,60 @@ pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_StartNamingScreen(taskId
         );
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_SoItsPlayerName(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_SoItsPlayerName(taskId: u8) {
     NewGameBirchSpeech_ClearWindow(0);
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_Birch_SoItsPlayer.as_ptr().cast_mut(),
+        (*crate::asmdata::gText_Birch_SoItsPlayer.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     AddTextPrinterForMessage(TRUE);
-    gTasks[taskId].func = Some(Task_NewGameBirchSpeech_CreateNameYesNo);
+    task_set_func(taskId, Some(Task_NewGameBirchSpeech_CreateNameYesNo));
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_CreateNameYesNo(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_CreateNameYesNo(taskId: u8) {
     if RunTextPrintersAndIsPrinter0Active() == 0 {
         CreateYesNoMenuParameterized(2, 1, 0xF3, 0xDF, 2, 15);
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_ProcessNameYesNoMenu);
+        task_set_func(taskId, Some(Task_NewGameBirchSpeech_ProcessNameYesNoMenu));
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_ProcessNameYesNoMenu(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_ProcessNameYesNoMenu(taskId: u8) {
     match Menu_ProcessInputNoWrapClearOnChoose() {
         0 => {
             PlaySE(SE_SELECT);
-            gSprites[gTasks[taskId].data[2]]
+            gSprites[task_get(taskId, tPlayerSpriteId)]
                 .oam
                 .set_objMode(ST_OAM_OBJ_BLEND);
             NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId, 2);
             NewGameBirchSpeech_StartFadePlatformIn(taskId, 1);
-            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_SlidePlatformAway2);
+            task_set_func(taskId, Some(Task_NewGameBirchSpeech_SlidePlatformAway2));
         }
         MENU_B_PRESSED | 1 => {
             PlaySE(SE_SELECT);
-            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_BoyOrGirl);
+            task_set_func(taskId, Some(Task_NewGameBirchSpeech_BoyOrGirl));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_SlidePlatformAway2(taskId: u8) {
-    if gTasks[taskId].data[4] != 0 {
-        gTasks[taskId].data[4] += 2;
-        SetGpuReg(REG_OFFSET_BG1HOFS, gTasks[taskId].data[4] as u16);
+pub(crate) unsafe fn Task_NewGameBirchSpeech_SlidePlatformAway2(taskId: u8) {
+    if task_get(taskId, tBG1HOFS) != 0 {
+        task_set(taskId, tBG1HOFS, task_get(taskId, tBG1HOFS) + 2);
+        SetGpuReg(REG_OFFSET_BG1HOFS, task_get(taskId, tBG1HOFS) as u16);
     } else {
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_ReshowBirchLotad);
+        task_set_func(taskId, Some(Task_NewGameBirchSpeech_ReshowBirchLotad));
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_ReshowBirchLotad(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_ReshowBirchLotad(taskId: u8) {
     let mut spriteId: u8 = 0;
-    if gTasks[taskId].data[5] != 0 {
-        gSprites[gTasks[taskId].data[10]].set_invisible(TRUE as u16);
-        gSprites[gTasks[taskId].data[11]].set_invisible(TRUE as u16);
-        spriteId = gTasks[taskId].data[8] as u8;
+    if task_get(taskId, tIsDoneFadingSprites) != 0 {
+        gSprites[task_get(taskId, tBrendanSpriteId)].set_invisible(TRUE as u16);
+        gSprites[task_get(taskId, tMaySpriteId)].set_invisible(TRUE as u16);
+        spriteId = task_get(taskId, tBirchSpriteId) as u8;
         gSprites[spriteId].x = 136;
         gSprites[spriteId].y = 60;
         gSprites[spriteId].set_invisible(FALSE as u16);
         gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_BLEND);
-        spriteId = gTasks[taskId].data[9] as u8;
+        spriteId = task_get(taskId, tLotadSpriteId) as u8;
         gSprites[spriteId].x = 100;
         gSprites[spriteId].y = 75;
         gSprites[spriteId].set_invisible(FALSE as u16);
@@ -1477,73 +1570,78 @@ pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_ReshowBirchLotad(taskId:
         NewGameBirchSpeech_ClearWindow(0);
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_Birch_YourePlayer.as_ptr().cast_mut(),
+            (*crate::asmdata::gText_Birch_YourePlayer.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         AddTextPrinterForMessage(TRUE);
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitForSpriteFadeInAndTextPrinter);
+        task_set_func(
+            taskId,
+            Some(Task_NewGameBirchSpeech_WaitForSpriteFadeInAndTextPrinter),
+        );
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitForSpriteFadeInAndTextPrinter(
-    taskId: u8,
-) {
-    if gTasks[taskId].data[5] != 0 {
-        gSprites[gTasks[taskId].data[8]]
+pub(crate) unsafe fn Task_NewGameBirchSpeech_WaitForSpriteFadeInAndTextPrinter(taskId: u8) {
+    if task_get(taskId, tIsDoneFadingSprites) != 0 {
+        gSprites[task_get(taskId, tBirchSpriteId)]
             .oam
             .set_objMode(ST_OAM_OBJ_NORMAL as u32);
-        gSprites[gTasks[taskId].data[9]]
+        gSprites[task_get(taskId, tLotadSpriteId)]
             .oam
             .set_objMode(ST_OAM_OBJ_NORMAL as u32);
         if RunTextPrintersAndIsPrinter0Active() == 0 {
-            gSprites[gTasks[taskId].data[8]]
+            gSprites[task_get(taskId, tBirchSpriteId)]
                 .oam
                 .set_objMode(ST_OAM_OBJ_BLEND);
-            gSprites[gTasks[taskId].data[9]]
+            gSprites[task_get(taskId, tLotadSpriteId)]
                 .oam
                 .set_objMode(ST_OAM_OBJ_BLEND);
             NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId, 2);
             NewGameBirchSpeech_StartFadePlatformIn(taskId, 1);
-            gTasks[taskId].data[7] = 64;
-            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_AreYouReady);
+            task_set(taskId, tTimer, 64);
+            task_set_func(taskId, Some(Task_NewGameBirchSpeech_AreYouReady));
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_AreYouReady(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_AreYouReady(taskId: u8) {
     let mut spriteId: u8 = 0;
-    if gTasks[taskId].data[5] != 0 {
-        gSprites[gTasks[taskId].data[8]].set_invisible(TRUE as u16);
-        gSprites[gTasks[taskId].data[9]].set_invisible(TRUE as u16);
-        if gTasks[taskId].data[7] != 0 {
-            gTasks[taskId].data[7] -= 1;
+    if task_get(taskId, tIsDoneFadingSprites) != 0 {
+        gSprites[task_get(taskId, tBirchSpriteId)].set_invisible(TRUE as u16);
+        gSprites[task_get(taskId, tLotadSpriteId)].set_invisible(TRUE as u16);
+        if task_get(taskId, tTimer) != 0 {
+            task_set(taskId, tTimer, task_get(taskId, tTimer) - 1);
             return;
         }
         if (*gSaveBlock2Ptr).playerGender != MALE {
-            spriteId = gTasks[taskId].data[11] as u8;
+            spriteId = task_get(taskId, tMaySpriteId) as u8;
         } else {
-            spriteId = gTasks[taskId].data[10] as u8;
+            spriteId = task_get(taskId, tBrendanSpriteId) as u8;
         }
         gSprites[spriteId].x = 120;
         gSprites[spriteId].y = 60;
         gSprites[spriteId].set_invisible(FALSE as u16);
         gSprites[spriteId].oam.set_objMode(ST_OAM_OBJ_BLEND);
-        gTasks[taskId].data[2] = spriteId as i16;
+        task_set(taskId, tPlayerSpriteId, spriteId as i16);
         NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 2);
         NewGameBirchSpeech_StartFadePlatformOut(taskId, 1);
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_Birch_AreYouReady.as_ptr().cast_mut(),
+            (*crate::asmdata::gText_Birch_AreYouReady.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         AddTextPrinterForMessage(TRUE);
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_ShrinkPlayer);
+        task_set_func(taskId, Some(Task_NewGameBirchSpeech_ShrinkPlayer));
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_ShrinkPlayer(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_ShrinkPlayer(taskId: u8) {
     let mut spriteId: u8 = 0;
-    if gTasks[taskId].data[5] != 0 {
-        gSprites[gTasks[taskId].data[2]]
+    if task_get(taskId, tIsDoneFadingSprites) != 0 {
+        gSprites[task_get(taskId, tPlayerSpriteId)]
             .oam
             .set_objMode(ST_OAM_OBJ_NORMAL as u32);
         if RunTextPrintersAndIsPrinter0Active() == 0 {
-            spriteId = gTasks[taskId].data[2] as u8;
+            spriteId = task_get(taskId, tPlayerSpriteId) as u8;
             gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
             gSprites[spriteId].affineAnims =
                 sSpriteAffineAnimTable_PlayerShrink.as_ptr().cast_mut();
@@ -1552,37 +1650,36 @@ pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_ShrinkPlayer(taskId: u8)
             gSprites[spriteId].callback = Some(SpriteCB_MovePlayerDownWhileShrinking);
             BeginNormalPaletteFade(PALETTES_BG, 0, 0, 16, 0);
             FadeOutBGM(4);
-            gTasks[taskId].func = Some(Task_NewGameBirchSpeech_WaitForPlayerShrink);
+            task_set_func(taskId, Some(Task_NewGameBirchSpeech_WaitForPlayerShrink));
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_WaitForPlayerShrink(taskId: u8) {
-    let mut spriteId: u8 = gTasks[taskId].data[2] as u8;
+pub(crate) unsafe fn Task_NewGameBirchSpeech_WaitForPlayerShrink(taskId: u8) {
+    let spriteId: u8 = task_get(taskId, tPlayerSpriteId) as u8;
     if gSprites[spriteId].affineAnimEnded() != 0 {
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_FadePlayerToWhite);
+        task_set_func(taskId, Some(Task_NewGameBirchSpeech_FadePlayerToWhite));
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_FadePlayerToWhite(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_FadePlayerToWhite(taskId: u8) {
     let mut spriteId: u8 = 0;
     if gPaletteFade.active() == 0 {
-        spriteId = gTasks[taskId].data[2] as u8;
+        spriteId = task_get(taskId, tPlayerSpriteId) as u8;
         gSprites[spriteId].callback = Some(SpriteCB_Null);
         SetGpuReg(REG_OFFSET_DISPCNT, 4160);
         BeginNormalPaletteFade(PALETTES_OBJECTS, 0, 0, 16, 65535);
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_Cleanup);
+        task_set_func(taskId, Some(Task_NewGameBirchSpeech_Cleanup));
     }
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_Cleanup(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_Cleanup(taskId: u8) {
     if gPaletteFade.active() == 0 {
         FreeAllWindowBuffers();
-        FreeAndDestroyMonPicSprite(gTasks[taskId].data[9] as u16);
+        FreeAndDestroyMonPicSprite(task_get(taskId, tLotadSpriteId) as u16);
         ResetAllPicSprites();
         SetMainCallback2(Some(CB2_NewGame));
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn CB2_NewGameBirchSpeech_ReturnFromNamingScreen() {
-    let mut taskId: u8 = 0;
+pub(crate) unsafe fn CB2_NewGameBirchSpeech_ReturnFromNamingScreen() {
     let mut spriteId: u8 = 0;
     ResetBgsAndClearDma3BusyFlags(0);
     SetGpuReg(0x0, 0);
@@ -1605,7 +1702,7 @@ pub(crate) unsafe extern "C" fn CB2_NewGameBirchSpeech_ReturnFromNamingScreen() 
             volatile_write(&raw mut tmp, 0);
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                     volatile_write(dmaRegs.at(1), VRAM as u32);
                     volatile_write(dmaRegs.at(2), 0x8100c000);
@@ -1620,7 +1717,7 @@ pub(crate) unsafe extern "C" fn CB2_NewGameBirchSpeech_ReturnFromNamingScreen() 
             volatile_write(&raw mut tmp, 0);
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                     volatile_write(dmaRegs.at(1), OAM);
                     volatile_write(dmaRegs.at(2), 0x85000100);
@@ -1635,7 +1732,7 @@ pub(crate) unsafe extern "C" fn CB2_NewGameBirchSpeech_ReturnFromNamingScreen() 
             volatile_write(&raw mut tmp, 0);
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                     volatile_write(dmaRegs.at(1), PLTT);
                     volatile_write(dmaRegs.at(2), 0x81000200);
@@ -1651,7 +1748,7 @@ pub(crate) unsafe extern "C" fn CB2_NewGameBirchSpeech_ReturnFromNamingScreen() 
     );
     LZ77UnCompVram(
         sBirchSpeechBgMap.as_ptr().cast_mut(),
-        0x6003800 as usize as *mut u8 as *mut c_void,
+        0x6003800_usize as *mut u8 as *mut c_void,
     );
     LoadPalette(sBirchSpeechBgPals.as_ptr().cast_mut() as *mut c_void, 0, 64);
     LoadPalette(
@@ -1660,28 +1757,28 @@ pub(crate) unsafe extern "C" fn CB2_NewGameBirchSpeech_ReturnFromNamingScreen() 
         16,
     );
     ResetTasks();
-    taskId = CreateTask(
+    let taskId: u8 = CreateTask(
         Some(Task_NewGameBirchSpeech_ReturnFromNamingScreenShowTextbox),
         0,
     );
-    gTasks[taskId].data[7] = 5;
-    gTasks[taskId].data[4] = -60;
+    task_set(taskId, tTimer, 5);
+    task_set(taskId, tBG1HOFS, -60);
     ScanlineEffect_Stop();
     ResetSpriteData();
     FreeAllSpritePalettes();
     ResetAllPicSprites();
     AddBirchSpeechObjects(taskId);
     if (*gSaveBlock2Ptr).playerGender != MALE {
-        gTasks[taskId].data[6] = FEMALE as i16;
-        spriteId = gTasks[taskId].data[11] as u8;
+        task_set(taskId, tPlayerGender, FEMALE as i16);
+        spriteId = task_get(taskId, tMaySpriteId) as u8;
     } else {
-        gTasks[taskId].data[6] = MALE as i16;
-        spriteId = gTasks[taskId].data[10] as u8;
+        task_set(taskId, tPlayerGender, MALE as i16);
+        spriteId = task_get(taskId, tBrendanSpriteId) as u8;
     }
     gSprites[spriteId].x = 180;
     gSprites[spriteId].y = 60;
     gSprites[spriteId].set_invisible(FALSE as u16);
-    gTasks[taskId].data[2] = spriteId as i16;
+    task_set(taskId, tPlayerSpriteId, spriteId as i16);
     SetGpuReg(REG_OFFSET_BG1HOFS, 65476);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
     SetGpuReg(REG_OFFSET_WIN0H, 0);
@@ -1694,14 +1791,13 @@ pub(crate) unsafe extern "C" fn CB2_NewGameBirchSpeech_ReturnFromNamingScreen() 
     ShowBg(0);
     ShowBg(1);
     {
-        let mut imeTemp: u16 = 0;
-        imeTemp = (67109384 as usize as *mut u16).read_volatile();
-        volatile_write(67109384 as usize as *mut u16, 0);
+        let imeTemp: u16 = (67109384_usize as *mut u16).read_volatile();
+        volatile_write(67109384_usize as *mut u16, 0);
         volatile_write(
-            0x4000200 as usize as *mut u16,
-            (0x4000200 as usize as *mut u16).read_volatile() | INTR_FLAG_VBLANK,
+            0x4000200_usize as *mut u16,
+            (0x4000200_usize as *mut u16).read_volatile() | INTR_FLAG_VBLANK,
         );
-        volatile_write(67109384 as usize as *mut u16, imeTemp);
+        volatile_write(67109384_usize as *mut u16, imeTemp);
     }
     SetVBlankCallback(Some(VBlankCB_MainMenu));
     SetMainCallback2(Some(CB2_MainMenu));
@@ -1711,15 +1807,15 @@ pub(crate) unsafe extern "C" fn CB2_NewGameBirchSpeech_ReturnFromNamingScreen() 
     PutWindowTilemap(0);
     CopyWindowToVram(0, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Null(sprite: *mut Sprite) {}
-pub(crate) unsafe extern "C" fn SpriteCB_MovePlayerDownWhileShrinking(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_Null(sprite: *mut Sprite) {}
+pub(crate) unsafe fn SpriteCB_MovePlayerDownWhileShrinking(sprite: *mut Sprite) {
     let mut y: u32 = 0;
     y = (((*sprite).y as u32) << 16) + (*sprite).data[0] as u32 + 0xC000;
     (*sprite).y = (y >> 16) as i16;
     (*sprite).data[0] = y as i16;
 }
-pub(crate) unsafe extern "C" fn NewGameBirchSpeech_CreateLotadSprite(x: u8, y: u8) -> u8 {
-    return CreateMonPicSprite_Affine(
+unsafe fn NewGameBirchSpeech_CreateLotadSprite(x: u8, y: u8) -> u8 {
+    CreateMonPicSprite_Affine(
         SPECIES_LOTAD,
         SHINY_ODDS,
         0,
@@ -1728,169 +1824,159 @@ pub(crate) unsafe extern "C" fn NewGameBirchSpeech_CreateLotadSprite(x: u8, y: u
         y as i16,
         14,
         TAG_NONE,
-    ) as u8;
+    ) as u8
 }
-pub(crate) unsafe extern "C" fn AddBirchSpeechObjects(taskId: u8) {
-    let mut birchSpriteId: u8 = 0;
-    let mut lotadSpriteId: u8 = 0;
-    let mut brendanSpriteId: u8 = 0;
-    let mut maySpriteId: u8 = 0;
-    birchSpriteId = AddNewGameBirchObject(0x88, 0x3C, 1);
+unsafe fn AddBirchSpeechObjects(taskId: u8) {
+    let birchSpriteId: u8 = AddNewGameBirchObject(0x88, 0x3C, 1);
     gSprites[birchSpriteId].callback = Some(SpriteCB_Null);
     gSprites[birchSpriteId].oam.set_priority(0);
     gSprites[birchSpriteId].set_invisible(TRUE as u16);
-    gTasks[taskId].data[8] = birchSpriteId as i16;
-    lotadSpriteId = NewGameBirchSpeech_CreateLotadSprite(100, 0x4B);
+    task_set(taskId, tBirchSpriteId, birchSpriteId as i16);
+    let lotadSpriteId: u8 = NewGameBirchSpeech_CreateLotadSprite(100, 0x4B);
     gSprites[lotadSpriteId].callback = Some(SpriteCB_Null);
     gSprites[lotadSpriteId].oam.set_priority(0);
     gSprites[lotadSpriteId].set_invisible(TRUE as u16);
-    gTasks[taskId].data[9] = lotadSpriteId as i16;
-    brendanSpriteId = CreateTrainerSprite(
+    task_set(taskId, tLotadSpriteId, lotadSpriteId as i16);
+    let brendanSpriteId: u8 = CreateTrainerSprite(
         FacilityClassToPicIndex(0x3c) as u8,
         120,
         60,
         0,
-        &raw mut gDecompressionBuffer[0],
+        &raw mut (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())[0],
     );
     gSprites[brendanSpriteId].callback = Some(SpriteCB_Null);
     gSprites[brendanSpriteId].set_invisible(TRUE as u16);
     gSprites[brendanSpriteId].oam.set_priority(0);
-    gTasks[taskId].data[10] = brendanSpriteId as i16;
-    maySpriteId = CreateTrainerSprite(
+    task_set(taskId, tBrendanSpriteId, brendanSpriteId as i16);
+    let maySpriteId: u8 = CreateTrainerSprite(
         FacilityClassToPicIndex(FACILITY_CLASS_MAY) as u8,
         120,
         60,
         0,
-        &raw mut gDecompressionBuffer[2048],
+        &raw mut (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())[2048],
     );
     gSprites[maySpriteId].callback = Some(SpriteCB_Null);
     gSprites[maySpriteId].set_invisible(TRUE as u16);
     gSprites[maySpriteId].oam.set_priority(0);
-    gTasks[taskId].data[11] = maySpriteId as i16;
+    task_set(taskId, tMaySpriteId, maySpriteId as i16);
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_FadeOutTarget1InTarget2(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_FadeOutTarget1InTarget2(taskId: u8) {
     let mut alphaCoeff2: i32 = 0;
-    if gTasks[taskId].data[1] == 0 {
-        gTasks[gTasks[taskId].data[0]].data[5] = TRUE as i16;
+    if task_get(taskId, tAlphaCoeff1) == 0 {
+        (*gTasks.as_ptr())[task_get(taskId, tMainTask)].data[tIsDoneFadingSprites] = TRUE as i16;
         DestroyTask(taskId);
-    } else if gTasks[taskId].data[4] != 0 {
-        gTasks[taskId].data[4] -= 1;
+    } else if task_get(taskId, tDelayTimer) != 0 {
+        task_set(taskId, tDelayTimer, task_get(taskId, tDelayTimer) - 1);
     } else {
-        gTasks[taskId].data[4] = gTasks[taskId].data[3];
-        gTasks[taskId].data[1] -= 1;
-        gTasks[taskId].data[2] += 1;
-        alphaCoeff2 = (gTasks[taskId].data[2] as i32) << 8;
+        task_set(taskId, tDelayTimer, task_get(taskId, tDelay));
+        task_set(taskId, tAlphaCoeff1, task_get(taskId, tAlphaCoeff1) - 1);
+        task_set(taskId, tAlphaCoeff2, task_get(taskId, tAlphaCoeff2) + 1);
+        alphaCoeff2 = (task_get(taskId, tAlphaCoeff2) as i32) << 8;
         SetGpuReg(
             REG_OFFSET_BLDALPHA,
-            gTasks[taskId].data[1] as u16 + alphaCoeff2 as u16,
+            task_get(taskId, tAlphaCoeff1) as u16 + alphaCoeff2 as u16,
         );
     }
 }
-pub(crate) unsafe extern "C" fn NewGameBirchSpeech_StartFadeOutTarget1InTarget2(
-    taskId: u8,
-    delay: u8,
-) {
-    let mut taskId2: u8 = 0;
+unsafe fn NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId: u8, delay: u8) {
     SetGpuReg(REG_OFFSET_BLDCNT, 592);
     SetGpuReg(REG_OFFSET_BLDALPHA, 16);
     SetGpuReg(REG_OFFSET_BLDY, 0);
-    gTasks[taskId].data[5] = 0;
-    taskId2 = CreateTask(Some(Task_NewGameBirchSpeech_FadeOutTarget1InTarget2), 0);
-    gTasks[taskId2].data[0] = taskId as i16;
-    gTasks[taskId2].data[1] = 16;
-    gTasks[taskId2].data[2] = 0;
-    gTasks[taskId2].data[3] = delay as i16;
-    gTasks[taskId2].data[4] = delay as i16;
+    task_set(taskId, tIsDoneFadingSprites, 0);
+    let taskId2: u8 = CreateTask(Some(Task_NewGameBirchSpeech_FadeOutTarget1InTarget2), 0);
+    task_set(taskId2, tMainTask, taskId as i16);
+    task_set(taskId2, tAlphaCoeff1, 16);
+    task_set(taskId2, tAlphaCoeff2, 0);
+    task_set(taskId2, tDelay, delay as i16);
+    task_set(taskId2, tDelayTimer, delay as i16);
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_FadeInTarget1OutTarget2(taskId: u8) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_FadeInTarget1OutTarget2(taskId: u8) {
     let mut alphaCoeff2: i32 = 0;
-    if gTasks[taskId].data[1] == 16 {
-        gTasks[gTasks[taskId].data[0]].data[5] = TRUE as i16;
+    if task_get(taskId, tAlphaCoeff1) == 16 {
+        (*gTasks.as_ptr())[task_get(taskId, tMainTask)].data[tIsDoneFadingSprites] = TRUE as i16;
         DestroyTask(taskId);
-    } else if gTasks[taskId].data[4] != 0 {
-        gTasks[taskId].data[4] -= 1;
+    } else if task_get(taskId, tDelayTimer) != 0 {
+        task_set(taskId, tDelayTimer, task_get(taskId, tDelayTimer) - 1);
     } else {
-        gTasks[taskId].data[4] = gTasks[taskId].data[3];
-        gTasks[taskId].data[1] += 1;
-        gTasks[taskId].data[2] -= 1;
-        alphaCoeff2 = (gTasks[taskId].data[2] as i32) << 8;
+        task_set(taskId, tDelayTimer, task_get(taskId, tDelay));
+        task_set(taskId, tAlphaCoeff1, task_get(taskId, tAlphaCoeff1) + 1);
+        task_set(taskId, tAlphaCoeff2, task_get(taskId, tAlphaCoeff2) - 1);
+        alphaCoeff2 = (task_get(taskId, tAlphaCoeff2) as i32) << 8;
         SetGpuReg(
             REG_OFFSET_BLDALPHA,
-            gTasks[taskId].data[1] as u16 + alphaCoeff2 as u16,
+            task_get(taskId, tAlphaCoeff1) as u16 + alphaCoeff2 as u16,
         );
     }
 }
-pub(crate) unsafe extern "C" fn NewGameBirchSpeech_StartFadeInTarget1OutTarget2(
-    taskId: u8,
-    delay: u8,
-) {
-    let mut taskId2: u8 = 0;
+unsafe fn NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId: u8, delay: u8) {
     SetGpuReg(REG_OFFSET_BLDCNT, 592);
     SetGpuReg(REG_OFFSET_BLDALPHA, 4096);
     SetGpuReg(REG_OFFSET_BLDY, 0);
-    gTasks[taskId].data[5] = 0;
-    taskId2 = CreateTask(Some(Task_NewGameBirchSpeech_FadeInTarget1OutTarget2), 0);
-    gTasks[taskId2].data[0] = taskId as i16;
-    gTasks[taskId2].data[1] = 0;
-    gTasks[taskId2].data[2] = 16;
-    gTasks[taskId2].data[3] = delay as i16;
-    gTasks[taskId2].data[4] = delay as i16;
+    task_set(taskId, tIsDoneFadingSprites, 0);
+    let taskId2: u8 = CreateTask(Some(Task_NewGameBirchSpeech_FadeInTarget1OutTarget2), 0);
+    task_set(taskId2, tMainTask, taskId as i16);
+    task_set(taskId2, tAlphaCoeff1, 0);
+    task_set(taskId2, tAlphaCoeff2, 16);
+    task_set(taskId2, tDelay, delay as i16);
+    task_set(taskId2, tDelayTimer, delay as i16);
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_FadePlatformIn(taskId: u8) {
-    if gTasks[taskId].data[2] != 0 {
-        gTasks[taskId].data[2] -= 1;
-    } else if gTasks[taskId].data[1] == 8 {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_FadePlatformIn(taskId: u8) {
+    if task_get(taskId, tDelayBefore) != 0 {
+        task_set(taskId, tDelayBefore, task_get(taskId, tDelayBefore) - 1);
+    } else if task_get(taskId, tPalIndex) == 8 {
         DestroyTask(taskId);
-    } else if gTasks[taskId].data[4] != 0 {
-        gTasks[taskId].data[4] -= 1;
+    } else if task_get(taskId, tDelayTimer) != 0 {
+        task_set(taskId, tDelayTimer, task_get(taskId, tDelayTimer) - 1);
     } else {
-        gTasks[taskId].data[4] = gTasks[taskId].data[3];
-        gTasks[taskId].data[1] += 1;
+        task_set(taskId, tDelayTimer, task_get(taskId, tDelay));
+        task_set(taskId, tPalIndex, task_get(taskId, tPalIndex) + 1);
         LoadPalette(
-            (&raw const sBirchSpeechBgGradientPal[gTasks[taskId].data[1]]).cast_mut()
+            (&raw const sBirchSpeechBgGradientPal[task_get(taskId, tPalIndex)]).cast_mut()
                 as *mut c_void,
             1,
             16,
         );
     }
 }
-pub(crate) unsafe extern "C" fn NewGameBirchSpeech_StartFadePlatformIn(taskId: u8, delay: u8) {
-    let mut taskId2: u8 = 0;
-    taskId2 = CreateTask(Some(Task_NewGameBirchSpeech_FadePlatformIn), 0);
-    gTasks[taskId2].data[0] = taskId as i16;
-    gTasks[taskId2].data[1] = 0;
-    gTasks[taskId2].data[2] = 8;
-    gTasks[taskId2].data[3] = delay as i16;
-    gTasks[taskId2].data[4] = delay as i16;
+unsafe fn NewGameBirchSpeech_StartFadePlatformIn(taskId: u8, delay: u8) {
+    let taskId2: u8 = CreateTask(Some(Task_NewGameBirchSpeech_FadePlatformIn), 0);
+    task_set(taskId2, tMainTask, taskId as i16);
+    task_set(taskId2, tPalIndex, 0);
+    task_set(taskId2, tDelayBefore, 8);
+    task_set(taskId2, tDelay, delay as i16);
+    task_set(taskId2, tDelayTimer, delay as i16);
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_FadePlatformOut(taskId: u8) {
-    if gTasks[taskId].data[2] != 0 {
-        gTasks[taskId].data[2] -= 1;
-    } else if gTasks[taskId].data[1] == 0 {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_FadePlatformOut(taskId: u8) {
+    if task_get(taskId, tDelayBefore) != 0 {
+        task_set(taskId, tDelayBefore, task_get(taskId, tDelayBefore) - 1);
+    } else if task_get(taskId, tPalIndex) == 0 {
         DestroyTask(taskId);
-    } else if gTasks[taskId].data[4] != 0 {
-        gTasks[taskId].data[4] -= 1;
+    } else if task_get(taskId, tDelayTimer) != 0 {
+        task_set(taskId, tDelayTimer, task_get(taskId, tDelayTimer) - 1);
     } else {
-        gTasks[taskId].data[4] = gTasks[taskId].data[3];
-        gTasks[taskId].data[1] -= 1;
+        task_set(taskId, tDelayTimer, task_get(taskId, tDelay));
+        task_set(taskId, tPalIndex, task_get(taskId, tPalIndex) - 1);
         LoadPalette(
-            (&raw const sBirchSpeechBgGradientPal[gTasks[taskId].data[1]]).cast_mut()
+            (&raw const sBirchSpeechBgGradientPal[task_get(taskId, tPalIndex)]).cast_mut()
                 as *mut c_void,
             1,
             16,
         );
     }
 }
-pub(crate) unsafe extern "C" fn NewGameBirchSpeech_StartFadePlatformOut(taskId: u8, delay: u8) {
-    let mut taskId2: u8 = 0;
-    taskId2 = CreateTask(Some(Task_NewGameBirchSpeech_FadePlatformOut), 0);
-    gTasks[taskId2].data[0] = taskId as i16;
-    gTasks[taskId2].data[1] = 8;
-    gTasks[taskId2].data[2] = 8;
-    gTasks[taskId2].data[3] = delay as i16;
-    gTasks[taskId2].data[4] = delay as i16;
+unsafe fn NewGameBirchSpeech_StartFadePlatformOut(taskId: u8, delay: u8) {
+    let taskId2: u8 = CreateTask(Some(Task_NewGameBirchSpeech_FadePlatformOut), 0);
+    task_set(taskId2, tMainTask, taskId as i16);
+    task_set(taskId2, tPalIndex, 8);
+    task_set(taskId2, tDelayBefore, 8);
+    task_set(taskId2, tDelay, delay as i16);
+    task_set(taskId2, tDelayTimer, delay as i16);
 }
-pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ShowGenderMenu() {
+unsafe fn NewGameBirchSpeech_ShowGenderMenu() {
     DrawMainMenuWindowBorder(
         (&raw const sNewGameBirchSpeechTextWindows[1]).cast_mut(),
         0xF3,
@@ -1901,25 +1987,22 @@ pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ShowGenderMenu() {
     PutWindowTilemap(1);
     CopyWindowToVram(1, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ProcessGenderMenuInput() -> i8 {
-    return Menu_ProcessInputNoWrap();
+unsafe fn NewGameBirchSpeech_ProcessGenderMenuInput() -> i8 {
+    Menu_ProcessInputNoWrap()
 }
-pub(crate) unsafe extern "C" fn NewGameBirchSpeech_SetDefaultPlayerName(nameId: u8) {
+unsafe fn NewGameBirchSpeech_SetDefaultPlayerName(nameId: u8) {
     let mut name: *mut u8 = null_mut();
-    let mut i: u8 = 0;
     if (*gSaveBlock2Ptr).playerGender == MALE {
         name = sMalePresetNames[nameId];
     } else {
         name = sFemalePresetNames[nameId];
     }
-    i = 0;
-    while i < PLAYER_NAME_LENGTH as u8 {
+    for i in 0..(PLAYER_NAME_LENGTH as u8) {
         (*gSaveBlock2Ptr).playerName[i] = *name.at(i);
-        i += 1;
     }
     (*gSaveBlock2Ptr).playerName[7] = EOS;
 }
-pub(crate) unsafe extern "C" fn CreateMainMenuErrorWindow(str: *mut u8) {
+unsafe fn CreateMainMenuErrorWindow(str: *mut u8) {
     FillWindowPixelBuffer(7, 17);
     AddTextPrinterParameterized(7, FONT_NORMAL, str, 0, 1, 2, None);
     PutWindowTilemap(7);
@@ -1931,16 +2014,18 @@ pub(crate) unsafe extern "C" fn CreateMainMenuErrorWindow(str: *mut u8) {
     SetGpuReg(REG_OFFSET_WIN0H, 2535);
     SetGpuReg(REG_OFFSET_WIN0V, 29087);
 }
-pub(crate) unsafe extern "C" fn MainMenu_FormatSavegameText() {
+unsafe fn MainMenu_FormatSavegameText() {
     MainMenu_FormatSavegamePlayer();
     MainMenu_FormatSavegamePokedex();
     MainMenu_FormatSavegameTime();
     MainMenu_FormatSavegameBadges();
 }
-pub(crate) unsafe extern "C" fn MainMenu_FormatSavegamePlayer() {
+unsafe fn MainMenu_FormatSavegamePlayer() {
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_ContinueMenuPlayer.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_ContinueMenuPlayer).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     AddTextPrinterParameterized3(
         2,
@@ -1965,12 +2050,13 @@ pub(crate) unsafe extern "C" fn MainMenu_FormatSavegamePlayer() {
         (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
     );
 }
-pub(crate) unsafe extern "C" fn MainMenu_FormatSavegameTime() {
+unsafe fn MainMenu_FormatSavegameTime() {
     let mut str: CArray<u8, 32> = zeroed();
-    let mut ptr: *mut u8 = null_mut();
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_ContinueMenuTime.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_ContinueMenuTime).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     AddTextPrinterParameterized3(
         2,
@@ -1981,7 +2067,7 @@ pub(crate) unsafe extern "C" fn MainMenu_FormatSavegameTime() {
         TEXT_SKIP_DRAW as i8,
         gStringVar4.as_mut_ptr(),
     );
-    ptr = ConvertIntToDecimalStringN(
+    let mut ptr: *mut u8 = ConvertIntToDecimalStringN(
         str.as_mut_ptr(),
         (*gSaveBlock2Ptr).playTimeHours as i32,
         STR_CONV_MODE_LEFT_ALIGN,
@@ -2008,7 +2094,7 @@ pub(crate) unsafe extern "C" fn MainMenu_FormatSavegameTime() {
         str.as_mut_ptr(),
     );
 }
-pub(crate) unsafe extern "C" fn MainMenu_FormatSavegamePokedex() {
+unsafe fn MainMenu_FormatSavegamePokedex() {
     let mut str: CArray<u8, 32> = zeroed();
     let mut dexCount: u16 = 0;
     if FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE {
@@ -2019,7 +2105,9 @@ pub(crate) unsafe extern "C" fn MainMenu_FormatSavegamePokedex() {
         }
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_ContinueMenuPokedex.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_ContinueMenuPokedex).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         AddTextPrinterParameterized3(
             2,
@@ -2047,20 +2135,19 @@ pub(crate) unsafe extern "C" fn MainMenu_FormatSavegamePokedex() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn MainMenu_FormatSavegameBadges() {
+unsafe fn MainMenu_FormatSavegameBadges() {
     let mut str: CArray<u8, 32> = zeroed();
     let mut badgeCount: u8 = 0;
-    let mut i: u32 = 0;
-    i = FLAG_BADGE01_GET;
-    while i < 2159 {
+    for i in FLAG_BADGE01_GET..2159 {
         if FlagGet(i as u16) != 0 {
             badgeCount += 1;
         }
-        i += 1;
     }
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_ContinueMenuBadges.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_ContinueMenuBadges).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     AddTextPrinterParameterized3(
         2,
@@ -2087,7 +2174,7 @@ pub(crate) unsafe extern "C" fn MainMenu_FormatSavegameBadges() {
         str.as_mut_ptr(),
     );
 }
-pub(crate) unsafe extern "C" fn LoadMainMenuWindowFrameTiles(bgId: u8, tileOffset: u16) {
+unsafe fn LoadMainMenuWindowFrameTiles(bgId: u8, tileOffset: u16) {
     LoadBgTiles(
         bgId,
         (*GetWindowFrameTilesPal((*gSaveBlock2Ptr).optionsWindowFrameType() as u8)).tiles
@@ -2102,17 +2189,14 @@ pub(crate) unsafe extern "C" fn LoadMainMenuWindowFrameTiles(bgId: u8, tileOffse
         32,
     );
 }
-pub(crate) unsafe extern "C" fn DrawMainMenuWindowBorder(
-    template: *mut WindowTemplate,
-    baseTileNum: u16,
-) {
-    let mut r9: u16 = 1 + baseTileNum;
-    let mut r10: u16 = 2 + baseTileNum;
-    let mut sp18: u16 = 3 + baseTileNum;
-    let mut spC: u16 = 5 + baseTileNum;
-    let mut sp10: u16 = 6 + baseTileNum;
-    let mut sp14: u16 = 7 + baseTileNum;
-    let mut r6: u16 = 8 + baseTileNum;
+unsafe fn DrawMainMenuWindowBorder(template: *mut WindowTemplate, baseTileNum: u16) {
+    let r9: u16 = 1 + baseTileNum;
+    let r10: u16 = 2 + baseTileNum;
+    let sp18: u16 = 3 + baseTileNum;
+    let spC: u16 = 5 + baseTileNum;
+    let sp10: u16 = 6 + baseTileNum;
+    let sp14: u16 = 7 + baseTileNum;
+    let r6: u16 = 8 + baseTileNum;
     FillBgTilemapBufferRect(
         (*template).bg,
         baseTileNum,
@@ -2187,7 +2271,7 @@ pub(crate) unsafe extern "C" fn DrawMainMenuWindowBorder(
     );
     CopyBgTilemapBufferToVram((*template).bg);
 }
-pub(crate) unsafe extern "C" fn ClearMainMenuWindowTilemap(template: *mut WindowTemplate) {
+unsafe fn ClearMainMenuWindowTilemap(template: *mut WindowTemplate) {
     FillBgTilemapBufferRect(
         (*template).bg,
         0,
@@ -2199,7 +2283,7 @@ pub(crate) unsafe extern "C" fn ClearMainMenuWindowTilemap(template: *mut Window
     );
     CopyBgTilemapBufferToVram((*template).bg);
 }
-pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ClearGenderWindowTilemap(
+pub(crate) unsafe fn NewGameBirchSpeech_ClearGenderWindowTilemap(
     bg: u8,
     x: u8,
     y: u8,
@@ -2209,7 +2293,7 @@ pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ClearGenderWindowTilemap(
 ) {
     FillBgTilemapBufferRect(bg, 0, x + 255, y + 255, width + 2, height + 2, 2);
 }
-pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ClearGenderWindow(windowId: u8, copyToVram: u8) {
+unsafe fn NewGameBirchSpeech_ClearGenderWindow(windowId: u8, copyToVram: u8) {
     CallWindowFunction(windowId, Some(NewGameBirchSpeech_ClearGenderWindowTilemap));
     FillWindowPixelBuffer(windowId, 17);
     ClearWindowTilemap(windowId);
@@ -2217,12 +2301,12 @@ pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ClearGenderWindow(windowId: u
         CopyWindowToVram(windowId, COPYWIN_FULL);
     }
 }
-pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ClearWindow(windowId: u8) {
-    let mut bgColor: u8 = GetFontAttribute(FONT_NORMAL, FONTATTR_COLOR_BACKGROUND);
-    let mut maxCharWidth: u8 = GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_WIDTH);
-    let mut maxCharHeight: u8 = GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_HEIGHT);
-    let mut winWidth: u8 = GetWindowAttribute(windowId, WINDOW_WIDTH) as u8;
-    let mut winHeight: u8 = GetWindowAttribute(windowId, WINDOW_HEIGHT) as u8;
+unsafe fn NewGameBirchSpeech_ClearWindow(windowId: u8) {
+    let bgColor: u8 = GetFontAttribute(FONT_NORMAL, FONTATTR_COLOR_BACKGROUND);
+    let maxCharWidth: u8 = GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_WIDTH);
+    let maxCharHeight: u8 = GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_HEIGHT);
+    let winWidth: u8 = GetWindowAttribute(windowId, WINDOW_WIDTH) as u8;
+    let winHeight: u8 = GetWindowAttribute(windowId, WINDOW_HEIGHT) as u8;
     FillWindowPixelRect(
         windowId,
         bgColor,
@@ -2233,17 +2317,16 @@ pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ClearWindow(windowId: u8) {
     );
     CopyWindowToVram(windowId, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn NewGameBirchSpeech_WaitForThisIsPokemonText(
+pub(crate) unsafe fn NewGameBirchSpeech_WaitForThisIsPokemonText(
     printer: *mut TextPrinterTemplate,
     renderCmd: u16,
 ) {
-    if *(*printer).currentChar.at(-2) == EXT_CTRL_CODE_PAUSE && sStartedPokeBallTask == 0 {
-        sStartedPokeBallTask = TRUE;
+    if *(*printer).currentChar.at(-2) == EXT_CTRL_CODE_PAUSE && sStartedPokeBallTask.get() == 0 {
+        sStartedPokeBallTask.set(TRUE);
         CreateTask(Some(Task_NewGameBirchSpeechSub_InitPokeBall), 0);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateYesNoMenuParameterized(
+pub unsafe fn CreateYesNoMenuParameterized(
     x: u8,
     y: u8,
     baseTileNum: u16,
@@ -2251,14 +2334,11 @@ pub unsafe extern "C" fn CreateYesNoMenuParameterized(
     yesNoPalNum: u8,
     winPalNum: u8,
 ) {
-    let mut template: WindowTemplate = zeroed();
-    template = CreateWindowTemplate(0, x + 1, y + 1, 5, 4, winPalNum, baseBlock);
+    let mut template: WindowTemplate =
+        CreateWindowTemplate(0, x + 1, y + 1, 5, 4, winPalNum, baseBlock);
     CreateYesNoMenu(&raw mut template, baseTileNum, yesNoPalNum, 0);
 }
-pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ShowDialogueWindow(
-    windowId: u8,
-    copyToVram: u8,
-) {
+unsafe fn NewGameBirchSpeech_ShowDialogueWindow(windowId: u8, copyToVram: u8) {
     CallWindowFunction(
         windowId,
         Some(NewGameBirchSpeech_CreateDialogueWindowBorder),
@@ -2269,7 +2349,7 @@ pub(crate) unsafe extern "C" fn NewGameBirchSpeech_ShowDialogueWindow(
         CopyWindowToVram(windowId, COPYWIN_FULL);
     }
 }
-pub(crate) unsafe extern "C" fn NewGameBirchSpeech_CreateDialogueWindowBorder(
+pub(crate) unsafe fn NewGameBirchSpeech_CreateDialogueWindowBorder(
     bg: u8,
     x: u8,
     y: u8,
@@ -2291,16 +2371,14 @@ pub(crate) unsafe extern "C" fn NewGameBirchSpeech_CreateDialogueWindowBorder(
     FillBgTilemapBufferRect(bg, 2305, x + width - 1, y + height, 1, 1, palNum);
     FillBgTilemapBufferRect(bg, 2306, x + width, y + height, 1, 1, palNum);
 }
-pub(crate) unsafe extern "C" fn Task_NewGameBirchSpeech_ReturnFromNamingScreenShowTextbox(
-    taskId: u8,
-) {
+pub(crate) unsafe fn Task_NewGameBirchSpeech_ReturnFromNamingScreenShowTextbox(taskId: u8) {
     if ({
-        let t1 = gTasks[taskId].data[7];
-        gTasks[taskId].data[7] -= 1;
+        let t1 = task_get(taskId, tTimer);
+        task_set(taskId, tTimer, task_get(taskId, tTimer) - 1);
         t1
     }) <= 0
     {
         NewGameBirchSpeech_ShowDialogueWindow(0, 1);
-        gTasks[taskId].func = Some(Task_NewGameBirchSpeech_SoItsPlayerName);
+        task_set_func(taskId, Some(Task_NewGameBirchSpeech_SoItsPlayerName));
     }
 }

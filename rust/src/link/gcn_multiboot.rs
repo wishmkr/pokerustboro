@@ -58,7 +58,7 @@ const REG_JOY_TRANS: *mut u32 = 0x0400_0154 as *mut u32;
 const REG_JOYSTAT: *mut u16 = 0x0400_0158 as *mut u16;
 const INTR_FLAG_SERIAL: u16 = 0x80;
 
-type Handler = unsafe extern "C" fn(*mut u8, u32);
+type Handler = unsafe fn(*mut u8, u32);
 
 unsafe fn get8(mb: *mut u8, off: usize) -> u8 {
     unsafe { mb.add(off).read_volatile() }
@@ -100,7 +100,7 @@ fn hash(value: u32, data: u32) -> u32 {
 
 /// `void GameCubeMultiBoot_Main(struct GameCubeMultiBoot *mb)`, once a frame.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GameCubeMultiBoot_Main(mb: *mut u8) {
+pub unsafe fn GameCubeMultiBoot_Main(mb: *mut u8) {
     unsafe {
         // The assembly branches to Init on the carry flag left by these
         // counters: always when there is no handler yet, and when counter1
@@ -215,21 +215,20 @@ pub unsafe extern "C" fn GameCubeMultiBoot_Main(mb: *mut u8) {
 /// jump (in ARM state) past the received image's header; never returns
 /// when an image is ready.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GameCubeMultiBoot_ExecuteProgram(mb: *mut u8) {
+pub unsafe fn GameCubeMultiBoot_ExecuteProgram(mb: *mut u8) {
     unsafe {
         if get8(mb, MBPROGRESS) != MBPROGRESS_READY_TO_BOOT {
             return;
         }
         wr16(REG_IME, 0);
-        let entry: unsafe extern "C" fn() -> ! =
-            core::mem::transmute((MULTIBOOT_LOAD_ADDR + 0xC0) as usize);
+        let entry: unsafe fn() -> ! = core::mem::transmute((MULTIBOOT_LOAD_ADDR + 0xC0) as usize);
         entry();
     }
 }
 
 /// `void GameCubeMultiBoot_Init(struct GameCubeMultiBoot *mb)`
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GameCubeMultiBoot_Init(mb: *mut u8) {
+pub unsafe fn GameCubeMultiBoot_Init(mb: *mut u8) {
     unsafe {
         let ime = REG_IME.read_volatile();
         wr16(REG_IME, 0);
@@ -263,7 +262,7 @@ pub unsafe extern "C" fn GameCubeMultiBoot_Init(mb: *mut u8) {
 
 /// `void GameCubeMultiBoot_Quit(void)`
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GameCubeMultiBoot_Quit() {
+pub unsafe fn GameCubeMultiBoot_Quit() {
     unsafe {
         let ime = REG_IME.read_volatile();
         wr16(REG_IME, 0);
@@ -277,7 +276,7 @@ pub unsafe extern "C" fn GameCubeMultiBoot_Quit() {
 
 /// `void GameCubeMultiBoot_HandleSerialInterrupt(struct GameCubeMultiBoot *mb)`
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GameCubeMultiBoot_HandleSerialInterrupt(mb: *mut u8) {
+pub unsafe fn GameCubeMultiBoot_HandleSerialInterrupt(mb: *mut u8) {
     unsafe {
         // Acknowledge reset/receive/send.
         let joycnt = u32::from(REG_JOYCNT.read_volatile());
@@ -325,7 +324,7 @@ unsafe fn stop(mb: *mut u8) {
     }
 }
 
-unsafe extern "C" fn handler_stop(mb: *mut u8, _flags: u32) {
+unsafe fn handler_stop(mb: *mut u8, _flags: u32) {
     unsafe { stop(mb) }
 }
 
@@ -345,7 +344,7 @@ unsafe fn begin_handshake(mb: *mut u8) {
     }
 }
 
-unsafe extern "C" fn handler_check_game_code_sent(mb: *mut u8, flags: u32) {
+unsafe fn handler_check_game_code_sent(mb: *mut u8, flags: u32) {
     unsafe {
         if !sent(flags) {
             stop(mb);
@@ -357,7 +356,7 @@ unsafe extern "C" fn handler_check_game_code_sent(mb: *mut u8, flags: u32) {
     }
 }
 
-unsafe extern "C" fn handler_check_handshake_response(mb: *mut u8, flags: u32) {
+unsafe fn handler_check_handshake_response(mb: *mut u8, flags: u32) {
     unsafe {
         if !received(flags) {
             stop(mb);
@@ -378,7 +377,7 @@ unsafe fn check_handshake_response(mb: *mut u8) {
     }
 }
 
-unsafe extern "C" fn handler_receive_key_a(mb: *mut u8, flags: u32) {
+unsafe fn handler_receive_key_a(mb: *mut u8, flags: u32) {
     unsafe {
         if !received(flags) {
             stop(mb);
@@ -405,7 +404,7 @@ unsafe extern "C" fn handler_receive_key_a(mb: *mut u8, flags: u32) {
     }
 }
 
-unsafe extern "C" fn handler_check_key_b_sent(mb: *mut u8, flags: u32) {
+unsafe fn handler_check_key_b_sent(mb: *mut u8, flags: u32) {
     unsafe {
         if !sent(flags) {
             stop(mb);
@@ -417,7 +416,7 @@ unsafe extern "C" fn handler_check_key_b_sent(mb: *mut u8, flags: u32) {
     }
 }
 
-unsafe extern "C" fn handler_check_image_size_response(mb: *mut u8, flags: u32) {
+unsafe fn handler_check_image_size_response(mb: *mut u8, flags: u32) {
     unsafe {
         if !received(flags) {
             stop(mb);
@@ -449,7 +448,7 @@ unsafe fn check_image_size_response(mb: *mut u8) {
     }
 }
 
-unsafe extern "C" fn handler_check_image_response(mb: *mut u8, flags: u32) {
+unsafe fn handler_check_image_response(mb: *mut u8, flags: u32) {
     unsafe {
         if !received(flags) {
             stop(mb);
@@ -480,7 +479,7 @@ unsafe fn send_counter2(mb: *mut u8) {
     }
 }
 
-unsafe extern "C" fn handler_check_counter2_sent(mb: *mut u8, flags: u32) {
+unsafe fn handler_check_counter2_sent(mb: *mut u8, flags: u32) {
     unsafe {
         if !sent(flags) {
             stop(mb);
@@ -497,7 +496,7 @@ unsafe extern "C" fn handler_check_counter2_sent(mb: *mut u8, flags: u32) {
     }
 }
 
-unsafe extern "C" fn handler_check_key_c_derivation_sent(mb: *mut u8, flags: u32) {
+unsafe fn handler_check_key_c_derivation_sent(mb: *mut u8, flags: u32) {
     unsafe {
         if !sent(flags) {
             stop(mb);
@@ -509,7 +508,7 @@ unsafe extern "C" fn handler_check_key_c_derivation_sent(mb: *mut u8, flags: u32
     }
 }
 
-unsafe extern "C" fn handler_check_boot_key_response(mb: *mut u8, flags: u32) {
+unsafe fn handler_check_boot_key_response(mb: *mut u8, flags: u32) {
     unsafe {
         if !received(flags) {
             stop(mb);

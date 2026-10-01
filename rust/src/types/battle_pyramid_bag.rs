@@ -9,7 +9,7 @@ use core::mem::{offset_of, size_of};
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PyramidBagMenu {
-    pub newScreenCallback: Option<unsafe extern "C" fn()>,
+    pub newScreenCallback: Option<unsafe fn()>,
     pub tilemapBuffer: CArray<u8, 2048>,
     pub spriteIds: CArray<u8, 11>,
     pub windowIds: CArray<u8, 5>,
@@ -33,7 +33,7 @@ unsafe impl Sync for PyramidBagMenu {}
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PyramidBagMenuState {
-    pub exitCallback: Option<unsafe extern "C" fn()>,
+    pub exitCallback: Option<unsafe fn()>,
     pub location: u8,
     pub cursorPosition: u16,
     pub scrollPosition: u16,

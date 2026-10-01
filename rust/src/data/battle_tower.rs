@@ -4,867 +4,535 @@
 
 use crate::ffi::{RomBytes, RomPtr};
 
-unsafe extern "C" {
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Accept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Intro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Mon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Mon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Reject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMReject: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterAccept: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterIntro: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterMon1: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterMon2Ask: u8;
-    static BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterReject: u8;
-}
 
 pub(crate) static sRubyFacilityClassToEmerald: RomBytes<150> = RomBytes([0, 11, 1, 1, 2, 6, 3, 13, 4, 14, 5, 15, 6, 16, 7, 17, 8, 3, 9, 18, 10, 12, 11, 19, 12, 20, 13, 21, 14, 23, 15, 7, 16, 10, 17, 25, 18, 26, 19, 27, 20, 29, 21, 30, 22, 31, 23, 32, 24, 33, 25, 34, 26, 35, 27, 36, 28, 37, 29, 38, 30, 39, 31, 40, 32, 41, 33, 42, 34, 9, 35, 22, 36, 43, 37, 44, 38, 45, 39, 46, 40, 47, 41, 48, 42, 49, 43, 50, 44, 51, 45, 52, 46, 4, 47, 53, 48, 54, 49, 55, 50, 56, 51, 28, 52, 57, 53, 58, 56, 5, 57, 59, 58, 60, 59, 61, 60, 62, 61, 63, 62, 64, 63, 65, 64, 66, 65, 2, 66, 68, 67, 69, 68, 70, 69, 8, 70, 24, 71, 71, 72, 67, 73, 0, 74, 72, 75, 73, 76, 74]);
 
 pub(crate) static sPartnerApprenticeTexts1: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice1Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts2: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice2Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts3: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice3Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts4: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice4Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts5: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice5Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts6: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice6Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts7: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice7Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts8: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice8Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts9: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice9Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts10: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice10Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts11: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice11Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts12: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice12Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts13: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice13Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts14: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice14Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts15: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice15Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerApprenticeTexts16: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Intro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Mon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Mon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Accept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Reject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Intro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Mon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Mon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Accept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_Apprentice16Reject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsLass: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_LassReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsYoungster: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_YoungsterReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsHiker: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_HikerReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsBeauty: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BeautyReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsFisherman: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_FishermanReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsLady: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_LadyReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsCyclingTriathleteF: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteFReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsBugCatcher: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugCatcherReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsSchoolKidM: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidMReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsRichBoy: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RichBoyReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsBlackBelt: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BlackBeltReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsTuberF: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberFReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsHexManiac: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_HexManiacReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsPkmnBreederM: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederMReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsRunningTriathleteF: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteFReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsRunningTriathleteM: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RunningTriathleteMReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsBattleGirl: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BattleGirlReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsCyclingTriathleteM: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CyclingTriathleteMReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsTuberM: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_TuberMReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsGuitarist: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_GuitaristReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsGentleman: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_GentlemanReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsPokefanM: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanMReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsExpertM: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertMReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsExpertF: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ExpertFReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsDragonTamer: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_DragonTamerReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsBirdKeeper: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BirdKeeperReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsNinjaBoy: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_NinjaBoyReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsParasolLady: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_ParasolLadyReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsBugManiac: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_BugManiacReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsSailor: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SailorReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsCollector: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CollectorReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsPkmnRangerM: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerMReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsPkmnRangerF: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnRangerFReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsAromaLady: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_AromaLadyReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsRuinManiac: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_RuinManiacReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsCoolTrainerM: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerMReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsCoolTrainerF: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CoolTrainerFReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsPokemaniac: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokemaniacReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsKindler: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_KindlerReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsCamper: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_CamperReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsPicnicker: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PicnickerReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsPsychicM: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicMReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsPsychicF: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PsychicFReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsSchoolKidF: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SchoolKidFReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsPkmnBreederF: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PkmnBreederFReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsPokefanF: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_PokefanFReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsSwimmerF: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerFReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsSwimmingTriathleteM: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteMReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsSwimmingTriathleteF: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmingTriathleteFReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTextsSwimmerM: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMIntro)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMMon1)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMMon2Ask)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMAccept)),
-    RomPtr((&raw const BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMReject)),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMIntro.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMMon1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMMon2Ask.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMAccept.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleFrontier_BattleTowerMultiPartnerRoom_Text_SwimmerMReject.cast::<u8>()))),
 ];
 
 pub(crate) static sPartnerTrainerTextTables: [RomPtr<u8>; 100] = [

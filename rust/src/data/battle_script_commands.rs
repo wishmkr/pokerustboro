@@ -4,19 +4,6 @@
 
 use crate::ffi::{RomBytes, RomPtr};
 
-unsafe extern "C" {
-    static BattleScript_MoveEffectBurn: u8;
-    static BattleScript_MoveEffectConfusion: u8;
-    static BattleScript_MoveEffectFreeze: u8;
-    static BattleScript_MoveEffectParalysis: u8;
-    static BattleScript_MoveEffectPayDay: u8;
-    static BattleScript_MoveEffectPoison: u8;
-    static BattleScript_MoveEffectRecoil: u8;
-    static BattleScript_MoveEffectSleep: u8;
-    static BattleScript_MoveEffectToxic: u8;
-    static BattleScript_MoveEffectUproar: u8;
-    static BattleScript_MoveEffectWrap: u8;
-}
 
 pub(crate) static sAccuracyStageRatios: RomBytes<52> = RomBytes([33, 100, 0, 0, 36, 100, 0, 0, 43, 100, 0, 0, 50, 100, 0, 0, 60, 100, 0, 0, 75, 100, 0, 0, 1, 1, 0, 0, 133, 100, 0, 0, 166, 100, 0, 0, 2, 1, 0, 0, 233, 100, 0, 0, 133, 50, 0, 0, 3, 1, 0, 0]);
 
@@ -25,45 +12,45 @@ pub(crate) static sCriticalHitChance: RomBytes<10> = RomBytes([16, 0, 8, 0, 4, 0
 pub(crate) static sStatusFlagsForMoveEffects: RomBytes<240> = RomBytes([0, 0, 0, 0, 7, 0, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 32, 0, 0, 0, 64, 0, 0, 0, 128, 0, 0, 0, 7, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 112, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 224, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
 pub(crate) static sMoveEffectBS_Ptrs: [RomPtr<u8>; 39] = [
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectPoison)),
-    RomPtr((&raw const BattleScript_MoveEffectBurn)),
-    RomPtr((&raw const BattleScript_MoveEffectFreeze)),
-    RomPtr((&raw const BattleScript_MoveEffectParalysis)),
-    RomPtr((&raw const BattleScript_MoveEffectToxic)),
-    RomPtr((&raw const BattleScript_MoveEffectConfusion)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectUproar)),
-    RomPtr((&raw const BattleScript_MoveEffectPayDay)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectWrap)),
-    RomPtr((&raw const BattleScript_MoveEffectRecoil)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectSleep)),
-    RomPtr((&raw const BattleScript_MoveEffectRecoil)),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectPoison.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectBurn.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectFreeze.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectParalysis.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectToxic.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectConfusion.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectUproar.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectPayDay.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectWrap.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectRecoil.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectSleep.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::BattleScript_MoveEffectRecoil.cast::<u8>()))),
 ];
 
 pub(crate) static sUnusedWinTemplate: RomBytes<8> = RomBytes([0, 1, 3, 7, 15, 31, 63, 0]);

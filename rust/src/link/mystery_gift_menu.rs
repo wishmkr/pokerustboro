@@ -3,37 +3,134 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect,
+    ResetBgsAndClearDma3BusyFlags, ShowBg,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::ereader_screen::CreateEReaderTask;
+use crate::ffi::gSpecialVar_Result;
+use crate::gpu_regs::{ClearGpuRegBits, EnableInterrupts, SetGpuReg};
+use crate::international_string_util::GetStringRightAlignXOffset;
+use crate::link::{CloseLink, gLinkPlayers, gReceivedRemoteLinkPlayers};
+use crate::link_rfu_2::Rfu_SetCloseLinkCallback;
+use crate::link_rfu_3::DestroyWirelessStatusIndicatorSprite;
+use crate::list_menu::DoMysteryGiftListMenu;
+use crate::menu::{
+    AddTextPrinterParameterized4, CreateYesNoMenu, DecompressAndLoadBgGfxUsingHeap,
+    Menu_LoadStdPalAt, Menu_ProcessInputNoWrapClearOnChoose,
+};
+use crate::mystery_gift::{
+    ClearSavedWonderCardAndRelated, ClearSavedWonderNewsAndRelated, GetSavedWonderCard,
+    GetSavedWonderCardMetadata, GetSavedWonderNews, IsSavedWonderCardGiftNotReceived,
+    IsSendingSavedWonderCardAllowed, IsSendingSavedWonderNewsAllowed, ValidateSavedWonderCard,
+    ValidateSavedWonderNews,
+};
+use crate::mystery_gift_client::{
+    MysteryGiftClient_AdvanceState, MysteryGiftClient_Create, MysteryGiftClient_Run,
+    MysteryGiftClient_SetParam,
+};
+use crate::mystery_gift_server::{
+    MysterGiftServer_CreateForCard, MysterGiftServer_CreateForNews, MysterGiftServer_Run,
+};
+use crate::mystery_gift_view::{
+    WonderCard_Destroy, WonderCard_Enter, WonderCard_Exit, WonderCard_Init,
+    WonderNews_AddScrollIndicatorArrowPair, WonderNews_Destroy, WonderNews_Enter, WonderNews_Exit,
+    WonderNews_GetInput, WonderNews_Init, WonderNews_RemoveScrollIndicatorArrowPair,
+};
+use crate::palette::{LoadPalette, ResetPaletteFade, TransferPlttBuffer};
+use crate::save::TrySavingData;
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::sound::{IsFanfareTaskInactive, PlayBGM, PlayFanfare};
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData,
+};
+use crate::string_util::{StringCopy, StringExpandPlaceholders};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar3, gStringVar4};
+use crate::task::gTasks;
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::text::{DeactivateAllTextPrinters, DrawDownArrow, RunTextPrinters};
+use crate::text_window::{
+    DrawTextBorderOuter, LoadUserWindowBorderGfx, LoadUserWindowBorderGfx_, rbox_fill_rectangle,
+};
+use crate::title_screen::CB2_InitTitleScreen;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::union_room::{
+    CreateTask_LinkMysteryGiftOverWireless, CreateTask_LinkMysteryGiftWithFriend,
+    CreateTask_SendMysteryGift,
+};
+use crate::window::{
+    ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers,
+    PutWindowTilemap, RemoveWindow,
+};
+use crate::wonder_news::WonderNews_SetReward;
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `Intl_GetListMenuWidth` with this module's view of its types.
+#[inline]
+unsafe fn Intl_GetListMenuWidth(a0: *mut ListMenuTemplate) -> i32 {
+    unsafe { crate::international_string_util::Intl_GetListMenuWidth(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
 // Data tables (translate with cdata.py): sTextboxBorder_Pal sTextboxBorder_Gfx sBGTemplates sMainWindows sWindowTemplate_YesNoMsg_Wide sWindowTemplate_YesNoMsg sWindowTemplate_GiftSelect sWindowTemplate_ThreeOptions sWindowTemplate_YesNoBox sWindowTemplate_GiftSelect_3Options sWindowTemplate_GiftSelect_2Options sWindowTemplate_GiftSelect_1Option sListMenuItems_CardsOrNews sListMenuItems_WirelessOrFriend sListMenuTemplate_ThreeOptions sListMenuItems_ReceiveSendToss sListMenuItems_ReceiveToss sListMenuItems_ReceiveSend sListMenuItems_Receive sListMenu_ReceiveSendToss sListMenu_ReceiveToss sListMenu_ReceiveSend sListMenu_Receive sUnusedMenuTexts sTextColors_Header sTextColors_Header_Copy sMG_Ereader_TextColor_2
 
 /// `struct MysteryGiftTaskData`
@@ -165,199 +262,54 @@ static sWindowTemplate_YesNoMsg_Wide: Table<WindowTemplate> =
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sDownArrowCounterAndYCoordIdx: Aligned<CArray<u8, 8>> =
     Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gGiftIsFromEReader: u8 = 0;
 
-unsafe extern "C" {
-    static gJPText_DecideStop: CArray<u8, 0>;
-    static gJPText_MysteryGift: CArray<u8, 0>;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gMain: Main;
-    static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gSpecialVar_Result: u16;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar3: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_AlreadyHadCard: CArray<u8, 0>;
-    static gText_AlreadyHadNews: CArray<u8, 0>;
-    static gText_AlreadyHadStamp: CArray<u8, 0>;
-    static gText_CantAcceptCardFromTrainer: CArray<u8, 0>;
-    static gText_CantAcceptNewsFromTrainer: CArray<u8, 0>;
-    static gText_CantSendGiftToTrainer: CArray<u8, 0>;
-    static gText_Communicating: CArray<u8, 0>;
-    static gText_CommunicationCanceled: CArray<u8, 0>;
-    static gText_CommunicationCompleted: CArray<u8, 0>;
-    static gText_CommunicationError: CArray<u8, 0>;
-    static gText_DataWillBeSaved: CArray<u8, 0>;
-    static gText_DontHaveCardNewOneInput: CArray<u8, 0>;
-    static gText_DontHaveNewsNewOneInput: CArray<u8, 0>;
-    static gText_GiftSentTo: CArray<u8, 0>;
-    static gText_HaventReceivedCardsGift: CArray<u8, 0>;
-    static gText_HaventReceivedGiftOkayToDiscard: CArray<u8, 0>;
-    static gText_IfThrowAwayCardEventWontHappen: CArray<u8, 0>;
-    static gText_MysteryGift: CArray<u8, 0>;
-    static gText_NewStampReceived: CArray<u8, 0>;
-    static gText_NewTrainerReceived: CArray<u8, 0>;
-    static gText_NoMoreRoomForStamps: CArray<u8, 0>;
-    static gText_NothingSentOver: CArray<u8, 0>;
-    static gText_OkayToDiscardNews: CArray<u8, 0>;
-    static gText_OtherTrainerCanceled: CArray<u8, 0>;
-    static gText_OtherTrainerHasCard: CArray<u8, 0>;
-    static gText_OtherTrainerHasNews: CArray<u8, 0>;
-    static gText_OtherTrainerHasStamp: CArray<u8, 0>;
-    static gText_PickOKCancel: CArray<u8, 0>;
-    static gText_PickOKExit: CArray<u8, 0>;
-    static gText_RecordUploadedViaWireless: CArray<u8, 0>;
-    static gText_SaveCompletedPressA: CArray<u8, 0>;
-    static gText_SendingWonderCard: CArray<u8, 0>;
-    static gText_SendingWonderNews: CArray<u8, 0>;
-    static gText_StampSentTo: CArray<u8, 0>;
-    static gText_ThrowAwayWonderCard: CArray<u8, 0>;
-    static gText_WhatToDoWithCards: CArray<u8, 0>;
-    static gText_WhatToDoWithNews: CArray<u8, 0>;
-    static gText_WhereShouldCardBeAccessed: CArray<u8, 0>;
-    static gText_WhereShouldNewsBeAccessed: CArray<u8, 0>;
-    static gText_WonderCardReceived: CArray<u8, 0>;
-    static gText_WonderCardReceivedFrom: CArray<u8, 0>;
-    static gText_WonderCardSentTo: CArray<u8, 0>;
-    static gText_WonderCardThrownAway: CArray<u8, 0>;
-    static gText_WonderNewsReceived: CArray<u8, 0>;
-    static gText_WonderNewsReceivedFrom: CArray<u8, 0>;
-    static gText_WonderNewsSentTo: CArray<u8, 0>;
-    static gText_WonderNewsThrownAway: CArray<u8, 0>;
-    fn AddTextPrinterParameterized4(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: i8,
-        a8: *mut u8,
-    );
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BuildOamBuffer();
-    fn CB2_InitTitleScreen();
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ClearGpuRegBits(a0: u8, a1: u16);
-    fn ClearSavedWonderCardAndRelated();
-    fn ClearSavedWonderNewsAndRelated();
-    fn ClearWindowTilemap(a0: u8);
-    fn CloseLink();
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateEReaderTask();
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateTask_LinkMysteryGiftOverWireless(a0: u32);
-    fn CreateTask_LinkMysteryGiftWithFriend(a0: u32);
-    fn CreateTask_SendMysteryGift(a0: u32);
-    fn CreateYesNoMenu(a0: *mut WindowTemplate, a1: u16, a2: u8, a3: u8);
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut c_void, a2: u32, a3: u16, a4: u8);
-    fn DestroyTask(a0: u8);
-    fn DestroyWirelessStatusIndicatorSprite();
-    fn DoMysteryGiftListMenu(
-        a0: *mut WindowTemplate,
-        a1: *mut ListMenuTemplate,
-        a2: u8,
-        a3: u16,
-        a4: u16,
-    ) -> i32;
-    fn DrawDownArrow(a0: u8, a1: u16, a2: u16, a3: u8, a4: u8, a5: *mut u8, a6: *mut u8);
-    fn DrawTextBorderOuter(a0: u8, a1: u16, a2: u8);
-    fn EnableInterrupts(a0: u16);
-    fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
-    fn GetSavedWonderCard() -> *mut WonderCard;
-    fn GetSavedWonderCardMetadata() -> *mut WonderCardMetadata;
-    fn GetSavedWonderNews() -> *mut WonderNews;
-    fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetTextWindowPalette(a0: u8) -> *mut u16;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn Intl_GetListMenuWidth(a0: *mut ListMenuTemplate) -> i32;
-    fn IsFanfareTaskInactive() -> u8;
-    fn IsSavedWonderCardGiftNotReceived() -> u32;
-    fn IsSendingSavedWonderCardAllowed() -> u32;
-    fn IsSendingSavedWonderNewsAllowed() -> u32;
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn LoadUserWindowBorderGfx_(a0: u8, a1: u16, a2: u8);
-    fn Menu_LoadStdPalAt(a0: u16);
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn MysterGiftServer_CreateForCard();
-    fn MysterGiftServer_CreateForNews();
-    fn MysterGiftServer_Run(a0: *mut u16) -> u32;
-    fn MysteryGiftClient_AdvanceState();
-    fn MysteryGiftClient_Create(a0: u32);
-    fn MysteryGiftClient_GetMsg() -> *mut c_void;
-    fn MysteryGiftClient_Run(a0: *mut u16) -> u32;
-    fn MysteryGiftClient_SetParam(a0: u32);
-    fn PlayBGM(a0: u16);
-    fn PlayFanfare(a0: u16);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveWindow(a0: u8);
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn Rfu_SetCloseLinkCallback();
-    fn RunTasks();
-    fn RunTextPrinters();
-    fn ScanlineEffect_Stop();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TransferPlttBuffer();
-    fn TrySavingData(a0: u8) -> u8;
-    fn ValidateSavedWonderCard() -> u32;
-    fn ValidateSavedWonderNews() -> u32;
-    fn WonderCard_Destroy();
-    fn WonderCard_Enter() -> i32;
-    fn WonderCard_Exit(a0: u32) -> i32;
-    fn WonderCard_Init(a0: *mut WonderCard, a1: *mut WonderCardMetadata) -> u32;
-    fn WonderNews_AddScrollIndicatorArrowPair();
-    fn WonderNews_Destroy();
-    fn WonderNews_Enter() -> i32;
-    fn WonderNews_Exit(a0: u32) -> i32;
-    fn WonderNews_GetInput(a0: u16) -> u32;
-    fn WonderNews_Init(a0: *mut WonderNews) -> u32;
-    fn WonderNews_RemoveScrollIndicatorArrowPair();
-    fn WonderNews_SetReward(a0: u32);
-    fn rbox_fill_rectangle(a0: u8);
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `GetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
+    unsafe { crate::bg::GetBgTilemapBuffer(a0) as *mut c_void }
+}
+/// `GetTextWindowPalette` with this module's view of its types.
+#[inline]
+unsafe fn GetTextWindowPalette(a0: u8) -> *mut u16 {
+    unsafe { crate::text_window::GetTextWindowPalette(a0) as *mut u16 }
+}
+/// `MysteryGiftClient_GetMsg` with this module's view of its types.
+#[inline]
+unsafe fn MysteryGiftClient_GetMsg() -> *mut c_void {
+    unsafe { crate::mystery_gift_client::MysteryGiftClient_GetMsg() as *mut c_void }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn VBlankCB_MysteryGiftEReader() {
+pub(crate) unsafe fn VBlankCB_MysteryGiftEReader() {
     ProcessSpriteCopyRequests();
     LoadOam();
     TransferPlttBuffer();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_MysteryGiftEReader() {
+pub unsafe fn CB2_MysteryGiftEReader() {
     RunTasks();
     RunTextPrinters();
     AnimateSprites();
     BuildOamBuffer();
 }
-pub(crate) unsafe extern "C" fn HandleMysteryGiftOrEReaderSetup(isEReader: i32) -> u32 {
+unsafe fn HandleMysteryGiftOrEReaderSetup(isEReader: i32) -> u32 {
     match gMain.state {
         0 => {
             SetVBlankCallback(None);
@@ -419,10 +371,9 @@ pub(crate) unsafe extern "C" fn HandleMysteryGiftOrEReaderSetup(isEReader: i32) 
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_InitMysteryGift() {
+pub unsafe fn CB2_InitMysteryGift() {
     if HandleMysteryGiftOrEReaderSetup(FALSE as i32) != 0 {
         SetMainCallback2(Some(CB2_MysteryGiftEReader));
         gGiftIsFromEReader = FALSE;
@@ -430,16 +381,14 @@ pub unsafe extern "C" fn CB2_InitMysteryGift() {
     }
     RunTasks();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_InitEReader() {
+pub unsafe fn CB2_InitEReader() {
     if HandleMysteryGiftOrEReaderSetup(TRUE as i32) != 0 {
         SetMainCallback2(Some(CB2_MysteryGiftEReader));
         gGiftIsFromEReader = TRUE;
         CreateEReaderTask();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MainCB_FreeAllBuffersAndReturnToInitTitleScreen() {
+pub unsafe fn MainCB_FreeAllBuffersAndReturnToInitTitleScreen() {
     gGiftIsFromEReader = FALSE;
     FreeAllWindowBuffers();
     Free(GetBgTilemapBuffer(0));
@@ -448,21 +397,30 @@ pub unsafe extern "C" fn MainCB_FreeAllBuffersAndReturnToInitTitleScreen() {
     Free(GetBgTilemapBuffer(3));
     SetMainCallback2(Some(CB2_InitTitleScreen));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintMysteryGiftOrEReaderHeader(isEReader: u8, useCancel: u32) {
+pub unsafe fn PrintMysteryGiftOrEReaderHeader(isEReader: u8, useCancel: u32) {
     let mut title: *mut u8 = null_mut();
     let mut options: *mut u8 = null_mut();
     FillWindowPixelBuffer(WIN_HEADER, 0);
     if isEReader == 0 {
-        title = gText_MysteryGift.as_ptr().cast_mut();
+        title = (*(&raw const crate::data::strings::gText_MysteryGift).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         options = if useCancel == 0 {
-            gText_PickOKExit.as_ptr().cast_mut()
+            (*(&raw const crate::data::strings::gText_PickOKExit).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
         } else {
-            gText_PickOKCancel.as_ptr().cast_mut()
+            (*(&raw const crate::data::strings::gText_PickOKCancel).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
         };
     } else {
-        title = gJPText_MysteryGift.as_ptr().cast_mut();
-        options = gJPText_DecideStop.as_ptr().cast_mut();
+        title = (*(&raw const crate::data::strings::gJPText_MysteryGift).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
+        options = (*(&raw const crate::data::strings::gJPText_DecideStop).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     AddTextPrinterParameterized4(
         WIN_HEADER,
@@ -489,30 +447,22 @@ pub unsafe extern "C" fn PrintMysteryGiftOrEReaderHeader(isEReader: u8, useCance
     CopyWindowToVram(WIN_HEADER, COPYWIN_GFX);
     PutWindowTilemap(WIN_HEADER);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MG_DrawTextBorder(windowId: u8) {
+pub unsafe fn MG_DrawTextBorder(windowId: u8) {
     DrawTextBorderOuter(windowId, 0x01, 0xF);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MG_DrawCheckerboardPattern(bg: u32) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+pub unsafe fn MG_DrawCheckerboardPattern(bg: u32) {
     FillBgTilemapBufferRect(bg as u8, 0x003, 0, 0, 32, 2, 17);
-    i = 0;
-    while i < 18 {
-        j = 0;
-        while j < 32 {
+    for i in 0..18i32 {
+        for j in 0..32i32 {
             if i & 1 != j & 1 {
                 FillBgTilemapBufferRect(bg as u8, 1, j as u8, i as u8 + 2, 1, 1, 17);
             } else {
                 FillBgTilemapBufferRect(bg as u8, 2, j as u8, i as u8 + 2, 1, 1, 17);
             }
-            j += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ClearScreenInBg0(ignoreTopTwoRows: u32) {
+unsafe fn ClearScreenInBg0(ignoreTopTwoRows: u32) {
     match ignoreTopTwoRows {
         0 => {
             FillBgTilemapBufferRect(0, 0, 0, 0, 32, 32, 17);
@@ -524,8 +474,7 @@ pub(crate) unsafe extern "C" fn ClearScreenInBg0(ignoreTopTwoRows: u32) {
     }
     CopyBgTilemapBufferToVram(0);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MG_AddMessageTextPrinter(str: *mut u8) {
+pub unsafe fn MG_AddMessageTextPrinter(str: *mut u8) {
     StringExpandPlaceholders(gStringVar4.as_mut_ptr(), str);
     FillWindowPixelBuffer(WIN_MSG, 0x11);
     AddTextPrinterParameterized4(
@@ -543,13 +492,12 @@ pub unsafe extern "C" fn MG_AddMessageTextPrinter(str: *mut u8) {
     PutWindowTilemap(WIN_MSG);
     CopyWindowToVram(WIN_MSG, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn ClearMessage() {
+unsafe fn ClearMessage() {
     rbox_fill_rectangle(WIN_MSG);
     ClearWindowTilemap(WIN_MSG);
     CopyWindowToVram(WIN_MSG, COPYWIN_MAP);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintMysteryGiftMenuMessage(textState: *mut u8, str: *mut u8) -> u32 {
+pub unsafe fn PrintMysteryGiftMenuMessage(textState: *mut u8, str: *mut u8) -> u32 {
     match *textState {
         0 => {
             MG_AddMessageTextPrinter(str);
@@ -589,9 +537,9 @@ pub unsafe extern "C" fn PrintMysteryGiftMenuMessage(textState: *mut u8, str: *m
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn HideDownArrow() {
+unsafe fn HideDownArrow() {
     DrawDownArrow(
         WIN_MSG,
         DOWN_ARROW_X,
@@ -602,7 +550,7 @@ pub(crate) unsafe extern "C" fn HideDownArrow() {
         &raw mut sDownArrowCounterAndYCoordIdx[1],
     );
 }
-pub(crate) unsafe extern "C" fn ShowDownArrow() {
+unsafe fn ShowDownArrow() {
     DrawDownArrow(
         WIN_MSG,
         DOWN_ARROW_X,
@@ -613,7 +561,7 @@ pub(crate) unsafe extern "C" fn ShowDownArrow() {
         &raw mut sDownArrowCounterAndYCoordIdx[1],
     );
 }
-pub(crate) unsafe extern "C" fn HideDownArrowAndWaitButton(textState: *mut u8) -> u32 {
+unsafe fn HideDownArrowAndWaitButton(textState: *mut u8) -> u32 {
     match *textState {
         0 => {
             HideDownArrow();
@@ -628,9 +576,9 @@ pub(crate) unsafe extern "C" fn HideDownArrowAndWaitButton(textState: *mut u8) -
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn PrintStringAndWait2Seconds(counter: *mut u8, str: *mut u8) -> u32 {
+unsafe fn PrintStringAndWait2Seconds(counter: *mut u8, str: *mut u8) -> u32 {
     if *counter == 0 {
         MG_AddMessageTextPrinter(str);
     }
@@ -647,26 +595,22 @@ pub(crate) unsafe extern "C" fn PrintStringAndWait2Seconds(counter: *mut u8, str
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn MysteryGift_HandleThreeOptionMenu(
+unsafe fn MysteryGift_HandleThreeOptionMenu(
     unused0: *mut u8,
     unused1: *mut u16,
     whichMenu: u8,
 ) -> u32 {
-    let mut listMenuTemplate: ListMenuTemplate = zeroed();
-    listMenuTemplate = *sListMenuTemplate_ThreeOptions;
-    let mut windowTemplate: WindowTemplate = zeroed();
-    windowTemplate = *sWindowTemplate_ThreeOptions;
-    let mut width: i32 = 0;
-    let mut response: i32 = 0;
+    let mut listMenuTemplate: ListMenuTemplate = *sListMenuTemplate_ThreeOptions;
+    let mut windowTemplate: WindowTemplate = *sWindowTemplate_ThreeOptions;
     if whichMenu == 0 {
         listMenuTemplate.items = sListMenuItems_CardsOrNews.as_ptr().cast_mut();
     } else {
         listMenuTemplate.items = sListMenuItems_WirelessOrFriend.as_ptr().cast_mut();
     }
-    width = Intl_GetListMenuWidth(&raw mut listMenuTemplate);
+    let mut width: i32 = Intl_GetListMenuWidth(&raw mut listMenuTemplate);
     if width & 1 != 0 {
         width += 1;
     }
@@ -676,7 +620,7 @@ pub(crate) unsafe extern "C" fn MysteryGift_HandleThreeOptionMenu(
     } else {
         windowTemplate.tilemapLeft = 0;
     }
-    response = DoMysteryGiftListMenu(
+    let response: i32 = DoMysteryGiftListMenu(
         &raw mut windowTemplate,
         &raw mut listMenuTemplate,
         1,
@@ -687,10 +631,9 @@ pub(crate) unsafe extern "C" fn MysteryGift_HandleThreeOptionMenu(
         ClearWindowTilemap(WIN_UNK);
         CopyWindowToVram(WIN_UNK, COPYWIN_MAP);
     }
-    return response as u32;
+    response as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoMysteryGiftYesNo(
+pub unsafe fn DoMysteryGiftYesNo(
     textState: *mut u8,
     windowId: *mut u16,
     yesNoBoxPlacement: u8,
@@ -754,9 +697,9 @@ pub unsafe extern "C" fn DoMysteryGiftYesNo(
         }
         _ => {}
     }
-    return MENU_NOTHING_CHOSEN;
+    MENU_NOTHING_CHOSEN
 }
-pub(crate) unsafe extern "C" fn HandleGiftSelectMenu(
+unsafe fn HandleGiftSelectMenu(
     textState: *mut u8,
     windowId: *mut u16,
     cannotToss: u32,
@@ -769,12 +712,18 @@ pub(crate) unsafe extern "C" fn HandleGiftSelectMenu(
             if cannotToss == 0 {
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
-                    gText_WhatToDoWithCards.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_WhatToDoWithCards)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
             } else {
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
-                    gText_WhatToDoWithNews.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_WhatToDoWithNews)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
             }
             *windowId = AddWindow((&raw const *sWindowTemplate_GiftSelect).cast_mut());
@@ -853,9 +802,9 @@ pub(crate) unsafe extern "C" fn HandleGiftSelectMenu(
         }
         _ => {}
     }
-    return LIST_NOTHING_CHOSEN;
+    LIST_NOTHING_CHOSEN
 }
-pub(crate) unsafe extern "C" fn ValidateCardOrNews(isWonderNews: u32) -> u32 {
+unsafe fn ValidateCardOrNews(isWonderNews: u32) -> u32 {
     if isWonderNews == 0 {
         return ValidateSavedWonderCard();
     } else {
@@ -863,13 +812,10 @@ pub(crate) unsafe extern "C" fn ValidateCardOrNews(isWonderNews: u32) -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn HandleLoadWonderCardOrNews(
-    state: *mut u8,
-    isWonderNews: u32,
-) -> u32 {
+unsafe fn HandleLoadWonderCardOrNews(state: *mut u8, isWonderNews: u32) -> u32 {
     match *state {
         0 => {
             if isWonderNews == 0 {
@@ -894,17 +840,17 @@ pub(crate) unsafe extern "C" fn HandleLoadWonderCardOrNews(
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn ClearSavedNewsOrCard(isWonderNews: u32) -> u32 {
+unsafe fn ClearSavedNewsOrCard(isWonderNews: u32) -> u32 {
     if isWonderNews == 0 {
         ClearSavedWonderCardAndRelated();
     } else {
         ClearSavedWonderNewsAndRelated();
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn ExitWonderCardOrNews(isWonderNews: u32, useCancel: u32) -> u32 {
+unsafe fn ExitWonderCardOrNews(isWonderNews: u32, useCancel: u32) -> u32 {
     if isWonderNews == 0 {
         if WonderCard_Exit(useCancel) != 0 {
             WonderCard_Destroy();
@@ -922,55 +868,66 @@ pub(crate) unsafe extern "C" fn ExitWonderCardOrNews(isWonderNews: u32, useCance
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn AskDiscardGift(
-    textState: *mut u8,
-    windowId: *mut u16,
-    isWonderNews: u32,
-) -> i32 {
+unsafe fn AskDiscardGift(textState: *mut u8, windowId: *mut u16, isWonderNews: u32) -> i32 {
     if isWonderNews == 0 {
         return DoMysteryGiftYesNo(
             textState,
             windowId,
             TRUE,
-            gText_IfThrowAwayCardEventWontHappen.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_IfThrowAwayCardEventWontHappen)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         ) as i32;
     } else {
         return DoMysteryGiftYesNo(
             textState,
             windowId,
             TRUE,
-            gText_OkayToDiscardNews.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_OkayToDiscardNews).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         ) as i32;
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn PrintThrownAway(textState: *mut u8, isWonderNews: u32) -> u32 {
+unsafe fn PrintThrownAway(textState: *mut u8, isWonderNews: u32) -> u32 {
     if isWonderNews == 0 {
         return PrintMysteryGiftMenuMessage(
             textState,
-            gText_WonderCardThrownAway.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_WonderCardThrownAway)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
     } else {
         return PrintMysteryGiftMenuMessage(
             textState,
-            gText_WonderNewsThrownAway.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_WonderNewsThrownAway)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn SaveOnMysteryGiftMenu(state: *mut u8) -> u32 {
+unsafe fn SaveOnMysteryGiftMenu(state: *mut u8) -> u32 {
     match *state {
         0 => {
-            MG_AddMessageTextPrinter(gText_DataWillBeSaved.as_ptr().cast_mut());
+            MG_AddMessageTextPrinter(
+                (*(&raw const crate::data::strings::gText_DataWillBeSaved).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
             *state += 1;
         }
         1 => {
@@ -978,7 +935,12 @@ pub(crate) unsafe extern "C" fn SaveOnMysteryGiftMenu(state: *mut u8) -> u32 {
             *state += 1;
         }
         2 => {
-            MG_AddMessageTextPrinter(gText_SaveCompletedPressA.as_ptr().cast_mut());
+            MG_AddMessageTextPrinter(
+                (*(&raw const crate::data::strings::gText_SaveCompletedPressA)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            );
             *state += 1;
         }
         3 => {
@@ -993,9 +955,9 @@ pub(crate) unsafe extern "C" fn SaveOnMysteryGiftMenu(state: *mut u8) -> u32 {
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn GetClientResultMessage(
+unsafe fn GetClientResultMessage(
     successMsg: *mut u32,
     isWonderNews: u8,
     sourceIsFriend: u8,
@@ -1006,67 +968,115 @@ pub(crate) unsafe extern "C" fn GetClientResultMessage(
     match msgId {
         CLI_MSG_NOTHING_SENT => {
             *successMsg = FALSE as u32;
-            msg = gText_NothingSentOver.as_ptr().cast_mut();
+            msg = (*(&raw const crate::data::strings::gText_NothingSentOver)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         CLI_MSG_RECORD_UPLOADED => {
             *successMsg = FALSE as u32;
-            msg = gText_RecordUploadedViaWireless.as_ptr().cast_mut();
+            msg = (*(&raw const crate::data::strings::gText_RecordUploadedViaWireless)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         CLI_MSG_CARD_RECEIVED => {
             *successMsg = TRUE as u32;
             msg = if sourceIsFriend == 0 {
-                gText_WonderCardReceived.as_ptr().cast_mut()
+                (*(&raw const crate::data::strings::gText_WonderCardReceived)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
             } else {
-                gText_WonderCardReceivedFrom.as_ptr().cast_mut()
+                (*(&raw const crate::data::strings::gText_WonderCardReceivedFrom)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
             };
         }
         CLI_MSG_NEWS_RECEIVED => {
             *successMsg = TRUE as u32;
             msg = if sourceIsFriend == 0 {
-                gText_WonderNewsReceived.as_ptr().cast_mut()
+                (*(&raw const crate::data::strings::gText_WonderNewsReceived)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
             } else {
-                gText_WonderNewsReceivedFrom.as_ptr().cast_mut()
+                (*(&raw const crate::data::strings::gText_WonderNewsReceivedFrom)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
             };
         }
         CLI_MSG_STAMP_RECEIVED => {
             *successMsg = TRUE as u32;
-            msg = gText_NewStampReceived.as_ptr().cast_mut();
+            msg = (*(&raw const crate::data::strings::gText_NewStampReceived)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         CLI_MSG_HAD_CARD => {
             *successMsg = FALSE as u32;
-            msg = gText_AlreadyHadCard.as_ptr().cast_mut();
+            msg = (*(&raw const crate::data::strings::gText_AlreadyHadCard)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         CLI_MSG_HAD_STAMP => {
             *successMsg = FALSE as u32;
-            msg = gText_AlreadyHadStamp.as_ptr().cast_mut();
+            msg = (*(&raw const crate::data::strings::gText_AlreadyHadStamp)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         CLI_MSG_HAD_NEWS => {
             *successMsg = FALSE as u32;
-            msg = gText_AlreadyHadNews.as_ptr().cast_mut();
+            msg = (*(&raw const crate::data::strings::gText_AlreadyHadNews)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         CLI_MSG_NO_ROOM_STAMPS => {
             *successMsg = FALSE as u32;
-            msg = gText_NoMoreRoomForStamps.as_ptr().cast_mut();
+            msg = (*(&raw const crate::data::strings::gText_NoMoreRoomForStamps)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         CLI_MSG_COMM_CANCELED => {
             *successMsg = FALSE as u32;
-            msg = gText_CommunicationCanceled.as_ptr().cast_mut();
+            msg = (*(&raw const crate::data::strings::gText_CommunicationCanceled)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         CLI_MSG_CANT_ACCEPT => {
             *successMsg = FALSE as u32;
             msg = if isWonderNews == 0 {
-                gText_CantAcceptCardFromTrainer.as_ptr().cast_mut()
+                (*(&raw const crate::data::strings::gText_CantAcceptCardFromTrainer)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
             } else {
-                gText_CantAcceptNewsFromTrainer.as_ptr().cast_mut()
+                (*(&raw const crate::data::strings::gText_CantAcceptNewsFromTrainer)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
             };
         }
         CLI_MSG_COMM_ERROR => {
             *successMsg = FALSE as u32;
-            msg = gText_CommunicationError.as_ptr().cast_mut();
+            msg = (*(&raw const crate::data::strings::gText_CommunicationError)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         CLI_MSG_TRAINER_RECEIVED => {
             *successMsg = TRUE as u32;
-            msg = gText_NewTrainerReceived.as_ptr().cast_mut();
+            msg = (*(&raw const crate::data::strings::gText_NewTrainerReceived)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         CLI_MSG_BUFFER_SUCCESS => {
             *successMsg = TRUE as u32;
@@ -1076,13 +1086,9 @@ pub(crate) unsafe extern "C" fn GetClientResultMessage(
         }
         _ => {}
     }
-    return msg;
+    msg
 }
-pub(crate) unsafe extern "C" fn PrintSuccessMessage(
-    state: *mut u8,
-    msg: *mut u8,
-    timer: *mut u16,
-) -> u32 {
+unsafe fn PrintSuccessMessage(state: *mut u8, msg: *mut u8, timer: *mut u16) -> u32 {
     match *state {
         0 => {
             if !msg.is_null() {
@@ -1101,84 +1107,128 @@ pub(crate) unsafe extern "C" fn PrintSuccessMessage(
                 *state += 1;
             }
         }
-        2 => {
-            if IsFanfareTaskInactive() != 0 {
-                *state = 0;
-                ClearMessage();
-                return TRUE as u32;
-            }
+        2 if IsFanfareTaskInactive() != 0 => {
+            *state = 0;
+            ClearMessage();
+            return TRUE as u32;
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn GetServerResultMessage(
+unsafe fn GetServerResultMessage(
     wonderSuccess: *mut u32,
     sourceIsFriend: u8,
     msgId: u32,
 ) -> *mut u8 {
-    let mut result: *mut u8 = gText_CommunicationError.as_ptr().cast_mut();
+    let mut result: *mut u8 = (*(&raw const crate::data::strings::gText_CommunicationError)
+        .cast::<CArray<u8, 0>>())
+    .as_ptr()
+    .cast_mut();
     *wonderSuccess = FALSE as u32;
     match msgId {
         SVR_MSG_NOTHING_SENT => {
-            result = gText_NothingSentOver.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_NothingSentOver)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         SVR_MSG_RECORD_UPLOADED => {
-            result = gText_RecordUploadedViaWireless.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_RecordUploadedViaWireless)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         SVR_MSG_CARD_SENT => {
-            result = gText_WonderCardSentTo.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_WonderCardSentTo)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
             *wonderSuccess = TRUE as u32;
         }
         SVR_MSG_NEWS_SENT => {
-            result = gText_WonderNewsSentTo.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_WonderNewsSentTo)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
             *wonderSuccess = TRUE as u32;
         }
         SVR_MSG_STAMP_SENT => {
-            result = gText_StampSentTo.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_StampSentTo)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         SVR_MSG_HAS_CARD => {
-            result = gText_OtherTrainerHasCard.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_OtherTrainerHasCard)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         SVR_MSG_HAS_STAMP => {
-            result = gText_OtherTrainerHasStamp.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_OtherTrainerHasStamp)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         SVR_MSG_HAS_NEWS => {
-            result = gText_OtherTrainerHasNews.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_OtherTrainerHasNews)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         SVR_MSG_NO_ROOM_STAMPS => {
-            result = gText_NoMoreRoomForStamps.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_NoMoreRoomForStamps)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         SVR_MSG_CLIENT_CANCELED => {
-            result = gText_OtherTrainerCanceled.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_OtherTrainerCanceled)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         SVR_MSG_CANT_SEND_GIFT_1 => {
-            result = gText_CantSendGiftToTrainer.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_CantSendGiftToTrainer)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         SVR_MSG_COMM_ERROR => {
-            result = gText_CommunicationError.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_CommunicationError)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         SVR_MSG_GIFT_SENT_1 => {
-            result = gText_GiftSentTo.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_GiftSentTo).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         }
         SVR_MSG_GIFT_SENT_2 => {
-            result = gText_GiftSentTo.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_GiftSentTo).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         }
         SVR_MSG_CANT_SEND_GIFT_2 => {
-            result = gText_CantSendGiftToTrainer.as_ptr().cast_mut();
+            result = (*(&raw const crate::data::strings::gText_CantSendGiftToTrainer)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         _ => {}
     }
-    return result;
+    result
 }
-pub(crate) unsafe extern "C" fn PrintServerResultMessage(
+unsafe fn PrintServerResultMessage(
     state: *mut u8,
     timer: *mut u16,
     sourceIsFriend: u8,
     msgId: u32,
 ) -> u32 {
     let mut wonderSuccess: u32 = 0;
-    let mut str: *mut u8 = GetServerResultMessage(&raw mut wonderSuccess, sourceIsFriend, msgId);
+    let str: *mut u8 = GetServerResultMessage(&raw mut wonderSuccess, sourceIsFriend, msgId);
     if wonderSuccess != 0 {
         return PrintSuccessMessage(state, str, timer);
     } else {
@@ -1186,13 +1236,13 @@ pub(crate) unsafe extern "C" fn PrintServerResultMessage(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn CreateMysteryGiftTask() {
-    let mut taskId: u8 = CreateTask(Some(Task_MysteryGift), 0);
-    let mut data: *mut MysteryGiftTaskData =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut MysteryGiftTaskData;
+unsafe fn CreateMysteryGiftTask() {
+    let taskId: u8 = CreateTask(Some(Task_MysteryGift), 0);
+    let data: *mut MysteryGiftTaskData =
+        (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut MysteryGiftTaskData;
     (*data).state = MG_STATE_TO_MAIN_MENU;
     (*data).textState = 0;
     (*data).unused4 = 0;
@@ -1206,9 +1256,9 @@ pub(crate) unsafe extern "C" fn CreateMysteryGiftTask() {
     (*data).msgId = 0;
     (*data).clientMsg = AllocZeroed(CLIENT_MAX_MSG_SIZE) as *mut u8;
 }
-pub(crate) unsafe extern "C" fn Task_MysteryGift(taskId: u8) {
-    let mut data: *mut MysteryGiftTaskData =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut MysteryGiftTaskData;
+pub(crate) unsafe fn Task_MysteryGift(taskId: u8) {
+    let data: *mut MysteryGiftTaskData =
+        (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut MysteryGiftTaskData;
     let mut successMsg: u32 = 0;
     let mut input: u32 = 0;
     let mut msg: *mut u8 = null_mut();
@@ -1249,7 +1299,10 @@ pub(crate) unsafe extern "C" fn Task_MysteryGift(taskId: u8) {
                 if (*data).isWonderNews == 0 {
                     if PrintMysteryGiftMenuMessage(
                         &raw mut (*data).textState,
-                        gText_DontHaveCardNewOneInput.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::strings::gText_DontHaveCardNewOneInput)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     ) != 0
                     {
                         (*data).state = MG_STATE_SOURCE_PROMPT;
@@ -1258,7 +1311,10 @@ pub(crate) unsafe extern "C" fn Task_MysteryGift(taskId: u8) {
                 } else {
                     if PrintMysteryGiftMenuMessage(
                         &raw mut (*data).textState,
-                        gText_DontHaveNewsNewOneInput.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::strings::gText_DontHaveNewsNewOneInput)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     ) != 0
                     {
                         (*data).state = MG_STATE_SOURCE_PROMPT;
@@ -1269,9 +1325,19 @@ pub(crate) unsafe extern "C" fn Task_MysteryGift(taskId: u8) {
             }
             MG_STATE_SOURCE_PROMPT => {
                 if (*data).isWonderNews == 0 {
-                    MG_AddMessageTextPrinter(gText_WhereShouldCardBeAccessed.as_ptr().cast_mut());
+                    MG_AddMessageTextPrinter(
+                        (*(&raw const crate::data::strings::gText_WhereShouldCardBeAccessed)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                    );
                 } else {
-                    MG_AddMessageTextPrinter(gText_WhereShouldNewsBeAccessed.as_ptr().cast_mut());
+                    MG_AddMessageTextPrinter(
+                        (*(&raw const crate::data::strings::gText_WhereShouldNewsBeAccessed)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                    );
                 }
                 (*data).state = MG_STATE_SOURCE_PROMPT_INPUT;
             }
@@ -1337,7 +1403,12 @@ pub(crate) unsafe extern "C" fn Task_MysteryGift(taskId: u8) {
                 }
             }
             MG_STATE_CLIENT_COMMUNICATING => {
-                MG_AddMessageTextPrinter(gText_Communicating.as_ptr().cast_mut());
+                MG_AddMessageTextPrinter(
+                    (*(&raw const crate::data::strings::gText_Communicating)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                );
                 (*data).state = MG_STATE_CLIENT_LINK;
             }
             MG_STATE_CLIENT_LINK => match MysteryGiftClient_Run(&raw mut (*data).var) {
@@ -1402,7 +1473,10 @@ pub(crate) unsafe extern "C" fn Task_MysteryGift(taskId: u8) {
                     &raw mut (*data).textState,
                     &raw mut (*data).var,
                     FALSE,
-                    gText_ThrowAwayWonderCard.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_ThrowAwayWonderCard)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 ) as u32;
                 match input {
                     0 => {
@@ -1427,7 +1501,10 @@ pub(crate) unsafe extern "C" fn Task_MysteryGift(taskId: u8) {
                     &raw mut (*data).textState,
                     &raw mut (*data).var,
                     FALSE,
-                    gText_HaventReceivedCardsGift.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_HaventReceivedCardsGift)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 ) as u32;
                 match input {
                     0 => {
@@ -1452,7 +1529,10 @@ pub(crate) unsafe extern "C" fn Task_MysteryGift(taskId: u8) {
             MG_STATE_CLIENT_COMM_COMPLETED => {
                 if PrintStringAndWait2Seconds(
                     &raw mut (*data).textState,
-                    gText_CommunicationCompleted.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_CommunicationCompleted)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 ) != 0
                 {
                     if (*data).sourceIsFriend == TRUE {
@@ -1609,7 +1689,10 @@ pub(crate) unsafe extern "C" fn Task_MysteryGift(taskId: u8) {
                     &raw mut (*data).textState,
                     &raw mut (*data).var,
                     TRUE,
-                    gText_HaventReceivedGiftOkayToDiscard.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_HaventReceivedGiftOkayToDiscard)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 ) as u32
                 {
                     0 => {
@@ -1677,10 +1760,20 @@ pub(crate) unsafe extern "C" fn Task_MysteryGift(taskId: u8) {
                 *gStringVar2.as_mut_ptr() = EOS;
                 *gStringVar3.as_mut_ptr() = EOS;
                 if (*data).isWonderNews == 0 {
-                    MG_AddMessageTextPrinter(gText_SendingWonderCard.as_ptr().cast_mut());
+                    MG_AddMessageTextPrinter(
+                        (*(&raw const crate::data::strings::gText_SendingWonderCard)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                    );
                     MysterGiftServer_CreateForCard();
                 } else {
-                    MG_AddMessageTextPrinter(gText_SendingWonderNews.as_ptr().cast_mut());
+                    MG_AddMessageTextPrinter(
+                        (*(&raw const crate::data::strings::gText_SendingWonderNews)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                    );
                     MysterGiftServer_CreateForNews();
                 }
                 (*data).state = MG_STATE_SERVER_LINK;
@@ -1722,7 +1815,10 @@ pub(crate) unsafe extern "C" fn Task_MysteryGift(taskId: u8) {
             MG_STATE_CLIENT_ERROR | MG_STATE_SERVER_ERROR => {
                 if PrintMysteryGiftMenuMessage(
                     &raw mut (*data).textState,
-                    gText_CommunicationError.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_CommunicationError)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 ) != 0
                 {
                     (*data).state = MG_STATE_TO_MAIN_MENU;
@@ -1739,11 +1835,10 @@ pub(crate) unsafe extern "C" fn Task_MysteryGift(taskId: u8) {
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMysteryGiftBaseBlock() -> u16 {
-    return 0x1A9;
+pub fn GetMysteryGiftBaseBlock() -> u16 {
+    0x1A9
 }
-pub(crate) unsafe extern "C" fn LoadMysteryGiftTextboxBorder(bgId: u8) {
+unsafe fn LoadMysteryGiftTextboxBorder(bgId: u8) {
     DecompressAndLoadBgGfxUsingHeap(
         bgId,
         sTextboxBorder_Gfx.as_ptr().cast_mut() as *mut c_void,

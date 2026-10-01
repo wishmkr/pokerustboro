@@ -1,9 +1,10 @@
 use crate::ffi::{
     CreateTask, DestroyTask, FuncIsActiveTask, LOCALID_PLAYER, T_TILE_TRANSITION,
-    gSelectedObjectEvent, gSpecialVar_Facing, object_event, object_event_active,
-    object_event_single_movement_active, player_avatar_tile_transition_state, set_task_data,
-    task_data,
+    gSpecialVar_Facing, object_event, object_event_active, object_event_single_movement_active,
+    player_avatar_tile_transition_state, set_task_data, task_data,
 };
+use crate::field_control_avatar::gSelectedObjectEvent;
+use crate::trainer_see::gNoOfApproachingTrainers;
 use core::ptr::addr_of;
 
 /// Task priority shared by every lock task in the original file.
@@ -14,22 +15,86 @@ const T_PLAYER_FROZEN: usize = 0;
 const T_OBJECT_FROZEN: usize = 1;
 const T_OBJECT_ID: usize = 2;
 
-unsafe extern "C" {
-    static mut gNoOfApproachingTrainers: u8;
-
-    fn PlayerFreeze();
-    fn StopPlayerAvatar();
-    fn FreezeObjectEvents();
-    fn FreezeObjectEvent(object_event: *mut u8) -> u8;
-    fn FreezeObjectEventsExceptOne(object_event_id: u8);
-    fn FreezeObjectEventsExceptTwo(object_event_id1: u8, object_event_id2: u8);
-    fn UnfreezeObjectEvents();
-    fn ObjectEventClearHeldMovementIfFinished(object_event: *mut u8) -> u8;
-    fn ObjectEventClearHeldMovementIfActive(object_event: *mut u8);
-    fn ObjectEventFaceOppositeDirection(object_event: *mut u8, direction: u8) -> u8;
-    fn ScriptMovement_UnfreezeObjectEvents();
-    fn GetObjectEventIdByLocalIdAndMap(local_id: u8, map_num: u8, map_group_id: u8) -> u8;
-    fn GetChosenApproachingTrainerObjectEventId(array_id: u8) -> u8;
+/// `PlayerFreeze` with this module's view of its types.
+#[inline]
+unsafe fn PlayerFreeze() {
+    unsafe {
+        crate::field_player_avatar::PlayerFreeze();
+    }
+}
+/// `StopPlayerAvatar` with this module's view of its types.
+#[inline]
+unsafe fn StopPlayerAvatar() {
+    unsafe {
+        crate::field_player_avatar::StopPlayerAvatar();
+    }
+}
+/// `FreezeObjectEvents` with this module's view of its types.
+#[inline]
+unsafe fn FreezeObjectEvents() {
+    unsafe {
+        crate::event_object_movement::FreezeObjectEvents();
+    }
+}
+/// `FreezeObjectEvent` with this module's view of its types.
+#[inline]
+unsafe fn FreezeObjectEvent(a0: *mut u8) -> u8 {
+    unsafe { crate::event_object_movement::FreezeObjectEvent(a0 as _) }
+}
+/// `FreezeObjectEventsExceptOne` with this module's view of its types.
+#[inline]
+unsafe fn FreezeObjectEventsExceptOne(a0: u8) {
+    unsafe {
+        crate::event_object_movement::FreezeObjectEventsExceptOne(a0);
+    }
+}
+/// `FreezeObjectEventsExceptTwo` with this module's view of its types.
+#[inline]
+unsafe fn FreezeObjectEventsExceptTwo(a0: u8, a1: u8) {
+    unsafe {
+        crate::event_object_movement::FreezeObjectEventsExceptTwo(a0, a1);
+    }
+}
+/// `UnfreezeObjectEvents` with this module's view of its types.
+#[inline]
+unsafe fn UnfreezeObjectEvents() {
+    unsafe {
+        crate::event_object_movement::UnfreezeObjectEvents();
+    }
+}
+/// `ObjectEventClearHeldMovementIfFinished` with this module's view of its types.
+#[inline]
+unsafe fn ObjectEventClearHeldMovementIfFinished(a0: *mut u8) -> u8 {
+    unsafe { crate::event_object_movement::ObjectEventClearHeldMovementIfFinished(a0 as _) }
+}
+/// `ObjectEventClearHeldMovementIfActive` with this module's view of its types.
+#[inline]
+unsafe fn ObjectEventClearHeldMovementIfActive(a0: *mut u8) {
+    unsafe {
+        crate::event_object_movement::ObjectEventClearHeldMovementIfActive(a0 as _);
+    }
+}
+/// `ObjectEventFaceOppositeDirection` with this module's view of its types.
+#[inline]
+unsafe fn ObjectEventFaceOppositeDirection(a0: *mut u8, a1: u8) -> u8 {
+    unsafe { crate::event_object_movement::ObjectEventFaceOppositeDirection(a0 as _, a1) }
+}
+/// `ScriptMovement_UnfreezeObjectEvents` with this module's view of its types.
+#[inline]
+unsafe fn ScriptMovement_UnfreezeObjectEvents() {
+    unsafe {
+        crate::script_movement::ScriptMovement_UnfreezeObjectEvents();
+    }
+}
+/// `GetObjectEventIdByLocalIdAndMap` with this module's view of its types.
+#[inline]
+unsafe fn GetObjectEventIdByLocalIdAndMap(a0: u8, a1: u8, a2: u8) -> u8 {
+    unsafe { crate::event_object_movement::GetObjectEventIdByLocalIdAndMap(a0, a1, a2) }
+}
+/// `GetChosenApproachingTrainerObjectEventId` with this module's view of its types.
+#[inline]
+unsafe fn GetChosenApproachingTrainerObjectEventId(a0: u8) -> u8 {
+    unsafe { crate::trainer_see::GetChosenApproachingTrainerObjectEventId(a0) }
 }
 
 #[inline]
@@ -47,12 +112,12 @@ unsafe fn freeze_object_now_if_idle(task_id: u8, object_event_id: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsPlayerStandingStill() -> u8 {
+pub unsafe fn IsPlayerStandingStill() -> u8 {
     u8::from(unsafe { player_avatar_tile_transition_state() } != T_TILE_TRANSITION)
 }
 
 /// Freezes the player once their movement is finished.
-unsafe extern "C" fn task_freeze_player(task_id: u8) {
+unsafe fn task_freeze_player(task_id: u8) {
     if unsafe { IsPlayerStandingStill() } != 0 {
         unsafe { PlayerFreeze() };
         unsafe { DestroyTask(task_id) };
@@ -60,7 +125,7 @@ unsafe extern "C" fn task_freeze_player(task_id: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsFreezePlayerFinished() -> u8 {
+pub unsafe fn IsFreezePlayerFinished() -> u8 {
     if unsafe { FuncIsActiveTask(task_freeze_player) } != 0 {
         0
     } else {
@@ -70,13 +135,13 @@ pub unsafe extern "C" fn IsFreezePlayerFinished() -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreezeObjects_WaitForPlayer() {
+pub unsafe fn FreezeObjects_WaitForPlayer() {
     unsafe { FreezeObjectEvents() };
     let _ = unsafe { CreateTask(task_freeze_player, LOCK_TASK_PRIORITY) };
 }
 
 /// Freezes the selected object and the player once their movement is finished.
-unsafe extern "C" fn task_freeze_selected_object_and_player(task_id: u8) {
+unsafe fn task_freeze_selected_object_and_player(task_id: u8) {
     if unsafe { task_data(task_id, T_PLAYER_FROZEN) } == 0
         && unsafe { IsPlayerStandingStill() } == 1
     {
@@ -100,7 +165,7 @@ unsafe extern "C" fn task_freeze_selected_object_and_player(task_id: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsFreezeSelectedObjectAndPlayerFinished() -> u8 {
+pub unsafe fn IsFreezeSelectedObjectAndPlayerFinished() -> u8 {
     if unsafe { FuncIsActiveTask(task_freeze_selected_object_and_player) } != 0 {
         0
     } else {
@@ -112,7 +177,7 @@ pub unsafe extern "C" fn IsFreezeSelectedObjectAndPlayerFinished() -> u8 {
 /// Freezes every object except the selected one and the player immediately;
 /// those two are frozen once their movement is finished.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreezeObjects_WaitForPlayerAndSelected() {
+pub unsafe fn FreezeObjects_WaitForPlayerAndSelected() {
     let selected = unsafe { addr_of!(gSelectedObjectEvent).read_volatile() };
     unsafe { FreezeObjectEventsExceptOne(selected) };
     let task_id = unsafe { CreateTask(task_freeze_selected_object_and_player, LOCK_TASK_PRIORITY) };
@@ -120,7 +185,7 @@ pub unsafe extern "C" fn FreezeObjects_WaitForPlayerAndSelected() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptUnfreezeObjectEvents() {
+pub unsafe fn ScriptUnfreezeObjectEvents() {
     let player_object_id = unsafe { GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0) };
     let _ =
         unsafe { ObjectEventClearHeldMovementIfFinished(object_event(player_object_id as usize)) };
@@ -129,7 +194,7 @@ pub unsafe extern "C" fn ScriptUnfreezeObjectEvents() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UnionRoom_UnlockPlayerAndChatPartner() {
+pub unsafe fn UnionRoom_UnlockPlayerAndChatPartner() {
     let selected = unsafe { selected_object_event() };
     if unsafe { object_event_active(selected) } {
         let _ = unsafe { ObjectEventClearHeldMovementIfFinished(object_event(selected)) };
@@ -143,21 +208,21 @@ pub unsafe extern "C" fn UnionRoom_UnlockPlayerAndChatPartner() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Script_FacePlayer() {
+pub unsafe fn Script_FacePlayer() {
     let selected = unsafe { selected_object_event() };
     let facing = unsafe { addr_of!(gSpecialVar_Facing).read_volatile() } as u8;
     let _ = unsafe { ObjectEventFaceOppositeDirection(object_event(selected), facing) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Script_ClearHeldMovement() {
+pub unsafe fn Script_ClearHeldMovement() {
     let selected = unsafe { selected_object_event() };
     unsafe { ObjectEventClearHeldMovementIfActive(object_event(selected)) };
 }
 
 /// Freezes the object named in `tObjectId` and the player once their movement
 /// is finished.
-unsafe extern "C" fn task_freeze_object_and_player(task_id: u8) {
+unsafe fn task_freeze_object_and_player(task_id: u8) {
     let object_event_id = unsafe { task_data(task_id, T_OBJECT_ID) } as u8 as usize;
 
     if unsafe { task_data(task_id, T_PLAYER_FROZEN) } == 0
@@ -184,7 +249,7 @@ unsafe extern "C" fn task_freeze_object_and_player(task_id: u8) {
 /// Freezes every object except the player and the approaching trainers
 /// immediately; those are frozen once their movement is finished.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreezeForApproachingTrainers() {
+pub unsafe fn FreezeForApproachingTrainers() {
     let trainer1 = unsafe { GetChosenApproachingTrainerObjectEventId(0) };
 
     if unsafe { addr_of!(gNoOfApproachingTrainers).read_volatile() } == 2 {
@@ -207,7 +272,7 @@ pub unsafe extern "C" fn FreezeForApproachingTrainers() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsFreezeObjectAndPlayerFinished() -> u8 {
+pub unsafe fn IsFreezeObjectAndPlayerFinished() -> u8 {
     if unsafe { FuncIsActiveTask(task_freeze_object_and_player) } != 0 {
         0
     } else {

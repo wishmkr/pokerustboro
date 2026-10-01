@@ -20,8 +20,8 @@ unsafe impl Sync for ListMenuItem {}
 #[derive(Clone, Copy)]
 pub struct ListMenuTemplate {
     pub items: *mut ListMenuItem,
-    pub moveCursorFunc: Option<unsafe extern "C" fn(i32, u8, *mut ListMenu)>,
-    pub itemPrintFunc: Option<unsafe extern "C" fn(u8, u32, u8)>,
+    pub moveCursorFunc: Option<unsafe fn(i32, u8, *mut ListMenu)>,
+    pub itemPrintFunc: Option<unsafe fn(u8, u32, u8)>,
     pub totalItems: u16,
     pub maxShowed: u16,
     pub windowId: u8,

@@ -3,37 +3,197 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::explicit_counter_loop,
+    clippy::missing_transmute_annotations,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::bg::{
+    CopyBgTilemapBufferToVram, ResetBgsAndClearDma3BusyFlags, SetBgAttribute, ShowBg,
+    UnsetBgTilemapBuffer,
+};
 #[allow(unused_imports)]
 use crate::c::*;
+use crate::coins::{GetCoins, HideCoinsWindow, PrintCoinsString, SetCoins, ShowCoinsWindow};
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::ffi::gSpecialVar_0x8004;
+use crate::field_screen_effect::FieldCB_ContinueScriptHandleMusic;
+use crate::gpu_regs::{EnableInterrupts, SetGpuReg};
+use crate::m4a::{
+    gMPlayInfo_SE1, gMPlayInfo_SE2, m4aMPlayPanpotControl, m4aSongNumStart,
+    m4aSongNumStartOrChange, m4aSongNumStop,
+};
+use crate::menu::{
+    ClearStdWindowAndFrame, DecompressAndCopyTileDataToVram, DisplayYesNoMenuDefaultYes,
+    DrawStdWindowFrame, FreeTempTileDataBuffersIfPossible, InitTextBoxGfxAndPrinters,
+    ResetTempTileDataBuffers, malloc_and_decompress,
+};
+use crate::menu_helpers::{
+    DoYesNoFuncWithChoice, ResetAllBgsCoordinates, ResetVramOamAndBgCntRegs,
+    SetVBlankHBlankCallbacksToNull,
+};
+use crate::overworld::{CB2_ReturnToField, GetGameStat, SetGameStat, gFieldCallback};
+use crate::palette::{
+    BeginHardwarePaletteFade, BeginNormalPaletteFade, LoadPalette, ResetPaletteFade,
+    TransferPlttBuffer, UpdatePaletteFade, gPaletteFade,
+};
+use crate::palette::{gPlttBufferFaded, gPlttBufferUnfaded};
+use crate::palette_util::{
+    FillTilemapRect, RouletteFlash_Add, RouletteFlash_Enable, RouletteFlash_Reset,
+    RouletteFlash_Run, RouletteFlash_Stop, SetTilemapRect,
+};
+use crate::pokemon::{GetMonData2, gPlayerParty};
+use crate::random::Random;
+use crate::rtc::{RtcCalcLocalTime, gLocalTime};
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::script::{LockPlayerFieldControls, UnlockPlayerFieldControls};
+use crate::sound::{IsFanfareTaskInactive, IsSEPlaying, PlayCry_Normal, PlayFanfare, PlaySE};
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, FreeOamMatrix, FreeSpriteTilesByTag,
+    LoadOam, ProcessSpriteCopyRequests, ResetSpriteData, gSpriteCoordOffsetX, gSpriteCoordOffsetY,
+};
+use crate::string_util::{gStringVar1, gStringVar4};
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::task::{task_data_ptr, task_func, task_get, task_set, task_set_func};
+use crate::text::DeactivateAllTextPrinters;
+use crate::trig::{Cos2, Sin2};
+use crate::tv::{
+    AlertTVThatPlayerPlayedRoulette, IncrementDailyRouletteUses, TryPutFindThatGamerOnAir,
+};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{CopyWindowToVram, FreeAllWindowBuffers};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `CopyToBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBuffer(a0, a1 as _, a2, a3);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `LoadSpritePalettes` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+    unsafe {
+        crate::sprite::LoadSpritePalettes(a0 as _);
+    }
+}
+/// `LoadSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
+    unsafe { crate::sprite::LoadSpriteSheet(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StringExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringExpandPlaceholders(a0 as _, a1 as _) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const sStillStuck: usize = 0;
+const sStuckOnWheelLeft: usize = 0;
+const sState: usize = 1;
+const tPayout: usize = 1;
+const sSlotMidpointDist: usize = 2;
+const tMultiplier: usize = 2;
+const sBallAngle: usize = 3;
+const sBallDistToCenter: usize = 4;
+const sMonSpriteId: usize = 4;
+const tSelectionId: usize = 4;
+const sBallShadowSpriteId: usize = 5;
+const tWonBet: usize = 5;
+const sBallWheelAngle: usize = 6;
+const sMonShadowSpriteId: usize = 6;
+const tBallNum: usize = 6;
+const tTotalBallNum: usize = 8;
+const tConsecutiveWins: usize = 11;
+const tWinningSquare: usize = 12;
+const tCoins: usize = 13;
 // Data tables (translate with cdata.py): sWheel_Pal sGrid_Tilemap sWheel_Tilemap sBgTemplates sWindowTemplates sGridSelections sRouletteSlots sTableMinBets sRouletteTables sFlashData_Colors sFlashData_PokeIcons sYesNoTable_AcceptMinBet sYesNoTable_KeepPlaying sFiller sShadow_Pal sBall_Pal sBallCounter_Pal sCursor_Pal sCredit_Pal sShroomish_Pal sTaillow_Pal sGridIcons_Pal sWynaut_Pal sAzurill_Pal sSkitty_Pal sMakuhita_Pal sUnused1_Pal sUnused2_Pal sUnused3_Pal sUnused4_Pal sBall_Gfx sBallCounter_Gfx sShroomishTaillow_Gfx sGridIcons_Gfx sWheelIcons_Gfx sShadow_Gfx sCursor_Gfx sSpritePalettes sOam_GridHeader sOam_GridIcon sOam_WheelIcon sAffineAnim_Unused1 sAffineAnims_Unused1 sAffineAnim_Unused2 sAffineAnims_Unused2 sSpriteSheet_WheelIcons sAnim_WheelIcons sAnim_WheelIcon_OrangeWynaut sAnim_WheelIcon_GreenAzurill sAnim_WheelIcon_PurpleSkitty sAnim_WheelIcon_OrangeMakuhita sAnim_WheelIcon_GreenWynaut sAnim_WheelIcon_PurpleAzurill sAnim_WheelIcon_OrangeSkitty sAnim_WheelIcon_GreenMakuhita sAnim_WheelIcon_PurpleWynaut sAnim_WheelIcon_OrangeAzurill sAnim_WheelIcon_GreenSkitty sAnim_WheelIcon_PurpleMakuhita sSpriteSheet_Headers sSpriteSheet_GridIcons sAnim_Headers sAnim_GridIcons sAnim_WynautHeader sAnim_AzurillHeader sAnim_SkittyHeader sAnim_MakuhitaHeader sAnim_OrangeHeader sAnim_GreenHeader sAnim_PurpleHeader sAnim_GridIcon_Wynaut sAnim_GridIcon_Azurill sAnim_GridIcon_Skitty sAnim_GridIcon_Makuhita sSpriteTemplates_PokeHeaders sSpriteTemplates_ColorHeaders sSpriteTemplates_GridIcons sSpriteTemplates_WheelIcons sOam_Credit sOam_CreditDigit sOam_Multiplier sOam_BallCounter sSpriteSheets_Interface sAnim_CreditDigit sAnims_CreditDigit sAnim_Multiplier sAnims_Multiplier sAnim_BallCounter sAnims_BallCounter sSpriteTemplate_Credit sSpriteTemplate_CreditDigit sSpriteTemplate_Multiplier sSpriteTemplate_BallCounter sSpriteTemplate_Cursor sOam_Ball sSpriteSheet_Ball sAnim_Ball_RollFast sAnim_Ball_RollMedium sAnim_Ball_RollSlow sAnim_Ball_StopOnFrame1 sAnim_Ball_StopOnFrame3 sAnim_Ball_StopOnFrame4 sAnim_Ball_Still sAnim_Ball_StopOnFrame2 sAnims_Ball sSpriteTemplate_Ball sOam_WheelCenter sSpriteSheet_WheelCenter sSpriteTemplate_WheelCenter sOam_Shroomish sOam_Taillow sSpriteSheet_ShroomishTaillow sAnim_Shroomish sAnim_Taillow_WingDown_Left sAnim_Taillow_WingDown_Right sAnim_Taillow_FlapSlow_Left sAnim_Taillow_FlapSlow_Right sAnim_Taillow_FlapFast_Left sAnim_Taillow_FlapFast_Right sAnims_Shroomish sAnims_Taillow sSpriteTemplate_Shroomish sSpriteTemplate_Taillow sOam_ShroomishBallShadow sOam_ShroomishShadow sOam_TaillowShadow sSpriteSheet_Shadow sAffineAnim_Unused3 sAffineAnim_TaillowShadow sAffineAnims_Unused3 sAffineAnims_TaillowShadow sAffineAnim_Unused4 sAffineAnims_Unused4 sAnim_ShroomishBallShadow sAnim_UnstickMonShadow sAnims_ShroomishBallShadow sAnims_UnstickMonShadow sSpriteTemplate_ShroomishShadow sSpriteTemplate_TaillowShadow sShroomishShadowAlphas
 
 /// `struct Roulette`
@@ -83,9 +243,9 @@ pub struct Roulette {
     pub filler_1: CArray<u8, 2>,
     pub taskWaitDelay: u16,
     pub taskWaitKey: u16,
-    pub nextTask: Option<unsafe extern "C" fn(u8)>,
+    pub nextTask: Option<unsafe fn(u8)>,
     pub filler_2: CArray<u8, 4>,
-    pub prevTask: Option<unsafe extern "C" fn(u8)>,
+    pub prevTask: Option<unsafe fn(u8)>,
     pub flashUtil: RouletteFlashUtil,
     pub tilemapBuffers: CArray<CArray<u16, 1024>, 7>,
     pub gridTilemap: *mut u16,
@@ -94,11 +254,11 @@ pub struct Roulette {
 impl Roulette {
     #[inline(always)]
     pub fn useTaillow(&self) -> u8 {
-        ((self.bits_3 as u32 >> 0) & 0x1f) as u8
+        ((self.bits_3 as u32) & 0x1f) as u8
     }
     #[inline(always)]
     pub fn set_useTaillow(&mut self, v: u8) {
-        self.bits_3 = (self.bits_3 & !(0x1f << 0)) | ((v as u8 & 0x1f) << 0);
+        self.bits_3 = (self.bits_3 & !0x1f) | (v & 0x1f);
     }
     #[inline(always)]
     pub fn ballStuck(&self) -> u8 {
@@ -106,7 +266,7 @@ impl Roulette {
     }
     #[inline(always)]
     pub fn set_ballStuck(&mut self, v: u8) {
-        self.bits_3 = (self.bits_3 & !(0x1 << 5)) | ((v as u8 & 0x1) << 5);
+        self.bits_3 = (self.bits_3 & !(0x1 << 5)) | ((v & 0x1) << 5);
     }
     #[inline(always)]
     pub fn ballUnstuck(&self) -> u8 {
@@ -114,7 +274,7 @@ impl Roulette {
     }
     #[inline(always)]
     pub fn set_ballUnstuck(&mut self, v: u8) {
-        self.bits_3 = (self.bits_3 & !(0x1 << 6)) | ((v as u8 & 0x1) << 6);
+        self.bits_3 = (self.bits_3 & !(0x1 << 6)) | ((v & 0x1) << 6);
     }
     #[inline(always)]
     pub fn ballRolling(&self) -> u8 {
@@ -122,15 +282,15 @@ impl Roulette {
     }
     #[inline(always)]
     pub fn set_ballRolling(&mut self, v: u8) {
-        self.bits_3 = (self.bits_3 & !(0x1 << 7)) | ((v as u8 & 0x1) << 7);
+        self.bits_3 = (self.bits_3 & !(0x1 << 7)) | ((v & 0x1) << 7);
     }
     #[inline(always)]
     pub fn tableId(&self) -> u8 {
-        ((self.bits_4 as u32 >> 0) & 0x3) as u8
+        ((self.bits_4 as u32) & 0x3) as u8
     }
     #[inline(always)]
     pub fn set_tableId(&mut self, v: u8) {
-        self.bits_4 = (self.bits_4 & !(0x3 << 0)) | ((v as u8 & 0x3) << 0);
+        self.bits_4 = (self.bits_4 & !0x3) | (v & 0x3);
     }
     #[inline(always)]
     pub fn unused(&self) -> u8 {
@@ -138,7 +298,7 @@ impl Roulette {
     }
     #[inline(always)]
     pub fn set_unused(&mut self, v: u8) {
-        self.bits_4 = (self.bits_4 & !(0x1f << 2)) | ((v as u8 & 0x1f) << 2);
+        self.bits_4 = (self.bits_4 & !(0x1f << 2)) | ((v & 0x1f) << 2);
     }
     #[inline(always)]
     pub fn isSpecialRate(&self) -> u8 {
@@ -146,15 +306,15 @@ impl Roulette {
     }
     #[inline(always)]
     pub fn set_isSpecialRate(&mut self, v: u8) {
-        self.bits_4 = (self.bits_4 & !(0x1 << 7)) | ((v as u8 & 0x1) << 7);
+        self.bits_4 = (self.bits_4 & !(0x1 << 7)) | ((v & 0x1) << 7);
     }
     #[inline(always)]
     pub fn curBallNum(&self) -> u8 {
-        ((self.bits_26 as u32 >> 0) & 0xf) as u8
+        ((self.bits_26 as u32) & 0xf) as u8
     }
     #[inline(always)]
     pub fn set_curBallNum(&mut self, v: u8) {
-        self.bits_26 = (self.bits_26 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+        self.bits_26 = (self.bits_26 & !0xf) | (v & 0xf);
     }
     #[inline(always)]
     pub fn unk1(&self) -> u8 {
@@ -162,7 +322,7 @@ impl Roulette {
     }
     #[inline(always)]
     pub fn set_unk1(&mut self, v: u8) {
-        self.bits_26 = (self.bits_26 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+        self.bits_26 = (self.bits_26 & !(0xf << 4)) | ((v & 0xf) << 4);
     }
 }
 
@@ -187,11 +347,11 @@ pub struct GridSelection {
 impl GridSelection {
     #[inline(always)]
     pub fn baseMultiplier(&self) -> u8 {
-        ((self.bits_1 as u32 >> 0) & 0xf) as u8
+        ((self.bits_1 as u32) & 0xf) as u8
     }
     #[inline(always)]
     pub fn set_baseMultiplier(&mut self, v: u8) {
-        self.bits_1 = (self.bits_1 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+        self.bits_1 = (self.bits_1 & !0xf) | (v & 0xf);
     }
     #[inline(always)]
     pub fn column(&self) -> u8 {
@@ -199,7 +359,7 @@ impl GridSelection {
     }
     #[inline(always)]
     pub fn set_column(&mut self, v: u8) {
-        self.bits_1 = (self.bits_1 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+        self.bits_1 = (self.bits_1 & !(0xf << 4)) | ((v & 0xf) << 4);
     }
 }
 
@@ -488,151 +648,50 @@ pub(crate) static mut sRoulette: *mut Roulette = null_mut();
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sTextWindowId: u8 = 0;
 
-unsafe extern "C" {
-    static Roulette_Text_BoardWillBeCleared: CArray<u8, 0>;
-    static Roulette_Text_CoinCaseIsFull: CArray<u8, 0>;
-    static Roulette_Text_ControlsInstruction: CArray<u8, 0>;
-    static Roulette_Text_ItsAHit: CArray<u8, 0>;
-    static Roulette_Text_Jackpot: CArray<u8, 0>;
-    static Roulette_Text_KeepPlaying: CArray<u8, 0>;
-    static Roulette_Text_NoCoinsLeft: CArray<u8, 0>;
-    static Roulette_Text_NotEnoughCoins: CArray<u8, 0>;
-    static Roulette_Text_NothingDoing: CArray<u8, 0>;
-    static Roulette_Text_PlayMinimumWagerIsX: CArray<u8, 0>;
-    static Roulette_Text_SpecialRateTable: CArray<u8, 0>;
-    static Roulette_Text_YouveWonXCoins: CArray<u8, 0>;
-    static mut gDecompressionBuffer: CArray<u8, 16384>;
-    static mut gFieldCallback: Option<unsafe extern "C" fn()>;
-    static mut gLocalTime: Time;
-    static mut gMPlayInfo_SE1: MusicPlayerInfo;
-    static mut gMPlayInfo_SE2: MusicPlayerInfo;
-    static mut gMain: Main;
-    static mut gOamMatrices: CArray<OamMatrix, 32>;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gPlttBufferFaded: CArray<u16, 512>;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static gRouletteMenu_Gfx: CArray<u32, 0>;
-    static gRouletteWheel_Gfx: CArray<u32, 0>;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpriteCoordOffsetX: i16;
-    static mut gSpriteCoordOffsetY: i16;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AlertTVThatPlayerPlayedRoulette(a0: u16);
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginHardwarePaletteFade(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8);
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BuildOamBuffer();
-    fn CB2_ReturnToField();
-    fn ClearStdWindowAndFrame(a0: u8, a1: u8);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn Cos2(a0: u16) -> i16;
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DisplayYesNoMenuDefaultYes();
-    fn DoYesNoFuncWithChoice(a0: u8, a1: *mut YesNoFuncTable);
-    fn DrawStdWindowFrame(a0: u8, a1: u8);
-    fn EnableInterrupts(a0: u16);
-    fn FieldCB_ContinueScriptHandleMusic();
-    fn FillTilemapRect(a0: *mut u16, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeOamMatrix(a0: u8);
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn GetCoins() -> u16;
-    fn GetGameStat(a0: u8) -> u32;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn HideCoinsWindow();
-    fn IncrementDailyRouletteUses();
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitTextBoxGfxAndPrinters();
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsFanfareTaskInactive() -> u8;
-    fn IsSEPlaying() -> u8;
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpritePalettes(a0: *mut SpritePalette);
-    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
-    fn LockPlayerFieldControls();
-    fn PlayCry_Normal(a0: u16, a1: i8);
-    fn PlayFanfare(a0: u16);
-    fn PlaySE(a0: u16);
-    fn PrintCoinsString(a0: u32);
-    fn ProcessSpriteCopyRequests();
-    fn Random() -> u16;
-    fn ResetAllBgsCoordinates();
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn ResetTempTileDataBuffers();
-    fn ResetVramOamAndBgCntRegs();
-    fn RouletteFlash_Add(a0: *mut RouletteFlashUtil, a1: u8, a2: *mut RouletteFlashSettings) -> u8;
-    fn RouletteFlash_Enable(a0: *mut RouletteFlashUtil, a1: u16);
-    fn RouletteFlash_Reset(a0: *mut RouletteFlashUtil);
-    fn RouletteFlash_Run(a0: *mut RouletteFlashUtil);
-    fn RouletteFlash_Stop(a0: *mut RouletteFlashUtil, a1: u16);
-    fn RtcCalcLocalTime();
-    fn RunTasks();
-    fn ScanlineEffect_Stop();
-    fn SetBgAttribute(a0: u8, a1: u8, a2: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetCoins(a0: u16);
-    fn SetGameStat(a0: u8, a1: u32);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetTilemapRect(a0: *mut u16, a1: *mut u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankHBlankCallbacksToNull();
-    fn ShowBg(a0: u8);
-    fn ShowCoinsWindow(a0: u32, a1: u8, a2: u8);
-    fn Sin2(a0: u16) -> i16;
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TransferPlttBuffer();
-    fn TryPutFindThatGamerOnAir(a0: u16);
-    fn UnlockPlayerFieldControls();
-    fn UnsetBgTilemapBuffer(a0: u8);
-    fn UpdatePaletteFade() -> u8;
-    fn m4aMPlayPanpotControl(a0: *mut MusicPlayerInfo, a1: u16, a2: i8);
-    fn m4aSongNumStart(a0: u16);
-    fn m4aSongNumStartOrChange(a0: u16);
-    fn m4aSongNumStop(a0: u16);
-    fn malloc_and_decompress(a0: *mut c_void, a1: *mut u32) -> *mut c_void;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `LZ77UnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn CB2_Roulette() {
+pub(crate) unsafe fn CB2_Roulette() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
@@ -640,7 +699,7 @@ pub(crate) unsafe extern "C" fn CB2_Roulette() {
         RouletteFlash_Run(&raw mut (*sRoulette).flashUtil);
     }
 }
-pub(crate) unsafe extern "C" fn VBlankCB_Roulette() {
+pub(crate) unsafe fn VBlankCB_Roulette() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
@@ -653,15 +712,15 @@ pub(crate) unsafe extern "C" fn VBlankCB_Roulette() {
         {
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(
                         dmaRegs,
                         &raw mut (*sRoulette).tilemapBuffers[2][224] as usize as u32,
                     );
                     volatile_write(
                         dmaRegs.at(1),
-                        (0x6002000 as usize as *mut c_void as *mut u8).at(448) as *mut c_void
-                            as usize as u32,
+                        (0x6002000_usize as *mut c_void as *mut u8).at(448) as *mut c_void as usize
+                            as u32,
                     );
                     volatile_write(dmaRegs.at(2), 0x800001a0);
                     let _ = (dmaRegs.at(2)).read_volatile();
@@ -674,20 +733,19 @@ pub(crate) unsafe extern "C" fn VBlankCB_Roulette() {
         let sw1: i16 = (*sRoulette).selectionRectDrawState;
         let mut fall = false;
         if sw1 == SELECT_STATE_DRAW {
-            fall = true;
             SetBgAttribute(0, BG_ATTR_CHARBASEINDEX, 0);
             ShowBg(0);
             {
                 {
                     {
-                        let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                        let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                         volatile_write(
                             dmaRegs,
                             &raw mut (*sRoulette).tilemapBuffers[0][224] as usize as u32,
                         );
                         volatile_write(
                             dmaRegs.at(1),
-                            (0x600f800 as usize as *mut c_void as *mut u8).at(448) as *mut c_void
+                            (0x600f800_usize as *mut c_void as *mut u8).at(448) as *mut c_void
                                 as usize as u32,
                         );
                         volatile_write(dmaRegs.at(2), 0x800001a0);
@@ -699,18 +757,17 @@ pub(crate) unsafe extern "C" fn VBlankCB_Roulette() {
             break 'l5;
         }
         if sw1 == SELECT_STATE_UPDATE {
-            fall = true;
             {
                 {
                     {
-                        let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                        let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                         volatile_write(
                             dmaRegs,
                             &raw mut (*sRoulette).tilemapBuffers[0][224] as usize as u32,
                         );
                         volatile_write(
                             dmaRegs.at(1),
-                            (0x600f800 as usize as *mut c_void as *mut u8).at(448) as *mut c_void
+                            (0x600f800_usize as *mut c_void as *mut u8).at(448) as *mut c_void
                                 as usize as u32,
                         );
                         volatile_write(dmaRegs.at(2), 0x800001a0);
@@ -730,12 +787,12 @@ pub(crate) unsafe extern "C" fn VBlankCB_Roulette() {
                     volatile_write(&raw mut tmp, 0);
                     {
                         {
-                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                             volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                             volatile_write(
                                 dmaRegs.at(1),
-                                (0x600f800 as usize as *mut c_void as *mut u8).at(448)
-                                    as *mut c_void as usize as u32,
+                                (0x600f800_usize as *mut c_void as *mut u8).at(448) as *mut c_void
+                                    as usize as u32,
                             );
                             volatile_write(dmaRegs.at(2), 0x810001a0);
                             let _ = (dmaRegs.at(2)).read_volatile();
@@ -746,12 +803,11 @@ pub(crate) unsafe extern "C" fn VBlankCB_Roulette() {
             (*sRoulette).selectionRectDrawState = SELECT_STATE_WAIT;
         }
         if fall || sw1 == SELECT_STATE_WAIT {
-            fall = true;
             break 'l5;
         }
     }
 }
-pub(crate) unsafe extern "C" fn InitRouletteBgAndWindows() {
+unsafe fn InitRouletteBgAndWindows() {
     let mut size: u32 = 0;
     sRoulette = AllocZeroed(14720) as *mut Roulette;
     ResetBgsAndClearDma3BusyFlags(0);
@@ -776,7 +832,7 @@ pub(crate) unsafe extern "C" fn InitRouletteBgAndWindows() {
         &raw mut size,
     ) as *mut u16;
 }
-pub(crate) unsafe extern "C" fn FreeRoulette() {
+unsafe fn FreeRoulette() {
     Free((*sRoulette).gridTilemap as *mut c_void);
     (*sRoulette).gridTilemap = null_mut();
     FreeAllWindowBuffers();
@@ -788,9 +844,8 @@ pub(crate) unsafe extern "C" fn FreeRoulette() {
     Free(sRoulette as *mut c_void);
     sRoulette = null_mut();
 }
-pub(crate) unsafe extern "C" fn InitRouletteTableData() {
-    let mut i: u8 = 0;
-    let mut bgColors: CArray<u16, 3> = CArray([10392, 6762, 10392]);
+unsafe fn InitRouletteTableData() {
+    let bgColors: CArray<u16, 3> = CArray([10392, 6762, 10392]);
     (*sRoulette).set_tableId(gSpecialVar_0x8004 as u8 & 1);
     if gSpecialVar_0x8004 as i32 & ROULETTE_SPECIAL_RATE != 0 {
         (*sRoulette).set_isSpecialRate(TRUE);
@@ -824,7 +879,7 @@ pub(crate) unsafe extern "C" fn InitRouletteTableData() {
         };
     }
     RouletteFlash_Reset(&raw mut (*sRoulette).flashUtil);
-    i = 0;
+    let mut i: u8 = 0;
     while i < 13 {
         RouletteFlash_Add(
             &raw mut (*sRoulette).flashUtil,
@@ -833,8 +888,7 @@ pub(crate) unsafe extern "C" fn InitRouletteTableData() {
         );
         i += 1;
     }
-    i = 0;
-    while i < PARTY_SIZE as u8 {
+    for i in 0..(PARTY_SIZE as u8) {
         match GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) {
             SPECIES_SHROOMISH => {
                 (*sRoulette).partySpeciesFlags |= HAS_SHROOMISH;
@@ -844,11 +898,10 @@ pub(crate) unsafe extern "C" fn InitRouletteTableData() {
             }
             _ => {}
         }
-        i += 1;
     }
     RtcCalcLocalTime();
 }
-pub(crate) unsafe extern "C" fn CB2_LoadRoulette() {
+pub(crate) unsafe fn CB2_LoadRoulette() {
     let mut taskId: u8 = 0;
     match gMain.state {
         0 => {
@@ -874,14 +927,18 @@ pub(crate) unsafe extern "C" fn CB2_LoadRoulette() {
             LoadPalette((&raw const *sWheel_Pal).cast_mut() as *mut c_void, 0, 448);
             DecompressAndCopyTileDataToVram(
                 1,
-                gRouletteMenu_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gRouletteMenu_Gfx).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0,
                 0,
                 0,
             );
             DecompressAndCopyTileDataToVram(
                 2,
-                gRouletteWheel_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gRouletteWheel_Gfx).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0,
                 0,
                 0,
@@ -914,7 +971,9 @@ pub(crate) unsafe extern "C" fn CB2_LoadRoulette() {
             AddTextPrinterParameterized(
                 sTextWindowId,
                 FONT_NORMAL,
-                Roulette_Text_ControlsInstruction.as_ptr().cast_mut(),
+                (*crate::asmdata::Roulette_Text_ControlsInstruction.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 0,
                 1,
                 TEXT_SKIP_DRAW,
@@ -940,8 +999,8 @@ pub(crate) unsafe extern "C" fn CB2_LoadRoulette() {
                 (*sRoulette).playTaskId = CreateTask(Some(Task_StartPlaying), 0);
                 (*sRoulette).playTaskId
             };
-            gTasks[taskId].data[6] = BALLS_PER_ROUND as i16;
-            gTasks[taskId].data[13] = GetCoins() as i16;
+            task_set(taskId, tBallNum, BALLS_PER_ROUND as i16);
+            task_set(taskId, tCoins, GetCoins() as i16);
             AlertTVThatPlayerPlayedRoulette(GetCoins());
             (*sRoulette).spinTaskId = CreateTask(Some(Task_SpinWheel), 1);
             SetMainCallback2(Some(CB2_Roulette));
@@ -951,9 +1010,7 @@ pub(crate) unsafe extern "C" fn CB2_LoadRoulette() {
     }
     gMain.state += 1;
 }
-pub(crate) unsafe extern "C" fn Task_SpinWheel(taskId: u8) {
-    let mut sin: i16 = 0;
-    let mut cos: i16 = 0;
+pub(crate) unsafe fn Task_SpinWheel(taskId: u8) {
     if ({
         let t1 = (*sRoulette).wheelDelayTimer;
         (*sRoulette).wheelDelayTimer += 1;
@@ -969,9 +1026,9 @@ pub(crate) unsafe extern "C" fn Task_SpinWheel(taskId: u8) {
             (*sRoulette).wheelAngle = 360 - (*sRoulette).wheelSpeed as i16;
         }
     }
-    sin = Sin2((*sRoulette).wheelAngle as u16);
-    cos = Cos2((*sRoulette).wheelAngle as u16);
-    sin = sin / 16;
+    let mut sin: i16 = Sin2((*sRoulette).wheelAngle as u16);
+    let cos: i16 = Cos2((*sRoulette).wheelAngle as u16);
+    sin /= 16;
     (*sRoulette).wheelRotation.a = {
         (*sRoulette).wheelRotation.d = cos / 16;
         (*sRoulette).wheelRotation.d
@@ -979,11 +1036,11 @@ pub(crate) unsafe extern "C" fn Task_SpinWheel(taskId: u8) {
     (*sRoulette).wheelRotation.b = sin;
     (*sRoulette).wheelRotation.c = -sin;
 }
-pub(crate) unsafe extern "C" fn Task_StartPlaying(taskId: u8) {
+pub(crate) unsafe fn Task_StartPlaying(taskId: u8) {
     if UpdatePaletteFade() == 0 {
         SetGpuReg(REG_OFFSET_BLDCNT, 9216);
         SetGpuReg(REG_OFFSET_BLDALPHA, 2056);
-        gTasks[taskId].data[6] = 0;
+        task_set(taskId, tBallNum, 0);
         ResetBallDataForNewSpin(taskId);
         ResetHits();
         HideWheelBalls();
@@ -992,13 +1049,15 @@ pub(crate) unsafe extern "C" fn Task_StartPlaying(taskId: u8) {
         StartTaskAfterDelayOrInput(taskId, Some(Task_ContinuePlaying), NO_DELAY, 3);
     }
 }
-pub(crate) unsafe extern "C" fn Task_AskKeepPlaying(taskId: u8) {
+pub(crate) unsafe fn Task_AskKeepPlaying(taskId: u8) {
     DisplayYesNoMenuDefaultYes();
     DrawStdWindowFrame(sTextWindowId, FALSE);
     AddTextPrinterParameterized(
         sTextWindowId,
         FONT_NORMAL,
-        Roulette_Text_KeepPlaying.as_ptr().cast_mut(),
+        (*crate::asmdata::Roulette_Text_KeepPlaying.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         TEXT_SKIP_DRAW,
@@ -1007,15 +1066,15 @@ pub(crate) unsafe extern "C" fn Task_AskKeepPlaying(taskId: u8) {
     CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
     DoYesNoFuncWithChoice(taskId, (&raw const *sYesNoTable_KeepPlaying).cast_mut());
 }
-pub(crate) unsafe extern "C" fn Task_ContinuePlaying(taskId: u8) {
+pub(crate) unsafe fn Task_ContinuePlaying(taskId: u8) {
     ClearStdWindowAndFrame(0, TRUE);
-    gTasks[taskId].func = Some(Task_SelectFirstEmptySquare);
+    task_set_func(taskId, Some(Task_SelectFirstEmptySquare));
 }
-pub(crate) unsafe extern "C" fn Task_StopPlaying(taskId: u8) {
+pub(crate) unsafe fn Task_StopPlaying(taskId: u8) {
     DestroyTask((*sRoulette).spinTaskId);
     ExitRoulette(taskId);
 }
-pub(crate) unsafe extern "C" fn UpdateGridSelectionRect(selectionId: u8) {
+unsafe fn UpdateGridSelectionRect(selectionId: u8) {
     let mut temp0: u8 = 0;
     let mut temp1: u8 = 0;
     match selectionId {
@@ -1061,26 +1120,24 @@ pub(crate) unsafe extern "C" fn UpdateGridSelectionRect(selectionId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn UpdateGridSelection(taskId: u8) {
-    SetMultiplierSprite(gTasks[taskId].data[4] as u8);
-    UpdateGridSelectionRect(gTasks[taskId].data[4] as u8);
+unsafe fn UpdateGridSelection(taskId: u8) {
+    SetMultiplierSprite(task_get(taskId, tSelectionId) as u8);
+    UpdateGridSelectionRect(task_get(taskId, tSelectionId) as u8);
 }
-pub(crate) unsafe extern "C" fn Task_StartHandleBetGridInput(taskId: u8) {
+pub(crate) unsafe fn Task_StartHandleBetGridInput(taskId: u8) {
     (*sRoulette).selectionRectDrawState = SELECT_STATE_DRAW;
-    UpdateGridSelectionRect(gTasks[taskId].data[4] as u8);
+    UpdateGridSelectionRect(task_get(taskId, tSelectionId) as u8);
     (*sRoulette).wheelDelay = 2;
     (*sRoulette).wheelDelayTimer = 0;
-    gTasks[taskId].func = Some(Task_HandleBetGridInput);
+    task_set_func(taskId, Some(Task_HandleBetGridInput));
 }
-pub(crate) unsafe extern "C" fn Task_SelectFirstEmptySquare(taskId: u8) {
+pub(crate) unsafe fn Task_SelectFirstEmptySquare(taskId: u8) {
     let mut i: i16 = 0;
     if (*sRoulette).hitFlags & F_ORANGE_ROW != 0 {
-        i = SQU_GREEN_WYNAUT;
-        while i < SQU_GREEN_MAKUHITA {
+        for i in SQU_GREEN_WYNAUT..SQU_GREEN_MAKUHITA {
             if (*sRoulette).hitFlags & sGridSelections[i].flag == 0 {
                 break;
             }
-            i += 1;
         }
     } else {
         i = SQU_ORANGE_WYNAUT;
@@ -1091,19 +1148,19 @@ pub(crate) unsafe extern "C" fn Task_SelectFirstEmptySquare(taskId: u8) {
             i += 1;
         }
     }
-    gTasks[taskId].data[4] = i;
+    task_set(taskId, tSelectionId, i);
     ResetBallDataForNewSpin(taskId);
-    DrawGridBackground(gTasks[taskId].data[4] as u8);
-    SetMultiplierSprite(gTasks[taskId].data[4] as u8);
-    FlashSelectionOnWheel(gTasks[taskId].data[4] as u8);
-    gTasks[taskId].data[1] = 0;
-    gTasks[taskId].func = Some(Task_StartHandleBetGridInput);
+    DrawGridBackground(task_get(taskId, tSelectionId) as u8);
+    SetMultiplierSprite(task_get(taskId, tSelectionId) as u8);
+    FlashSelectionOnWheel(task_get(taskId, tSelectionId) as u8);
+    task_set(taskId, 1, 0);
+    task_set_func(taskId, Some(Task_StartHandleBetGridInput));
 }
-pub(crate) unsafe extern "C" fn CanMoveSelectionInDir(selectionId: *mut i16, dir: u8) -> u8 {
+unsafe fn CanMoveSelectionInDir(selectionId: *mut i16, dir: u8) -> u8 {
     let mut temp1: i8 = 0;
     let mut temp: i8 = 0;
-    let mut moveOffsets: CArray<i8, 4> = CArray([-5, 5, -1, 1]);
-    let mut originalSelection: i8 = *selectionId as i8;
+    let moveOffsets: CArray<i8, 4> = CArray([-5, 5, -1, 1]);
+    let originalSelection: i8 = *selectionId as i8;
     match dir {
         0 | 1 => {
             temp1 = (*selectionId % 5) as i8;
@@ -1131,9 +1188,9 @@ pub(crate) unsafe extern "C" fn CanMoveSelectionInDir(selectionId: *mut i16, dir
     if *selectionId != originalSelection as i16 {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn ProcessBetGridInput(taskId: u8) {
+unsafe fn ProcessBetGridInput(taskId: u8) {
     let mut headerOffset: u8 = 0;
     let mut dirPressed: u8 = FALSE;
     if (gMain.newKeys as i32 & DPAD_UP == 0
@@ -1141,31 +1198,30 @@ pub(crate) unsafe extern "C" fn ProcessBetGridInput(taskId: u8) {
             dirPressed = TRUE;
             dirPressed
         }) != 0
-            && CanMoveSelectionInDir(&raw mut gTasks[taskId].data[4], 0) != 0)
+            && CanMoveSelectionInDir(task_data_ptr(taskId, tSelectionId), 0) != 0)
         && (gMain.newKeys as i32 & DPAD_DOWN == 0
             || ({
                 dirPressed = 1;
                 dirPressed
             }) != 0
-                && CanMoveSelectionInDir(&raw mut gTasks[taskId].data[4], 1) != 0)
+                && CanMoveSelectionInDir(task_data_ptr(taskId, tSelectionId), 1) != 0)
         && (gMain.newKeys as i32 & DPAD_LEFT == 0
             || ({
                 dirPressed = TRUE;
                 dirPressed
             }) != 0
-                && CanMoveSelectionInDir(&raw mut gTasks[taskId].data[4], 2) != 0)
+                && CanMoveSelectionInDir(task_data_ptr(taskId, tSelectionId), 2) != 0)
         && (gMain.newKeys as i32 & DPAD_RIGHT == 0
             || ({
                 dirPressed = TRUE;
                 dirPressed
             }) != 0
-                && CanMoveSelectionInDir(&raw mut gTasks[taskId].data[4], 3) != 0)
+                && CanMoveSelectionInDir(task_data_ptr(taskId, tSelectionId), 3) != 0)
         && dirPressed != 0
     {
-        let mut i: u8 = 0;
-        DrawGridBackground(gTasks[taskId].data[4] as u8);
+        DrawGridBackground(task_get(taskId, tSelectionId) as u8);
         UpdateGridSelection(taskId);
-        gTasks[taskId].data[1] = 0;
+        task_set(taskId, 1, 0);
         PlaySE(SE_SELECT);
         RouletteFlash_Stop(&raw mut (*sRoulette).flashUtil, 0xFFFF);
         (*sRoulette).flashUtil.palettes[13].set_available({
@@ -1175,9 +1231,8 @@ pub(crate) unsafe extern "C" fn ProcessBetGridInput(taskId: u8) {
             });
             (*sRoulette).flashUtil.palettes[14].available()
         });
-        FlashSelectionOnWheel(gTasks[taskId].data[4] as u8);
-        i = 0;
-        while i < NUM_BOARD_POKES {
+        FlashSelectionOnWheel(task_get(taskId, tSelectionId) as u8);
+        for i in 0..NUM_BOARD_POKES {
             gSprites[(*sRoulette).spriteIds[i as i32 + SPR_POKE_HEADER_1]]
                 .oam
                 .set_tileNum(
@@ -1185,12 +1240,11 @@ pub(crate) unsafe extern "C" fn ProcessBetGridInput(taskId: u8) {
                         + (*(*gSprites[(*sRoulette).spriteIds[i as i32 + SPR_POKE_HEADER_1]].anims))
                             .r#type as u16,
                 );
-            i += 1;
         }
-        if gTasks[taskId].data[4] as u16 as i32 - 1 < COL_MAKUHITA as i32
-            && (*sRoulette).hitFlags & sGridSelections[gTasks[taskId].data[4]].flag == 0
+        if task_get(taskId, tSelectionId) as u16 as i32 - 1 < COL_MAKUHITA as i32
+            && (*sRoulette).hitFlags & sGridSelections[task_get(taskId, tSelectionId)].flag == 0
         {
-            headerOffset = gTasks[taskId].data[4] as u8 - 1;
+            headerOffset = task_get(taskId, tSelectionId) as u8 - 1;
             gSprites[(*sRoulette).spriteIds[headerOffset as i32 + SPR_POKE_HEADER_1]]
                 .oam
                 .set_tileNum(
@@ -1205,7 +1259,7 @@ pub(crate) unsafe extern "C" fn ProcessBetGridInput(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_StartSpin(taskId: u8) {
+pub(crate) unsafe fn Task_StartSpin(taskId: u8) {
     IncrementDailyRouletteUses();
     (*sRoulette).selectionRectDrawState = SELECT_STATE_ERASE;
     if (*sRoulette).minBet == 1 {
@@ -1214,59 +1268,66 @@ pub(crate) unsafe extern "C" fn Task_StartSpin(taskId: u8) {
         (*sRoulette).wheelDelay = 0;
     }
     (*sRoulette).wheelDelayTimer = 0;
-    gTasks[taskId].data[1] = 32;
-    gTasks[taskId].func = Some(Task_SlideGridOffscreen);
+    task_set(taskId, 1, 32);
+    task_set_func(taskId, Some(Task_SlideGridOffscreen));
 }
-pub(crate) unsafe extern "C" fn Task_PlaceBet(taskId: u8) {
-    (*sRoulette).betSelection[(*sRoulette).curBallNum()] = gTasks[taskId].data[4] as u8;
-    gTasks[taskId].data[2] =
-        GetMultiplier((*sRoulette).betSelection[(*sRoulette).curBallNum()]) as i16;
+pub(crate) unsafe fn Task_PlaceBet(taskId: u8) {
+    (*sRoulette).betSelection[(*sRoulette).curBallNum()] = task_get(taskId, tSelectionId) as u8;
+    task_set(
+        taskId,
+        tMultiplier,
+        GetMultiplier((*sRoulette).betSelection[(*sRoulette).curBallNum()]) as i16,
+    );
     SetMultiplierSprite((*sRoulette).betSelection[(*sRoulette).curBallNum()]);
     if ({
-        gTasks[taskId].data[13] -= (*sRoulette).minBet as i16;
-        gTasks[taskId].data[13]
+        task_set(
+            taskId,
+            tCoins,
+            task_get(taskId, tCoins) - ((*sRoulette).minBet as i16),
+        );
+        task_get(taskId, tCoins)
     }) < 0
     {
-        gTasks[taskId].data[13] = 0;
+        task_set(taskId, tCoins, 0);
     }
-    SetCreditDigits(gTasks[taskId].data[13] as u16);
-    gTasks[taskId].func = Some(Task_StartSpin);
+    SetCreditDigits(task_get(taskId, tCoins) as u16);
+    task_set_func(taskId, Some(Task_StartSpin));
 }
-pub(crate) unsafe extern "C" fn Task_HandleBetGridInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandleBetGridInput(taskId: u8) {
     ProcessBetGridInput(taskId);
-    match gTasks[taskId].data[1] {
+    match task_get(taskId, 1) {
         0 => {
-            UpdateGridSelectionRect(gTasks[taskId].data[4] as u8);
-            gTasks[taskId].data[1] += 1;
+            UpdateGridSelectionRect(task_get(taskId, tSelectionId) as u8);
+            task_set(taskId, 1, task_get(taskId, 1) + 1);
         }
         30 => {
             UpdateGridSelectionRect(SELECTION_NONE);
-            gTasks[taskId].data[1] += 1;
+            task_set(taskId, 1, task_get(taskId, 1) + 1);
         }
         59 => {
-            gTasks[taskId].data[1] = 0;
+            task_set(taskId, 1, 0);
         }
         _ => {
-            gTasks[taskId].data[1] += 1;
+            task_set(taskId, 1, task_get(taskId, 1) + 1);
         }
     }
     if gMain.newKeys as i32 & A_BUTTON != 0 {
-        if (*sRoulette).hitFlags & sGridSelections[gTasks[taskId].data[4]].flag != 0 {
+        if (*sRoulette).hitFlags & sGridSelections[task_get(taskId, tSelectionId)].flag != 0 {
             PlaySE(SE_BOO);
         } else {
             m4aSongNumStart(SE_SHOP);
-            gTasks[taskId].func = Some(Task_PlaceBet);
+            task_set_func(taskId, Some(Task_PlaceBet));
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_SlideGridOffscreen(taskId: u8) {
+pub(crate) unsafe fn Task_SlideGridOffscreen(taskId: u8) {
     if ({
-        let t1 = gTasks[taskId].data[1];
-        gTasks[taskId].data[1] -= 1;
+        let t1 = task_get(taskId, 1);
+        task_set(taskId, 1, task_get(taskId, 1) - 1);
         t1
     }) > 0
     {
-        if gTasks[taskId].data[1] > 2 {
+        if task_get(taskId, 1) > 2 {
             gSpriteCoordOffsetX += 2;
         }
         if ({
@@ -1275,16 +1336,16 @@ pub(crate) unsafe extern "C" fn Task_SlideGridOffscreen(taskId: u8) {
         }) == 104
         {
             gSprites[(*sRoulette).spriteIds[25]].callback =
-                Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite));
+                Some(SpriteCallbackDummy as unsafe fn(*mut Sprite));
         }
     } else {
         ShowHideGridIcons(1, 255);
         ShowHideGridBalls(1, 255);
-        gTasks[taskId].func = Some(Task_InitBallRoll);
-        gTasks[taskId].data[1] = 0;
+        task_set_func(taskId, Some(Task_InitBallRoll));
+        task_set(taskId, 1, 0);
     }
 }
-pub(crate) unsafe extern "C" fn GetRandomForBallTravelDistance(ballNum: u16, rand: u16) -> u8 {
+unsafe fn GetRandomForBallTravelDistance(ballNum: u16, rand: u16) -> u8 {
     match (*sRoulette).partySpeciesFlags {
         HAS_SHROOMISH | HAS_TAILLOW => {
             if gLocalTime.hours > 3 && gLocalTime.hours < 10 {
@@ -1342,20 +1403,16 @@ pub(crate) unsafe extern "C" fn GetRandomForBallTravelDistance(ballNum: u16, ran
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn Task_InitBallRoll(taskId: u8) {
-    let mut randTravelMod: u8 = 0;
-    let mut randTravelDist: i8 = 0;
+pub(crate) unsafe fn Task_InitBallRoll(taskId: u8) {
     let mut startAngleId: i8 = 0;
     let mut travelDist: u16 = 0;
-    let mut rand: u16 = 0;
-    let mut randmod: u16 = 0;
-    let mut startAngles: CArray<u16, 4> = CArray([0, 180, 90, 270]);
-    rand = Random();
-    randmod = (rand as i32 % 100) as u16;
-    (*sRoulette).curBallSpriteId = gTasks[taskId].data[6] as u8;
+    let startAngles: CArray<u16, 4> = CArray([0, 180, 90, 270]);
+    let rand: u16 = Random();
+    let randmod: u16 = (rand as i32 % 100) as u16;
+    (*sRoulette).curBallSpriteId = task_get(taskId, tBallNum) as u8;
     (*sRoulette).ballState = {
         (*sRoulette).hitSlot = {
             (*sRoulette).stuckHitSlot = 0;
@@ -1363,8 +1420,9 @@ pub(crate) unsafe extern "C" fn Task_InitBallRoll(taskId: u8) {
         };
         (*sRoulette).hitSlot
     };
-    randTravelMod = GetRandomForBallTravelDistance(gTasks[taskId].data[8] as u16, rand);
-    randTravelDist =
+    let randTravelMod: u8 =
+        GetRandomForBallTravelDistance(task_get(taskId, tTotalBallNum) as u16, rand);
+    let randTravelDist: i8 =
         rem_i32(rand as i32, randTravelMod as i32) as i8 - (randTravelMod as i32 / 2) as i8;
     if gLocalTime.hours < 13 {
         startAngleId = 0;
@@ -1387,31 +1445,30 @@ pub(crate) unsafe extern "C" fn Task_InitBallRoll(taskId: u8) {
             f += 65536.0;
         }
         f
-    }) as f32
-        / 5.0f32 as f32) as u16;
+    }) / 5_f32) as u16;
     (*sRoulette).ballTravelDistFast = travelDist as i16 * 3;
     (*sRoulette).ballTravelDistSlow = {
         (*sRoulette).ballTravelDistMed = travelDist;
         (*sRoulette).ballTravelDistMed
     };
-    (*sRoulette).ballAngle = ({
+    (*sRoulette).ballAngle = {
         let v2: i16 = startAngles[(rand as i32 & 1) + startAngleId as i32] as i16;
         let mut f = v2 as f32;
         if v2 < 0 {
             f += 65536.0;
         }
         f
-    }) as f32;
-    (*sRoulette).ballAngleSpeed = ({
+    };
+    (*sRoulette).ballAngleSpeed = {
         let v3: i16 = sRouletteTables[(*sRoulette).tableId()].ballSpeed as i16;
         let mut f = v3 as f32;
         if v3 < 0 {
             f += 65536.0;
         }
         f
-    }) as f32;
-    (*sRoulette).ballAngleAccel = ((((*sRoulette).ballAngleSpeed as f32 * 0.5f32 as f32) as f32
-        - (*sRoulette).ballAngleSpeed as f32) as f32
+    };
+    (*sRoulette).ballAngleAccel = (((*sRoulette).ballAngleSpeed * 0_f32)
+        - (*sRoulette).ballAngleSpeed)
         / ({
             let v4: i16 = (*sRoulette).ballTravelDistFast;
             let mut f = v4 as f32;
@@ -1419,10 +1476,10 @@ pub(crate) unsafe extern "C" fn Task_InitBallRoll(taskId: u8) {
                 f += 65536.0;
             }
             f
-        }) as f32) as f32;
-    (*sRoulette).ballDistToCenter = 68.0f32 as f32;
-    (*sRoulette).ballFallAccel = 0.0f32 as f32;
-    (*sRoulette).ballFallSpeed = -(8.0f32 as f32
+        });
+    (*sRoulette).ballDistToCenter = 68_f32;
+    (*sRoulette).ballFallAccel = 0_f32;
+    (*sRoulette).ballFallSpeed = -(8_f32
         / ({
             let v5: i16 = (*sRoulette).ballTravelDistFast;
             let mut f = v5 as f32;
@@ -1430,21 +1487,21 @@ pub(crate) unsafe extern "C" fn Task_InitBallRoll(taskId: u8) {
                 f += 65536.0;
             }
             f
-        }) as f32) as f32;
-    (*sRoulette).varA0 = 36.0f32 as f32;
-    gTasks[taskId].func = Some(Task_RollBall);
+        }));
+    (*sRoulette).varA0 = 36_f32;
+    task_set_func(taskId, Some(Task_RollBall));
 }
-pub(crate) unsafe extern "C" fn Task_RollBall(taskId: u8) {
+pub(crate) unsafe fn Task_RollBall(taskId: u8) {
     (*sRoulette).set_ballRolling(TRUE);
     (*sRoulette).ball = &raw mut gSprites[(*sRoulette).spriteIds[(*sRoulette).curBallSpriteId]];
     (*(*sRoulette).ball).callback = Some(SpriteCB_RollBall_Start);
-    gTasks[taskId].data[6] += 1;
-    gTasks[taskId].data[8] += 1;
-    SetBallCounterNumLeft(BALLS_PER_ROUND - gTasks[taskId].data[6] as u8);
+    task_set(taskId, tBallNum, task_get(taskId, tBallNum) + 1);
+    task_set(taskId, tTotalBallNum, task_get(taskId, tTotalBallNum) + 1);
+    SetBallCounterNumLeft(BALLS_PER_ROUND - task_get(taskId, tBallNum) as u8);
     m4aSongNumStart(SE_ROULETTE_BALL);
-    gTasks[taskId].func = Some(Task_RecordBallHit);
+    task_set_func(taskId, Some(Task_RecordBallHit));
 }
-pub(crate) unsafe extern "C" fn Task_RecordBallHit(taskId: u8) {
+pub(crate) unsafe fn Task_RecordBallHit(taskId: u8) {
     if (*sRoulette).ballState != BALL_STATE_ROLLING {
         if (*sRoulette).ballStuck() != 0 {
             if (*sRoulette).ballUnstuck() != 0 {
@@ -1452,39 +1509,39 @@ pub(crate) unsafe extern "C" fn Task_RecordBallHit(taskId: u8) {
                 (*sRoulette).set_ballStuck(FALSE);
             }
         } else {
-            if gTasks[taskId].data[1] == 0 {
-                let mut won: u8 = IsHitInBetSelection(
+            if task_get(taskId, 1) == 0 {
+                let won: u8 = IsHitInBetSelection(
                     RecordHit(taskId, (*sRoulette).hitSlot),
                     (*sRoulette).betSelection[(*sRoulette).curBallNum()],
                 );
-                gTasks[taskId].data[5] = won as i16;
+                task_set(taskId, tWonBet, won as i16);
                 if won == TRUE {
                     RouletteFlash_Enable(&raw mut (*sRoulette).flashUtil, F_FLASH_OUTER_EDGES);
                 }
             }
-            if gTasks[taskId].data[1] <= 60 {
+            if task_get(taskId, 1) <= 60 {
                 if gMain.newKeys as i32 & A_BUTTON != 0 {
-                    gTasks[taskId].data[1] = 60;
+                    task_set(taskId, 1, 60);
                 }
-                gTasks[taskId].data[1] += 1;
+                task_set(taskId, 1, task_get(taskId, 1) + 1);
             } else {
                 DrawGridBackground((*sRoulette).betSelection[(*sRoulette).curBallNum()]);
-                ShowHideGridIcons(FALSE, gTasks[taskId].data[12] as u8);
-                ShowHideGridBalls(FALSE, gTasks[taskId].data[6] as u8 - 1);
-                gTasks[taskId].data[1] = 32;
-                gTasks[taskId].func = Some(Task_SlideGridOnscreen);
+                ShowHideGridIcons(FALSE, task_get(taskId, tWinningSquare) as u8);
+                ShowHideGridBalls(FALSE, task_get(taskId, tBallNum) as u8 - 1);
+                task_set(taskId, 1, 32);
+                task_set_func(taskId, Some(Task_SlideGridOnscreen));
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_SlideGridOnscreen(taskId: u8) {
+pub(crate) unsafe fn Task_SlideGridOnscreen(taskId: u8) {
     if ({
-        let t1 = gTasks[taskId].data[1];
-        gTasks[taskId].data[1] -= 1;
+        let t1 = task_get(taskId, 1);
+        task_set(taskId, 1, task_get(taskId, 1) - 1);
         t1
     }) > 0
     {
-        if gTasks[taskId].data[1] > 2 {
+        if task_get(taskId, 1) > 2 {
             gSpriteCoordOffsetX -= 2;
         }
         if ({
@@ -1495,30 +1552,30 @@ pub(crate) unsafe extern "C" fn Task_SlideGridOnscreen(taskId: u8) {
             gSprites[(*sRoulette).spriteIds[25]].callback = Some(SpriteCB_GridSquare);
         }
     } else {
-        ShowHideWinSlotCursor(gTasks[taskId].data[12] as u8);
-        if gTasks[taskId].data[5] == TRUE as i16 {
-            gTasks[taskId].data[1] = 121;
+        ShowHideWinSlotCursor(task_get(taskId, tWinningSquare) as u8);
+        if task_get(taskId, tWonBet) == TRUE as i16 {
+            task_set(taskId, 1, 121);
         } else {
-            gTasks[taskId].data[1] = 61;
+            task_set(taskId, 1, 61);
         }
-        gTasks[taskId].func = Some(Task_FlashBallOnWinningSquare);
+        task_set_func(taskId, Some(Task_FlashBallOnWinningSquare));
     }
 }
-pub(crate) unsafe extern "C" fn Task_FlashBallOnWinningSquare(taskId: u8) {
+pub(crate) unsafe fn Task_FlashBallOnWinningSquare(taskId: u8) {
     if ({
-        let t1 = gTasks[taskId].data[1];
-        gTasks[taskId].data[1] -= 1;
+        let t1 = task_get(taskId, 1);
+        task_set(taskId, 1, task_get(taskId, 1) - 1);
         t1
     }) > 1
     {
-        match gTasks[taskId].data[1] % 16 {
+        match task_get(taskId, 1) % 16 {
             8 => {
                 ShowHideGridIcons(FALSE, 255);
                 ShowHideGridBalls(FALSE, 255);
             }
             0 => {
-                ShowHideGridIcons(FALSE, gTasks[taskId].data[12] as u8);
-                ShowHideGridBalls(FALSE, gTasks[taskId].data[6] as u8 - 1);
+                ShowHideGridIcons(FALSE, task_get(taskId, tWinningSquare) as u8);
+                ShowHideGridBalls(FALSE, task_get(taskId, tBallNum) as u8 - 1);
             }
             _ => {}
         }
@@ -1526,20 +1583,24 @@ pub(crate) unsafe extern "C" fn Task_FlashBallOnWinningSquare(taskId: u8) {
         StartTaskAfterDelayOrInput(taskId, Some(Task_PrintSpinResult), 30, 0);
     }
 }
-pub(crate) unsafe extern "C" fn Task_TryIncrementWins(taskId: u8) {
-    match gTasks[taskId].data[5] {
+pub(crate) unsafe fn Task_TryIncrementWins(taskId: u8) {
+    match task_get(taskId, tWonBet) {
         1 | 2 => {
             if IsFanfareTaskInactive() != 0 {
-                let mut wins: u32 = GetGameStat(GAME_STAT_CONSECUTIVE_ROULETTE_WINS);
+                let wins: u32 = GetGameStat(GAME_STAT_CONSECUTIVE_ROULETTE_WINS);
                 if wins
                     < ({
-                        gTasks[taskId].data[11] += 1;
-                        gTasks[taskId].data[11]
+                        task_set(
+                            taskId,
+                            tConsecutiveWins,
+                            task_get(taskId, tConsecutiveWins) + 1,
+                        );
+                        task_get(taskId, tConsecutiveWins)
                     }) as u32
                 {
                     SetGameStat(
                         GAME_STAT_CONSECUTIVE_ROULETTE_WINS,
-                        gTasks[taskId].data[11] as u32,
+                        task_get(taskId, tConsecutiveWins) as u32,
                     );
                 }
                 StartTaskAfterDelayOrInput(taskId, Some(Task_PrintPayout), NO_DELAY, 3);
@@ -1547,22 +1608,24 @@ pub(crate) unsafe extern "C" fn Task_TryIncrementWins(taskId: u8) {
         }
         _ => {
             if IsSEPlaying() == 0 {
-                gTasks[taskId].data[11] = 0;
+                task_set(taskId, tConsecutiveWins, 0);
                 StartTaskAfterDelayOrInput(taskId, Some(Task_EndTurn), NO_DELAY, 3);
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_PrintSpinResult(taskId: u8) {
-    match gTasks[taskId].data[5] {
+pub(crate) unsafe fn Task_PrintSpinResult(taskId: u8) {
+    match task_get(taskId, tWonBet) {
         1 | 2 => {
-            if gTasks[taskId].data[2] == MAX_MULTIPLIER {
+            if task_get(taskId, tMultiplier) == MAX_MULTIPLIER {
                 PlayFanfare(MUS_SLOTS_JACKPOT);
                 DrawStdWindowFrame(sTextWindowId, FALSE);
                 AddTextPrinterParameterized(
                     sTextWindowId,
                     FONT_NORMAL,
-                    Roulette_Text_Jackpot.as_ptr().cast_mut(),
+                    (*crate::asmdata::Roulette_Text_Jackpot.cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     0,
                     1,
                     TEXT_SKIP_DRAW,
@@ -1575,7 +1638,9 @@ pub(crate) unsafe extern "C" fn Task_PrintSpinResult(taskId: u8) {
                 AddTextPrinterParameterized(
                     sTextWindowId,
                     FONT_NORMAL,
-                    Roulette_Text_ItsAHit.as_ptr().cast_mut(),
+                    (*crate::asmdata::Roulette_Text_ItsAHit.cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     0,
                     1,
                     TEXT_SKIP_DRAW,
@@ -1590,7 +1655,9 @@ pub(crate) unsafe extern "C" fn Task_PrintSpinResult(taskId: u8) {
             AddTextPrinterParameterized(
                 sTextWindowId,
                 FONT_NORMAL,
-                Roulette_Text_NothingDoing.as_ptr().cast_mut(),
+                (*crate::asmdata::Roulette_Text_NothingDoing.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 0,
                 1,
                 TEXT_SKIP_DRAW,
@@ -1599,44 +1666,46 @@ pub(crate) unsafe extern "C" fn Task_PrintSpinResult(taskId: u8) {
             CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
         }
     }
-    gTasks[taskId].data[1] = 0;
-    gTasks[taskId].func = Some(Task_TryIncrementWins);
+    task_set(taskId, 1, 0);
+    task_set_func(taskId, Some(Task_TryIncrementWins));
 }
-pub(crate) unsafe extern "C" fn Task_GivePayout(taskId: u8) {
-    match gTasks[taskId].data[7] {
+pub(crate) unsafe fn Task_GivePayout(taskId: u8) {
+    match task_get(taskId, 7) {
         0 => {
-            gTasks[taskId].data[13] += 1;
+            task_set(taskId, tCoins, task_get(taskId, tCoins) + 1);
             m4aSongNumStart(SE_PIN);
-            SetCreditDigits(gTasks[taskId].data[13] as u16);
-            if gTasks[taskId].data[13] >= MAX_COINS {
-                gTasks[taskId].data[1] = 0;
+            SetCreditDigits(task_get(taskId, tCoins) as u16);
+            if task_get(taskId, tCoins) >= MAX_COINS {
+                task_set(taskId, tPayout, 0);
             } else {
-                gTasks[taskId].data[1] -= 1;
-                gTasks[taskId].data[7] += 1;
+                task_set(taskId, tPayout, task_get(taskId, tPayout) - 1);
+                task_set(taskId, 7, task_get(taskId, 7) + 1);
             }
         }
         3 => {
             m4aSongNumStop(SE_PIN);
-            gTasks[taskId].data[7] = 0;
+            task_set(taskId, 7, 0);
         }
         _ => {
-            gTasks[taskId].data[7] += 1;
+            task_set(taskId, 7, task_get(taskId, 7) + 1);
         }
     }
-    if gTasks[taskId].data[1] == 0 {
+    if task_get(taskId, tPayout) == 0 {
         StartTaskAfterDelayOrInput(taskId, Some(Task_EndTurn), NO_DELAY, 3);
     }
 }
-pub(crate) unsafe extern "C" fn Task_PrintPayout(taskId: u8) {
+pub(crate) unsafe fn Task_PrintPayout(taskId: u8) {
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
-        (*sRoulette).minBet as i32 * gTasks[taskId].data[2] as i32,
+        (*sRoulette).minBet as i32 * task_get(taskId, tMultiplier) as i32,
         STR_CONV_MODE_LEFT_ALIGN,
         2,
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        Roulette_Text_YouveWonXCoins.as_ptr().cast_mut(),
+        (*crate::asmdata::Roulette_Text_YouveWonXCoins.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     DrawStdWindowFrame(sTextWindowId, FALSE);
     AddTextPrinterParameterized(
@@ -1649,11 +1718,15 @@ pub(crate) unsafe extern "C" fn Task_PrintPayout(taskId: u8) {
         None,
     );
     CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
-    gTasks[taskId].data[1] = (*sRoulette).minBet as i16 * gTasks[taskId].data[2];
-    gTasks[taskId].data[7] = 0;
-    gTasks[taskId].func = Some(Task_GivePayout);
+    task_set(
+        taskId,
+        tPayout,
+        (*sRoulette).minBet as i16 * task_get(taskId, tMultiplier),
+    );
+    task_set(taskId, 7, 0);
+    task_set_func(taskId, Some(Task_GivePayout));
 }
-pub(crate) unsafe extern "C" fn Task_EndTurn(taskId: u8) {
+pub(crate) unsafe fn Task_EndTurn(taskId: u8) {
     RouletteFlash_Stop(&raw mut (*sRoulette).flashUtil, 0xFFFF);
     (*sRoulette).flashUtil.palettes[13].set_available({
         (*sRoulette).flashUtil.palettes[14].set_available({
@@ -1663,18 +1736,17 @@ pub(crate) unsafe extern "C" fn Task_EndTurn(taskId: u8) {
         (*sRoulette).flashUtil.palettes[14].available()
     });
     gSprites[(*sRoulette).spriteIds[SPR_WHEEL_ICON_ORANGE_WYNAUT
-        + sGridSelections[gTasks[taskId].data[12]].spriteIdOffset as i32]]
+        + sGridSelections[task_get(taskId, tWinningSquare)].spriteIdOffset as i32]]
         .set_invisible(TRUE as u16);
-    gTasks[taskId].func = Some(Task_TryPrintEndTurnMsg);
+    task_set_func(taskId, Some(Task_TryPrintEndTurnMsg));
 }
-pub(crate) unsafe extern "C" fn Task_TryPrintEndTurnMsg(taskId: u8) {
-    let mut i: u8 = 0;
-    gTasks[taskId].data[4] = i as i16;
+pub(crate) unsafe fn Task_TryPrintEndTurnMsg(taskId: u8) {
+    let i: u8 = 0;
+    task_set(taskId, tSelectionId, i as i16);
     (*sRoulette).betSelection[(*sRoulette).curBallNum()] = SELECTION_NONE;
     DrawGridBackground(SELECTION_NONE);
     gSprites[(*sRoulette).spriteIds[48]].set_invisible(TRUE as u16);
-    i = 0;
-    while i < NUM_BOARD_POKES {
+    for i in 0..NUM_BOARD_POKES {
         gSprites[(*sRoulette).spriteIds[i as i32 + SPR_POKE_HEADER_1]]
             .oam
             .set_tileNum(
@@ -1682,15 +1754,16 @@ pub(crate) unsafe extern "C" fn Task_TryPrintEndTurnMsg(taskId: u8) {
                     + (*(*gSprites[(*sRoulette).spriteIds[i as i32 + SPR_POKE_HEADER_1]].anims))
                         .r#type as u16,
             );
-        i += 1;
     }
-    if gTasks[taskId].data[13] >= (*sRoulette).minBet as i16 {
-        if gTasks[taskId].data[6] == BALLS_PER_ROUND as i16 {
+    if task_get(taskId, tCoins) >= (*sRoulette).minBet as i16 {
+        if task_get(taskId, tBallNum) == BALLS_PER_ROUND as i16 {
             DrawStdWindowFrame(sTextWindowId, FALSE);
             AddTextPrinterParameterized(
                 sTextWindowId,
                 FONT_NORMAL,
-                Roulette_Text_BoardWillBeCleared.as_ptr().cast_mut(),
+                (*crate::asmdata::Roulette_Text_BoardWillBeCleared.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 0,
                 1,
                 TEXT_SKIP_DRAW,
@@ -1698,12 +1771,14 @@ pub(crate) unsafe extern "C" fn Task_TryPrintEndTurnMsg(taskId: u8) {
             );
             CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
             StartTaskAfterDelayOrInput(taskId, Some(Task_ClearBoard), NO_DELAY, 3);
-        } else if gTasks[taskId].data[13] == MAX_COINS {
+        } else if task_get(taskId, tCoins) == MAX_COINS {
             DrawStdWindowFrame(sTextWindowId, FALSE);
             AddTextPrinterParameterized(
                 sTextWindowId,
                 FONT_NORMAL,
-                Roulette_Text_CoinCaseIsFull.as_ptr().cast_mut(),
+                (*crate::asmdata::Roulette_Text_CoinCaseIsFull.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 0,
                 1,
                 TEXT_SKIP_DRAW,
@@ -1712,14 +1787,16 @@ pub(crate) unsafe extern "C" fn Task_TryPrintEndTurnMsg(taskId: u8) {
             CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
             StartTaskAfterDelayOrInput(taskId, Some(Task_AskKeepPlaying), NO_DELAY, 3);
         } else {
-            gTasks[taskId].func = Some(Task_AskKeepPlaying);
+            task_set_func(taskId, Some(Task_AskKeepPlaying));
         }
     } else {
         DrawStdWindowFrame(sTextWindowId, FALSE);
         AddTextPrinterParameterized(
             sTextWindowId,
             FONT_NORMAL,
-            Roulette_Text_NoCoinsLeft.as_ptr().cast_mut(),
+            (*crate::asmdata::Roulette_Text_NoCoinsLeft.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             0,
             1,
             TEXT_SKIP_DRAW,
@@ -1729,26 +1806,25 @@ pub(crate) unsafe extern "C" fn Task_TryPrintEndTurnMsg(taskId: u8) {
         StartTaskAfterDelayOrInput(taskId, Some(Task_StopPlaying), 60, 3);
     }
 }
-pub(crate) unsafe extern "C" fn Task_ClearBoard(taskId: u8) {
-    let mut i: u8 = 0;
-    gTasks[taskId].data[6] = 0;
+pub(crate) unsafe fn Task_ClearBoard(taskId: u8) {
+    task_set(taskId, tBallNum, 0);
     ResetBallDataForNewSpin(taskId);
     ResetHits();
     HideWheelBalls();
     DrawGridBackground(SELECTION_NONE);
     SetBallCounterNumLeft(BALLS_PER_ROUND);
-    i = 0;
-    while i < NUM_ROULETTE_SLOTS {
+    for i in 0..NUM_ROULETTE_SLOTS {
         gSprites[(*sRoulette).spriteIds[i as i32 + SPR_WHEEL_ICON_ORANGE_WYNAUT]]
             .set_invisible(FALSE as u16);
-        i += 1;
     }
-    if gTasks[taskId].data[13] == MAX_COINS {
+    if task_get(taskId, tCoins) == MAX_COINS {
         DrawStdWindowFrame(sTextWindowId, FALSE);
         AddTextPrinterParameterized(
             sTextWindowId,
             FONT_NORMAL,
-            Roulette_Text_CoinCaseIsFull.as_ptr().cast_mut(),
+            (*crate::asmdata::Roulette_Text_CoinCaseIsFull.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             0,
             1,
             TEXT_SKIP_DRAW,
@@ -1757,13 +1833,13 @@ pub(crate) unsafe extern "C" fn Task_ClearBoard(taskId: u8) {
         CopyWindowToVram(sTextWindowId, COPYWIN_FULL);
         StartTaskAfterDelayOrInput(taskId, Some(Task_AskKeepPlaying), NO_DELAY, 3);
     } else {
-        gTasks[taskId].func = Some(Task_AskKeepPlaying);
+        task_set_func(taskId, Some(Task_AskKeepPlaying));
     }
 }
-pub(crate) unsafe extern "C" fn ExitRoulette(taskId: u8) {
+unsafe fn ExitRoulette(taskId: u8) {
     RouletteFlash_Stop(&raw mut (*sRoulette).flashUtil, 0xFFFF);
     RouletteFlash_Reset(&raw mut (*sRoulette).flashUtil);
-    SetCoins(gTasks[taskId].data[13] as u16);
+    SetCoins(task_get(taskId, tCoins) as u16);
     if GetCoins() < (*sRoulette).minBet as u16 {
         gSpecialVar_0x8004 = TRUE as u16;
     } else {
@@ -1771,9 +1847,9 @@ pub(crate) unsafe extern "C" fn ExitRoulette(taskId: u8) {
     }
     TryPutFindThatGamerOnAir(GetCoins());
     BeginHardwarePaletteFade(0xFF, 0, 0, 16, 0);
-    gTasks[taskId].func = Some(Task_ExitRoulette);
+    task_set_func(taskId, Some(Task_ExitRoulette));
 }
-pub(crate) unsafe extern "C" fn Task_ExitRoulette(taskId: u8) {
+pub(crate) unsafe fn Task_ExitRoulette(taskId: u8) {
     if UpdatePaletteFade() == 0 {
         SetVBlankCallback(None);
         gSpriteCoordOffsetX = {
@@ -1794,11 +1870,11 @@ pub(crate) unsafe extern "C" fn Task_ExitRoulette(taskId: u8) {
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_WaitForNextTask(taskId: u8) {
+pub(crate) unsafe fn Task_WaitForNextTask(taskId: u8) {
     if (*sRoulette).taskWaitDelay == 0
         || gMain.newKeys as i32 & (*sRoulette).taskWaitKey as i32 != 0
     {
-        gTasks[taskId].func = (*sRoulette).nextTask;
+        task_set_func(taskId, (*sRoulette).nextTask);
         if (*sRoulette).taskWaitKey > 0 {
             PlaySE(SE_SELECT);
         }
@@ -1810,13 +1886,13 @@ pub(crate) unsafe extern "C" fn Task_WaitForNextTask(taskId: u8) {
         (*sRoulette).taskWaitDelay -= 1;
     }
 }
-pub(crate) unsafe extern "C" fn StartTaskAfterDelayOrInput(
+unsafe fn StartTaskAfterDelayOrInput(
     taskId: u8,
-    mut task: Option<unsafe extern "C" fn(u8)>,
+    mut task: Option<unsafe fn(u8)>,
     delay: u16,
     key: u16,
 ) {
-    (*sRoulette).prevTask = gTasks[taskId].func;
+    (*sRoulette).prevTask = task_func(taskId);
     if task.is_none() {
         task = (*sRoulette).prevTask;
     }
@@ -1827,78 +1903,69 @@ pub(crate) unsafe extern "C" fn StartTaskAfterDelayOrInput(
     } else {
         (*sRoulette).taskWaitKey = key;
     }
-    gTasks[taskId].func = Some(Task_WaitForNextTask);
+    task_set_func(taskId, Some(Task_WaitForNextTask));
 }
-pub(crate) unsafe extern "C" fn ResetBallDataForNewSpin(taskId: u8) {
-    let mut i: u8 = 0;
+unsafe fn ResetBallDataForNewSpin(taskId: u8) {
     (*sRoulette).unk0 = FALSE;
     (*sRoulette).set_ballRolling(FALSE);
     (*sRoulette).set_ballStuck(FALSE);
     (*sRoulette).set_ballUnstuck(FALSE);
     (*sRoulette).set_useTaillow(FALSE);
-    i = 0;
-    while i < BALLS_PER_ROUND {
+    for i in 0..BALLS_PER_ROUND {
         (*sRoulette).betSelection[i] = SELECTION_NONE;
-        i += 1;
     }
     (*sRoulette).set_curBallNum(0);
-    gTasks[taskId].data[1] = 0;
+    task_set(taskId, 1, 0);
 }
-pub(crate) unsafe extern "C" fn ResetHits() {
-    let mut i: u8 = 0;
+unsafe fn ResetHits() {
     (*sRoulette).hitFlags = 0;
-    i = 0;
-    while i < BALLS_PER_ROUND {
+    for i in 0..BALLS_PER_ROUND {
         (*sRoulette).hitSquares[i] = 0;
-        i += 1;
     }
-    i = 0;
+    let mut i: u8 = 0;
     while i < NUM_BOARD_POKES {
         (*sRoulette).pokeHits[i] = 0;
         i += 1;
     }
-    i = 0;
-    while i < NUM_BOARD_COLORS {
+    for i in 0..NUM_BOARD_COLORS {
         (*sRoulette).colorHits[i] = 0;
-        i += 1;
     }
     ShowHideGridBalls(1, 255);
 }
-pub(crate) unsafe extern "C" fn RecordHit(taskId: u8, slotId: u8) -> u8 {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
-    let mut columnFlags: CArray<u32, 4> = CArray([0x10842, 0x21084, 0x42108, 0x84210]);
-    let mut rowFlags: CArray<u32, 3> = CArray([992, 31744, 0xf8000]);
+unsafe fn RecordHit(taskId: u8, slotId: u8) -> u8 {
+    let columnFlags: CArray<u32, 4> = CArray([0x10842, 0x21084, 0x42108, 0x84210]);
+    let rowFlags: CArray<u32, 3> = CArray([992, 31744, 0xf8000]);
     if slotId >= NUM_ROULETTE_SLOTS {
         return 0;
     }
-    (*sRoulette).hitSquares[gTasks[taskId].data[6] as i32 - 1] = sRouletteSlots[slotId].gridSquare;
-    gTasks[taskId].data[12] = sRouletteSlots[slotId].gridSquare as i16;
+    (*sRoulette).hitSquares[task_get(taskId, tBallNum) as i32 - 1] =
+        sRouletteSlots[slotId].gridSquare;
+    task_set(
+        taskId,
+        tWinningSquare,
+        sRouletteSlots[slotId].gridSquare as i16,
+    );
     (*sRoulette).hitFlags |= sRouletteSlots[slotId].flag;
-    i = 0;
-    while i < NUM_BOARD_POKES {
+    for i in 0..NUM_BOARD_POKES {
         if sRouletteSlots[slotId].flag & columnFlags[i] != 0 {
             (*sRoulette).pokeHits[i] += 1;
         }
         if (*sRoulette).pokeHits[i] >= NUM_BOARD_COLORS {
             (*sRoulette).hitFlags |= columnFlags[i];
         }
-        i += 1;
     }
-    j = 0;
-    while j < NUM_BOARD_COLORS {
+    for j in 0..NUM_BOARD_COLORS {
         if sRouletteSlots[slotId].flag & rowFlags[j] != 0 {
             (*sRoulette).colorHits[j] += 1;
         }
         if (*sRoulette).colorHits[j] >= NUM_BOARD_POKES {
             (*sRoulette).hitFlags |= rowFlags[j];
         }
-        j += 1;
     }
-    return sRouletteSlots[slotId].gridSquare;
+    sRouletteSlots[slotId].gridSquare
 }
-pub(crate) unsafe extern "C" fn IsHitInBetSelection(mut gridSquare: u8, betSelection: u8) -> u8 {
-    let mut hit: u8 = gridSquare;
+fn IsHitInBetSelection(mut gridSquare: u8, betSelection: u8) -> u8 {
+    let hit: u8 = gridSquare;
     if ({
         gridSquare -= 1;
         gridSquare
@@ -1930,9 +1997,9 @@ pub(crate) unsafe extern "C" fn IsHitInBetSelection(mut gridSquare: u8, betSelec
             }
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn FlashSelectionOnWheel(selectionId: u8) {
+unsafe fn FlashSelectionOnWheel(selectionId: u8) {
     let mut flashFlags: u16 = 0;
     let mut numSelected: u8 = 0;
     let mut palOffset: u16 = 0;
@@ -1959,7 +2026,7 @@ pub(crate) unsafe extern "C" fn FlashSelectionOnWheel(selectionId: u8) {
                     sFlashData_PokeIcons.as_ptr().cast_mut() as *mut u8,
                     24,
                 );
-                if selectionId >= COL_WYNAUT && selectionId <= COL_MAKUHITA {
+                if (COL_WYNAUT..=COL_MAKUHITA).contains(&selectionId) {
                     numSelected = NUM_BOARD_COLORS;
                 } else {
                     numSelected = 1;
@@ -1992,9 +2059,8 @@ pub(crate) unsafe extern "C" fn FlashSelectionOnWheel(selectionId: u8) {
                         break 'l1;
                     }
                 } else {
-                    i = 0;
-                    while i < NUM_BOARD_COLORS {
-                        let mut columnSlotId: u8 = i * 5 + selectionId + 5;
+                    for i in 0..NUM_BOARD_COLORS {
+                        let columnSlotId: u8 = i * 5 + selectionId + 5;
                         if (*sRoulette).hitFlags & sGridSelections[columnSlotId].flag == 0 {
                             iconFlash[columnSlotId as i32 / 5 - 1].paletteOffset += palOffset;
                             RouletteFlash_Add(
@@ -2007,7 +2073,6 @@ pub(crate) unsafe extern "C" fn FlashSelectionOnWheel(selectionId: u8) {
                             }
                             numSelected -= 1;
                         }
-                        i += 1;
                     }
                     if numSelected != 2 {
                         flashFlags = 0;
@@ -2022,7 +2087,7 @@ pub(crate) unsafe extern "C" fn FlashSelectionOnWheel(selectionId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn DrawGridBackground(selectionId: u8) {
+unsafe fn DrawGridBackground(selectionId: u8) {
     let mut i: u8 = 0;
     volatile_write(&raw mut i, 0);
     let mut j: u8 = 0;
@@ -2091,14 +2156,13 @@ pub(crate) unsafe extern "C" fn DrawGridBackground(selectionId: u8) {
                     * 32,
             );
             (*sRoulette).tilemapBuffers[2]
-                [(&raw mut x).read_volatile() as i32 + (&raw mut y).read_volatile() as i32 + 0] =
+                [(&raw mut x).read_volatile() as i32 + (&raw mut y).read_volatile() as i32] =
                 *(*sRoulette)
                     .gridTilemap
                     .at(((&raw mut tilemapOffset).read_volatile() as i32
                         + (&raw mut j).read_volatile() as i32)
                         * 3
-                        + 208
-                        + 0);
+                        + 208);
             (*sRoulette).tilemapBuffers[2]
                 [(&raw mut x).read_volatile() as i32 + (&raw mut y).read_volatile() as i32 + 1] =
                 *(*sRoulette)
@@ -2122,8 +2186,8 @@ pub(crate) unsafe extern "C" fn DrawGridBackground(selectionId: u8) {
         volatile_write(&raw mut i, (&raw mut i).read_volatile() + 1);
     }
 }
-pub(crate) unsafe extern "C" fn GetMultiplier(mut selectionId: u8) -> u8 {
-    let mut multipliers: CArray<u8, 5> = CArray([0, 3, 4, 6, 12]);
+unsafe fn GetMultiplier(mut selectionId: u8) -> u8 {
+    let multipliers: CArray<u8, 5> = CArray([0, 3, 4, 6, 12]);
     if selectionId > NUM_GRID_SELECTIONS {
         selectionId = 0;
     }
@@ -2136,7 +2200,7 @@ pub(crate) unsafe extern "C" fn GetMultiplier(mut selectionId: u8) -> u8 {
             return multipliers[(*sRoulette).colorHits[selectionId] as i32 + 1];
         }
         NUM_BOARD_POKES => {
-            selectionId = selectionId - 1;
+            selectionId -= 1;
             if (*sRoulette).pokeHits[selectionId] >= NUM_BOARD_COLORS {
                 return 0;
             }
@@ -2150,19 +2214,17 @@ pub(crate) unsafe extern "C" fn GetMultiplier(mut selectionId: u8) -> u8 {
         }
         _ => {}
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn UpdateWheelPosition() {
-    let mut bg2x: i32 = 0;
-    let mut bg2y: i32 = 0;
+unsafe fn UpdateWheelPosition() {
     SetGpuReg(REG_OFFSET_BG2PA, (*sRoulette).wheelRotation.a as u16);
     SetGpuReg(REG_OFFSET_BG2PB, (*sRoulette).wheelRotation.b as u16);
     SetGpuReg(REG_OFFSET_BG2PC, (*sRoulette).wheelRotation.c as u16);
     SetGpuReg(REG_OFFSET_BG2PD, (*sRoulette).wheelRotation.d as u16);
-    bg2x = 0x7400
+    let bg2x: i32 = 0x7400
         - (*sRoulette).wheelRotation.a as i32 * (gSpriteCoordOffsetX as i32 + 116)
         - (*sRoulette).wheelRotation.b as i32 * (gSpriteCoordOffsetY as i32 + 80);
-    bg2y = 0x5400
+    let bg2y: i32 = 0x5400
         - (*sRoulette).wheelRotation.c as i32 * (gSpriteCoordOffsetX as i32 + 116)
         - (*sRoulette).wheelRotation.d as i32 * (gSpriteCoordOffsetY as i32 + 80);
     SetGpuReg(REG_OFFSET_BG2X_L, bg2x as u16);
@@ -2170,34 +2232,34 @@ pub(crate) unsafe extern "C" fn UpdateWheelPosition() {
     SetGpuReg(REG_OFFSET_BG2Y_L, bg2y as u16);
     SetGpuReg(REG_OFFSET_BG2Y_H, ((bg2y & 0x0fff0000) >> 16) as u16);
 }
-pub(crate) unsafe extern "C" fn Task_ShowMinBetYesNo(taskId: u8) {
+pub(crate) unsafe fn Task_ShowMinBetYesNo(taskId: u8) {
     DisplayYesNoMenuDefaultYes();
     DoYesNoFuncWithChoice(taskId, (&raw const *sYesNoTable_AcceptMinBet).cast_mut());
 }
-pub(crate) unsafe extern "C" fn Task_FadeToRouletteGame(taskId: u8) {
+pub(crate) unsafe fn Task_FadeToRouletteGame(taskId: u8) {
     if gPaletteFade.active() == 0 {
         SetVBlankCallback(None);
         SetMainCallback2(Some(CB2_LoadRoulette));
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_AcceptMinBet(taskId: u8) {
+pub(crate) unsafe fn Task_AcceptMinBet(taskId: u8) {
     ClearStdWindowAndFrame(0, TRUE);
     HideCoinsWindow();
     FreeAllWindowBuffers();
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
     gPaletteFade.set_delayCounter(gPaletteFade.multipurpose2() as u8);
     UpdatePaletteFade();
-    gTasks[taskId].func = Some(Task_FadeToRouletteGame);
+    task_set_func(taskId, Some(Task_FadeToRouletteGame));
 }
-pub(crate) unsafe extern "C" fn Task_DeclineMinBet(taskId: u8) {
+pub(crate) unsafe fn Task_DeclineMinBet(taskId: u8) {
     ClearStdWindowAndFrame(0, 0);
     HideCoinsWindow();
     UnlockPlayerFieldControls();
     DestroyTask(taskId);
 }
-pub(crate) unsafe extern "C" fn Task_NotEnoughForMinBet(taskId: u8) {
-    gTasks[taskId].data[0] += 1;
+pub(crate) unsafe fn Task_NotEnoughForMinBet(taskId: u8) {
+    task_set(taskId, 0, task_get(taskId, 0) + 1);
     if gMain.newKeys as i32 & 3 != 0 {
         gSpecialVar_0x8004 = 1;
         HideCoinsWindow();
@@ -2206,9 +2268,9 @@ pub(crate) unsafe extern "C" fn Task_NotEnoughForMinBet(taskId: u8) {
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_PrintMinBet(taskId: u8) {
+pub(crate) unsafe fn Task_PrintMinBet(taskId: u8) {
     if gMain.newKeys as i32 & 3 != 0 {
-        let mut minBet: u32 = sTableMinBets
+        let minBet: u32 = sTableMinBets
             [(gSpecialVar_0x8004 as i32 & 1) + (gSpecialVar_0x8004 >> 7) as i32 * 2]
             as u32;
         ConvertIntToDecimalStringN(
@@ -2219,7 +2281,9 @@ pub(crate) unsafe extern "C" fn Task_PrintMinBet(taskId: u8) {
         );
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            Roulette_Text_PlayMinimumWagerIsX.as_ptr().cast_mut(),
+            (*crate::asmdata::Roulette_Text_PlayMinimumWagerIsX.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         DrawStdWindowFrame(0, 0);
         AddTextPrinterParameterized(
@@ -2232,13 +2296,13 @@ pub(crate) unsafe extern "C" fn Task_PrintMinBet(taskId: u8) {
             None,
         );
         CopyWindowToVram(0, COPYWIN_FULL);
-        gTasks[taskId].func = Some(Task_ShowMinBetYesNo);
+        task_set_func(taskId, Some(Task_ShowMinBetYesNo));
     }
 }
-pub(crate) unsafe extern "C" fn Task_PrintRouletteEntryMsg(taskId: u8) {
-    let mut minBet: i32 = 0;
-    PrintCoinsString(gTasks[taskId].data[13] as u32);
-    minBet = sTableMinBets[(gSpecialVar_0x8004 as i32 & 1) + (gSpecialVar_0x8004 >> 7) as i32 * 2]
+pub(crate) unsafe fn Task_PrintRouletteEntryMsg(taskId: u8) {
+    PrintCoinsString(task_get(taskId, tCoins) as u32);
+    let minBet: i32 = sTableMinBets
+        [(gSpecialVar_0x8004 as i32 & 1) + (gSpecialVar_0x8004 >> 7) as i32 * 2]
         as i32;
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
@@ -2246,7 +2310,7 @@ pub(crate) unsafe extern "C" fn Task_PrintRouletteEntryMsg(taskId: u8) {
         STR_CONV_MODE_LEADING_ZEROS,
         1,
     );
-    if gTasks[taskId].data[13] as i32 >= minBet {
+    if task_get(taskId, tCoins) as i32 >= minBet {
         if gSpecialVar_0x8004 as i32 & ROULETTE_SPECIAL_RATE != 0
             && gSpecialVar_0x8004 as i32 & 1 != 0
         {
@@ -2254,18 +2318,22 @@ pub(crate) unsafe extern "C" fn Task_PrintRouletteEntryMsg(taskId: u8) {
             AddTextPrinterParameterized(
                 0,
                 FONT_NORMAL,
-                Roulette_Text_SpecialRateTable.as_ptr().cast_mut(),
+                (*crate::asmdata::Roulette_Text_SpecialRateTable.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 0,
                 1,
                 TEXT_SKIP_DRAW,
                 None,
             );
             CopyWindowToVram(0, COPYWIN_FULL);
-            gTasks[taskId].func = Some(Task_PrintMinBet);
+            task_set_func(taskId, Some(Task_PrintMinBet));
         } else {
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
-                Roulette_Text_PlayMinimumWagerIsX.as_ptr().cast_mut(),
+                (*crate::asmdata::Roulette_Text_PlayMinimumWagerIsX.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
             );
             DrawStdWindowFrame(0, 0);
             AddTextPrinterParameterized(
@@ -2278,12 +2346,14 @@ pub(crate) unsafe extern "C" fn Task_PrintRouletteEntryMsg(taskId: u8) {
                 None,
             );
             CopyWindowToVram(0, COPYWIN_FULL);
-            gTasks[taskId].func = Some(Task_ShowMinBetYesNo);
+            task_set_func(taskId, Some(Task_ShowMinBetYesNo));
         }
     } else {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            Roulette_Text_NotEnoughCoins.as_ptr().cast_mut(),
+            (*crate::asmdata::Roulette_Text_NotEnoughCoins.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         DrawStdWindowFrame(0, 0);
         AddTextPrinterParameterized(
@@ -2296,20 +2366,19 @@ pub(crate) unsafe extern "C" fn Task_PrintRouletteEntryMsg(taskId: u8) {
             None,
         );
         CopyWindowToVram(0, COPYWIN_FULL);
-        gTasks[taskId].func = Some(Task_NotEnoughForMinBet);
-        gTasks[taskId].data[13] = 0;
-        gTasks[taskId].data[0] = 0;
+        task_set_func(taskId, Some(Task_NotEnoughForMinBet));
+        task_set(taskId, tCoins, 0);
+        task_set(taskId, 0, 0);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayRoulette() {
-    let mut taskId: u8 = 0;
+pub unsafe fn PlayRoulette() {
     LockPlayerFieldControls();
     ShowCoinsWindow(GetCoins() as u32, 1, 1);
-    taskId = CreateTask(Some(Task_PrintRouletteEntryMsg), 0);
-    gTasks[taskId].data[13] = GetCoins() as i16;
+    let taskId: u8 = CreateTask(Some(Task_PrintRouletteEntryMsg), 0);
+    task_set(taskId, tCoins, GetCoins() as i16);
 }
-pub(crate) unsafe extern "C" fn LoadOrFreeMiscSpritePalettesAndSheets(free: u8) {
+unsafe fn LoadOrFreeMiscSpritePalettesAndSheets(free: u8) {
     if free == 0 {
         FreeAllSpritePalettes();
         LoadSpritePalettes(sSpritePalettes.as_ptr().cast_mut());
@@ -2323,51 +2392,54 @@ pub(crate) unsafe extern "C" fn LoadOrFreeMiscSpritePalettesAndSheets(free: u8) 
         FreeAllSpritePalettes();
     }
 }
-pub(crate) unsafe extern "C" fn CreateWheelIconSprite(
-    template: *mut SpriteTemplate,
-    r1: u8,
-    angle: *mut u16,
-) -> u8 {
-    let mut temp: u16 = 0;
-    let mut spriteId: u8 = CreateSprite(template, 116, 80, (*(*template).oam).y() as u8);
+unsafe fn CreateWheelIconSprite(template: *mut SpriteTemplate, r1: u8, angle: *mut u16) -> u8 {
+    let spriteId: u8 = CreateSprite(template, 116, 80, (*(*template).oam).y() as u8);
     gSprites[spriteId].data[0] = *angle as i16;
     gSprites[spriteId].data[1] = r1 as i16;
     gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
     gSprites[spriteId].set_animPaused(TRUE);
     gSprites[spriteId].set_affineAnimPaused(TRUE);
-    temp = *angle;
+    let temp: u16 = *angle;
     *angle += DEGREES_PER_SLOT;
     if *angle >= 360 {
         *angle = temp - 330;
     }
-    return spriteId;
+    spriteId
 }
-pub(crate) unsafe extern "C" fn CreateGridSprites() {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
+unsafe fn CreateGridSprites() {
     let mut spriteId: u8 = 0;
     let mut s: SpriteSheet = zeroed();
     LZ77UnCompWram(
         sSpriteSheet_Headers.data,
-        gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+        (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())
+        .as_mut_ptr() as *mut c_void,
     );
-    s.data = gDecompressionBuffer.as_mut_ptr() as *mut c_void;
+    s.data = (*(&raw const crate::decompress::gDecompressionBuffer)
+        .cast::<CArray<u8, 16384>>()
+        .cast_mut())
+    .as_mut_ptr() as *mut c_void;
     s.size = sSpriteSheet_Headers.size;
     s.tag = sSpriteSheet_Headers.tag;
     LoadSpriteSheet(&raw mut s);
     LZ77UnCompWram(
         sSpriteSheet_GridIcons.data,
-        gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+        (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())
+        .as_mut_ptr() as *mut c_void,
     );
-    s.data = gDecompressionBuffer.as_mut_ptr() as *mut c_void;
+    s.data = (*(&raw const crate::decompress::gDecompressionBuffer)
+        .cast::<CArray<u8, 16384>>()
+        .cast_mut())
+    .as_mut_ptr() as *mut c_void;
     s.size = sSpriteSheet_GridIcons.size;
     s.tag = sSpriteSheet_GridIcons.tag;
     LoadSpriteSheet(&raw mut s);
-    i = 0;
-    while i < NUM_BOARD_COLORS {
+    for i in 0..NUM_BOARD_COLORS {
         let mut y: u8 = i * 24;
-        j = 0;
-        while j < NUM_BOARD_POKES {
+        for j in 0..NUM_BOARD_POKES {
             spriteId = {
                 (*sRoulette).spriteIds
                     [i as i32 * NUM_BOARD_POKES as i32 + SPR_GRID_ICON_ORANGE_WYNAUT + j as i32] =
@@ -2385,11 +2457,9 @@ pub(crate) unsafe extern "C" fn CreateGridSprites() {
             if y >= 72 {
                 y = 0;
             }
-            j += 1;
         }
-        i += 1;
     }
-    i = 0;
+    let mut i: u8 = 0;
     while i < 4 {
         spriteId = {
             (*sRoulette).spriteIds[i as i32 + SPR_POKE_HEADER_1] = CreateSprite(
@@ -2403,8 +2473,7 @@ pub(crate) unsafe extern "C" fn CreateGridSprites() {
         gSprites[spriteId].set_animPaused(TRUE);
         i += 1;
     }
-    i = 0;
-    while i < 3 {
+    for i in 0..3u8 {
         spriteId = {
             (*sRoulette).spriteIds[i as i32 + SPR_COLOR_HEADER_1] = CreateSprite(
                 (&raw const sSpriteTemplates_ColorHeaders[i]).cast_mut(),
@@ -2415,28 +2484,22 @@ pub(crate) unsafe extern "C" fn CreateGridSprites() {
             (*sRoulette).spriteIds[i as i32 + SPR_COLOR_HEADER_1]
         };
         gSprites[spriteId].set_animPaused(TRUE);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyGridSprites() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < NUM_ROULETTE_SLOTS {
+unsafe fn DestroyGridSprites() {
+    for i in 0..NUM_ROULETTE_SLOTS {
         DestroySprite(
             &raw mut gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_ICON_ORANGE_WYNAUT]],
         );
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ShowHideGridIcons(hideAll: u8, hideSquare: u8) {
+unsafe fn ShowHideGridIcons(hideAll: u8, hideSquare: u8) {
     let mut i: u8 = 0;
     match hideAll {
         TRUE => {
-            i = 0;
-            while i < NUM_GRID_SELECTIONS {
+            for i in 0..NUM_GRID_SELECTIONS {
                 gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_ICON_ORANGE_WYNAUT]]
                     .set_invisible(TRUE as u16);
-                i += 1;
             }
         }
         FALSE => {
@@ -2463,10 +2526,8 @@ pub(crate) unsafe extern "C" fn ShowHideGridIcons(hideAll: u8, hideSquare: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CreateGridBallSprites() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < BALLS_PER_ROUND {
+unsafe fn CreateGridBallSprites() {
+    for i in 0..BALLS_PER_ROUND {
         (*sRoulette).spriteIds[i as i32 + SPR_GRID_BALL_1] =
             CreateSprite((&raw const *sSpriteTemplate_Ball).cast_mut(), 116, 20, 10);
         gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_BALL_1]].set_invisible(TRUE as u16);
@@ -2480,10 +2541,9 @@ pub(crate) unsafe extern "C" fn CreateGridBallSprites() {
             &raw mut gSprites[(*sRoulette).spriteIds[i as i32 + SPR_GRID_BALL_1]],
             8,
         );
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ShowHideGridBalls(hideAll: u8, hideBallId: u8) {
+unsafe fn ShowHideGridBalls(hideAll: u8, hideBallId: u8) {
     let mut i: u8 = 0;
     if hideAll != 0 {
         while i < BALLS_PER_ROUND {
@@ -2507,7 +2567,7 @@ pub(crate) unsafe extern "C" fn ShowHideGridBalls(hideAll: u8, hideBallId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn ShowHideWinSlotCursor(selectionId: u8) {
+unsafe fn ShowHideWinSlotCursor(selectionId: u8) {
     if selectionId == 0 {
         gSprites[(*sRoulette).spriteIds[48]].set_invisible(TRUE as u16);
     } else {
@@ -2516,26 +2576,26 @@ pub(crate) unsafe extern "C" fn ShowHideWinSlotCursor(selectionId: u8) {
         gSprites[(*sRoulette).spriteIds[48]].y = (sGridSelections[selectionId].y as i16 + 2) * 8;
     }
 }
-pub(crate) unsafe extern "C" fn CreateWheelIconSprites() {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
-    let mut angle: u16 = 0;
+unsafe fn CreateWheelIconSprites() {
     let mut s: SpriteSheet = zeroed();
     LZ77UnCompWram(
         sSpriteSheet_WheelIcons.data,
-        gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+        (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())
+        .as_mut_ptr() as *mut c_void,
     );
-    s.data = gDecompressionBuffer.as_mut_ptr() as *mut c_void;
+    s.data = (*(&raw const crate::decompress::gDecompressionBuffer)
+        .cast::<CArray<u8, 16384>>()
+        .cast_mut())
+    .as_mut_ptr() as *mut c_void;
     s.size = sSpriteSheet_WheelIcons.size;
     s.tag = sSpriteSheet_WheelIcons.tag;
     LoadSpriteSheet(&raw mut s);
-    angle = 15;
-    i = 0;
-    while i < NUM_BOARD_COLORS {
-        j = 0;
-        while j < NUM_BOARD_POKES {
-            let mut spriteId: u8 = 0;
-            spriteId = {
+    let mut angle: u16 = 15;
+    for i in 0..NUM_BOARD_COLORS {
+        for j in 0..NUM_BOARD_POKES {
+            let spriteId: u8 = {
                 (*sRoulette).spriteIds
                     [i as i32 * NUM_BOARD_POKES as i32 + SPR_WHEEL_ICON_ORANGE_WYNAUT + j as i32] =
                     CreateWheelIconSprite(
@@ -2550,52 +2610,63 @@ pub(crate) unsafe extern "C" fn CreateWheelIconSprites() {
             };
             gSprites[spriteId].set_animPaused(TRUE);
             gSprites[spriteId].set_affineAnimPaused(TRUE);
-            j += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_WheelIcon(sprite: *mut Sprite) {
-    let mut cos: i16 = 0;
-    let mut sin: i16 = 0;
+pub(crate) unsafe fn SpriteCB_WheelIcon(sprite: *mut Sprite) {
     let mut matrixNum: u32 = 0;
     let mut angle: i16 = (*sRoulette).wheelAngle + (*sprite).data[0];
     if angle >= 360 {
         angle -= 360;
     }
-    sin = Sin2(angle as u16);
-    cos = Cos2(angle as u16);
-    (*sprite).x2 = (sin as i32 * (*sprite).data[1] as i32 >> 12) as i16;
-    (*sprite).y2 = (-(cos as i32) * (*sprite).data[1] as i32 >> 12) as i16;
+    let mut sin: i16 = Sin2(angle as u16);
+    let mut cos: i16 = Cos2(angle as u16);
+    (*sprite).x2 = ((sin as i32 * (*sprite).data[1] as i32) >> 12) as i16;
+    (*sprite).y2 = ((-(cos as i32) * (*sprite).data[1] as i32) >> 12) as i16;
     matrixNum = (*sprite).oam.matrixNum();
-    sin = sin / 16;
-    gOamMatrices[matrixNum].d = {
-        cos = cos / 16;
+    sin /= 16;
+    (*(&raw const crate::sprite::gOamMatrices)
+        .cast::<CArray<OamMatrix, 32>>()
+        .cast_mut())[matrixNum]
+        .d = {
+        cos /= 16;
         cos
     };
-    gOamMatrices[matrixNum].a = cos;
-    gOamMatrices[matrixNum].b = sin;
-    gOamMatrices[matrixNum].c = -sin;
+    (*(&raw const crate::sprite::gOamMatrices)
+        .cast::<CArray<OamMatrix, 32>>()
+        .cast_mut())[matrixNum]
+        .a = cos;
+    (*(&raw const crate::sprite::gOamMatrices)
+        .cast::<CArray<OamMatrix, 32>>()
+        .cast_mut())[matrixNum]
+        .b = sin;
+    (*(&raw const crate::sprite::gOamMatrices)
+        .cast::<CArray<OamMatrix, 32>>()
+        .cast_mut())[matrixNum]
+        .c = -sin;
 }
-pub(crate) unsafe extern "C" fn CreateInterfaceSprites() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 5 {
+pub(crate) unsafe fn CreateInterfaceSprites() {
+    for i in 0..5u8 {
         let mut s: SpriteSheet = zeroed();
         LZ77UnCompWram(
             sSpriteSheets_Interface[i].data,
-            gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+            (*(&raw const crate::decompress::gDecompressionBuffer)
+                .cast::<CArray<u8, 16384>>()
+                .cast_mut())
+            .as_mut_ptr() as *mut c_void,
         );
-        s.data = gDecompressionBuffer.as_mut_ptr() as *mut c_void;
+        s.data = (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())
+        .as_mut_ptr() as *mut c_void;
         s.size = sSpriteSheets_Interface[i].size;
         s.tag = sSpriteSheets_Interface[i].tag;
         LoadSpriteSheet(&raw mut s);
-        i += 1;
     }
     (*sRoulette).spriteIds[20] =
         CreateSprite((&raw const *sSpriteTemplate_Credit).cast_mut(), 208, 16, 4);
     gSprites[(*sRoulette).spriteIds[20]].set_animPaused(TRUE);
-    i = 0;
+    let mut i: u8 = 0;
     while i < MAX_COIN_DIGITS {
         (*sRoulette).spriteIds[i as i32 + SPR_CREDIT_DIG_1] = CreateSprite(
             (&raw const *sSpriteTemplate_CreditDigit).cast_mut(),
@@ -2614,8 +2685,7 @@ pub(crate) unsafe extern "C" fn CreateInterfaceSprites() {
         4,
     );
     gSprites[(*sRoulette).spriteIds[25]].set_animPaused(TRUE);
-    i = 0;
-    while i < 3 {
+    for i in 0..3u8 {
         (*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1] = CreateSprite(
             (&raw const *sSpriteTemplate_BallCounter).cast_mut(),
             i as i16 * 16 + 192,
@@ -2624,7 +2694,6 @@ pub(crate) unsafe extern "C" fn CreateInterfaceSprites() {
         );
         gSprites[(*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1]].set_invisible(TRUE as u16);
         gSprites[(*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1]].set_animPaused(TRUE);
-        i += 1;
     }
     (*sRoulette).spriteIds[48] =
         CreateSprite((&raw const *sSpriteTemplate_Cursor).cast_mut(), 152, 96, 9);
@@ -2632,13 +2701,11 @@ pub(crate) unsafe extern "C" fn CreateInterfaceSprites() {
     gSprites[(*sRoulette).spriteIds[48]].set_animPaused(TRUE);
     gSprites[(*sRoulette).spriteIds[48]].set_invisible(TRUE as u16);
 }
-pub(crate) unsafe extern "C" fn SetCreditDigits(mut num: u16) {
-    let mut i: u8 = 0;
+unsafe fn SetCreditDigits(mut num: u16) {
     let mut d: u16 = 1000;
     let mut printZero: u8 = FALSE;
-    i = 0;
-    while i < MAX_COIN_DIGITS {
-        let mut digit: u8 = div_i32(num as i32, d as i32) as u8;
+    for i in 0..MAX_COIN_DIGITS {
+        let digit: u8 = div_i32(num as i32, d as i32) as u8;
         gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CREDIT_DIG_1]].set_invisible(TRUE as u16);
         if digit > 0 || printZero != 0 || i == 3 {
             gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CREDIT_DIG_1]]
@@ -2655,11 +2722,10 @@ pub(crate) unsafe extern "C" fn SetCreditDigits(mut num: u16) {
         }
         num = rem_i32(num as i32, d as i32) as u16;
         d = (d as i32 / 10) as u16;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn GetMultiplierAnimId(mut selectionId: u8) -> u8 {
-    let mut animIds: CArray<u8, 5> = CArray([0, 1, 2, 3, 4]);
+unsafe fn GetMultiplierAnimId(mut selectionId: u8) -> u8 {
+    let animIds: CArray<u8, 5> = CArray([0, 1, 2, 3, 4]);
     if selectionId > NUM_GRID_SELECTIONS {
         selectionId = 0;
     }
@@ -2672,7 +2738,7 @@ pub(crate) unsafe extern "C" fn GetMultiplierAnimId(mut selectionId: u8) -> u8 {
             return animIds[(*sRoulette).colorHits[selectionId] as i32 + 1];
         }
         NUM_BOARD_POKES => {
-            selectionId = selectionId - 1;
+            selectionId -= 1;
             if (*sRoulette).pokeHits[selectionId] > 2 {
                 return 0;
             }
@@ -2686,25 +2752,23 @@ pub(crate) unsafe extern "C" fn GetMultiplierAnimId(mut selectionId: u8) -> u8 {
         }
         _ => {}
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn SetMultiplierSprite(selectionId: u8) {
-    let mut sprite: *mut Sprite = &raw mut gSprites[(*sRoulette).spriteIds[25]];
+unsafe fn SetMultiplierSprite(selectionId: u8) {
+    let sprite: *mut Sprite = &raw mut gSprites[(*sRoulette).spriteIds[25]];
     (*sprite).animCmdIndex = GetMultiplierAnimId(selectionId);
     (*sprite).oam.set_tileNum(
         (*sprite).sheetTileStart + (*(*(*sprite).anims).at((*sprite).animCmdIndex)).r#type as u16,
     );
 }
-pub(crate) unsafe extern "C" fn SetBallCounterNumLeft(numBalls: u8) {
-    let mut i: u8 = 0;
+unsafe fn SetBallCounterNumLeft(numBalls: u8) {
     let mut t: u8 = 0;
     if (*sRoulette).minBet == 1 {
         t = 2;
     }
     match numBalls {
         6 => {
-            i = 0;
-            while i < 3 {
+            for i in 0..3u8 {
                 gSprites[(*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1]]
                     .set_invisible(FALSE as u16);
                 gSprites[(*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1]]
@@ -2716,7 +2780,6 @@ pub(crate) unsafe extern "C" fn SetBallCounterNumLeft(numBalls: u8) {
                                 .anims))
                                 .r#type as u16,
                     );
-                i += 1;
             }
         }
         5 => {
@@ -2750,8 +2813,7 @@ pub(crate) unsafe extern "C" fn SetBallCounterNumLeft(numBalls: u8) {
             );
         }
         _ => {
-            i = 0;
-            while i < 3 {
+            for i in 0..3u8 {
                 gSprites[(*sRoulette).spriteIds[i as i32 + SPR_BALL_COUNTER_1]]
                     .oam
                     .set_tileNum(
@@ -2763,26 +2825,30 @@ pub(crate) unsafe extern "C" fn SetBallCounterNumLeft(numBalls: u8) {
                                 .at(2))
                             .r#type as u16,
                     );
-                i += 1;
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_GridSquare(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_GridSquare(sprite: *mut Sprite) {
     (*sprite).x2 = (*sRoulette).gridX;
 }
-pub(crate) unsafe extern "C" fn CreateWheelCenterSprite() {
-    let mut spriteId: u8 = 0;
+unsafe fn CreateWheelCenterSprite() {
     let mut s: SpriteSheet = zeroed();
     LZ77UnCompWram(
         sSpriteSheet_WheelCenter.data,
-        gDecompressionBuffer.as_mut_ptr() as *mut c_void,
+        (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())
+        .as_mut_ptr() as *mut c_void,
     );
-    s.data = gDecompressionBuffer.as_mut_ptr() as *mut c_void;
+    s.data = (*(&raw const crate::decompress::gDecompressionBuffer)
+        .cast::<CArray<u8, 16384>>()
+        .cast_mut())
+    .as_mut_ptr() as *mut c_void;
     s.size = sSpriteSheet_WheelCenter.size;
     s.tag = sSpriteSheet_WheelCenter.tag;
     LoadSpriteSheet(&raw mut s);
-    spriteId = CreateSprite(
+    let spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_WheelCenter).cast_mut(),
         116,
         80,
@@ -2794,18 +2860,18 @@ pub(crate) unsafe extern "C" fn CreateWheelCenterSprite() {
     gSprites[spriteId].set_affineAnimPaused(TRUE);
     gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_WheelCenter(sprite: *mut Sprite) {
-    let mut matrixNum: u32 = (*sprite).oam.matrixNum();
-    let mut matrix: *mut OamMatrix = &raw mut gOamMatrices[0];
+pub(crate) unsafe fn SpriteCB_WheelCenter(sprite: *mut Sprite) {
+    let matrixNum: u32 = (*sprite).oam.matrixNum();
+    let matrix: *mut OamMatrix = &raw mut (*(&raw const crate::sprite::gOamMatrices)
+        .cast::<CArray<OamMatrix, 32>>()
+        .cast_mut())[0];
     (*matrix.at(matrixNum)).d = (*sRoulette).wheelRotation.a;
     (*matrix.at(matrixNum)).a = (*sRoulette).wheelRotation.a;
     (*matrix.at(matrixNum)).b = (*sRoulette).wheelRotation.b;
     (*matrix.at(matrixNum)).c = (*sRoulette).wheelRotation.c;
 }
-pub(crate) unsafe extern "C" fn CreateWheelBallSprites() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < BALLS_PER_ROUND {
+unsafe fn CreateWheelBallSprites() {
+    for i in 0..BALLS_PER_ROUND {
         (*sRoulette).spriteIds[i] = CreateSprite(
             (&raw const *sSpriteTemplate_Ball).cast_mut(),
             116,
@@ -2816,206 +2882,181 @@ pub(crate) unsafe extern "C" fn CreateWheelBallSprites() {
             gSprites[(*sRoulette).spriteIds[i]].set_invisible(TRUE as u16);
             gSprites[(*sRoulette).spriteIds[i]].set_coordOffsetEnabled(TRUE as u16);
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn HideWheelBalls() {
+unsafe fn HideWheelBalls() {
     let mut spriteId: u8 = (*sRoulette).spriteIds[0];
-    let mut i: u8 = 0;
-    i = 0;
-    while i < BALLS_PER_ROUND {
-        let mut j: u8 = 0;
+    for i in 0..BALLS_PER_ROUND {
         gSprites[spriteId].set_invisible(TRUE as u16);
-        gSprites[spriteId].callback =
-            Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite));
+        gSprites[spriteId].callback = Some(SpriteCallbackDummy as unsafe fn(*mut Sprite));
         StartSpriteAnim(&raw mut gSprites[spriteId], 0);
-        j = 0;
-        while j < 8 {
+        for j in 0..8u8 {
             gSprites[spriteId].data[j] = 0;
-            j += 1;
         }
         spriteId += 1;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateBallRelativeWheelAngle(sprite: *mut Sprite) -> i16 {
-    if (*sRoulette).wheelAngle > (*sprite).data[3] {
-        (*sprite).data[6] = 360 - (*sRoulette).wheelAngle + (*sprite).data[3];
-        if (*sprite).data[6] >= 360 {
-            (*sprite).data[6] -= 360;
+unsafe fn UpdateBallRelativeWheelAngle(sprite: *mut Sprite) -> i16 {
+    if (*sRoulette).wheelAngle > (*sprite).data[sBallAngle] {
+        (*sprite).data[sBallWheelAngle] =
+            360 - (*sRoulette).wheelAngle + (*sprite).data[sBallAngle];
+        if (*sprite).data[sBallWheelAngle] >= 360 {
+            (*sprite).data[sBallWheelAngle] -= 360;
         }
     } else {
-        (*sprite).data[6] = (*sprite).data[3] - (*sRoulette).wheelAngle;
+        (*sprite).data[sBallWheelAngle] = (*sprite).data[sBallAngle] - (*sRoulette).wheelAngle;
     }
-    return (*sprite).data[6];
+    (*sprite).data[sBallWheelAngle]
 }
-pub(crate) unsafe extern "C" fn UpdateSlotBelowBall(sprite: *mut Sprite) -> u8 {
+unsafe fn UpdateSlotBelowBall(sprite: *mut Sprite) -> u8 {
     (*sRoulette).hitSlot =
-        (UpdateBallRelativeWheelAngle(sprite) as f32 / DEGREES_PER_SLOT as i32 as f32 as f32) as u8;
-    return (*sRoulette).hitSlot;
+        (UpdateBallRelativeWheelAngle(sprite) as f32 / DEGREES_PER_SLOT as i32 as f32) as u8;
+    (*sRoulette).hitSlot
 }
-pub(crate) unsafe extern "C" fn GetBallDistanceToSlotMidpoint(sprite: *mut Sprite) -> i16 {
-    let mut angleIntoSlot: i16 = UpdateBallRelativeWheelAngle(sprite) % 30;
+unsafe fn GetBallDistanceToSlotMidpoint(sprite: *mut Sprite) -> i16 {
+    let angleIntoSlot: i16 = UpdateBallRelativeWheelAngle(sprite) % 30;
     let mut distanceToMidpoint: u16 = 0;
     if angleIntoSlot == SLOT_MIDPOINT {
         distanceToMidpoint = 0;
         return {
-            (*sprite).data[2] = distanceToMidpoint as i16;
-            (*sprite).data[2]
+            (*sprite).data[sSlotMidpointDist] = distanceToMidpoint as i16;
+            (*sprite).data[sSlotMidpointDist]
         };
     } else if angleIntoSlot >= SLOT_MIDPOINT {
         distanceToMidpoint = 43 - angleIntoSlot as u16;
         return {
-            (*sprite).data[2] = distanceToMidpoint as i16;
-            (*sprite).data[2]
+            (*sprite).data[sSlotMidpointDist] = distanceToMidpoint as i16;
+            (*sprite).data[sSlotMidpointDist]
         };
     } else {
         distanceToMidpoint = SLOT_MIDPOINT as u16 - angleIntoSlot as u16;
         return {
-            (*sprite).data[2] = distanceToMidpoint as i16;
-            (*sprite).data[2]
+            (*sprite).data[sSlotMidpointDist] = distanceToMidpoint as i16;
+            (*sprite).data[sSlotMidpointDist]
         };
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn UpdateBallPos(sprite: *mut Sprite) {
-    let mut sin: i16 = 0;
-    let mut cos: i16 = 0;
-    (*sRoulette).ballAngleSpeed += (*sRoulette).ballAngleAccel as f32;
-    (*sRoulette).ballAngle += (*sRoulette).ballAngleSpeed as f32;
-    if (*sRoulette).ballAngle as f32 >= 360 as f32 {
-        (*sRoulette).ballAngle -= 360.0f32 as f32;
-    } else if ((*sRoulette).ballAngle as f32) < 0.0f32 as f32 {
-        (*sRoulette).ballAngle += 360.0f32 as f32;
+unsafe fn UpdateBallPos(sprite: *mut Sprite) {
+    (*sRoulette).ballAngleSpeed += (*sRoulette).ballAngleAccel;
+    (*sRoulette).ballAngle += (*sRoulette).ballAngleSpeed;
+    if (*sRoulette).ballAngle >= 360_f32 {
+        (*sRoulette).ballAngle -= 360_f32;
+    } else if (*sRoulette).ballAngle < 0_f32 {
+        (*sRoulette).ballAngle += 360_f32;
     }
-    (*sprite).data[3] = (*sRoulette).ballAngle as i16;
-    (*sRoulette).ballFallSpeed += (*sRoulette).ballFallAccel as f32;
-    (*sRoulette).ballDistToCenter += (*sRoulette).ballFallSpeed as f32;
-    (*sprite).data[4] = (*sRoulette).ballDistToCenter as i16;
-    sin = Sin2((*sprite).data[3] as u16);
-    cos = Cos2((*sprite).data[3] as u16);
-    (*sprite).x2 = (sin as i32 * (*sprite).data[4] as i32 >> 12) as i16;
-    (*sprite).y2 = (-(cos as i32) * (*sprite).data[4] as i32 >> 12) as i16;
+    (*sprite).data[sBallAngle] = (*sRoulette).ballAngle as i16;
+    (*sRoulette).ballFallSpeed += (*sRoulette).ballFallAccel;
+    (*sRoulette).ballDistToCenter += (*sRoulette).ballFallSpeed;
+    (*sprite).data[sBallDistToCenter] = (*sRoulette).ballDistToCenter as i16;
+    let sin: i16 = Sin2((*sprite).data[sBallAngle] as u16);
+    let cos: i16 = Cos2((*sprite).data[sBallAngle] as u16);
+    (*sprite).x2 = ((sin as i32 * (*sprite).data[sBallDistToCenter] as i32) >> 12) as i16;
+    (*sprite).y2 = ((-(cos as i32) * (*sprite).data[sBallDistToCenter] as i32) >> 12) as i16;
     if IsSEPlaying() != 0 {
         m4aMPlayPanpotControl(&raw mut gMPlayInfo_SE1, TRACKS_ALL, (*sprite).x2 as i8);
         m4aMPlayPanpotControl(&raw mut gMPlayInfo_SE2, TRACKS_ALL, (*sprite).x2 as i8);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_BallLandInSlot(sprite: *mut Sprite) {
-    let mut sin: i16 = 0;
-    let mut cos: i16 = 0;
-    (*sprite).data[3] = (*sRoulette).wheelAngle + (*sprite).data[6];
-    if (*sprite).data[3] >= 360 {
-        (*sprite).data[3] -= 360;
+pub(crate) unsafe fn SpriteCB_BallLandInSlot(sprite: *mut Sprite) {
+    (*sprite).data[sBallAngle] = (*sRoulette).wheelAngle + (*sprite).data[sBallWheelAngle];
+    if (*sprite).data[sBallAngle] >= 360 {
+        (*sprite).data[sBallAngle] -= 360;
     }
-    sin = Sin2((*sprite).data[3] as u16);
-    cos = Cos2((*sprite).data[3] as u16);
-    (*sprite).x2 = (sin as i32 * (*sprite).data[4] as i32 >> 12) as i16;
-    (*sprite).y2 = (-(cos as i32) * (*sprite).data[4] as i32 >> 12) as i16;
+    let sin: i16 = Sin2((*sprite).data[sBallAngle] as u16);
+    let cos: i16 = Cos2((*sprite).data[sBallAngle] as u16);
+    (*sprite).x2 = ((sin as i32 * (*sprite).data[sBallDistToCenter] as i32) >> 12) as i16;
+    (*sprite).y2 = ((-(cos as i32) * (*sprite).data[sBallDistToCenter] as i32) >> 12) as i16;
     (*sprite).y2 += gSpriteCoordOffsetY;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_ShroomishBallFall(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_UnstickBall_ShroomishBallFall(sprite: *mut Sprite) {
     UpdateBallPos(sprite);
     (*sprite).data[2] += 1;
-    if (*sprite).data[4] < -132 || (*sprite).data[4] > 80 {
+    if (*sprite).data[sBallDistToCenter] < -132 || (*sprite).data[sBallDistToCenter] > 80 {
         (*sprite).set_invisible(TRUE as u16);
     } else {
         (*sprite).set_invisible(FALSE as u16);
     }
     if (*sprite).data[2] >= DEGREES_PER_SLOT as i16 {
-        if (*sprite).data[0] == 0 {
-            if (*sRoulette).ballDistToCenter as f32
-                <= ((*sRoulette).varA0 as f32 - 2.0f32 as f32) as f32
-            {
+        if (*sprite).data[sStuckOnWheelLeft] == 0 {
+            if (*sRoulette).ballDistToCenter <= ((*sRoulette).varA0 - 2_f32) {
                 (*sRoulette).ballState = BALL_STATE_LANDED;
                 (*sRoulette).set_ballRolling(0);
                 StartSpriteAnim(sprite, (*sprite).animCmdIndex + 3);
                 UpdateSlotBelowBall(sprite);
-                (*sprite).data[4] = 30;
+                (*sprite).data[sBallDistToCenter] = 30;
                 UpdateBallRelativeWheelAngle(sprite);
                 (*sprite).data[6] = (*sprite).data[6] / 30 * 30 + 15;
                 (*sprite).callback = Some(SpriteCB_BallLandInSlot);
                 m4aSongNumStartOrChange(71);
-                (*sRoulette).ballFallAccel = ({
-                    (*sRoulette).ballFallSpeed = 0.0f32 as f32;
+                (*sRoulette).ballFallAccel = {
+                    (*sRoulette).ballFallSpeed = 0_f32;
                     (*sRoulette).ballFallSpeed
-                }) as f32;
-                (*sRoulette).ballAngleSpeed = -1.0f32 as f32;
+                };
+                (*sRoulette).ballAngleSpeed = -1_f32;
             }
         } else {
-            if (*sRoulette).ballDistToCenter as f32
-                >= ((*sRoulette).varA0 as f32 - 2.0f32 as f32) as f32
-            {
+            if (*sRoulette).ballDistToCenter >= ((*sRoulette).varA0 - 2_f32) {
                 (*sRoulette).ballState = BALL_STATE_LANDED;
                 (*sRoulette).set_ballRolling(0);
                 StartSpriteAnim(sprite, (*sprite).animCmdIndex + 3);
                 UpdateSlotBelowBall(sprite);
-                (*sprite).data[4] = 30;
+                (*sprite).data[sBallDistToCenter] = 30;
                 UpdateBallRelativeWheelAngle(sprite);
                 (*sprite).data[6] = (*sprite).data[6] / 30 * 30 + 15;
                 (*sprite).callback = Some(SpriteCB_BallLandInSlot);
                 m4aSongNumStartOrChange(71);
-                (*sRoulette).ballFallAccel = ({
-                    (*sRoulette).ballFallSpeed = 0.0f32 as f32;
+                (*sRoulette).ballFallAccel = {
+                    (*sRoulette).ballFallSpeed = 0_f32;
                     (*sRoulette).ballFallSpeed
-                }) as f32;
-                (*sRoulette).ballAngleSpeed = -1.0f32 as f32;
+                };
+                (*sRoulette).ballAngleSpeed = -1_f32;
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_Shroomish(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_UnstickBall_Shroomish(sprite: *mut Sprite) {
     let mut slotOffset: f32 = 0.0;
     let mut ballFallDist: f32 = 0.0;
     let mut ballFallSpeed: f32 = 0.0;
     UpdateBallPos(sprite);
-    match (*sprite).data[3] {
+    match (*sprite).data[sBallAngle] {
         0 => {
-            if (*sprite).data[0] != TRUE as i16 {
+            if (*sprite).data[sStuckOnWheelLeft] != TRUE as i16 {
                 slotOffset = (*sprite).data[7] as f32;
-                ballFallDist = ((slotOffset as f32
+                ballFallDist = (slotOffset
                     * sRouletteTables[(*sRoulette).tableId()].randDistanceHigh as f32)
-                    as f32
-                    + (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i32 - 1) as f32)
-                    as f32;
-                ballFallSpeed = (slotOffset as f32
+                    + (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i32 - 1) as f32;
+                ballFallSpeed = slotOffset
                     / sRouletteTables[(*sRoulette).tableId()]
                         .shroomish
-                        .fallSlowdown as f32) as f32;
+                        .fallSlowdown as f32;
             } else {
                 return;
             }
         }
-        180 => {
-            if (*sprite).data[0] != 0 {
-                slotOffset = (*sprite).data[7] as f32;
-                ballFallDist = ((slotOffset as f32
-                    * sRouletteTables[(*sRoulette).tableId()].randDistanceHigh as f32)
-                    as f32
-                    + (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i32 - 1) as f32)
-                    as f32;
-                ballFallSpeed = -(slotOffset as f32
-                    / sRouletteTables[(*sRoulette).tableId()]
-                        .shroomish
-                        .fallSlowdown as f32) as f32;
-            } else {
-                return;
-            }
+        180 if (*sprite).data[sStuckOnWheelLeft] != 0 => {
+            slotOffset = (*sprite).data[7] as f32;
+            ballFallDist = (slotOffset
+                * sRouletteTables[(*sRoulette).tableId()].randDistanceHigh as f32)
+                + (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i32 - 1) as f32;
+            ballFallSpeed = -(slotOffset
+                / sRouletteTables[(*sRoulette).tableId()]
+                    .shroomish
+                    .fallSlowdown as f32);
         }
         _ => {
             return;
         }
     }
-    (*sRoulette).varA0 = (*sRoulette).ballDistToCenter as f32;
-    (*sRoulette).ballFallSpeed = ballFallSpeed as f32;
-    (*sRoulette).ballFallAccel = -(((ballFallSpeed as f32 * 2.0f32 as f32) as f32
-        / ballFallDist as f32) as f32
-        + (2.0f32 as f32 / (ballFallDist as f32 * ballFallDist as f32) as f32) as f32)
-        as f32;
-    (*sRoulette).ballAngleSpeed = 0.0f32 as f32;
+    (*sRoulette).varA0 = (*sRoulette).ballDistToCenter;
+    (*sRoulette).ballFallSpeed = ballFallSpeed;
+    (*sRoulette).ballFallAccel =
+        -(((ballFallSpeed * 2_f32) / ballFallDist) + (2_f32 / (ballFallDist * ballFallDist)));
+    (*sRoulette).ballAngleSpeed = 0_f32;
     (*sprite).set_animPaused(FALSE);
     (*sprite).animNum = 0;
     (*sprite).set_animBeginning(TRUE as u16);
@@ -3023,9 +3064,8 @@ pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_Shroomish(sprite: *mut Spri
     (*sprite).callback = Some(SpriteCB_UnstickBall_ShroomishBallFall);
     (*sprite).data[2] = 0;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_TaillowDrop(sprite: *mut Sprite) {
-    (*sprite).y2 =
-        (((*sprite).data[2] as f32 * 0.05f32 as f32) as f32 * (*sprite).data[2] as f32) as i16 - 45;
+pub(crate) unsafe fn SpriteCB_UnstickBall_TaillowDrop(sprite: *mut Sprite) {
+    (*sprite).y2 = (((*sprite).data[2] as f32 * 0_f32) * (*sprite).data[2] as f32) as i16 - 45;
     (*sprite).data[2] += 1;
     if (*sprite).data[2] >= DEGREES_PER_SLOT as i16 && (*sprite).y2 >= 0 {
         (*sRoulette).ballState = BALL_STATE_LANDED;
@@ -3040,7 +3080,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_TaillowDrop(sprite: *mut Sp
         (*sRoulette).set_ballUnstuck(TRUE);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_TaillowPickUp(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_UnstickBall_TaillowPickUp(sprite: *mut Sprite) {
     if ({
         let t1 = (*sprite).data[2];
         (*sprite).data[2] += 1;
@@ -3048,10 +3088,8 @@ pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_TaillowPickUp(sprite: *mut 
     }) < 45
     {
         (*sprite).y2 -= 1;
-        if (*sprite).data[2] == 45 {
-            if gSprites[(*sRoulette).spriteIds[55]].animCmdIndex == 1 {
-                (*sprite).y2 += 1;
-            }
+        if (*sprite).data[2] == 45 && gSprites[(*sRoulette).spriteIds[55]].animCmdIndex == 1 {
+            (*sprite).y2 += 1;
         }
     } else {
         if (*sprite).data[2] < (*sprite).data[7] {
@@ -3073,27 +3111,24 @@ pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_TaillowPickUp(sprite: *mut 
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall_Taillow(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_UnstickBall_Taillow(sprite: *mut Sprite) {
     UpdateBallPos(sprite);
-    match (*sprite).data[3] {
+    match (*sprite).data[sBallAngle] {
         90 => {
-            if (*sprite).data[0] != TRUE as i16 {
+            if (*sprite).data[sStuckOnWheelLeft] != TRUE as i16 {
                 (*sprite).callback =
-                    Some(SpriteCB_UnstickBall_TaillowPickUp as unsafe extern "C" fn(*mut Sprite));
+                    Some(SpriteCB_UnstickBall_TaillowPickUp as unsafe fn(*mut Sprite));
                 (*sprite).data[2] = 0;
             }
         }
-        270 => {
-            if (*sprite).data[0] != 0 {
-                (*sprite).callback =
-                    Some(SpriteCB_UnstickBall_TaillowPickUp as unsafe extern "C" fn(*mut Sprite));
-                (*sprite).data[2] = 0;
-            }
+        270 if (*sprite).data[sStuckOnWheelLeft] != 0 => {
+            (*sprite).callback = Some(SpriteCB_UnstickBall_TaillowPickUp as unsafe fn(*mut Sprite));
+            (*sprite).data[2] = 0;
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_UnstickBall(sprite: *mut Sprite) {
     UpdateBallPos(sprite);
     match (*sRoulette).useTaillow() {
         TRUE => {
@@ -3106,7 +3141,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_UnstickBall(sprite: *mut Sprite) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_RollBall_TryLandAdjacent(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_RollBall_TryLandAdjacent(sprite: *mut Sprite) {
     UpdateBallPos(sprite);
     if ({
         let t1 = (*sprite).data[2];
@@ -3114,10 +3149,10 @@ pub(crate) unsafe extern "C" fn SpriteCB_RollBall_TryLandAdjacent(sprite: *mut S
         t1
     }) == 16
     {
-        (*sRoulette).ballFallSpeed *= -1.0f32 as f32;
+        (*sRoulette).ballFallSpeed *= -1_f32;
     }
     if (*sprite).data[2] == 0 {
-        if (*sprite).data[0] == 0 {
+        if (*sprite).data[sStillStuck] == 0 {
             (*sRoulette).ballState = BALL_STATE_LANDED;
             (*sRoulette).set_ballRolling(0);
             StartSpriteAnim(sprite, (*sprite).animCmdIndex + 3);
@@ -3134,7 +3169,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_RollBall_TryLandAdjacent(sprite: *mut S
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_RollBall_TryLand(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_RollBall_TryLand(sprite: *mut Sprite) {
     UpdateBallPos(sprite);
     (*sprite).data[2] = 0;
     UpdateSlotBelowBall(sprite);
@@ -3150,119 +3185,108 @@ pub(crate) unsafe extern "C" fn SpriteCB_RollBall_TryLand(sprite: *mut Sprite) {
         m4aSongNumStartOrChange(71);
     } else {
         let mut slotId: u8 = 0;
-        let mut fallRight: u32 = 0;
         m4aSongNumStart(SE_BALL_BOUNCE_1);
-        fallRight = Random() as u32 & 1;
+        let fallRight: u32 = Random() as u32 & 1;
         if fallRight != 0 {
-            (*sRoulette).ballAngleSpeed = 0.0f32 as f32;
+            (*sRoulette).ballAngleSpeed = 0_f32;
             (*sRoulette).stuckHitSlot = {
                 slotId = (((*sRoulette).hitSlot as i32 + 1) % 12) as u8;
                 slotId
             };
         } else {
             let mut temp: f32 = 0.0;
-            (*sRoulette).ballAngleSpeed = (({
-                temp = sRouletteTables[(*sRoulette).tableId()].var1C as f32;
+            (*sRoulette).ballAngleSpeed = ({
+                temp = sRouletteTables[(*sRoulette).tableId()].var1C;
                 temp
-            }) as f32
-                * 2.0f32 as f32) as f32;
+            }) * 2_f32;
             slotId = (((*sRoulette).hitSlot as i32 + NUM_ROULETTE_SLOTS as i32 - 1) % 12) as u8;
             (*sRoulette).stuckHitSlot = (*sRoulette).hitSlot;
         }
         if sRouletteSlots[slotId].flag & (*sRoulette).hitFlags != 0 {
-            (*sprite).data[0] = TRUE as i16;
+            (*sprite).data[sStillStuck] = TRUE as i16;
             (*sprite).data[2] = sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i16;
         } else {
-            (*sprite).data[0] = FALSE as i16;
+            (*sprite).data[sStillStuck] = FALSE as i16;
             if (*sRoulette).tableId() != 0 {
                 (*sprite).data[2] = sRouletteTables[(*sRoulette).tableId()].randDistanceHigh as i16;
             } else {
                 (*sprite).data[2] = sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i16;
                 if fallRight != 0 {
-                    (*sRoulette).ballAngleSpeed = 0.5f32 as f32;
+                    (*sRoulette).ballAngleSpeed = 0_f32;
                 } else {
-                    (*sRoulette).ballAngleSpeed = -1.5f32 as f32;
+                    (*sRoulette).ballAngleSpeed = -1_f32;
                 }
             }
         }
-        (*sRoulette).ballFallSpeed = 0.085f32 as f32;
+        (*sRoulette).ballFallSpeed = 0_f32;
         (*sprite).callback = Some(SpriteCB_RollBall_TryLandAdjacent);
-        (*sprite).data[1] = 5;
+        (*sprite).data[sState] = 5;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_RollBall_Slow(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_RollBall_Slow(sprite: *mut Sprite) {
     UpdateBallPos(sprite);
-    if (*sRoulette).ballAngleSpeed as f32 > 0.5f32 as f32 {
+    if (*sRoulette).ballAngleSpeed > 0_f32 {
         return;
     }
     UpdateSlotBelowBall(sprite);
     if GetBallDistanceToSlotMidpoint(sprite) == 0 {
-        (*sRoulette).ballAngleAccel = 0.0f32 as f32;
-        (*sRoulette).ballAngleSpeed -= (sRouletteTables[(*sRoulette).tableId()].wheelSpeed as f32
-            as f32
-            / (sRouletteTables[(*sRoulette).tableId()].wheelDelay as i32 + 1) as f32)
-            as f32;
-        (*sprite).data[1] = 4;
+        (*sRoulette).ballAngleAccel = 0_f32;
+        (*sRoulette).ballAngleSpeed -= sRouletteTables[(*sRoulette).tableId()].wheelSpeed as f32
+            / (sRouletteTables[(*sRoulette).tableId()].wheelDelay as i32 + 1) as f32;
+        (*sprite).data[sState] = 4;
         (*sprite).callback = Some(SpriteCB_RollBall_TryLand);
     } else {
-        if (*sRoulette).ballAngleAccel as f32 != 0.0f32 as f32 {
-            if ((*sRoulette).ballAngleSpeed as f32) < 0.0f32 as f32 {
-                (*sRoulette).ballAngleAccel = 0.0f32 as f32;
-                (*sRoulette).ballAngleSpeed = 0.0f32 as f32;
-                (*sRoulette).ballFallSpeed /= 1.2f32 as f32;
-            }
+        if (*sRoulette).ballAngleAccel != 0_f32 && (*sRoulette).ballAngleSpeed < 0_f32 {
+            (*sRoulette).ballAngleAccel = 0_f32;
+            (*sRoulette).ballAngleSpeed = 0_f32;
+            (*sRoulette).ballFallSpeed /= 1_f32;
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_RollBall_Medium(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_RollBall_Medium(sprite: *mut Sprite) {
     UpdateBallPos(sprite);
-    if (*sRoulette).ballDistToCenter as f32 > 40.0f32 as f32 {
+    if (*sRoulette).ballDistToCenter > 40_f32 {
         return;
     }
-    (*sRoulette).ballFallSpeed =
-        -(4.0f32 as f32 / (*sRoulette).ballTravelDistSlow as f32 as f32) as f32;
-    (*sRoulette).ballAngleAccel = -((*sRoulette).ballAngleSpeed as f32
-        / (*sRoulette).ballTravelDistSlow as f32 as f32) as f32;
+    (*sRoulette).ballFallSpeed = -(4_f32 / (*sRoulette).ballTravelDistSlow as f32);
+    (*sRoulette).ballAngleAccel =
+        -((*sRoulette).ballAngleSpeed / (*sRoulette).ballTravelDistSlow as f32);
     (*sprite).animNum = 2;
     (*sprite).set_animBeginning(TRUE as u16);
     (*sprite).set_animEnded(FALSE as u16);
-    (*sprite).data[1] = 3;
+    (*sprite).data[sState] = 3;
     (*sprite).callback = Some(SpriteCB_RollBall_Slow);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_RollBall_Fast(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_RollBall_Fast(sprite: *mut Sprite) {
     UpdateBallPos(sprite);
-    if (*sRoulette).ballDistToCenter as f32 > 60.0f32 as f32 {
+    if (*sRoulette).ballDistToCenter > 60_f32 {
         return;
     }
     m4aSongNumStartOrChange(SE_ROULETTE_BALL2);
-    (*sRoulette).ballFallSpeed =
-        -(20.0f32 as f32 / (*sRoulette).ballTravelDistMed as f32 as f32) as f32;
-    (*sRoulette).ballAngleAccel = ((1.0f32 as f32 - (*sRoulette).ballAngleSpeed as f32) as f32
-        / (*sRoulette).ballTravelDistMed as f32 as f32) as f32;
+    (*sRoulette).ballFallSpeed = -(20_f32 / (*sRoulette).ballTravelDistMed as f32);
+    (*sRoulette).ballAngleAccel =
+        (1_f32 - (*sRoulette).ballAngleSpeed) / (*sRoulette).ballTravelDistMed as f32;
     (*sprite).animNum = 1;
     (*sprite).set_animBeginning(TRUE as u16);
     (*sprite).set_animEnded(FALSE as u16);
-    (*sprite).data[1] = 2;
+    (*sprite).data[sState] = 2;
     (*sprite).callback = Some(SpriteCB_RollBall_Medium);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_RollBall_Start(sprite: *mut Sprite) {
-    (*sprite).data[1] = 1;
+pub(crate) unsafe fn SpriteCB_RollBall_Start(sprite: *mut Sprite) {
+    (*sprite).data[sState] = 1;
     (*sprite).data[2] = 0;
     UpdateBallPos(sprite);
     (*sprite).set_invisible(FALSE as u16);
     (*sprite).callback = Some(SpriteCB_RollBall_Fast);
 }
-pub(crate) unsafe extern "C" fn CreateShroomishSprite(ball: *mut Sprite) {
-    let mut t: u16 = 0;
-    let mut i: u8 = 0;
+unsafe fn CreateShroomishSprite(ball: *mut Sprite) {
     let mut coords: CArray<CArray<i16, 2>, 2> = zeroed();
     coords[0][0] = 116;
     coords[0][1] = 44;
     coords[1][0] = 116;
     coords[1][1] = 112;
-    let mut roulette: *mut Roulette = null_mut();
-    t = (*ball).data[7] as u16 - 2;
-    roulette = sRoulette;
+    let t: u16 = (*ball).data[7] as u16 - 2;
+    let roulette: *mut Roulette = sRoulette;
     (*sRoulette).spriteIds[55] = CreateSprite(
         (&raw const *sSpriteTemplate_Shroomish).cast_mut(),
         36,
@@ -3271,8 +3295,8 @@ pub(crate) unsafe extern "C" fn CreateShroomishSprite(ball: *mut Sprite) {
     );
     (*sRoulette).spriteIds[56] = CreateSprite(
         (&raw const sSpriteTemplate_ShroomishShadow[0]).cast_mut(),
-        coords[(*ball).data[0]][0],
-        coords[(*ball).data[0]][1],
+        coords[(*ball).data[sStuckOnWheelLeft]][0],
+        coords[(*ball).data[sStuckOnWheelLeft]][1],
         59,
     );
     (*sRoulette).spriteIds[57] = CreateSprite(
@@ -3284,51 +3308,47 @@ pub(crate) unsafe extern "C" fn CreateShroomishSprite(ball: *mut Sprite) {
     gSprites[(*sRoulette).spriteIds[57]]
         .oam
         .set_objMode(ST_OAM_OBJ_BLEND);
-    i = 0;
-    while i < 3 {
+    for i in 0..3u8 {
         gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]]
             .set_coordOffsetEnabled(FALSE as u16);
         gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].set_invisible(TRUE as u16);
         gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].set_animPaused(TRUE);
         gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].set_affineAnimPaused(TRUE);
-        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].data[4] =
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].data[sMonSpriteId] =
             (*sRoulette).spriteIds[55] as i16;
-        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].data[5] =
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].data[sBallShadowSpriteId] =
             (*sRoulette).spriteIds[56] as i16;
-        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].data[6] =
+        gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].data[sMonShadowSpriteId] =
             (*sRoulette).spriteIds[57] as i16;
         gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].data[2] = t as i16;
         gSprites[(*sRoulette).spriteIds[i as i32 + SPR_CLEAR_MON]].data[3] = (*ball).data[7]
             * sRouletteTables[(*sRoulette).tableId()].randDistanceHigh as i16
             + (sRouletteTables[(*sRoulette).tableId()].randDistanceLow as i16 + -1);
-        i += 1;
     }
     gSprites[(*sRoulette).spriteIds[56]].set_coordOffsetEnabled(TRUE as u16);
     (*sRoulette).ball = ball;
 }
-pub(crate) unsafe extern "C" fn CreateTaillowSprite(ball: *mut Sprite) {
-    let mut i: u8 = 0;
-    let mut t: i16 = 0;
+unsafe fn CreateTaillowSprite(ball: *mut Sprite) {
     let mut coords: CArray<CArray<i16, 2>, 2> = zeroed();
     coords[0][0] = 256;
     coords[0][1] = 84;
     coords[1][0] = -16;
     coords[1][1] = 84;
-    t = (*ball).data[7] - 2;
+    let t: i16 = (*ball).data[7] - 2;
     (*sRoulette).spriteIds[55] = CreateSprite(
         (&raw const *sSpriteTemplate_Taillow).cast_mut(),
-        coords[(*ball).data[0]][0],
-        coords[(*ball).data[0]][1],
+        coords[(*ball).data[sStuckOnWheelLeft]][0],
+        coords[(*ball).data[sStuckOnWheelLeft]][1],
         50,
     );
     StartSpriteAnim(
         &raw mut gSprites[(*sRoulette).spriteIds[55]],
-        (*ball).data[0] as u8,
+        (*ball).data[sStuckOnWheelLeft] as u8,
     );
     (*sRoulette).spriteIds[56] = CreateSprite(
         (&raw const *sSpriteTemplate_TaillowShadow).cast_mut(),
-        coords[(*ball).data[0]][0],
-        coords[(*ball).data[0]][1],
+        coords[(*ball).data[sStuckOnWheelLeft]][0],
+        coords[(*ball).data[sStuckOnWheelLeft]][1],
         51,
     );
     gSprites[(*sRoulette).spriteIds[56]].set_affineAnimPaused(TRUE);
@@ -3338,50 +3358,45 @@ pub(crate) unsafe extern "C" fn CreateTaillowSprite(ball: *mut Sprite) {
             .taillow
             .baseDropDelay as i16
             + 45);
-    while i < 2 {
-        gSprites[(*sRoulette).spriteIds[SPR_CLEAR_MON + i as i32]].data[4] =
+    for i in 0..2u8 {
+        gSprites[(*sRoulette).spriteIds[SPR_CLEAR_MON + i as i32]].data[sMonSpriteId] =
             (*sRoulette).spriteIds[55] as i16;
-        gSprites[(*sRoulette).spriteIds[SPR_CLEAR_MON + i as i32]].data[5] =
+        gSprites[(*sRoulette).spriteIds[SPR_CLEAR_MON + i as i32]].data[sBallShadowSpriteId] =
             (*sRoulette).spriteIds[56] as i16;
-        gSprites[(*sRoulette).spriteIds[SPR_CLEAR_MON + i as i32]].data[6] =
+        gSprites[(*sRoulette).spriteIds[SPR_CLEAR_MON + i as i32]].data[sMonShadowSpriteId] =
             (*sRoulette).spriteIds[56] as i16;
         gSprites[(*sRoulette).spriteIds[SPR_CLEAR_MON + i as i32]].data[2] = t;
         gSprites[(*sRoulette).spriteIds[SPR_CLEAR_MON + i as i32]].data[3] = (*ball).data[7] - 45;
-        i += 1;
     }
     (*sRoulette).ball = ball;
 }
-pub(crate) unsafe extern "C" fn SetBallStuck(sprite: *mut Sprite) {
-    let mut slotId: u8 = 0;
-    let mut angle: u16 = 0;
+unsafe fn SetBallStuck(sprite: *mut Sprite) {
     let mut numCandidates: u8 = 0;
     let mut maxSlotToCheck: u8 = 5;
     let mut betSlotId: u8 = 0;
-    let mut i: u8 = 0;
-    let mut slotsToSkip: u8 = 0;
     let mut slotCandidates: CArray<u8, 10> = CArray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-    let mut rand: u16 = Random();
+    let rand: u16 = Random();
     (*sRoulette).ballState = BALL_STATE_STUCK;
     (*sRoulette).set_ballStuck(TRUE);
     (*sRoulette).set_ballUnstuck(FALSE);
     (*sRoulette).hitSlot = 0xFF;
-    (*sRoulette).ballAngle = (*sprite).data[3] as f32;
-    (*sRoulette).ballFallSpeed = 0.0f32 as f32;
-    (*sRoulette).ballAngleSpeed = sRouletteTables[(*sRoulette).tableId()].var1C as f32;
-    angle = (*sRoulette).tableId() as u16 * DEGREES_PER_SLOT
+    (*sRoulette).ballAngle = (*sprite).data[sBallAngle] as f32;
+    (*sRoulette).ballFallSpeed = 0_f32;
+    (*sRoulette).ballAngleSpeed = sRouletteTables[(*sRoulette).tableId()].var1C;
+    let mut angle: u16 = (*sRoulette).tableId() as u16 * DEGREES_PER_SLOT
         + 33
         + (1 - (*sRoulette).useTaillow() as u16) * 15;
-    i = 0;
+    let mut i: u8 = 0;
     while i < 4 {
-        if (angle as i32) < (*sprite).data[3] as i32
-            && (*sprite).data[3] as i32 <= angle as i32 + 90
+        if (angle as i32) < (*sprite).data[sBallAngle] as i32
+            && (*sprite).data[sBallAngle] as i32 <= angle as i32 + 90
         {
-            (*sprite).data[0] = (i as i32 / 2) as i16;
+            (*sprite).data[sStuckOnWheelLeft] = (i as i32 / 2) as i16;
             (*sRoulette).set_useTaillow((i as i32 % 2) as u8);
             break;
         }
         if i == 3 {
-            (*sprite).data[0] = TRUE as i16;
+            (*sprite).data[sStuckOnWheelLeft] = TRUE as i16;
             (*sRoulette).set_useTaillow(TRUE);
             break;
         }
@@ -3389,7 +3404,7 @@ pub(crate) unsafe extern "C" fn SetBallStuck(sprite: *mut Sprite) {
         i += 1;
     }
     if (*sRoulette).useTaillow() != 0 {
-        if (*sprite).data[0] != 0 {
+        if (*sprite).data[sStuckOnWheelLeft] != 0 {
             PlayCry_Normal(SPECIES_TAILLOW, -63);
         } else {
             PlayCry_Normal(SPECIES_TAILLOW, 63);
@@ -3397,15 +3412,14 @@ pub(crate) unsafe extern "C" fn SetBallStuck(sprite: *mut Sprite) {
     } else {
         PlayCry_Normal(SPECIES_SHROOMISH as u16, -63);
     }
-    slotsToSkip = 2;
-    slotId = (((*sRoulette).stuckHitSlot as i32 + 2) % 12) as u8;
+    let slotsToSkip: u8 = 2;
+    let mut slotId: u8 = (((*sRoulette).stuckHitSlot as i32 + 2) % 12) as u8;
     if (*sRoulette).useTaillow() == 1 && (*sRoulette).tableId() == 1 {
         maxSlotToCheck += 6;
     } else {
         maxSlotToCheck += slotsToSkip;
     }
-    i = slotsToSkip;
-    while i < maxSlotToCheck {
+    for i in slotsToSkip..maxSlotToCheck {
         if (*sRoulette).hitFlags & sRouletteSlots[slotId].flag == 0 {
             slotCandidates[{
                 let t1 = numCandidates;
@@ -3422,9 +3436,8 @@ pub(crate) unsafe extern "C" fn SetBallStuck(sprite: *mut Sprite) {
             }
         }
         slotId = ((slotId as i32 + 1) % 12) as u8;
-        i += 1;
     }
-    if (*sRoulette).useTaillow() as i32 + 1 & (*sRoulette).partySpeciesFlags as i32 != 0 {
+    if ((*sRoulette).useTaillow() as i32 + 1) & (*sRoulette).partySpeciesFlags as i32 != 0 {
         if betSlotId != 0 && rand as i32 % 256 < 192 {
             (*sprite).data[7] = betSlotId as i16;
         } else {
@@ -3435,7 +3448,7 @@ pub(crate) unsafe extern "C" fn SetBallStuck(sprite: *mut Sprite) {
     }
     (*sprite).callback = Some(SpriteCB_UnstickBall);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ShroomishExit(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ShroomishExit(sprite: *mut Sprite) {
     if ({
         let t1 = (*sprite).data[1];
         (*sprite).data[1] += 1;
@@ -3453,7 +3466,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_ShroomishExit(sprite: *mut Sprite) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ShroomishShakeScreen(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ShroomishShakeScreen(sprite: *mut Sprite) {
     let mut screenShakeIdx: i32 = 0;
     let mut screenShakeOffsets: CArray<CArray<u16, 4>, 3> = zeroed();
     screenShakeOffsets[0][0] = 65535;
@@ -3487,11 +3500,10 @@ pub(crate) unsafe extern "C" fn SpriteCB_ShroomishShakeScreen(sprite: *mut Sprit
         DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ShroomishFall(sprite: *mut Sprite) {
-    let mut timer: f32 = 0.0;
+pub(crate) unsafe fn SpriteCB_ShroomishFall(sprite: *mut Sprite) {
     (*sprite).data[1] += 1;
-    timer = (*sprite).data[1] as f32;
-    (*sprite).y2 = ((timer as f32 * 0.039f32 as f32) as f32 * timer as f32) as i16;
+    let timer: f32 = (*sprite).data[1] as f32;
+    (*sprite).y2 = ((timer * 0_f32) * timer) as i16;
     (*sRoulette).shroomishShadowAlpha =
         sShroomishShadowAlphas[((*sRoulette).shroomishShadowTimer as i32 - 1) / 2];
     if (*sRoulette).shroomishShadowTimer < 19 {
@@ -3500,23 +3512,24 @@ pub(crate) unsafe extern "C" fn SpriteCB_ShroomishFall(sprite: *mut Sprite) {
     if (*sprite).data[1] > 60 {
         (*sprite).data[1] = 0;
         (*sprite).callback = Some(SpriteCB_ShroomishExit);
-        gSprites[(*sprite).data[6]].callback = Some(SpriteCB_ShroomishExit);
-        gSprites[(*sprite).data[6]].data[1] = -2;
-        gSprites[(*sprite).data[5]].set_invisible(FALSE as u16);
-        gSprites[(*sprite).data[5]].callback = Some(SpriteCB_ShroomishShakeScreen);
+        gSprites[(*sprite).data[sMonShadowSpriteId]].callback = Some(SpriteCB_ShroomishExit);
+        gSprites[(*sprite).data[sMonShadowSpriteId]].data[1] = -2;
+        gSprites[(*sprite).data[sBallShadowSpriteId]].set_invisible(FALSE as u16);
+        gSprites[(*sprite).data[sBallShadowSpriteId]].callback =
+            Some(SpriteCB_ShroomishShakeScreen);
         m4aSongNumStart(SE_M_STRENGTH);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Shroomish(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_Shroomish(sprite: *mut Sprite) {
     if (*sprite).data[7] == 0 {
-        if (*(*sRoulette).ball).data[0] == 0 {
-            if (*(*sRoulette).ball).data[3] as i32
+        if (*(*sRoulette).ball).data[sStuckOnWheelLeft] == 0 {
+            if (*(*sRoulette).ball).data[sBallAngle] as i32
                 != sRouletteTables[(*sRoulette).tableId()].shroomish.startAngle as i32
             {
                 return;
             }
         } else {
-            if (*(*sRoulette).ball).data[3] as i32
+            if (*(*sRoulette).ball).data[sBallAngle] as i32
                 != sRouletteTables[(*sRoulette).tableId()].shroomish.startAngle as i32 + 180
             {
                 return;
@@ -3533,29 +3546,29 @@ pub(crate) unsafe extern "C" fn SpriteCB_Shroomish(sprite: *mut Sprite) {
         if (*sRoulette).shroomishShadowTimer < 19 {
             (*sRoulette).shroomishShadowTimer += 1;
         }
-        if (*(*sRoulette).ball).data[0] == 0 {
-            if (*(*sRoulette).ball).data[3] as i32
+        if (*(*sRoulette).ball).data[sStuckOnWheelLeft] == 0 {
+            if (*(*sRoulette).ball).data[sBallAngle] as i32
                 != sRouletteTables[(*sRoulette).tableId()].shroomish.dropAngle as i32
             {
                 return;
             }
         } else {
-            if (*(*sRoulette).ball).data[3] as i32
+            if (*(*sRoulette).ball).data[sBallAngle] as i32
                 != sRouletteTables[(*sRoulette).tableId()].shroomish.dropAngle as i32 + 180
             {
                 return;
             }
         }
-        gSprites[(*sprite).data[4]].callback = Some(SpriteCB_ShroomishFall);
-        gSprites[(*sprite).data[4]].set_invisible(FALSE as u16);
-        (*sprite).callback = Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite));
+        gSprites[(*sprite).data[sMonSpriteId]].callback = Some(SpriteCB_ShroomishFall);
+        gSprites[(*sprite).data[sMonSpriteId]].set_invisible(FALSE as u16);
+        (*sprite).callback = Some(SpriteCallbackDummy as unsafe fn(*mut Sprite));
         (*sprite).data[7] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_TaillowShadow_Flash(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_TaillowShadow_Flash(sprite: *mut Sprite) {
     (*sprite).set_invisible((*sprite).invisible() ^ 1);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Taillow_FlyAway(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_Taillow_FlyAway(sprite: *mut Sprite) {
     if (*sprite).y > -16 {
         (*sprite).y -= 1;
     } else {
@@ -3568,7 +3581,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_Taillow_FlyAway(sprite: *mut Sprite) {
         DestroySprite(&raw mut gSprites[(*sRoulette).spriteIds[56]]);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Taillow_PickUpBall(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_Taillow_PickUpBall(sprite: *mut Sprite) {
     if (*sprite).data[1] >= 0 {
         (*sprite).data[1] -= 1;
         (*sprite).y -= 1;
@@ -3587,14 +3600,17 @@ pub(crate) unsafe extern "C" fn SpriteCB_Taillow_PickUpBall(sprite: *mut Sprite)
             }
         } else {
             m4aSongNumStart(SE_FALL);
-            StartSpriteAnim(sprite, (*(*sRoulette).ball).data[0] as u8 + 4);
+            StartSpriteAnim(
+                sprite,
+                (*(*sRoulette).ball).data[sStuckOnWheelLeft] as u8 + 4,
+            );
             (*sprite).callback = Some(SpriteCB_Taillow_FlyAway);
-            gSprites[(*sprite).data[6]].set_affineAnimPaused(FALSE);
+            gSprites[(*sprite).data[sMonShadowSpriteId]].set_affineAnimPaused(FALSE);
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Taillow_FlyIn(sprite: *mut Sprite) {
-    let mut xMoveOffsets: CArray<i8, 2> = CArray([-1, 1]);
+pub(crate) unsafe fn SpriteCB_Taillow_FlyIn(sprite: *mut Sprite) {
+    let xMoveOffsets: CArray<i8, 2> = CArray([-1, 1]);
     let mut yMoveOffsets: CArray<CArray<i8, 2>, 8> = zeroed();
     yMoveOffsets[0][0] = 2;
     yMoveOffsets[0][1] = 0;
@@ -3618,71 +3634,75 @@ pub(crate) unsafe extern "C" fn SpriteCB_Taillow_FlyIn(sprite: *mut Sprite) {
         t1
     }) > 7
     {
-        (*sprite).x += xMoveOffsets[(*(*sRoulette).ball).data[0]] as i16 * 2;
+        (*sprite).x += xMoveOffsets[(*(*sRoulette).ball).data[sStuckOnWheelLeft]] as i16 * 2;
         if IsSEPlaying() != 0 {
-            let mut pan: i8 = -(((116 - (*sprite).x as i32) / 2) as i8);
+            let pan: i8 = -(((116 - (*sprite).x as i32) / 2) as i8);
             m4aMPlayPanpotControl(&raw mut gMPlayInfo_SE1, TRACKS_ALL, pan);
             m4aMPlayPanpotControl(&raw mut gMPlayInfo_SE2, TRACKS_ALL, pan);
         }
     } else {
         if (*sprite).data[1] >= 0 {
-            (*sprite).x += xMoveOffsets[(*(*sRoulette).ball).data[0]] as i16
+            (*sprite).x += xMoveOffsets[(*(*sRoulette).ball).data[sStuckOnWheelLeft]] as i16
                 * yMoveOffsets[7 - (*sprite).data[1] as i32][0] as i16;
             (*sprite).y += yMoveOffsets[7 - (*sprite).data[1] as i32][1] as i16;
         } else {
             m4aSongNumStartOrChange(SE_TAILLOW_WING_FLAP);
-            if (*(*sRoulette).ball).data[0] == 0 {
+            if (*(*sRoulette).ball).data[sStuckOnWheelLeft] == 0 {
                 PlayCry_Normal(SPECIES_TAILLOW, 63);
             } else {
                 PlayCry_Normal(SPECIES_TAILLOW, -63);
             }
-            StartSpriteAnim(sprite, (*(*sRoulette).ball).data[0] as u8 + 2);
+            StartSpriteAnim(
+                sprite,
+                (*(*sRoulette).ball).data[sStuckOnWheelLeft] as u8 + 2,
+            );
             (*sprite).data[1] = 45;
             (*sprite).callback = Some(SpriteCB_Taillow_PickUpBall);
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_TaillowShadow_FlyIn(sprite: *mut Sprite) {
-    let mut moveDir: CArray<i8, 2> = CArray([-1, 1]);
+pub(crate) unsafe fn SpriteCB_TaillowShadow_FlyIn(sprite: *mut Sprite) {
+    let moveDir: CArray<i8, 2> = CArray([-1, 1]);
     if ({
         let t1 = (*sprite).data[1];
         (*sprite).data[1] -= 1;
         t1
     }) >= 0
     {
-        (*sprite).x += moveDir[(*(*sRoulette).ball).data[0]] as i16 * 2;
-        gSprites[(*sprite).data[6]].set_invisible(gSprites[(*sprite).data[6]].invisible() ^ 1);
+        (*sprite).x += moveDir[(*(*sRoulette).ball).data[sStuckOnWheelLeft]] as i16 * 2;
+        gSprites[(*sprite).data[sMonShadowSpriteId]]
+            .set_invisible(gSprites[(*sprite).data[sMonShadowSpriteId]].invisible() ^ 1);
     } else {
         (*sprite).callback = Some(SpriteCB_TaillowShadow_Flash);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Taillow(sprite: *mut Sprite) {
-    if (*(*sRoulette).ball).data[0] == FALSE as i16 {
-        if (*(*sRoulette).ball).data[3] as i32
+pub(crate) unsafe fn SpriteCB_Taillow(sprite: *mut Sprite) {
+    if (*(*sRoulette).ball).data[sStuckOnWheelLeft] == FALSE as i16 {
+        if (*(*sRoulette).ball).data[sBallAngle] as i32
             == sRouletteTables[(*sRoulette).tableId()]
                 .taillow
                 .rightStartAngle as i32
                 + 90
         {
-            gSprites[(*sprite).data[6]].data[1] = 52;
-            gSprites[(*sprite).data[4]].data[1] = 52;
+            gSprites[(*sprite).data[sMonShadowSpriteId]].data[1] = 52;
+            gSprites[(*sprite).data[sMonSpriteId]].data[1] = 52;
         } else {
             return;
         }
     } else {
-        if (*(*sRoulette).ball).data[3] as i32
+        if (*(*sRoulette).ball).data[sBallAngle] as i32
             == sRouletteTables[(*sRoulette).tableId()]
                 .taillow
                 .leftStartAngle as i32
                 + 270
         {
-            gSprites[(*sprite).data[6]].data[1] = 46;
-            gSprites[(*sprite).data[4]].data[1] = 46;
+            gSprites[(*sprite).data[sMonShadowSpriteId]].data[1] = 46;
+            gSprites[(*sprite).data[sMonSpriteId]].data[1] = 46;
         } else {
             return;
         }
     }
-    gSprites[(*sprite).data[6]].callback = Some(SpriteCB_TaillowShadow_FlyIn);
-    gSprites[(*sprite).data[4]].callback = Some(SpriteCB_Taillow_FlyIn);
+    gSprites[(*sprite).data[sMonShadowSpriteId]].callback = Some(SpriteCB_TaillowShadow_FlyIn);
+    gSprites[(*sprite).data[sMonSpriteId]].callback = Some(SpriteCB_Taillow_FlyIn);
     m4aSongNumStart(SE_FALL);
 }

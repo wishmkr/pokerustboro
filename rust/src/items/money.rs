@@ -4,11 +4,12 @@ use crate::ffi::{
     CompressedSpriteSheet, ConvertIntToDecimalStringN, CopyWindowToVram, CreateSprite,
     DestroySpriteAndFreeResources, DrawStdFrameWithCustomTileAndPalette, FONT_NORMAL,
     FillWindowPixelBuffer, LoadCompressedSpritePalette, LoadCompressedSpriteSheet, OamData,
-    PutWindowTilemap, RemoveWindow, RomPtr, SAVE1_MONEY_OFFSET, SAVE2_ENCRYPTION_KEY_OFFSET,
-    SetWindowTemplateFields, SpriteCallbackDummy, SpriteTemplate, StringExpandPlaceholders,
-    StringLength, WindowTemplate, gDummySpriteAffineAnimTable, gSpecialVar_0x8005, gStringVar1,
-    gStringVar4, sprite,
+    PutWindowTilemap, RemoveWindow, RomPtr, SetWindowTemplateFields, SpriteCallbackDummy,
+    SpriteTemplate, StringExpandPlaceholders, StringLength, WindowTemplate,
+    gDummySpriteAffineAnimTable, gSpecialVar_0x8005, gStringVar1, gStringVar4, sprite,
 };
+use crate::save_blocks::{save_block1, save_block2};
+use crate::types::{SaveBlock1, SaveBlock2};
 use core::ffi::c_int;
 use core::ptr::addr_of;
 
@@ -50,95 +51,120 @@ static SPRITE_TEMPLATE_MONEY_LABEL: SpriteTemplate = SpriteTemplate {
 };
 
 static SPRITE_SHEET_MONEY_LABEL: CompressedSpriteSheet = CompressedSpriteSheet {
-    data: (&raw const gShopMenuMoney_Gfx).cast(),
+    data: (&raw const (*(&raw const crate::data::graphics::gShopMenuMoney_Gfx).cast::<u32>()))
+        .cast(),
     size: 256,
     tag: MONEY_LABEL_TAG,
 };
 
 static SPRITE_PALETTE_MONEY_LABEL: CompressedSpritePalette = CompressedSpritePalette {
-    data: (&raw const gShopMenu_Pal).cast(),
+    data: (&raw const (*(&raw const crate::data::graphics::gShopMenu_Pal).cast::<u32>())).cast(),
     tag: MONEY_LABEL_TAG,
 };
 
-unsafe extern "C" {
-    static mut gSaveBlock1Ptr: *mut u8;
-    static mut gSaveBlock2Ptr: *mut u8;
-    static gShopMenuMoney_Gfx: u32;
-    static gShopMenu_Pal: u32;
-    static gText_PokedollarVar1: u8;
+/// The player's money as the save stores it: XORed with the save's
+/// encryption key.
+pub struct Money<'a> {
+    stored: &'a mut u32,
+    key: u32,
 }
 
-#[inline]
-unsafe fn encryption_key() -> u32 {
-    unsafe {
-        gSaveBlock2Ptr
-            .add(SAVE2_ENCRYPTION_KEY_OFFSET)
-            .cast::<u32>()
-            .read()
+impl<'a> Money<'a> {
+    /// The player's money.
+    pub fn player(save1: &'a mut SaveBlock1, save2: &SaveBlock2) -> Self {
+        Self::from_parts(&mut save1.money, save2.encryptionKey)
+    }
+
+    /// Money stored in `stored`, encrypted with `key`.
+    pub fn from_parts(stored: &'a mut u32, key: u32) -> Self {
+        Self { stored, key }
+    }
+
+    /// How much money there is.
+    pub fn get(&self) -> u32 {
+        *self.stored ^ self.key
+    }
+
+    /// Sets the amount (not capped).
+    pub fn set(&mut self, amount: u32) {
+        *self.stored = amount ^ self.key;
+    }
+
+    /// Whether there is at least `cost`.
+    pub fn is_enough(&self, cost: u32) -> bool {
+        self.get() >= cost
+    }
+
+    /// Adds money, up to [`MAX_MONEY`] (receiving money never leaves less).
+    pub fn add(&mut self, amount: u32) {
+        let total = self.get().saturating_add(amount).min(MAX_MONEY);
+        self.set(total);
+    }
+
+    /// Takes money away, down to zero.
+    pub fn remove(&mut self, amount: u32) {
+        let left = self.get().saturating_sub(amount);
+        self.set(left);
     }
 }
 
-/// `&gSaveBlock1Ptr->money`
-#[inline]
-unsafe fn money_ptr() -> *mut u32 {
-    unsafe { gSaveBlock1Ptr.add(SAVE1_MONEY_OFFSET).cast::<u32>() }
+// ------------------------------------------------------------------ C names
+
+/// The money at `money_ptr`, with the save's key.
+///
+/// # Safety
+/// `money_ptr` must point to encrypted money (in practice a save field) and
+/// the save blocks must be set up; nothing else may use them meanwhile.
+unsafe fn money_at(money_ptr: *mut u32) -> Money<'static> {
+    unsafe { Money::from_parts(&mut *money_ptr, save_block2().encryptionKey) }
+}
+
+/// The player's money (see [`money_at`]).
+unsafe fn player_money() -> Money<'static> {
+    unsafe { Money::player(save_block1(), save_block2()) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMoney(money_ptr: *mut u32) -> u32 {
-    unsafe { money_ptr.read() ^ encryption_key() }
+pub unsafe fn GetMoney(money_ptr: *mut u32) -> u32 {
+    unsafe { money_at(money_ptr) }.get()
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetMoney(money_ptr: *mut u32, new_value: u32) {
-    unsafe { money_ptr.write(encryption_key() ^ new_value) };
+pub unsafe fn SetMoney(money_ptr: *mut u32, amount: u32) {
+    unsafe { money_at(money_ptr) }.set(amount);
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsEnoughMoney(money_ptr: *mut u32, cost: u32) -> u8 {
-    u8::from(unsafe { GetMoney(money_ptr) } >= cost)
+pub unsafe fn IsEnoughMoney(money_ptr: *mut u32, cost: u32) -> u8 {
+    unsafe { money_at(money_ptr) }.is_enough(cost).into()
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddMoney(money_ptr: *mut u32, to_add: u32) {
-    let current = unsafe { GetMoney(money_ptr) };
-
-    let to_set = if current.wrapping_add(to_add) > MAX_MONEY {
-        MAX_MONEY
-    } else {
-        let sum = current.wrapping_add(to_add);
-        // Receiving money must never leave the player with less of it.
-        if sum < current { MAX_MONEY } else { sum }
-    };
-
-    unsafe { SetMoney(money_ptr, to_set) };
+pub unsafe fn AddMoney(money_ptr: *mut u32, amount: u32) {
+    unsafe { money_at(money_ptr) }.add(amount);
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RemoveMoney(money_ptr: *mut u32, to_sub: u32) {
-    let current = unsafe { GetMoney(money_ptr) };
-    let to_set = if current < to_sub {
-        0
-    } else {
-        current - to_sub
-    };
-    unsafe { SetMoney(money_ptr, to_set) };
+pub unsafe fn RemoveMoney(money_ptr: *mut u32, amount: u32) {
+    unsafe { money_at(money_ptr) }.remove(amount);
+}
+
+/// Script special: whether the player can pay `VAR_0x8005`.
+#[unsafe(no_mangle)]
+pub unsafe fn IsEnoughForCostInVar0x8005() -> u8 {
+    let cost = u32::from(unsafe { gSpecialVar_0x8005 });
+    unsafe { player_money() }.is_enough(cost).into()
+}
+
+/// Script special: the player pays `VAR_0x8005`.
+#[unsafe(no_mangle)]
+pub unsafe fn SubtractMoneyFromVar0x8005() {
+    let cost = u32::from(unsafe { gSpecialVar_0x8005 });
+    unsafe { player_money() }.remove(cost);
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsEnoughForCostInVar0x8005() -> u8 {
-    let cost = u32::from(unsafe { addr_of!(gSpecialVar_0x8005).read() });
-    unsafe { IsEnoughMoney(money_ptr(), cost) }
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SubtractMoneyFromVar0x8005() {
-    let cost = u32::from(unsafe { addr_of!(gSpecialVar_0x8005).read() });
-    unsafe { RemoveMoney(money_ptr(), cost) };
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintMoneyAmount(window_id: u8, x: u8, y: u8, amount: i32, speed: u8) {
+pub unsafe fn PrintMoneyAmount(window_id: u8, x: u8, y: u8, amount: i32, speed: u8) {
     let var1 = (&raw mut gStringVar1).cast::<u8>();
     let _ = unsafe { ConvertIntToDecimalStringN(var1, amount, STR_CONV_MODE_LEFT_ALIGN, 6) };
 
@@ -151,7 +177,12 @@ pub unsafe extern "C" fn PrintMoneyAmount(window_id: u8, x: u8, y: u8, amount: i
         padding -= 1;
     }
 
-    let _ = unsafe { StringExpandPlaceholders(text, &raw const gText_PokedollarVar1) };
+    let _ = unsafe {
+        StringExpandPlaceholders(
+            text,
+            &raw const (*(&raw const crate::data::strings::gText_PokedollarVar1).cast::<u8>()),
+        )
+    };
     let _ = unsafe {
         AddTextPrinterParameterized(
             window_id,
@@ -166,12 +197,12 @@ pub unsafe extern "C" fn PrintMoneyAmount(window_id: u8, x: u8, y: u8, amount: i
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintMoneyAmountInMoneyBox(window_id: u8, amount: i32, speed: u8) {
+pub unsafe fn PrintMoneyAmountInMoneyBox(window_id: u8, amount: i32, speed: u8) {
     unsafe { PrintMoneyAmount(window_id, 38, 1, amount, speed) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintMoneyAmountInMoneyBoxWithBorder(
+pub unsafe fn PrintMoneyAmountInMoneyBoxWithBorder(
     window_id: u8,
     tile_start: u16,
     palette: u8,
@@ -182,13 +213,13 @@ pub unsafe extern "C" fn PrintMoneyAmountInMoneyBoxWithBorder(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ChangeAmountInMoneyBox(amount: i32) {
+pub unsafe fn ChangeAmountInMoneyBox(amount: i32) {
     let window_id = unsafe { addr_of!(sMoneyBoxWindowId).read_volatile() };
     unsafe { PrintMoneyAmountInMoneyBox(window_id, amount, 0) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawMoneyBox(amount: i32, x: u8, y: u8) {
+pub unsafe fn DrawMoneyBox(amount: i32, x: u8, y: u8) {
     let mut template = WindowTemplate::default();
     unsafe { SetWindowTemplateFields(&raw mut template, 0, x + 1, y + 1, 10, 2, 15, 8) };
 
@@ -210,7 +241,7 @@ pub unsafe extern "C" fn DrawMoneyBox(amount: i32, x: u8, y: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HideMoneyBox() {
+pub unsafe fn HideMoneyBox() {
     unsafe { RemoveMoneyLabelObject() };
     let window_id = unsafe { addr_of!(sMoneyBoxWindowId).read_volatile() };
     unsafe { ClearStdWindowAndFrameToTransparent(window_id, 0) };
@@ -219,7 +250,7 @@ pub unsafe extern "C" fn HideMoneyBox() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddMoneyLabelObject(x: u16, y: u16) {
+pub unsafe fn AddMoneyLabelObject(x: u16, y: u16) {
     let _ = unsafe { LoadCompressedSpriteSheet(&raw const SPRITE_SHEET_MONEY_LABEL) };
     unsafe { LoadCompressedSpritePalette(&raw const SPRITE_PALETTE_MONEY_LABEL) };
     let sprite_id = unsafe {
@@ -234,7 +265,7 @@ pub unsafe extern "C" fn AddMoneyLabelObject(x: u16, y: u16) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RemoveMoneyLabelObject() {
+pub unsafe fn RemoveMoneyLabelObject() {
     let sprite_id = unsafe { addr_of!(sMoneyLabelSpriteId).read_volatile() } as usize;
     unsafe { DestroySpriteAndFreeResources(sprite(sprite_id)) };
 }
@@ -244,41 +275,39 @@ mod tests {
     use super::*;
 
     #[test]
-    fn money_is_capped_and_never_wraps() {
-        let add = |current: u32, to_add: u32| {
-            let sum = current.wrapping_add(to_add);
-            if sum > MAX_MONEY || sum < current {
-                MAX_MONEY
-            } else {
-                sum
-            }
-        };
+    fn money_is_stored_encrypted() {
+        let mut stored = 0;
+        let mut money = Money::from_parts(&mut stored, 0xdead_beef);
+        money.set(12_345);
+        assert_eq!(money.get(), 12_345);
+        assert_eq!(stored, 12_345 ^ 0xdead_beef);
+    }
 
-        assert_eq!(add(0, 500), 500);
-        assert_eq!(add(MAX_MONEY, 1), MAX_MONEY);
-        assert_eq!(add(1000, MAX_MONEY), MAX_MONEY);
-        // Wrapping past 2^32 must still clamp rather than shrink the wallet.
-        assert_eq!(add(1000, u32::MAX), MAX_MONEY);
+    #[test]
+    fn money_is_capped_and_never_wraps() {
+        let mut stored = 0;
+        let mut money = Money::from_parts(&mut stored, 0x5555_aaaa);
+        money.set(0);
+        money.add(500);
+        assert_eq!(money.get(), 500);
+        money.add(MAX_MONEY);
+        assert_eq!(money.get(), MAX_MONEY);
+        money.set(1000);
+        // past 2^32: still the maximum, not less money
+        money.add(u32::MAX);
+        assert_eq!(money.get(), MAX_MONEY);
     }
 
     #[test]
     fn spending_more_than_you_hold_empties_the_wallet() {
-        let remove = |current: u32, to_sub: u32| {
-            if current < to_sub {
-                0
-            } else {
-                current - to_sub
-            }
-        };
-        assert_eq!(remove(100, 40), 60);
-        assert_eq!(remove(100, 100), 0);
-        assert_eq!(remove(100, 101), 0);
-    }
-
-    #[test]
-    fn money_is_stored_xored_with_the_save_encryption_key() {
-        let key = 0xdead_beefu32;
-        let value = 12_345u32;
-        assert_eq!((key ^ value) ^ key, value);
+        let mut stored = 0;
+        let mut money = Money::from_parts(&mut stored, 0);
+        money.set(100);
+        assert!(money.is_enough(100));
+        assert!(!money.is_enough(101));
+        money.remove(40);
+        assert_eq!(money.get(), 60);
+        money.remove(61);
+        assert_eq!(money.get(), 0);
     }
 }

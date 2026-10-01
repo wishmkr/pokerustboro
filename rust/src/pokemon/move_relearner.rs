@@ -3,37 +3,127 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    unused_assignments
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::bg::{ResetBgsAndClearDma3BusyFlags, ShowBg};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::ffi::{gSpecialVar_0x8004, gSpecialVar_0x8005};
+use crate::field_screen_effect::FieldCB_ContinueScriptHandleMusic;
+use crate::gpu_regs::SetGpuReg;
+use crate::list_menu::{
+    AddScrollIndicatorArrowPair, DestroyListMenuTask, ListMenu_ProcessInput,
+    ListMenuGetScrollAndRow, ListMenuInit, RemoveScrollIndicatorArrowPair,
+    gMultiuseListMenuTemplate, gTempScrollArrowTemplate,
+};
+use crate::menu::{
+    ClearScheduledBgCopiesToVram, DoScheduledBgTilemapCopiesToVram,
+    Menu_ProcessInputNoWrapClearOnChoose, ScheduleBgCopyTilemapToVram,
+};
+use crate::menu_helpers::{GetLRKeysPressed, ResetAllBgsCoordinates, ResetVramOamAndBgCntRegs};
+use crate::menu_specialized::{
+    InitMoveRelearnerWindows, LoadMoveRelearnerMovesList, MoveRelearnerCreateYesNoMenu,
+    MoveRelearnerPrintMessage, MoveRelearnerRunTextPrinters,
+};
+use crate::overworld::{CB2_ReturnToField, gFieldCallback};
+use crate::palette::{
+    BeginNormalPaletteFade, FillPalette, TransferPlttBuffer, UpdatePaletteFade, gPaletteFade,
+};
+use crate::pokemon::{
+    GetMonData2, GetMonData3, GetMoveRelearnerMoves, GiveMoveToMon, RemoveMonPPBonus,
+    SetMonMoveSlot, gPlayerParty, gPlayerPartyCount,
+};
+use crate::pokemon_summary_screen::ShowSelectMovePokemonSummaryScreen;
+use crate::script::LockPlayerFieldControls;
+use crate::sound::{IsFanfareTaskInactive, PlayFanfare, PlaySE};
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData,
+};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar3, gStringVar4};
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, PutWindowTilemap,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `LoadSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
+    unsafe { crate::sprite::LoadSpritePalette(a0 as _) }
+}
+/// `LoadSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
+    unsafe { crate::sprite::LoadSpriteSheet(a0 as _) }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringCopy_Nickname` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy_Nickname(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy_Nickname(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringExpandPlaceholders(a0 as _, a1 as _) as *mut u8 }
+}
 // Data tables (translate with cdata.py): sUI_Pal sUI_Tiles sHeartSpriteOamData sUnusedOam1 sUnusedOam2 sMoveRelearnerSpriteSheet sMoveRelearnerPalette sDisplayModeArrowsTemplate sMoveListScrollArrowsTemplate sHeartSprite_AppealEmptyFrame sHeartSprite_AppealFullFrame sHeartSprite_JamEmptyFrame sHeartSprite_JamFullFrame sHeartSpriteAnimationCommands sConstestMoveHeartSprite sMoveRelearnerMenuBackgroundTemplates
 
 /// `__typeof__(*((__typeof__(sMoveRelearnerStruct))0))`
@@ -135,134 +225,61 @@ static sMoveRelearnerSpriteSheet: Table<SpriteSheet> =
 pub(crate) static mut sMoveRelearnerStruct: *mut typeof___sMoveRelearnerStruct_0_t = null_mut();
 pub(crate) static mut sMoveRelearnerMenuState: sMoveRelearnerMenuState_t = unsafe { zeroed() };
 
-unsafe extern "C" {
-    static gContestEffects: CArray<ContestEffect, 0>;
-    static gContestMoves: CArray<ContestMove, 0>;
-    static mut gFieldCallback: Option<unsafe extern "C" fn()>;
-    static mut gMain: Main;
-    static gMoveNames: CArray<CArray<u8, 13>, 355>;
-    static mut gMultiuseListMenuTemplate: ListMenuTemplate;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gPlayerPartyCount: u8;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_0x8005: u16;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar3: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTempScrollArrowTemplate: ScrollArrowsTemplate;
-    static gText_Cancel: CArray<u8, 0>;
-    static gText_MoveRelearnerAndPoof: CArray<u8, 0>;
-    static gText_MoveRelearnerGiveUp: CArray<u8, 0>;
-    static gText_MoveRelearnerPkmnForgotMoveAndLearnedNew: CArray<u8, 0>;
-    static gText_MoveRelearnerPkmnLearnedMove: CArray<u8, 0>;
-    static gText_MoveRelearnerPkmnTryingToLearnMove: CArray<u8, 0>;
-    static gText_MoveRelearnerStopTryingToTeachMove: CArray<u8, 0>;
-    static gText_MoveRelearnerTeachMoveConfirm: CArray<u8, 0>;
-    static gText_MoveRelearnerWhichMoveToForget: CArray<u8, 0>;
-    static gText_TeachWhichMoveToPkmn: CArray<u8, 0>;
-    fn AddScrollIndicatorArrowPair(a0: *mut ScrollArrowsTemplate, a1: *mut u16) -> u8;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BuildOamBuffer();
-    fn CB2_ReturnToField();
-    fn ClearScheduledBgCopiesToVram();
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DestroyListMenuTask(a0: u8, a1: *mut u16, a2: *mut u16);
-    fn DestroyTask(a0: u8);
-    fn DoScheduledBgTilemapCopiesToVram();
-    fn FieldCB_ContinueScriptHandleMusic();
-    fn FillPalette(a0: u16, a1: u16, a2: u16);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn GetLRKeysPressed() -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetMoveRelearnerMoves(a0: *mut Pokemon, a1: *mut u16) -> u8;
-    fn GiveMoveToMon(a0: *mut Pokemon, a1: u16) -> u16;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitMoveRelearnerWindows(a0: u8);
-    fn IsFanfareTaskInactive() -> u8;
-    fn ListMenuGetScrollAndRow(a0: u8, a1: *mut u16, a2: *mut u16);
-    fn ListMenuInit(a0: *mut ListMenuTemplate, a1: u16, a2: u16) -> u8;
-    fn ListMenu_ProcessInput(a0: u8) -> i32;
-    fn LoadMoveRelearnerMovesList(a0: *mut ListMenuItem, a1: u16) -> u8;
-    fn LoadOam();
-    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
-    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
-    fn LockPlayerFieldControls();
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn MoveRelearnerCreateYesNoMenu();
-    fn MoveRelearnerPrintMessage(a0: *mut u8);
-    fn MoveRelearnerRunTextPrinters() -> u16;
-    fn PlayFanfare(a0: u16);
-    fn PlaySE(a0: u16);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveMonPPBonus(a0: *mut Pokemon, a1: u8);
-    fn RemoveScrollIndicatorArrowPair(a0: u8);
-    fn ResetAllBgsCoordinates();
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn ResetVramOamAndBgCntRegs();
-    fn RunTasks();
-    fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMonMoveSlot(a0: *mut Pokemon, a1: u16, a2: u8);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn ShowSelectMovePokemonSummaryScreen(
-        a0: *mut Pokemon,
-        a1: u8,
-        a2: u8,
-        a3: Option<unsafe extern "C" fn()>,
-        a4: u16,
-    );
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy_Nickname(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn VBlankCB_MoveRelearner() {
+pub(crate) unsafe fn VBlankCB_MoveRelearner() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TeachMoveRelearnerMove() {
+pub unsafe fn TeachMoveRelearnerMove() {
     LockPlayerFieldControls();
     CreateTask(Some(Task_WaitForFadeOut), 10);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
 }
-pub(crate) unsafe extern "C" fn Task_WaitForFadeOut(taskId: u8) {
+pub(crate) unsafe fn Task_WaitForFadeOut(taskId: u8) {
     if gPaletteFade.active() == 0 {
         SetMainCallback2(Some(CB2_InitLearnMove));
         gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic);
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn CB2_InitLearnMove() {
+pub(crate) unsafe fn CB2_InitLearnMove() {
     ResetSpriteData();
     FreeAllSpritePalettes();
     ResetTasks();
@@ -287,7 +304,7 @@ pub(crate) unsafe extern "C" fn CB2_InitLearnMove() {
     SetBackdropFromColor(0);
     SetMainCallback2(Some(CB2_MoveRelearnerMain));
 }
-pub(crate) unsafe extern "C" fn CB2_InitLearnMoveReturnFromSelectMove() {
+pub(crate) unsafe fn CB2_InitLearnMoveReturnFromSelectMove() {
     ResetSpriteData();
     FreeAllSpritePalettes();
     ResetTasks();
@@ -311,7 +328,7 @@ pub(crate) unsafe extern "C" fn CB2_InitLearnMoveReturnFromSelectMove() {
     SetBackdropFromColor(0);
     SetMainCallback2(Some(CB2_MoveRelearnerMain));
 }
-pub(crate) unsafe extern "C" fn InitMoveRelearnerBackgroundLayers() {
+unsafe fn InitMoveRelearnerBackgroundLayers() {
     ResetVramOamAndBgCntRegs();
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(
@@ -325,7 +342,7 @@ pub(crate) unsafe extern "C" fn InitMoveRelearnerBackgroundLayers() {
     ShowBg(1);
     SetGpuReg(REG_OFFSET_BLDCNT, 0);
 }
-pub(crate) unsafe extern "C" fn CB2_MoveRelearnerMain() {
+pub(crate) unsafe fn CB2_MoveRelearnerMain() {
     DoMoveRelearnerMain();
     RunTasks();
     AnimateSprites();
@@ -333,11 +350,11 @@ pub(crate) unsafe extern "C" fn CB2_MoveRelearnerMain() {
     DoScheduledBgTilemapCopiesToVram();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn PrintMessageWithPlaceholders(src: *mut u8) {
+unsafe fn PrintMessageWithPlaceholders(src: *mut u8) {
     StringExpandPlaceholders(gStringVar4.as_mut_ptr(), src);
     MoveRelearnerPrintMessage(gStringVar4.as_mut_ptr());
 }
-pub(crate) unsafe extern "C" fn DoMoveRelearnerMain() {
+unsafe fn DoMoveRelearnerMain() {
     match (*sMoveRelearnerStruct).state {
         MENU_STATE_FADE_TO_BLACK => {
             (*sMoveRelearnerStruct).state += 1;
@@ -375,7 +392,7 @@ pub(crate) unsafe extern "C" fn DoMoveRelearnerMain() {
             }
         }
         MENU_STATE_TEACH_MOVE_CONFIRM => {
-            let mut selection: i8 = Menu_ProcessInputNoWrapClearOnChoose();
+            let selection: i8 = Menu_ProcessInputNoWrapClearOnChoose();
             if selection == 0 {
                 if GiveMoveToMon(
                     &raw mut gPlayerParty[(*sMoveRelearnerStruct).partyMon],
@@ -383,7 +400,10 @@ pub(crate) unsafe extern "C" fn DoMoveRelearnerMain() {
                 ) != MON_HAS_MAX_MOVES
                 {
                     PrintMessageWithPlaceholders(
-                        gText_MoveRelearnerPkmnLearnedMove.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::strings::gText_MoveRelearnerPkmnLearnedMove)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     );
                     gSpecialVar_0x8004 = TRUE as u16;
                     (*sMoveRelearnerStruct).state = MENU_STATE_PRINT_TEXT_THEN_FANFARE;
@@ -405,7 +425,7 @@ pub(crate) unsafe extern "C" fn DoMoveRelearnerMain() {
             }
         }
         MENU_STATE_GIVE_UP_CONFIRM => {
-            let mut selection: i8 = Menu_ProcessInputNoWrapClearOnChoose();
+            let selection: i8 = Menu_ProcessInputNoWrapClearOnChoose();
             if selection == 0 {
                 gSpecialVar_0x8004 = FALSE as u16;
                 (*sMoveRelearnerStruct).state = MENU_STATE_FADE_AND_RETURN;
@@ -419,7 +439,10 @@ pub(crate) unsafe extern "C" fn DoMoveRelearnerMain() {
         }
         MENU_STATE_PRINT_TRYING_TO_LEARN_PROMPT => {
             PrintMessageWithPlaceholders(
-                gText_MoveRelearnerPkmnTryingToLearnMove.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_MoveRelearnerPkmnTryingToLearnMove)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
             (*sMoveRelearnerStruct).state += 1;
         }
@@ -430,10 +453,13 @@ pub(crate) unsafe extern "C" fn DoMoveRelearnerMain() {
             }
         }
         MENU_STATE_CONFIRM_DELETE_OLD_MOVE => {
-            let mut selection: i8 = Menu_ProcessInputNoWrapClearOnChoose();
+            let selection: i8 = Menu_ProcessInputNoWrapClearOnChoose();
             if selection == 0 {
                 PrintMessageWithPlaceholders(
-                    gText_MoveRelearnerWhichMoveToForget.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MoveRelearnerWhichMoveToForget)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 (*sMoveRelearnerStruct).state = MENU_STATE_PRINT_WHICH_MOVE_PROMPT;
             } else if selection == MENU_B_PRESSED || selection == 1 {
@@ -443,10 +469,16 @@ pub(crate) unsafe extern "C" fn DoMoveRelearnerMain() {
         MENU_STATE_PRINT_STOP_TEACHING => {
             StringCopy(
                 gStringVar2.as_mut_ptr(),
-                gMoveNames[GetCurrentSelectedMove()].as_ptr().cast_mut(),
+                (*(&raw const crate::data::data_tables::gMoveNames)
+                    .cast::<CArray<CArray<u8, 13>, 355>>())[GetCurrentSelectedMove()]
+                .as_ptr()
+                .cast_mut(),
             );
             PrintMessageWithPlaceholders(
-                gText_MoveRelearnerStopTryingToTeachMove.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_MoveRelearnerStopTryingToTeachMove)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
             (*sMoveRelearnerStruct).state += 1;
         }
@@ -457,7 +489,7 @@ pub(crate) unsafe extern "C" fn DoMoveRelearnerMain() {
             }
         }
         MENU_STATE_CONFIRM_STOP_TEACHING => {
-            let mut selection: i8 = Menu_ProcessInputNoWrapClearOnChoose();
+            let selection: i8 = Menu_ProcessInputNoWrapClearOnChoose();
             if selection == 0 {
                 (*sMoveRelearnerStruct).state = MENU_STATE_CHOOSE_SETUP_STATE;
             } else if selection == MENU_B_PRESSED || selection == 1 {
@@ -531,13 +563,19 @@ pub(crate) unsafe extern "C" fn DoMoveRelearnerMain() {
                 if (*sMoveRelearnerStruct).moveSlot == MAX_MON_MOVES as u8 {
                     (*sMoveRelearnerStruct).state = MENU_STATE_PRINT_STOP_TEACHING;
                 } else {
-                    let mut r#move: u16 = GetMonData2(
+                    let r#move: u16 = GetMonData2(
                         &raw mut gPlayerParty[(*sMoveRelearnerStruct).partyMon],
                         MON_DATA_MOVE1 + (*sMoveRelearnerStruct).moveSlot as i32,
                     ) as u16;
                     StringCopy(
                         gStringVar3.as_mut_ptr(),
-                        gMoveNames[r#move].as_ptr().cast_mut(),
+                        (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<
+                            CArray<u8, 13>,
+                            355,
+                        >>(
+                        ))[r#move]
+                            .as_ptr()
+                            .cast_mut(),
                     );
                     RemoveMonPPBonus(
                         &raw mut gPlayerParty[(*sMoveRelearnerStruct).partyMon],
@@ -550,9 +588,20 @@ pub(crate) unsafe extern "C" fn DoMoveRelearnerMain() {
                     );
                     StringCopy(
                         gStringVar2.as_mut_ptr(),
-                        gMoveNames[GetCurrentSelectedMove()].as_ptr().cast_mut(),
+                        (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<
+                            CArray<u8, 13>,
+                            355,
+                        >>(
+                        ))[GetCurrentSelectedMove()]
+                        .as_ptr()
+                        .cast_mut(),
                     );
-                    PrintMessageWithPlaceholders(gText_MoveRelearnerAndPoof.as_ptr().cast_mut());
+                    PrintMessageWithPlaceholders(
+                        (*(&raw const crate::data::strings::gText_MoveRelearnerAndPoof)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                    );
                     (*sMoveRelearnerStruct).state = MENU_STATE_DOUBLE_FANFARE_FORGOT_MOVE;
                     gSpecialVar_0x8004 = TRUE as u16;
                 }
@@ -561,7 +610,7 @@ pub(crate) unsafe extern "C" fn DoMoveRelearnerMain() {
         MENU_STATE_DOUBLE_FANFARE_FORGOT_MOVE => {
             if MoveRelearnerRunTextPrinters() == 0 {
                 PrintMessageWithPlaceholders(
-                    gText_MoveRelearnerPkmnForgotMoveAndLearnedNew
+                    (*(&raw const crate::data::strings::gText_MoveRelearnerPkmnForgotMoveAndLearnedNew).cast::<CArray<u8, 0>>())
                         .as_ptr()
                         .cast_mut(),
                 );
@@ -580,16 +629,14 @@ pub(crate) unsafe extern "C" fn DoMoveRelearnerMain() {
                 (*sMoveRelearnerStruct).state = MENU_STATE_WAIT_FOR_A_BUTTON;
             }
         }
-        MENU_STATE_WAIT_FOR_A_BUTTON => {
-            if gMain.newKeys as i32 & A_BUTTON != 0 {
-                PlaySE(SE_SELECT);
-                (*sMoveRelearnerStruct).state = MENU_STATE_FADE_AND_RETURN;
-            }
+        MENU_STATE_WAIT_FOR_A_BUTTON if gMain.newKeys as i32 & A_BUTTON != 0 => {
+            PlaySE(SE_SELECT);
+            (*sMoveRelearnerStruct).state = MENU_STATE_FADE_AND_RETURN;
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn FreeMoveRelearnerResources() {
+unsafe fn FreeMoveRelearnerResources() {
     RemoveScrollArrows();
     DestroyListMenuTask(
         (*sMoveRelearnerStruct).moveListMenuTask,
@@ -602,17 +649,17 @@ pub(crate) unsafe extern "C" fn FreeMoveRelearnerResources() {
     ResetSpriteData();
     FreeAllSpritePalettes();
 }
-pub(crate) unsafe extern "C" fn HideHeartSpritesAndShowTeachMoveText(onlyHideSprites: u8) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 16 {
+unsafe fn HideHeartSpritesAndShowTeachMoveText(onlyHideSprites: u8) {
+    for i in 0..16i32 {
         gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i]].set_invisible(TRUE as u16);
-        i += 1;
     }
     if onlyHideSprites == 0 {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_TeachWhichMoveToPkmn.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_TeachWhichMoveToPkmn)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
         FillWindowPixelBuffer(RELEARNERWIN_MSG, 0x11);
         AddTextPrinterParameterized(
@@ -626,8 +673,8 @@ pub(crate) unsafe extern "C" fn HideHeartSpritesAndShowTeachMoveText(onlyHideSpr
         );
     }
 }
-pub(crate) unsafe extern "C" fn HandleInput(showContest: u8) {
-    let mut itemId: i32 = ListMenu_ProcessInput((*sMoveRelearnerStruct).moveListMenuTask);
+pub(crate) unsafe fn HandleInput(showContest: u8) {
+    let itemId: i32 = ListMenu_ProcessInput((*sMoveRelearnerStruct).moveListMenuTask);
     ListMenuGetScrollAndRow(
         (*sMoveRelearnerStruct).moveListMenuTask,
         &raw mut sMoveRelearnerMenuState.listOffset,
@@ -658,7 +705,10 @@ pub(crate) unsafe extern "C" fn HandleInput(showContest: u8) {
                 (*sMoveRelearnerStruct).state = MENU_STATE_PRINT_GIVE_UP_PROMPT;
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
-                    gText_MoveRelearnerGiveUp.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MoveRelearnerGiveUp)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 MoveRelearnerPrintMessage(gStringVar4.as_mut_ptr());
             }
@@ -668,27 +718,36 @@ pub(crate) unsafe extern "C" fn HandleInput(showContest: u8) {
                 (*sMoveRelearnerStruct).state = MENU_STATE_PRINT_TEACH_MOVE_PROMPT;
                 StringCopy(
                     gStringVar2.as_mut_ptr(),
-                    gMoveNames[itemId].as_ptr().cast_mut(),
+                    (*(&raw const crate::data::data_tables::gMoveNames)
+                        .cast::<CArray<CArray<u8, 13>, 355>>())[itemId]
+                        .as_ptr()
+                        .cast_mut(),
                 );
                 StringExpandPlaceholders(
                     gStringVar4.as_mut_ptr(),
-                    gText_MoveRelearnerTeachMoveConfirm.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_MoveRelearnerTeachMoveConfirm)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
                 MoveRelearnerPrintMessage(gStringVar4.as_mut_ptr());
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn GetCurrentSelectedMove() -> i32 {
-    return (*sMoveRelearnerStruct).menuItems
+unsafe fn GetCurrentSelectedMove() -> i32 {
+    (*sMoveRelearnerStruct).menuItems
         [sMoveRelearnerMenuState.listRow as i32 + sMoveRelearnerMenuState.listOffset as i32]
-        .id;
+        .id
 }
-pub(crate) unsafe extern "C" fn ShowTeachMoveText(shouldDoNothingInstead: u8) {
+unsafe fn ShowTeachMoveText(shouldDoNothingInstead: u8) {
     if shouldDoNothingInstead == FALSE {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_TeachWhichMoveToPkmn.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_TeachWhichMoveToPkmn)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
         FillWindowPixelBuffer(RELEARNERWIN_MSG, 0x11);
         AddTextPrinterParameterized(
@@ -702,22 +761,19 @@ pub(crate) unsafe extern "C" fn ShowTeachMoveText(shouldDoNothingInstead: u8) {
         );
     }
 }
-pub(crate) unsafe extern "C" fn CreateUISprites() {
-    let mut i: i32 = 0;
+unsafe fn CreateUISprites() {
     (*sMoveRelearnerStruct).moveDisplayArrowTask = TASK_NONE;
     (*sMoveRelearnerStruct).moveListScrollArrowTask = TASK_NONE;
     AddScrollArrows();
-    i = 0;
-    while i < 8 {
+    for i in 0..8i32 {
         (*sMoveRelearnerStruct).heartSpriteIds[i] = CreateSprite(
             (&raw const *sConstestMoveHeartSprite).cast_mut(),
             (i as i16 - (i / 4) as i16 * 4) * 8 + 104,
             (i / 4) as i16 * 8 + 36,
             0,
         );
-        i += 1;
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i < 8 {
         (*sMoveRelearnerStruct).heartSpriteIds[i + 8] = CreateSprite(
             (&raw const *sConstestMoveHeartSprite).cast_mut(),
@@ -731,13 +787,11 @@ pub(crate) unsafe extern "C" fn CreateUISprites() {
         );
         i += 1;
     }
-    i = 0;
-    while i < 16 {
+    for i in 0..16i32 {
         gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i]].set_invisible(TRUE as u16);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn AddScrollArrows() {
+pub(crate) unsafe fn AddScrollArrows() {
     if (*sMoveRelearnerStruct).moveDisplayArrowTask == TASK_NONE {
         (*sMoveRelearnerStruct).moveDisplayArrowTask = AddScrollIndicatorArrowPair(
             (&raw const *sDisplayModeArrowsTemplate).cast_mut(),
@@ -754,7 +808,7 @@ pub(crate) unsafe extern "C" fn AddScrollArrows() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn RemoveScrollArrows() {
+unsafe fn RemoveScrollArrows() {
     if (*sMoveRelearnerStruct).moveDisplayArrowTask != TASK_NONE {
         RemoveScrollIndicatorArrowPair((*sMoveRelearnerStruct).moveDisplayArrowTask);
         (*sMoveRelearnerStruct).moveDisplayArrowTask = TASK_NONE;
@@ -764,19 +818,19 @@ pub(crate) unsafe extern "C" fn RemoveScrollArrows() {
         (*sMoveRelearnerStruct).moveListScrollArrowTask = TASK_NONE;
     }
 }
-pub(crate) unsafe extern "C" fn CreateLearnableMovesList() {
-    let mut i: i32 = 0;
+unsafe fn CreateLearnableMovesList() {
     let mut nickname: CArray<u8, 11> = zeroed();
     (*sMoveRelearnerStruct).numMenuChoices = GetMoveRelearnerMoves(
         &raw mut gPlayerParty[(*sMoveRelearnerStruct).partyMon],
         (*sMoveRelearnerStruct).movesToLearn.as_mut_ptr(),
     );
-    i = 0;
+    let mut i: i32 = 0;
     while i < (*sMoveRelearnerStruct).numMenuChoices as i32 {
-        (*sMoveRelearnerStruct).menuItems[i].name = gMoveNames
-            [(*sMoveRelearnerStruct).movesToLearn[i]]
-            .as_ptr()
-            .cast_mut();
+        (*sMoveRelearnerStruct).menuItems[i].name =
+            (*(&raw const crate::data::data_tables::gMoveNames)
+                .cast::<CArray<CArray<u8, 13>, 355>>())[(*sMoveRelearnerStruct).movesToLearn[i]]
+                .as_ptr()
+                .cast_mut();
         (*sMoveRelearnerStruct).menuItems[i].id = (*sMoveRelearnerStruct).movesToLearn[i] as i32;
         i += 1;
     }
@@ -787,7 +841,9 @@ pub(crate) unsafe extern "C" fn CreateLearnableMovesList() {
     );
     StringCopy_Nickname(gStringVar1.as_mut_ptr(), nickname.as_mut_ptr());
     (*sMoveRelearnerStruct).menuItems[(*sMoveRelearnerStruct).numMenuChoices].name =
-        gText_Cancel.as_ptr().cast_mut();
+        (*(&raw const crate::data::strings::gText_Cancel).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     (*sMoveRelearnerStruct).menuItems[(*sMoveRelearnerStruct).numMenuChoices].id = LIST_CANCEL;
     (*sMoveRelearnerStruct).numMenuChoices += 1;
     (*sMoveRelearnerStruct).numToShowAtOnce = LoadMoveRelearnerMovesList(
@@ -795,23 +851,24 @@ pub(crate) unsafe extern "C" fn CreateLearnableMovesList() {
         (*sMoveRelearnerStruct).numMenuChoices as u16,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MoveRelearnerShowHideHearts(r#move: i32) {
+pub unsafe fn MoveRelearnerShowHideHearts(r#move: i32) {
     let mut numHearts: u16 = 0;
-    let mut i: u16 = 0;
     if sMoveRelearnerMenuState.showContestInfo == 0 || r#move == LIST_CANCEL {
-        i = 0;
-        while i < 16 {
+        for i in 0..16u16 {
             gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i]].set_invisible(TRUE as u16);
-            i += 1;
         }
     } else {
-        numHearts = (gContestEffects[gContestMoves[r#move].effect].appeal as i32 / 10) as u8 as u16;
+        numHearts = ((*(&raw const crate::data::contest_effect::gContestEffects)
+            .cast::<CArray<ContestEffect, 0>>())
+            [(*(&raw const crate::data::contest_effect::gContestMoves)
+                .cast::<CArray<ContestMove, 0>>())[r#move]
+                .effect]
+            .appeal as i32
+            / 10) as u8 as u16;
         if numHearts == 0xFF {
             numHearts = 0;
         }
-        i = 0;
-        while i < 8 {
+        for i in 0..8u16 {
             if i < numHearts {
                 StartSpriteAnim(
                     &raw mut gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i]],
@@ -824,14 +881,18 @@ pub unsafe extern "C" fn MoveRelearnerShowHideHearts(r#move: i32) {
                 );
             }
             gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i]].set_invisible(FALSE as u16);
-            i += 1;
         }
-        numHearts = (gContestEffects[gContestMoves[r#move].effect].jam as i32 / 10) as u8 as u16;
+        numHearts = ((*(&raw const crate::data::contest_effect::gContestEffects)
+            .cast::<CArray<ContestEffect, 0>>())
+            [(*(&raw const crate::data::contest_effect::gContestMoves)
+                .cast::<CArray<ContestMove, 0>>())[r#move]
+                .effect]
+            .jam as i32
+            / 10) as u8 as u16;
         if numHearts == 0xFF {
             numHearts = 0;
         }
-        i = 0;
-        while i < 8 {
+        for i in 0..8u16 {
             if i < numHearts {
                 StartSpriteAnim(
                     &raw mut gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i as i32 + 8]],
@@ -845,10 +906,9 @@ pub unsafe extern "C" fn MoveRelearnerShowHideHearts(r#move: i32) {
             }
             gSprites[(*sMoveRelearnerStruct).heartSpriteIds[i as i32 + 8]]
                 .set_invisible(FALSE as u16);
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn SetBackdropFromColor(color: u16) {
+pub(crate) unsafe fn SetBackdropFromColor(color: u16) {
     FillPalette(color, 0, 2);
 }

@@ -4,17 +4,6 @@
 
 use crate::ffi::{RomBytes, RomPtr};
 
-unsafe extern "C" {
-    static SecretBase_Text_Trainer0Defeated: u8;
-    static SecretBase_Text_Trainer1Defeated: u8;
-    static SecretBase_Text_Trainer2Defeated: u8;
-    static SecretBase_Text_Trainer3Defeated: u8;
-    static SecretBase_Text_Trainer4Defeated: u8;
-    static SecretBase_Text_Trainer5Defeated: u8;
-    static SecretBase_Text_Trainer6Defeated: u8;
-    static SecretBase_Text_Trainer7Defeated: u8;
-    static SecretBase_Text_Trainer8Defeated: u8;
-}
 
 pub(crate) static sSecretBaseEntranceMetatiles: RomBytes<28> = RomBytes([38, 0, 54, 0, 39, 0, 55, 0, 160, 1, 161, 1, 168, 1, 169, 1, 176, 1, 177, 1, 8, 2, 16, 2, 113, 2, 120, 2]);
 
@@ -48,14 +37,14 @@ pub(crate) static sRegistryListMenuTemplate: [RomPtr<u8>; 6] = [
 pub(crate) static CSWTCH_265: RomBytes<14> = RomBytes([1, 1, 2, 2, 4, 4, 5, 5, 6, 6, 3, 3, 5, 5]);
 
 pub(crate) static CSWTCH_316: [RomPtr<u8>; 9] = [
-    RomPtr((&raw const SecretBase_Text_Trainer0Defeated)),
-    RomPtr((&raw const SecretBase_Text_Trainer1Defeated)),
-    RomPtr((&raw const SecretBase_Text_Trainer2Defeated)),
-    RomPtr((&raw const SecretBase_Text_Trainer3Defeated)),
-    RomPtr((&raw const SecretBase_Text_Trainer4Defeated)),
-    RomPtr((&raw const SecretBase_Text_Trainer5Defeated)),
-    RomPtr((&raw const SecretBase_Text_Trainer6Defeated)),
-    RomPtr((&raw const SecretBase_Text_Trainer7Defeated)),
-    RomPtr((&raw const SecretBase_Text_Trainer8Defeated)),
+    RomPtr((&raw const (*crate::asmdata::SecretBase_Text_Trainer0Defeated.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::SecretBase_Text_Trainer1Defeated.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::SecretBase_Text_Trainer2Defeated.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::SecretBase_Text_Trainer3Defeated.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::SecretBase_Text_Trainer4Defeated.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::SecretBase_Text_Trainer5Defeated.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::SecretBase_Text_Trainer6Defeated.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::SecretBase_Text_Trainer7Defeated.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::SecretBase_Text_Trainer8Defeated.cast::<u8>()))),
 ];
 

@@ -1,142 +1,164 @@
-use crate::ffi::{FlagClear, FlagSet, GetVarPointer, VarGet, VarSet};
-use core::ffi::c_int;
-use core::ptr::addr_of;
+//! Things that change with the days (was src/time_events.c): Mirage Island,
+//! the tide in Shoal Cave and Professor Birch's whereabouts.
+//!
+//! Mirage Island shows when the low half of a party Pokémon's personality
+//! equals the high half of a 32-bit random number, which the save keeps in
+//! two vars and advances once a day.
+
+use crate::event_data::{flag_clear, flag_set, var_get, var_set};
+use crate::party::player_party;
+use crate::random::random;
+use crate::rtc::{RtcCalcLocalTime, gLocalTime};
+use crate::task::{create_task, destroy_task};
 
 const VAR_MIRAGE_RND_H: u16 = 0x4024;
 const VAR_MIRAGE_RND_L: u16 = 0x4025;
 const VAR_BIRCH_STATE: u16 = 0x4049;
 const FLAG_SYS_SHOAL_TIDE: u16 = 0x89a;
-const MON_DATA_PERSONALITY: c_int = 0;
-const MON_DATA_SPECIES: c_int = 11;
+/// Birch's schedule repeats every week.
+const BIRCH_STATES: u16 = 7;
 
-#[repr(C, align(4))]
-struct Time {
-    days: i16,
-    hours: i8,
-    minutes: i8,
-    seconds: i8,
+/// `GetLastUsedWarpMapType` with this module's view of its types.
+#[inline]
+unsafe fn GetLastUsedWarpMapType() -> u8 {
+    unsafe { crate::overworld::GetLastUsedWarpMapType() }
+}
+/// `IsMapTypeOutdoors` with this module's view of its types.
+#[inline]
+unsafe fn IsMapTypeOutdoors(a0: u8) -> u8 {
+    unsafe { crate::overworld::IsMapTypeOutdoors(a0) }
+}
+/// `IsWeatherChangeComplete` with this module's view of its types.
+#[inline]
+unsafe fn IsWeatherChangeComplete() -> u8 {
+    unsafe { crate::field_weather::IsWeatherChangeComplete() }
+}
+/// `ScriptContext_Enable` with this module's view of its types.
+#[inline]
+unsafe fn ScriptContext_Enable() {
+    unsafe {
+        crate::script::ScriptContext_Enable();
+    }
 }
 
-#[repr(C, align(4))]
-struct Pokemon {
-    bytes: [u8; 100],
+fn mirage_random() -> u32 {
+    u32::from(var_get(VAR_MIRAGE_RND_H)) << 16 | u32::from(var_get(VAR_MIRAGE_RND_L))
 }
 
-type TaskFunc = unsafe extern "C" fn(u8);
-
-unsafe extern "C" {
-    static mut gLocalTime: Time;
-    static mut gPlayerParty: [Pokemon; 6];
-    fn Random() -> u16;
-    fn GetMonData2(mon: *mut u8, field: c_int) -> u32;
-    fn GetLastUsedWarpMapType() -> u8;
-    fn IsMapTypeOutdoors(map_type: u8) -> u8;
-    fn RtcCalcLocalTime();
-    fn IsWeatherChangeComplete() -> u8;
-    fn ScriptContext_Enable();
-    fn CreateTask(function: TaskFunc, priority: u8) -> u8;
-    fn DestroyTask(task_id: u8);
+fn set_mirage_random(value: u32) {
+    var_set(VAR_MIRAGE_RND_H, (value >> 16) as u16);
+    var_set(VAR_MIRAGE_RND_L, value as u16);
 }
 
-unsafe fn get_mirage_random() -> u32 {
-    let high = u32::from(unsafe { VarGet(VAR_MIRAGE_RND_H) });
-    let low = u32::from(unsafe { VarGet(VAR_MIRAGE_RND_L) });
-    (high << 16) | low
-}
-
-unsafe fn set_mirage_random(value: u32) {
-    let _ = unsafe { VarSet(VAR_MIRAGE_RND_H, (value >> 16) as u16) };
-    let _ = unsafe { VarSet(VAR_MIRAGE_RND_L, value as u16) };
-}
-
+/// One day's step of the Mirage Island number (C's `ISO_RANDOMIZE2`).
 const fn advance_mirage_random(value: u32) -> u32 {
     value.wrapping_mul(1_103_515_245).wrapping_add(12_345)
 }
 
+/// Whether the tide in Shoal Cave is high at `hour`.
 const fn is_high_tide_hour(hour: i8) -> bool {
     matches!(hour, 0..=2 | 9..=14 | 21..=23)
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitMirageRnd() {
-    let value = (u32::from(unsafe { Random() }) << 16) | u32::from(unsafe { Random() });
-    unsafe { set_mirage_random(value) };
+pub fn init_mirage_random() {
+    let high = u32::from(random());
+    set_mirage_random(high << 16 | u32::from(random()));
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateMirageRnd(mut days: u16) {
-    let mut value = unsafe { get_mirage_random() };
-    while days != 0 {
-        value = advance_mirage_random(value);
-        days -= 1;
+pub fn update_mirage_random(days: u16) {
+    let value = (0..days).fold(mirage_random(), |value, _| advance_mirage_random(value));
+    set_mirage_random(value);
+}
+
+pub fn is_mirage_island_present() -> bool {
+    let target = (mirage_random() >> 16) as u16;
+    // SAFETY: the party isn't borrowed elsewhere; the borrow ends here.
+    let party = unsafe { player_party() };
+    party
+        .0
+        .iter_mut()
+        .any(|mon| mon.r#box.species() != 0 && mon.r#box.personality as u16 == target)
+}
+
+pub fn update_shoal_tide_flag() {
+    // SAFETY: plain C functions without preconditions.
+    if unsafe { IsMapTypeOutdoors(GetLastUsedWarpMapType()) } == 0 {
+        return;
     }
-    unsafe { set_mirage_random(value) };
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsMirageIslandPresent() -> u8 {
-    let target = (unsafe { get_mirage_random() } >> 16) as u16;
-    let party = (&raw mut gPlayerParty).cast::<Pokemon>();
-    let mut index = 0;
-    while index < 6 {
-        let mon = unsafe { party.add(index) }.cast::<u8>();
-        if unsafe { GetMonData2(mon, MON_DATA_SPECIES) } != 0
-            && (unsafe { GetMonData2(mon, MON_DATA_PERSONALITY) } as u16) == target
-        {
-            return 1;
-        }
-        index += 1;
-    }
-    0
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateShoalTideFlag() {
-    if unsafe { IsMapTypeOutdoors(GetLastUsedWarpMapType()) } != 0 {
-        unsafe { RtcCalcLocalTime() };
-        let hour = unsafe { addr_of!(gLocalTime.hours).read() };
-        if is_high_tide_hour(hour) {
-            let _ = unsafe { FlagSet(FLAG_SYS_SHOAL_TIDE) };
-        } else {
-            let _ = unsafe { FlagClear(FLAG_SYS_SHOAL_TIDE) };
-        }
+    // SAFETY: as above; gLocalTime is only written by the RTC code.
+    let hour = unsafe {
+        RtcCalcLocalTime();
+        (*(&raw const gLocalTime)).hours
+    };
+    if is_high_tide_hour(hour) {
+        flag_set(FLAG_SYS_SHOAL_TIDE);
+    } else {
+        flag_clear(FLAG_SYS_SHOAL_TIDE);
     }
 }
 
-unsafe extern "C" fn task_wait_weather(task_id: u8) {
+fn task_wait_weather(task_id: u8) {
+    // SAFETY: plain C functions without preconditions.
     if unsafe { IsWeatherChangeComplete() } != 0 {
         unsafe { ScriptContext_Enable() };
-        unsafe { DestroyTask(task_id) };
+        destroy_task(task_id);
     }
 }
 
+/// Pauses the running script until the weather has finished changing.
+pub fn wait_weather() {
+    create_task(task_wait_weather, 80);
+}
+
+pub fn init_birch_state() {
+    var_set(VAR_BIRCH_STATE, 0);
+}
+
+pub fn update_birch_state(days: u16) {
+    let state = var_get(VAR_BIRCH_STATE).wrapping_add(days) % BIRCH_STATES;
+    var_set(VAR_BIRCH_STATE, state);
+}
+
+// ------------------------------------------------------------------ C names
+
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn WaitWeather() {
-    let _ = unsafe { CreateTask(task_wait_weather, 80) };
+pub fn InitMirageRnd() {
+    init_mirage_random();
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitBirchState() {
-    unsafe { GetVarPointer(VAR_BIRCH_STATE).write(0) };
+pub fn UpdateMirageRnd(days: u16) {
+    update_mirage_random(days);
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateBirchState(days: u16) {
-    let state = unsafe { GetVarPointer(VAR_BIRCH_STATE) };
-    let updated = unsafe { state.read() }.wrapping_add(days) % 7;
-    unsafe { state.write(updated) };
+pub fn IsMirageIslandPresent() -> u8 {
+    is_mirage_island_present().into()
+}
+
+#[unsafe(no_mangle)]
+pub fn UpdateShoalTideFlag() {
+    update_shoal_tide_flag();
+}
+
+#[unsafe(no_mangle)]
+pub fn WaitWeather() {
+    wait_weather();
+}
+
+#[unsafe(no_mangle)]
+pub fn InitBirchState() {
+    init_birch_state();
+}
+
+#[unsafe(no_mangle)]
+pub fn UpdateBirchState(days: u16) {
+    update_birch_state(days);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn ffi_types_match_the_arm_c_layout() {
-        assert_eq!(core::mem::size_of::<Time>(), 8);
-        assert_eq!(core::mem::offset_of!(Time, hours), 2);
-        assert_eq!(core::mem::size_of::<Pokemon>(), 100);
-    }
 
     #[test]
     fn mirage_rng_uses_the_second_iso_increment() {

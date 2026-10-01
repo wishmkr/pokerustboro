@@ -3,29 +3,44 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::RestoreSerialTimer3IntrHandlers;
+use crate::agb_main::gMain;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::ereader_helpers::{
+    EReaderHandleTransfer, EReaderHelper_ClearSendRecvMgr, EReaderHelper_RestoreRegsState,
+    EReaderHelper_SaveRegsState, EReaderHelper_SerialCallback, EReaderHelper_Timer3Callback,
+    TryWriteTrainerHill, ValidateTrainerHillData,
+};
+use crate::link::{
+    CheckShouldAdvanceLinkState, CloseLink, GetBlockReceivedStatus, GetLinkPlayerCount_2,
+    HasLinkErrorOccurred, IsLinkConnectionEstablished, IsLinkMaster,
+    IsLinkPlayerDataExchangeComplete, OpenLink, ResetBlockReceivedFlags,
+    SetCloseLinkCallbackAndType, SetSuppressLinkErrorMessage, gLink, gLinkType,
+    gReceivedRemoteLinkPlayers, gShouldAdvanceLinkState,
+};
+use crate::mystery_gift_menu::{
+    MG_AddMessageTextPrinter, MainCB_FreeAllBuffersAndReturnToInitTitleScreen,
+    PrintMysteryGiftMenuMessage,
+};
+use crate::sound::{IsFanfareTaskInactive, PlayFanfare, PlaySE};
+use crate::task::DestroyTask;
+use crate::task::gTasks;
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,6 +49,18 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
 
 /// `struct EReaderData`
 #[repr(C)]
@@ -131,110 +158,67 @@ const TRANSFER_CANCELED: u8 = 2;
 const TRANSFER_SUCCESS: u8 = 1;
 const TRANSFER_TIMEOUT: u8 = 3;
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gUnknownSpace: Aligned<CArray<u8, 64>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gEReaderData: EReaderData = unsafe { zeroed() };
 
-unsafe extern "C" {
-    static mut gDecompressionBuffer: CArray<u8, 16384>;
-    static mut gIntrTable: CArray<Option<unsafe extern "C" fn()>, 0>;
-    static gJPText_AllowEReaderToLoadCard: CArray<u8, 0>;
-    static gJPText_CardReadingHasBeenHalted: CArray<u8, 0>;
-    static gJPText_Connecting: CArray<u8, 0>;
-    static gJPText_ConnectionComplete: CArray<u8, 0>;
-    static gJPText_ConnectionErrorCheckLink: CArray<u8, 0>;
-    static gJPText_ConnectionErrorTryAgain: CArray<u8, 0>;
-    static gJPText_LinkIsIncorrect: CArray<u8, 0>;
-    static gJPText_NewTrainerHasComeToHoenn: CArray<u8, 0>;
-    static gJPText_PleaseWaitAMoment: CArray<u8, 0>;
-    static gJPText_ReceiveMysteryGiftWithEReader: CArray<u8, 0>;
-    static gJPText_SelectConnectFromEReaderMenu: CArray<u8, 0>;
-    static gJPText_SelectConnectWithGBA: CArray<u8, 0>;
-    static gJPText_WriteErrorUnableToSaveData: CArray<u8, 0>;
-    static mut gLink: Link;
-    static mut gLinkType: u16;
-    static mut gMain: Main;
-    static gMultiBootProgram_EReader_End: CArray<u8, 0>;
-    static gMultiBootProgram_EReader_Start: CArray<u8, 0>;
-    static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gShouldAdvanceLinkState: u8;
-    static mut gTasks: CArray<Task, 0>;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn CheckShouldAdvanceLinkState();
-    fn CloseLink();
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DestroyTask(a0: u8);
-    fn EReaderHandleTransfer(a0: u8, a1: u32, a2: *mut c_void, a3: *mut c_void) -> i32;
-    fn EReaderHelper_ClearSendRecvMgr();
-    fn EReaderHelper_RestoreRegsState();
-    fn EReaderHelper_SaveRegsState();
-    fn EReaderHelper_SerialCallback();
-    fn EReaderHelper_Timer3Callback();
-    fn Free(a0: *mut c_void);
-    fn GetBlockReceivedStatus() -> u8;
-    fn GetLinkPlayerCount_2() -> u8;
-    fn HasLinkErrorOccurred() -> u8;
-    fn IsFanfareTaskInactive() -> u8;
-    fn IsLinkConnectionEstablished() -> u8;
-    fn IsLinkMaster() -> u8;
-    fn IsLinkPlayerDataExchangeComplete() -> u8;
-    fn MG_AddMessageTextPrinter(a0: *mut u8);
-    fn MainCB_FreeAllBuffersAndReturnToInitTitleScreen();
-    fn OpenLink();
-    fn PlayFanfare(a0: u16);
-    fn PlaySE(a0: u16);
-    fn PrintMysteryGiftMenuMessage(a0: *mut u8, a1: *mut u8) -> u32;
-    fn ResetBlockReceivedFlags();
-    fn RestoreSerialTimer3IntrHandlers();
-    fn SetCloseLinkCallbackAndType(a0: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetSuppressLinkErrorMessage(a0: u8);
-    fn TryWriteTrainerHill(a0: *mut EReaderTrainerHillSet) -> u32;
-    fn ValidateTrainerHillData(a0: *mut EReaderTrainerHillSet) -> u8;
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn EReader_Load(eReader: *mut EReaderData, size: i32, data: *mut u32) {
+unsafe fn EReader_Load(eReader: *mut EReaderData, size: i32, data: *mut u32) {
     let mut backupIME: u16 = 0;
     volatile_write(
         &raw mut backupIME,
-        (67109384 as usize as *mut u16).read_volatile(),
+        (67109384_usize as *mut u16).read_volatile(),
     );
-    volatile_write(67109384 as usize as *mut u16, 0);
-    gIntrTable[1] = Some(EReaderHelper_SerialCallback);
-    gIntrTable[2] = Some(EReaderHelper_Timer3Callback);
+    volatile_write(67109384_usize as *mut u16, 0);
+    (*(&raw const crate::agb_main::gIntrTable)
+        .cast::<CArray<Option<crate::agb_main::IntrFunc>, 0>>()
+        .cast_mut())[1] = Some(EReaderHelper_SerialCallback);
+    (*(&raw const crate::agb_main::gIntrTable)
+        .cast::<CArray<Option<crate::agb_main::IntrFunc>, 0>>()
+        .cast_mut())[2] = Some(EReaderHelper_Timer3Callback);
     EReaderHelper_SaveRegsState();
     EReaderHelper_ClearSendRecvMgr();
     volatile_write(
-        0x4000200 as usize as *mut u16,
-        (0x4000200 as usize as *mut u16).read_volatile() | INTR_FLAG_VCOUNT,
+        0x4000200_usize as *mut u16,
+        (0x4000200_usize as *mut u16).read_volatile() | INTR_FLAG_VCOUNT,
     );
     volatile_write(
-        67109384 as usize as *mut u16,
+        67109384_usize as *mut u16,
         (&raw mut backupIME).read_volatile(),
     );
     (*eReader).status = 0;
     (*eReader).size = size as u32;
     (*eReader).data = data;
 }
-pub(crate) unsafe extern "C" fn EReader_Reset(eReader: *mut EReaderData) {
+unsafe fn EReader_Reset(eReader: *mut EReaderData) {
     let mut backupIME: u16 = 0;
     volatile_write(
         &raw mut backupIME,
-        (67109384 as usize as *mut u16).read_volatile(),
+        (67109384_usize as *mut u16).read_volatile(),
     );
-    volatile_write(67109384 as usize as *mut u16, 0);
+    volatile_write(67109384_usize as *mut u16, 0);
     EReaderHelper_ClearSendRecvMgr();
     EReaderHelper_RestoreRegsState();
     RestoreSerialTimer3IntrHandlers();
     volatile_write(
-        67109384 as usize as *mut u16,
+        67109384_usize as *mut u16,
         (&raw mut backupIME).read_volatile(),
     );
 }
-pub(crate) unsafe extern "C" fn EReader_Transfer(eReader: *mut EReaderData) -> u8 {
+unsafe fn EReader_Transfer(eReader: *mut EReaderData) -> u8 {
     let mut transferStatus: u8 = TRANSFER_ACTIVE;
     (*eReader).status = EReaderHandleTransfer(
         TRUE,
@@ -254,26 +238,33 @@ pub(crate) unsafe extern "C" fn EReader_Transfer(eReader: *mut EReaderData) -> u
         transferStatus = TRANSFER_TIMEOUT;
     }
     gShouldAdvanceLinkState = 0;
-    return transferStatus;
+    transferStatus
 }
-pub(crate) unsafe extern "C" fn OpenEReaderLink() {
-    memset(gDecompressionBuffer.as_mut_ptr(), 0, 0x2000);
+unsafe fn OpenEReaderLink() {
+    memset(
+        (*(&raw const crate::decompress::gDecompressionBuffer)
+            .cast::<CArray<u8, 16384>>()
+            .cast_mut())
+        .as_mut_ptr(),
+        0,
+        0x2000,
+    );
     gLinkType = LINKTYPE_EREADER_EM;
     OpenLink();
     SetSuppressLinkErrorMessage(TRUE);
 }
-pub(crate) unsafe extern "C" fn ValidateEReaderConnection() -> u32 {
+unsafe fn ValidateEReaderConnection() -> u32 {
     let mut backupIME: u16 = 0;
     volatile_write(&raw mut backupIME, 0);
     let mut handshakes: CArray<u16, 4> = zeroed();
     volatile_write(
         &raw mut backupIME,
-        (67109384 as usize as *mut u16).read_volatile(),
+        (67109384_usize as *mut u16).read_volatile(),
     );
-    volatile_write(67109384 as usize as *mut u16, 0);
+    volatile_write(67109384_usize as *mut u16, 0);
     *(handshakes.as_mut_ptr() as *mut u64) = *(gLink.handshakeBuffer.as_mut_ptr() as *mut u64);
     volatile_write(
-        67109384 as usize as *mut u16,
+        67109384_usize as *mut u16,
         (&raw mut backupIME).read_volatile(),
     );
     if handshakes[0] == SLAVE_HANDSHAKE
@@ -283,15 +274,15 @@ pub(crate) unsafe extern "C" fn ValidateEReaderConnection() -> u32 {
     {
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn IsChildConnected() -> u32 {
+unsafe fn IsChildConnected() -> u32 {
     if IsLinkMaster() != 0 && GetLinkPlayerCount_2() == 2 {
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn TryReceiveCard(state: *mut u8, timer: *mut u16) -> u32 {
+unsafe fn TryReceiveCard(state: *mut u8, timer: *mut u16) -> u32 {
     if *state >= RECV_STATE_EXCHANGE
         && *state <= RECV_STATE_WAIT_DISCONNECT
         && HasLinkErrorOccurred() != 0
@@ -365,13 +356,12 @@ pub(crate) unsafe extern "C" fn TryReceiveCard(state: *mut u8, timer: *mut u16) 
             return RECV_ACTIVE;
         }
     }
-    return RECV_ACTIVE;
+    RECV_ACTIVE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateEReaderTask() {
+pub unsafe fn CreateEReaderTask() {
     let mut data: *mut EReaderTaskData = null_mut();
-    let mut taskId: u8 = CreateTask(Some(Task_EReader), 0);
-    data = gTasks[taskId].data.as_mut_ptr() as *mut EReaderTaskData;
+    let taskId: u8 = CreateTask(Some(Task_EReader), 0);
+    data = (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut EReaderTaskData;
     (*data).state = 0;
     (*data).textState = 0;
     (*data).unused4 = 0;
@@ -385,10 +375,10 @@ pub unsafe extern "C" fn CreateEReaderTask() {
     (*data).status = 0;
     (*data).unusedBuffer = AllocZeroed(CLIENT_MAX_MSG_SIZE) as *mut u8;
 }
-pub(crate) unsafe extern "C" fn ResetTimer(timer: *mut u16) {
+unsafe fn ResetTimer(timer: *mut u16) {
     *timer = 0;
 }
-pub(crate) unsafe extern "C" fn UpdateTimer(timer: *mut u16, time: u16) -> u32 {
+unsafe fn UpdateTimer(timer: *mut u16, time: u16) -> u32 {
     if ({
         *timer += 1;
         *timer
@@ -397,15 +387,19 @@ pub(crate) unsafe extern "C" fn UpdateTimer(timer: *mut u16, time: u16) -> u32 {
         *timer = 0;
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn Task_EReader(taskId: u8) {
-    let mut data: *mut EReaderTaskData = gTasks[taskId].data.as_mut_ptr() as *mut EReaderTaskData;
+pub(crate) unsafe fn Task_EReader(taskId: u8) {
+    let data: *mut EReaderTaskData =
+        (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut EReaderTaskData;
     match (*data).state {
         ER_STATE_START => {
             if PrintMysteryGiftMenuMessage(
                 &raw mut (*data).textState,
-                gJPText_ReceiveMysteryGiftWithEReader.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gJPText_ReceiveMysteryGiftWithEReader)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             ) != 0
             {
                 (*data).state = ER_STATE_INIT_LINK;
@@ -432,10 +426,18 @@ pub(crate) unsafe extern "C" fn Task_EReader(taskId: u8) {
         ER_STATE_MSG_SELECT_CONNECT => {
             if PrintMysteryGiftMenuMessage(
                 &raw mut (*data).textState,
-                gJPText_SelectConnectFromEReaderMenu.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gJPText_SelectConnectFromEReaderMenu)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             ) != 0
             {
-                MG_AddMessageTextPrinter(gJPText_SelectConnectWithGBA.as_ptr().cast_mut());
+                MG_AddMessageTextPrinter(
+                    (*(&raw const crate::data::strings::gJPText_SelectConnectWithGBA)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                );
                 ResetTimer(&raw mut (*data).timer);
                 (*data).state = ER_STATE_MSG_SELECT_CONNECT_WAIT;
             }
@@ -474,20 +476,34 @@ pub(crate) unsafe extern "C" fn Task_EReader(taskId: u8) {
         ER_STATE_INCORRECT_LINK => {
             if PrintMysteryGiftMenuMessage(
                 &raw mut (*data).textState,
-                gJPText_LinkIsIncorrect.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gJPText_LinkIsIncorrect)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             ) != 0
             {
                 (*data).state = ER_STATE_MSG_SELECT_CONNECT;
             }
         }
         ER_STATE_CONNECTING => {
-            MG_AddMessageTextPrinter(gJPText_Connecting.as_ptr().cast_mut());
+            MG_AddMessageTextPrinter(
+                (*(&raw const crate::data::strings::gJPText_Connecting).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
             EReader_Load(
                 &raw mut gEReaderData,
-                (gMultiBootProgram_EReader_End.as_ptr().cast_mut() as usize)
-                    .wrapping_sub(gMultiBootProgram_EReader_Start.as_ptr().cast_mut() as usize)
-                    as i32,
-                gMultiBootProgram_EReader_Start.as_ptr().cast_mut() as *mut u32,
+                ((*crate::asmdata::gMultiBootProgram_EReader_End.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut() as usize)
+                    .wrapping_sub(
+                        (*crate::asmdata::gMultiBootProgram_EReader_Start.cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut() as usize,
+                    ) as i32,
+                (*crate::asmdata::gMultiBootProgram_EReader_Start.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut u32,
             );
             (*data).state = ER_STATE_TRANSFER;
         }
@@ -503,7 +519,12 @@ pub(crate) unsafe extern "C" fn Task_EReader(taskId: u8) {
                 (*data).state = ER_STATE_LINK_ERROR;
             } else if (*data).status == TRANSFER_SUCCESS {
                 ResetTimer(&raw mut (*data).timer);
-                MG_AddMessageTextPrinter(gJPText_PleaseWaitAMoment.as_ptr().cast_mut());
+                MG_AddMessageTextPrinter(
+                    (*(&raw const crate::data::strings::gJPText_PleaseWaitAMoment)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                );
                 (*data).state = ER_STATE_TRANSFER_SUCCESS;
             } else {
                 (*data).state = ER_STATE_START;
@@ -516,14 +537,24 @@ pub(crate) unsafe extern "C" fn Task_EReader(taskId: u8) {
         }
         ER_STATE_LOAD_CARD_START => {
             OpenEReaderLink();
-            MG_AddMessageTextPrinter(gJPText_AllowEReaderToLoadCard.as_ptr().cast_mut());
+            MG_AddMessageTextPrinter(
+                (*(&raw const crate::data::strings::gJPText_AllowEReaderToLoadCard)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            );
             (*data).state = ER_STATE_LOAD_CARD;
         }
         ER_STATE_LOAD_CARD => {
             match TryReceiveCard(&raw mut (*data).textState, &raw mut (*data).timer) {
                 RECV_ACTIVE => {}
                 RECV_SUCCESS => {
-                    MG_AddMessageTextPrinter(gJPText_Connecting.as_ptr().cast_mut());
+                    MG_AddMessageTextPrinter(
+                        (*(&raw const crate::data::strings::gJPText_Connecting)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                    );
                     (*data).state = ER_STATE_WAIT_RECV_CARD;
                 }
                 RECV_CANCELED => {
@@ -553,7 +584,10 @@ pub(crate) unsafe extern "C" fn Task_EReader(taskId: u8) {
         }
         ER_STATE_VALIDATE_CARD => {
             (*data).status = ValidateTrainerHillData(
-                gDecompressionBuffer.as_mut_ptr() as *mut EReaderTrainerHillSet
+                (*(&raw const crate::decompress::gDecompressionBuffer)
+                    .cast::<CArray<u8, 16384>>()
+                    .cast_mut())
+                .as_mut_ptr() as *mut EReaderTrainerHillSet,
             );
             SetCloseLinkCallbackAndType((*data).status as u16);
             (*data).state = ER_STATE_WAIT_DISCONNECT;
@@ -568,9 +602,18 @@ pub(crate) unsafe extern "C" fn Task_EReader(taskId: u8) {
             }
         }
         ER_STATE_SAVE => {
-            if TryWriteTrainerHill(&raw mut gDecompressionBuffer as *mut EReaderTrainerHillSet) != 0
+            if TryWriteTrainerHill(
+                &raw mut (*(&raw const crate::decompress::gDecompressionBuffer)
+                    .cast::<CArray<u8, 16384>>()
+                    .cast_mut()) as *mut EReaderTrainerHillSet,
+            ) != 0
             {
-                MG_AddMessageTextPrinter(gJPText_ConnectionComplete.as_ptr().cast_mut());
+                MG_AddMessageTextPrinter(
+                    (*(&raw const crate::data::strings::gJPText_ConnectionComplete)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                );
                 ResetTimer(&raw mut (*data).timer);
                 (*data).state = ER_STATE_SUCCESS_MSG;
             } else {
@@ -579,7 +622,12 @@ pub(crate) unsafe extern "C" fn Task_EReader(taskId: u8) {
         }
         ER_STATE_SUCCESS_MSG => {
             if UpdateTimer(&raw mut (*data).timer, 120) != 0 {
-                MG_AddMessageTextPrinter(gJPText_NewTrainerHasComeToHoenn.as_ptr().cast_mut());
+                MG_AddMessageTextPrinter(
+                    (*(&raw const crate::data::strings::gJPText_NewTrainerHasComeToHoenn)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                );
                 PlayFanfare(MUS_OBTAIN_ITEM);
                 (*data).state = ER_STATE_SUCCESS_END;
             }
@@ -592,7 +640,10 @@ pub(crate) unsafe extern "C" fn Task_EReader(taskId: u8) {
         ER_STATE_CANCELED_CARD_READ => {
             if PrintMysteryGiftMenuMessage(
                 &raw mut (*data).textState,
-                gJPText_CardReadingHasBeenHalted.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gJPText_CardReadingHasBeenHalted)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             ) != 0
             {
                 (*data).state = ER_STATE_END;
@@ -601,7 +652,10 @@ pub(crate) unsafe extern "C" fn Task_EReader(taskId: u8) {
         ER_STATE_LINK_ERROR => {
             if PrintMysteryGiftMenuMessage(
                 &raw mut (*data).textState,
-                gJPText_ConnectionErrorCheckLink.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gJPText_ConnectionErrorCheckLink)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             ) != 0
             {
                 (*data).state = ER_STATE_START;
@@ -610,7 +664,10 @@ pub(crate) unsafe extern "C" fn Task_EReader(taskId: u8) {
         ER_STATE_LINK_ERROR_TRY_AGAIN => {
             if PrintMysteryGiftMenuMessage(
                 &raw mut (*data).textState,
-                gJPText_ConnectionErrorTryAgain.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gJPText_ConnectionErrorTryAgain)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             ) != 0
             {
                 (*data).state = ER_STATE_START;
@@ -619,7 +676,10 @@ pub(crate) unsafe extern "C" fn Task_EReader(taskId: u8) {
         ER_STATE_SAVE_FAILED => {
             if PrintMysteryGiftMenuMessage(
                 &raw mut (*data).textState,
-                gJPText_WriteErrorUnableToSaveData.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gJPText_WriteErrorUnableToSaveData)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             ) != 0
             {
                 (*data).state = ER_STATE_START;

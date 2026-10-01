@@ -168,7 +168,8 @@ fn checked(addr: usize, value: u32) -> u32 {
     if addr >> 25 != 0 {
         return value;
     }
-    let template = (&raw const gMPlayJumpTableTemplate) as usize;
+    let template = (&raw const (*(&raw const crate::data::m4a_tables::gMPlayJumpTableTemplate)
+        .cast::<u8>())) as usize;
     if addr >= template && addr >> 14 == 0 {
         value
     } else {
@@ -196,13 +197,13 @@ unsafe fn next_byte_unchecked(track: Ptr) -> u8 {
 
 /// `u32 umul3232H32(u32, u32)`: the high word of the 64-bit product.
 #[unsafe(no_mangle)]
-pub extern "C" fn umul3232H32(a: u32, b: u32) -> u32 {
+pub fn umul3232H32(a: u32, b: u32) -> u32 {
     ((u64::from(a) * u64::from(b)) >> 32) as u32
 }
 
 /// `SoundMainBTM`: clear 64 bytes (jump table entry 35, Clear64byte).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SoundMainBTM(p: *mut u32) {
+pub unsafe fn SoundMainBTM(p: *mut u32) {
     unsafe {
         for i in 0..16 {
             p.add(i).write(0);
@@ -212,7 +213,7 @@ pub unsafe extern "C" fn SoundMainBTM(p: *mut u32) {
 
 /// `RealClearChain`: unlink a channel from its track's chain (entry 34).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RealClearChain(chan: Ptr) {
+pub unsafe fn RealClearChain(chan: Ptr) {
     unsafe {
         let track = rp(chan, C_TRACK);
         if track.is_null() {
@@ -234,7 +235,7 @@ pub unsafe extern "C" fn RealClearChain(chan: Ptr) {
 
 /// `ply_fine` (FINE): stop the track's notes and the track.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_fine(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_fine(_mplay: Ptr, track: Ptr) {
     unsafe {
         let mut chan = rp(track, T_CHAN);
         while !chan.is_null() {
@@ -251,9 +252,11 @@ pub unsafe extern "C" fn ply_fine(_mplay: Ptr, track: Ptr) {
 
 /// `MPlayJumpTableCopy(dest)`: the 36 command handlers into `dest`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MPlayJumpTableCopy(dest: *mut u32) {
+pub unsafe fn MPlayJumpTableCopy(dest: *mut u32) {
     unsafe {
-        let src = (&raw const gMPlayJumpTableTemplate).cast::<u32>();
+        let src = (&raw const (*(&raw const crate::data::m4a_tables::gMPlayJumpTableTemplate)
+            .cast::<u8>()))
+            .cast::<u32>();
         for i in 0..0x24 {
             let addr = src.add(i);
             dest.add(i).write(checked(addr as usize, addr.read()));
@@ -274,13 +277,13 @@ unsafe fn goto_target(track: Ptr) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_goto(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_goto(_mplay: Ptr, track: Ptr) {
     unsafe { goto_target(track) }
 }
 
 /// PATT: call a pattern (three levels deep at most; deeper ends the track).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_patt(mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_patt(mplay: Ptr, track: Ptr) {
     unsafe {
         let level = r8(track, T_PATTERN_LEVEL);
         if level >= 3 {
@@ -299,7 +302,7 @@ pub unsafe extern "C" fn ply_patt(mplay: Ptr, track: Ptr) {
 
 /// PEND: return from a pattern.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_pend(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_pend(_mplay: Ptr, track: Ptr) {
     unsafe {
         let level = r8(track, T_PATTERN_LEVEL);
         if level == 0 {
@@ -317,7 +320,7 @@ pub unsafe extern "C" fn ply_pend(_mplay: Ptr, track: Ptr) {
 
 /// REPT count, address: repeat `count` times (0 = forever).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_rept(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_rept(_mplay: Ptr, track: Ptr) {
     unsafe {
         let p = rp(track, T_CMD_PTR);
         if p.read() == 0 {
@@ -338,12 +341,12 @@ pub unsafe extern "C" fn ply_rept(_mplay: Ptr, track: Ptr) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_prio(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_prio(_mplay: Ptr, track: Ptr) {
     unsafe { w8(track, T_PRIORITY, next_byte(track)) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_tempo(mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_tempo(mplay: Ptr, track: Ptr) {
     unsafe {
         let d = u32::from(next_byte(track)) << 1;
         w16(mplay, MPI_TEMPO_D, d as u16);
@@ -356,7 +359,7 @@ pub unsafe extern "C" fn ply_tempo(mplay: Ptr, track: Ptr) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_keysh(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_keysh(_mplay: Ptr, track: Ptr) {
     unsafe {
         w8(track, T_KEY_SHIFT, next_byte(track));
         or8(track, T_FLAGS, MPT_FLG_PITCHG);
@@ -365,7 +368,7 @@ pub unsafe extern "C" fn ply_keysh(_mplay: Ptr, track: Ptr) {
 
 /// VOICE n: copy tone n of the player's voice group into the track.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_voice(mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_voice(mplay: Ptr, track: Ptr) {
     unsafe {
         let p = rp(track, T_CMD_PTR);
         let n = usize::from(p.read());
@@ -380,7 +383,7 @@ pub unsafe extern "C" fn ply_voice(mplay: Ptr, track: Ptr) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_vol(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_vol(_mplay: Ptr, track: Ptr) {
     unsafe {
         w8(track, T_VOL, next_byte(track));
         or8(track, T_FLAGS, MPT_FLG_VOLCHG);
@@ -388,7 +391,7 @@ pub unsafe extern "C" fn ply_vol(_mplay: Ptr, track: Ptr) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_pan(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_pan(_mplay: Ptr, track: Ptr) {
     unsafe {
         w8(track, T_PAN, next_byte(track).wrapping_sub(C_V));
         or8(track, T_FLAGS, MPT_FLG_VOLCHG);
@@ -396,7 +399,7 @@ pub unsafe extern "C" fn ply_pan(_mplay: Ptr, track: Ptr) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_bend(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_bend(_mplay: Ptr, track: Ptr) {
     unsafe {
         w8(track, T_BEND, next_byte(track).wrapping_sub(C_V));
         or8(track, T_FLAGS, MPT_FLG_PITCHG);
@@ -404,7 +407,7 @@ pub unsafe extern "C" fn ply_bend(_mplay: Ptr, track: Ptr) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_bendr(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_bendr(_mplay: Ptr, track: Ptr) {
     unsafe {
         w8(track, T_BEND_RANGE, next_byte(track));
         or8(track, T_FLAGS, MPT_FLG_PITCHG);
@@ -412,12 +415,12 @@ pub unsafe extern "C" fn ply_bendr(_mplay: Ptr, track: Ptr) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_lfodl(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_lfodl(_mplay: Ptr, track: Ptr) {
     unsafe { w8(track, T_LFO_DELAY, next_byte(track)) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_modt(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_modt(_mplay: Ptr, track: Ptr) {
     unsafe {
         let v = next_byte(track);
         if r8(track, T_MOD_T) != v {
@@ -428,7 +431,7 @@ pub unsafe extern "C" fn ply_modt(_mplay: Ptr, track: Ptr) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_tune(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_tune(_mplay: Ptr, track: Ptr) {
     unsafe {
         w8(track, T_TUNE, next_byte(track).wrapping_sub(C_V));
         or8(track, T_FLAGS, MPT_FLG_PITCHG);
@@ -437,7 +440,7 @@ pub unsafe extern "C" fn ply_tune(_mplay: Ptr, track: Ptr) {
 
 /// PORT reg, value: write a sound register (REG_SOUND1CNT_L + reg).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_port(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_port(_mplay: Ptr, track: Ptr) {
     unsafe {
         let p = rp(track, T_CMD_PTR);
         let reg = (0x0400_0060usize + usize::from(p.read())) as *mut u8;
@@ -450,7 +453,7 @@ pub unsafe extern "C" fn ply_port(_mplay: Ptr, track: Ptr) {
 
 /// Restart the Direct Sound FIFO DMAs every `pcmDmaPeriod` frames.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn m4aSoundVSync() {
+pub unsafe fn m4aSoundVSync() {
     const REG_DMA1CNT: *mut u32 = 0x0400_00C4 as *mut u32;
     const REG_DMA2CNT: *mut u32 = 0x0400_00D0 as *mut u32;
     const DMA_REPEAT_BIT: u32 = 1 << 25;
@@ -496,7 +499,7 @@ unsafe fn clear_mod_m(track: Ptr) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_lfos(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_lfos(_mplay: Ptr, track: Ptr) {
     unsafe {
         let v = next_byte_unchecked(track);
         w8(track, T_LFO_SPEED, v);
@@ -507,7 +510,7 @@ pub unsafe extern "C" fn ply_lfos(_mplay: Ptr, track: Ptr) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_mod(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_mod(_mplay: Ptr, track: Ptr) {
     unsafe {
         let v = next_byte_unchecked(track);
         w8(track, T_MOD, v);
@@ -519,7 +522,7 @@ pub unsafe extern "C" fn ply_mod(_mplay: Ptr, track: Ptr) {
 
 /// EOT [key]: release the tied note (the first matching one).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_endtie(_mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_endtie(_mplay: Ptr, track: Ptr) {
     unsafe {
         let p = rp(track, T_CMD_PTR);
         let key = if p.read() < 0x80 {
@@ -544,7 +547,7 @@ pub unsafe extern "C" fn ply_endtie(_mplay: Ptr, track: Ptr) {
 
 /// `TrackStop(mplayInfo, track)`: silence and unlink every channel.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TrackStop(_mplay: Ptr, track: Ptr) {
+pub unsafe fn TrackStop(_mplay: Ptr, track: Ptr) {
     unsafe {
         if r8(track, T_FLAGS) & MPT_FLG_EXIST == 0 {
             return;
@@ -555,7 +558,7 @@ pub unsafe extern "C" fn TrackStop(_mplay: Ptr, track: Ptr) {
             if sf != 0 {
                 let cgb = r8(chan, C_TYPE) & TONEDATA_TYPE_CGB;
                 if cgb != 0 {
-                    let osc_off: unsafe extern "C" fn(u8) =
+                    let osc_off: unsafe fn(u8) =
                         core::mem::transmute(rp(sound_info(), SI_CGB_OSC_OFF));
                     osc_off(cgb);
                 }
@@ -596,10 +599,11 @@ unsafe fn chn_vol_set(chan: Ptr, track: Ptr) {
 /// Note commands 0xCF..: `ply_note(noteLengthIndex, mplayInfo, track)`,
 /// reached through SoundInfo.plynote.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ply_note(length_index: u32, mplay: Ptr, track: Ptr) {
+pub unsafe fn ply_note(length_index: u32, mplay: Ptr, track: Ptr) {
     unsafe {
         let si = sound_info();
-        let clock = (&raw const gClockTable).cast::<u8>();
+        let clock = (&raw const (*(&raw const crate::data::m4a_tables::gClockTable).cast::<u8>()))
+            .cast::<u8>();
         w8(track, T_GATE_TIME, clock.add(length_index as usize).read());
 
         // key [velocity [gate time extension]]
@@ -785,7 +789,7 @@ pub unsafe extern "C" fn ply_note(length_index: u32, mplay: Ptr, track: Ptr) {
                     ps
                 },
             );
-            let to_freq: unsafe extern "C" fn(u8, u8, u8) -> u32 =
+            let to_freq: unsafe fn(u8, u8, u8) -> u32 =
                 core::mem::transmute(rp(si, SI_MIDI_KEY_TO_CGB_FREQ));
             to_freq(cgb, k as u8, r8(track, T_PIT_M))
         } else {
@@ -801,7 +805,7 @@ pub unsafe extern "C" fn ply_note(length_index: u32, mplay: Ptr, track: Ptr) {
 /// `MPlayMain(mplayInfo)`: one frame of a music player: run as many ticks
 /// as the tempo allows, then push volume/pitch changes to the channels.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MPlayMain(mplay: Ptr) {
+pub unsafe fn MPlayMain(mplay: Ptr) {
     unsafe {
         if r32(mplay, MPI_IDENT) != ID_NUMBER {
             return;
@@ -809,7 +813,7 @@ pub unsafe extern "C" fn MPlayMain(mplay: Ptr) {
         w32(mplay, MPI_IDENT, ID_NUMBER + 1);
         let func = r32(mplay, MPI_FUNC);
         if func != 0 {
-            let f: unsafe extern "C" fn(u32) = core::mem::transmute(func as usize);
+            let f: unsafe fn(u32) = core::mem::transmute(func as usize);
             f(r32(mplay, MPI_INTP));
         }
         run(mplay);
@@ -886,7 +890,7 @@ unsafe fn run(mplay: Ptr) {
                                 k = 0;
                             }
                             if cgb != 0 {
-                                let to_freq: unsafe extern "C" fn(u8, u8, u8) -> u32 =
+                                let to_freq: unsafe fn(u8, u8, u8) -> u32 =
                                     core::mem::transmute(rp(si, SI_MIDI_KEY_TO_CGB_FREQ));
                                 w32(chan, C_FREQUENCY, to_freq(cgb, k as u8, r8(track, T_PIT_M)));
                                 or8(chan, CGB_MODIFY, CGB_MO_PIT);
@@ -957,21 +961,22 @@ unsafe fn tick_track(si: Ptr, mplay: Ptr, track: Ptr) {
                 }
             }
             if cmd >= 0xCF {
-                let note: unsafe extern "C" fn(u32, Ptr, Ptr) =
-                    core::mem::transmute(rp(si, SI_PLYNOTE));
+                let note: unsafe fn(u32, Ptr, Ptr) = core::mem::transmute(rp(si, SI_PLYNOTE));
                 note(u32::from(cmd - 0xCF), mplay, track);
             } else if cmd > 0xB0 {
                 let n = cmd - 0xB1;
                 w8(mplay, MPI_CMD, n);
                 let table = rp(si, SI_MPLAY_JUMP_TABLE).cast::<u32>();
-                let handler: unsafe extern "C" fn(Ptr, Ptr) =
+                let handler: unsafe fn(Ptr, Ptr) =
                     core::mem::transmute(table.add(usize::from(n)).read() as usize);
                 handler(mplay, track);
                 if r8(track, T_FLAGS) == 0 {
                     return; // the track ended
                 }
             } else {
-                let clock = (&raw const gClockTable).cast::<u8>();
+                let clock = (&raw const (*(&raw const crate::data::m4a_tables::gClockTable)
+                    .cast::<u8>()))
+                    .cast::<u8>();
                 w8(track, T_WAIT, clock.add(usize::from(cmd - 0x80)).read());
             }
         }
@@ -1010,9 +1015,4 @@ unsafe fn tick_track(si: Ptr, mplay: Ptr, track: Ptr) {
             );
         }
     }
-}
-
-unsafe extern "C" {
-    static gMPlayJumpTableTemplate: u8;
-    static gClockTable: u8;
 }

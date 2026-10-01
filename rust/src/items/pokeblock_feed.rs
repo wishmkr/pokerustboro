@@ -3,37 +3,196 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::battle_gfx_sfx_util::{AllocateMonSpritesGfx, FreeMonSpritesGfx};
+use crate::battle_main::gMonSpritesGfxPtr;
+use crate::bg::{ResetBgsAndClearDma3BusyFlags, ShowBg};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::gpu_regs::SetGpuReg;
+use crate::item_menu::gSpecialVar_ItemId;
+use crate::load_save::gSaveBlock1Ptr;
+use crate::m4a::{gMPlayInfo_BGM, m4aMPlayVolumeControl};
+use crate::menu::{
+    AddTextPrinterParameterized2, ClearScheduledBgCopiesToVram, DecompressAndCopyTileDataToVram,
+    DoScheduledBgTilemapCopiesToVram, DrawStdFrameWithCustomTileAndPalette,
+    FreeTempTileDataBuffersIfPossible, GetPlayerTextSpeedDelay, ResetTempTileDataBuffers,
+    ScheduleBgCopyTilemapToVram,
+};
+use crate::menu_helpers::{
+    MenuHelpers_IsLinkActive, MenuHelpers_ShouldWaitForLinkRecv, ResetAllBgsCoordinates,
+    ResetVramOamAndBgCntRegs, RunTextPrintersRetIsActive, SetVBlankHBlankCallbacksToNull,
+};
+use crate::palette::{
+    BeginNormalPaletteFade, BlendPalettes, LoadCompressedPalette, LoadPalette, ResetPaletteFade,
+    TransferPlttBuffer, UpdatePaletteFade, gPaletteFade,
+};
+use crate::party_menu::GetMonNickname;
+use crate::pokeblock::{
+    CreatePokeblockCaseSprite, GetPokeblockData, PokeblockCopyName, PokeblockGetGain,
+};
+use crate::pokemon::{
+    GetMonData2, GetMonSpritePalStructFromOtIdPersonality, GetNature, IsMonSpriteNotFlipped,
+    SetMultiuseSpriteTemplateToPokemon, gMultiuseSpriteTemplate, gPlayerParty,
+};
+use crate::sound::PlayCry_Normal;
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, FreeOamMatrix, LoadOam,
+    ProcessSpriteCopyRequests, ResetSpriteData,
+};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar4};
+use crate::task::{DestroyTask, RunTasks};
+use crate::task::{task_get, task_set, task_set_func};
+use crate::text::DeactivateAllTextPrinters;
+use crate::text_window::LoadUserWindowBorderGfx;
+use crate::trig::{Cos, Sin};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::use_pokeblock::{gPokeblockGain, gPokeblockMonId};
+use crate::window::{FillWindowPixelBuffer, FreeAllWindowBuffers, PutWindowTilemap};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CalcCenterToCornerVec` with this module's view of its types.
+#[inline]
+unsafe fn CalcCenterToCornerVec(a0: *mut Sprite, a1: u8, a2: u8, a3: u8) {
+    unsafe {
+        crate::sprite::CalcCenterToCornerVec(a0 as _, a1, a2, a3);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `FreeSpriteOamMatrix` with this module's view of its types.
+#[inline]
+unsafe fn FreeSpriteOamMatrix(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::FreeSpriteOamMatrix(a0 as _);
+    }
+}
+/// `HandleLoadSpecialPokePic_2` with this module's view of its types.
+#[inline]
+unsafe fn HandleLoadSpecialPokePic_2(
+    a0: *mut CompressedSpriteSheet,
+    a1: *mut c_void,
+    a2: i32,
+    a3: u32,
+) {
+    unsafe {
+        crate::decompress::HandleLoadSpecialPokePic_2(a0 as _, a1 as _, a2, a3);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn InitSpriteAffineAnim(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::InitSpriteAffineAnim(a0 as _);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LZDecompressWram` with this module's view of its types.
+#[inline]
+unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::decompress::LZDecompressWram(a0 as _, a1 as _);
+    }
+}
+/// `LoadCompressedSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+    unsafe {
+        crate::decompress::LoadCompressedSpritePalette(a0 as _);
+    }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAffineAnim(a0 as _, a1);
+    }
+}
+/// `StringExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringExpandPlaceholders(a0 as _, a1 as _) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const sSpeed: usize = 0;
+const tState: usize = 0;
+const sAccel: usize = 1;
+const tHorizontalThrow: usize = 1;
+const sSpecies: usize = 2;
 // Data tables (translate with cdata.py): sNatureToMonPokeblockAnim sMonPokeblockAnims sAffineAnim_Mon_None sAffineAnim_Mon_TurnUp sAffineAnim_Mon_TurnUp_Flipped sAffineAnim_Mon_TurnUpAndDown sAffineAnim_Mon_TurnUpAndDown_Flipped sAffineAnim_Mon_TurnDown sAffineAnim_Mon_TurnDown_Flipped sAffineAnim_Mon_TurnDownSlow sAffineAnim_Mon_TurnDownSlow_Flipped sAffineAnim_Mon_TurnDownSlight sAffineAnim_Mon_TurnDownSlight_Flipped sAffineAnim_Mon_TurnUpHigh sAffineAnim_Mon_TurnUpHigh_Flipped sAffineAnims_Mon sBackgroundTemplates sWindowTemplates sPokeblocksPals sAffineAnim_Still sSpriteAffineAnimTable_MonNoFlip sAffineAnim_PokeblockCase_ThrowFromVertical sAffineAnim_PokeblockCase_ThrowFromHorizontal sAffineAnims_PokeblockCase_Still sAffineAnims_PokeblockCase_ThrowFromVertical sAffineAnims_PokeblockCase_ThrowFromHorizontal sOamData_Pokeblock sAnim_Pokeblock sAnims_Pokeblock sAffineAnim_Pokeblock sAffineAnims_Pokeblock sSpriteSheet_Pokeblock sSpriteTemplate_Pokeblock
 
 /// `struct PokeblockFeed`
@@ -157,147 +316,32 @@ pub(crate) static mut sPokeblockFeed: *mut PokeblockFeed = null_mut();
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sPokeblockSpritePal: CompressedSpritePalette = unsafe { zeroed() };
 
-unsafe extern "C" {
-    static gBattleEnvironmentPalette_Frontier: CArray<u32, 0>;
-    static gBattleEnvironmentTiles_Building: CArray<u32, 0>;
-    static mut gMPlayInfo_BGM: MusicPlayerInfo;
-    static mut gMain: Main;
-    static gMonFrontPicTable: CArray<CompressedSpriteSheet, 0>;
-    static mut gMonSpritesGfxPtr: *mut MonSpritesGfx;
-    static mut gMultiuseSpriteTemplate: SpriteTemplate;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static gPokeblockCase_SpritePal: CompressedSpritePalette;
-    static gPokeblockCase_SpriteSheet: CompressedSpriteSheet;
-    static gPokeblockFeedBg_Tilemap: CArray<u32, 0>;
-    static mut gPokeblockGain: i16;
-    static mut gPokeblockMonId: u8;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSpecialVar_ItemId: u16;
-    static mut gSprites: CArray<Sprite, 65>;
-    static gStandardMenuPalette: CArray<u16, 0>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static mut gTextFlags: TextFlags;
-    static gText_Var1AteTheVar2: CArray<u8, 0>;
-    static gText_Var1DisdainfullyAteVar2: CArray<u8, 0>;
-    static gText_Var1HappilyAteVar2: CArray<u8, 0>;
-    fn AddTextPrinterParameterized2(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-        a5: u8,
-        a6: u8,
-        a7: u8,
-    ) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AllocateMonSpritesGfx();
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn BuildOamBuffer();
-    fn CalcCenterToCornerVec(a0: *mut Sprite, a1: u8, a2: u8, a3: u8);
-    fn ClearScheduledBgCopiesToVram();
-    fn Cos(a0: i16, a1: i16) -> i16;
-    fn CreatePokeblockCaseSprite(a0: i16, a1: i16, a2: u8) -> u8;
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DoScheduledBgTilemapCopiesToVram();
-    fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeMonSpritesGfx();
-    fn FreeOamMatrix(a0: u8);
-    fn FreeSpriteOamMatrix(a0: *mut Sprite);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonNickname(a0: *mut Pokemon, a1: *mut u8) -> *mut u8;
-    fn GetMonSpritePalStructFromOtIdPersonality(
-        a0: u16,
-        a1: u32,
-        a2: u32,
-    ) -> *mut CompressedSpritePalette;
-    fn GetNature(a0: *mut Pokemon) -> u8;
-    fn GetPlayerTextSpeedDelay() -> u8;
-    fn GetPokeblockData(a0: *mut Pokeblock, a1: u8) -> i16;
-    fn HandleLoadSpecialPokePic_2(
-        a0: *mut CompressedSpriteSheet,
-        a1: *mut c_void,
-        a2: i32,
-        a3: u32,
-    );
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitSpriteAffineAnim(a0: *mut Sprite);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsMonSpriteNotFlipped(a0: u16) -> u8;
-    fn LZDecompressWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette);
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn MenuHelpers_IsLinkActive() -> u8;
-    fn MenuHelpers_ShouldWaitForLinkRecv() -> u8;
-    fn PlayCry_Normal(a0: u16, a1: i8);
-    fn PokeblockCopyName(a0: *mut Pokeblock, a1: *mut u8);
-    fn PokeblockGetGain(a0: u8, a1: *mut Pokeblock) -> i16;
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn ResetAllBgsCoordinates();
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTempTileDataBuffers();
-    fn ResetVramOamAndBgCntRegs();
-    fn RunTasks();
-    fn RunTextPrintersRetIsActive(a0: u8) -> u16;
-    fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMultiuseSpriteTemplateToPokemon(a0: u16, a1: u8);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankHBlankCallbacksToNull();
-    fn ShowBg(a0: u8);
-    fn Sin(a0: i16, a1: i16) -> i16;
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
-    fn m4aMPlayVolumeControl(a0: *mut MusicPlayerInfo, a1: u16, a2: u16);
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn CB2_PokeblockFeed() {
+pub(crate) unsafe fn CB2_PokeblockFeed() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
     DoScheduledBgTilemapCopiesToVram();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn VBlankCB_PokeblockFeed() {
+pub(crate) unsafe fn VBlankCB_PokeblockFeed() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn LoadPokeblockFeedScene() -> u8 {
+unsafe fn LoadPokeblockFeedScene() -> u8 {
     match gMain.state {
         0 => {
             sPokeblockFeed = AllocZeroed(4228) as *mut PokeblockFeed;
@@ -331,7 +375,7 @@ pub(crate) unsafe extern "C" fn LoadPokeblockFeedScene() -> u8 {
             gMain.state += 1;
         }
         7 => {
-            if LoadMonAndSceneGfx(&raw mut gPlayerParty[gPokeblockMonId]) != 0 {
+            if LoadMonAndSceneGfx(&raw mut gPlayerParty[gPokeblockMonId.get()]) != 0 {
                 gMain.state += 1;
             }
         }
@@ -340,7 +384,8 @@ pub(crate) unsafe extern "C" fn LoadPokeblockFeedScene() -> u8 {
             gMain.state += 1;
         }
         9 => {
-            (*sPokeblockFeed).monSpriteId = CreateMonSprite(&raw mut gPlayerParty[gPokeblockMonId]);
+            (*sPokeblockFeed).monSpriteId =
+                CreateMonSprite(&raw mut gPlayerParty[gPokeblockMonId.get()]);
             gMain.state += 1;
         }
         10 => {
@@ -366,10 +411,9 @@ pub(crate) unsafe extern "C" fn LoadPokeblockFeedScene() -> u8 {
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PreparePokeblockFeedScene() {
+pub unsafe fn PreparePokeblockFeedScene() {
     loop {
         if MenuHelpers_ShouldWaitForLinkRecv() == TRUE {
             break;
@@ -382,7 +426,7 @@ pub unsafe extern "C" fn PreparePokeblockFeedScene() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn HandleInitBackgrounds() {
+pub(crate) unsafe fn HandleInitBackgrounds() {
     ResetVramOamAndBgCntRegs();
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sBackgroundTemplates.as_ptr().cast_mut(), 2);
@@ -397,7 +441,7 @@ pub(crate) unsafe extern "C" fn HandleInitBackgrounds() {
     ShowBg(1);
     SetGpuReg(REG_OFFSET_BLDCNT, 0);
 }
-pub(crate) unsafe extern "C" fn LoadMonAndSceneGfx(mon: *mut Pokemon) -> u8 {
+unsafe fn LoadMonAndSceneGfx(mon: *mut Pokemon) -> u8 {
     let mut species: u16 = 0;
     let mut personality: u32 = 0;
     let mut trainerId: u32 = 0;
@@ -407,7 +451,9 @@ pub(crate) unsafe extern "C" fn LoadMonAndSceneGfx(mon: *mut Pokemon) -> u8 {
             species = GetMonData2(mon, MON_DATA_SPECIES_OR_EGG) as u16;
             personality = GetMonData2(mon, MON_DATA_PERSONALITY);
             HandleLoadSpecialPokePic_2(
-                (&raw const gMonFrontPicTable[species]).cast_mut(),
+                (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+                    .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
+                    .cast_mut(),
                 (*gMonSpritesGfxPtr).sprites.ptr[1],
                 species as i32,
                 personality,
@@ -424,11 +470,19 @@ pub(crate) unsafe extern "C" fn LoadMonAndSceneGfx(mon: *mut Pokemon) -> u8 {
             (*sPokeblockFeed).loadGfxState += 1;
         }
         2 => {
-            LoadCompressedSpriteSheet((&raw const gPokeblockCase_SpriteSheet).cast_mut());
+            LoadCompressedSpriteSheet(
+                (&raw const (*(&raw const crate::data::pokeblock::gPokeblockCase_SpriteSheet)
+                    .cast::<CompressedSpriteSheet>()))
+                    .cast_mut(),
+            );
             (*sPokeblockFeed).loadGfxState += 1;
         }
         3 => {
-            LoadCompressedSpritePalette((&raw const gPokeblockCase_SpritePal).cast_mut());
+            LoadCompressedSpritePalette(
+                (&raw const (*(&raw const crate::data::pokeblock::gPokeblockCase_SpritePal)
+                    .cast::<CompressedSpritePalette>()))
+                    .cast_mut(),
+            );
             (*sPokeblockFeed).loadGfxState += 1;
         }
         4 => {
@@ -444,7 +498,10 @@ pub(crate) unsafe extern "C" fn LoadMonAndSceneGfx(mon: *mut Pokemon) -> u8 {
             ResetTempTileDataBuffers();
             DecompressAndCopyTileDataToVram(
                 1,
-                gBattleEnvironmentTiles_Building.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Building)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0,
                 0,
                 0,
@@ -454,7 +511,10 @@ pub(crate) unsafe extern "C" fn LoadMonAndSceneGfx(mon: *mut Pokemon) -> u8 {
         7 => {
             if FreeTempTileDataBuffersIfPossible() != TRUE {
                 LZDecompressWram(
-                    gPokeblockFeedBg_Tilemap.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gPokeblockFeedBg_Tilemap)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     (*sPokeblockFeed).tilemapBuffer.as_mut_ptr() as *mut c_void,
                 );
                 (*sPokeblockFeed).loadGfxState += 1;
@@ -462,7 +522,10 @@ pub(crate) unsafe extern "C" fn LoadMonAndSceneGfx(mon: *mut Pokemon) -> u8 {
         }
         8 => {
             LoadCompressedPalette(
-                gBattleEnvironmentPalette_Frontier.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_Frontier)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 32,
                 96,
             );
@@ -471,14 +534,16 @@ pub(crate) unsafe extern "C" fn LoadMonAndSceneGfx(mon: *mut Pokemon) -> u8 {
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn HandleInitWindows() {
+pub(crate) unsafe fn HandleInitWindows() {
     InitWindows(sWindowTemplates.as_ptr().cast_mut());
     DeactivateAllTextPrinters();
     LoadUserWindowBorderGfx(0, 1, 224);
     LoadPalette(
-        gStandardMenuPalette.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::menu::gStandardMenuPalette).cast::<CArray<u16, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         240,
         32,
     );
@@ -486,17 +551,17 @@ pub(crate) unsafe extern "C" fn HandleInitWindows() {
     PutWindowTilemap(0);
     ScheduleBgCopyTilemapToVram(0);
 }
-pub(crate) unsafe extern "C" fn SetPokeblockSpritePal(pokeblockCaseId: u8) {
-    let mut colorId: u8 = GetPokeblockData(
+unsafe fn SetPokeblockSpritePal(pokeblockCaseId: u8) {
+    let colorId: u8 = GetPokeblockData(
         &raw mut (*gSaveBlock1Ptr).pokeblocks[pokeblockCaseId],
         PBLOCK_COLOR,
     ) as u8;
     sPokeblockSpritePal.data = sPokeblocksPals[colorId as i32 - 1];
     sPokeblockSpritePal.tag = TAG_POKEBLOCK;
 }
-pub(crate) unsafe extern "C" fn Task_HandlePokeblockFeed(taskId: u8) {
+pub(crate) unsafe fn Task_HandlePokeblockFeed(taskId: u8) {
     if gPaletteFade.active() == 0 {
-        match gTasks[taskId].data[0] {
+        match task_get(taskId, tState) {
             0 => {
                 (*sPokeblockFeed).animRunState = 0;
                 (*sPokeblockFeed).timer = 0;
@@ -505,7 +570,7 @@ pub(crate) unsafe extern "C" fn Task_HandlePokeblockFeed(taskId: u8) {
             STATE_START_THROW => {
                 DoPokeblockCaseThrowEffect(
                     (*sPokeblockFeed).pokeblockCaseSpriteId,
-                    gTasks[taskId].data[1] as u8,
+                    task_get(taskId, tHorizontalThrow) as u8,
                 );
             }
             STATE_SPAWN_PBLOCK => {
@@ -515,7 +580,7 @@ pub(crate) unsafe extern "C" fn Task_HandlePokeblockFeed(taskId: u8) {
                 StartMonJumpForPokeblock((*sPokeblockFeed).monSpriteId);
             }
             STATE_PRINT_MSG => {
-                gTasks[taskId].func = Some(Task_PrintAtePokeblockMessage);
+                task_set_func(taskId, Some(Task_PrintAtePokeblockMessage));
                 return;
             }
             _ => {}
@@ -523,45 +588,55 @@ pub(crate) unsafe extern "C" fn Task_HandlePokeblockFeed(taskId: u8) {
         if (*sPokeblockFeed).timer < (*sPokeblockFeed).monAnimLength {
             UpdateMonAnim();
         } else if (*sPokeblockFeed).timer == (*sPokeblockFeed).monAnimLength {
-            gTasks[taskId].data[0] = 254;
+            task_set(taskId, tState, 254);
         }
         (*sPokeblockFeed).timer += 1;
-        gTasks[taskId].data[0] += 1;
+        task_set(taskId, tState, task_get(taskId, tState) + 1);
     }
 }
-pub(crate) unsafe extern "C" fn LaunchPokeblockFeedTask() {
-    let mut taskId: u8 = CreateTask(Some(Task_HandlePokeblockFeed), 0);
-    gTasks[taskId].data[0] = 0;
-    gTasks[taskId].data[1] = TRUE as i16;
+unsafe fn LaunchPokeblockFeedTask() {
+    let taskId: u8 = CreateTask(Some(Task_HandlePokeblockFeed), 0);
+    task_set(taskId, tState, 0);
+    task_set(taskId, tHorizontalThrow, TRUE as i16);
 }
-pub(crate) unsafe extern "C" fn Task_WaitForAtePokeblockMessage(taskId: u8) {
+pub(crate) unsafe fn Task_WaitForAtePokeblockMessage(taskId: u8) {
     if RunTextPrintersRetIsActive(0) != TRUE as u16 {
-        gTasks[taskId].func = Some(Task_FadeOutPokeblockFeed);
+        task_set_func(taskId, Some(Task_FadeOutPokeblockFeed));
     }
 }
-pub(crate) unsafe extern "C" fn Task_PrintAtePokeblockMessage(taskId: u8) {
-    let mut mon: *mut Pokemon = &raw mut gPlayerParty[gPokeblockMonId];
-    let mut pokeblock: *mut Pokeblock = &raw mut (*gSaveBlock1Ptr).pokeblocks[gSpecialVar_ItemId];
-    gPokeblockGain = PokeblockGetGain(GetNature(mon), pokeblock);
+pub(crate) unsafe fn Task_PrintAtePokeblockMessage(taskId: u8) {
+    let mon: *mut Pokemon = &raw mut gPlayerParty[gPokeblockMonId.get()];
+    let pokeblock: *mut Pokeblock = &raw mut (*gSaveBlock1Ptr).pokeblocks[gSpecialVar_ItemId];
+    gPokeblockGain.set(PokeblockGetGain(GetNature(mon), pokeblock));
     GetMonNickname(mon, gStringVar1.as_mut_ptr());
     PokeblockCopyName(pokeblock, gStringVar2.as_mut_ptr());
-    if gPokeblockGain == 0 {
+    if gPokeblockGain.get() == 0 {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_Var1AteTheVar2.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_Var1AteTheVar2).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
-    } else if gPokeblockGain > 0 {
+    } else if gPokeblockGain.get() > 0 {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_Var1HappilyAteVar2.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_Var1HappilyAteVar2).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
     } else {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_Var1DisdainfullyAteVar2.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_Var1DisdainfullyAteVar2)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
     }
-    gTextFlags.set_canABSpeedUpPrint(TRUE);
+    (*(&raw const crate::text::gTextFlags)
+        .cast::<TextFlags>()
+        .cast_mut())
+    .set_canABSpeedUpPrint(TRUE);
     AddTextPrinterParameterized2(
         0,
         FONT_NORMAL,
@@ -572,9 +647,9 @@ pub(crate) unsafe extern "C" fn Task_PrintAtePokeblockMessage(taskId: u8) {
         TEXT_COLOR_WHITE,
         TEXT_COLOR_LIGHT_GRAY,
     );
-    gTasks[taskId].func = Some(Task_WaitForAtePokeblockMessage);
+    task_set_func(taskId, Some(Task_WaitForAtePokeblockMessage));
 }
-pub(crate) unsafe extern "C" fn Task_ExitPokeblockFeed(taskId: u8) {
+pub(crate) unsafe fn Task_ExitPokeblockFeed(taskId: u8) {
     if gPaletteFade.active() == 0 {
         ResetSpriteData();
         FreeAllSpritePalettes();
@@ -586,17 +661,17 @@ pub(crate) unsafe extern "C" fn Task_ExitPokeblockFeed(taskId: u8) {
         FreeMonSpritesGfx();
     }
 }
-pub(crate) unsafe extern "C" fn Task_FadeOutPokeblockFeed(taskId: u8) {
+pub(crate) unsafe fn Task_FadeOutPokeblockFeed(taskId: u8) {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-    gTasks[taskId].func = Some(Task_ExitPokeblockFeed);
+    task_set_func(taskId, Some(Task_ExitPokeblockFeed));
 }
-pub(crate) unsafe extern "C" fn CreateMonSprite(mon: *mut Pokemon) -> u8 {
-    let mut species: u16 = GetMonData2(mon, MON_DATA_SPECIES_OR_EGG) as u16;
-    let mut spriteId: u8 = CreateSprite(&raw mut gMultiuseSpriteTemplate, MON_X, MON_Y, 2);
+pub(crate) unsafe fn CreateMonSprite(mon: *mut Pokemon) -> u8 {
+    let species: u16 = GetMonData2(mon, MON_DATA_SPECIES_OR_EGG) as u16;
+    let spriteId: u8 = CreateSprite(&raw mut gMultiuseSpriteTemplate, MON_X, MON_Y, 2);
     (*sPokeblockFeed).species = species;
     (*sPokeblockFeed).monSpriteId_ = spriteId;
     (*sPokeblockFeed).nature = GetNature(mon);
-    gSprites[spriteId].data[2] = species as i16;
+    gSprites[spriteId].data[sSpecies] = species as i16;
     gSprites[spriteId].callback = Some(SpriteCallbackDummy);
     (*sPokeblockFeed).noMonFlip = TRUE;
     if IsMonSpriteNotFlipped(species) == 0 {
@@ -610,35 +685,35 @@ pub(crate) unsafe extern "C" fn CreateMonSprite(mon: *mut Pokemon) -> u8 {
         );
         (*sPokeblockFeed).noMonFlip = FALSE;
     }
-    return spriteId;
+    spriteId
 }
-pub(crate) unsafe extern "C" fn StartMonJumpForPokeblock(spriteId: u8) {
+unsafe fn StartMonJumpForPokeblock(spriteId: u8) {
     gSprites[spriteId].x = MON_X;
     gSprites[spriteId].y = MON_Y;
-    gSprites[spriteId].data[0] = -8;
-    gSprites[spriteId].data[1] = 1;
+    gSprites[spriteId].data[sSpeed] = -8;
+    gSprites[spriteId].data[sAccel] = 1;
     gSprites[spriteId].callback = Some(SpriteCB_MonJumpForPokeblock);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_MonJumpForPokeblock(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_MonJumpForPokeblock(sprite: *mut Sprite) {
     (*sprite).x += 4;
-    (*sprite).y += (*sprite).data[0];
-    (*sprite).data[0] += (*sprite).data[1];
-    if (*sprite).data[0] == 0 {
-        PlayCry_Normal((*sprite).data[2] as u16, 0);
+    (*sprite).y += (*sprite).data[sSpeed];
+    (*sprite).data[sSpeed] += (*sprite).data[sAccel];
+    if (*sprite).data[sSpeed] == 0 {
+        PlayCry_Normal((*sprite).data[sSpecies] as u16, 0);
     }
-    if (*sprite).data[0] == 9 {
+    if (*sprite).data[sSpeed] == 9 {
         (*sprite).callback = Some(SpriteCallbackDummy);
     }
 }
-pub(crate) unsafe extern "C" fn CreatePokeblockCaseSpriteForFeeding() -> u8 {
-    let mut spriteId: u8 = CreatePokeblockCaseSprite(188, 100, 2);
+unsafe fn CreatePokeblockCaseSpriteForFeeding() -> u8 {
+    let spriteId: u8 = CreatePokeblockCaseSprite(188, 100, 2);
     gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
     gSprites[spriteId].affineAnims = sAffineAnims_PokeblockCase_Still.as_ptr().cast_mut();
     gSprites[spriteId].callback = Some(SpriteCallbackDummy);
     InitSpriteAffineAnim(&raw mut gSprites[spriteId]);
-    return spriteId;
+    spriteId
 }
-pub(crate) unsafe extern "C" fn DoPokeblockCaseThrowEffect(spriteId: u8, horizontalThrow: u8) {
+unsafe fn DoPokeblockCaseThrowEffect(spriteId: u8, horizontalThrow: u8) {
     FreeOamMatrix(gSprites[spriteId].oam.matrixNum() as u8);
     gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_DOUBLE);
     if horizontalThrow == 0 {
@@ -652,33 +727,30 @@ pub(crate) unsafe extern "C" fn DoPokeblockCaseThrowEffect(spriteId: u8, horizon
     }
     InitSpriteAffineAnim(&raw mut gSprites[spriteId]);
 }
-pub(crate) unsafe extern "C" fn CreatePokeblockSprite() -> u8 {
-    let mut spriteId: u8 = CreateSprite(
+unsafe fn CreatePokeblockSprite() -> u8 {
+    let spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_Pokeblock).cast_mut(),
         174,
         84,
         1,
     );
-    gSprites[spriteId].data[0] = -12;
-    gSprites[spriteId].data[1] = 1;
-    return spriteId;
+    gSprites[spriteId].data[sSpeed] = -12;
+    gSprites[spriteId].data[sAccel] = 1;
+    spriteId
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ThrownPokeblock(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ThrownPokeblock(sprite: *mut Sprite) {
     (*sprite).x -= 4;
-    (*sprite).y += (*sprite).data[0];
-    (*sprite).data[0] += (*sprite).data[1];
-    if (*sprite).data[0] == 10 {
+    (*sprite).y += (*sprite).data[sSpeed];
+    (*sprite).data[sSpeed] += (*sprite).data[sAccel];
+    if (*sprite).data[sSpeed] == 10 {
         DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn CalculateMonAnimLength() {
-    let mut animId: u8 = 0;
-    let mut i: u8 = 0;
-    let mut pokeblockFeed: *mut PokeblockFeed = null_mut();
-    pokeblockFeed = sPokeblockFeed;
+unsafe fn CalculateMonAnimLength() {
+    let pokeblockFeed: *mut PokeblockFeed = sPokeblockFeed;
     (*pokeblockFeed).monAnimLength = 1;
-    animId = sNatureToMonPokeblockAnim[(*pokeblockFeed).nature][0];
-    i = 0;
+    let mut animId: u8 = sNatureToMonPokeblockAnim[(*pokeblockFeed).nature][0];
+    let mut i: u8 = 0;
     while i < 8 {
         (*pokeblockFeed).monAnimLength += sMonPokeblockAnims[animId][4] as u16;
         if sMonPokeblockAnims[animId][9] == TRUE as i16 {
@@ -688,13 +760,12 @@ pub(crate) unsafe extern "C" fn CalculateMonAnimLength() {
         animId += 1;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateMonAnim() {
-    let mut pokeblockFeed: *mut PokeblockFeed = sPokeblockFeed;
+unsafe fn UpdateMonAnim() {
+    let pokeblockFeed: *mut PokeblockFeed = sPokeblockFeed;
     'l1: {
         let sw1: u8 = (*pokeblockFeed).animRunState;
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             (*pokeblockFeed).animId = sNatureToMonPokeblockAnim[(*pokeblockFeed).nature][0];
             (*pokeblockFeed).monSpritePtr = &raw mut gSprites[(*pokeblockFeed).monSpriteId_];
             (*pokeblockFeed).savedMonSprite = *(*pokeblockFeed).monSpritePtr;
@@ -702,7 +773,6 @@ pub(crate) unsafe extern "C" fn UpdateMonAnim() {
             break 'l1;
         }
         if (1..=9).contains(&sw1) {
-            fall = true;
             break 'l1;
         }
         if sw1 == 10 {
@@ -719,7 +789,6 @@ pub(crate) unsafe extern "C" fn UpdateMonAnim() {
             (*pokeblockFeed).animRunState = 50;
         }
         if fall || sw1 == 50 {
-            fall = true;
             if sNatureToMonPokeblockAnim[(*pokeblockFeed).nature][1] != AFFINE_NONE {
                 if (*pokeblockFeed).noMonFlip == 0 {
                     StartSpriteAffineAnim(
@@ -737,7 +806,6 @@ pub(crate) unsafe extern "C" fn UpdateMonAnim() {
             break 'l1;
         }
         if sw1 == 60 {
-            fall = true;
             if DoMonAnimStep() == TRUE {
                 if (*pokeblockFeed).animData[9] == 0 {
                     (*pokeblockFeed).animId += 1;
@@ -751,25 +819,20 @@ pub(crate) unsafe extern "C" fn UpdateMonAnim() {
             break 'l1;
         }
         if sw1 == 70 {
-            fall = true;
             FreeMonSpriteOamMatrix();
             (*pokeblockFeed).animId = 0;
             (*pokeblockFeed).animRunState = 0;
             break 'l1;
         }
         if (71..=90).contains(&sw1) {
-            fall = true;
             break 'l1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn InitMonAnimStage() -> u8 {
-    let mut pokeblockFeed: *mut PokeblockFeed = sPokeblockFeed;
-    let mut i: u8 = 0;
-    i = 0;
-    while i < NUM_ANIMDATA {
+unsafe fn InitMonAnimStage() -> u8 {
+    let pokeblockFeed: *mut PokeblockFeed = sPokeblockFeed;
+    for i in 0..NUM_ANIMDATA {
         (*pokeblockFeed).animData[i] = sMonPokeblockAnims[(*pokeblockFeed).animId][i];
-        i += 1;
     }
     if (*pokeblockFeed).animData[4] == 0 {
         return TRUE;
@@ -787,11 +850,11 @@ pub(crate) unsafe extern "C" fn InitMonAnimStage() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn DoMonAnimStep() -> u8 {
-    let mut time: u16 =
+unsafe fn DoMonAnimStep() -> u8 {
+    let time: u16 =
         (*sPokeblockFeed).maxAnimStageTime as u16 - (*sPokeblockFeed).animData[4] as u16;
     (*(*sPokeblockFeed).monSpritePtr).x2 = (*sPokeblockFeed).monAnimX[time];
     (*(*sPokeblockFeed).monSpritePtr).y2 = (*sPokeblockFeed).monAnimY[time];
@@ -806,24 +869,23 @@ pub(crate) unsafe extern "C" fn DoMonAnimStep() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn FreeMonSpriteOamMatrix() -> u8 {
+unsafe fn FreeMonSpriteOamMatrix() -> u8 {
     FreeSpriteOamMatrix((*sPokeblockFeed).monSpritePtr);
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn CalculateMonAnimMovementEnd() {
-    let mut pokeblockFeed: *mut PokeblockFeed = sPokeblockFeed;
+unsafe fn CalculateMonAnimMovementEnd() {
+    let pokeblockFeed: *mut PokeblockFeed = sPokeblockFeed;
+    let approachTime: u16 = (*pokeblockFeed).animData[8] as u16;
+    let time: u16 = (*pokeblockFeed).maxAnimStageTime as u16 - approachTime;
+    let x: i16 = (*pokeblockFeed).monX + (*pokeblockFeed).animData[6];
+    let y: i16 = (*pokeblockFeed).monY + (*pokeblockFeed).animData[7];
     let mut i: u16 = 0;
-    let mut approachTime: u16 = (*pokeblockFeed).animData[8] as u16;
-    let mut time: u16 = (*pokeblockFeed).maxAnimStageTime as u16 - approachTime;
-    let mut x: i16 = (*pokeblockFeed).monX + (*pokeblockFeed).animData[6];
-    let mut y: i16 = (*pokeblockFeed).monY + (*pokeblockFeed).animData[7];
-    i = 0;
     while (i as i32) < time as i32 - 1 {
-        let mut xOffset: i16 = (*pokeblockFeed).monAnimX[approachTime as i32 + i as i32] - x;
-        let mut yOffset: i16 = (*pokeblockFeed).monAnimY[approachTime as i32 + i as i32] - y;
+        let xOffset: i16 = (*pokeblockFeed).monAnimX[approachTime as i32 + i as i32] - x;
+        let yOffset: i16 = (*pokeblockFeed).monAnimY[approachTime as i32 + i as i32] - y;
         (*pokeblockFeed).monAnimX[approachTime as i32 + i as i32] -=
             div_i32(xOffset as i32 * (i as i32 + 1), time as i32) as i16;
         (*pokeblockFeed).monAnimY[approachTime as i32 + i as i32] -=
@@ -833,26 +895,24 @@ pub(crate) unsafe extern "C" fn CalculateMonAnimMovementEnd() {
     (*pokeblockFeed).monAnimX[approachTime as i32 + time as i32 - 1] = x;
     (*pokeblockFeed).monAnimY[approachTime as i32 + time as i32 - 1] = y;
 }
-pub(crate) unsafe extern "C" fn CalculateMonAnimMovement() {
-    let mut pokeblockFeed: *mut PokeblockFeed = sPokeblockFeed;
+unsafe fn CalculateMonAnimMovement() {
+    let pokeblockFeed: *mut PokeblockFeed = sPokeblockFeed;
     let mut negative: u8 = FALSE;
-    let mut x: i16 = (*pokeblockFeed).monX - (*pokeblockFeed).monInitX;
-    let mut y: i16 = (*pokeblockFeed).monY - (*pokeblockFeed).monInitY;
+    let x: i16 = (*pokeblockFeed).monX - (*pokeblockFeed).monInitX;
+    let y: i16 = (*pokeblockFeed).monY - (*pokeblockFeed).monInitY;
     loop {
-        let mut amplitude: u16 = 0;
-        let mut time: u16 = 0;
-        let mut acceleration: u16 = 0;
-        acceleration = (if (*pokeblockFeed).animData[5] < 0 {
+        let acceleration: u16 = (if (*pokeblockFeed).animData[5] < 0 {
             -((*pokeblockFeed).animData[5] as i32)
         } else {
             (*pokeblockFeed).animData[5] as i32
         }) as u16;
-        amplitude = acceleration + (*pokeblockFeed).animData[3] as u16;
+        let amplitude: u16 = acceleration + (*pokeblockFeed).animData[3] as u16;
         (*pokeblockFeed).animData[3] = amplitude as i16;
         if (*pokeblockFeed).animData[2] < 0 {
             negative = TRUE;
         }
-        time = (*pokeblockFeed).maxAnimStageTime as u16 - (*pokeblockFeed).animData[4] as u16;
+        let time: u16 =
+            (*pokeblockFeed).maxAnimStageTime as u16 - (*pokeblockFeed).animData[4] as u16;
         if (*pokeblockFeed).animData[4] == 0 {
             break;
         }

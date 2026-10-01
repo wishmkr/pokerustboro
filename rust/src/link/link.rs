@@ -3,37 +3,112 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    clippy::manual_c_str_literals,
+    clippy::missing_transmute_annotations,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::AgbRfu_LinkManager::rfu_LMAN_REQBN_softReset_and_checkID;
+use crate::agb_main::gMain;
+use crate::agb_main::{
+    RestoreSerialTimer3IntrHandlers, SetVBlankCallback, gGameLanguage, gGameVersion,
+    gLinkTransferringData, gLinkVSyncDisabled, gSoftResetDisabled,
+};
+use crate::battle_main::gBattleTypeFlags;
+use crate::bg::{CopyBgTilemapBufferToVram, ResetBgsAndClearDma3BusyFlags, ShowBg};
+use crate::bg::{CopyToBgTilemapBuffer, LoadBgTiles};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::{FlagGet, IsNationalPokedexEnabled};
+use crate::ffi::gSpecialVar_0x8005;
+use crate::gpu_regs::{ClearGpuRegBits, DisableInterrupts, EnableInterrupts, SetGpuReg};
+use crate::item_menu::gSpecialVar_ItemId;
+use crate::librfu_rfu::{rfu_REQ_stopMode, rfu_waitREQComplete};
+use crate::link_rfu_2::{
+    ClearLinkRfuCallback, GetRfuRecvQueueLength, InitRFUAPI, IsLinkRfuTaskFinished,
+    IsRfuRecvQueueEmpty, IsSendingKeysToRfu, LinkRfu_Shutdown, ResetLinkRfuGFLayer,
+    Rfu_GetBlockReceivedStatus, Rfu_GetLinkPlayerCount, Rfu_GetMultiplayerId, Rfu_InitBlockSend,
+    Rfu_IsMaster, Rfu_ResetBlockReceivedFlag, Rfu_SendBlockRequest,
+    Rfu_SetBerryBlenderLinkCallback, Rfu_SetBlockReceivedFlag, Rfu_SetCloseLinkCallback,
+    Rfu_SetLinkStandbyCallback, RfuMain1, RfuMain2, StartSendingKeysToRfu,
+};
+use crate::load_save::gSaveBlock2Ptr;
+use crate::m4a::{gMPlayInfo_SE1, gMPlayInfo_SE2, gMPlayInfo_SE3, m4aMPlayStop};
+use crate::menu::{
+    AddTextPrinterParameterized3, DecompressAndLoadBgGfxUsingHeap, ResetTempTileDataBuffers,
+};
+use crate::overworld::{IsSendingKeysOverCable, gHeldKeyCodeToSend};
+use crate::palette::{
+    BeginNormalPaletteFade, FillPalette, LoadPalette, ResetPaletteFadeControl, TransferPlttBuffer,
+    UpdatePaletteFade,
+};
+use crate::random::{Random, SeedRng};
+use crate::reload_save::ReloadSave;
+use crate::save::TrySavingData;
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::sound::{PlaySE, StopMapMusic};
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData,
+};
+use crate::string_util::ConvertInternationalString;
+use crate::string_util::{StringCompare, StringCopy};
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::task::{task_get, task_set};
+use crate::text::DeactivateAllTextPrinters;
+use crate::trade::GetGameProgressForLinkTrade;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{CopyWindowToVram, FillWindowPixelBuffer, PutWindowTilemap};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitHeap` with this module's view of its types.
+#[inline]
+unsafe fn InitHeap(a0: *mut c_void, a1: u32) {
+    unsafe {
+        crate::malloc::InitHeap(a0 as _, a1);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
 // Data tables (translate with cdata.py): sWirelessLinkDisplayPal sWirelessLinkDisplayGfx sWirelessLinkDisplayTilemap sLinkTestDigitsPal sLinkTestDigitsGfx sUnusedTransparentWhite sCommErrorBg_Gfx sBlockRequests sBGControlRegs sASCIIGameFreakInc sASCIITestPrint sLinkErrorBgTemplates sLinkErrorWindowTemplates sTextColors sUnusedData
 
 /// `struct BlockTransfer`
@@ -128,130 +203,105 @@ static sWirelessLinkDisplayTilemap: Table<CArray<u32, 123>> =
 
 pub(crate) static mut sBlockSend: BlockTransfer = unsafe { zeroed() };
 pub(crate) static mut sBlockRecv: CArray<BlockTransfer, 4> = unsafe { zeroed() };
-pub(crate) static mut sBlockSendDelayCounter: u32 = 0;
-pub(crate) static mut sDummy1: u32 = 0;
-pub(crate) static mut sDummy2: u8 = 0;
-pub(crate) static mut sPlayerDataExchangeStatus: u32 = 0;
-pub(crate) static mut sDummy3: u32 = 0;
-pub(crate) static mut sLinkTestLastBlockSendPos: u8 = 0;
+pub(crate) static sBlockSendDelayCounter: crate::global::Global<u32> =
+    crate::global::Global::new(0);
+pub(crate) static sDummy1: crate::global::Global<u32> = crate::global::Global::new(0);
+pub(crate) static sDummy2: crate::global::Global<u8> = crate::global::Global::new(0);
+pub(crate) static sPlayerDataExchangeStatus: crate::global::Global<u32> =
+    crate::global::Global::new(0);
+pub(crate) static sDummy3: crate::global::Global<u32> = crate::global::Global::new(0);
+pub(crate) static sLinkTestLastBlockSendPos: crate::global::Global<u8> =
+    crate::global::Global::new(0);
 pub(crate) static mut sLinkTestLastBlockRecvPos: Aligned<CArray<u8, 4>> =
     Aligned(unsafe { zeroed() });
-pub(crate) static mut sNumVBlanksWithoutSerialIntr: u8 = 0;
-pub(crate) static mut sSendBufferEmpty: u8 = 0;
-pub(crate) static mut sSendNonzeroCheck: u16 = 0;
-pub(crate) static mut sRecvNonzeroCheck: u16 = 0;
-pub(crate) static mut sChecksumAvailable: u8 = 0;
-pub(crate) static mut sHandshakePlayerCount: u8 = 0;
+pub(crate) static sNumVBlanksWithoutSerialIntr: crate::global::Global<u8> =
+    crate::global::Global::new(0);
+pub(crate) static sSendBufferEmpty: crate::global::Global<u8> = crate::global::Global::new(0);
+pub(crate) static sSendNonzeroCheck: crate::global::Global<u16> = crate::global::Global::new(0);
+pub(crate) static sRecvNonzeroCheck: crate::global::Global<u16> = crate::global::Global::new(0);
+pub(crate) static sChecksumAvailable: crate::global::Global<u8> = crate::global::Global::new(0);
+pub(crate) static sHandshakePlayerCount: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gLinkPartnersHeldKeys: Aligned<CArray<u16, 6>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gLinkDebugSeed: u32 = 0;
-#[unsafe(no_mangle)]
+pub static gLinkDebugSeed: crate::global::Global<u32> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
 pub static mut gLocalLinkPlayerBlock: LinkPlayerBlock = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gLinkErrorOccurred: u8 = 0;
-#[unsafe(no_mangle)]
+pub static gLinkErrorOccurred: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
-pub static mut gLinkDebugFlags: u32 = 0;
-#[unsafe(no_mangle)]
+pub static gLinkDebugFlags: crate::global::Global<u32> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
-pub static mut gLinkFiller1: u32 = 0;
-#[unsafe(no_mangle)]
+pub static gLinkFiller1: crate::global::Global<u32> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
 pub static mut gRemoteLinkPlayersNotReceived: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gBlockReceivedStatus: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gLinkFiller2: u32 = 0;
-#[unsafe(no_mangle)]
+pub static gLinkFiller2: crate::global::Global<u32> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
-pub static mut gLinkHeldKeys: u16 = 0;
+pub static gLinkHeldKeys: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gRecvCmds: Aligned<CArray<CArray<u16, 8>, 5>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gLinkStatus: u32 = 0;
-#[unsafe(no_mangle)]
+pub static gLinkStatus: crate::global::Global<u32> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
-pub static mut gLinkDummy1: u8 = 0;
-#[unsafe(no_mangle)]
+pub static gLinkDummy1: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
-pub static mut gLinkDummy2: u8 = 0;
-#[unsafe(no_mangle)]
+pub static gLinkDummy2: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
 pub static mut gReadyToExitStandby: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gReadyToCloseLink: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gReadyCloseLinkType: u16 = 0;
-#[unsafe(no_mangle)]
+pub static gReadyCloseLinkType: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
-pub static mut gSuppressLinkErrorMessage: u8 = 0;
+pub static gSuppressLinkErrorMessage: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gWirelessCommType: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gSavedLinkPlayerCount: u8 = 0;
+pub static gSavedLinkPlayerCount: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gSendCmd: Aligned<CArray<u16, 8>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gSavedMultiplayerId: u8 = 0;
+pub static gSavedMultiplayerId: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gReceivedRemoteLinkPlayers: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gLinkTestBGInfo: LinkTestBGInfo = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gLinkCallback: Option<unsafe extern "C" fn()> = None;
-#[unsafe(no_mangle)]
+pub static mut gLinkCallback: Option<unsafe fn()> = None;
 #[unsafe(link_section = "common_data")]
 pub static mut gShouldAdvanceLinkState: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gLinkTestBlockChecksums: Aligned<CArray<u16, 4>> = Aligned(unsafe { zeroed() });
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gBlockRequestType: u8 = 0;
-#[unsafe(no_mangle)]
+pub static gBlockRequestType: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
-pub static mut gLinkFiller3: u32 = 0;
-#[unsafe(no_mangle)]
+pub static gLinkFiller3: crate::global::Global<u32> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
-pub static mut gLinkFiller4: u32 = 0;
-#[unsafe(no_mangle)]
+pub static gLinkFiller4: crate::global::Global<u32> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
-pub static mut gLinkFiller5: u32 = 0;
-#[unsafe(no_mangle)]
+pub static gLinkFiller5: crate::global::Global<u32> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
-pub static mut gLastSendQueueCount: u8 = 0;
-#[unsafe(no_mangle)]
+pub static gLastSendQueueCount: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
 pub static mut gLink: Link = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gLastRecvQueueCount: u8 = 0;
-#[unsafe(no_mangle)]
+pub static gLastRecvQueueCount: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
-pub static mut gLinkSavedIme: u16 = 0;
+pub static gLinkSavedIme: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sLinkTestDebugValuesEnabled: u8 = 0;
+pub(crate) static sLinkTestDebugValuesEnabled: crate::global::Global<u8> =
+    crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sDummyFlag: u8 = 0;
-#[unsafe(no_mangle)]
+pub(crate) static sDummyFlag: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBerryBlenderKeySendAttempts: u32 = 0;
 #[unsafe(no_mangle)]
@@ -262,13 +312,12 @@ pub static mut gBlockRecvBuffer: Aligned<CArray<CArray<u16, 128>, 5>> =
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBlockSendBuffer: Aligned<CArray<u8, 256>> = Aligned(unsafe { zeroed() });
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sLinkOpen: u8 = 0;
+pub(crate) static sLinkOpen: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gLinkType: u16 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTimeOutCounter: u16 = 0;
-#[unsafe(no_mangle)]
+pub(crate) static sTimeOutCounter: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub static mut gLocalLinkPlayer: LinkPlayer = unsafe { zeroed() };
 #[unsafe(no_mangle)]
@@ -278,128 +327,40 @@ pub static mut gLinkPlayers: CArray<LinkPlayer, 5> = unsafe { zeroed() };
 pub(crate) static mut sSavedLinkPlayers: CArray<LinkPlayer, 5> = unsafe { zeroed() };
 pub(crate) static mut sLinkErrorBuffer: sLinkErrorBuffer_t = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sReadyCloseLinkAttempts: u16 = 0;
+pub(crate) static sReadyCloseLinkAttempts: crate::global::Global<u16> =
+    crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sLinkErrorBgTilemapBuffer: *mut c_void = null_mut();
 
-unsafe extern "C" {
-    static mut gBattleTypeFlags: u32;
-    static mut gDecompressionBuffer: CArray<u8, 16384>;
-    static gGameLanguage: u8;
-    static gGameVersion: u8;
-    static mut gHeap: CArray<u8, 114688>;
-    static mut gHeldKeyCodeToSend: u16;
-    static mut gLinkTransferringData: u8;
-    static mut gLinkVSyncDisabled: u8;
-    static mut gMPlayInfo_SE1: MusicPlayerInfo;
-    static mut gMPlayInfo_SE2: MusicPlayerInfo;
-    static mut gMPlayInfo_SE3: MusicPlayerInfo;
-    static mut gMain: Main;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSoftResetDisabled: u8;
-    static mut gSpecialVar_0x8005: u16;
-    static mut gSpecialVar_ItemId: u16;
-    static gStandardMenuPalette: CArray<u16, 0>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_ABtnRegistrationCounter: CArray<u8, 0>;
-    static gText_ABtnTitleScreen: CArray<u8, 0>;
-    static gText_CommErrorCheckConnections: CArray<u8, 0>;
-    static gText_CommErrorEllipsis: CArray<u8, 0>;
-    static gText_MoveCloserToLinkPartner: CArray<u8, 0>;
-    fn AddTextPrinterParameterized3(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: *mut u8,
-        a5: i8,
-        a6: *mut u8,
-    );
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BuildOamBuffer();
-    fn ClearGpuRegBits(a0: u8, a1: u16);
-    fn ClearLinkRfuCallback();
-    fn ConvertInternationalString(a0: *mut u8, a1: u8);
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut c_void, a2: u32, a3: u16, a4: u8);
-    fn DestroyTask(a0: u8);
-    fn DisableInterrupts(a0: u16);
-    fn DoSoftReset();
-    fn EnableInterrupts(a0: u16);
-    fn FillPalette(a0: u16, a1: u16, a2: u16);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FlagGet(a0: u16) -> u8;
-    fn FreeAllSpritePalettes();
-    fn GetGameProgressForLinkTrade() -> i32;
-    fn GetRfuRecvQueueLength() -> u32;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitHeap(a0: *mut c_void, a1: u32);
-    fn InitRFUAPI();
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsLinkRfuTaskFinished() -> u8;
-    fn IsNationalPokedexEnabled() -> u32;
-    fn IsRfuRecvQueueEmpty() -> u32;
-    fn IsSendingKeysOverCable() -> u32;
-    fn IsSendingKeysToRfu() -> u32;
-    fn LinkRfu_Shutdown();
-    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn PlaySE(a0: u16);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn Random() -> u16;
-    fn ReloadSave();
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetLinkRfuGFLayer();
-    fn ResetPaletteFadeControl();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn ResetTempTileDataBuffers();
-    fn RestoreSerialTimer3IntrHandlers();
-    fn RfuMain1() -> u32;
-    fn RfuMain2() -> u32;
-    fn Rfu_GetBlockReceivedStatus() -> u8;
-    fn Rfu_GetLinkPlayerCount() -> u8;
-    fn Rfu_GetMultiplayerId() -> u8;
-    fn Rfu_InitBlockSend(a0: *mut u8, a1: u32) -> u32;
-    fn Rfu_IsMaster() -> u8;
-    fn Rfu_ResetBlockReceivedFlag(a0: u8);
-    fn Rfu_SendBlockRequest(a0: u8) -> u8;
-    fn Rfu_SetBerryBlenderLinkCallback();
-    fn Rfu_SetBlockReceivedFlag(a0: u8);
-    fn Rfu_SetCloseLinkCallback();
-    fn Rfu_SetLinkStandbyCallback();
-    fn RunTasks();
-    fn ScanlineEffect_Stop();
-    fn SeedRng(a0: u16);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn StartSendingKeysToRfu();
-    fn StopMapMusic();
-    fn StringCompare(a0: *mut u8, a1: *mut u8) -> i32;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TransferPlttBuffer();
-    fn TrySavingData(a0: u8) -> u8;
-    fn UpdatePaletteFade() -> u8;
-    fn m4aMPlayStop(a0: *mut MusicPlayerInfo);
-    fn rfu_LMAN_REQBN_softReset_and_checkID() -> u32;
-    fn rfu_REQ_stopMode();
-    fn rfu_waitREQComplete() -> u16;
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `DoSoftReset` with this module's view of its types.
+#[inline]
+unsafe fn DoSoftReset() {
+    unsafe {
+        crate::agb_main::DoSoftReset();
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsWirelessAdapterConnected() -> u8 {
+pub unsafe fn IsWirelessAdapterConnected() -> u8 {
     SetWirelessCommType1();
     InitRFUAPI();
     if rfu_LMAN_REQBN_softReset_and_checkID() == RFU_ID {
@@ -410,13 +371,13 @@ pub unsafe extern "C" fn IsWirelessAdapterConnected() -> u8 {
     SetWirelessCommType0_Internal();
     CloseLink();
     RestoreSerialTimer3IntrHandlers();
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Task_DestroySelf(taskId: u8) {
+pub unsafe fn Task_DestroySelf(taskId: u8) {
     DestroyTask(taskId);
 }
-pub(crate) unsafe extern "C" fn InitLinkTestBG(
+unsafe fn InitLinkTestBG(
     paletteNum: u8,
     bgNum: u8,
     screenBaseBlock: u8,
@@ -425,13 +386,13 @@ pub(crate) unsafe extern "C" fn InitLinkTestBG(
 ) {
     LoadPalette(
         sLinkTestDigitsPal.as_ptr().cast_mut() as *mut c_void,
-        0x000 + paletteNum as u16 * 16,
+        paletteNum as u16 * 16,
         32,
     );
     {
         {
             {
-                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                 volatile_write(
                     dmaRegs,
                     sLinkTestDigitsGfx.as_ptr().cast_mut() as usize as u32,
@@ -473,21 +434,16 @@ pub(crate) unsafe extern "C" fn InitLinkTestBG(
     SetGpuReg(REG_OFFSET_BG0HOFS + bgNum * 4, 0);
     SetGpuReg(REG_OFFSET_BG0VOFS + bgNum * 4, 0);
 }
-pub(crate) unsafe extern "C" fn LoadLinkTestBgGfx(
-    paletteNum: u8,
-    bgNum: u8,
-    screenBaseBlock: u8,
-    charBaseBlock: u8,
-) {
+unsafe fn LoadLinkTestBgGfx(paletteNum: u8, bgNum: u8, screenBaseBlock: u8, charBaseBlock: u8) {
     LoadPalette(
         sLinkTestDigitsPal.as_ptr().cast_mut() as *mut c_void,
-        0x000 + paletteNum as u16 * 16,
+        paletteNum as u16 * 16,
         32,
     );
     {
         {
             {
-                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                 volatile_write(
                     dmaRegs,
                     sLinkTestDigitsGfx.as_ptr().cast_mut() as usize as u32,
@@ -510,8 +466,7 @@ pub(crate) unsafe extern "C" fn LoadLinkTestBgGfx(
         (screenBaseBlock as u16) << 8 | (charBaseBlock as u16) << 2,
     );
 }
-pub(crate) unsafe extern "C" fn LinkTestScreen() {
-    let mut i: i32 = 0;
+unsafe fn LinkTestScreen() {
     ResetSpriteData();
     FreeAllSpritePalettes();
     ResetTasks();
@@ -520,10 +475,8 @@ pub(crate) unsafe extern "C" fn LinkTestScreen() {
     gLinkType = LINKTYPE_TRADE;
     OpenLink();
     SeedRng(gMain.vblankCounter2 as u16);
-    i = 0;
-    while i < TRAINER_ID_LENGTH as i32 {
+    for i in 0..(TRAINER_ID_LENGTH as i32) {
         (*gSaveBlock2Ptr).playerTrainerId[i] = (Random() as i32 % 256) as u8;
-        i += 1;
     }
     InitLinkTestBG(0, 2, 4, 0, 0);
     SetGpuReg(0x0, 5440);
@@ -532,16 +485,15 @@ pub(crate) unsafe extern "C" fn LinkTestScreen() {
     AnimateSprites();
     BuildOamBuffer();
     UpdatePaletteFade();
-    sDummy3 = FALSE as u32;
+    sDummy3.set(FALSE as u32);
     InitLocalLinkPlayer();
     CreateTask(Some(Task_PrintTestData), 0);
     SetMainCallback2(Some(CB2_LinkTest));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetLocalLinkPlayerId(playerId: u8) {
+pub unsafe fn SetLocalLinkPlayerId(playerId: u8) {
     gLocalLinkPlayer.id = playerId as u16;
 }
-pub(crate) unsafe extern "C" fn InitLocalLinkPlayer() {
+unsafe fn InitLocalLinkPlayer() {
     gLocalLinkPlayer.trainerId = (*gSaveBlock2Ptr).playerTrainerId[0] as u32
         | ((*gSaveBlock2Ptr).playerTrainerId[1] as u32) << 8
         | ((*gSaveBlock2Ptr).playerTrainerId[2] as u32) << 16
@@ -560,25 +512,22 @@ pub(crate) unsafe extern "C" fn InitLocalLinkPlayer() {
         gLocalLinkPlayer.progressFlags |= 0x10;
     }
 }
-pub(crate) unsafe extern "C" fn VBlankCB_LinkError() {
+pub(crate) unsafe fn VBlankCB_LinkError() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn InitLink() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < CMD_LENGTH as i32 {
+unsafe fn InitLink() {
+    for i in 0..(CMD_LENGTH as i32) {
         gSendCmd[i] = LINKCMD_NONE;
-        i += 1;
     }
-    sLinkOpen = TRUE;
+    sLinkOpen.set(TRUE);
     EnableSerial();
 }
-pub(crate) unsafe extern "C" fn Task_TriggerHandshake(taskId: u8) {
+pub(crate) unsafe fn Task_TriggerHandshake(taskId: u8) {
     if ({
-        gTasks[taskId].data[0] += 1;
-        gTasks[taskId].data[0]
+        task_set(taskId, 0, task_get(taskId, 0) + 1);
+        task_get(taskId, 0)
     }) == 5
     {
         gShouldAdvanceLinkState = 1;
@@ -586,51 +535,46 @@ pub(crate) unsafe extern "C" fn Task_TriggerHandshake(taskId: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn OpenLink() {
-    let mut i: i32 = 0;
+pub unsafe fn OpenLink() {
     if gWirelessCommType == 0 {
         ResetSerial();
         InitLink();
         gLinkCallback = Some(LinkCB_RequestPlayerDataExchange);
         gLinkVSyncDisabled = FALSE;
-        gLinkErrorOccurred = FALSE;
-        gSuppressLinkErrorMessage = FALSE;
+        gLinkErrorOccurred.set(FALSE);
+        gSuppressLinkErrorMessage.set(FALSE);
         ResetBlockReceivedFlags();
         ResetBlockSend();
-        sDummy1 = FALSE as u32;
-        gLinkDummy2 = FALSE;
-        gLinkDummy1 = FALSE;
-        gReadyCloseLinkType = 0;
+        sDummy1.set(FALSE as u32);
+        gLinkDummy2.set(FALSE);
+        gLinkDummy1.set(FALSE);
+        gReadyCloseLinkType.set(0);
         CreateTask(Some(Task_TriggerHandshake), 2);
     } else {
         InitRFUAPI();
     }
     gReceivedRemoteLinkPlayers = 0;
-    i = 0;
-    while i < MAX_LINK_PLAYERS {
+    for i in 0..MAX_LINK_PLAYERS {
         gRemoteLinkPlayersNotReceived[i] = TRUE;
         gReadyToCloseLink[i] = FALSE;
         gReadyToExitStandby[i] = FALSE;
-        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CloseLink() {
+pub unsafe fn CloseLink() {
     gReceivedRemoteLinkPlayers = FALSE;
     if gWirelessCommType != 0 {
         LinkRfu_Shutdown();
     }
-    sLinkOpen = FALSE;
+    sLinkOpen.set(FALSE);
     DisableSerial();
 }
-pub(crate) unsafe extern "C" fn TestBlockTransfer(nothing: u8, is: u8, used: u8) {
-    let mut i: u8 = 0;
-    let mut status: u8 = 0;
-    if sLinkTestLastBlockSendPos as u16 != sBlockSend.pos {
+unsafe fn TestBlockTransfer(nothing: u8, is: u8, used: u8) {
+    if sLinkTestLastBlockSendPos.get() as u16 != sBlockSend.pos {
         LinkTest_PrintHex(sBlockSend.pos as u32, 2, 3, 2);
-        sLinkTestLastBlockSendPos = sBlockSend.pos as u8;
+        sLinkTestLastBlockSendPos.set(sBlockSend.pos as u8);
     }
-    i = 0;
+    let mut i: u8 = 0;
     while i < MAX_LINK_PLAYERS as u8 {
         if sLinkTestLastBlockRecvPos[i] as u16 != sBlockRecv[i].pos {
             LinkTest_PrintHex(sBlockRecv[i].pos as u32, 2, i + 4, 2);
@@ -638,29 +582,34 @@ pub(crate) unsafe extern "C" fn TestBlockTransfer(nothing: u8, is: u8, used: u8)
         }
         i += 1;
     }
-    status = GetBlockReceivedStatus();
+    let status: u8 = GetBlockReceivedStatus();
     if status == 0xF {
-        i = 0;
-        while i < MAX_LINK_PLAYERS as u8 {
+        for i in 0..(MAX_LINK_PLAYERS as u8) {
             if shr_i32(status as i32, i as u32) & 1 != 0 {
                 gLinkTestBlockChecksums[i] =
                     LinkTestCalcBlockChecksum(gBlockRecvBuffer[i].as_mut_ptr(), sBlockRecv[i].size);
                 ResetBlockReceivedFlag(i);
                 if gLinkTestBlockChecksums[i] != 0x0342 {
-                    sLinkTestDebugValuesEnabled = FALSE;
-                    sDummyFlag = FALSE;
+                    sLinkTestDebugValuesEnabled.set(FALSE);
+                    sDummyFlag.set(FALSE);
                 }
             }
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn LinkTestProcessKeyInput() {
+unsafe fn LinkTestProcessKeyInput() {
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         gShouldAdvanceLinkState = 1;
     }
     if gMain.heldKeys as i32 & B_BUTTON != 0 {
-        InitBlockSend(gHeap.as_mut_ptr().at(16384) as *mut c_void, 0x00002004);
+        InitBlockSend(
+            (*(&raw const crate::malloc::gHeap)
+                .cast::<CArray<u8, 114688>>()
+                .cast_mut())
+            .as_mut_ptr()
+            .at(16384) as *mut c_void,
+            0x00002004,
+        );
     }
     if gMain.newKeys as i32 & L_BUTTON != 0 {
         BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 2);
@@ -674,7 +623,7 @@ pub(crate) unsafe extern "C" fn LinkTestProcessKeyInput() {
     if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
         SetCloseLinkCallback();
     }
-    if sLinkTestDebugValuesEnabled != 0 {
+    if sLinkTestDebugValuesEnabled.get() != 0 {
         SetLinkDebugValues(
             gMain.vblankCounter2,
             (if gLinkCallback.is_some() {
@@ -685,7 +634,7 @@ pub(crate) unsafe extern "C" fn LinkTestProcessKeyInput() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn CB2_LinkTest() {
+pub(crate) unsafe fn CB2_LinkTest() {
     LinkTestProcessKeyInput();
     TestBlockTransfer(1, 1, 0);
     RunTasks();
@@ -693,33 +642,27 @@ pub(crate) unsafe extern "C" fn CB2_LinkTest() {
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LinkMain2(heldKeys: *mut u16) -> u16 {
-    let mut i: u8 = 0;
-    if sLinkOpen == 0 {
+pub unsafe fn LinkMain2(heldKeys: *mut u16) -> u16 {
+    if sLinkOpen.get() == 0 {
         return 0;
     }
-    i = 0;
-    while i < CMD_LENGTH {
+    for i in 0..CMD_LENGTH {
         gSendCmd[i] = 0;
-        i += 1;
     }
-    gLinkHeldKeys = *heldKeys;
-    if gLinkStatus & LINK_STAT_CONN_ESTABLISHED != 0 {
-        ProcessRecvCmds((*(67109160 as usize as *mut SioMultiCnt)).id() as u8);
+    gLinkHeldKeys.set(*heldKeys);
+    if gLinkStatus.get() & LINK_STAT_CONN_ESTABLISHED != 0 {
+        ProcessRecvCmds((*(67109160_usize as *mut SioMultiCnt)).id() as u8);
         if gLinkCallback.is_some() {
             gLinkCallback.unwrap_unchecked()();
         }
         TrySetLinkErrorBuffer();
     }
-    return gLinkStatus as u16;
+    gLinkStatus.get() as u16
 }
-pub(crate) unsafe extern "C" fn HandleReceiveRemoteLinkPlayer(who: u8) {
-    let mut i: i32 = 0;
+unsafe fn HandleReceiveRemoteLinkPlayer(who: u8) {
     let mut count: i32 = 0;
-    count = 0;
     gRemoteLinkPlayersNotReceived[who] = FALSE;
-    i = 0;
+    let mut i: i32 = 0;
     while i < GetLinkPlayerCount_2() as i32 {
         count += gRemoteLinkPlayersNotReceived[i] as i32;
         i += 1;
@@ -728,10 +671,8 @@ pub(crate) unsafe extern "C" fn HandleReceiveRemoteLinkPlayer(who: u8) {
         gReceivedRemoteLinkPlayers = 1;
     }
 }
-pub(crate) unsafe extern "C" fn ProcessRecvCmds(unused: u8) {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < MAX_LINK_PLAYERS as u16 {
+unsafe fn ProcessRecvCmds(unused: u8) {
+    for i in 0..(MAX_LINK_PLAYERS as u16) {
         'l1: {
             gLinkPartnersHeldKeys[i] = 0;
             if gRecvCmds[i][0] == 0 {
@@ -740,9 +681,8 @@ pub(crate) unsafe extern "C" fn ProcessRecvCmds(unused: u8) {
             'l3: {
                 match gRecvCmds[i][0] {
                     LINKCMD_SEND_LINK_TYPE => {
-                        let mut block: *mut LinkPlayerBlock = null_mut();
                         InitLocalLinkPlayer();
-                        block = &raw mut gLocalLinkPlayerBlock;
+                        let block: *mut LinkPlayerBlock = &raw mut gLocalLinkPlayerBlock;
                         (*block).linkPlayer = gLocalLinkPlayer;
                         memcpy(
                             (*block).magic1.as_mut_ptr(),
@@ -761,14 +701,13 @@ pub(crate) unsafe extern "C" fn ProcessRecvCmds(unused: u8) {
                         gLinkPartnersHeldKeys[i] = gRecvCmds[i][1];
                     }
                     LINKCMD_DUMMY_1 => {
-                        gLinkDummy2 = TRUE;
+                        gLinkDummy2.set(TRUE);
                     }
                     LINKCMD_DUMMY_2 => {
-                        gLinkDummy2 = TRUE;
+                        gLinkDummy2.set(TRUE);
                     }
                     LINKCMD_INIT_BLOCK => {
-                        let mut blockRecv: *mut BlockTransfer = null_mut();
-                        blockRecv = &raw mut sBlockRecv[i];
+                        let blockRecv: *mut BlockTransfer = &raw mut sBlockRecv[i];
                         (*blockRecv).pos = 0;
                         (*blockRecv).size = gRecvCmds[i][1];
                         (*blockRecv).multiplayerId = gRecvCmds[i][2] as u8;
@@ -776,31 +715,27 @@ pub(crate) unsafe extern "C" fn ProcessRecvCmds(unused: u8) {
                     }
                     LINKCMD_CONT_BLOCK => {
                         if sBlockRecv[i].size > BLOCK_BUFFER_SIZE as u16 {
-                            let mut buffer: *mut u16 = null_mut();
-                            let mut j: u16 = 0;
-                            buffer = gDecompressionBuffer.as_mut_ptr() as *mut u16;
-                            j = 0;
-                            while j < 7 {
+                            let buffer: *mut u16 =
+                                (*(&raw const crate::decompress::gDecompressionBuffer)
+                                    .cast::<CArray<u8, 16384>>()
+                                    .cast_mut())
+                                .as_mut_ptr() as *mut u16;
+                            for j in 0..7u16 {
                                 *buffer.at(sBlockRecv[i].pos as i32 / 2 + j as i32) =
                                     gRecvCmds[i][j as i32 + 1];
-                                j += 1;
                             }
                         } else {
-                            let mut j: u16 = 0;
-                            j = 0;
-                            while j < 7 {
+                            for j in 0..7u16 {
                                 gBlockRecvBuffer[i][sBlockRecv[i].pos as i32 / 2 + j as i32] =
                                     gRecvCmds[i][j as i32 + 1];
-                                j += 1;
                             }
                         }
                         sBlockRecv[i].pos += 14;
                         if sBlockRecv[i].pos >= sBlockRecv[i].size {
                             if gRemoteLinkPlayersNotReceived[i] == TRUE {
-                                let mut block: *mut LinkPlayerBlock = null_mut();
-                                let mut linkPlayer: *mut LinkPlayer = null_mut();
-                                block = &raw mut gBlockRecvBuffer[i] as *mut LinkPlayerBlock;
-                                linkPlayer = &raw mut gLinkPlayers[i];
+                                let block: *mut LinkPlayerBlock =
+                                    &raw mut gBlockRecvBuffer[i] as *mut LinkPlayerBlock;
+                                let linkPlayer: *mut LinkPlayer = &raw mut gLinkPlayers[i];
                                 *linkPlayer = (*block).linkPlayer;
                                 if (*linkPlayer).version as i32 & 0xFF == VERSION_RUBY
                                     || (*linkPlayer).version as i32 & 0xFF == VERSION_SAPPHIRE
@@ -851,10 +786,9 @@ pub(crate) unsafe extern "C" fn ProcessRecvCmds(unused: u8) {
                 }
             }
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn BuildSendCmd(command: u16) {
+unsafe fn BuildSendCmd(command: u16) {
     'l1: {
         match command {
             LINKCMD_SEND_LINK_TYPE => {
@@ -876,12 +810,9 @@ pub(crate) unsafe extern "C" fn BuildSendCmd(command: u16) {
                 gSendCmd[1] = 0;
             }
             LINKCMD_SEND_0xEE => {
-                let mut i: u8 = 0;
                 gSendCmd[0] = LINKCMD_SEND_0xEE;
-                i = 0;
-                while i < 5 {
+                for i in 0..5u8 {
                     gSendCmd[i as i32 + 1] = 0xEE;
-                    i += 1;
                 }
                 break 'l1;
             }
@@ -899,11 +830,11 @@ pub(crate) unsafe extern "C" fn BuildSendCmd(command: u16) {
             }
             LINKCMD_SEND_BLOCK_REQ => {
                 gSendCmd[0] = LINKCMD_SEND_BLOCK_REQ;
-                gSendCmd[1] = gBlockRequestType as u16;
+                gSendCmd[1] = gBlockRequestType.get() as u16;
             }
             LINKCMD_READY_CLOSE_LINK => {
                 gSendCmd[0] = LINKCMD_READY_CLOSE_LINK;
-                gSendCmd[1] = gReadyCloseLinkType;
+                gSendCmd[1] = gReadyCloseLinkType.get();
             }
             LINKCMD_DUMMY_2 => {
                 gSendCmd[0] = LINKCMD_DUMMY_2;
@@ -919,30 +850,34 @@ pub(crate) unsafe extern "C" fn BuildSendCmd(command: u16) {
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartSendingKeysToLink() {
+pub unsafe fn StartSendingKeysToLink() {
     if gWirelessCommType != 0 {
         StartSendingKeysToRfu();
     }
     gLinkCallback = Some(LinkCB_SendHeldKeys);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsSendingKeysToLink() -> u32 {
+pub unsafe fn IsSendingKeysToLink() -> u32 {
     if gWirelessCommType != 0 {
         return IsSendingKeysToRfu();
     }
-    if gLinkCallback == Some(LinkCB_SendHeldKeys as unsafe extern "C" fn()) {
+    if gLinkCallback == Some(LinkCB_SendHeldKeys as unsafe fn()) {
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn LinkCB_SendHeldKeys() {
+pub(crate) unsafe fn LinkCB_SendHeldKeys() {
     if gReceivedRemoteLinkPlayers == TRUE {
         BuildSendCmd(LINKCMD_SEND_HELD_KEYS);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearLinkCallback() {
+pub unsafe fn ClearLinkCallback() {
+    if gWirelessCommType != 0 {
+        ClearLinkRfuCallback();
+    } else {
+        gLinkCallback = None;
+    }
+}
+pub unsafe fn ClearLinkCallback_2() {
     if gWirelessCommType != 0 {
         ClearLinkRfuCallback();
     } else {
@@ -950,92 +885,68 @@ pub unsafe extern "C" fn ClearLinkCallback() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearLinkCallback_2() {
-    if gWirelessCommType != 0 {
-        ClearLinkRfuCallback();
-    } else {
-        gLinkCallback = None;
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLinkPlayerCount() -> u8 {
+pub unsafe fn GetLinkPlayerCount() -> u8 {
     if gWirelessCommType != 0 {
         return Rfu_GetLinkPlayerCount();
     }
-    return ((gLinkStatus & 0x0000001C) >> 2) as u8;
+    ((gLinkStatus.get() & 0x0000001C) >> 2) as u8
 }
-pub(crate) unsafe extern "C" fn AreAnyLinkPlayersUsingVersions(
-    version1: u32,
-    version2: u32,
-) -> i32 {
-    let mut i: i32 = 0;
-    let mut nPlayers: u8 = 0;
-    nPlayers = GetLinkPlayerCount();
-    i = 0;
-    while i < nPlayers as i32 {
+unsafe fn AreAnyLinkPlayersUsingVersions(version1: u32, version2: u32) -> i32 {
+    let nPlayers: u8 = GetLinkPlayerCount();
+    for i in 0..(nPlayers as i32) {
         if gLinkPlayers[i].version as u32 & 0xFF == version1
             || gLinkPlayers[i].version as u32 & 0xFF == version2
         {
             return 1;
         }
-        i += 1;
     }
-    return -1;
+    -1
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LinkDummy_Return2() -> u32 {
-    return 2;
+pub fn LinkDummy_Return2() -> u32 {
+    2
 }
-pub(crate) unsafe extern "C" fn IsFullLinkGroupWithNoRS() -> u32 {
+unsafe fn IsFullLinkGroupWithNoRS() -> u32 {
     if GetLinkPlayerCount() != MAX_LINK_PLAYERS as u8
         || AreAnyLinkPlayersUsingVersions(VERSION_RUBY as u32, VERSION_SAPPHIRE as u32) < 0
     {
         return FALSE as u32;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Link_AnyPartnersPlayingRubyOrSapphire() -> u32 {
+pub unsafe fn Link_AnyPartnersPlayingRubyOrSapphire() -> u32 {
     if AreAnyLinkPlayersUsingVersions(VERSION_RUBY as u32, VERSION_SAPPHIRE as u32) >= 0 {
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Link_AnyPartnersPlayingFRLG_JP() -> u32 {
-    let mut i: i32 = 0;
-    i = AreAnyLinkPlayersUsingVersions(VERSION_FIRE_RED as u32, VERSION_LEAF_GREEN as u32);
+pub unsafe fn Link_AnyPartnersPlayingFRLG_JP() -> u32 {
+    let i: i32 = AreAnyLinkPlayersUsingVersions(VERSION_FIRE_RED as u32, VERSION_LEAF_GREEN as u32);
     if i >= 0 && gLinkPlayers[i].language == LANGUAGE_JAPANESE as u16 {
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn OpenLinkTimed() {
-    sPlayerDataExchangeStatus = EXCHANGE_NOT_STARTED;
-    sTimeOutCounter = 0;
+pub unsafe fn OpenLinkTimed() {
+    sPlayerDataExchangeStatus.set(EXCHANGE_NOT_STARTED);
+    sTimeOutCounter.set(0);
     OpenLink();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLinkPlayerDataExchangeStatusTimed(
-    minPlayers: i32,
-    maxPlayers: i32,
-) -> u8 {
+pub unsafe fn GetLinkPlayerDataExchangeStatusTimed(minPlayers: i32, maxPlayers: i32) -> u8 {
     let mut i: i32 = 0;
-    let mut count: i32 = 0;
     let mut index: u32 = 0;
     let mut numPlayers: u8 = 0;
     let mut linkType1: u32 = 0;
     let mut linkType2: u32 = 0;
-    count = 0;
+    let mut count: i32 = 0;
     if gReceivedRemoteLinkPlayers == TRUE {
         numPlayers = GetLinkPlayerCount_2();
         if minPlayers > numPlayers as i32 || numPlayers as i32 > maxPlayers {
-            sPlayerDataExchangeStatus = EXCHANGE_WRONG_NUM_PLAYERS as u32;
-            return sPlayerDataExchangeStatus as u8;
+            sPlayerDataExchangeStatus.set(EXCHANGE_WRONG_NUM_PLAYERS as u32);
+            return sPlayerDataExchangeStatus.get() as u8;
         } else {
             if GetLinkPlayerCount() == 0 {
-                gLinkErrorOccurred = TRUE;
+                gLinkErrorOccurred.set(TRUE);
                 CloseLink();
             }
             i = 0;
@@ -1051,21 +962,21 @@ pub unsafe extern "C" fn GetLinkPlayerDataExchangeStatusTimed(
                 if gLinkPlayers[0].linkType == LINKTYPE_TRADE_SETUP as u32 {
                     match GetGameProgressForLinkTrade() {
                         TRADE_PLAYER_NOT_READY => {
-                            sPlayerDataExchangeStatus = EXCHANGE_PLAYER_NOT_READY as u32;
+                            sPlayerDataExchangeStatus.set(EXCHANGE_PLAYER_NOT_READY as u32);
                         }
                         TRADE_PARTNER_NOT_READY => {
-                            sPlayerDataExchangeStatus = EXCHANGE_PARTNER_NOT_READY as u32;
+                            sPlayerDataExchangeStatus.set(EXCHANGE_PARTNER_NOT_READY as u32);
                         }
                         TRADE_BOTH_PLAYERS_READY => {
-                            sPlayerDataExchangeStatus = EXCHANGE_COMPLETE;
+                            sPlayerDataExchangeStatus.set(EXCHANGE_COMPLETE);
                         }
                         _ => {}
                     }
                 } else {
-                    sPlayerDataExchangeStatus = EXCHANGE_COMPLETE;
+                    sPlayerDataExchangeStatus.set(EXCHANGE_COMPLETE);
                 }
             } else {
-                sPlayerDataExchangeStatus = EXCHANGE_DIFF_SELECTIONS;
+                sPlayerDataExchangeStatus.set(EXCHANGE_DIFF_SELECTIONS);
                 linkType1 = gLinkPlayers[GetMultiplayerId()].linkType;
                 linkType2 = gLinkPlayers[GetMultiplayerId() as i32 ^ 1].linkType;
                 if linkType1 == LINKTYPE_BATTLE_TOWER_50 as u32
@@ -1078,21 +989,18 @@ pub unsafe extern "C" fn GetLinkPlayerDataExchangeStatusTimed(
             }
         }
     } else if ({
-        sTimeOutCounter += 1;
-        sTimeOutCounter
+        sTimeOutCounter.set(sTimeOutCounter.get() + 1);
+        sTimeOutCounter.get()
     }) > 600
     {
-        sPlayerDataExchangeStatus = EXCHANGE_TIMED_OUT;
+        sPlayerDataExchangeStatus.set(EXCHANGE_TIMED_OUT);
     }
-    return sPlayerDataExchangeStatus as u8;
+    sPlayerDataExchangeStatus.get() as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsLinkPlayerDataExchangeComplete() -> u8 {
-    let mut i: u8 = 0;
-    let mut count: u8 = 0;
+pub unsafe fn IsLinkPlayerDataExchangeComplete() -> u8 {
     let mut retval: u8 = 0;
-    count = 0;
-    i = 0;
+    let mut count: u8 = 0;
+    let mut i: u8 = 0;
     while i < GetLinkPlayerCount() {
         if gLinkPlayers[i].linkType == gLinkPlayers[0].linkType {
             count += 1;
@@ -1101,21 +1009,18 @@ pub unsafe extern "C" fn IsLinkPlayerDataExchangeComplete() -> u8 {
     }
     if count == GetLinkPlayerCount() {
         retval = TRUE;
-        sPlayerDataExchangeStatus = EXCHANGE_COMPLETE;
+        sPlayerDataExchangeStatus.set(EXCHANGE_COMPLETE);
     } else {
         retval = FALSE;
-        sPlayerDataExchangeStatus = EXCHANGE_DIFF_SELECTIONS;
+        sPlayerDataExchangeStatus.set(EXCHANGE_DIFF_SELECTIONS);
     }
-    return retval;
+    retval
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLinkPlayerTrainerId(who: u8) -> u32 {
-    return gLinkPlayers[who].trainerId;
+pub unsafe fn GetLinkPlayerTrainerId(who: u8) -> u32 {
+    gLinkPlayers[who].trainerId
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetLinkPlayers() {
+pub unsafe fn ResetLinkPlayers() {
     let mut i: i32 = 0;
-    i = 0;
     while i <= MAX_LINK_PLAYERS {
         gLinkPlayers[i] = {
             let mut lit1: LinkPlayer = zeroed();
@@ -1125,13 +1030,13 @@ pub unsafe extern "C" fn ResetLinkPlayers() {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ResetBlockSend() {
+unsafe fn ResetBlockSend() {
     sBlockSend.active = FALSE;
     sBlockSend.pos = 0;
     sBlockSend.size = 0;
     sBlockSend.src = null_mut();
 }
-pub(crate) unsafe extern "C" fn InitBlockSend(src: *mut c_void, size: u32) -> u32 {
+unsafe fn InitBlockSend(src: *mut c_void, size: u32) -> u32 {
     if sBlockSend.active != 0 {
         return FALSE as u32;
     }
@@ -1142,35 +1047,32 @@ pub(crate) unsafe extern "C" fn InitBlockSend(src: *mut c_void, size: u32) -> u3
     if size > BLOCK_BUFFER_SIZE {
         sBlockSend.src = src as *mut u8;
     } else {
-        if (src as usize) != (gBlockSendBuffer.as_mut_ptr() as usize) {
+        if !core::ptr::addr_eq(src, gBlockSendBuffer.as_mut_ptr()) {
             memcpy(gBlockSendBuffer.as_mut_ptr(), src as *mut u8, size);
         }
         sBlockSend.src = gBlockSendBuffer.as_mut_ptr();
     }
     BuildSendCmd(LINKCMD_INIT_BLOCK);
     gLinkCallback = Some(LinkCB_BlockSendBegin);
-    sBlockSendDelayCounter = 0;
-    return TRUE as u32;
+    sBlockSendDelayCounter.set(0);
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn LinkCB_BlockSendBegin() {
+pub(crate) unsafe fn LinkCB_BlockSendBegin() {
     if ({
-        sBlockSendDelayCounter += 1;
-        sBlockSendDelayCounter
+        sBlockSendDelayCounter.set(sBlockSendDelayCounter.get() + 1);
+        sBlockSendDelayCounter.get()
     }) > 2
     {
         gLinkCallback = Some(LinkCB_BlockSend);
     }
 }
-pub(crate) unsafe extern "C" fn LinkCB_BlockSend() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn LinkCB_BlockSend() {
     let mut src: *mut u8 = null_mut();
     src = sBlockSend.src;
     gSendCmd[0] = LINKCMD_CONT_BLOCK;
-    i = 0;
-    while i < 7 {
+    for i in 0..7i32 {
         gSendCmd[i + 1] = (*src.at(sBlockSend.pos as i32 + i * 2 + 1) as u16) << 8
             | *src.at(sBlockSend.pos as i32 + i * 2) as u16;
-        i += 1;
     }
     sBlockSend.pos += 14;
     if sBlockSend.size <= sBlockSend.pos {
@@ -1178,16 +1080,15 @@ pub(crate) unsafe extern "C" fn LinkCB_BlockSend() {
         gLinkCallback = Some(LinkCB_BlockSendEnd);
     }
 }
-pub(crate) unsafe extern "C" fn LinkCB_BlockSendEnd() {
+pub(crate) unsafe fn LinkCB_BlockSendEnd() {
     gLinkCallback = None;
 }
-pub(crate) unsafe extern "C" fn LinkCB_BerryBlenderSendHeldKeys() {
+pub(crate) unsafe fn LinkCB_BerryBlenderSendHeldKeys() {
     GetMultiplayerId();
     BuildSendCmd(LINKCMD_BLENDER_SEND_KEYS);
     gBerryBlenderKeySendAttempts += 1;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBerryBlenderLinkCallback() {
+pub unsafe fn SetBerryBlenderLinkCallback() {
     gBerryBlenderKeySendAttempts = 0;
     if gWirelessCommType != 0 {
         Rfu_SetBerryBlenderLinkCallback();
@@ -1195,62 +1096,59 @@ pub unsafe extern "C" fn SetBerryBlenderLinkCallback() {
         gLinkCallback = Some(LinkCB_BerryBlenderSendHeldKeys);
     }
 }
-pub(crate) unsafe extern "C" fn GetBerryBlenderKeySendAttempts() -> u32 {
-    return gBerryBlenderKeySendAttempts;
+unsafe fn GetBerryBlenderKeySendAttempts() -> u32 {
+    gBerryBlenderKeySendAttempts
 }
-pub(crate) unsafe extern "C" fn SendBerryBlenderNoSpaceForPokeblocks() {
+unsafe fn SendBerryBlenderNoSpaceForPokeblocks() {
     BuildSendCmd(LINKCMD_BLENDER_NO_PBLOCK_SPACE);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMultiplayerId() -> u8 {
+pub unsafe fn GetMultiplayerId() -> u8 {
     if gWirelessCommType == TRUE {
         return Rfu_GetMultiplayerId();
     }
-    return (*(67109160 as usize as *mut SioMultiCnt)).id() as u8;
+    (*(67109160_usize as *mut SioMultiCnt)).id() as u8
+}
+pub unsafe fn BitmaskAllOtherLinkPlayers() -> u8 {
+    let mpId: u8 = GetMultiplayerId();
+    15 ^ shl_i32(1, mpId as u32) as u8
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BitmaskAllOtherLinkPlayers() -> u8 {
-    let mut mpId: u8 = 0;
-    mpId = GetMultiplayerId();
-    return 15 ^ shl_i32(1, mpId as u32) as u8;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SendBlock(unused: u8, src: *mut c_void, size: u16) -> u8 {
+pub unsafe fn SendBlock(unused: u8, src: *mut c_void, size: u16) -> u8 {
     if gWirelessCommType == TRUE {
         return Rfu_InitBlockSend(src as *mut u8, size as u32) as u8;
     }
-    return InitBlockSend(src, size as u32) as u8;
+    InitBlockSend(src, size as u32) as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SendBlockRequest(blockReqType: u8) -> u8 {
+pub unsafe fn SendBlockRequest(blockReqType: u8) -> u8 {
     if gWirelessCommType == TRUE {
         return Rfu_SendBlockRequest(blockReqType);
     }
     if gLinkCallback.is_none() {
-        gBlockRequestType = blockReqType;
+        gBlockRequestType.set(blockReqType);
         BuildSendCmd(LINKCMD_SEND_BLOCK_REQ);
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsLinkTaskFinished() -> u8 {
+pub unsafe fn IsLinkTaskFinished() -> u8 {
     if gWirelessCommType == TRUE {
         return IsLinkRfuTaskFinished();
     }
-    return gLinkCallback.is_none() as u8;
+    gLinkCallback.is_none() as u8
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBlockReceivedStatus() -> u8 {
+pub unsafe fn GetBlockReceivedStatus() -> u8 {
     if gWirelessCommType == TRUE {
         return Rfu_GetBlockReceivedStatus();
     }
-    return gBlockReceivedStatus[3] << 3
+    gBlockReceivedStatus[3] << 3
         | gBlockReceivedStatus[2] << 2
         | gBlockReceivedStatus[1] << 1
-        | gBlockReceivedStatus[0] << 0;
+        | gBlockReceivedStatus[0]
 }
-pub(crate) unsafe extern "C" fn SetBlockReceivedFlag(who: u8) {
+unsafe fn SetBlockReceivedFlag(who: u8) {
     if gWirelessCommType == TRUE {
         Rfu_SetBlockReceivedFlag(who);
     } else {
@@ -1258,24 +1156,19 @@ pub(crate) unsafe extern "C" fn SetBlockReceivedFlag(who: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetBlockReceivedFlags() {
-    let mut i: i32 = 0;
+pub unsafe fn ResetBlockReceivedFlags() {
     if gWirelessCommType == TRUE {
-        i = 0;
-        while i < MAX_RFU_PLAYERS {
+        for i in 0..MAX_RFU_PLAYERS {
             Rfu_ResetBlockReceivedFlag(i as u8);
-            i += 1;
         }
     } else {
-        i = 0;
-        while i < MAX_LINK_PLAYERS {
+        for i in 0..MAX_LINK_PLAYERS {
             gBlockReceivedStatus[i] = FALSE;
-            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetBlockReceivedFlag(who: u8) {
+pub unsafe fn ResetBlockReceivedFlag(who: u8) {
     if gWirelessCommType == TRUE {
         Rfu_ResetBlockReceivedFlag(who);
     } else if gBlockReceivedStatus[who] != 0 {
@@ -1283,66 +1176,57 @@ pub unsafe extern "C" fn ResetBlockReceivedFlag(who: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckShouldAdvanceLinkState() {
-    if gLinkStatus & LINK_STAT_MASTER != 0 && (gLinkStatus & 0x0000001C) >> 2 > 1 {
+pub unsafe fn CheckShouldAdvanceLinkState() {
+    if gLinkStatus.get() & LINK_STAT_MASTER != 0 && (gLinkStatus.get() & 0x0000001C) >> 2 > 1 {
         gShouldAdvanceLinkState = 1;
     }
 }
-pub(crate) unsafe extern "C" fn LinkTestCalcBlockChecksum(src: *mut u16, size: u16) -> u16 {
+unsafe fn LinkTestCalcBlockChecksum(src: *mut u16, size: u16) -> u16 {
     let mut chksum: u16 = 0;
     let mut i: u16 = 0;
-    chksum = 0;
-    i = 0;
     while (i as i32) < size as i32 / 2 {
         chksum += *src.at(i);
         i += 1;
     }
-    return chksum;
+    chksum
 }
-pub(crate) unsafe extern "C" fn LinkTest_PrintNumChar(val: u8, x: u8, y: u8) {
-    let mut vAddr: *mut u16 = null_mut();
-    vAddr = (0x6000000 + 0x800 * gLinkTestBGInfo.screenBaseBlock) as usize as *mut u16;
-    *vAddr.at(y as i32 * 32 + x as i32) = (gLinkTestBGInfo.paletteNum as u16) << 12
-        | val as u16 + 1 + gLinkTestBGInfo.baseChar as u16;
+unsafe fn LinkTest_PrintNumChar(val: u8, x: u8, y: u8) {
+    let vAddr: *mut u16 =
+        (0x6000000 + 0x800 * gLinkTestBGInfo.screenBaseBlock) as usize as *mut u16;
+    *vAddr.at(y as i32 * 32 + x as i32) = ((gLinkTestBGInfo.paletteNum as u16) << 12)
+        | (val as u16 + 1 + gLinkTestBGInfo.baseChar as u16);
 }
-pub(crate) unsafe extern "C" fn LinkTest_PrintChar(val: u8, x: u8, y: u8) {
-    let mut vAddr: *mut u16 = null_mut();
-    vAddr = (0x6000000 + 0x800 * gLinkTestBGInfo.screenBaseBlock) as usize as *mut u16;
-    *vAddr.at(y as i32 * 32 + x as i32) =
-        (gLinkTestBGInfo.paletteNum as u16) << 12 | val as u16 + gLinkTestBGInfo.baseChar as u16;
+unsafe fn LinkTest_PrintChar(val: u8, x: u8, y: u8) {
+    let vAddr: *mut u16 =
+        (0x6000000 + 0x800 * gLinkTestBGInfo.screenBaseBlock) as usize as *mut u16;
+    *vAddr.at(y as i32 * 32 + x as i32) = ((gLinkTestBGInfo.paletteNum as u16) << 12)
+        | (val as u16 + gLinkTestBGInfo.baseChar as u16);
 }
-pub(crate) unsafe extern "C" fn LinkTest_PrintHex(mut num: u32, mut x: u8, y: u8, length: u8) {
+unsafe fn LinkTest_PrintHex(mut num: u32, mut x: u8, y: u8, length: u8) {
     let mut buff: CArray<u8, 16> = zeroed();
-    let mut i: i32 = 0;
-    i = 0;
-    while i < length as i32 {
+    for i in 0..(length as i32) {
         buff[i] = num as u8 & 0xF;
         num >>= 4;
-        i += 1;
     }
-    i = length as i32 - 1;
+    let mut i: i32 = length as i32 - 1;
     while i >= 0 {
         LinkTest_PrintNumChar(buff[i], x, y);
         x += 1;
         i -= 1;
     }
 }
-pub(crate) unsafe extern "C" fn LinkTest_PrintInt(mut num: i32, mut x: u8, y: u8, length: u8) {
+unsafe fn LinkTest_PrintInt(mut num: i32, mut x: u8, y: u8, length: u8) {
     let mut buff: CArray<u8, 16> = zeroed();
-    let mut negX: i32 = 0;
-    let mut i: i32 = 0;
-    negX = -1;
+    let mut negX: i32 = -1;
     if num < 0 {
         negX = x as i32;
         num = -num;
     }
-    i = 0;
-    while i < length as i32 {
+    for i in 0..(length as i32) {
         buff[i] = (num % 10) as u8;
-        num = num / 10;
-        i += 1;
+        num /= 10;
     }
-    i = length as i32 - 1;
+    let mut i: i32 = length as i32 - 1;
     while i >= 0 {
         LinkTest_PrintNumChar(buff[i], x, y);
         x += 1;
@@ -1352,13 +1236,10 @@ pub(crate) unsafe extern "C" fn LinkTest_PrintInt(mut num: i32, mut x: u8, y: u8
         LinkTest_PrintNumChar(*b"\x0a\0".as_ptr().cast_mut(), negX as u8, y);
     }
 }
-pub(crate) unsafe extern "C" fn LinkTest_PrintString(mut str: *mut u8, x: u8, y: u8) {
-    let mut xOffset: i32 = 0;
-    let mut i: i32 = 0;
+unsafe fn LinkTest_PrintString(mut str: *mut u8, x: u8, y: u8) {
     let mut yOffset: i32 = 0;
-    yOffset = 0;
-    xOffset = 0;
-    i = 0;
+    let mut xOffset: i32 = 0;
+    let i: i32 = 0;
     while *str.at(i) != 0 {
         if *str.at(i) == *b"\x0a\0".as_ptr().cast_mut() {
             yOffset += 1;
@@ -1370,90 +1251,72 @@ pub(crate) unsafe extern "C" fn LinkTest_PrintString(mut str: *mut u8, x: u8, y:
         str = str.at(1);
     }
 }
-pub(crate) unsafe extern "C" fn LinkCB_RequestPlayerDataExchange() {
-    if gLinkStatus & LINK_STAT_MASTER != 0 {
+pub(crate) unsafe fn LinkCB_RequestPlayerDataExchange() {
+    if gLinkStatus.get() & LINK_STAT_MASTER != 0 {
         BuildSendCmd(LINKCMD_SEND_LINK_TYPE);
     }
     gLinkCallback = None;
 }
-pub(crate) unsafe extern "C" fn Task_PrintTestData(taskId: u8) {
+pub(crate) unsafe fn Task_PrintTestData(taskId: u8) {
     let mut testTitle: CArray<u8, 32> = zeroed();
-    let mut i: i32 = 0;
     strcpy(testTitle.as_mut_ptr(), sASCIITestPrint.as_ptr().cast_mut());
     LinkTest_PrintString(testTitle.as_mut_ptr(), 5, 2);
     LinkTest_PrintHex(gShouldAdvanceLinkState as u32, 2, 1, 2);
-    LinkTest_PrintHex(gLinkStatus, 15, 1, 8);
+    LinkTest_PrintHex(gLinkStatus.get(), 15, 1, 8);
     LinkTest_PrintHex(gLink.state as u32, 2, 10, 2);
-    LinkTest_PrintHex((gLinkStatus & 0x0000001C) >> 2, 15, 10, 2);
+    LinkTest_PrintHex((gLinkStatus.get() & 0x0000001C) >> 2, 15, 10, 2);
     LinkTest_PrintHex(GetMultiplayerId() as u32, 15, 12, 2);
-    LinkTest_PrintHex(gLastSendQueueCount as u32, 25, 1, 2);
-    LinkTest_PrintHex(gLastRecvQueueCount as u32, 25, 2, 2);
+    LinkTest_PrintHex(gLastSendQueueCount.get() as u32, 25, 1, 2);
+    LinkTest_PrintHex(gLastRecvQueueCount.get() as u32, 25, 2, 2);
     LinkTest_PrintHex(GetBlockReceivedStatus() as u32, 15, 5, 2);
-    LinkTest_PrintHex(gLinkDebugSeed, 2, 12, 8);
-    LinkTest_PrintHex(gLinkDebugFlags, 2, 13, 8);
+    LinkTest_PrintHex(gLinkDebugSeed.get(), 2, 12, 8);
+    LinkTest_PrintHex(gLinkDebugFlags.get(), 2, 13, 8);
     LinkTest_PrintHex(GetSioMultiSI() as u32, 25, 5, 1);
     LinkTest_PrintHex(IsSioMultiMaster() as u32, 25, 6, 1);
     LinkTest_PrintHex(IsLinkConnectionEstablished() as u32, 25, 7, 1);
     LinkTest_PrintHex(HasLinkErrorOccurred() as u32, 25, 8, 1);
-    i = 0;
-    while i < MAX_LINK_PLAYERS {
+    for i in 0..MAX_LINK_PLAYERS {
         LinkTest_PrintHex(gLinkTestBlockChecksums[i] as u32, 10, 4 + i as u8, 4);
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetLinkDebugValues(seed: u32, flags: u32) {
-    gLinkDebugSeed = seed;
-    gLinkDebugFlags = flags;
+pub fn SetLinkDebugValues(seed: u32, flags: u32) {
+    gLinkDebugSeed.set(seed);
+    gLinkDebugFlags.set(flags);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSavedLinkPlayerCountAsBitFlags() -> u8 {
-    let mut i: i32 = 0;
+pub fn GetSavedLinkPlayerCountAsBitFlags() -> u8 {
     let mut flags: u8 = 0;
-    flags = 0;
-    i = 0;
-    while i < gSavedLinkPlayerCount as i32 {
+    let mut i: i32 = 0;
+    while i < gSavedLinkPlayerCount.get() as i32 {
         flags |= shl_i32(1, i as u32) as u8;
         i += 1;
     }
-    return flags;
+    flags
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLinkPlayerCountAsBitFlags() -> u8 {
-    let mut i: i32 = 0;
+pub unsafe fn GetLinkPlayerCountAsBitFlags() -> u8 {
     let mut flags: u8 = 0;
-    flags = 0;
-    i = 0;
+    let mut i: i32 = 0;
     while i < GetLinkPlayerCount() as i32 {
         flags |= shl_i32(1, i as u32) as u8;
         i += 1;
     }
-    return flags;
+    flags
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SaveLinkPlayers(playerCount: u8) {
-    let mut i: i32 = 0;
-    gSavedLinkPlayerCount = playerCount;
-    gSavedMultiplayerId = GetMultiplayerId();
-    i = 0;
-    while i < MAX_RFU_PLAYERS {
+pub unsafe fn SaveLinkPlayers(playerCount: u8) {
+    gSavedLinkPlayerCount.set(playerCount);
+    gSavedMultiplayerId.set(GetMultiplayerId());
+    for i in 0..MAX_RFU_PLAYERS {
         sSavedLinkPlayers[i] = gLinkPlayers[i];
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSavedPlayerCount() -> u8 {
-    return gSavedLinkPlayerCount;
+pub fn GetSavedPlayerCount() -> u8 {
+    gSavedLinkPlayerCount.get()
 }
-pub(crate) unsafe extern "C" fn GetSavedMultiplayerId() -> u8 {
-    return gSavedMultiplayerId;
+fn GetSavedMultiplayerId() -> u8 {
+    gSavedMultiplayerId.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoesLinkPlayerCountMatchSaved() -> u8 {
-    let mut i: i32 = 0;
+pub unsafe fn DoesLinkPlayerCountMatchSaved() -> u8 {
     let mut count: u32 = 0;
-    i = 0;
-    while i < gSavedLinkPlayerCount as i32 {
+    for i in 0..(gSavedLinkPlayerCount.get() as i32) {
         if gLinkPlayers[i].trainerId == sSavedLinkPlayers[i].trainerId {
             if gLinkType == LINKTYPE_BATTLE_TOWER {
                 if gLinkType as u32 == gLinkPlayers[i].linkType {
@@ -1463,172 +1326,155 @@ pub unsafe extern "C" fn DoesLinkPlayerCountMatchSaved() -> u8 {
                 count += 1;
             }
         }
-        i += 1;
     }
-    if count == gSavedLinkPlayerCount as u32 {
-        if GetLinkPlayerCount_2() == gSavedLinkPlayerCount {
-            return TRUE;
-        }
+    if count == gSavedLinkPlayerCount.get() as u32
+        && GetLinkPlayerCount_2() == gSavedLinkPlayerCount.get()
+    {
+        return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearSavedLinkPlayers() {
+pub unsafe fn ClearSavedLinkPlayers() {
     memset(sSavedLinkPlayers.as_mut_ptr() as *mut u8, 0, 140);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckLinkPlayersMatchSaved() {
+pub unsafe fn CheckLinkPlayersMatchSaved() {
     let mut i: u8 = 0;
-    i = 0;
-    while i < gSavedLinkPlayerCount {
+    while i < gSavedLinkPlayerCount.get() {
         if sSavedLinkPlayers[i].trainerId != gLinkPlayers[i].trainerId
             || StringCompare(
                 sSavedLinkPlayers[i].name.as_mut_ptr(),
                 gLinkPlayers[i].name.as_mut_ptr(),
             ) != 0
         {
-            gLinkErrorOccurred = TRUE;
+            gLinkErrorOccurred.set(TRUE);
             CloseLink();
             SetMainCallback2(Some(CB2_LinkError));
         }
         i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetLinkPlayerCount() {
-    gSavedLinkPlayerCount = 0;
-    gSavedMultiplayerId = 0;
+pub fn ResetLinkPlayerCount() {
+    gSavedLinkPlayerCount.set(0);
+    gSavedMultiplayerId.set(0);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLinkPlayerCount_2() -> u8 {
-    return ((gLinkStatus & 0x0000001C) >> 2) as u8;
+pub unsafe fn GetLinkPlayerCount_2() -> u8 {
+    ((gLinkStatus.get() & 0x0000001C) >> 2) as u8
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsLinkMaster() -> u8 {
+pub unsafe fn IsLinkMaster() -> u8 {
     if gWirelessCommType != 0 {
         return Rfu_IsMaster();
     }
-    return (gLinkStatus >> 5) as u8 & 1;
+    (gLinkStatus.get() >> 5) as u8 & 1
 }
-pub(crate) unsafe extern "C" fn GetDummy2() -> u8 {
-    return sDummy2;
+fn GetDummy2() -> u8 {
+    sDummy2.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCloseLinkCallbackAndType(r#type: u16) {
+pub unsafe fn SetCloseLinkCallbackAndType(r#type: u16) {
     if gWirelessCommType == TRUE {
         Rfu_SetCloseLinkCallback();
     } else {
         if gLinkCallback.is_none() {
             gLinkCallback = Some(LinkCB_ReadyCloseLink);
-            gLinkDummy1 = FALSE;
-            gReadyCloseLinkType = r#type;
+            gLinkDummy1.set(FALSE);
+            gReadyCloseLinkType.set(r#type);
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCloseLinkCallback() {
+pub unsafe fn SetCloseLinkCallback() {
     if gWirelessCommType == TRUE {
         Rfu_SetCloseLinkCallback();
     } else {
         if gLinkCallback.is_some() {
-            sReadyCloseLinkAttempts += 1;
+            sReadyCloseLinkAttempts.set(sReadyCloseLinkAttempts.get() + 1);
         } else {
             gLinkCallback = Some(LinkCB_ReadyCloseLink);
-            gLinkDummy1 = FALSE;
-            gReadyCloseLinkType = 0;
+            gLinkDummy1.set(FALSE);
+            gReadyCloseLinkType.set(0);
         }
     }
 }
-pub(crate) unsafe extern "C" fn LinkCB_ReadyCloseLink() {
-    if gLastRecvQueueCount == 0 {
+pub(crate) unsafe fn LinkCB_ReadyCloseLink() {
+    if gLastRecvQueueCount.get() == 0 {
         BuildSendCmd(LINKCMD_READY_CLOSE_LINK);
         gLinkCallback = Some(LinkCB_WaitCloseLink);
     }
 }
-pub(crate) unsafe extern "C" fn LinkCB_WaitCloseLink() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn LinkCB_WaitCloseLink() {
+    let linkPlayerCount: u8 = GetLinkPlayerCount();
     let mut count: u32 = 0;
-    let mut linkPlayerCount: u8 = GetLinkPlayerCount();
-    count = 0;
-    i = 0;
-    while i < linkPlayerCount as i32 {
+    for i in 0..(linkPlayerCount as i32) {
         if gReadyToCloseLink[i] != 0 {
             count += 1;
         }
-        i += 1;
     }
     if count == linkPlayerCount as u32 {
         gBattleTypeFlags &= 0xffffffdf;
         gLinkVSyncDisabled = TRUE;
         CloseLink();
         gLinkCallback = None;
-        gLinkDummy1 = TRUE;
+        gLinkDummy1.set(TRUE);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCloseLinkCallbackHandleJP() {
+pub unsafe fn SetCloseLinkCallbackHandleJP() {
     if gWirelessCommType == TRUE {
         Rfu_SetCloseLinkCallback();
     } else {
         if gLinkCallback.is_some() {
-            sReadyCloseLinkAttempts += 1;
+            sReadyCloseLinkAttempts.set(sReadyCloseLinkAttempts.get() + 1);
         } else {
             gLinkCallback = Some(LinkCB_ReadyCloseLinkWithJP);
-            gLinkDummy1 = FALSE;
-            gReadyCloseLinkType = 0;
+            gLinkDummy1.set(FALSE);
+            gReadyCloseLinkType.set(0);
         }
     }
 }
-pub(crate) unsafe extern "C" fn LinkCB_ReadyCloseLinkWithJP() {
-    if gLastRecvQueueCount == 0 {
+pub(crate) unsafe fn LinkCB_ReadyCloseLinkWithJP() {
+    if gLastRecvQueueCount.get() == 0 {
         BuildSendCmd(LINKCMD_READY_CLOSE_LINK);
         gLinkCallback = Some(LinkCB_WaitCloseLinkWithJP);
     }
 }
-pub(crate) unsafe extern "C" fn LinkCB_WaitCloseLinkWithJP() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn LinkCB_WaitCloseLinkWithJP() {
+    let linkPlayerCount: u8 = GetLinkPlayerCount();
     let mut count: u32 = 0;
-    let mut linkPlayerCount: u8 = 0;
-    linkPlayerCount = GetLinkPlayerCount();
-    count = 0;
-    i = 0;
-    while i < linkPlayerCount as i32 {
+    for i in 0..(linkPlayerCount as i32) {
         if gLinkPlayers[i].language == LANGUAGE_JAPANESE as u16 {
             count += 1;
         } else if gReadyToCloseLink[i] != 0 {
             count += 1;
         }
-        i += 1;
     }
     if count == linkPlayerCount as u32 {
         gBattleTypeFlags &= 0xffffffdf;
         gLinkVSyncDisabled = TRUE;
         CloseLink();
         gLinkCallback = None;
-        gLinkDummy1 = TRUE;
+        gLinkDummy1.set(TRUE);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetLinkStandbyCallback() {
+pub unsafe fn SetLinkStandbyCallback() {
     if gWirelessCommType == TRUE {
         Rfu_SetLinkStandbyCallback();
     } else {
         if gLinkCallback.is_none() {
             gLinkCallback = Some(LinkCB_Standby);
         }
-        gLinkDummy1 = FALSE;
+        gLinkDummy1.set(FALSE);
     }
 }
-pub(crate) unsafe extern "C" fn LinkCB_Standby() {
-    if gLastRecvQueueCount == 0 {
+pub(crate) unsafe fn LinkCB_Standby() {
+    if gLastRecvQueueCount.get() == 0 {
         BuildSendCmd(LINKCMD_READY_EXIT_STANDBY);
         gLinkCallback = Some(LinkCB_StandbyForAll);
     }
 }
-pub(crate) unsafe extern "C" fn LinkCB_StandbyForAll() {
+pub(crate) unsafe fn LinkCB_StandbyForAll() {
+    let linkPlayerCount: u8 = GetLinkPlayerCount();
     let mut i: u8 = 0;
-    let mut linkPlayerCount: u8 = GetLinkPlayerCount();
-    i = 0;
     while i < linkPlayerCount {
         if gReadyToExitStandby[i] == 0 {
             break;
@@ -1636,28 +1482,25 @@ pub(crate) unsafe extern "C" fn LinkCB_StandbyForAll() {
         i += 1;
     }
     if i == linkPlayerCount {
-        i = 0;
-        while i < MAX_LINK_PLAYERS as u8 {
+        for i in 0..(MAX_LINK_PLAYERS as u8) {
             gReadyToExitStandby[i] = FALSE;
-            i += 1;
         }
         gLinkCallback = None;
     }
 }
-pub(crate) unsafe extern "C" fn TrySetLinkErrorBuffer() {
-    if sLinkOpen != 0 && (gLinkStatus & 0x0007F000) >> 12 != 0 {
-        if gSuppressLinkErrorMessage == 0 {
-            sLinkErrorBuffer.status = gLinkStatus;
-            sLinkErrorBuffer.lastRecvQueueCount = gLastRecvQueueCount;
-            sLinkErrorBuffer.lastSendQueueCount = gLastSendQueueCount;
+unsafe fn TrySetLinkErrorBuffer() {
+    if sLinkOpen.get() != 0 && (gLinkStatus.get() & 0x0007F000) >> 12 != 0 {
+        if gSuppressLinkErrorMessage.get() == 0 {
+            sLinkErrorBuffer.status = gLinkStatus.get();
+            sLinkErrorBuffer.lastRecvQueueCount = gLastRecvQueueCount.get();
+            sLinkErrorBuffer.lastSendQueueCount = gLastSendQueueCount.get();
             SetMainCallback2(Some(CB2_LinkError));
         }
-        gLinkErrorOccurred = TRUE;
+        gLinkErrorOccurred.set(TRUE);
         CloseLink();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetLinkErrorBuffer(
+pub unsafe fn SetLinkErrorBuffer(
     status: u32,
     lastSendQueueCount: u8,
     lastRecvQueueCount: u8,
@@ -1668,14 +1511,19 @@ pub unsafe extern "C" fn SetLinkErrorBuffer(
     sLinkErrorBuffer.lastRecvQueueCount = lastRecvQueueCount;
     sLinkErrorBuffer.disconnected = disconnected;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_LinkError() {
+pub unsafe fn CB2_LinkError() {
     let mut tilemapBuffer: *mut u8 = null_mut();
     SetGpuReg(0x0, 0);
     m4aMPlayStop(&raw mut gMPlayInfo_SE1);
     m4aMPlayStop(&raw mut gMPlayInfo_SE2);
     m4aMPlayStop(&raw mut gMPlayInfo_SE3);
-    InitHeap(gHeap.as_mut_ptr() as *mut c_void, HEAP_SIZE);
+    InitHeap(
+        (*(&raw const crate::malloc::gHeap)
+            .cast::<CArray<u8, 114688>>()
+            .cast_mut())
+        .as_mut_ptr() as *mut c_void,
+        HEAP_SIZE,
+    );
     ResetSpriteData();
     FreeAllSpritePalettes();
     ResetPaletteFadeControl();
@@ -1707,7 +1555,9 @@ pub unsafe extern "C" fn CB2_LinkError() {
         SetGpuReg(REG_OFFSET_BG1VOFS, 0);
         ClearGpuRegBits(REG_OFFSET_DISPCNT, 57344);
         LoadPalette(
-            gStandardMenuPalette.as_ptr().cast_mut() as *mut c_void,
+            (*(&raw const crate::data::menu::gStandardMenuPalette).cast::<CArray<u16, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
             240,
             32,
         );
@@ -1722,7 +1572,7 @@ pub unsafe extern "C" fn CB2_LinkError() {
         SetMainCallback2(Some(CB2_PrintErrorMessage));
     }
 }
-pub(crate) unsafe extern "C" fn ErrorMsg_MoveCloserToPartner() {
+unsafe fn ErrorMsg_MoveCloserToPartner() {
     LoadBgTiles(
         0,
         sCommErrorBg_Gfx.as_ptr().cast_mut() as *mut c_void,
@@ -1757,7 +1607,9 @@ pub(crate) unsafe extern "C" fn ErrorMsg_MoveCloserToPartner() {
         6,
         sTextColors.as_ptr().cast_mut(),
         0,
-        gText_CommErrorEllipsis.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_CommErrorEllipsis).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     AddTextPrinterParameterized3(
         WIN_LINK_ERROR_BOTTOM,
@@ -1766,14 +1618,16 @@ pub(crate) unsafe extern "C" fn ErrorMsg_MoveCloserToPartner() {
         1,
         sTextColors.as_ptr().cast_mut(),
         0,
-        gText_MoveCloserToLinkPartner.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_MoveCloserToLinkPartner).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     PutWindowTilemap(WIN_LINK_ERROR_TOP);
     PutWindowTilemap(WIN_LINK_ERROR_BOTTOM);
     CopyWindowToVram(WIN_LINK_ERROR_TOP, COPYWIN_NONE);
     CopyWindowToVram(WIN_LINK_ERROR_BOTTOM, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn ErrorMsg_CheckConnections() {
+unsafe fn ErrorMsg_CheckConnections() {
     LoadBgTiles(
         0,
         sCommErrorBg_Gfx.as_ptr().cast_mut() as *mut c_void,
@@ -1789,14 +1643,17 @@ pub(crate) unsafe extern "C" fn ErrorMsg_CheckConnections() {
         0,
         sTextColors.as_ptr().cast_mut(),
         0,
-        gText_CommErrorCheckConnections.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_CommErrorCheckConnections)
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut(),
     );
     PutWindowTilemap(WIN_LINK_ERROR_MID);
     PutWindowTilemap(WIN_LINK_ERROR_BOTTOM);
     CopyWindowToVram(WIN_LINK_ERROR_MID, COPYWIN_NONE);
     CopyWindowToVram(WIN_LINK_ERROR_BOTTOM, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn CB2_PrintErrorMessage() {
+pub(crate) unsafe fn CB2_PrintErrorMessage() {
     match gMain.state {
         0 => {
             if sLinkErrorBuffer.disconnected != 0 {
@@ -1829,7 +1686,10 @@ pub(crate) unsafe extern "C" fn CB2_PrintErrorMessage() {
                     20,
                     sTextColors.as_ptr().cast_mut(),
                     0,
-                    gText_ABtnTitleScreen.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_ABtnTitleScreen)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
             } else if gWirelessCommType == 1 {
                 AddTextPrinterParameterized3(
@@ -1839,7 +1699,10 @@ pub(crate) unsafe extern "C" fn CB2_PrintErrorMessage() {
                     20,
                     sTextColors.as_ptr().cast_mut(),
                     0,
-                    gText_ABtnRegistrationCounter.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_ABtnRegistrationCounter)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
             }
         }
@@ -1853,44 +1716,36 @@ pub(crate) unsafe extern "C" fn CB2_PrintErrorMessage() {
                 sLinkErrorBuffer.disconnected = FALSE;
                 ReloadSave();
             }
-        } else if gWirelessCommType == 2 {
-            if gMain.newKeys as i32 & A_BUTTON != 0 {
-                rfu_REQ_stopMode();
-                rfu_waitREQComplete();
-                DoSoftReset();
-            }
+        } else if gWirelessCommType == 2 && gMain.newKeys as i32 & A_BUTTON != 0 {
+            rfu_REQ_stopMode();
+            rfu_waitREQComplete();
+            DoSoftReset();
         }
     }
     if gMain.state != 160 {
         gMain.state += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSioMultiSI() -> u8 {
-    return ((67109160 as usize as *mut u16).read_volatile() as i32 & SIO_MULTI_SI != 0) as u8;
+pub unsafe fn GetSioMultiSI() -> u8 {
+    ((67109160_usize as *mut u16).read_volatile() as i32 & SIO_MULTI_SI != 0) as u8
 }
-pub(crate) unsafe extern "C" fn IsSioMultiMaster() -> u8 {
-    return ((67109160 as usize as *mut u16).read_volatile() as i32 & SIO_MULTI_SD != 0
-        && (67109160 as usize as *mut u16).read_volatile() as i32 & SIO_MULTI_SI == 0)
-        as u8;
+unsafe fn IsSioMultiMaster() -> u8 {
+    ((67109160_usize as *mut u16).read_volatile() as i32 & SIO_MULTI_SD != 0
+        && (67109160_usize as *mut u16).read_volatile() as i32 & SIO_MULTI_SI == 0) as u8
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsLinkConnectionEstablished() -> u8 {
-    return (gLinkStatus >> 6) as u8 & 1;
+pub unsafe fn IsLinkConnectionEstablished() -> u8 {
+    (gLinkStatus.get() >> 6) as u8 & 1
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetSuppressLinkErrorMessage(flag: u8) {
-    gSuppressLinkErrorMessage = flag;
+pub fn SetSuppressLinkErrorMessage(flag: u8) {
+    gSuppressLinkErrorMessage.set(flag);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HasLinkErrorOccurred() -> u8 {
-    return gLinkErrorOccurred;
+pub fn HasLinkErrorOccurred() -> u8 {
+    gLinkErrorOccurred.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LocalLinkPlayerToBlock() {
-    let mut block: *mut LinkPlayerBlock = null_mut();
+pub unsafe fn LocalLinkPlayerToBlock() {
     InitLocalLinkPlayer();
-    block = &raw mut gLocalLinkPlayerBlock;
+    let block: *mut LinkPlayerBlock = &raw mut gLocalLinkPlayerBlock;
     (*block).linkPlayer = gLocalLinkPlayer;
     memcpy(
         (*block).magic1.as_mut_ptr(),
@@ -1904,13 +1759,10 @@ pub unsafe extern "C" fn LocalLinkPlayerToBlock() {
     );
     memcpy(gBlockSendBuffer.as_mut_ptr(), block as *mut u8, 60);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LinkPlayerFromBlock(who: u32) {
-    let mut who_: u8 = who as u8;
-    let mut block: *mut LinkPlayerBlock = null_mut();
-    let mut player: *mut LinkPlayer = null_mut();
-    block = gBlockRecvBuffer[who_].as_mut_ptr() as *mut LinkPlayerBlock;
-    player = &raw mut gLinkPlayers[who_];
+pub unsafe fn LinkPlayerFromBlock(who: u32) {
+    let who_: u8 = who as u8;
+    let block: *mut LinkPlayerBlock = gBlockRecvBuffer[who_].as_mut_ptr() as *mut LinkPlayerBlock;
+    let player: *mut LinkPlayer = &raw mut gLinkPlayers[who_];
     *player = (*block).linkPlayer;
     ConvertLinkPlayerName(player);
     if strcmp(
@@ -1926,78 +1778,74 @@ pub unsafe extern "C" fn LinkPlayerFromBlock(who: u32) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleLinkConnection() -> u8 {
+pub unsafe fn HandleLinkConnection() -> u8 {
     let mut main1Failed: u32 = 0;
     let mut main2Failed: u32 = 0;
     if gWirelessCommType == 0 {
-        gLinkStatus = LinkMain1(
+        gLinkStatus.set(LinkMain1(
             &raw mut gShouldAdvanceLinkState,
             gSendCmd.as_mut_ptr(),
             gRecvCmds.as_mut_ptr(),
-        );
+        ));
         LinkMain2(&raw mut gMain.heldKeys);
-        if gLinkStatus & LINK_STAT_RECEIVED_NOTHING != 0 && IsSendingKeysOverCable() == TRUE as u32
+        if gLinkStatus.get() & LINK_STAT_RECEIVED_NOTHING != 0
+            && IsSendingKeysOverCable() == TRUE as u32
         {
             return TRUE;
         }
     } else {
         main1Failed = RfuMain1();
         main2Failed = RfuMain2();
-        if IsSendingKeysOverCable() == TRUE as u32 {
-            if main1Failed == TRUE as u32 || IsRfuRecvQueueEmpty() != 0 || main2Failed != 0 {
-                return TRUE;
-            }
+        if IsSendingKeysOverCable() == TRUE as u32
+            && (main1Failed == TRUE as u32 || IsRfuRecvQueueEmpty() != 0 || main2Failed != 0)
+        {
+            return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWirelessCommType1() {
+pub unsafe fn SetWirelessCommType1() {
     if gReceivedRemoteLinkPlayers == 0 {
         gWirelessCommType = 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetWirelessCommType0_Internal() {
+unsafe fn SetWirelessCommType0_Internal() {
     if gReceivedRemoteLinkPlayers == 0 {
         gWirelessCommType = 0;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWirelessCommType0() {
+pub unsafe fn SetWirelessCommType0() {
     if gReceivedRemoteLinkPlayers == 0 {
         gWirelessCommType = 0;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLinkRecvQueueLength() -> u32 {
+pub unsafe fn GetLinkRecvQueueLength() -> u32 {
     if gWirelessCommType != 0 {
         return GetRfuRecvQueueLength();
     }
-    return gLink.recvQueue.count as u32;
+    gLink.recvQueue.count as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsLinkRecvQueueAtOverworldMax() -> u32 {
+pub unsafe fn IsLinkRecvQueueAtOverworldMax() -> u32 {
     if GetLinkRecvQueueLength() >= OVERWORLD_RECV_QUEUE_MAX {
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetWirelessCommType() -> u8 {
-    return gWirelessCommType;
+pub unsafe fn GetWirelessCommType() -> u8 {
+    gWirelessCommType
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConvertLinkPlayerName(player: *mut LinkPlayer) {
+pub unsafe fn ConvertLinkPlayerName(player: *mut LinkPlayer) {
     (*player).progressFlagsCopy = (*player).progressFlags;
     ConvertInternationalString((*player).name.as_mut_ptr(), (*player).language as u8);
 }
-pub(crate) unsafe extern "C" fn DisableSerial() {
+unsafe fn DisableSerial() {
     DisableInterrupts(192);
-    volatile_write(67109160 as usize as *mut u16, SIO_MULTI_MODE);
-    volatile_write(67109134 as usize as *mut u16, 0);
-    volatile_write(67109378 as usize as *mut u16, 192);
-    volatile_write(67109162 as usize as *mut u16, 0);
-    volatile_write(67109152 as usize as *mut u64, 0);
+    volatile_write(67109160_usize as *mut u16, SIO_MULTI_MODE);
+    volatile_write(67109134_usize as *mut u16, 0);
+    volatile_write(67109378_usize as *mut u16, 192);
+    volatile_write(67109162_usize as *mut u16, 0);
+    volatile_write(67109152_usize as *mut u64, 0);
     {
         {
             let mut tmp: u32 = 0;
@@ -2010,16 +1858,16 @@ pub(crate) unsafe extern "C" fn DisableSerial() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn EnableSerial() {
+unsafe fn EnableSerial() {
     DisableInterrupts(192);
-    volatile_write(67109172 as usize as *mut u16, 0);
-    volatile_write(67109160 as usize as *mut u16, SIO_MULTI_MODE);
+    volatile_write(67109172_usize as *mut u16, 0);
+    volatile_write(67109160_usize as *mut u16, SIO_MULTI_MODE);
     volatile_write(
-        67109160 as usize as *mut u16,
-        (67109160 as usize as *mut u16).read_volatile() | 16387,
+        67109160_usize as *mut u16,
+        (67109160_usize as *mut u16).read_volatile() | 16387,
     );
     EnableInterrupts(INTR_FLAG_SERIAL);
-    volatile_write(67109162 as usize as *mut u16, 0);
+    volatile_write(67109162_usize as *mut u16, 0);
     {
         {
             let mut tmp: u32 = 0;
@@ -2031,38 +1879,32 @@ pub(crate) unsafe extern "C" fn EnableSerial() {
             );
         }
     }
-    sNumVBlanksWithoutSerialIntr = 0;
-    sSendNonzeroCheck = 0;
-    sRecvNonzeroCheck = 0;
-    sChecksumAvailable = 0;
-    sHandshakePlayerCount = 0;
-    gLastSendQueueCount = 0;
-    gLastRecvQueueCount = 0;
+    sNumVBlanksWithoutSerialIntr.set(0);
+    sSendNonzeroCheck.set(0);
+    sRecvNonzeroCheck.set(0);
+    sChecksumAvailable.set(0);
+    sHandshakePlayerCount.set(0);
+    gLastSendQueueCount.set(0);
+    gLastRecvQueueCount.set(0);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetSerial() {
+pub unsafe fn ResetSerial() {
     EnableSerial();
     DisableSerial();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LinkMain1(
+pub unsafe fn LinkMain1(
     shouldAdvanceLinkState: *mut u8,
     sendCmd: *mut u16,
     recvCmds: *mut CArray<u16, 8>,
 ) -> u32 {
-    let mut retVal: u32 = 0;
-    let mut retVal2: u32 = 0;
     'l1: {
         let sw1: u8 = gLink.state;
         let mut fall = false;
         if sw1 == LINK_STATE_START0 {
-            fall = true;
             DisableSerial();
             gLink.state = 1;
             break 'l1;
         }
         if sw1 == LINK_STATE_START1 {
-            fall = true;
             if *shouldAdvanceLinkState == 1 {
                 EnableSerial();
                 gLink.state = 2;
@@ -2070,7 +1912,6 @@ pub unsafe extern "C" fn LinkMain1(
             break 'l1;
         }
         if sw1 == LINK_STATE_HANDSHAKE {
-            fall = true;
             match *shouldAdvanceLinkState {
                 1 => {
                     if gLink.isMaster == LINK_MASTER && gLink.playerCount > 1 {
@@ -2079,7 +1920,7 @@ pub unsafe extern "C" fn LinkMain1(
                 }
                 2 => {
                     gLink.state = LINK_STATE_START0;
-                    volatile_write(67109162 as usize as *mut u16, 0);
+                    volatile_write(67109162_usize as *mut u16, 0);
                 }
                 _ => {
                     CheckMasterOrSlave();
@@ -2093,24 +1934,23 @@ pub unsafe extern "C" fn LinkMain1(
             gLink.state = LINK_STATE_CONN_ESTABLISHED;
         }
         if fall || sw1 == LINK_STATE_CONN_ESTABLISHED {
-            fall = true;
             EnqueueSendCmd(sendCmd);
             DequeueRecvCmds(recvCmds);
             break 'l1;
         }
     }
     *shouldAdvanceLinkState = 0;
-    retVal = gLink.localId as u32;
+    let mut retVal: u32 = gLink.localId as u32;
     retVal |= (gLink.playerCount as u32) << 2;
     if gLink.isMaster == LINK_MASTER {
         retVal |= LINK_STAT_MASTER;
     }
     {
-        let mut receivedNothing: u32 = (gLink.receivedNothing as u32) << 8;
-        let mut link_field_F: u32 = (gLink.link_field_F as u32) << 9;
-        let mut hardwareError: u32 = (gLink.hardwareError as u32) << 12;
-        let mut badChecksum: u32 = (gLink.badChecksum as u32) << 13;
-        let mut queueFull: u32 = (gLink.queueFull as u32) << 14;
+        let receivedNothing: u32 = (gLink.receivedNothing as u32) << 8;
+        let link_field_F: u32 = (gLink.link_field_F as u32) << 9;
+        let hardwareError: u32 = (gLink.hardwareError as u32) << 12;
+        let badChecksum: u32 = (gLink.badChecksum as u32) << 13;
+        let queueFull: u32 = (gLink.queueFull as u32) << 14;
         let mut val: u32 = 0;
         if gLink.state == LINK_STATE_CONN_ESTABLISHED {
             val = LINK_STAT_CONN_ESTABLISHED;
@@ -2136,81 +1976,67 @@ pub unsafe extern "C" fn LinkMain1(
     if gLink.localId >= MAX_LINK_PLAYERS as u8 {
         retVal |= LINK_STAT_ERROR_INVALID_ID;
     }
-    retVal2 = retVal;
+    let mut retVal2: u32 = retVal;
     if gLink.lag == LAG_SLAVE {
         retVal2 |= LINK_STAT_ERROR_LAG_SLAVE;
     }
-    return retVal2;
+    retVal2
 }
-pub(crate) unsafe extern "C" fn CheckMasterOrSlave() {
-    let mut terminals: u32 = 0;
-    terminals = (REG_ADDR_SIOCNT as usize as *mut u32).read_volatile() & 12;
+unsafe fn CheckMasterOrSlave() {
+    let terminals: u32 = (REG_ADDR_SIOCNT as usize as *mut u32).read_volatile() & 12;
     if terminals == SIO_MULTI_SD as u32 && gLink.localId == 0 {
         gLink.isMaster = LINK_MASTER;
     } else {
         gLink.isMaster = LINK_SLAVE;
     }
 }
-pub(crate) unsafe extern "C" fn InitTimer() {
+unsafe fn InitTimer() {
     if gLink.isMaster != 0 {
-        volatile_write(67109132 as usize as *mut u16, 65339);
-        volatile_write(67109134 as usize as *mut u16, 65);
+        volatile_write(67109132_usize as *mut u16, 65339);
+        volatile_write(67109134_usize as *mut u16, 65);
         EnableInterrupts(INTR_FLAG_TIMER3);
     }
 }
-pub(crate) unsafe extern "C" fn EnqueueSendCmd(mut sendCmd: *mut u16) {
-    let mut i: u8 = 0;
+unsafe fn EnqueueSendCmd(mut sendCmd: *mut u16) {
     let mut offset: u8 = 0;
-    gLinkSavedIme = (67109384 as usize as *mut u16).read_volatile();
-    volatile_write(67109384 as usize as *mut u16, 0);
+    gLinkSavedIme.set((67109384_usize as *mut u16).read_volatile());
+    volatile_write(67109384_usize as *mut u16, 0);
     if gLink.sendQueue.count < QUEUE_CAPACITY {
         offset = gLink.sendQueue.pos + gLink.sendQueue.count;
         if offset >= QUEUE_CAPACITY {
             offset -= QUEUE_CAPACITY;
         }
-        i = 0;
-        while i < CMD_LENGTH {
-            sSendNonzeroCheck |= *sendCmd;
+        for i in 0..CMD_LENGTH {
+            sSendNonzeroCheck.set(sSendNonzeroCheck.get() | (*sendCmd));
             gLink.sendQueue.data[i][offset] = *sendCmd;
             *sendCmd = 0;
             sendCmd = sendCmd.at(1);
-            i += 1;
         }
     } else {
         gLink.queueFull = QUEUE_FULL_SEND;
     }
-    if sSendNonzeroCheck != 0 {
+    if sSendNonzeroCheck.get() != 0 {
         gLink.sendQueue.count += 1;
-        sSendNonzeroCheck = 0;
+        sSendNonzeroCheck.set(0);
     }
-    volatile_write(67109384 as usize as *mut u16, gLinkSavedIme);
-    gLastSendQueueCount = gLink.sendQueue.count;
+    volatile_write(67109384_usize as *mut u16, gLinkSavedIme.get());
+    gLastSendQueueCount.set(gLink.sendQueue.count);
 }
-pub(crate) unsafe extern "C" fn DequeueRecvCmds(mut recvCmds: *mut CArray<u16, 8>) {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
-    gLinkSavedIme = (67109384 as usize as *mut u16).read_volatile();
-    volatile_write(67109384 as usize as *mut u16, 0);
+unsafe fn DequeueRecvCmds(recvCmds: *mut CArray<u16, 8>) {
+    gLinkSavedIme.set((67109384_usize as *mut u16).read_volatile());
+    volatile_write(67109384_usize as *mut u16, 0);
     if gLink.recvQueue.count == 0 {
-        i = 0;
-        while i < gLink.playerCount {
-            j = 0;
-            while j < CMD_LENGTH {
+        for i in 0..gLink.playerCount {
+            for j in 0..CMD_LENGTH {
                 (*recvCmds.at(i))[j] = 0;
-                j += 1;
             }
-            i += 1;
         }
         gLink.receivedNothing = TRUE;
     } else {
-        i = 0;
-        while i < gLink.playerCount {
-            j = 0;
-            while j < CMD_LENGTH {
+        for i in 0..gLink.playerCount {
+            for j in 0..CMD_LENGTH {
                 (*recvCmds.at(i))[j] = gLink.recvQueue.data[i][j][gLink.recvQueue.pos];
-                j += 1;
             }
-            i += 1;
         }
         gLink.recvQueue.count -= 1;
         gLink.recvQueue.pos += 1;
@@ -2219,10 +2045,10 @@ pub(crate) unsafe extern "C" fn DequeueRecvCmds(mut recvCmds: *mut CArray<u16, 8
         }
         gLink.receivedNothing = FALSE;
     }
-    volatile_write(67109384 as usize as *mut u16, gLinkSavedIme);
+    volatile_write(67109384_usize as *mut u16, gLinkSavedIme.get());
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LinkVSync() {
+pub unsafe fn LinkVSync() {
     if gLink.isMaster != 0 {
         match gLink.state {
             LINK_STATE_CONN_ESTABLISHED => {
@@ -2242,19 +2068,18 @@ pub unsafe extern "C" fn LinkVSync() {
             }
             _ => {}
         }
-    } else if gLink.state == LINK_STATE_CONN_ESTABLISHED || gLink.state == LINK_STATE_HANDSHAKE {
-        if ({
-            sNumVBlanksWithoutSerialIntr += 1;
-            sNumVBlanksWithoutSerialIntr
+    } else if (gLink.state == LINK_STATE_CONN_ESTABLISHED || gLink.state == LINK_STATE_HANDSHAKE)
+        && ({
+            sNumVBlanksWithoutSerialIntr.set(sNumVBlanksWithoutSerialIntr.get() + 1);
+            sNumVBlanksWithoutSerialIntr.get()
         }) > 10
-        {
-            if gLink.state == LINK_STATE_CONN_ESTABLISHED {
-                gLink.lag = LAG_SLAVE;
-            }
-            if gLink.state == LINK_STATE_HANDSHAKE {
-                gLink.playerCount = 0;
-                gLink.link_field_F = FALSE;
-            }
+    {
+        if gLink.state == LINK_STATE_CONN_ESTABLISHED {
+            gLink.lag = LAG_SLAVE;
+        }
+        if gLink.state == LINK_STATE_HANDSHAKE {
+            gLink.playerCount = 0;
+            gLink.link_field_F = FALSE;
         }
     }
 }
@@ -2263,62 +2088,54 @@ pub unsafe extern "C" fn Timer3Intr() {
     StopTimer();
     StartTransfer();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SerialCB() {
-    gLink.localId = (*(67109160 as usize as *mut SioMultiCnt)).id() as u8;
+pub unsafe fn SerialCB() {
+    gLink.localId = (*(67109160_usize as *mut SioMultiCnt)).id() as u8;
     match gLink.state {
         LINK_STATE_CONN_ESTABLISHED => {
-            gLink.hardwareError = (*(67109160 as usize as *mut SioMultiCnt)).error() as u8;
+            gLink.hardwareError = (*(67109160_usize as *mut SioMultiCnt)).error() as u8;
             DoRecv();
             DoSend();
             SendRecvDone();
         }
-        LINK_STATE_HANDSHAKE => {
-            if DoHandshake() != 0 {
-                if gLink.isMaster != 0 {
-                    gLink.state = LINK_STATE_INIT_TIMER;
-                    gLink.serialIntrCounter = 8;
-                } else {
-                    gLink.state = LINK_STATE_CONN_ESTABLISHED;
-                }
+        LINK_STATE_HANDSHAKE if DoHandshake() != 0 => {
+            if gLink.isMaster != 0 {
+                gLink.state = LINK_STATE_INIT_TIMER;
+                gLink.serialIntrCounter = 8;
+            } else {
+                gLink.state = LINK_STATE_CONN_ESTABLISHED;
             }
         }
         _ => {}
     }
     gLink.serialIntrCounter += 1;
-    sNumVBlanksWithoutSerialIntr = 0;
+    sNumVBlanksWithoutSerialIntr.set(0);
     if gLink.serialIntrCounter == 8 {
-        gLastRecvQueueCount = gLink.recvQueue.count;
+        gLastRecvQueueCount.set(gLink.recvQueue.count);
     }
 }
-pub(crate) unsafe extern "C" fn StartTransfer() {
+unsafe fn StartTransfer() {
     volatile_write(
-        67109160 as usize as *mut u16,
-        (67109160 as usize as *mut u16).read_volatile() | SIO_START,
+        67109160_usize as *mut u16,
+        (67109160_usize as *mut u16).read_volatile() | SIO_START,
     );
 }
-pub(crate) unsafe extern "C" fn DoHandshake() -> u8 {
-    let mut i: u8 = 0;
+unsafe fn DoHandshake() -> u8 {
     let mut playerCount: u8 = 0;
-    let mut minRecv: u16 = 0;
-    let mut recvSiomlt: u64 = 0;
-    playerCount = 0;
-    minRecv = 0xFFFF;
+    let mut minRecv: u16 = 0xFFFF;
     if gLink.handshakeAsMaster == TRUE {
-        volatile_write(67109162 as usize as *mut u16, MASTER_HANDSHAKE);
+        volatile_write(67109162_usize as *mut u16, MASTER_HANDSHAKE);
     } else {
-        volatile_write(67109162 as usize as *mut u16, SLAVE_HANDSHAKE);
+        volatile_write(67109162_usize as *mut u16, SLAVE_HANDSHAKE);
     }
-    recvSiomlt = (67109152 as usize as *mut u64).read_volatile();
+    let mut recvSiomlt: u64 = (67109152_usize as *mut u64).read_volatile();
     memcpy(
         gLink.handshakeBuffer.as_mut_ptr() as *mut u8,
         &raw mut recvSiomlt as *mut u8,
         8,
     );
-    volatile_write(67109152 as usize as *mut u64, 0);
+    volatile_write(67109152_usize as *mut u64, 0);
     gLink.handshakeAsMaster = FALSE;
-    i = 0;
-    while i < MAX_LINK_PLAYERS as u8 {
+    for i in 0..(MAX_LINK_PLAYERS as u8) {
         if gLink.handshakeBuffer[i] as i32 & -4 == SLAVE_HANDSHAKE as i32
             || gLink.handshakeBuffer[i] == MASTER_HANDSHAKE
         {
@@ -2332,11 +2149,10 @@ pub(crate) unsafe extern "C" fn DoHandshake() -> u8 {
             }
             break;
         }
-        i += 1;
     }
     gLink.playerCount = playerCount;
     if gLink.playerCount > 1
-        && gLink.playerCount == sHandshakePlayerCount
+        && gLink.playerCount == sHandshakePlayerCount.get()
         && gLink.handshakeBuffer[0] == MASTER_HANDSHAKE
     {
         return TRUE;
@@ -2346,14 +2162,14 @@ pub(crate) unsafe extern "C" fn DoHandshake() -> u8 {
     } else {
         gLink.link_field_F = 0;
     }
-    sHandshakePlayerCount = gLink.playerCount;
-    return FALSE;
+    sHandshakePlayerCount.set(gLink.playerCount);
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DoRecv() {
+unsafe fn DoRecv() {
     let mut recv: CArray<u16, 4> = zeroed();
     let mut i: u8 = 0;
     let mut index: u8 = 0;
-    let mut recvSiomlt: u64 = (67109152 as usize as *mut u64).read_volatile();
+    let mut recvSiomlt: u64 = (67109152_usize as *mut u64).read_volatile();
     memcpy(
         recv.as_mut_ptr() as *mut u8,
         &raw mut recvSiomlt as *mut u8,
@@ -2362,13 +2178,13 @@ pub(crate) unsafe extern "C" fn DoRecv() {
     if gLink.sendCmdIndex == 0 {
         i = 0;
         while i < gLink.playerCount {
-            if gLink.checksum != recv[i] && sChecksumAvailable != 0 {
+            if gLink.checksum != recv[i] && sChecksumAvailable.get() != 0 {
                 gLink.badChecksum = TRUE;
             }
             i += 1;
         }
         gLink.checksum = 0;
-        sChecksumAvailable = TRUE;
+        sChecksumAvailable.set(TRUE);
     } else {
         index = gLink.recvQueue.pos + gLink.recvQueue.count;
         if index >= QUEUE_CAPACITY {
@@ -2378,7 +2194,7 @@ pub(crate) unsafe extern "C" fn DoRecv() {
             i = 0;
             while i < gLink.playerCount {
                 gLink.checksum += recv[i];
-                sRecvNonzeroCheck |= recv[i];
+                sRecvNonzeroCheck.set(sRecvNonzeroCheck.get() | (recv[i]));
                 gLink.recvQueue.data[i][gLink.recvCmdIndex][index] = recv[i];
                 i += 1;
             }
@@ -2386,96 +2202,79 @@ pub(crate) unsafe extern "C" fn DoRecv() {
             gLink.queueFull = QUEUE_FULL_RECV;
         }
         gLink.recvCmdIndex += 1;
-        if gLink.recvCmdIndex == CMD_LENGTH && sRecvNonzeroCheck != 0 {
+        if gLink.recvCmdIndex == CMD_LENGTH && sRecvNonzeroCheck.get() != 0 {
             gLink.recvQueue.count += 1;
-            sRecvNonzeroCheck = 0;
+            sRecvNonzeroCheck.set(0);
         }
     }
 }
-pub(crate) unsafe extern "C" fn DoSend() {
+unsafe fn DoSend() {
     if gLink.sendCmdIndex == CMD_LENGTH {
-        volatile_write(67109162 as usize as *mut u16, gLink.checksum);
-        if sSendBufferEmpty == 0 {
+        volatile_write(67109162_usize as *mut u16, gLink.checksum);
+        if sSendBufferEmpty.get() == 0 {
             gLink.sendQueue.count -= 1;
             gLink.sendQueue.pos += 1;
             if gLink.sendQueue.pos >= QUEUE_CAPACITY {
                 gLink.sendQueue.pos = 0;
             }
         } else {
-            sSendBufferEmpty = FALSE;
+            sSendBufferEmpty.set(FALSE);
         }
     } else {
-        if sSendBufferEmpty == 0 && gLink.sendQueue.count == 0 {
-            sSendBufferEmpty = TRUE;
+        if sSendBufferEmpty.get() == 0 && gLink.sendQueue.count == 0 {
+            sSendBufferEmpty.set(TRUE);
         }
-        if sSendBufferEmpty != 0 {
-            volatile_write(67109162 as usize as *mut u16, 0);
+        if sSendBufferEmpty.get() != 0 {
+            volatile_write(67109162_usize as *mut u16, 0);
         } else {
             volatile_write(
-                67109162 as usize as *mut u16,
+                67109162_usize as *mut u16,
                 gLink.sendQueue.data[gLink.sendCmdIndex][gLink.sendQueue.pos],
             );
         }
         gLink.sendCmdIndex += 1;
     }
 }
-pub(crate) unsafe extern "C" fn StopTimer() {
+unsafe fn StopTimer() {
     if gLink.isMaster != 0 {
         volatile_write(
-            67109134 as usize as *mut u16,
-            (67109134 as usize as *mut u16).read_volatile() & 65407,
+            67109134_usize as *mut u16,
+            (67109134_usize as *mut u16).read_volatile() & 65407,
         );
-        volatile_write(67109132 as usize as *mut u16, 65339);
+        volatile_write(67109132_usize as *mut u16, 65339);
     }
 }
-pub(crate) unsafe extern "C" fn SendRecvDone() {
+unsafe fn SendRecvDone() {
     if gLink.recvCmdIndex == CMD_LENGTH {
         gLink.sendCmdIndex = 0;
         gLink.recvCmdIndex = 0;
     } else if gLink.isMaster != 0 {
         volatile_write(
-            67109134 as usize as *mut u16,
-            (67109134 as usize as *mut u16).read_volatile() | TIMER_ENABLE,
+            67109134_usize as *mut u16,
+            (67109134_usize as *mut u16).read_volatile() | TIMER_ENABLE,
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetSendBuffer() {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
+pub unsafe fn ResetSendBuffer() {
     gLink.sendQueue.count = 0;
     gLink.sendQueue.pos = 0;
-    i = 0;
-    while i < CMD_LENGTH {
-        j = 0;
-        while j < QUEUE_CAPACITY {
+    for i in 0..CMD_LENGTH {
+        for j in 0..QUEUE_CAPACITY {
             gLink.sendQueue.data[i][j] = LINKCMD_NONE;
-            j += 1;
         }
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetRecvBuffer() {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
-    let mut k: u8 = 0;
+pub unsafe fn ResetRecvBuffer() {
     gLink.recvQueue.count = 0;
     gLink.recvQueue.pos = 0;
-    i = 0;
-    while i < MAX_LINK_PLAYERS as u8 {
-        j = 0;
-        while j < CMD_LENGTH {
-            k = 0;
-            while k < QUEUE_CAPACITY {
+    for i in 0..(MAX_LINK_PLAYERS as u8) {
+        for j in 0..CMD_LENGTH {
+            for k in 0..QUEUE_CAPACITY {
                 gLink.recvQueue.data[i][j][k] = LINKCMD_NONE;
-                k += 1;
             }
-            j += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetBackdropFromColor(color: u16) {
+pub(crate) unsafe fn SetBackdropFromColor(color: u16) {
     FillPalette(color, 0, 2);
 }

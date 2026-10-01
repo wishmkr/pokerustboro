@@ -9,7 +9,7 @@ use core::mem::{offset_of, size_of};
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct CameraObject {
-    pub callback: Option<unsafe extern "C" fn(*mut CameraObject)>,
+    pub callback: Option<unsafe fn(*mut CameraObject)>,
     pub spriteId: u32,
     pub movementSpeedX: i32,
     pub movementSpeedY: i32,

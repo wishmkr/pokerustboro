@@ -9,8 +9,10 @@ GPIOPortData = 0x080000C4;
 GPIOPortDirection = 0x080000C6;
 GPIOPortReadEnable = 0x080000C8;
 
+/* (used by the C-style Rust in rust-c-style/) */
 gNumMusicPlayers = 4;
 gMaxLines = 0;
+
 
 MEMORY
 {
@@ -91,9 +93,9 @@ SECTIONS {
     multiboot_data :
     ALIGN(4)
     {
-        data/multiboot_ereader.o(.rodata);
-        data/multiboot_berry_glitch_fix.o(.rodata);
-        data/multiboot_pokemon_colosseum.o(.rodata);
+        data/multiboot_ereader.[o](.rodata);
+        data/multiboot_berry_glitch_fix.[o](.rodata);
+        data/multiboot_pokemon_colosseum.[o](.rodata);
     } > ROM =0
 
     anim_mon_front_pic_data :

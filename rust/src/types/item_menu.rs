@@ -9,7 +9,7 @@ use core::mem::{offset_of, size_of};
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct BagPosition {
-    pub exitCallback: Option<unsafe extern "C" fn()>,
+    pub exitCallback: Option<unsafe fn()>,
     pub location: u8,
     pub pocket: u8,
     pub pocketSwitchArrowPos: u16,
@@ -23,7 +23,7 @@ unsafe impl Sync for BagPosition {}
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct BagMenu {
-    pub newScreenCallback: Option<unsafe extern "C" fn()>,
+    pub newScreenCallback: Option<unsafe fn()>,
     pub tilemapBuffer: CArray<u8, 2048>,
     pub spriteIds: CArray<u8, 12>,
     pub windowIds: CArray<u8, 10>,

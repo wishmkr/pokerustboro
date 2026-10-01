@@ -61,37 +61,68 @@ const T_INCOMING_POPUP: usize = 3;
 const T_PRINT_TIMER: usize = 4;
 
 #[unsafe(link_section = "ewram_data")]
-static mut POPUP_TASK_ID: u8 = 0;
+static POPUP_TASK_ID: crate::global::Global<u8> = crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static gMapHeader: u8;
-    fn ClearStdWindowAndFrame(window_id: u8, copy_to_vram: u8);
-    fn GetMapNamePopUpWindowId() -> u8;
-    fn AddMapNamePopUpWindow() -> u8;
-    fn RemoveMapNamePopUpWindow();
-    fn CurrentBattlePyramidLocation() -> u8;
-    fn GetMapName(dest: *mut u8, region_map_id: u16, pad_length: u16) -> *mut u8;
-    fn LoadPalette(src: *const core::ffi::c_void, offset: u16, size: u16);
+/// `ClearStdWindowAndFrame` with this module's view of its types.
+#[inline]
+unsafe fn ClearStdWindowAndFrame(a0: u8, a1: u8) {
+    unsafe {
+        crate::menu::ClearStdWindowAndFrame(a0, a1);
+    }
+}
+/// `GetMapNamePopUpWindowId` with this module's view of its types.
+#[inline]
+unsafe fn GetMapNamePopUpWindowId() -> u8 {
+    crate::menu::GetMapNamePopUpWindowId()
+}
+/// `AddMapNamePopUpWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddMapNamePopUpWindow() -> u8 {
+    unsafe { crate::menu::AddMapNamePopUpWindow() }
+}
+/// `RemoveMapNamePopUpWindow` with this module's view of its types.
+#[inline]
+unsafe fn RemoveMapNamePopUpWindow() {
+    unsafe {
+        crate::menu::RemoveMapNamePopUpWindow();
+    }
+}
+/// `CurrentBattlePyramidLocation` with this module's view of its types.
+#[inline]
+unsafe fn CurrentBattlePyramidLocation() -> u8 {
+    unsafe { crate::battle_pyramid::CurrentBattlePyramidLocation() }
+}
+/// `GetMapName` with this module's view of its types.
+#[inline]
+unsafe fn GetMapName(a0: *mut u8, a1: u16, a2: u16) -> *mut u8 {
+    unsafe { crate::region_map::GetMapName(a0 as _, a1, a2) as *mut u8 }
+}
+/// `LoadPalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadPalette(a0: *const core::ffi::c_void, a1: u16, a2: u16) {
+    unsafe {
+        crate::palette::LoadPalette(a0 as _, a1, a2);
+    }
 }
 
 #[inline]
 fn popup_task() -> u8 {
-    unsafe { (&raw const POPUP_TASK_ID).read() }
+    unsafe { (POPUP_TASK_ID.as_ptr().cast_const()).read() }
 }
 
 #[inline]
 unsafe fn map_header(offset: usize) -> *const u8 {
-    unsafe { (&raw const gMapHeader).add(offset) }
+    unsafe { (&raw const (*(&raw const crate::fieldmap::gMapHeader).cast::<u8>())).add(offset) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowMapNamePopup() {
+pub unsafe fn ShowMapNamePopup() {
     if unsafe { FlagGet(FLAG_HIDE_MAP_NAME_POPUP) } == 1 {
         return;
     }
-    if unsafe { FuncIsActiveTask(task_map_name_popup_window) } == 0 {
+    if FuncIsActiveTask(task_map_name_popup_window) == 0 {
         let task_id = unsafe { CreateTask(task_map_name_popup_window, 90) };
-        unsafe { (&raw mut POPUP_TASK_ID).write(task_id) };
+        unsafe { (POPUP_TASK_ID.as_ptr()).write(task_id) };
         unsafe { SetGpuReg(REG_OFFSET_BG0VOFS, POPUP_OFFSCREEN_Y as u16) };
         unsafe { set_task_data(task_id, T_STATE, STATE_PRINT) };
         unsafe { set_task_data(task_id, T_Y_OFFSET, POPUP_OFFSCREEN_Y) };
@@ -105,7 +136,7 @@ pub unsafe extern "C" fn ShowMapNamePopup() {
     }
 }
 
-unsafe extern "C" fn task_map_name_popup_window(task_id: u8) {
+unsafe fn task_map_name_popup_window(task_id: u8) {
     let get = |i| unsafe { task_data(task_id, i) };
     let put = |i, v| unsafe { set_task_data(task_id, i, v) };
 
@@ -166,8 +197,8 @@ unsafe extern "C" fn task_map_name_popup_window(task_id: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HideMapNamePopUpWindow() {
-    if unsafe { FuncIsActiveTask(task_map_name_popup_window) } != 0 {
+pub unsafe fn HideMapNamePopUpWindow() {
+    if FuncIsActiveTask(task_map_name_popup_window) != 0 {
         unsafe { ClearStdWindowAndFrame(GetMapNamePopUpWindowId(), 1) };
         unsafe { RemoveMapNamePopUpWindow() };
         unsafe { SetGpuReg_ForcedBlank(REG_OFFSET_BG0VOFS, 0) };
@@ -184,7 +215,7 @@ unsafe fn show_map_name_popup_window() {
         let index = if layout == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_TOP {
             FRONTIER_STAGES_PER_CHALLENGE
         } else {
-            let sb2 = unsafe { (&raw const gSaveBlock2Ptr).read() };
+            let sb2 = unsafe { (&raw const gSaveBlock2Ptr).read().cast::<u8>() };
             usize::from(unsafe { sb2.add(SB2_CUR_CHALLENGE_BATTLE_NUM).cast::<u16>().read() })
         };
         let source = unsafe { sBattlePyramid_MapHeaderStrings.as_ptr().add(index).read() }.0;
@@ -226,14 +257,7 @@ const TILE_RIGHT_EDGE_BOT: u16 = 0x22e;
 const TILE_BOT_EDGE_START: u16 = 0x22f;
 const TILE_BOT_EDGE_END: u16 = 0x23a;
 
-unsafe extern "C" fn draw_map_name_popup_frame(
-    bg: u8,
-    x: u8,
-    y: u8,
-    delta_x: u8,
-    delta_y: u8,
-    _unused: u8,
-) {
+unsafe fn draw_map_name_popup_frame(bg: u8, x: u8, y: u8, delta_x: u8, delta_y: u8, _unused: u8) {
     let tile =
         |tile: u16, tx: u8, ty: u8| unsafe { FillBgTilemapBufferRect(bg, tile, tx, ty, 1, 1, 14) };
 

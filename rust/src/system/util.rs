@@ -1,8 +1,7 @@
 use crate::ffi::{
     CpuSet, CreateSprite, DISPLAY_HEIGHT, DISPLAY_WIDTH, SPRITE_CALLBACK_OFFSET, SPRITE_FLAGS_BYTE,
     SPRITE_INVISIBLE_BIT, SpriteCallback, SpriteCallbackDummy, SpriteTemplate, gDummyOamData,
-    gDummySpriteAffineAnimTable, gDummySpriteAnimTable, gPlttBufferFaded, gPlttBufferUnfaded, rgb,
-    rgb_blue, rgb_green, rgb_red, sprite,
+    gDummySpriteAffineAnimTable, gDummySpriteAnimTable, rgb, rgb_blue, rgb_green, rgb_red, sprite,
 };
 use crate::incbin;
 use core::ffi::c_int;
@@ -22,14 +21,14 @@ unsafe fn cpu_copy32(src: *const u8, dest: *mut u8, size: u32) {
 }
 
 #[unsafe(no_mangle)]
-pub static gBitTable: [u32; 32] = {
+pub static gBitTable: crate::c::CArray<u32, 32> = {
     let mut table = [0u32; 32];
     let mut i = 0;
     while i < 32 {
         table[i] = 1u32 << i;
         i += 1;
     }
-    table
+    crate::c::CArray(table)
 };
 
 incbin!(
@@ -37,8 +36,12 @@ incbin!(
     "../../../build/assets/graphics/interface/blank.png.4bpp"
 );
 
-unsafe extern "C" {
-    fn BgAffineSet(src: *const BgAffineSrcData, dest: *mut u8, count: i32);
+/// `BgAffineSet` with this module's view of its types.
+#[inline]
+unsafe fn BgAffineSet(a0: *const BgAffineSrcData, a1: *mut u8, a2: i32) {
+    unsafe {
+        crate::syscall::BgAffineSet(a0 as _, a1 as _, a2);
+    }
 }
 
 static INVISIBLE_SPRITE_TEMPLATE: SpriteTemplate = SpriteTemplate {
@@ -71,7 +74,7 @@ pub struct BgAffineSrcData {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateInvisibleSpriteWithCallback(callback: SpriteCallback) -> u8 {
+pub unsafe fn CreateInvisibleSpriteWithCallback(callback: SpriteCallback) -> u8 {
     let sprite_id = unsafe {
         CreateSprite(
             &raw const INVISIBLE_SPRITE_TEMPLATE,
@@ -94,13 +97,13 @@ pub unsafe extern "C" fn CreateInvisibleSpriteWithCallback(callback: SpriteCallb
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StoreWordInTwoHalfwords(halfwords: *mut u16, word: u32) {
+pub unsafe fn StoreWordInTwoHalfwords(halfwords: *mut u16, word: u32) {
     unsafe { halfwords.write(word as u16) };
     unsafe { halfwords.add(1).write((word >> 16) as u16) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadWordFromTwoHalfwords(halfwords: *mut u16, word: *mut u32) {
+pub unsafe fn LoadWordFromTwoHalfwords(halfwords: *mut u16, word: *mut u32) {
     // The high half is read back signed, matching the original cast.
     let low = u32::from(unsafe { halfwords.read() });
     let high = (i32::from(unsafe { halfwords.add(1).read() } as i16) << 16) as u32;
@@ -108,7 +111,7 @@ pub unsafe extern "C" fn LoadWordFromTwoHalfwords(halfwords: *mut u16, word: *mu
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBgAffineStruct(
+pub unsafe fn SetBgAffineStruct(
     src: *mut BgAffineSrcData,
     tex_x: u32,
     tex_y: u32,
@@ -130,7 +133,7 @@ pub unsafe extern "C" fn SetBgAffineStruct(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoBgAffineSet(
+pub unsafe fn DoBgAffineSet(
     dest: *mut u8,
     tex_x: u32,
     tex_y: u32,
@@ -154,7 +157,7 @@ pub unsafe extern "C" fn DoBgAffineSet(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopySpriteTiles(
+pub unsafe fn CopySpriteTiles(
     shape: u8,
     size: u8,
     tiles: *mut u8,
@@ -227,7 +230,7 @@ pub unsafe extern "C" fn CopySpriteTiles(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CountTrailingZeroBits(value: u32) -> c_int {
+pub unsafe fn CountTrailingZeroBits(value: u32) -> c_int {
     let mut value = value;
     let mut i = 0i32;
     while i < 32 {
@@ -242,7 +245,7 @@ pub unsafe extern "C" fn CountTrailingZeroBits(value: u32) -> c_int {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CalcCRC16(data: *const u8, length: i32) -> u16 {
+pub unsafe fn CalcCRC16(data: *const u8, length: i32) -> u16 {
     let mut crc = 0x1121u16;
     let mut i = 0i32;
     while i < length {
@@ -262,7 +265,7 @@ pub unsafe extern "C" fn CalcCRC16(data: *const u8, length: i32) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CalcCRC16WithTable(data: *const u8, length: u32) -> u16 {
+pub unsafe fn CalcCRC16WithTable(data: *const u8, length: u32) -> u16 {
     let mut crc = 0x1121u16;
     let mut i = 0u32;
     while i < length {
@@ -275,7 +278,7 @@ pub unsafe extern "C" fn CalcCRC16WithTable(data: *const u8, length: u32) -> u16
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CalcByteArraySum(data: *const u8, length: u32) -> u32 {
+pub unsafe fn CalcByteArraySum(data: *const u8, length: u32) -> u32 {
     let mut sum = 0u32;
     let mut i = 0u32;
     while i < length {
@@ -286,12 +289,7 @@ pub unsafe extern "C" fn CalcByteArraySum(data: *const u8, length: u32) -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BlendPalette(
-    pal_offset: u16,
-    num_entries: u16,
-    coeff: u8,
-    blend_color: u16,
-) {
+pub unsafe fn BlendPalette(pal_offset: u16, num_entries: u16, coeff: u8, blend_color: u16) {
     let target_r = rgb_red(blend_color);
     let target_g = rgb_green(blend_color);
     let target_b = rgb_blue(blend_color);
@@ -300,7 +298,9 @@ pub unsafe extern "C" fn BlendPalette(
     while i < num_entries {
         let index = (i + pal_offset) as usize;
         let color = unsafe {
-            (&raw const gPlttBufferUnfaded)
+            (&raw const (*(&raw const crate::palette::gPlttBufferUnfaded)
+                .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
+                .cast_mut()))
                 .cast::<u16>()
                 .add(index)
                 .read_volatile()
@@ -314,7 +314,9 @@ pub unsafe extern "C" fn BlendPalette(
             b + (((target_b - b) * i32::from(coeff)) >> 4),
         );
         unsafe {
-            (&raw mut gPlttBufferFaded)
+            (&raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+                .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
+                .cast_mut()))
                 .cast::<u16>()
                 .add(index)
                 .write_volatile(blended)

@@ -3,37 +3,108 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::battle_tower::{
+    CalcEmeraldBattleTowerChecksum, EmeraldBattleTowerRecordToRuby, PutNewBattleTowerRecord,
+    RubyBattleTowerRecordToEmerald,
+};
 #[allow(unused_imports)]
 use crate::c::*;
+use crate::cable_club::{CreateTask_EnterCableClubSeat, CreateTask_ReestablishCableClubLink};
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::daycare::InitDaycareMailRecordMixing;
+use crate::event_data::{FlagSet, VarSet};
+use crate::ffi::gSpecialVar_0x8005;
+use crate::field_screen_effect::Task_ReturnToFieldRecordMixing;
+use crate::fldeff_misc::{CreateRecordMixingLights, DestroyRecordMixingLights};
+use crate::international_string_util::PadNameString;
+use crate::item::{AddBagItem, CheckBagHasItem, CheckPCHasItem, GetPocketByItemId};
+use crate::lilycove_lady::{
+    GetLilycoveLadyId, QuizLadyClearQuestionForRecordMix, ResetLilycoveLadyForRecordMix,
+};
+use crate::link::{
+    CheckShouldAdvanceLinkState, ClearLinkCallback_2, GetBlockReceivedStatus, GetLinkPlayerCount,
+    GetLinkPlayerCount_2, GetLinkPlayerCountAsBitFlags, GetLinkPlayerTrainerId, GetMultiplayerId,
+    GetSavedPlayerCount, IsLinkMaster, IsLinkTaskFinished, Link_AnyPartnersPlayingRubyOrSapphire,
+    LinkDummy_Return2, ResetBlockReceivedFlag, SendBlockRequest, SetCloseLinkCallback,
+    SetLinkStandbyCallback, SetLocalLinkPlayerId, gLinkPlayers, gReceivedRemoteLinkPlayers,
+    gWirelessCommType,
+};
+use crate::link::{gBlockRecvBuffer, gBlockSendBuffer};
+use crate::link_rfu_2::Rfu_SetLinkRecovery;
+use crate::load_save::{ClearContinueGameWarpStatus2, SetContinueGameWarpStatusToDynamicWarp};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::mauville_old_man::{
+    ResetMauvilleOldManFlag, SanitizeMauvilleOldManForRuby, SanitizeReceivedEmeraldOldMan,
+    SanitizeReceivedRubyOldMan,
+};
+use crate::menu::{ClearDialogWindowAndFrame, DrawDialogueFrame};
+use crate::mystery_event_script::GetRecordMixingGift;
+use crate::new_game::{CopyTrainerId, GetTrainerId};
+use crate::overworld::SetLinkWaitingForScript;
+use crate::random::{Random2, SeedRng, SeedRng2};
+use crate::save::{Task_LinkFullSave, WriteSaveBlock1Sector, WriteSaveBlock2};
+use crate::script::ScriptContext_Enable;
+use crate::secret_base::{
+    ClearJapaneseSecretBases, ReceiveSecretBasesData, SetPlayerSecretBaseParty,
+};
+use crate::sound::PlaySE;
+use crate::string_util::gStringVar1;
+use crate::string_util::{ConvertIntToDecimalStringN, StringCopy, StringLength};
+use crate::string_util::{ConvertInternationalString, IsStringJapanese, StripExtCtrlCodes};
+use crate::task::DestroyTask;
+use crate::task::gTasks;
+use crate::task::{task_data_ptr, task_get, task_set, task_set_func};
+use crate::tv::{
+    DeactivateAllNormalTVShows, ReceivePokeNewsData, ReceiveTvShowsData,
+    SanitizeTVShowLocationsForRuby, SanitizeTVShowsForRuby,
+};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::CopyWindowToVram;
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+// The C's names for task and sprite data slots.
+const tCounter: usize = 0;
+const tState: usize = 0;
+const tSentRecord: usize = 2;
+const tNumChunksSent: usize = 4;
+const tMultiplayerId: usize = 5;
+const tRecvRecords: usize = 5;
+const tCopyTaskId: usize = 10;
 // Data tables (translate with cdata.py): sPlayerIdxOrders_2Player sPlayerIdxOrders_3Player sPlayerIdxOrders_4Player sDaycareMailSwapIds_3Player sDaycareMailSwapIds_4Player
 
 /// `union PlayerRecord`
@@ -142,7 +213,7 @@ static sPlayerIdxOrders_3Player: Table<CArray<CArray<u8, 3>, 2>> =
 static sPlayerIdxOrders_4Player: Table<CArray<CArray<u8, 4>, 9>> =
     Table((&raw const crate::data::record_mixing::sPlayerIdxOrders_4Player).cast());
 
-pub(crate) static mut sReadyToReceive: u8 = 0;
+pub(crate) static sReadyToReceive: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static mut sSecretBasesSave: *mut SecretBase = null_mut();
 pub(crate) static mut sTvShowsSave: *mut TVShow = null_mut();
 pub(crate) static mut sPokeNewsSave: *mut PokeNews = null_mut();
@@ -153,8 +224,8 @@ pub(crate) static mut sBattleTowerSave: *mut c_void = null_mut();
 pub(crate) static mut sLilycoveLadySave: *mut LilycoveLady = null_mut();
 pub(crate) static mut sApprenticesSave: *mut c_void = null_mut();
 pub(crate) static mut sBattleTowerSave_Duplicate: *mut c_void = null_mut();
-pub(crate) static mut sRecordStructSize: u32 = 0;
-pub(crate) static mut sDaycareMailRandSum: u8 = 0;
+pub(crate) static sRecordStructSize: crate::global::Global<u32> = crate::global::Global::new(0);
+pub(crate) static sDaycareMailRandSum: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static mut sPartnerHallRecords: CArray<*mut PlayerHallRecords, 3> = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sRecordMixMail: RecordMixingDaycareMail = unsafe { zeroed() };
@@ -163,122 +234,52 @@ pub(crate) static mut sReceivedRecords: *mut PlayerRecord = null_mut();
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sSentRecord: *mut PlayerRecord = null_mut();
 
-unsafe extern "C" {
-    static mut gBlockRecvBuffer: CArray<CArray<u16, 128>, 5>;
-    static mut gBlockSendBuffer: CArray<u8, 256>;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSpecialVar_0x8005: u16;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_MixingRecords: CArray<u8, 0>;
-    static gText_RecordMixingComplete: CArray<u8, 0>;
-    static mut gWirelessCommType: u8;
-    fn AddBagItem(a0: u16, a1: u16) -> u8;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn CalcEmeraldBattleTowerChecksum(a0: *mut EmeraldBattleTowerRecord);
-    fn CheckBagHasItem(a0: u16, a1: u16) -> u8;
-    fn CheckPCHasItem(a0: u16, a1: u16) -> u8;
-    fn CheckShouldAdvanceLinkState();
-    fn ClearContinueGameWarpStatus2();
-    fn ClearDialogWindowAndFrame(a0: u8, a1: u8);
-    fn ClearJapaneseSecretBases(a0: *mut SecretBase);
-    fn ClearLinkCallback_2();
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn ConvertInternationalString(a0: *mut u8, a1: u8);
-    fn CopyTrainerId(a0: *mut u8, a1: *mut u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateRecordMixingLights() -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateTask_EnterCableClubSeat(a0: Option<unsafe extern "C" fn(u8)>);
-    fn CreateTask_ReestablishCableClubLink() -> u8;
-    fn DeactivateAllNormalTVShows();
-    fn DestroyRecordMixingLights();
-    fn DestroyTask(a0: u8);
-    fn DrawDialogueFrame(a0: u8, a1: u8);
-    fn EmeraldBattleTowerRecordToRuby(
-        a0: *mut EmeraldBattleTowerRecord,
-        a1: *mut RSBattleTowerRecord,
-    ) -> u32;
-    fn FlagSet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetBlockReceivedStatus() -> u8;
-    fn GetLilycoveLadyId() -> u8;
-    fn GetLinkPlayerCount() -> u8;
-    fn GetLinkPlayerCountAsBitFlags() -> u8;
-    fn GetLinkPlayerCount_2() -> u8;
-    fn GetLinkPlayerTrainerId(a0: u8) -> u32;
-    fn GetMultiplayerId() -> u8;
-    fn GetPocketByItemId(a0: u16) -> u8;
-    fn GetRecordMixingGift() -> u16;
-    fn GetSavedPlayerCount() -> u8;
-    fn GetTrainerId(a0: *mut u8) -> u32;
-    fn InitDaycareMailRecordMixing(a0: *mut DayCare, a1: *mut RecordMixingDaycareMail);
-    fn IsLinkMaster() -> u8;
-    fn IsLinkTaskFinished() -> u8;
-    fn IsStringJapanese(a0: *mut u8) -> u32;
-    fn LinkDummy_Return2() -> u32;
-    fn Link_AnyPartnersPlayingRubyOrSapphire() -> u32;
-    fn PadNameString(a0: *mut u8, a1: u8);
-    fn PlaySE(a0: u16);
-    fn PutNewBattleTowerRecord(a0: *mut EmeraldBattleTowerRecord);
-    fn QuizLadyClearQuestionForRecordMix(a0: *mut LilycoveLady);
-    fn Random2() -> u16;
-    fn ReceiveDewfordTrendData(a0: *mut DewfordTrend, a1: u32, a2: u8);
-    fn ReceivePokeNewsData(a0: *mut c_void, a1: u32, a2: u8);
-    fn ReceiveSecretBasesData(a0: *mut c_void, a1: u32, a2: u8);
-    fn ReceiveTvShowsData(a0: *mut c_void, a1: u32, a2: u8);
-    fn ResetBlockReceivedFlag(a0: u8);
-    fn ResetLilycoveLadyForRecordMix();
-    fn ResetMauvilleOldManFlag();
-    fn Rfu_SetLinkRecovery(a0: u32) -> u8;
-    fn RubyBattleTowerRecordToEmerald(
-        a0: *mut RSBattleTowerRecord,
-        a1: *mut EmeraldBattleTowerRecord,
-    ) -> u32;
-    fn SanitizeMauvilleOldManForRuby(a0: *mut OldMan);
-    fn SanitizeReceivedEmeraldOldMan(a0: *mut OldMan, a1: u32, a2: u32);
-    fn SanitizeReceivedRubyOldMan(a0: *mut OldMan, a1: u32, a2: u32);
-    fn SanitizeTVShowLocationsForRuby(a0: *mut TVShow);
-    fn SanitizeTVShowsForRuby(a0: *mut TVShow);
-    fn ScriptContext_Enable();
-    fn SeedRng(a0: u16);
-    fn SeedRng2(a0: u16);
-    fn SendBlockRequest(a0: u8) -> u8;
-    fn SetCloseLinkCallback();
-    fn SetContinueGameWarpStatusToDynamicWarp();
-    fn SetLinkStandbyCallback();
-    fn SetLinkWaitingForScript() -> u16;
-    fn SetLocalLinkPlayerId(a0: u8);
-    fn SetPlayerSecretBaseParty();
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringLength(a0: *mut u8) -> u16;
-    fn StripExtCtrlCodes(a0: *mut u8);
-    fn Task_LinkFullSave(a0: u8);
-    fn Task_ReturnToFieldRecordMixing(a0: u8);
-    fn VarSet(a0: u16, a1: u16) -> u8;
-    fn WriteSaveBlock1Sector() -> u8;
-    fn WriteSaveBlock2() -> u8;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `ReceiveDewfordTrendData` with this module's view of its types.
+#[inline]
+unsafe fn ReceiveDewfordTrendData(a0: *mut DewfordTrend, a1: u32, a2: u8) {
+    unsafe {
+        crate::dewford_trend::ReceiveDewfordTrendData(a0 as _, a1 as _, a2);
+    }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordMixingPlayerSpotTriggered() {
+pub unsafe fn RecordMixingPlayerSpotTriggered() {
     CreateTask_EnterCableClubSeat(Some(Task_RecordMixing_Main));
 }
-pub(crate) unsafe extern "C" fn SetSrcLookupPointers() {
+unsafe fn SetSrcLookupPointers() {
     sSecretBasesSave = (*gSaveBlock1Ptr).secretBases.as_mut_ptr();
     sTvShowsSave = (*gSaveBlock1Ptr).tvShows.as_mut_ptr();
     sPokeNewsSave = (*gSaveBlock1Ptr).pokeNews.as_mut_ptr();
@@ -290,7 +291,7 @@ pub(crate) unsafe extern "C" fn SetSrcLookupPointers() {
     sApprenticesSave = (*gSaveBlock2Ptr).apprentices.as_mut_ptr() as *mut c_void;
     sBattleTowerSave_Duplicate = &raw mut (*gSaveBlock2Ptr).frontier.towerPlayer as *mut c_void;
 }
-pub(crate) unsafe extern "C" fn PrepareUnknownExchangePacket(dest: *mut PlayerRecordRS) {
+unsafe fn PrepareUnknownExchangePacket(dest: *mut PlayerRecordRS) {
     memcpy(
         (*dest).secretBases.as_mut_ptr() as *mut u8,
         sSecretBasesSave as *mut u8,
@@ -326,7 +327,7 @@ pub(crate) unsafe extern "C" fn PrepareUnknownExchangePacket(dest: *mut PlayerRe
         (*dest).giftItem = GetRecordMixingGift();
     }
 }
-pub(crate) unsafe extern "C" fn PrepareExchangePacketForRubySapphire(dest: *mut PlayerRecordRS) {
+unsafe fn PrepareExchangePacketForRubySapphire(dest: *mut PlayerRecordRS) {
     memcpy(
         (*dest).secretBases.as_mut_ptr() as *mut u8,
         sSecretBasesSave as *mut u8,
@@ -366,7 +367,7 @@ pub(crate) unsafe extern "C" fn PrepareExchangePacketForRubySapphire(dest: *mut 
         (*dest).giftItem = GetRecordMixingGift();
     }
 }
-pub(crate) unsafe extern "C" fn PrepareExchangePacket() {
+unsafe fn PrepareExchangePacket() {
     SetPlayerSecretBaseParty();
     DeactivateAllNormalTVShows();
     SetSrcLookupPointers();
@@ -424,7 +425,7 @@ pub(crate) unsafe extern "C" fn PrepareExchangePacket() {
         GetPlayerHallRecords(&raw mut (*sSentRecord).emerald.hallRecords);
     }
 }
-pub(crate) unsafe extern "C" fn ReceiveExchangePacket(multiplayerId: u32) {
+unsafe fn ReceiveExchangePacket(multiplayerId: u32) {
     if Link_AnyPartnersPlayingRubyOrSapphire() != 0 {
         CalculateDaycareMailRandSum(
             (*sReceivedRecords).ruby.tvShows.as_mut_ptr() as *mut c_void as *mut u8
@@ -530,30 +531,30 @@ pub(crate) unsafe extern "C" fn ReceiveExchangePacket(multiplayerId: u32) {
         );
     }
 }
-pub(crate) unsafe extern "C" fn PrintTextOnRecordMixing(src: *mut u8) {
+unsafe fn PrintTextOnRecordMixing(src: *mut u8) {
     DrawDialogueFrame(0, 0);
     AddTextPrinterParameterized(0, FONT_NORMAL, src, 0, 1, 0, None);
     CopyWindowToVram(0, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn Task_RecordMixing_SoundEffect(taskId: u8) {
+pub(crate) unsafe fn Task_RecordMixing_SoundEffect(taskId: u8) {
     if ({
-        gTasks[taskId].data[0] += 1;
-        gTasks[taskId].data[0]
+        task_set(taskId, tCounter, task_get(taskId, tCounter) + 1);
+        task_get(taskId, tCounter)
     }) == 50
     {
         PlaySE(SE_M_ATTRACT);
-        gTasks[taskId].data[0] = 0;
+        task_set(taskId, tCounter, 0);
     }
 }
-pub(crate) unsafe extern "C" fn Task_RecordMixing_Main(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_RecordMixing_Main(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     match *data {
         0 => {
             sSentRecord = Alloc(5188) as *mut PlayerRecord;
             sReceivedRecords = Alloc(20752) as *mut PlayerRecord;
             SetLocalLinkPlayerId(gSpecialVar_0x8005 as u8);
             VarSet(VAR_TEMP_MIXED_RECORDS, 1);
-            sReadyToReceive = FALSE;
+            sReadyToReceive.set(FALSE);
             PrepareExchangePacket();
             CreateRecordMixingLights();
             *data = 1;
@@ -561,7 +562,7 @@ pub(crate) unsafe extern "C" fn Task_RecordMixing_Main(taskId: u8) {
             *data.at(15) = CreateTask(Some(Task_RecordMixing_SoundEffect), 81) as i16;
         }
         1 => {
-            if gTasks[*data.at(10)].isActive == 0 {
+            if (*gTasks.as_ptr())[*data.at(10)].isActive == 0 {
                 *data = 2;
                 FlagSet(FLAG_SYS_MIX_RECORD);
                 DestroyRecordMixingLights();
@@ -574,12 +575,17 @@ pub(crate) unsafe extern "C" fn Task_RecordMixing_Main(taskId: u8) {
             PlaySE(SE_M_BATON_PASS);
         }
         3 => {
-            if gTasks[*data.at(10)].isActive == 0 {
+            if (*gTasks.as_ptr())[*data.at(10)].isActive == 0 {
                 *data = 4;
                 if gWirelessCommType == 0 {
                     *data.at(10) = CreateTask_ReestablishCableClubLink() as i16;
                 }
-                PrintTextOnRecordMixing(gText_RecordMixingComplete.as_ptr().cast_mut());
+                PrintTextOnRecordMixing(
+                    (*(&raw const crate::data::strings::gText_RecordMixingComplete)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                );
                 *data.at(8) = 0;
             }
         }
@@ -592,27 +598,29 @@ pub(crate) unsafe extern "C" fn Task_RecordMixing_Main(taskId: u8) {
                 *data = 5;
             }
         }
-        5 => {
-            if gTasks[*data.at(10)].isActive == 0 {
-                Free(sReceivedRecords as *mut c_void);
-                Free(sSentRecord as *mut c_void);
-                SetLinkWaitingForScript();
-                if gWirelessCommType != 0 {
-                    CreateTask(Some(Task_ReturnToFieldRecordMixing), 10);
-                }
-                ClearDialogWindowAndFrame(0, TRUE);
-                DestroyTask(taskId);
-                ScriptContext_Enable();
+        5 if (*gTasks.as_ptr())[*data.at(10)].isActive == 0 => {
+            Free(sReceivedRecords as *mut c_void);
+            Free(sSentRecord as *mut c_void);
+            SetLinkWaitingForScript();
+            if gWirelessCommType != 0 {
+                CreateTask(Some(Task_ReturnToFieldRecordMixing), 10);
             }
+            ClearDialogWindowAndFrame(0, TRUE);
+            DestroyTask(taskId);
+            ScriptContext_Enable();
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_MixingRecordsRecv(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
+pub(crate) unsafe fn Task_MixingRecordsRecv(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
     match (*task).data[0] {
         0 => {
-            PrintTextOnRecordMixing(gText_MixingRecords.as_ptr().cast_mut());
+            PrintTextOnRecordMixing(
+                (*(&raw const crate::data::strings::gText_MixingRecords).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
             (*task).data[8] = 0x708;
             (*task).data[0] = 400;
             ClearLinkCallback_2();
@@ -628,7 +636,7 @@ pub(crate) unsafe extern "C" fn Task_MixingRecordsRecv(taskId: u8) {
             }
         }
         101 => {
-            let mut players: u8 = GetLinkPlayerCount_2();
+            let players: u8 = GetLinkPlayerCount_2();
             if IsLinkMaster() == TRUE {
                 if players == GetSavedPlayerCount() {
                     PlaySE(SE_PIN);
@@ -687,193 +695,181 @@ pub(crate) unsafe extern "C" fn Task_MixingRecordsRecv(taskId: u8) {
             if Link_AnyPartnersPlayingRubyOrSapphire() != 0 {
                 StorePtrInTaskData(
                     sSentRecord as *mut c_void,
-                    &raw mut (*task).data[2] as *mut u16,
+                    &raw mut (*task).data[tSentRecord] as *mut u16,
                 );
                 subTaskId = CreateTask(Some(Task_CopyReceiveBuffer), 80);
                 (*task).data[10] = subTaskId as i16;
-                gTasks[subTaskId].data[0] = taskId as i16;
+                task_set(subTaskId, 0, taskId as i16);
                 StorePtrInTaskData(
                     sReceivedRecords as *mut c_void,
-                    &raw mut gTasks[subTaskId].data[5] as *mut u16,
+                    task_data_ptr(subTaskId, 5) as *mut u16,
                 );
-                sRecordStructSize = 4656;
+                sRecordStructSize.set(4656);
             } else {
                 StorePtrInTaskData(
                     sSentRecord as *mut c_void,
-                    &raw mut (*task).data[2] as *mut u16,
+                    &raw mut (*task).data[tSentRecord] as *mut u16,
                 );
                 subTaskId = CreateTask(Some(Task_CopyReceiveBuffer), 80);
                 (*task).data[10] = subTaskId as i16;
-                gTasks[subTaskId].data[0] = taskId as i16;
+                task_set(subTaskId, 0, taskId as i16);
                 StorePtrInTaskData(
                     sReceivedRecords as *mut c_void,
-                    &raw mut gTasks[subTaskId].data[5] as *mut u16,
+                    task_data_ptr(subTaskId, 5) as *mut u16,
                 );
-                sRecordStructSize = 5188;
+                sRecordStructSize.set(5188);
             }
         }
-        5 => {
-            if ({
-                (*task).data[10] += 1;
-                (*task).data[10]
-            }) > 60
-            {
-                (*task).data[10] = 0;
-                (*task).data[0] = 2;
-            }
+        5 if ({
+            (*task).data[10] += 1;
+            (*task).data[10]
+        }) > 60 =>
+        {
+            (*task).data[10] = 0;
+            (*task).data[0] = 2;
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_SendPacket(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_SendPacket(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         0 => {
-            let mut recordData: *mut c_void =
-                (LoadPtrFromTaskData(&raw mut (*task).data[2] as *mut u16) as *mut u8)
-                    .at((*task).data[4] as i32 * BUFFER_CHUNK_SIZE as i32)
+            let recordData: *mut c_void =
+                (LoadPtrFromTaskData(&raw mut (*task).data[tSentRecord] as *mut u16) as *mut u8)
+                    .at((*task).data[tNumChunksSent] as i32 * BUFFER_CHUNK_SIZE as i32)
                     as *mut c_void;
             memcpy(
                 gBlockSendBuffer.as_mut_ptr(),
                 recordData as *mut u8,
                 BUFFER_CHUNK_SIZE,
             );
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
         1 => {
             if GetMultiplayerId() == 0 {
                 SendBlockRequest(BLOCK_REQ_SIZE_200);
             }
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
         2 => {}
         3 => {
-            (*task).data[4] += 1;
-            if (*task).data[4] as u32 == sRecordStructSize / 200 + 1 {
-                (*task).data[0] += 1;
+            (*task).data[tNumChunksSent] += 1;
+            if (*task).data[tNumChunksSent] as u32 == sRecordStructSize.get() / 200 + 1 {
+                (*task).data[tState] += 1;
             } else {
-                (*task).data[0] = 0;
+                (*task).data[tState] = 0;
             }
         }
-        4 => {
-            if gTasks[(*task).data[10]].isActive == 0 {
-                (*task).func = Some(Task_SendPacket_SwitchToReceive);
-            }
+        4 if (*gTasks.as_ptr())[(*task).data[tCopyTaskId]].isActive == 0 => {
+            (*task).func = Some(Task_SendPacket_SwitchToReceive);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_CopyReceiveBuffer(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    let mut status: u8 = GetBlockReceivedStatus();
+pub(crate) unsafe fn Task_CopyReceiveBuffer(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    let status: u8 = GetBlockReceivedStatus();
     let mut handledPlayers: u8 = 0;
     if status == GetLinkPlayerCountAsBitFlags() {
         let mut i: u8 = 0;
-        i = 0;
         while i < GetLinkPlayerCount() {
             if shr_i32(status as i32, i as u32) & 1 != 0 {
-                let mut dest: *mut c_void =
-                    ((LoadPtrFromTaskData(&raw mut (*task).data[5] as *mut u16) as *mut u8)
+                let dest: *mut c_void =
+                    ((LoadPtrFromTaskData(&raw mut (*task).data[tRecvRecords] as *mut u16)
+                        as *mut u8)
                         .at((*task).data[1 + i as i32] as i32 * BUFFER_CHUNK_SIZE as i32)
                         as *mut c_void as *mut u8)
-                        .at(sRecordStructSize * i as u32) as *mut c_void;
-                let mut src: *mut c_void = GetPlayerRecvBuffer(i);
-                if ((*task).data[1 + i as i32] as u32 + 1) * BUFFER_CHUNK_SIZE > sRecordStructSize {
+                        .at(sRecordStructSize.get() * i as u32) as *mut c_void;
+                let src: *mut c_void = GetPlayerRecvBuffer(i);
+                if ((*task).data[1 + i as i32] as u32 + 1) * BUFFER_CHUNK_SIZE
+                    > sRecordStructSize.get()
+                {
                     memcpy(
                         dest as *mut u8,
                         src as *mut u8,
-                        sRecordStructSize - (*task).data[1 + i as i32] as u32 * BUFFER_CHUNK_SIZE,
+                        sRecordStructSize.get()
+                            - (*task).data[1 + i as i32] as u32 * BUFFER_CHUNK_SIZE,
                     );
                 } else {
                     memcpy(dest as *mut u8, src as *mut u8, BUFFER_CHUNK_SIZE);
                 }
                 ResetBlockReceivedFlag(i);
                 (*task).data[1 + i as i32] += 1;
-                if (*task).data[1 + i as i32] as u32 == sRecordStructSize / 200 + 1 {
+                if (*task).data[1 + i as i32] as u32 == sRecordStructSize.get() / 200 + 1 {
                     handledPlayers += 1;
                 }
             }
             i += 1;
         }
-        gTasks[(*task).data[0]].data[0] += 1;
+        task_set((*task).data[0], 0, task_get((*task).data[0], 0) + 1);
     }
     if handledPlayers == GetLinkPlayerCount() {
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_WaitReceivePacket(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    if gTasks[(*task).data[10]].isActive == 0 {
+pub(crate) unsafe fn Task_WaitReceivePacket(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    if (*gTasks.as_ptr())[(*task).data[tCopyTaskId]].isActive == 0 {
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_ReceivePacket(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
+pub(crate) unsafe fn Task_ReceivePacket(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
     (*task).func = Some(Task_WaitReceivePacket);
-    if sReadyToReceive == TRUE {
-        ReceiveExchangePacket((*task).data[5] as u32);
+    if sReadyToReceive.get() == TRUE {
+        ReceiveExchangePacket((*task).data[tMultiplayerId] as u32);
     }
 }
-pub(crate) unsafe extern "C" fn Task_SendPacket_SwitchToReceive(taskId: u8) {
-    gTasks[taskId].func = Some(Task_ReceivePacket);
-    sReadyToReceive = TRUE;
+pub(crate) unsafe fn Task_SendPacket_SwitchToReceive(taskId: u8) {
+    task_set_func(taskId, Some(Task_ReceivePacket));
+    sReadyToReceive.set(TRUE);
 }
-pub(crate) unsafe extern "C" fn LoadPtrFromTaskData(asShort: *mut u16) -> *mut c_void {
-    return (*asShort as i32 | (*asShort.at(1) as i32) << 16) as usize as *mut c_void;
+unsafe fn LoadPtrFromTaskData(asShort: *mut u16) -> *mut c_void {
+    (*asShort as i32 | (*asShort.at(1) as i32) << 16) as usize as *mut c_void
 }
-pub(crate) unsafe extern "C" fn StorePtrInTaskData(records: *mut c_void, mut asShort: *mut u16) {
+unsafe fn StorePtrInTaskData(records: *mut c_void, asShort: *mut u16) {
     *asShort = records as usize as u32 as u16;
     *asShort.at(1) = (records as usize as u32 >> 16) as u16;
 }
-pub(crate) unsafe extern "C" fn GetMultiplayerId_() -> u8 {
-    return GetMultiplayerId();
+unsafe fn GetMultiplayerId_() -> u8 {
+    GetMultiplayerId()
 }
-pub(crate) unsafe extern "C" fn GetPlayerRecvBuffer(id: u8) -> *mut c_void {
-    return gBlockRecvBuffer[id].as_mut_ptr() as *mut c_void;
+unsafe fn GetPlayerRecvBuffer(id: u8) -> *mut c_void {
+    gBlockRecvBuffer[id].as_mut_ptr() as *mut c_void
 }
-pub(crate) unsafe extern "C" fn ShufflePlayerIndices(mut data: *mut u32) {
-    let mut i: u32 = 0;
+unsafe fn ShufflePlayerIndices(data: *mut u32) {
     let mut linkTrainerId: u32 = 0;
-    let mut players: u32 = GetLinkPlayerCount() as u32;
+    let players: u32 = GetLinkPlayerCount() as u32;
     match players {
         2 => {
-            i = 0;
-            while i < 2 {
+            for i in 0..2u32 {
                 *data.at(i) = sPlayerIdxOrders_2Player[i] as u32;
-                i += 1;
             }
         }
         3 => {
             linkTrainerId = GetLinkPlayerTrainerId(0) % 2;
-            i = 0;
-            while i < 3 {
+            for i in 0..3u32 {
                 *data.at(i) = sPlayerIdxOrders_3Player[linkTrainerId][i] as u32;
-                i += 1;
             }
         }
         4 => {
             linkTrainerId = GetLinkPlayerTrainerId(0) % 9;
-            i = 0;
-            while i < 4 {
+            for i in 0..4u32 {
                 *data.at(i) = sPlayerIdxOrders_4Player[linkTrainerId][i] as u32;
-                i += 1;
             }
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn ReceiveOldManData(
-    records: *mut OldMan,
-    recordSize: u32,
-    multiplayerId: u8,
-) {
+unsafe fn ReceiveOldManData(records: *mut OldMan, recordSize: u32, multiplayerId: u8) {
     let mut version: u8 = 0;
     let mut language: u16 = 0;
-    let mut oldMan: *mut OldMan = null_mut();
     let mut mixIndices: CArray<u32, 4> = zeroed();
     ShufflePlayerIndices(mixIndices.as_mut_ptr());
-    oldMan = (records as *mut c_void as *mut u8).at(recordSize * mixIndices[multiplayerId])
-        as *mut c_void as *mut OldMan;
+    let oldMan: *mut OldMan = (records as *mut c_void as *mut u8)
+        .at(recordSize * mixIndices[multiplayerId]) as *mut c_void
+        as *mut OldMan;
     version = gLinkPlayers[mixIndices[multiplayerId]].version as u8;
     language = gLinkPlayers[mixIndices[multiplayerId]].language;
     if Link_AnyPartnersPlayingRubyOrSapphire() != 0 {
@@ -889,11 +885,7 @@ pub(crate) unsafe extern "C" fn ReceiveOldManData(
     );
     ResetMauvilleOldManFlag();
 }
-pub(crate) unsafe extern "C" fn ReceiveBattleTowerData(
-    records: *mut c_void,
-    recordSize: u32,
-    multiplayerId: u8,
-) {
+unsafe fn ReceiveBattleTowerData(records: *mut c_void, recordSize: u32, multiplayerId: u8) {
     let mut battleTowerRecord: *mut EmeraldBattleTowerRecord = null_mut();
     let mut btPokemon: *mut BattleTowerPokemon = null_mut();
     let mut mixIndices: CArray<u32, 4> = zeroed();
@@ -942,11 +934,7 @@ pub(crate) unsafe extern "C" fn ReceiveBattleTowerData(
     PutNewBattleTowerRecord((records as *mut u8).at(recordSize * multiplayerId as u32)
         as *mut c_void as *mut EmeraldBattleTowerRecord);
 }
-pub(crate) unsafe extern "C" fn ReceiveLilycoveLadyData(
-    records: *mut LilycoveLady,
-    recordSize: u32,
-    multiplayerId: u8,
-) {
+unsafe fn ReceiveLilycoveLadyData(records: *mut LilycoveLady, recordSize: u32, multiplayerId: u8) {
     let mut lilycoveLady: *mut LilycoveLady = null_mut();
     let mut mixIndices: CArray<u32, 4> = zeroed();
     ShufflePlayerIndices(mixIndices.as_mut_ptr());
@@ -977,10 +965,10 @@ pub(crate) unsafe extern "C" fn ReceiveLilycoveLadyData(
         Free(lilycoveLady as *mut c_void);
     }
 }
-pub(crate) unsafe extern "C" fn GetDaycareMailItemId(mail: *mut DaycareMail) -> u8 {
-    return (*mail).message.itemId as u8;
+unsafe fn GetDaycareMailItemId(mail: *mut DaycareMail) -> u8 {
+    (*mail).message.itemId as u8
 }
-pub(crate) unsafe extern "C" fn SwapDaycareMail(
+unsafe fn SwapDaycareMail(
     records: *mut RecordMixingDaycareMail,
     recordSize: u32,
     idxs: *mut CArray<u8, 2>,
@@ -988,19 +976,17 @@ pub(crate) unsafe extern "C" fn SwapDaycareMail(
     playerSlot2: u8,
 ) {
     let mut temp: DaycareMail = zeroed();
-    let mut mixMail1: *mut RecordMixingDaycareMail = null_mut();
-    let mut mixMail2: *mut RecordMixingDaycareMail = null_mut();
-    mixMail1 = (records as *mut c_void as *mut u8)
-        .at(recordSize * (*idxs.at(playerSlot1))[0] as u32) as *mut c_void
-        as *mut RecordMixingDaycareMail;
+    let mixMail1: *mut RecordMixingDaycareMail =
+        (records as *mut c_void as *mut u8).at(recordSize * (*idxs.at(playerSlot1))[0] as u32)
+            as *mut c_void as *mut RecordMixingDaycareMail;
     memcpy(
         &raw mut temp as *mut u8,
         &raw mut (*mixMail1).mail[(*idxs.at(playerSlot1))[1]] as *mut u8,
         56,
     );
-    mixMail2 = (records as *mut c_void as *mut u8)
-        .at(recordSize * (*idxs.at(playerSlot2))[0] as u32) as *mut c_void
-        as *mut RecordMixingDaycareMail;
+    let mixMail2: *mut RecordMixingDaycareMail =
+        (records as *mut c_void as *mut u8).at(recordSize * (*idxs.at(playerSlot2))[0] as u32)
+            as *mut c_void as *mut RecordMixingDaycareMail;
     memcpy(
         &raw mut (*mixMail1).mail[(*idxs.at(playerSlot1))[1]] as *mut u8,
         &raw mut (*mixMail2).mail[(*idxs.at(playerSlot2))[1]] as *mut u8,
@@ -1012,30 +998,23 @@ pub(crate) unsafe extern "C" fn SwapDaycareMail(
         56,
     );
 }
-pub(crate) unsafe extern "C" fn CalculateDaycareMailRandSum(src: *mut u8) {
+unsafe fn CalculateDaycareMailRandSum(src: *mut u8) {
     let mut sum: u8 = 0;
-    let mut i: i32 = 0;
-    sum = 0;
-    i = 0;
-    while i < 256 {
+    for i in 0..256i32 {
         sum += *src.at(i);
-        i += 1;
     }
-    sDaycareMailRandSum = sum;
+    sDaycareMailRandSum.set(sum);
 }
-pub(crate) unsafe extern "C" fn GetDaycareMailRandSum() -> u8 {
-    return sDaycareMailRandSum;
+fn GetDaycareMailRandSum() -> u8 {
+    sDaycareMailRandSum.get()
 }
-pub(crate) unsafe extern "C" fn ReceiveDaycareMailData(
-    mut records: *mut RecordMixingDaycareMail,
+unsafe fn ReceiveDaycareMailData(
+    records: *mut RecordMixingDaycareMail,
     recordSize: u32,
     multiplayerId: u8,
     shows: *mut TVShow,
 ) {
-    let mut i: u16 = 0;
     let mut j: u16 = 0;
-    let mut linkPlayerCount: u8 = 0;
-    let mut tableId: u8 = 0;
     let mut mixMail: *mut RecordMixingDaycareMail = null_mut();
     let mut playerSlot1: u8 = 0;
     let mut playerSlot2: u8 = 0;
@@ -1045,22 +1024,17 @@ pub(crate) unsafe extern "C" fn ReceiveDaycareMailData(
     let mut unusedMixMail: CArray<*mut RecordMixingDaycareMail, 4> = zeroed();
     let mut canHoldItem: CArray<CArray<u8, 2>, 4> = zeroed();
     let mut idxs: CArray<CArray<u8, 2>, 4> = zeroed();
-    let mut numDaycareCanHold: u8 = 0;
-    let mut oldSeed: u16 = 0;
-    let mut anyRS: u32 = 0;
-    oldSeed = Random2();
+    let oldSeed: u16 = Random2();
     SeedRng2(gLinkPlayers[0].trainerId as u16);
-    linkPlayerCount = GetLinkPlayerCount();
-    i = 0;
-    while i < MAX_LINK_PLAYERS as u16 {
+    let linkPlayerCount: u8 = GetLinkPlayerCount();
+    for i in 0..(MAX_LINK_PLAYERS as u16) {
         unusedArr1[i] = 0xFF;
         unusedArr2[i] = 0;
         canHoldItem[i][0] = 0;
         canHoldItem[i][1] = FALSE;
-        i += 1;
     }
-    anyRS = Link_AnyPartnersPlayingRubyOrSapphire();
-    i = 0;
+    let anyRS: u32 = Link_AnyPartnersPlayingRubyOrSapphire();
+    let mut i: u16 = 0;
     while i < GetLinkPlayerCount() as u16 {
         let mut language: u32 = 0;
         let mut version: u32 = 0;
@@ -1073,7 +1047,7 @@ pub(crate) unsafe extern "C" fn ReceiveDaycareMailData(
             'l3: {
                 let mut otNameLanguage: u16 = 0;
                 let mut nicknameLanguage: u16 = 0;
-                let mut daycareMail: *mut DaycareMail = &raw mut (*mixMail).mail[j];
+                let daycareMail: *mut DaycareMail = &raw mut (*mixMail).mail[j];
                 if (*daycareMail).message.itemId == ITEM_NONE {
                     break 'l3;
                 }
@@ -1113,9 +1087,8 @@ pub(crate) unsafe extern "C" fn ReceiveDaycareMailData(
         }
         i += 1;
     }
-    numDaycareCanHold = 0;
-    i = 0;
-    while i < linkPlayerCount as u16 {
+    let mut numDaycareCanHold: u8 = 0;
+    for i in 0..(linkPlayerCount as u16) {
         'l5: {
             mixMail = (records as *mut c_void as *mut u8).at(i as u32 * recordSize) as *mut c_void
                 as *mut RecordMixingDaycareMail;
@@ -1130,7 +1103,6 @@ pub(crate) unsafe extern "C" fn ReceiveDaycareMailData(
                 j += 1;
             }
         }
-        i += 1;
     }
     j = 0;
     i = 0;
@@ -1149,11 +1121,9 @@ pub(crate) unsafe extern "C" fn ReceiveDaycareMailData(
             idxs[j][1] = 1;
             j += 1;
         } else if canHoldItem[i][0] == 1 && canHoldItem[i][1] == 1 {
-            let mut itemId1: u32 = 0;
-            let mut itemId2: u32 = 0;
             idxs[j][0] = i as u8;
-            itemId1 = GetDaycareMailItemId(&raw mut (*mixMail).mail[0]) as u32;
-            itemId2 = GetDaycareMailItemId(&raw mut (*mixMail).mail[1]) as u32;
+            let itemId1: u32 = GetDaycareMailItemId(&raw mut (*mixMail).mail[0]) as u32;
+            let itemId2: u32 = GetDaycareMailItemId(&raw mut (*mixMail).mail[1]) as u32;
             if itemId1 == 0 && itemId2 == 0 || itemId1 != 0 && itemId2 != 0 {
                 idxs[j][1] = (Random2() as i32 % 2) as u8;
             } else if itemId1 != 0 && itemId2 == 0 {
@@ -1165,13 +1135,11 @@ pub(crate) unsafe extern "C" fn ReceiveDaycareMailData(
         }
         i += 1;
     }
-    i = 0;
-    while i < MAX_LINK_PLAYERS as u16 {
+    for i in 0..(MAX_LINK_PLAYERS as u16) {
         mixMail = records.at(multiplayerId as u32 * recordSize);
         unusedMixMail[i] = mixMail;
-        i += 1;
     }
-    tableId = (GetDaycareMailRandSum() as i32 % 3) as u8;
+    let tableId: u8 = (GetDaycareMailRandSum() as i32 % 3) as u8;
     match numDaycareCanHold {
         2 => {
             SwapDaycareMail(records, recordSize, idxs.as_mut_ptr(), 0, 1);
@@ -1224,7 +1192,7 @@ pub(crate) unsafe extern "C" fn ReceiveDaycareMailData(
     );
     SeedRng(oldSeed);
 }
-pub(crate) unsafe extern "C" fn ReceiveGiftItem(item: *mut u16, multiplayerId: u8) {
+unsafe fn ReceiveGiftItem(item: *mut u16, multiplayerId: u8) {
     if multiplayerId != 0 && *item != ITEM_NONE && GetPocketByItemId(*item) == POCKET_KEY_ITEMS {
         if CheckBagHasItem(*item, 1) == 0
             && CheckPCHasItem(*item, 1) == 0
@@ -1240,28 +1208,28 @@ pub(crate) unsafe extern "C" fn ReceiveGiftItem(item: *mut u16, multiplayerId: u
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_DoRecordMixing(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_DoRecordMixing(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         0 => {
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
         1 => {
             if Link_AnyPartnersPlayingRubyOrSapphire() != 0 {
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             } else {
-                (*task).data[0] = 6;
+                (*task).data[tState] = 6;
             }
         }
         2 => {
             SetContinueGameWarpStatusToDynamicWarp();
             WriteSaveBlock2();
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
         3 => {
             if WriteSaveBlock1Sector() != 0 {
                 ClearContinueGameWarpStatus2();
-                (*task).data[0] = 4;
+                (*task).data[tState] = 4;
                 (*task).data[1] = 0;
             }
         }
@@ -1272,7 +1240,7 @@ pub(crate) unsafe extern "C" fn Task_DoRecordMixing(taskId: u8) {
             }) > 10
             {
                 SetCloseLinkCallback();
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             }
         }
         5 => {
@@ -1283,50 +1251,39 @@ pub(crate) unsafe extern "C" fn Task_DoRecordMixing(taskId: u8) {
         6 => {
             if Rfu_SetLinkRecovery(FALSE as u32) == 0 {
                 CreateTask(Some(Task_LinkFullSave), 5);
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             }
         }
         7 => {
             if FuncIsActiveTask(Some(Task_LinkFullSave)) == 0 {
                 if gWirelessCommType != 0 {
                     Rfu_SetLinkRecovery(TRUE as u32);
-                    (*task).data[0] = 8;
+                    (*task).data[tState] = 8;
                 } else {
-                    (*task).data[0] = 4;
+                    (*task).data[tState] = 4;
                 }
             }
         }
         8 => {
             SetLinkStandbyCallback();
-            (*task).data[0] += 1;
+            (*task).data[tState] += 1;
         }
-        9 => {
-            if IsLinkTaskFinished() != 0 {
-                DestroyTask(taskId);
-            }
+        9 if IsLinkTaskFinished() != 0 => {
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn GetSavedApprentices(
-    mut dst: *mut Apprentice,
-    src: *mut Apprentice,
-) {
-    let mut i: i32 = 0;
+unsafe fn GetSavedApprentices(dst: *mut Apprentice, src: *mut Apprentice) {
     let mut id: i32 = 0;
-    let mut apprenticeSaveId: i32 = 0;
-    let mut oldPlayerApprenticeSaveId: i32 = 0;
-    let mut numOldPlayerApprentices: i32 = 0;
-    let mut numMixApprentices: i32 = 0;
     (*dst).playerName[0] = EOS;
     (*dst.at(1)).playerName[0] = EOS;
     *dst = *src;
-    oldPlayerApprenticeSaveId = 0;
-    numOldPlayerApprentices = 0;
-    apprenticeSaveId = 0;
-    numMixApprentices = 0;
-    i = 0;
-    while i < 2 {
+    let mut oldPlayerApprenticeSaveId: i32 = 0;
+    let mut numOldPlayerApprentices: i32 = 0;
+    let mut apprenticeSaveId: i32 = 0;
+    let mut numMixApprentices: i32 = 0;
+    for i in 0..2i32 {
         id = (i + (*gSaveBlock2Ptr).playerApprentice.saveId() as i32) % 3 + 1;
         if (*src.at(id)).playerName[0] != EOS {
             if GetTrainerId((*src.at(id)).playerId.as_mut_ptr())
@@ -1342,7 +1299,6 @@ pub(crate) unsafe extern "C" fn GetSavedApprentices(
                 oldPlayerApprenticeSaveId = id;
             }
         }
-        i += 1;
     }
     if numMixApprentices == 0 && numOldPlayerApprentices != 0 {
         numMixApprentices = numOldPlayerApprentices;
@@ -1363,14 +1319,10 @@ pub(crate) unsafe extern "C" fn GetSavedApprentices(
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerHallRecords(dst: *mut PlayerHallRecords) {
+pub unsafe fn GetPlayerHallRecords(dst: *mut PlayerHallRecords) {
     let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    i = 0;
     while i < HALL_FACILITIES_COUNT {
-        j = 0;
-        while j < FRONTIER_LVL_MODE_COUNT {
+        for j in 0..FRONTIER_LVL_MODE_COUNT {
             CopyTrainerId(
                 (*dst).onePlayer[i][j].id.as_mut_ptr(),
                 (*gSaveBlock2Ptr).playerTrainerId.as_mut_ptr(),
@@ -1380,12 +1332,10 @@ pub unsafe extern "C" fn GetPlayerHallRecords(dst: *mut PlayerHallRecords) {
                 (*dst).onePlayer[i][j].name.as_mut_ptr(),
                 (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
             );
-            j += 1;
         }
         i += 1;
     }
-    j = 0;
-    while j < FRONTIER_LVL_MODE_COUNT {
+    for j in 0..FRONTIER_LVL_MODE_COUNT {
         (*dst).twoPlayers[j].language = GAME_LANGUAGE;
         CopyTrainerId(
             (*dst).twoPlayers[j].id1.as_mut_ptr(),
@@ -1403,10 +1353,8 @@ pub unsafe extern "C" fn GetPlayerHallRecords(dst: *mut PlayerHallRecords) {
             (*dst).twoPlayers[j].name2.as_mut_ptr(),
             (*gSaveBlock2Ptr).frontier.opponentNames[j].as_mut_ptr(),
         );
-        j += 1;
     }
-    i = 0;
-    while i < FRONTIER_LVL_MODE_COUNT {
+    for i in 0..FRONTIER_LVL_MODE_COUNT {
         (*dst).onePlayer[0][i].winStreak = (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[0][i];
         (*dst).onePlayer[1][i].winStreak = (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[1][i];
         (*dst).onePlayer[2][i].winStreak = (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[2][i];
@@ -1417,43 +1365,32 @@ pub unsafe extern "C" fn GetPlayerHallRecords(dst: *mut PlayerHallRecords) {
         (*dst).onePlayer[7][i].winStreak = (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[i];
         (*dst).onePlayer[8][i].winStreak = (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[i];
         (*dst).twoPlayers[i].winStreak = (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[3][i];
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn IsApprenticeAlreadySaved(
+unsafe fn IsApprenticeAlreadySaved(
     mixApprentice: *mut Apprentice,
     apprentices: *mut Apprentice,
 ) -> u32 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < APPRENTICE_COUNT {
+    for i in 0..APPRENTICE_COUNT {
         if GetTrainerId((*mixApprentice).playerId.as_mut_ptr())
             == GetTrainerId((*apprentices.at(i)).playerId.as_mut_ptr())
             && (*mixApprentice).number == (*apprentices.at(i)).number
         {
             return TRUE as u32;
         }
-        i += 1;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn ReceiveApprenticeData(
-    records: *mut Apprentice,
-    recordSize: u32,
-    multiplayerId: u32,
-) {
-    let mut i: i32 = 0;
-    let mut numApprentices: i32 = 0;
-    let mut apprenticeId: i32 = 0;
-    let mut mixApprentice: *mut Apprentice = null_mut();
+unsafe fn ReceiveApprenticeData(records: *mut Apprentice, recordSize: u32, multiplayerId: u32) {
     let mut mixIndices: CArray<u32, 4> = zeroed();
     let mut apprenticeSaveId: u32 = 0;
     ShufflePlayerIndices(mixIndices.as_mut_ptr());
-    mixApprentice = (records as *mut c_void as *mut u8).at(recordSize * mixIndices[multiplayerId])
+    let mixApprentice: *mut Apprentice = (records as *mut c_void as *mut u8)
+        .at(recordSize * mixIndices[multiplayerId])
         as *mut c_void as *mut Apprentice;
-    numApprentices = 0;
-    apprenticeId = 0;
-    i = 0;
+    let mut numApprentices: i32 = 0;
+    let mut apprenticeId: i32 = 0;
+    let mut i: i32 = 0;
     while i < 2 {
         if (*mixApprentice.at(i)).playerName[0] != EOS
             && IsApprenticeAlreadySaved(
@@ -1475,12 +1412,10 @@ pub(crate) unsafe extern "C" fn ReceiveApprenticeData(
                 .set_saveId((((*gSaveBlock2Ptr).playerApprentice.saveId() as i32 + 1) % 3) as u8);
         }
         2 => {
-            i = 0;
-            while i < 2 {
+            for i in 0..2i32 {
                 apprenticeSaveId =
                     (((i ^ 1) + (*gSaveBlock2Ptr).playerApprentice.saveId() as i32) % 3) as u32 + 1;
                 (*gSaveBlock2Ptr).apprentices[apprenticeSaveId] = *mixApprentice.at(i);
-                i += 1;
             }
             (*gSaveBlock2Ptr)
                 .playerApprentice
@@ -1489,20 +1424,16 @@ pub(crate) unsafe extern "C" fn ReceiveApprenticeData(
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn GetNewHallRecords(
+unsafe fn GetNewHallRecords(
     dst: *mut RecordMixingHallRecords,
     mut records: *mut c_void,
     recordSize: u32,
     multiplayerId: u32,
     linkPlayerCount: i32,
 ) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    let mut k: i32 = 0;
-    let mut l: i32 = 0;
     let mut repeatTrainers: i32 = 0;
-    k = 0;
-    i = 0;
+    let mut k: i32 = 0;
+    let mut i: i32 = 0;
     while i < linkPlayerCount {
         if i as u32 != multiplayerId {
             sPartnerHallRecords[{
@@ -1517,20 +1448,16 @@ pub(crate) unsafe extern "C" fn GetNewHallRecords(
         records = (records as *mut u8).at(recordSize) as *mut c_void;
         i += 1;
     }
-    i = 0;
-    while i < HALL_FACILITIES_COUNT {
-        j = 0;
-        while j < FRONTIER_LVL_MODE_COUNT {
+    for i in 0..HALL_FACILITIES_COUNT {
+        for j in 0..FRONTIER_LVL_MODE_COUNT {
             k = 0;
             while k < HALL_RECORDS_COUNT {
                 (*dst).hallRecords1P[i][j][k] = (*gSaveBlock2Ptr).hallRecords1P[i][j][k];
                 k += 1;
             }
-            k = 0;
-            while k < linkPlayerCount - 1 {
+            for k in 0..(linkPlayerCount - 1) {
                 repeatTrainers = 0;
-                l = 0;
-                while l < HALL_RECORDS_COUNT {
+                for l in 0..HALL_RECORDS_COUNT {
                     if GetTrainerId((*dst).hallRecords1P[i][j][l].id.as_mut_ptr())
                         == GetTrainerId((*sPartnerHallRecords[k]).onePlayer[i][j].id.as_mut_ptr())
                     {
@@ -1542,30 +1469,23 @@ pub(crate) unsafe extern "C" fn GetNewHallRecords(
                                 (*sPartnerHallRecords[k]).onePlayer[i][j];
                         }
                     }
-                    l += 1;
                 }
                 if repeatTrainers == 0 {
                     (*dst).hallRecords1P[i][j][k + HALL_RECORDS_COUNT] =
                         (*sPartnerHallRecords[k]).onePlayer[i][j];
                 }
-                k += 1;
             }
-            j += 1;
         }
-        i += 1;
     }
-    j = 0;
-    while j < FRONTIER_LVL_MODE_COUNT {
+    for j in 0..FRONTIER_LVL_MODE_COUNT {
         k = 0;
         while k < HALL_RECORDS_COUNT {
             (*dst).hallRecords2P[j][k] = (*gSaveBlock2Ptr).hallRecords2P[j][k];
             k += 1;
         }
-        k = 0;
-        while k < linkPlayerCount - 1 {
+        for k in 0..(linkPlayerCount - 1) {
             repeatTrainers = 0;
-            l = 0;
-            while l < HALL_RECORDS_COUNT {
+            for l in 0..HALL_RECORDS_COUNT {
                 if GetTrainerId((*dst).hallRecords2P[j][l].id1.as_mut_ptr())
                     == GetTrainerId((*sPartnerHallRecords[k]).twoPlayers[j].id1.as_mut_ptr())
                     && GetTrainerId((*dst).hallRecords2P[j][l].id2.as_mut_ptr())
@@ -1578,100 +1498,75 @@ pub(crate) unsafe extern "C" fn GetNewHallRecords(
                         (*dst).hallRecords2P[j][l] = (*sPartnerHallRecords[k]).twoPlayers[j];
                     }
                 }
-                l += 1;
             }
             if repeatTrainers == 0 {
                 (*dst).hallRecords2P[j][k + HALL_RECORDS_COUNT] =
                     (*sPartnerHallRecords[k]).twoPlayers[j];
             }
-            k += 1;
         }
-        j += 1;
     }
 }
-pub(crate) unsafe extern "C" fn FillWinStreakRecords1P(
-    mut playerRecords: *mut RankingHall1P,
-    mut mixRecords: *mut RankingHall1P,
+unsafe fn FillWinStreakRecords1P(
+    playerRecords: *mut RankingHall1P,
+    mixRecords: *mut RankingHall1P,
 ) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    i = 0;
-    while i < HALL_RECORDS_COUNT {
+    for i in 0..HALL_RECORDS_COUNT {
         let mut highestWinStreak: i32 = 0;
         let mut highestId: i32 = -1;
-        j = 0;
-        while j < 6 {
+        for j in 0..6i32 {
             if (*mixRecords.at(j)).winStreak as i32 > highestWinStreak {
                 highestId = j;
                 highestWinStreak = (*mixRecords.at(j)).winStreak as i32;
             }
-            j += 1;
         }
         if highestId >= 0 {
             *playerRecords.at(i) = *mixRecords.at(highestId);
             (*mixRecords.at(highestId)).winStreak = 0;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn FillWinStreakRecords2P(
-    mut playerRecords: *mut RankingHall2P,
-    mut mixRecords: *mut RankingHall2P,
+unsafe fn FillWinStreakRecords2P(
+    playerRecords: *mut RankingHall2P,
+    mixRecords: *mut RankingHall2P,
 ) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    i = 0;
-    while i < HALL_RECORDS_COUNT {
+    for i in 0..HALL_RECORDS_COUNT {
         let mut highestWinStreak: i32 = 0;
         let mut highestId: i32 = -1;
-        j = 0;
-        while j < 6 {
+        for j in 0..6i32 {
             if (*mixRecords.at(j)).winStreak as i32 > highestWinStreak {
                 highestId = j;
                 highestWinStreak = (*mixRecords.at(j)).winStreak as i32;
             }
-            j += 1;
         }
         if highestId >= 0 {
             *playerRecords.at(i) = *mixRecords.at(highestId);
             (*mixRecords.at(highestId)).winStreak = 0;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SaveHighestWinStreakRecords(
-    mixHallRecords: *mut RecordMixingHallRecords,
-) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    i = 0;
-    while i < HALL_FACILITIES_COUNT {
-        j = 0;
-        while j < FRONTIER_LVL_MODE_COUNT {
+unsafe fn SaveHighestWinStreakRecords(mixHallRecords: *mut RecordMixingHallRecords) {
+    for i in 0..HALL_FACILITIES_COUNT {
+        for j in 0..FRONTIER_LVL_MODE_COUNT {
             FillWinStreakRecords1P(
                 (*gSaveBlock2Ptr).hallRecords1P[i][j].as_mut_ptr(),
                 (*mixHallRecords).hallRecords1P[i][j].as_mut_ptr(),
             );
-            j += 1;
         }
-        i += 1;
     }
-    j = 0;
-    while j < FRONTIER_LVL_MODE_COUNT {
+    for j in 0..FRONTIER_LVL_MODE_COUNT {
         FillWinStreakRecords2P(
             (*gSaveBlock2Ptr).hallRecords2P[j].as_mut_ptr(),
             (*mixHallRecords).hallRecords2P[j].as_mut_ptr(),
         );
-        j += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ReceiveRankingHallRecords(
+unsafe fn ReceiveRankingHallRecords(
     records: *mut PlayerHallRecords,
     recordSize: u32,
     multiplayerId: u32,
 ) {
-    let mut linkPlayerCount: u8 = GetLinkPlayerCount();
-    let mut mixHallRecords: *mut RecordMixingHallRecords =
+    let linkPlayerCount: u8 = GetLinkPlayerCount();
+    let mixHallRecords: *mut RecordMixingHallRecords =
         AllocZeroed(2064) as *mut RecordMixingHallRecords;
     GetNewHallRecords(
         mixHallRecords,
@@ -1683,17 +1578,16 @@ pub(crate) unsafe extern "C" fn ReceiveRankingHallRecords(
     SaveHighestWinStreakRecords(mixHallRecords);
     Free(mixHallRecords as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn GetRecordMixingDaycareMail(dst: *mut RecordMixingDaycareMail) {
+unsafe fn GetRecordMixingDaycareMail(dst: *mut RecordMixingDaycareMail) {
     sRecordMixMail.mail[0] = (*gSaveBlock1Ptr).daycare.mons[0].mail;
     sRecordMixMail.mail[1] = (*gSaveBlock1Ptr).daycare.mons[1].mail;
     InitDaycareMailRecordMixing(&raw mut (*gSaveBlock1Ptr).daycare, &raw mut sRecordMixMail);
     *dst = *sRecordMixMailSave;
 }
-pub(crate) unsafe extern "C" fn SanitizeDaycareMailForRuby(src: *mut RecordMixingDaycareMail) {
+unsafe fn SanitizeDaycareMailForRuby(src: *mut RecordMixingDaycareMail) {
     let mut i: i32 = 0;
-    i = 0;
     while (i as u32) < (*src).numDaycareMons {
-        let mut mail: *mut DaycareMail = &raw mut (*src).mail[i];
+        let mail: *mut DaycareMail = &raw mut (*src).mail[i];
         if (*mail).message.itemId != ITEM_NONE {
             if (*mail).gameLanguage() != LANGUAGE_JAPANESE {
                 PadNameString((*mail).otName.as_mut_ptr(), EXT_CTRL_CODE_BEGIN);
@@ -1703,12 +1597,9 @@ pub(crate) unsafe extern "C" fn SanitizeDaycareMailForRuby(src: *mut RecordMixin
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SanitizeRubyBattleTowerRecord(src: *mut RSBattleTowerRecord) {}
-pub(crate) unsafe extern "C" fn SanitizeEmeraldBattleTowerRecord(
-    dst: *mut EmeraldBattleTowerRecord,
-) {
+unsafe fn SanitizeRubyBattleTowerRecord(src: *mut RSBattleTowerRecord) {}
+unsafe fn SanitizeEmeraldBattleTowerRecord(dst: *mut EmeraldBattleTowerRecord) {
     let mut i: i32 = 0;
-    i = 0;
     while i
         < (if 3 >= (if 4 >= 2 { 4 } else { 2 }) {
             3
@@ -1716,7 +1607,7 @@ pub(crate) unsafe extern "C" fn SanitizeEmeraldBattleTowerRecord(
             if 4 >= 2 { 4 } else { 2 }
         })
     {
-        let mut towerMon: *mut BattleTowerPokemon = &raw mut (*dst).party[i];
+        let towerMon: *mut BattleTowerPokemon = &raw mut (*dst).party[i];
         if (*towerMon).species != SPECIES_NONE {
             StripExtCtrlCodes((*towerMon).nickname.as_mut_ptr());
         }

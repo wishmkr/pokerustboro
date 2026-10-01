@@ -80,27 +80,6 @@ pub struct GfRomHeader {
 
 unsafe impl Sync for GfRomHeader {}
 
-#[cfg(not(test))]
-unsafe extern "C" {
-    static gMonFrontPicTable: u8;
-    static gMonBackPicTable: u8;
-    static gMonPaletteTable: u8;
-    static gMonShinyPaletteTable: u8;
-    static gMonIconTable: u8;
-    static gMonIconPaletteIndices: u8;
-    static gMonIconPaletteTable: u8;
-    static gSpeciesNames: u8;
-    static gMoveNames: u8;
-    static gDecorations: u8;
-    static gSpeciesInfo: u8;
-    static gAbilityNames: u8;
-    static gAbilityDescriptionPointers: u8;
-    static gItems: u8;
-    static gBattleMoves: u8;
-    static gBallSpriteSheets: u8;
-    static gBallSpritePalettes: u8;
-}
-
 /// `"pokemon emerald version"` as a plain ASCII C string. It is a `char`
 /// literal, not `_("...")`, so preproc never re-encodes it.
 const fn game_name() -> [u8; 32] {
@@ -123,16 +102,36 @@ static GF_ROM_HEADER: GfRomHeader = GfRomHeader {
     version: 3,  // GAME_VERSION (VERSION_EMERALD)
     language: 2, // GAME_LANGUAGE (LANGUAGE_ENGLISH)
     game_name: game_name(),
-    mon_front_pics: RomPtr(&raw const gMonFrontPicTable),
-    mon_back_pics: RomPtr(&raw const gMonBackPicTable),
-    mon_normal_palettes: RomPtr(&raw const gMonPaletteTable),
-    mon_shiny_palettes: RomPtr(&raw const gMonShinyPaletteTable),
-    mon_icons: RomPtr(&raw const gMonIconTable),
-    mon_icon_palette_ids: RomPtr(&raw const gMonIconPaletteIndices),
-    mon_icon_palettes: RomPtr(&raw const gMonIconPaletteTable),
-    mon_species_names: RomPtr(&raw const gSpeciesNames),
-    move_names: RomPtr(&raw const gMoveNames),
-    decorations: RomPtr(&raw const gDecorations),
+    mon_front_pics: RomPtr(
+        &raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable).cast::<u8>()),
+    ),
+    mon_back_pics: RomPtr(
+        &raw const (*(&raw const crate::data::data_tables::gMonBackPicTable).cast::<u8>()),
+    ),
+    mon_normal_palettes: RomPtr(
+        &raw const (*(&raw const crate::data::data_tables::gMonPaletteTable).cast::<u8>()),
+    ),
+    mon_shiny_palettes: RomPtr(
+        &raw const (*(&raw const crate::data::data_tables::gMonShinyPaletteTable).cast::<u8>()),
+    ),
+    mon_icons: RomPtr(
+        &raw const (*(&raw const crate::data::pokemon_icon::gMonIconTable).cast::<u8>()),
+    ),
+    mon_icon_palette_ids: RomPtr(
+        &raw const (*(&raw const crate::data::pokemon_icon::gMonIconPaletteIndices).cast::<u8>()),
+    ),
+    mon_icon_palettes: RomPtr(
+        &raw const (*(&raw const crate::data::pokemon_icon::gMonIconPaletteTable).cast::<u8>()),
+    ),
+    mon_species_names: RomPtr(
+        &raw const (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<u8>()),
+    ),
+    move_names: RomPtr(
+        &raw const (*(&raw const crate::data::data_tables::gMoveNames).cast::<u8>()),
+    ),
+    decorations: RomPtr(
+        &raw const (*(&raw const crate::data::decoration::gDecorations).cast::<u8>()),
+    ),
     flags_offset: 0x1270,
     vars_offset: 0x139c,
     pokedex_offset: 0x18,
@@ -161,13 +160,24 @@ static GF_ROM_HEADER: GfRomHeader = GfRomHeader {
     external_event_flags_offset: 0x31c7,
     external_event_data_offset: 0x31b3,
     unk18: 0,
-    species_info: RomPtr(&raw const gSpeciesInfo),
-    ability_names: RomPtr(&raw const gAbilityNames),
-    ability_descriptions: RomPtr(&raw const gAbilityDescriptionPointers),
-    items: RomPtr(&raw const gItems),
-    moves: RomPtr(&raw const gBattleMoves),
-    ball_gfx: RomPtr(&raw const gBallSpriteSheets),
-    ball_palettes: RomPtr(&raw const gBallSpritePalettes),
+    species_info: RomPtr(
+        &raw const (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<u8>()),
+    ),
+    ability_names: RomPtr(
+        &raw const (*(&raw const crate::data::battle_main::gAbilityNames).cast::<u8>()),
+    ),
+    ability_descriptions: RomPtr(
+        &raw const (*(&raw const crate::data::battle_main::gAbilityDescriptionPointers)
+            .cast::<u8>()),
+    ),
+    items: RomPtr(&raw const (*(&raw const crate::data::item::gItems).cast::<u8>())),
+    moves: RomPtr(&raw const (*(&raw const crate::data::pokemon::gBattleMoves).cast::<u8>())),
+    ball_gfx: RomPtr(
+        &raw const (*(&raw const crate::data::pokeball::gBallSpriteSheets).cast::<u8>()),
+    ),
+    ball_palettes: RomPtr(
+        &raw const (*(&raw const crate::data::pokeball::gBallSpritePalettes).cast::<u8>()),
+    ),
     gcn_link_flags_offset: 0xa8,
     game_clear_flag: 0x864, // FLAG_SYS_GAME_CLEAR
     ribbon_flag: 0x89b,     // FLAG_SYS_RIBBON_GET

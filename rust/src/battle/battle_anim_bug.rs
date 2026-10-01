@@ -3,29 +3,30 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    unused_assignments
 )]
 
+use crate::battle_anim::gBattleAnimArgs;
+use crate::battle_anim::{DestroyAnimSprite, IsContest, gBattleAnimAttacker, gBattleAnimTarget};
+use crate::battle_anim_mons::{
+    AnimTranslateLinear, ArcTan2Neg, DestroySpriteAndMatrix, GetBattlerPosition, GetBattlerSide,
+    GetBattlerSpriteCoord, GetBattlerSpriteCoord2, InitAnimArcTranslation,
+    InitAnimLinearTranslationWithSpeed, InitSpritePosToAnimAttacker,
+    RunStoredCallbackWhenAffineAnimEnds, SetAverageBattlerPositions, StartAnimLinearTranslation,
+    StoreSpriteCallbackInData6, TranslateAnimHorizontalArc, TrySetSpriteRotScale,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::gpu_regs::SetGpuReg;
+use crate::trig::Sin;
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,6 +35,13 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `StartSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAffineAnim(a0 as _, a1);
+    }
+}
 // Data tables (translate with cdata.py): sAffineAnim_MegahornHorn_0 sAffineAnim_MegahornHorn_1 sAffineAnim_MegahornHorn_2 sAffineAnims_MegahornHorn gMegahornHornSpriteTemplate sAffineAnim_LeechLifeNeedle_0 sAffineAnim_LeechLifeNeedle_1 sAffineAnim_LeechLifeNeedle_2 sAffineAnims_LeechLifeNeedle gLeechLifeNeedleSpriteTemplate gWebThreadSpriteTemplate gStringWrapSpriteTemplate sAffineAnim_SpiderWeb sAffineAnims_SpiderWeb gSpiderWebSpriteTemplate gLinearStingerSpriteTemplate gPinMissileSpriteTemplate gIcicleSpearSpriteTemplate sAffineAnim_TailGlowOrb sAffineAnims_TailGlowOrb gTailGlowOrbSpriteTemplate
 
 /// `__anon1`
@@ -159,35 +167,8 @@ const _: () = {
     assert!(offset_of!(Anon7, relativeTo) == 0);
 };
 
-unsafe extern "C" {
-    static mut gBattleAnimArgs: CArray<i16, 8>;
-    static mut gBattleAnimAttacker: u8;
-    static mut gBattleAnimTarget: u8;
-    fn AnimTranslateLinear(a0: *mut Sprite) -> u8;
-    fn ArcTan2Neg(a0: i16, a1: i16) -> u16;
-    fn DestroyAnimSprite(a0: *mut Sprite);
-    fn DestroySpriteAndMatrix(a0: *mut Sprite);
-    fn GetBattlerPosition(a0: u8) -> u8;
-    fn GetBattlerSide(a0: u8) -> u8;
-    fn GetBattlerSpriteCoord(a0: u8, a1: u8) -> u8;
-    fn GetBattlerSpriteCoord2(a0: u8, a1: u8) -> u8;
-    fn InitAnimArcTranslation(a0: *mut Sprite);
-    fn InitAnimLinearTranslationWithSpeed(a0: *mut Sprite);
-    fn InitSpritePosToAnimAttacker(a0: *mut Sprite, a1: u8);
-    fn IsContest() -> u8;
-    fn RunStoredCallbackWhenAffineAnimEnds(a0: *mut Sprite);
-    fn SetAverageBattlerPositions(a0: u8, a1: u8, a2: *mut i16, a3: *mut i16);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn Sin(a0: i16, a1: i16) -> i16;
-    fn StartAnimLinearTranslation(a0: *mut Sprite);
-    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
-    fn StoreSpriteCallbackInData6(a0: *mut Sprite, a1: Option<unsafe extern "C" fn(*mut Sprite)>);
-    fn TranslateAnimHorizontalArc(a0: *mut Sprite) -> u8;
-    fn TrySetSpriteRotScale(a0: *mut Sprite, a1: u8, a2: i16, a3: i16, a4: u16);
-}
-
-pub(crate) unsafe extern "C" fn AnimMegahornHorn(sprite: *mut Sprite) {
-    let mut cmd: *mut Anon1 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon1;
+pub(crate) unsafe fn AnimMegahornHorn(sprite: *mut Sprite) {
+    let cmd: *mut Anon1 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon1;
     if IsContest() != 0 {
         StartSpriteAffineAnim(sprite, 2);
         (*cmd).x2 = -(*cmd).x2;
@@ -210,8 +191,8 @@ pub(crate) unsafe extern "C" fn AnimMegahornHorn(sprite: *mut Sprite) {
     (*sprite).callback = Some(StartAnimLinearTranslation);
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
-pub(crate) unsafe extern "C" fn AnimLeechLifeNeedle(sprite: *mut Sprite) {
-    let mut cmd: *mut Anon2 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon2;
+pub(crate) unsafe fn AnimLeechLifeNeedle(sprite: *mut Sprite) {
+    let cmd: *mut Anon2 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon2;
     if IsContest() != 0 {
         (*cmd).x = -(*cmd).x;
         StartSpriteAffineAnim(sprite, 2);
@@ -228,10 +209,10 @@ pub(crate) unsafe extern "C" fn AnimLeechLifeNeedle(sprite: *mut Sprite) {
     (*sprite).callback = Some(StartAnimLinearTranslation);
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
-pub(crate) unsafe extern "C" fn AnimTranslateWebThread(sprite: *mut Sprite) {
-    let mut cmd: *mut Anon3 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon3;
+pub(crate) unsafe fn AnimTranslateWebThread(sprite: *mut Sprite) {
+    let cmd: *mut Anon3 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon3;
     if IsContest() != 0 {
-        (*cmd).unk2 = (*cmd).unk2 / 2;
+        (*cmd).unk2 /= 2;
     }
     InitSpritePosToAnimAttacker(sprite, TRUE);
     (*sprite).data[0] = (*cmd).unk2;
@@ -253,16 +234,16 @@ pub(crate) unsafe extern "C" fn AnimTranslateWebThread(sprite: *mut Sprite) {
     (*sprite).data[5] = (*cmd).amplitude;
     (*sprite).callback = Some(AnimTranslateWebThread_Step);
 }
-pub(crate) unsafe extern "C" fn AnimTranslateWebThread_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimTranslateWebThread_Step(sprite: *mut Sprite) {
     if AnimTranslateLinear(sprite) != 0 {
         DestroyAnimSprite(sprite);
         return;
     }
     (*sprite).x2 += Sin((*sprite).data[6], (*sprite).data[5]);
-    (*sprite).data[6] = (*sprite).data[6] + 13 & 0xFF;
+    (*sprite).data[6] = ((*sprite).data[6] + 13) & 0xFF;
 }
-pub(crate) unsafe extern "C" fn AnimStringWrap(sprite: *mut Sprite) {
-    let mut cmd: *mut Anon4 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon4;
+pub(crate) unsafe fn AnimStringWrap(sprite: *mut Sprite) {
+    let cmd: *mut Anon4 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon4;
     SetAverageBattlerPositions(
         gBattleAnimTarget,
         FALSE,
@@ -280,7 +261,7 @@ pub(crate) unsafe extern "C" fn AnimStringWrap(sprite: *mut Sprite) {
     }
     (*sprite).callback = Some(AnimStringWrap_Step);
 }
-pub(crate) unsafe extern "C" fn AnimStringWrap_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimStringWrap_Step(sprite: *mut Sprite) {
     if ({
         (*sprite).data[0] += 1;
         (*sprite).data[0]
@@ -297,13 +278,13 @@ pub(crate) unsafe extern "C" fn AnimStringWrap_Step(sprite: *mut Sprite) {
         DestroyAnimSprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimSpiderWeb(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSpiderWeb(sprite: *mut Sprite) {
     SetGpuReg(REG_OFFSET_BLDCNT, 16192);
     SetGpuReg(REG_OFFSET_BLDALPHA, 16);
     (*sprite).data[0] = 16;
     (*sprite).callback = Some(AnimSpiderWeb_Step);
 }
-pub(crate) unsafe extern "C" fn AnimSpiderWeb_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSpiderWeb_Step(sprite: *mut Sprite) {
     if (*sprite).data[2] < 20 {
         (*sprite).data[2] += 1;
     } else if ({
@@ -325,16 +306,13 @@ pub(crate) unsafe extern "C" fn AnimSpiderWeb_Step(sprite: *mut Sprite) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn AnimSpiderWeb_End(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSpiderWeb_End(sprite: *mut Sprite) {
     SetGpuReg(REG_OFFSET_BLDCNT, 0);
     SetGpuReg(REG_OFFSET_BLDALPHA, 0);
     DestroyAnimSprite(sprite);
 }
-pub(crate) unsafe extern "C" fn AnimTranslateStinger(sprite: *mut Sprite) {
-    let mut cmd: *mut Anon5 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon5;
-    let mut lVarX: i16 = 0;
-    let mut lVarY: i16 = 0;
-    let mut rot: u16 = 0;
+pub(crate) unsafe fn AnimTranslateStinger(sprite: *mut Sprite) {
+    let cmd: *mut Anon5 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon5;
     if IsContest() != 0 {
         (*cmd).targetX = -(*cmd).targetX;
     } else {
@@ -344,20 +322,20 @@ pub(crate) unsafe extern "C" fn AnimTranslateStinger(sprite: *mut Sprite) {
             (*cmd).targetY = -(*cmd).targetY;
         }
     }
-    if IsContest() == 0 && GetBattlerSide(gBattleAnimAttacker) == GetBattlerSide(gBattleAnimTarget)
+    if IsContest() == 0
+        && GetBattlerSide(gBattleAnimAttacker) == GetBattlerSide(gBattleAnimTarget)
+        && (GetBattlerPosition(gBattleAnimTarget) == B_POSITION_PLAYER_LEFT
+            || GetBattlerPosition(gBattleAnimTarget) == B_POSITION_OPPONENT_LEFT)
     {
-        if GetBattlerPosition(gBattleAnimTarget) == B_POSITION_PLAYER_LEFT
-            || GetBattlerPosition(gBattleAnimTarget) == B_POSITION_OPPONENT_LEFT
-        {
-            (*cmd).targetX *= -1;
-            (*cmd).initialX *= -1;
-        }
+        (*cmd).targetX *= -1;
+        (*cmd).initialX *= -1;
     }
     InitSpritePosToAnimAttacker(sprite, TRUE);
-    lVarX = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16 + (*cmd).targetX;
-    lVarY = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16
+    let lVarX: i16 =
+        GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16 + (*cmd).targetX;
+    let lVarY: i16 = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16
         + (*cmd).targetY;
-    rot = ArcTan2Neg(lVarX - (*sprite).x, lVarY - (*sprite).y);
+    let mut rot: u16 = ArcTan2Neg(lVarX - (*sprite).x, lVarY - (*sprite).y);
     rot -= 0x4000;
     TrySetSpriteRotScale(sprite, FALSE, 0x100, 0x100, rot);
     (*sprite).data[0] = (*cmd).duration;
@@ -366,8 +344,8 @@ pub(crate) unsafe extern "C" fn AnimTranslateStinger(sprite: *mut Sprite) {
     (*sprite).callback = Some(StartAnimLinearTranslation);
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
-pub(crate) unsafe extern "C" fn AnimMissileArc(sprite: *mut Sprite) {
-    let mut cmd: *mut Anon6 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon6;
+pub(crate) unsafe fn AnimMissileArc(sprite: *mut Sprite) {
+    let cmd: *mut Anon6 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon6;
     InitSpritePosToAnimAttacker(sprite, TRUE);
     if GetBattlerSide(gBattleAnimAttacker) != 0 {
         (*cmd).targetX = -(*cmd).targetX;
@@ -382,7 +360,7 @@ pub(crate) unsafe extern "C" fn AnimMissileArc(sprite: *mut Sprite) {
     (*sprite).callback = Some(AnimMissileArc_Step);
     (*sprite).set_invisible(TRUE as u16);
 }
-pub(crate) unsafe extern "C" fn AnimMissileArc_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimMissileArc_Step(sprite: *mut Sprite) {
     (*sprite).set_invisible(FALSE as u16);
     if TranslateAnimHorizontalArc(sprite) != 0 {
         DestroyAnimSprite(sprite);
@@ -391,7 +369,6 @@ pub(crate) unsafe extern "C" fn AnimMissileArc_Step(sprite: *mut Sprite) {
         let mut x2: i16 = 0;
         let mut y2: i16 = 0;
         let mut i: i32 = 0;
-        i = 0;
         while i < 8 {
             tempData[i] = (*sprite).data[i];
             i += 1;
@@ -405,16 +382,14 @@ pub(crate) unsafe extern "C" fn AnimMissileArc_Step(sprite: *mut Sprite) {
             );
             rotation -= 0x4000;
             TrySetSpriteRotScale(sprite, FALSE, 0x100, 0x100, rotation);
-            i = 0;
-            while i < 8 {
+            for i in 0..8i32 {
                 (*sprite).data[i] = tempData[i];
-                i += 1;
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn AnimTailGlowOrb(sprite: *mut Sprite) {
-    let mut cmd: *mut Anon7 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon7;
+pub(crate) unsafe fn AnimTailGlowOrb(sprite: *mut Sprite) {
+    let cmd: *mut Anon7 = gBattleAnimArgs.as_mut_ptr() as *mut c_void as *mut Anon7;
     if (*cmd).relativeTo == ANIM_ATTACKER as i16 {
         (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2) as i16;
         (*sprite).y =

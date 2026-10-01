@@ -1,340 +1,379 @@
-//! The task scheduler: a fixed pool of 16 slots threaded into a
-//! priority-ordered intrusive linked list.
+//! The task scheduler (was src/task.c).
+//!
+//! A task is a function called once a frame with its id, plus sixteen
+//! `i16`s of data it keeps between frames. There are 16 slots; active tasks
+//! form a linked list ordered by priority (lower runs first), threaded
+//! through `prev`/`next` with [`HEAD_SENTINEL`] and [`TAIL_SENTINEL`] at its
+//! ends.
+//!
+//! Task functions reach `gTasks` themselves while the scheduler runs them
+//! (to read their data, destroy themselves, start other tasks), so the
+//! scheduler never holds a reference to it across a call.
 
-use crate::ffi::{
-    HEAD_SENTINEL, NUM_TASK_DATA, NUM_TASKS, TAIL_SENTINEL, TASK_FUNC_OFFSET,
-    TASK_IS_ACTIVE_OFFSET, TASK_NEXT_OFFSET, TASK_PREV_OFFSET, TASK_PRIORITY_OFFSET, TASK_SIZE,
-    TaskArm, TaskFunc, set_task_data, task, task_data,
-};
+use crate::c::{CArray, CIndex};
+use crate::ffi::TaskFunc;
+use crate::global::Global;
+use crate::types::Task;
 
-/// `COMMON_DATA struct Task gTasks[NUM_TASKS]`
-#[unsafe(no_mangle)]
-#[unsafe(link_section = "common_data")]
-pub static mut gTasks: [TaskArm; NUM_TASKS] = [const { TaskArm([0; TASK_SIZE]) }; NUM_TASKS];
+pub const NUM_TASKS: usize = 16;
+pub const NUM_TASK_DATA: usize = 16;
+pub const HEAD_SENTINEL: u8 = 0xfe;
+pub const TAIL_SENTINEL: u8 = 0xff;
+/// What [`find_task_id_by_func`]'s C name returns for "none".
+pub const TASK_NONE: u8 = TAIL_SENTINEL;
 
-/// Followup functions are stashed in the last two data slots.
+/// Where `SetTaskFuncWithFollowupFunc` keeps the followup function: the
+/// last two data slots.
 const FOLLOWUP_FUNC_INDEX: usize = NUM_TASK_DATA - 2;
 
-#[inline]
-unsafe fn is_active(task_id: u8) -> bool {
-    let flag = unsafe { task(task_id).add(TASK_IS_ACTIVE_OFFSET).read_volatile() };
-    flag != 0
-}
-
-#[inline]
-unsafe fn set_is_active(task_id: u8, active: bool) {
-    unsafe {
-        task(task_id)
-            .add(TASK_IS_ACTIVE_OFFSET)
-            .write_volatile(u8::from(active))
-    };
-}
-
-#[inline]
-unsafe fn prev(task_id: u8) -> u8 {
-    unsafe { task(task_id).add(TASK_PREV_OFFSET).read_volatile() }
-}
-
-#[inline]
-unsafe fn set_prev(task_id: u8, value: u8) {
-    unsafe { task(task_id).add(TASK_PREV_OFFSET).write_volatile(value) };
-}
-
-#[inline]
-unsafe fn next(task_id: u8) -> u8 {
-    unsafe { task(task_id).add(TASK_NEXT_OFFSET).read_volatile() }
-}
-
-#[inline]
-unsafe fn set_next(task_id: u8, value: u8) {
-    unsafe { task(task_id).add(TASK_NEXT_OFFSET).write_volatile(value) };
-}
-
-#[inline]
-unsafe fn priority(task_id: u8) -> u8 {
-    unsafe { task(task_id).add(TASK_PRIORITY_OFFSET).read_volatile() }
-}
-
-#[inline]
-unsafe fn set_priority(task_id: u8, value: u8) {
-    unsafe {
-        task(task_id)
-            .add(TASK_PRIORITY_OFFSET)
-            .write_volatile(value)
-    };
-}
-
-/// Compares two task functions the way the C does: by address. Rust's
-/// `fn` equality is lint-flagged because codegen may merge or duplicate
-/// functions, but on this target the scheduler genuinely identifies tasks by
-/// the pointer it was handed.
-#[inline]
-unsafe fn func_is(task_id: u8, function: TaskFunc) -> bool {
-    unsafe { func(task_id) }.is_some_and(|stored| stored as usize == function as usize)
-}
-
-#[inline]
-unsafe fn func(task_id: u8) -> Option<TaskFunc> {
-    unsafe {
-        task(task_id)
-            .add(TASK_FUNC_OFFSET)
-            .cast::<Option<TaskFunc>>()
-            .read()
-    }
-}
-
-#[inline]
-unsafe fn set_func(task_id: u8, value: Option<TaskFunc>) {
-    unsafe {
-        task(task_id)
-            .add(TASK_FUNC_OFFSET)
-            .cast::<Option<TaskFunc>>()
-            .write(value)
-    };
-}
-
-#[inline]
-unsafe fn clear_data(task_id: u8) {
-    let mut index = 0usize;
-    while index < NUM_TASK_DATA {
-        unsafe { set_task_data(task_id, index, 0) };
-        index += 1;
-    }
-}
-
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetTasks() {
-    let mut i = 0u8;
-    while (i as usize) < NUM_TASKS {
-        unsafe { set_is_active(i, false) };
-        unsafe { set_func(i, Some(TaskDummy)) };
-        unsafe { set_prev(i, i) };
-        unsafe { set_next(i, i.wrapping_add(1)) };
-        // `priority = -1` on a u8 field.
-        unsafe { set_priority(i, 0xff) };
-        unsafe { clear_data(i) };
-        i += 1;
-    }
+#[unsafe(link_section = "common_data")]
+pub static gTasks: Global<CArray<Task, NUM_TASKS>> = Global::new(unsafe { core::mem::zeroed() });
 
-    unsafe { set_prev(0, HEAD_SENTINEL) };
-    unsafe { set_next(NUM_TASKS as u8 - 1, TAIL_SENTINEL) };
+/// The task slots.
+///
+/// # Safety
+/// No other reference to them may be in use while the result lives: keep
+/// it within one step, not across a call to a task function.
+unsafe fn tasks<'a>() -> &'a mut CArray<Task, NUM_TASKS> {
+    // SAFETY: a static; exclusivity is the caller's promise.
+    unsafe { &mut *gTasks.as_ptr() }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateTask(function: TaskFunc, task_priority: u8) -> u8 {
-    let mut i = 0u8;
-    while (i as usize) < NUM_TASKS {
-        if !unsafe { is_active(i) } {
-            unsafe { set_func(i, Some(function)) };
-            unsafe { set_priority(i, task_priority) };
-            unsafe { insert_task(i) };
-            unsafe { clear_data(i) };
-            unsafe { set_is_active(i, true) };
-            return i;
-        }
-        i += 1;
-    }
+// Single reads and writes of a task's fields, for code that keeps no
+// reference to the tasks. Like C (and CArray) they don't check the indices.
 
-    // The pool is full; the caller silently reuses slot 0's id.
-    0
+/// Task `id`'s data slot `slot`.
+#[inline(always)]
+pub fn task_get(id: impl CIndex, slot: impl CIndex) -> i16 {
+    // SAFETY: a plain read; no reference to the tasks is kept.
+    unsafe { tasks()[id].data[slot] }
 }
 
-unsafe fn insert_task(new_task_id: u8) {
-    let mut task_id = unsafe { find_first_active_task() };
+/// Sets task `id`'s data slot `slot`.
+#[inline(always)]
+pub fn task_set(id: impl CIndex, slot: impl CIndex, value: i16) {
+    // SAFETY: as in task_get.
+    unsafe { tasks()[id].data[slot] = value }
+}
 
-    if task_id as usize == NUM_TASKS {
-        // The new task is the only task.
-        unsafe { set_prev(new_task_id, HEAD_SENTINEL) };
-        unsafe { set_next(new_task_id, TAIL_SENTINEL) };
+/// Task `id`'s function.
+#[inline(always)]
+pub fn task_func(id: impl CIndex) -> Option<TaskFunc> {
+    // SAFETY: as in task_get.
+    unsafe { tasks()[id].func }
+}
+
+/// Makes task `id` run `func`.
+#[inline(always)]
+pub fn task_set_func(id: impl CIndex, func: Option<TaskFunc>) {
+    // SAFETY: as in task_get.
+    unsafe { tasks()[id].func = func }
+}
+
+/// A pointer to task `id`'s data slot `slot`, for code that works through
+/// pointers.
+#[inline(always)]
+pub fn task_data_ptr(id: impl CIndex, slot: impl CIndex) -> *mut i16 {
+    // SAFETY: only an address is computed.
+    unsafe { &raw mut tasks()[id].data[slot] }
+}
+
+/// Task `id`'s data, for the task's own code.
+///
+/// # Safety
+/// As for [`tasks`]: the result must not live across a call that may touch
+/// the tasks (another task's code, [`create_task`]...).
+pub unsafe fn task_data<'a>(id: u8) -> &'a mut CArray<i16, NUM_TASK_DATA> {
+    unsafe { &mut tasks()[id].data }
+}
+
+fn is_same_func(a: Option<TaskFunc>, b: TaskFunc) -> bool {
+    a.is_some_and(|a| a as usize == b as usize)
+}
+
+/// Empties every slot.
+pub fn reset_tasks() {
+    // SAFETY: the scheduler isn't running any task now.
+    let tasks = unsafe { tasks() };
+    for (i, task) in tasks.0.iter_mut().enumerate() {
+        *task = Task {
+            func: Some(TaskDummy),
+            isActive: 0,
+            prev: i as u8,
+            next: i as u8 + 1,
+            priority: u8::MAX,
+            data: CArray([0; NUM_TASK_DATA]),
+        };
+    }
+    tasks[0].prev = HEAD_SENTINEL;
+    tasks[NUM_TASKS - 1].next = TAIL_SENTINEL;
+}
+
+/// Starts `func` in the first free slot and returns its id. When all 16 are
+/// taken it creates nothing and returns 0, as C does.
+pub fn create_task(func: TaskFunc, priority: u8) -> u8 {
+    // SAFETY: the borrow ends before any task code runs.
+    let tasks = unsafe { tasks() };
+    let Some(id) = tasks.0.iter().position(|t| t.isActive == 0) else {
+        return 0;
+    };
+    let id = id as u8;
+    tasks[id].func = Some(func);
+    tasks[id].priority = priority;
+    insert_task(tasks, id);
+    tasks[id].data = CArray([0; NUM_TASK_DATA]);
+    tasks[id].isActive = 1;
+    id
+}
+
+/// Links task `new` into the list, before the first task with a higher
+/// priority value.
+fn insert_task(tasks: &mut CArray<Task, NUM_TASKS>, new: u8) {
+    let mut id = first_active_task(tasks);
+    if id == NUM_TASKS as u8 {
+        // the only task
+        tasks[new].prev = HEAD_SENTINEL;
+        tasks[new].next = TAIL_SENTINEL;
         return;
     }
-
     loop {
-        if unsafe { priority(new_task_id) } < unsafe { priority(task_id) } {
-            // A task with a higher priority value: insert before it.
-            unsafe { set_prev(new_task_id, prev(task_id)) };
-            unsafe { set_next(new_task_id, task_id) };
-            if unsafe { prev(task_id) } != HEAD_SENTINEL {
-                unsafe { set_next(prev(task_id), new_task_id) };
+        if tasks[new].priority < tasks[id].priority {
+            let prev = tasks[id].prev;
+            tasks[new].prev = prev;
+            tasks[new].next = id;
+            if prev != HEAD_SENTINEL {
+                tasks[prev].next = new;
             }
-            unsafe { set_prev(task_id, new_task_id) };
+            tasks[id].prev = new;
             return;
         }
-
-        if unsafe { next(task_id) } == TAIL_SENTINEL {
-            // The end of the list.
-            unsafe { set_prev(new_task_id, task_id) };
-            unsafe { set_next(new_task_id, next(task_id)) };
-            unsafe { set_next(task_id, new_task_id) };
+        if tasks[id].next == TAIL_SENTINEL {
+            tasks[new].prev = id;
+            tasks[new].next = TAIL_SENTINEL;
+            tasks[id].next = new;
             return;
         }
-
-        task_id = unsafe { next(task_id) };
+        id = tasks[id].next;
     }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DestroyTask(task_id: u8) {
-    if !unsafe { is_active(task_id) } {
+/// Stops task `id` and unlinks it (its data stays).
+pub fn destroy_task(id: u8) {
+    // SAFETY: the borrow ends here.
+    let tasks = unsafe { tasks() };
+    if tasks[id].isActive == 0 {
         return;
     }
-    unsafe { set_is_active(task_id, false) };
-
-    if unsafe { prev(task_id) } == HEAD_SENTINEL {
-        if unsafe { next(task_id) } != TAIL_SENTINEL {
-            unsafe { set_prev(next(task_id), HEAD_SENTINEL) };
+    tasks[id].isActive = 0;
+    let (prev, next) = (tasks[id].prev, tasks[id].next);
+    if prev == HEAD_SENTINEL {
+        if next != TAIL_SENTINEL {
+            tasks[next].prev = HEAD_SENTINEL;
         }
-    } else if unsafe { next(task_id) } == TAIL_SENTINEL {
-        unsafe { set_next(prev(task_id), TAIL_SENTINEL) };
+    } else if next == TAIL_SENTINEL {
+        tasks[prev].next = TAIL_SENTINEL;
     } else {
-        unsafe { set_next(prev(task_id), next(task_id)) };
-        unsafe { set_prev(next(task_id), prev(task_id)) };
+        tasks[prev].next = next;
+        tasks[next].prev = prev;
     }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RunTasks() {
-    let mut task_id = unsafe { find_first_active_task() };
-    if task_id as usize == NUM_TASKS {
+/// Runs every active task once, in list order.
+pub fn run_tasks() {
+    // SAFETY: each borrow of the tasks ends before the task function runs.
+    let mut id = first_active_task(unsafe { tasks() });
+    if id == NUM_TASKS as u8 {
         return;
     }
-
     loop {
-        if let Some(function) = unsafe { func(task_id) } {
-            unsafe { function(task_id) };
+        let func = unsafe { tasks() }[id].func;
+        if let Some(func) = func {
+            // SAFETY: task functions take their own id.
+            unsafe { func(id) };
         }
-        task_id = unsafe { next(task_id) };
-        if task_id == TAIL_SENTINEL {
-            return;
-        }
-    }
-}
-
-unsafe fn find_first_active_task() -> u8 {
-    let mut task_id = 0u8;
-    while (task_id as usize) < NUM_TASKS {
-        if unsafe { is_active(task_id) } && unsafe { prev(task_id) } == HEAD_SENTINEL {
+        id = unsafe { tasks() }[id].next;
+        if id == TAIL_SENTINEL {
             break;
         }
-        task_id += 1;
-    }
-    task_id
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TaskDummy(_task_id: u8) {}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetTaskFuncWithFollowupFunc(
-    task_id: u8,
-    function: TaskFunc,
-    followup_func: TaskFunc,
-) {
-    // The followup is stored low half first, the opposite order to the
-    // field-move callbacks in data[8]/data[9].
-    let address = followup_func as usize as u32;
-    unsafe { set_task_data(task_id, FOLLOWUP_FUNC_INDEX, address as i16) };
-    unsafe { set_task_data(task_id, FOLLOWUP_FUNC_INDEX + 1, (address >> 16) as i16) };
-    unsafe { set_func(task_id, Some(function)) };
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SwitchTaskToFollowupFunc(task_id: u8) {
-    let low = unsafe { task_data(task_id, FOLLOWUP_FUNC_INDEX) } as u16;
-    // The high half is sign-extended before shifting in the original, which
-    // is harmless for a ROM address but is preserved anyway.
-    let high = i32::from(unsafe { task_data(task_id, FOLLOWUP_FUNC_INDEX + 1) }) << 16;
-    let address = (i32::from(low) | high) as u32;
-    unsafe {
-        set_func(
-            task_id,
-            core::mem::transmute::<usize, Option<TaskFunc>>(address as usize),
-        )
-    };
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FuncIsActiveTask(function: TaskFunc) -> u8 {
-    let mut i = 0u8;
-    while (i as usize) < NUM_TASKS {
-        if unsafe { is_active(i) } && unsafe { func_is(i, function) } {
-            return 1;
-        }
-        i += 1;
-    }
-    0
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FindTaskIdByFunc(function: TaskFunc) -> u8 {
-    let mut i = 0u8;
-    while (i as usize) < NUM_TASKS {
-        if unsafe { is_active(i) } && unsafe { func_is(i, function) } {
-            return i;
-        }
-        i += 1;
-    }
-    // TASK_NONE
-    TAIL_SENTINEL
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetTaskCount() -> u8 {
-    let mut count = 0u8;
-    let mut i = 0u8;
-    while (i as usize) < NUM_TASKS {
-        if unsafe { is_active(i) } {
-            count += 1;
-        }
-        i += 1;
-    }
-    count
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWordTaskArg(task_id: u8, data_elem: u8, value: u32) {
-    if (data_elem as usize) < NUM_TASK_DATA - 1 {
-        unsafe { set_task_data(task_id, data_elem as usize, value as i16) };
-        unsafe { set_task_data(task_id, data_elem as usize + 1, (value >> 16) as i16) };
     }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetWordTaskArg(task_id: u8, data_elem: u8) -> u32 {
-    if (data_elem as usize) < NUM_TASK_DATA - 1 {
-        let low = unsafe { task_data(task_id, data_elem as usize) } as u16;
-        let high = i32::from(unsafe { task_data(task_id, data_elem as usize + 1) }) << 16;
-        (i32::from(low) | high) as u32
+/// The head of the list, or NUM_TASKS if no task is active.
+fn first_active_task(tasks: &CArray<Task, NUM_TASKS>) -> u8 {
+    tasks
+        .0
+        .iter()
+        .position(|t| t.isActive == 1 && t.prev == HEAD_SENTINEL)
+        .unwrap_or(NUM_TASKS) as u8
+}
+
+/// Makes task `id` run `func`, and `followup` once it calls
+/// [`switch_task_to_followup_func`].
+pub fn set_task_func_with_followup_func(id: u8, func: TaskFunc, followup: TaskFunc) {
+    // SAFETY: the borrow ends here.
+    let task = &mut unsafe { tasks() }[id];
+    let address = followup as usize as u32;
+    task.data[FOLLOWUP_FUNC_INDEX] = address as i16;
+    task.data[FOLLOWUP_FUNC_INDEX + 1] = (address >> 16) as i16;
+    task.func = Some(func);
+}
+
+pub fn switch_task_to_followup_func(id: u8) {
+    // SAFETY: the borrow ends here.
+    let task = &mut unsafe { tasks() }[id];
+    let address = u32::from(task.data[FOLLOWUP_FUNC_INDEX] as u16)
+        | (task.data[FOLLOWUP_FUNC_INDEX + 1] as u32) << 16;
+    // SAFETY: the address is the one set_task_func_with_followup_func stored
+    // (or 0, None); fn pointers and addresses have the same size here.
+    task.func = unsafe { core::mem::transmute::<usize, Option<TaskFunc>>(address as usize) };
+}
+
+/// The id of an active task running `func`, if any.
+pub fn find_task_id_by_func(func: TaskFunc) -> Option<u8> {
+    // SAFETY: the borrow ends here.
+    let tasks = unsafe { tasks() };
+    tasks
+        .0
+        .iter()
+        .position(|t| t.isActive == 1 && is_same_func(t.func, func))
+        .map(|i| i as u8)
+}
+
+pub fn task_count() -> u8 {
+    // SAFETY: the borrow ends here.
+    unsafe { tasks() }
+        .0
+        .iter()
+        .filter(|t| t.isActive == 1)
+        .count() as u8
+}
+
+/// Stores a 32-bit value in data slots `elem` and `elem + 1`.
+pub fn set_word_task_arg(id: u8, elem: u8, value: u32) {
+    if usize::from(elem) < NUM_TASK_DATA - 1 {
+        // SAFETY: the borrow ends here.
+        let data = unsafe { task_data(id) };
+        data[elem] = value as i16;
+        data[elem + 1] = (value >> 16) as i16;
+    }
+}
+
+/// The 32-bit value in data slots `elem` and `elem + 1` (0 for the last slot).
+pub fn get_word_task_arg(id: u8, elem: u8) -> u32 {
+    if usize::from(elem) < NUM_TASK_DATA - 1 {
+        // SAFETY: the borrow ends here.
+        let data = unsafe { task_data(id) };
+        u32::from(data[elem] as u16) | (data[elem + 1] as u32) << 16
     } else {
         0
     }
+}
+
+// ------------------------------------------------------------------ C names
+
+#[unsafe(no_mangle)]
+pub fn ResetTasks() {
+    reset_tasks();
+}
+
+#[unsafe(no_mangle)]
+pub fn CreateTask(func: TaskFunc, priority: u8) -> u8 {
+    create_task(func, priority)
+}
+
+#[unsafe(no_mangle)]
+pub fn DestroyTask(id: u8) {
+    destroy_task(id);
+}
+
+#[unsafe(no_mangle)]
+pub fn RunTasks() {
+    run_tasks();
+}
+
+#[unsafe(no_mangle)]
+pub fn TaskDummy(_id: u8) {}
+
+#[unsafe(no_mangle)]
+pub fn SetTaskFuncWithFollowupFunc(id: u8, func: TaskFunc, followup: TaskFunc) {
+    set_task_func_with_followup_func(id, func, followup);
+}
+
+#[unsafe(no_mangle)]
+pub fn SwitchTaskToFollowupFunc(id: u8) {
+    switch_task_to_followup_func(id);
+}
+
+#[unsafe(no_mangle)]
+pub fn FuncIsActiveTask(func: TaskFunc) -> u8 {
+    find_task_id_by_func(func).is_some().into()
+}
+
+#[unsafe(no_mangle)]
+pub fn FindTaskIdByFunc(func: TaskFunc) -> u8 {
+    find_task_id_by_func(func).unwrap_or(TASK_NONE)
+}
+
+#[unsafe(no_mangle)]
+pub fn GetTaskCount() -> u8 {
+    task_count()
+}
+
+#[unsafe(no_mangle)]
+pub fn SetWordTaskArg(id: u8, elem: u8, value: u32) {
+    set_word_task_arg(id, elem, value);
+}
+
+#[unsafe(no_mangle)]
+pub fn GetWordTaskArg(id: u8, elem: u8) -> u32 {
+    get_word_task_arg(id, elem)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn the_task_pool_is_exactly_the_common_data_block() {
-        assert_eq!(core::mem::size_of::<TaskArm>(), 40);
-        assert_eq!(TASK_SIZE * NUM_TASKS, 640);
-        assert_eq!(FOLLOWUP_FUNC_INDEX, 14);
-    }
+    fn task_a(_: u8) {}
+    fn task_b(_: u8) {}
 
-    #[test]
-    fn sentinels_cannot_collide_with_a_real_task_id() {
-        assert!(HEAD_SENTINEL as usize >= NUM_TASKS);
-        assert!(TAIL_SENTINEL as usize >= NUM_TASKS);
-        assert_ne!(HEAD_SENTINEL, TAIL_SENTINEL);
-    }
-
-    #[test]
-    fn word_args_round_trip_through_two_signed_halves() {
-        for value in [0u32, 1, 0x0000_ffff, 0x8000_0000, 0x0812_3456, u32::MAX] {
-            let low = value as i16;
-            let high = (value >> 16) as i16;
-            let rebuilt = (i32::from(low as u16) | (i32::from(high) << 16)) as u32;
-            assert_eq!(rebuilt, value);
+    fn order() -> [u8; 4] {
+        let tasks = unsafe { tasks() };
+        let mut out = [TAIL_SENTINEL; 4];
+        let mut id = first_active_task(tasks);
+        let mut i = 0;
+        while id != TAIL_SENTINEL && i < 4 {
+            out[i] = id;
+            id = tasks[id].next;
+            i += 1;
         }
+        out
+    }
+
+    #[test]
+    fn the_list_is_kept_in_priority_order() {
+        reset_tasks();
+        let late = create_task(task_a, 50);
+        let early = create_task(task_b, 10);
+        let middle = create_task(task_a, 20);
+        assert_eq!(order(), [early, middle, late, TAIL_SENTINEL]);
+        assert_eq!(task_count(), 3);
+        assert_eq!(find_task_id_by_func(task_b), Some(early));
+        destroy_task(middle);
+        assert_eq!(order(), [early, late, TAIL_SENTINEL, TAIL_SENTINEL]);
+        // a freed slot is reused first
+        assert_eq!(create_task(task_b, 99), middle);
+        word_args_round_trip_through_two_signed_halves();
+    }
+
+    // (one test: the tests run in parallel and share gTasks)
+    fn word_args_round_trip_through_two_signed_halves() {
+        reset_tasks();
+        let id = create_task(task_a, 0);
+        for value in [0u32, 1, 0x0000_ffff, 0x8000_0000, 0x0812_3456, u32::MAX] {
+            set_word_task_arg(id, 3, value);
+            assert_eq!(get_word_task_arg(id, 3), value);
+        }
+        assert_eq!(get_word_task_arg(id, 15), 0);
     }
 }

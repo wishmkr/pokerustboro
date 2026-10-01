@@ -79,26 +79,46 @@ const BIG_MON_SIZE_TABLE: [SizeEntry; 16] = [
     entry(1700, 1, -26),
 ];
 
-unsafe extern "C" {
-    static mut gPlayerParty: u8;
-    static mut gSaveBlock2Ptr: *mut u8;
-    static gSpeciesNames: u8;
-    static gText_DecimalPoint: u8;
-    static gText_Marco: u8;
-
-    fn GetMonData2(mon: *mut u8, field: c_int) -> u32;
-    fn GetPokedexHeightWeight(dex_num: u16, data: u8) -> u16;
-    fn SpeciesToNationalPokedexNum(species: u16) -> u16;
-    fn ConvertIntToDecimalStringN(dest: *mut u8, value: i32, mode: c_int, n: u8) -> *mut u8;
-    fn StringAppend(dest: *mut u8, src: *const u8) -> *mut u8;
+/// `GetMonData2` with this module's view of its types.
+#[inline]
+unsafe fn GetMonData2(a0: *mut u8, a1: c_int) -> u32 {
+    unsafe { crate::pokemon::GetMonData2(a0 as _, a1) }
+}
+/// `GetPokedexHeightWeight` with this module's view of its types.
+#[inline]
+unsafe fn GetPokedexHeightWeight(a0: u16, a1: u8) -> u16 {
+    crate::pokedex::GetPokedexHeightWeight(a0, a1)
+}
+/// `SpeciesToNationalPokedexNum` with this module's view of its types.
+#[inline]
+unsafe fn SpeciesToNationalPokedexNum(a0: u16) -> u16 {
+    unsafe { crate::pokemon::SpeciesToNationalPokedexNum(a0) }
+}
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: c_int, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `StringAppend` with this module's view of its types.
+#[inline]
+unsafe fn StringAppend(a0: *mut u8, a1: *const u8) -> *mut u8 {
+    unsafe { crate::string_util::StringAppend(a0 as _, a1 as _) as *mut u8 }
 }
 
 unsafe fn party_mon(index: usize) -> *mut u8 {
-    unsafe { (&raw mut gPlayerParty).add(index * POKEMON_SIZE) }
+    unsafe {
+        (&raw mut (*(&raw const crate::pokemon::gPlayerParty)
+            .cast::<u8>()
+            .cast_mut()))
+            .add(index * POKEMON_SIZE)
+    }
 }
 
 unsafe fn species_name(species: u16) -> *const u8 {
-    unsafe { (&raw const gSpeciesNames).add(species as usize * POKEMON_NAME_BUFFER) }
+    unsafe {
+        (&raw const (*(&raw const crate::data::data_tables::gSpeciesNames).cast::<u8>()))
+            .add(species as usize * POKEMON_NAME_BUFFER)
+    }
 }
 
 unsafe fn mon_size_hash(mon: *mut u8) -> u32 {
@@ -154,7 +174,12 @@ unsafe fn format_mon_size_record(string: *mut u8, size: u32) {
     let string = unsafe {
         ConvertIntToDecimalStringN(string, (size / 10) as i32, STR_CONV_MODE_LEFT_ALIGN, 8)
     };
-    let string = unsafe { StringAppend(string, &raw const gText_DecimalPoint) };
+    let string = unsafe {
+        StringAppend(
+            string,
+            &raw const (*(&raw const crate::data::strings::gText_DecimalPoint).cast::<u8>()),
+        )
+    };
     let _ = unsafe {
         ConvertIntToDecimalStringN(string, (size % 10) as i32, STR_CONV_MODE_LEFT_ALIGN, 1)
     };
@@ -197,44 +222,48 @@ unsafe fn mon_size_record_info(species: u16, size_record: *mut u16) {
     let _ = unsafe { StringCopy((&raw mut gStringVar1).cast::<u8>(), species_name(species)) };
 
     let name: *const u8 = if record == DEFAULT_MAX_SIZE {
-        &raw const gText_Marco
+        &raw const (*(&raw const crate::data::strings::gText_Marco).cast::<u8>())
     } else {
-        unsafe { gSaveBlock2Ptr }
+        unsafe {
+            *(&raw const crate::load_save::gSaveBlock2Ptr)
+                .cast::<*mut u8>()
+                .cast_mut()
+        }
     };
     let _ = unsafe { StringCopy((&raw mut gStringVar2).cast::<u8>(), name) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitSeedotSizeRecord() {
+pub unsafe fn InitSeedotSizeRecord() {
     let _ = unsafe { VarSet(VAR_SEEDOT_SIZE_RECORD, DEFAULT_MAX_SIZE) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSeedotSizeRecordInfo() {
+pub unsafe fn GetSeedotSizeRecordInfo() {
     let size_record = unsafe { GetVarPointer(VAR_SEEDOT_SIZE_RECORD) };
     unsafe { mon_size_record_info(SPECIES_SEEDOT, size_record) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CompareSeedotSize() {
+pub unsafe fn CompareSeedotSize() {
     let size_record = unsafe { GetVarPointer(VAR_SEEDOT_SIZE_RECORD) };
     let result = unsafe { compare_mon_size(SPECIES_SEEDOT, size_record) };
     unsafe { addr_of_mut!(gSpecialVar_Result).write(u16::from(result)) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitLotadSizeRecord() {
+pub unsafe fn InitLotadSizeRecord() {
     let _ = unsafe { VarSet(VAR_LOTAD_SIZE_RECORD, DEFAULT_MAX_SIZE) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLotadSizeRecordInfo() {
+pub unsafe fn GetLotadSizeRecordInfo() {
     let size_record = unsafe { GetVarPointer(VAR_LOTAD_SIZE_RECORD) };
     unsafe { mon_size_record_info(SPECIES_LOTAD, size_record) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CompareLotadSize() {
+pub unsafe fn CompareLotadSize() {
     let size_record = unsafe { GetVarPointer(VAR_LOTAD_SIZE_RECORD) };
     let result = unsafe { compare_mon_size(SPECIES_LOTAD, size_record) };
     unsafe { addr_of_mut!(gSpecialVar_Result).write(u16::from(result)) };

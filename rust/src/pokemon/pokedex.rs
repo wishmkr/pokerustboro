@@ -3,37 +3,223 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_labels,
+    unused_variables
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::bg::{CopyBgTilemapBufferToVram, HideBg, ResetBgsAndClearDma3BusyFlags, ShowBg};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::{DisableNationalPokedex, IsNationalPokedexEnabled};
+use crate::gpu_regs::{ClearGpuRegBits, EnableInterrupts, SetGpuReg};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::m4a::{gMPlayInfo_BGM, m4aMPlayContinue, m4aMPlayStop, m4aMPlayVolumeControl};
+use crate::menu::{AddTextPrinterParameterized4, DecompressAndLoadBgGfxUsingHeap};
+use crate::overworld::CB2_ReturnToFieldWithOpenMenu;
+use crate::palette::{
+    BeginNormalPaletteFade, LoadCompressedPalette, LoadPalette, ResetPaletteFade,
+    TransferPlttBuffer, UpdatePaletteFade, gPaletteFade,
+};
+use crate::pokedex_area_screen::ShowPokedexAreaScreen;
+use crate::pokedex_cry_screen::{
+    CryScreenPlayButton, FreeCryScreen, LoadCryMeter, LoadCryWaveformWindow,
+    UpdateCryWaveformWindow, gDexCryScreenState,
+};
+use crate::pokemon::{
+    GetMonSpritePalFromSpeciesAndPersonality, HoennToNationalOrder, NationalPokedexNumToSpecies,
+    NationalToHoennOrder, PlayerGenderToFrontTrainerPicId,
+};
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::sound::{
+    IsCryPlaying, IsCryPlayingOrClearCrySongs, IsSEPlaying, PlayCry_Normal,
+    PlayCry_NormalNoDucking, PlaySE, StopCryAndClearCrySongs,
+};
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData, SetOamMatrix, gReservedSpritePaletteCount,
+};
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::task::{gTasks, task_data_ptr, task_func, task_get, task_set, task_set_func};
+use crate::text::DeactivateAllTextPrinters;
+use crate::trainer_pokemon_sprites::{
+    CreateMonPicSprite_HandleDeoxys, CreateTrainerPicSprite, FreeAndDestroyMonPicSprite,
+    FreeAndDestroyTrainerPicSprite, ResetAllPicSprites,
+};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers,
+    PutWindowTilemap,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `BlitBitmapToWindow` with this module's view of its types.
+#[inline]
+unsafe fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16) {
+    unsafe {
+        crate::window::BlitBitmapToWindow(a0, a1 as _, a2, a3, a4, a5);
+    }
+}
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `CopyMonCategoryText` with this module's view of its types.
+#[inline]
+unsafe fn CopyMonCategoryText(a0: i32, a1: *mut u8) {
+    unsafe {
+        crate::international_string_util::CopyMonCategoryText(a0, a1 as _);
+    }
+}
+/// `CopyToBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBuffer(a0, a1 as _, a2, a3);
+    }
+}
+/// `CopyToWindowPixelBuffer` with this module's view of its types.
+#[inline]
+unsafe fn CopyToWindowPixelBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16) {
+    unsafe {
+        crate::window::CopyToWindowPixelBuffer(a0, a1 as _, a2, a3);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `GetStringCenterAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringCenterAlignXOffset(a0, a1 as _, a2) }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `LoadSpritePalettes` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+    unsafe {
+        crate::sprite::LoadSpritePalettes(a0 as _);
+    }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StringAppend` with this module's view of its types.
+#[inline]
+unsafe fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringAppend(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringLength` with this module's view of its types.
+#[inline]
+unsafe fn StringLength(a0: *mut u8) -> u16 {
+    unsafe { crate::string_util::StringLength(a0 as _) }
+}
+// The C's names for task and sprite data slots.
+const sTaskId: usize = 0;
+const tLoadScreenTaskId: usize = 0;
+const tScrolling: usize = 0;
+const tState: usize = 0;
+const tTopBarItem: usize = 0;
+const sIsDownArrow: usize = 1;
+const tDexNum: usize = 1;
+const tMenuItem: usize = 1;
+const tMonSpriteDone: usize = 1;
+const tBgLoaded: usize = 2;
+const tCursorPos_Mode: usize = 2;
+const tPalTimer: usize = 2;
+const tScrollOffset_Mode: usize = 3;
+const tSkipCry: usize = 3;
+const tCursorPos_Order: usize = 4;
+const tScrollOffset_Order: usize = 5;
+const tTrainerSpriteId: usize = 5;
+const tCursorPos_Name: usize = 6;
+const tScrollOffset_Name: usize = 7;
+const tCursorPos_Color: usize = 8;
+const tScrollOffset_Color: usize = 9;
+const tCursorPos_TypeLeft: usize = 10;
+const tScrollOffset_TypeLeft: usize = 11;
+const tCursorPos_TypeRight: usize = 12;
+const tOtIdLo: usize = 12;
+const tOtIdHi: usize = 13;
+const tScrollOffset_TypeRight: usize = 13;
+const tCursorPos: usize = 14;
+const tPersonalityLo: usize = 14;
+const tPersonalityHi: usize = 15;
+const tScrollOffset: usize = 15;
 // Data tables (translate with cdata.py): gPokedexOrder_Alphabetical gPokedexOrder_Weight gPokedexOrder_Height sOamData_ScrollBar sOamData_ScrollArrow sOamData_InterfaceText sOamData_RotatingPokeBall sOamData_SeenOwnText sOamData_Dex8x16 sSpriteAnim_ScrollBar sSpriteAnim_ScrollArrow sSpriteAnim_RotatingPokeBall sSpriteAnim_StartButton sSpriteAnim_SearchText sSpriteAnim_SelectButton sSpriteAnim_MenuText sSpriteAnim_SeenText sSpriteAnim_OwnText sSpriteAnim_HoennText sSpriteAnim_NationalText sSpriteAnim_HoennSeenOwnDigit0 sSpriteAnim_HoennSeenOwnDigit1 sSpriteAnim_HoennSeenOwnDigit2 sSpriteAnim_HoennSeenOwnDigit3 sSpriteAnim_HoennSeenOwnDigit4 sSpriteAnim_HoennSeenOwnDigit5 sSpriteAnim_HoennSeenOwnDigit6 sSpriteAnim_HoennSeenOwnDigit7 sSpriteAnim_HoennSeenOwnDigit8 sSpriteAnim_HoennSeenOwnDigit9 sSpriteAnim_NationalSeenOwnDigit0 sSpriteAnim_NationalSeenOwnDigit1 sSpriteAnim_NationalSeenOwnDigit2 sSpriteAnim_NationalSeenOwnDigit3 sSpriteAnim_NationalSeenOwnDigit4 sSpriteAnim_NationalSeenOwnDigit5 sSpriteAnim_NationalSeenOwnDigit6 sSpriteAnim_NationalSeenOwnDigit7 sSpriteAnim_NationalSeenOwnDigit8 sSpriteAnim_NationalSeenOwnDigit9 sSpriteAnim_DexListStartMenuCursor sSpriteAnimTable_ScrollBar sSpriteAnimTable_ScrollArrow sSpriteAnimTable_RotatingPokeBall sSpriteAnimTable_InterfaceText sSpriteAnimTable_SeenOwnText sSpriteAnimTable_HoennNationalText sSpriteAnimTable_HoennSeenOwnNumber sSpriteAnimTable_NationalSeenOwnNumber sSpriteAnimTable_DexListStartMenuCursor sScrollBarSpriteTemplate sScrollArrowSpriteTemplate sInterfaceTextSpriteTemplate sRotatingPokeBallSpriteTemplate sSeenOwnTextSpriteTemplate sHoennNationalTextSpriteTemplate sHoennDexSeenOwnNumberSpriteTemplate sNationalDexSeenOwnNumberSpriteTemplate sDexListStartMenuCursorSpriteTemplate sInterfaceSpriteSheet sInterfaceSpritePalette sScrollMonIncrements sScrollTimers sPokedex_BgTemplate sPokemonList_WindowTemplate sText_No000 sCaughtBall_Gfx sText_TenDashes sExpandedPlaceholder_PokedexDescription gDummyPokedexText gBulbasaurPokedexText gIvysaurPokedexText gVenusaurPokedexText gCharmanderPokedexText gCharmeleonPokedexText gCharizardPokedexText gSquirtlePokedexText gWartortlePokedexText gBlastoisePokedexText gCaterpiePokedexText gMetapodPokedexText gButterfreePokedexText gWeedlePokedexText gKakunaPokedexText gBeedrillPokedexText gPidgeyPokedexText gPidgeottoPokedexText gPidgeotPokedexText gRattataPokedexText gRaticatePokedexText gSpearowPokedexText gFearowPokedexText gEkansPokedexText gArbokPokedexText gPikachuPokedexText gRaichuPokedexText gSandshrewPokedexText gSandslashPokedexText gNidoranFPokedexText gNidorinaPokedexText gNidoqueenPokedexText gNidoranMPokedexText gNidorinoPokedexText gNidokingPokedexText gClefairyPokedexText gClefablePokedexText gVulpixPokedexText gNinetalesPokedexText gJigglypuffPokedexText gWigglytuffPokedexText gZubatPokedexText gGolbatPokedexText gOddishPokedexText gGloomPokedexText gVileplumePokedexText gParasPokedexText gParasectPokedexText gVenonatPokedexText gVenomothPokedexText gDiglettPokedexText gDugtrioPokedexText gMeowthPokedexText gPersianPokedexText gPsyduckPokedexText gGolduckPokedexText gMankeyPokedexText gPrimeapePokedexText gGrowlithePokedexText gArcaninePokedexText gPoliwagPokedexText gPoliwhirlPokedexText gPoliwrathPokedexText gAbraPokedexText gKadabraPokedexText gAlakazamPokedexText gMachopPokedexText gMachokePokedexText gMachampPokedexText gBellsproutPokedexText gWeepinbellPokedexText gVictreebelPokedexText gTentacoolPokedexText gTentacruelPokedexText gGeodudePokedexText gGravelerPokedexText gGolemPokedexText gPonytaPokedexText gRapidashPokedexText gSlowpokePokedexText gSlowbroPokedexText gMagnemitePokedexText gMagnetonPokedexText gFarfetchdPokedexText gDoduoPokedexText gDodrioPokedexText gSeelPokedexText gDewgongPokedexText gGrimerPokedexText gMukPokedexText gShellderPokedexText gCloysterPokedexText gGastlyPokedexText gHaunterPokedexText gGengarPokedexText gOnixPokedexText gDrowzeePokedexText gHypnoPokedexText gKrabbyPokedexText gKinglerPokedexText gVoltorbPokedexText gElectrodePokedexText gExeggcutePokedexText gExeggutorPokedexText gCubonePokedexText gMarowakPokedexText gHitmonleePokedexText gHitmonchanPokedexText gLickitungPokedexText gKoffingPokedexText gWeezingPokedexText gRhyhornPokedexText gRhydonPokedexText gChanseyPokedexText gTangelaPokedexText gKangaskhanPokedexText gHorseaPokedexText gSeadraPokedexText gGoldeenPokedexText gSeakingPokedexText gStaryuPokedexText gStarmiePokedexText gMrMimePokedexText gScytherPokedexText gJynxPokedexText gElectabuzzPokedexText gMagmarPokedexText gPinsirPokedexText gTaurosPokedexText gMagikarpPokedexText gGyaradosPokedexText gLaprasPokedexText gDittoPokedexText gEeveePokedexText gVaporeonPokedexText gJolteonPokedexText gFlareonPokedexText gPorygonPokedexText gOmanytePokedexText gOmastarPokedexText gKabutoPokedexText gKabutopsPokedexText gAerodactylPokedexText gSnorlaxPokedexText gArticunoPokedexText gZapdosPokedexText gMoltresPokedexText gDratiniPokedexText gDragonairPokedexText gDragonitePokedexText gMewtwoPokedexText gMewPokedexText gChikoritaPokedexText gBayleefPokedexText gMeganiumPokedexText gCyndaquilPokedexText gQuilavaPokedexText gTyphlosionPokedexText gTotodilePokedexText gCroconawPokedexText gFeraligatrPokedexText gSentretPokedexText gFurretPokedexText gHoothootPokedexText gNoctowlPokedexText gLedybaPokedexText gLedianPokedexText gSpinarakPokedexText gAriadosPokedexText gCrobatPokedexText gChinchouPokedexText gLanturnPokedexText gPichuPokedexText gCleffaPokedexText gIgglybuffPokedexText gTogepiPokedexText gTogeticPokedexText gNatuPokedexText gXatuPokedexText gMareepPokedexText gFlaaffyPokedexText gAmpharosPokedexText gBellossomPokedexText gMarillPokedexText gAzumarillPokedexText gSudowoodoPokedexText gPolitoedPokedexText gHoppipPokedexText gSkiploomPokedexText gJumpluffPokedexText gAipomPokedexText gSunkernPokedexText gSunfloraPokedexText gYanmaPokedexText gWooperPokedexText gQuagsirePokedexText gEspeonPokedexText gUmbreonPokedexText gMurkrowPokedexText gSlowkingPokedexText gMisdreavusPokedexText gUnownPokedexText gWobbuffetPokedexText gGirafarigPokedexText gPinecoPokedexText gForretressPokedexText gDunsparcePokedexText gGligarPokedexText gSteelixPokedexText gSnubbullPokedexText gGranbullPokedexText gQwilfishPokedexText gScizorPokedexText gShucklePokedexText gHeracrossPokedexText gSneaselPokedexText gTeddiursaPokedexText gUrsaringPokedexText gSlugmaPokedexText gMagcargoPokedexText gSwinubPokedexText gPiloswinePokedexText gCorsolaPokedexText gRemoraidPokedexText gOctilleryPokedexText gDelibirdPokedexText gMantinePokedexText gSkarmoryPokedexText gHoundourPokedexText gHoundoomPokedexText gKingdraPokedexText gPhanpyPokedexText gDonphanPokedexText gPorygon2PokedexText gStantlerPokedexText gSmearglePokedexText gTyroguePokedexText gHitmontopPokedexText gSmoochumPokedexText gElekidPokedexText gMagbyPokedexText gMiltankPokedexText gBlisseyPokedexText gRaikouPokedexText gEnteiPokedexText gSuicunePokedexText gLarvitarPokedexText gPupitarPokedexText gTyranitarPokedexText gLugiaPokedexText gHoOhPokedexText gCelebiPokedexText gTreeckoPokedexText gGrovylePokedexText gSceptilePokedexText gTorchicPokedexText gCombuskenPokedexText gBlazikenPokedexText gMudkipPokedexText gMarshtompPokedexText gSwampertPokedexText gPoochyenaPokedexText gMightyenaPokedexText gZigzagoonPokedexText gLinoonePokedexText gWurmplePokedexText gSilcoonPokedexText gBeautiflyPokedexText gCascoonPokedexText gDustoxPokedexText gLotadPokedexText gLombrePokedexText gLudicoloPokedexText gSeedotPokedexText gNuzleafPokedexText gShiftryPokedexText gTaillowPokedexText gSwellowPokedexText gWingullPokedexText gPelipperPokedexText gRaltsPokedexText gKirliaPokedexText gGardevoirPokedexText gSurskitPokedexText gMasquerainPokedexText gShroomishPokedexText gBreloomPokedexText gSlakothPokedexText gVigorothPokedexText gSlakingPokedexText gNincadaPokedexText gNinjaskPokedexText gShedinjaPokedexText gWhismurPokedexText gLoudredPokedexText gExploudPokedexText gMakuhitaPokedexText gHariyamaPokedexText gAzurillPokedexText gNosepassPokedexText gSkittyPokedexText gDelcattyPokedexText gSableyePokedexText gMawilePokedexText gAronPokedexText gLaironPokedexText gAggronPokedexText gMedititePokedexText gMedichamPokedexText gElectrikePokedexText gManectricPokedexText gPluslePokedexText gMinunPokedexText gVolbeatPokedexText gIllumisePokedexText gRoseliaPokedexText gGulpinPokedexText gSwalotPokedexText gCarvanhaPokedexText gSharpedoPokedexText gWailmerPokedexText gWailordPokedexText gNumelPokedexText gCameruptPokedexText gTorkoalPokedexText gSpoinkPokedexText gGrumpigPokedexText gSpindaPokedexText gTrapinchPokedexText gVibravaPokedexText gFlygonPokedexText gCacneaPokedexText gCacturnePokedexText gSwabluPokedexText gAltariaPokedexText gZangoosePokedexText gSeviperPokedexText gLunatonePokedexText gSolrockPokedexText gBarboachPokedexText gWhiscashPokedexText gCorphishPokedexText gCrawdauntPokedexText gBaltoyPokedexText gClaydolPokedexText gLileepPokedexText gCradilyPokedexText gAnorithPokedexText gArmaldoPokedexText gFeebasPokedexText gMiloticPokedexText gCastformPokedexText gKecleonPokedexText gShuppetPokedexText gBanettePokedexText gDuskullPokedexText gDusclopsPokedexText gTropiusPokedexText gChimechoPokedexText gAbsolPokedexText gWynautPokedexText gSnoruntPokedexText gGlaliePokedexText gSphealPokedexText gSealeoPokedexText gWalreinPokedexText gClamperlPokedexText gHuntailPokedexText gGorebyssPokedexText gRelicanthPokedexText gLuvdiscPokedexText gBagonPokedexText gShelgonPokedexText gSalamencePokedexText gBeldumPokedexText gMetangPokedexText gMetagrossPokedexText gRegirockPokedexText gRegicePokedexText gRegisteelPokedexText gLatiasPokedexText gLatiosPokedexText gKyogrePokedexText gGroudonPokedexText gRayquazaPokedexText gJirachiPokedexText gDeoxysPokedexText gPokedexEntries sSizeScreenSilhouette_Pal sInfoScreen_BgTemplate sInfoScreen_WindowTemplates sNewEntryInfoScreen_BgTemplate sNewEntryInfoScreen_WindowTemplates sText_TenDashes2 gMonFootprintTable sLetterSearchRanges sSearchMenuTopBarItems sSearchMenuItems sSearchMovementMap_SearchNatDex sSearchMovementMap_ShiftNatDex sSearchMovementMap_SearchHoennDex sSearchMovementMap_ShiftHoennDex sDexModeOptions sDexOrderOptions sDexSearchNameOptions sDexSearchColorOptions sDexSearchTypeOptions sPokedexModes sOrderOptions sDexSearchTypeIds sSearchOptions sSearchMenu_BgTemplate sSearchMenu_WindowTemplate
 
 /// `struct PokedexView`
@@ -80,11 +266,11 @@ pub struct PokedexView {
 impl PokedexView {
     #[inline(always)]
     pub fn isSearchResults(&self) -> u8 {
-        ((self.bits_1612 as u32 >> 0) & 0x1) as u8
+        ((self.bits_1612 as u32) & 0x1) as u8
     }
     #[inline(always)]
     pub fn set_isSearchResults(&mut self, v: u8) {
-        self.bits_1612 = (self.bits_1612 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+        self.bits_1612 = (self.bits_1612 & !(0x1 << 0)) | (v & 0x1);
     }
 }
 
@@ -101,11 +287,11 @@ pub struct PokedexListItem {
 impl PokedexListItem {
     #[inline(always)]
     pub fn seen(&self) -> u16 {
-        ((self.bits_2 as u32 >> 0) & 0x1) as u16
+        ((self.bits_2 as u32) & 0x1) as u16
     }
     #[inline(always)]
     pub fn set_seen(&mut self, v: u16) {
-        self.bits_2 = (self.bits_2 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+        self.bits_2 = (self.bits_2 & !(0x1 << 0)) | (v as u8 & 0x1);
     }
     #[inline(always)]
     pub fn owned(&self) -> u16 {
@@ -379,174 +565,45 @@ static sText_TenDashes2: Table<CArray<u8, 11>> =
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sPokedexView: *mut PokedexView = null_mut();
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sLastSelectedPokemon: u16 = 0;
+pub(crate) static sLastSelectedPokemon: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPokeBallRotation: u8 = 0;
+pub(crate) static sPokeBallRotation: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sPokedexListItem: *mut PokedexListItem = null_mut();
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gUnusedPokedexU8: u8 = 0;
-#[unsafe(no_mangle)]
+pub static gUnusedPokedexU8: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
-pub static mut gPokedexVBlankCB: Option<unsafe extern "C" fn()> = None;
+pub static mut gPokedexVBlankCB: Option<unsafe fn()> = None;
 
-unsafe extern "C" {
-    static mut gDexCryScreenState: u8;
-    static mut gMPlayInfo_BGM: MusicPlayerInfo;
-    static mut gMain: Main;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static gPokedexBgHoenn_Pal: CArray<u16, 0>;
-    static gPokedexBgNational_Pal: CArray<u16, 0>;
-    static gPokedexCryScreen_Tilemap: CArray<u32, 0>;
-    static gPokedexInfoScreen_Tilemap: CArray<u32, 0>;
-    static gPokedexListUnderlay_Tilemap: CArray<u32, 0>;
-    static gPokedexList_Tilemap: CArray<u32, 0>;
-    static gPokedexMenu_Gfx: CArray<u32, 0>;
-    static gPokedexScreenSelectBarMain_Tilemap: CArray<u32, 0>;
-    static gPokedexScreenSelectBarSubmenu_Tilemap: CArray<u32, 0>;
-    static gPokedexSearchMenuHoenn_Tilemap: CArray<u32, 0>;
-    static gPokedexSearchMenuNational_Tilemap: CArray<u32, 0>;
-    static gPokedexSearchMenu_Gfx: CArray<u32, 0>;
-    static gPokedexSearchMenu_Pal: CArray<u16, 0>;
-    static gPokedexSearchResults_Pal: CArray<u16, 0>;
-    static gPokedexSizeScreen_Tilemap: CArray<u32, 0>;
-    static gPokedexStartMenuMain_Tilemap: CArray<u32, 0>;
-    static gPokedexStartMenuSearchResults_Tilemap: CArray<u32, 0>;
-    static mut gReservedSpritePaletteCount: u8;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static gSineTable: CArray<i16, 0>;
-    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_5MarksPokemon: CArray<u8, 0>;
-    static gText_CryOf: CArray<u8, 0>;
-    static gText_HTHeight: CArray<u8, 0>;
-    static gText_NoMatchingPkmnWereFound: CArray<u8, 0>;
-    static gText_NumberClear01: CArray<u8, 0>;
-    static gText_PokedexRegistration: CArray<u8, 0>;
-    static gText_SearchCompleted: CArray<u8, 0>;
-    static gText_SearchingPleaseWait: CArray<u8, 0>;
-    static gText_SelectorArrow: CArray<u8, 0>;
-    static gText_SizeComparedTo: CArray<u8, 0>;
-    static gText_UnkHeight: CArray<u8, 0>;
-    static gText_UnkWeight: CArray<u8, 0>;
-    static gText_WTWeight: CArray<u8, 0>;
-    fn AddTextPrinterParameterized4(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: i8,
-        a8: *mut u8,
-    );
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BlitBitmapToWindow(a0: u8, a1: *mut u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn BuildOamBuffer();
-    fn CB2_ReturnToFieldWithOpenMenu();
-    fn ClearGpuRegBits(a0: u8, a1: u16);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyMonCategoryText(a0: i32, a1: *mut u8);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn CopyToWindowPixelBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateMonPicSprite_HandleDeoxys(
-        a0: u16,
-        a1: u32,
-        a2: u32,
-        a3: u8,
-        a4: i16,
-        a5: i16,
-        a6: u8,
-        a7: u16,
-    ) -> u16;
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateTrainerPicSprite(a0: u16, a1: u8, a2: i16, a3: i16, a4: u8, a5: u16) -> u16;
-    fn CryScreenPlayButton(a0: u16);
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut c_void, a2: u32, a3: u16, a4: u8);
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DisableNationalPokedex();
-    fn EnableInterrupts(a0: u16);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeAndDestroyMonPicSprite(a0: u16) -> u16;
-    fn FreeAndDestroyTrainerPicSprite(a0: u16) -> u16;
-    fn FreeCryScreen();
-    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
-    fn GetMonSpritePalFromSpeciesAndPersonality(a0: u16, a1: u32, a2: u32) -> *mut u32;
-    fn GetOverworldTextboxPalettePtr() -> *mut u16;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn HideBg(a0: u8);
-    fn HoennToNationalOrder(a0: u16) -> u16;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsCryPlaying() -> u8;
-    fn IsCryPlayingOrClearCrySongs() -> u8;
-    fn IsNationalPokedexEnabled() -> u32;
-    fn IsSEPlaying() -> u8;
-    fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadCryMeter(a0: *mut CryScreenWindow, a1: u8) -> u8;
-    fn LoadCryWaveformWindow(a0: *mut CryScreenWindow, a1: u8) -> u8;
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpritePalettes(a0: *mut SpritePalette);
-    fn NationalPokedexNumToSpecies(a0: u16) -> u16;
-    fn NationalToHoennOrder(a0: u16) -> u16;
-    fn PlayCry_Normal(a0: u16, a1: i8);
-    fn PlayCry_NormalNoDucking(a0: u16, a1: i8, a2: i8, a3: u8);
-    fn PlaySE(a0: u16);
-    fn PlayerGenderToFrontTrainerPicId(a0: u8) -> u16;
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn ResetAllPicSprites() -> u16;
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn RunTasks();
-    fn ScanlineEffect_Stop();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetOamMatrix(a0: u8, a1: u16, a2: u16, a3: u16, a4: u16);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn ShowPokedexAreaScreen(a0: u16, a1: *mut u8);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StopCryAndClearCrySongs();
-    fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringLength(a0: *mut u8) -> u16;
-    fn TransferPlttBuffer();
-    fn UpdateCryWaveformWindow(a0: u8);
-    fn UpdatePaletteFade() -> u8;
-    fn m4aMPlayContinue(a0: *mut MusicPlayerInfo);
-    fn m4aMPlayStop(a0: *mut MusicPlayerInfo);
-    fn m4aMPlayVolumeControl(a0: *mut MusicPlayerInfo, a1: u16, a2: u16);
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `GetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
+    unsafe { crate::bg::GetBgTilemapBuffer(a0) as *mut c_void }
+}
+/// `GetOverworldTextboxPalettePtr` with this module's view of its types.
+#[inline]
+unsafe fn GetOverworldTextboxPalettePtr() -> *mut u16 {
+    unsafe { crate::text_window::GetOverworldTextboxPalettePtr() as *mut u16 }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetPokedex() {
-    let mut i: u16 = 0;
-    sLastSelectedPokemon = 0;
-    sPokeBallRotation = POKEBALL_ROTATION_TOP;
-    gUnusedPokedexU8 = 0;
+pub unsafe fn ResetPokedex() {
+    sLastSelectedPokemon.set(0);
+    sPokeBallRotation.set(POKEBALL_ROTATION_TOP);
+    gUnusedPokedexU8.set(0);
     (*gSaveBlock2Ptr).pokedex.mode = DEX_MODE_HOENN as u8;
     (*gSaveBlock2Ptr).pokedex.order = 0;
     (*gSaveBlock2Ptr).pokedex.nationalMagic = 0;
@@ -555,7 +612,7 @@ pub unsafe extern "C" fn ResetPokedex() {
     (*gSaveBlock2Ptr).pokedex.spindaPersonality = 0;
     (*gSaveBlock2Ptr).pokedex.unknown3 = 0;
     DisableNationalPokedex();
-    i = 0;
+    let mut i: u16 = 0;
     while (i as i32) < 51 + (if 4 != 0 { 1 } else { 0 }) {
         (*gSaveBlock2Ptr).pokedex.owned[i] = 0;
         (*gSaveBlock2Ptr).pokedex.seen[i] = 0;
@@ -565,23 +622,20 @@ pub unsafe extern "C" fn ResetPokedex() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetPokedexScrollPositions() {
-    sLastSelectedPokemon = 0;
-    sPokeBallRotation = POKEBALL_ROTATION_TOP;
+pub fn ResetPokedexScrollPositions() {
+    sLastSelectedPokemon.set(0);
+    sPokeBallRotation.set(POKEBALL_ROTATION_TOP);
 }
-pub(crate) unsafe extern "C" fn VBlankCB_Pokedex() {
+pub(crate) unsafe fn VBlankCB_Pokedex() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn ResetPokedexView(pokedexView: *mut PokedexView) {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < NATIONAL_DEX_DEOXYS {
+unsafe fn ResetPokedexView(pokedexView: *mut PokedexView) {
+    for i in 0..NATIONAL_DEX_DEOXYS {
         (*pokedexView).pokedexList[i].dexNum = 0xFFFF;
         (*pokedexView).pokedexList[i].set_seen(FALSE as u16);
         (*pokedexView).pokedexList[i].set_owned(FALSE as u16);
-        i += 1;
     }
     (*pokedexView).pokedexList[386].dexNum = 0;
     (*pokedexView).pokedexList[386].set_seen(FALSE as u16);
@@ -595,7 +649,7 @@ pub(crate) unsafe extern "C" fn ResetPokedexView(pokedexView: *mut PokedexView) 
     (*pokedexView).dexOrderBackup = ORDER_NUMERICAL;
     (*pokedexView).seenCount = 0;
     (*pokedexView).ownCount = 0;
-    i = 0;
+    let mut i: u16 = 0;
     while i < MAX_MONS_ON_SCREEN {
         (*pokedexView).monSpriteIds[i] = 0xFFFF;
         i += 1;
@@ -611,10 +665,8 @@ pub(crate) unsafe extern "C" fn ResetPokedexView(pokedexView: *mut PokedexView) 
     (*pokedexView).scrollMonIncrement = 0;
     (*pokedexView).maxScrollTimer = 0;
     (*pokedexView).scrollSpeed = 0;
-    i = 0;
-    while i < 4 {
+    for i in 0..4u16 {
         (*pokedexView).unkArr1[i] = 0;
-        i += 1;
     }
     (*pokedexView).currentPage = PAGE_MAIN;
     (*pokedexView).currentPageBackup = PAGE_MAIN;
@@ -624,19 +676,14 @@ pub(crate) unsafe extern "C" fn ResetPokedexView(pokedexView: *mut PokedexView) 
     (*pokedexView).menuIsOpen = 0;
     (*pokedexView).menuCursorPos = 0;
     (*pokedexView).menuY = 0;
-    i = 0;
-    while i < 8 {
+    for i in 0..8u16 {
         (*pokedexView).unkArr2[i] = 0;
-        i += 1;
     }
-    i = 0;
-    while i < 8 {
+    for i in 0..8u16 {
         (*pokedexView).unkArr3[i] = 0;
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_OpenPokedex() {
+pub unsafe fn CB2_OpenPokedex() {
     match gMain.state {
         1 => {
             ScanlineEffect_Stop();
@@ -657,8 +704,8 @@ pub unsafe extern "C" fn CB2_OpenPokedex() {
                 (*sPokedexView).dexMode = DEX_MODE_HOENN;
             }
             (*sPokedexView).dexOrder = (*gSaveBlock2Ptr).pokedex.order as u16;
-            (*sPokedexView).selectedPokemon = sLastSelectedPokemon;
-            (*sPokedexView).pokeBallRotation = sPokeBallRotation;
+            (*sPokedexView).selectedPokemon = sLastSelectedPokemon.get();
+            (*sPokedexView).pokeBallRotation = sPokeBallRotation.get();
             (*sPokedexView).selectedScreen = AREA_SCREEN;
             if IsNationalPokedexEnabled() == 0 {
                 (*sPokedexView).seenCount = GetHoennPokedexCount(FLAG_GET_SEEN);
@@ -693,7 +740,7 @@ pub unsafe extern "C" fn CB2_OpenPokedex() {
                             volatile_write(&raw mut tmp, 0);
                             {
                                 {
-                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                     volatile_write(dmaRegs.at(1), _dest as usize as u32);
                                     volatile_write(dmaRegs.at(2), 0x81000800);
@@ -711,10 +758,10 @@ pub unsafe extern "C" fn CB2_OpenPokedex() {
                                 volatile_write(&raw mut tmp, 0);
                                 {
                                     {
-                                        let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                        let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                         volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                         volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                        volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                        volatile_write(dmaRegs.at(2), 0x81000000 | (_size / 2));
                                         let _ = (dmaRegs.at(2)).read_volatile();
                                     }
                                 }
@@ -734,10 +781,10 @@ pub unsafe extern "C" fn CB2_OpenPokedex() {
                             volatile_write(&raw mut tmp, 0);
                             {
                                 {
-                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                     volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                    volatile_write(dmaRegs.at(2), 0x85000000 | _size / 4);
+                                    volatile_write(dmaRegs.at(2), 0x85000000 | (_size / 4));
                                     let _ = (dmaRegs.at(2)).read_volatile();
                                 }
                             }
@@ -755,10 +802,10 @@ pub unsafe extern "C" fn CB2_OpenPokedex() {
                             volatile_write(&raw mut tmp, 0);
                             {
                                 {
-                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                     volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                    volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                    volatile_write(dmaRegs.at(2), 0x81000000 | (_size / 2));
                                     let _ = (dmaRegs.at(2)).read_volatile();
                                 }
                             }
@@ -770,20 +817,19 @@ pub unsafe extern "C" fn CB2_OpenPokedex() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn CB2_Pokedex() {
+pub(crate) unsafe fn CB2_Pokedex() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Task_OpenPokedexMainPage(taskId: u8) {
+pub unsafe fn Task_OpenPokedexMainPage(taskId: u8) {
     (*sPokedexView).set_isSearchResults(FALSE);
     if LoadPokedexListPage(PAGE_MAIN) != 0 {
-        gTasks[taskId].func = Some(Task_HandlePokedexInput);
+        task_set_func(taskId, Some(Task_HandlePokedexInput));
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandlePokedexInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandlePokedexInput(taskId: u8) {
     SetGpuReg(REG_OFFSET_BG0VOFS, (*sPokedexView).menuY as u16);
     if (*sPokedexView).menuY != 0 {
         (*sPokedexView).menuY -= 8;
@@ -807,51 +853,51 @@ pub(crate) unsafe extern "C" fn Task_HandlePokedexInput(taskId: u8) {
             );
             gSprites[(*sPokedexView).selectedMonSpriteId].callback =
                 Some(SpriteCB_MoveMonForInfoScreen);
-            gTasks[taskId].func = Some(Task_OpenInfoScreenAfterMonMovement);
+            task_set_func(taskId, Some(Task_OpenInfoScreenAfterMonMovement));
             PlaySE(SE_PIN);
             FreeWindowAndBgBuffers();
         } else if gMain.newKeys as i32 & START_BUTTON != 0 {
             (*sPokedexView).menuY = 0;
             (*sPokedexView).menuIsOpen = TRUE;
             (*sPokedexView).menuCursorPos = 0;
-            gTasks[taskId].func = Some(Task_HandlePokedexStartMenuInput);
+            task_set_func(taskId, Some(Task_HandlePokedexStartMenuInput));
             PlaySE(SE_SELECT);
         } else if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
             PlaySE(SE_SELECT);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-            gTasks[taskId].data[0] = LoadSearchMenu() as i16;
+            task_set(taskId, tLoadScreenTaskId, LoadSearchMenu() as i16);
             (*sPokedexView).screenSwitchState = 0;
             (*sPokedexView).pokeBallRotationBackup = (*sPokedexView).pokeBallRotation as u16;
             (*sPokedexView).selectedPokemonBackup = (*sPokedexView).selectedPokemon;
             (*sPokedexView).dexModeBackup = (*sPokedexView).dexMode;
             (*sPokedexView).dexOrderBackup = (*sPokedexView).dexOrder;
-            gTasks[taskId].func = Some(Task_WaitForExitSearch);
+            task_set_func(taskId, Some(Task_WaitForExitSearch));
             PlaySE(SE_PC_LOGIN);
             FreeWindowAndBgBuffers();
         } else if gMain.newKeys as i32 & B_BUTTON != 0 {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-            gTasks[taskId].func = Some(Task_ClosePokedex);
+            task_set_func(taskId, Some(Task_ClosePokedex));
             PlaySE(SE_PC_OFF);
         } else {
             (*sPokedexView).selectedPokemon =
                 TryDoPokedexScroll((*sPokedexView).selectedPokemon, 0xE);
             if (*sPokedexView).scrollTimer != 0 {
-                gTasks[taskId].func = Some(Task_WaitForScroll);
+                task_set_func(taskId, Some(Task_WaitForScroll));
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_WaitForScroll(taskId: u8) {
+pub(crate) unsafe fn Task_WaitForScroll(taskId: u8) {
     if UpdateDexListScroll(
         (*sPokedexView).scrollDirection,
         (*sPokedexView).scrollMonIncrement as u8,
         (*sPokedexView).maxScrollTimer as u8,
     ) != 0
     {
-        gTasks[taskId].func = Some(Task_HandlePokedexInput);
+        task_set_func(taskId, Some(Task_HandlePokedexInput));
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandlePokedexStartMenuInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandlePokedexStartMenuInput(taskId: u8) {
     SetGpuReg(REG_OFFSET_BG0VOFS, (*sPokedexView).menuY as u16);
     if (*sPokedexView).menuY != 80 {
         (*sPokedexView).menuY += 8;
@@ -875,7 +921,7 @@ pub(crate) unsafe extern "C" fn Task_HandlePokedexStartMenuInput(taskId: u8) {
                 }
                 3 => {
                     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-                    gTasks[taskId].func = Some(Task_ClosePokedex);
+                    task_set_func(taskId, Some(Task_ClosePokedex));
                     PlaySE(SE_PC_OFF);
                 }
                 _ => {
@@ -885,7 +931,7 @@ pub(crate) unsafe extern "C" fn Task_HandlePokedexStartMenuInput(taskId: u8) {
         }
         if gMain.newKeys as i32 & 10 != 0 {
             (*sPokedexView).menuIsOpen = FALSE;
-            gTasks[taskId].func = Some(Task_HandlePokedexInput);
+            task_set_func(taskId, Some(Task_HandlePokedexInput));
             PlaySE(SE_SELECT);
         } else if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0
             && (*sPokedexView).menuCursorPos != 0
@@ -900,42 +946,46 @@ pub(crate) unsafe extern "C" fn Task_HandlePokedexStartMenuInput(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_OpenInfoScreenAfterMonMovement(taskId: u8) {
+pub(crate) unsafe fn Task_OpenInfoScreenAfterMonMovement(taskId: u8) {
     if gSprites[(*sPokedexView).selectedMonSpriteId].x == MON_PAGE_X
         && gSprites[(*sPokedexView).selectedMonSpriteId].y == MON_PAGE_Y
     {
         (*sPokedexView).currentPageBackup = (*sPokedexView).currentPage;
-        gTasks[taskId].data[0] = LoadInfoScreen(
-            &raw mut (*sPokedexView).pokedexList[(*sPokedexView).selectedPokemon],
-            (*sPokedexView).selectedMonSpriteId as u8,
-        ) as i16;
-        gTasks[taskId].func = Some(Task_WaitForExitInfoScreen);
+        task_set(
+            taskId,
+            tLoadScreenTaskId,
+            LoadInfoScreen(
+                &raw mut (*sPokedexView).pokedexList[(*sPokedexView).selectedPokemon],
+                (*sPokedexView).selectedMonSpriteId as u8,
+            ) as i16,
+        );
+        task_set_func(taskId, Some(Task_WaitForExitInfoScreen));
     }
 }
-pub(crate) unsafe extern "C" fn Task_WaitForExitInfoScreen(taskId: u8) {
-    if gTasks[gTasks[taskId].data[0]].isActive != 0 {
+pub(crate) unsafe fn Task_WaitForExitInfoScreen(taskId: u8) {
+    if (*gTasks.as_ptr())[task_get(taskId, tLoadScreenTaskId)].isActive != 0 {
         if (*sPokedexView).currentPage == PAGE_INFO
-            && IsInfoScreenScrolling(gTasks[taskId].data[0] as u8) == 0
+            && IsInfoScreenScrolling(task_get(taskId, tLoadScreenTaskId) as u8) == 0
             && TryDoInfoScreenScroll() != 0
         {
             StartInfoScreenScroll(
                 &raw mut (*sPokedexView).pokedexList[(*sPokedexView).selectedPokemon],
-                gTasks[taskId].data[0] as u8,
+                task_get(taskId, tLoadScreenTaskId) as u8,
             );
         }
     } else {
-        sLastSelectedPokemon = (*sPokedexView).selectedPokemon;
-        sPokeBallRotation = (*sPokedexView).pokeBallRotation;
-        gTasks[taskId].func = Some(Task_OpenPokedexMainPage);
+        sLastSelectedPokemon.set((*sPokedexView).selectedPokemon);
+        sPokeBallRotation.set((*sPokedexView).pokeBallRotation);
+        task_set_func(taskId, Some(Task_OpenPokedexMainPage));
     }
 }
-pub(crate) unsafe extern "C" fn Task_WaitForExitSearch(taskId: u8) {
-    if gTasks[gTasks[taskId].data[0]].isActive == 0 {
+pub(crate) unsafe fn Task_WaitForExitSearch(taskId: u8) {
+    if (*gTasks.as_ptr())[task_get(taskId, tLoadScreenTaskId)].isActive == 0 {
         ClearMonSprites();
         if (*sPokedexView).screenSwitchState != 0 {
             (*sPokedexView).selectedPokemon = 0;
             (*sPokedexView).pokeBallRotation = POKEBALL_ROTATION_TOP;
-            gTasks[taskId].func = Some(Task_OpenSearchResults);
+            task_set_func(taskId, Some(Task_OpenSearchResults));
         } else {
             (*sPokedexView).pokeBallRotation = (*sPokedexView).pokeBallRotationBackup as u8;
             (*sPokedexView).selectedPokemon = (*sPokedexView).selectedPokemonBackup;
@@ -944,11 +994,11 @@ pub(crate) unsafe extern "C" fn Task_WaitForExitSearch(taskId: u8) {
                 (*sPokedexView).dexMode = DEX_MODE_HOENN;
             }
             (*sPokedexView).dexOrder = (*sPokedexView).dexOrderBackup;
-            gTasks[taskId].func = Some(Task_OpenPokedexMainPage);
+            task_set_func(taskId, Some(Task_OpenPokedexMainPage));
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_ClosePokedex(taskId: u8) {
+pub(crate) unsafe fn Task_ClosePokedex(taskId: u8) {
     if gPaletteFade.active() == 0 {
         (*gSaveBlock2Ptr).pokedex.mode = (*sPokedexView).dexMode as u8;
         if IsNationalPokedexEnabled() == 0 {
@@ -963,13 +1013,13 @@ pub(crate) unsafe extern "C" fn Task_ClosePokedex(taskId: u8) {
         Free(sPokedexView as *mut c_void);
     }
 }
-pub(crate) unsafe extern "C" fn Task_OpenSearchResults(taskId: u8) {
+pub(crate) unsafe fn Task_OpenSearchResults(taskId: u8) {
     (*sPokedexView).set_isSearchResults(TRUE);
     if LoadPokedexListPage(PAGE_SEARCH_RESULTS) != 0 {
-        gTasks[taskId].func = Some(Task_HandleSearchResultsInput);
+        task_set_func(taskId, Some(Task_HandleSearchResultsInput));
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleSearchResultsInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandleSearchResultsInput(taskId: u8) {
     SetGpuReg(REG_OFFSET_BG0VOFS, (*sPokedexView).menuY as u16);
     if (*sPokedexView).menuY != 0 {
         (*sPokedexView).menuY -= 8;
@@ -977,9 +1027,8 @@ pub(crate) unsafe extern "C" fn Task_HandleSearchResultsInput(taskId: u8) {
         if gMain.newKeys as i32 & A_BUTTON != 0
             && (*sPokedexView).pokedexList[(*sPokedexView).selectedPokemon].seen() != 0
         {
-            let mut a: u32 = 0;
             UpdateSelectedMonSpriteId();
-            a = shl_i32(
+            let a: u32 = shl_i32(
                 1,
                 gSprites[(*sPokedexView).selectedMonSpriteId]
                     .oam
@@ -989,46 +1038,49 @@ pub(crate) unsafe extern "C" fn Task_HandleSearchResultsInput(taskId: u8) {
             gSprites[(*sPokedexView).selectedMonSpriteId].callback =
                 Some(SpriteCB_MoveMonForInfoScreen);
             BeginNormalPaletteFade(!a, 0, 0, 0x10, 0);
-            gTasks[taskId].func = Some(Task_OpenSearchResultsInfoScreenAfterMonMovement);
+            task_set_func(
+                taskId,
+                Some(Task_OpenSearchResultsInfoScreenAfterMonMovement),
+            );
             PlaySE(SE_PIN);
             FreeWindowAndBgBuffers();
         } else if gMain.newKeys as i32 & START_BUTTON != 0 {
             (*sPokedexView).menuY = 0;
             (*sPokedexView).menuIsOpen = TRUE;
             (*sPokedexView).menuCursorPos = 0;
-            gTasks[taskId].func = Some(Task_HandleSearchResultsStartMenuInput);
+            task_set_func(taskId, Some(Task_HandleSearchResultsStartMenuInput));
             PlaySE(SE_SELECT);
         } else if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-            gTasks[taskId].data[0] = LoadSearchMenu() as i16;
+            task_set(taskId, tLoadScreenTaskId, LoadSearchMenu() as i16);
             (*sPokedexView).screenSwitchState = 0;
-            gTasks[taskId].func = Some(Task_WaitForExitSearch);
+            task_set_func(taskId, Some(Task_WaitForExitSearch));
             PlaySE(SE_PC_LOGIN);
             FreeWindowAndBgBuffers();
         } else if gMain.newKeys as i32 & B_BUTTON != 0 {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-            gTasks[taskId].func = Some(Task_ReturnToPokedexFromSearchResults);
+            task_set_func(taskId, Some(Task_ReturnToPokedexFromSearchResults));
             PlaySE(SE_PC_OFF);
         } else {
             (*sPokedexView).selectedPokemon =
                 TryDoPokedexScroll((*sPokedexView).selectedPokemon, 0xE);
             if (*sPokedexView).scrollTimer != 0 {
-                gTasks[taskId].func = Some(Task_WaitForSearchResultsScroll);
+                task_set_func(taskId, Some(Task_WaitForSearchResultsScroll));
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_WaitForSearchResultsScroll(taskId: u8) {
+pub(crate) unsafe fn Task_WaitForSearchResultsScroll(taskId: u8) {
     if UpdateDexListScroll(
         (*sPokedexView).scrollDirection,
         (*sPokedexView).scrollMonIncrement as u8,
         (*sPokedexView).maxScrollTimer as u8,
     ) != 0
     {
-        gTasks[taskId].func = Some(Task_HandleSearchResultsInput);
+        task_set_func(taskId, Some(Task_HandleSearchResultsInput));
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleSearchResultsStartMenuInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandleSearchResultsStartMenuInput(taskId: u8) {
     SetGpuReg(REG_OFFSET_BG0VOFS, (*sPokedexView).menuY as u16);
     if (*sPokedexView).menuY != 96 {
         (*sPokedexView).menuY += 8;
@@ -1052,12 +1104,12 @@ pub(crate) unsafe extern "C" fn Task_HandleSearchResultsStartMenuInput(taskId: u
                 }
                 3 => {
                     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-                    gTasks[taskId].func = Some(Task_ReturnToPokedexFromSearchResults);
+                    task_set_func(taskId, Some(Task_ReturnToPokedexFromSearchResults));
                     PlaySE(SE_TRUCK_DOOR);
                 }
                 4 => {
                     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-                    gTasks[taskId].func = Some(Task_ClosePokedexFromSearchResultsStartMenu);
+                    task_set_func(taskId, Some(Task_ClosePokedexFromSearchResultsStartMenu));
                     PlaySE(SE_PC_OFF);
                 }
                 _ => {
@@ -1067,7 +1119,7 @@ pub(crate) unsafe extern "C" fn Task_HandleSearchResultsStartMenuInput(taskId: u
         }
         if gMain.newKeys as i32 & 10 != 0 {
             (*sPokedexView).menuIsOpen = FALSE;
-            gTasks[taskId].func = Some(Task_HandleSearchResultsInput);
+            task_set_func(taskId, Some(Task_HandleSearchResultsInput));
             PlaySE(SE_SELECT);
         } else if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0
             && (*sPokedexView).menuCursorPos != 0
@@ -1082,35 +1134,39 @@ pub(crate) unsafe extern "C" fn Task_HandleSearchResultsStartMenuInput(taskId: u
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_OpenSearchResultsInfoScreenAfterMonMovement(taskId: u8) {
+pub(crate) unsafe fn Task_OpenSearchResultsInfoScreenAfterMonMovement(taskId: u8) {
     if gSprites[(*sPokedexView).selectedMonSpriteId].x == MON_PAGE_X
         && gSprites[(*sPokedexView).selectedMonSpriteId].y == MON_PAGE_Y
     {
         (*sPokedexView).currentPageBackup = (*sPokedexView).currentPage;
-        gTasks[taskId].data[0] = LoadInfoScreen(
-            &raw mut (*sPokedexView).pokedexList[(*sPokedexView).selectedPokemon],
-            (*sPokedexView).selectedMonSpriteId as u8,
-        ) as i16;
+        task_set(
+            taskId,
+            tLoadScreenTaskId,
+            LoadInfoScreen(
+                &raw mut (*sPokedexView).pokedexList[(*sPokedexView).selectedPokemon],
+                (*sPokedexView).selectedMonSpriteId as u8,
+            ) as i16,
+        );
         (*sPokedexView).selectedMonSpriteId = 65535;
-        gTasks[taskId].func = Some(Task_WaitForExitSearchResultsInfoScreen);
+        task_set_func(taskId, Some(Task_WaitForExitSearchResultsInfoScreen));
     }
 }
-pub(crate) unsafe extern "C" fn Task_WaitForExitSearchResultsInfoScreen(taskId: u8) {
-    if gTasks[gTasks[taskId].data[0]].isActive != 0 {
+pub(crate) unsafe fn Task_WaitForExitSearchResultsInfoScreen(taskId: u8) {
+    if (*gTasks.as_ptr())[task_get(taskId, tLoadScreenTaskId)].isActive != 0 {
         if (*sPokedexView).currentPage == PAGE_INFO
-            && IsInfoScreenScrolling(gTasks[taskId].data[0] as u8) == 0
+            && IsInfoScreenScrolling(task_get(taskId, tLoadScreenTaskId) as u8) == 0
             && TryDoInfoScreenScroll() != 0
         {
             StartInfoScreenScroll(
                 &raw mut (*sPokedexView).pokedexList[(*sPokedexView).selectedPokemon],
-                gTasks[taskId].data[0] as u8,
+                task_get(taskId, tLoadScreenTaskId) as u8,
             );
         }
     } else {
-        gTasks[taskId].func = Some(Task_OpenSearchResults);
+        task_set_func(taskId, Some(Task_OpenSearchResults));
     }
 }
-pub(crate) unsafe extern "C" fn Task_ReturnToPokedexFromSearchResults(taskId: u8) {
+pub(crate) unsafe fn Task_ReturnToPokedexFromSearchResults(taskId: u8) {
     if gPaletteFade.active() == 0 {
         (*sPokedexView).pokeBallRotation = (*sPokedexView).pokeBallRotationBackup as u8;
         (*sPokedexView).selectedPokemon = (*sPokedexView).selectedPokemonBackup;
@@ -1119,12 +1175,12 @@ pub(crate) unsafe extern "C" fn Task_ReturnToPokedexFromSearchResults(taskId: u8
             (*sPokedexView).dexMode = DEX_MODE_HOENN;
         }
         (*sPokedexView).dexOrder = (*sPokedexView).dexOrderBackup;
-        gTasks[taskId].func = Some(Task_OpenPokedexMainPage);
+        task_set_func(taskId, Some(Task_OpenPokedexMainPage));
         ClearMonSprites();
         FreeWindowAndBgBuffers();
     }
 }
-pub(crate) unsafe extern "C" fn Task_ClosePokedexFromSearchResultsStartMenu(taskId: u8) {
+pub(crate) unsafe fn Task_ClosePokedexFromSearchResultsStartMenu(taskId: u8) {
     if gPaletteFade.active() == 0 {
         (*sPokedexView).pokeBallRotation = (*sPokedexView).pokeBallRotationBackup as u8;
         (*sPokedexView).selectedPokemon = (*sPokedexView).selectedPokemonBackup;
@@ -1133,10 +1189,10 @@ pub(crate) unsafe extern "C" fn Task_ClosePokedexFromSearchResultsStartMenu(task
             (*sPokedexView).dexMode = DEX_MODE_HOENN;
         }
         (*sPokedexView).dexOrder = (*sPokedexView).dexOrderBackup;
-        gTasks[taskId].func = Some(Task_ClosePokedex);
+        task_set_func(taskId, Some(Task_ClosePokedex));
     }
 }
-pub(crate) unsafe extern "C" fn LoadPokedexListPage(page: u8) -> u8 {
+unsafe fn LoadPokedexListPage(page: u8) -> u8 {
     match gMain.state {
         1 => {
             ResetSpriteData();
@@ -1210,34 +1266,47 @@ pub(crate) unsafe extern "C" fn LoadPokedexListPage(page: u8) -> u8 {
             SetBgTilemapBuffer(0, AllocZeroed(BG_SCREEN_SIZE));
             DecompressAndLoadBgGfxUsingHeap(
                 3,
-                gPokedexMenu_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gPokedexMenu_Gfx).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0x2000,
                 0,
                 0,
             );
             CopyToBgTilemapBuffer(
                 1,
-                gPokedexList_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gPokedexList_Tilemap).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0,
                 0,
             );
             CopyToBgTilemapBuffer(
                 3,
-                gPokedexListUnderlay_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gPokedexListUnderlay_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0,
                 0,
             );
             if page == PAGE_MAIN {
                 CopyToBgTilemapBuffer(
                     0,
-                    gPokedexStartMenuMain_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                    (*(&raw const crate::data::graphics::gPokedexStartMenuMain_Tilemap)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                     0,
                     0x280,
                 );
             } else {
                 CopyToBgTilemapBuffer(
                     0,
-                    gPokedexStartMenuSearchResults_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                    (*(&raw const crate::data::graphics::gPokedexStartMenuSearchResults_Tilemap)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                     0,
                     0x280,
                 );
@@ -1256,34 +1325,43 @@ pub(crate) unsafe extern "C" fn LoadPokedexListPage(page: u8) -> u8 {
             gMain.state = 1;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn LoadPokedexBgPalette(isSearchResults: u8) {
+unsafe fn LoadPokedexBgPalette(isSearchResults: u8) {
     if isSearchResults == TRUE {
         LoadPalette(
-            gPokedexSearchResults_Pal.as_ptr().cast_mut().at(1) as *mut c_void,
+            (*(&raw const crate::data::graphics::gPokedexSearchResults_Pal)
+                .cast::<CArray<u16, 0>>())
+            .as_ptr()
+            .cast_mut()
+            .at(1) as *mut c_void,
             1,
             190,
         );
     } else if IsNationalPokedexEnabled() == 0 {
         LoadPalette(
-            gPokedexBgHoenn_Pal.as_ptr().cast_mut().at(1) as *mut c_void,
+            (*(&raw const crate::data::graphics::gPokedexBgHoenn_Pal).cast::<CArray<u16, 0>>())
+                .as_ptr()
+                .cast_mut()
+                .at(1) as *mut c_void,
             1,
             190,
         );
     } else {
         LoadPalette(
-            gPokedexBgNational_Pal.as_ptr().cast_mut().at(1) as *mut c_void,
+            (*(&raw const crate::data::graphics::gPokedexBgNational_Pal).cast::<CArray<u16, 0>>())
+                .as_ptr()
+                .cast_mut()
+                .at(1) as *mut c_void,
             1,
             190,
         );
     }
     LoadPalette(GetOverworldTextboxPalettePtr() as *mut c_void, 240, 32);
 }
-pub(crate) unsafe extern "C" fn FreeWindowAndBgBuffers() {
-    let mut tilemapBuffer: *mut c_void = null_mut();
+unsafe fn FreeWindowAndBgBuffers() {
     FreeAllWindowBuffers();
-    tilemapBuffer = GetBgTilemapBuffer(0);
+    let mut tilemapBuffer: *mut c_void = GetBgTilemapBuffer(0);
     if !tilemapBuffer.is_null() {
         Free(tilemapBuffer);
     }
@@ -1300,19 +1378,14 @@ pub(crate) unsafe extern "C" fn FreeWindowAndBgBuffers() {
         Free(tilemapBuffer);
     }
 }
-pub(crate) unsafe extern "C" fn CreatePokedexList(dexMode: u8, order: u8) {
+unsafe fn CreatePokedexList(dexMode: u8, order: u8) {
     let mut vars: CArray<u16, 3> = zeroed();
     let mut i: i16 = 0;
     (*sPokedexView).pokemonListCount = 0;
     match dexMode {
-        1 => {
-            if IsNationalPokedexEnabled() != 0 {
-                vars[0] = NATIONAL_DEX_DEOXYS;
-                vars[1] = FALSE as u16;
-            } else {
-                vars[0] = HOENN_DEX_DEOXYS;
-                vars[1] = TRUE as u16;
-            }
+        1 if IsNationalPokedexEnabled() != 0 => {
+            vars[0] = NATIONAL_DEX_DEOXYS;
+            vars[1] = FALSE as u16;
         }
         _ => {
             vars[0] = HOENN_DEX_DEOXYS;
@@ -1336,11 +1409,9 @@ pub(crate) unsafe extern "C" fn CreatePokedexList(dexMode: u8, order: u8) {
                     i += 1;
                 }
             } else {
+                i = 0;
                 let mut r5: i16 = 0;
                 let mut r10: i16 = 0;
-                i = 0;
-                r5 = 0;
-                r10 = 0;
                 while (i as i32) < vars[0] as i32 {
                     vars[2] = i as u16 + 1;
                     if GetSetPokedexFlag(vars[2], FLAG_GET_SEEN) != 0 {
@@ -1362,8 +1433,7 @@ pub(crate) unsafe extern "C" fn CreatePokedexList(dexMode: u8, order: u8) {
             }
         }
         1 => {
-            i = 0;
-            while i < 411 {
+            for i in 0..411i16 {
                 vars[2] = gPokedexOrder_Alphabetical[i];
                 if NationalToHoennOrder(vars[2]) <= vars[0]
                     && GetSetPokedexFlag(vars[2], FLAG_GET_SEEN) != 0
@@ -1375,7 +1445,6 @@ pub(crate) unsafe extern "C" fn CreatePokedexList(dexMode: u8, order: u8) {
                         .set_owned(GetSetPokedexFlag(vars[2], FLAG_GET_CAUGHT) as u16);
                     (*sPokedexView).pokemonListCount += 1;
                 }
-                i += 1;
             }
         }
         2 => {
@@ -1396,8 +1465,7 @@ pub(crate) unsafe extern "C" fn CreatePokedexList(dexMode: u8, order: u8) {
             }
         }
         3 => {
-            i = 0;
-            while i < NATIONAL_DEX_DEOXYS as i16 {
+            for i in 0..(NATIONAL_DEX_DEOXYS as i16) {
                 vars[2] = gPokedexOrder_Weight[i];
                 if NationalToHoennOrder(vars[2]) <= vars[0]
                     && GetSetPokedexFlag(vars[2], FLAG_GET_CAUGHT) != 0
@@ -1409,7 +1477,6 @@ pub(crate) unsafe extern "C" fn CreatePokedexList(dexMode: u8, order: u8) {
                         .set_owned(TRUE as u16);
                     (*sPokedexView).pokemonListCount += 1;
                 }
-                i += 1;
             }
         }
         4 => {
@@ -1430,8 +1497,7 @@ pub(crate) unsafe extern "C" fn CreatePokedexList(dexMode: u8, order: u8) {
             }
         }
         5 => {
-            i = 0;
-            while i < NATIONAL_DEX_DEOXYS as i16 {
+            for i in 0..(NATIONAL_DEX_DEOXYS as i16) {
                 vars[2] = gPokedexOrder_Height[i];
                 if NationalToHoennOrder(vars[2]) <= vars[0]
                     && GetSetPokedexFlag(vars[2], FLAG_GET_CAUGHT) != 0
@@ -1443,26 +1509,17 @@ pub(crate) unsafe extern "C" fn CreatePokedexList(dexMode: u8, order: u8) {
                         .set_owned(TRUE as u16);
                     (*sPokedexView).pokemonListCount += 1;
                 }
-                i += 1;
             }
         }
         _ => {}
     }
-    i = (*sPokedexView).pokemonListCount as i16;
-    while i < NATIONAL_DEX_DEOXYS as i16 {
+    for i in ((*sPokedexView).pokemonListCount as i16)..(NATIONAL_DEX_DEOXYS as i16) {
         (*sPokedexView).pokedexList[i].dexNum = 0xFFFF;
         (*sPokedexView).pokedexList[i].set_seen(FALSE as u16);
         (*sPokedexView).pokedexList[i].set_owned(FALSE as u16);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn PrintMonDexNumAndName(
-    windowId: u8,
-    fontId: u8,
-    str: *mut u8,
-    left: u8,
-    top: u8,
-) {
+unsafe fn PrintMonDexNumAndName(windowId: u8, fontId: u8, str: *mut u8, left: u8, top: u8) {
     let mut color: CArray<u8, 3> = zeroed();
     color[0] = 0x0;
     color[1] = TEXT_DYNAMIC_COLOR_6;
@@ -1479,9 +1536,8 @@ pub(crate) unsafe extern "C" fn PrintMonDexNumAndName(
         str,
     );
 }
-pub(crate) unsafe extern "C" fn CreateMonListEntry(position: u8, b: u16, ignored: u16) {
+unsafe fn CreateMonListEntry(position: u8, b: u16, ignored: u16) {
     let mut entryNum: i16 = 0;
-    let mut i: u16 = 0;
     let mut vOffset: u16 = 0;
     match position {
         1 => {
@@ -1563,8 +1619,7 @@ pub(crate) unsafe extern "C" fn CreateMonListEntry(position: u8, b: u16, ignored
         }
         _ => {
             entryNum = b as i16 - 5;
-            i = 0;
-            while i <= 10 {
+            for i in 0..=10u16 {
                 if entryNum < 0
                     || entryNum >= NATIONAL_DEX_DEOXYS as i16
                     || (*sPokedexView).pokedexList[entryNum].dexNum == 0xFFFF
@@ -1592,13 +1647,12 @@ pub(crate) unsafe extern "C" fn CreateMonListEntry(position: u8, b: u16, ignored
                     }
                 }
                 entryNum += 1;
-                i += 1;
             }
         }
     }
     CopyWindowToVram(0, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn CreateMonDexNum(entryNum: u16, left: u8, top: u8, unused: u16) {
+unsafe fn CreateMonDexNum(entryNum: u16, left: u8, top: u8, unused: u16) {
     let mut text: CArray<u8, 6> = zeroed();
     let mut dexNum: u16 = 0;
     memcpy(text.as_mut_ptr(), sText_No000.as_ptr().cast_mut(), 6);
@@ -1611,7 +1665,7 @@ pub(crate) unsafe extern "C" fn CreateMonDexNum(entryNum: u16, left: u8, top: u8
     text[4] = CHAR_0 + (dexNum as i32 % 100 % 10) as u8;
     PrintMonDexNumAndName(0, FONT_NARROW, text.as_mut_ptr(), left, top);
 }
-pub(crate) unsafe extern "C" fn CreateCaughtBall(owned: u16, x: u8, y: u8, unused: u16) {
+unsafe fn CreateCaughtBall(owned: u16, x: u8, y: u8, unused: u16) {
     if owned != 0 {
         BlitBitmapToWindow(
             0,
@@ -1625,32 +1679,31 @@ pub(crate) unsafe extern "C" fn CreateCaughtBall(owned: u16, x: u8, y: u8, unuse
         FillWindowPixelRect(0, 0, x as u16 * 8, y as u16 * 8, 8, 16);
     }
 }
-pub(crate) unsafe extern "C" fn CreateMonName(mut num: u16, left: u8, top: u8) -> u8 {
+unsafe fn CreateMonName(mut num: u16, left: u8, top: u8) -> u8 {
     let mut str: *mut u8 = null_mut();
     num = NationalPokedexNumToSpecies(num);
     if num != 0 {
-        str = gSpeciesNames[num].as_ptr().cast_mut();
+        str = (*(&raw const crate::data::data_tables::gSpeciesNames)
+            .cast::<CArray<CArray<u8, 11>, 0>>())[num]
+            .as_ptr()
+            .cast_mut();
     } else {
         str = sText_TenDashes.as_ptr().cast_mut();
     }
     PrintMonDexNumAndName(0, FONT_NARROW, str, left, top);
-    return StringLength(str) as u8;
+    StringLength(str) as u8
 }
-pub(crate) unsafe extern "C" fn ClearMonListEntry(x: u8, y: u8, unused: u16) {
+unsafe fn ClearMonListEntry(x: u8, y: u8, unused: u16) {
     FillWindowPixelRect(0, 0, x as u16 * 8, y as u16 * 8, 0x60, 16);
 }
-pub(crate) unsafe extern "C" fn CreateMonSpritesAtPos(selectedMon: u16, ignored: u16) {
-    let mut i: u8 = 0;
-    let mut dexNum: u16 = 0;
+unsafe fn CreateMonSpritesAtPos(selectedMon: u16, ignored: u16) {
     let mut spriteId: u8 = 0;
     gPaletteFade.set_bufferTransferDisabled(TRUE as u16);
-    i = 0;
-    while i < MAX_MONS_ON_SCREEN as u8 {
+    for i in 0..(MAX_MONS_ON_SCREEN as u8) {
         (*sPokedexView).monSpriteIds[i] = 0xFFFF;
-        i += 1;
     }
     (*sPokedexView).selectedMonSpriteId = 0xFFFF;
-    dexNum = GetPokemonSpriteToDisplay(selectedMon - 1);
+    let mut dexNum: u16 = GetPokemonSpriteToDisplay(selectedMon - 1);
     if dexNum != 0xFFFF {
         spriteId = CreatePokedexMonSprite(dexNum, 0x60, 0x50) as u8;
         gSprites[spriteId].callback = Some(SpriteCB_PokedexListMonSprite);
@@ -1674,24 +1727,17 @@ pub(crate) unsafe extern "C" fn CreateMonSpritesAtPos(selectedMon: u16, ignored:
     (*sPokedexView).listMovingVOffset = 0;
     gPaletteFade.set_bufferTransferDisabled(FALSE as u16);
 }
-pub(crate) unsafe extern "C" fn UpdateDexListScroll(
-    direction: u8,
-    monMoveIncrement: u8,
-    scrollTimerMax: u8,
-) -> u8 {
-    let mut i: u16 = 0;
+unsafe fn UpdateDexListScroll(direction: u8, monMoveIncrement: u8, scrollTimerMax: u8) -> u8 {
     let mut step: u8 = 0;
     if (*sPokedexView).scrollTimer != 0 {
         (*sPokedexView).scrollTimer -= 1;
         match direction {
             1 => {
-                i = 0;
-                while i < MAX_MONS_ON_SCREEN {
+                for i in 0..MAX_MONS_ON_SCREEN {
                     if (*sPokedexView).monSpriteIds[i] != 0xFFFF {
                         gSprites[(*sPokedexView).monSpriteIds[i]].data[5] +=
                             monMoveIncrement as i16;
                     }
-                    i += 1;
                 }
                 step = div_i32(
                     LIST_SCROLL_STEP as i32
@@ -1707,13 +1753,11 @@ pub(crate) unsafe extern "C" fn UpdateDexListScroll(
                 (*sPokedexView).pokeBallRotation -= (*sPokedexView).pokeBallRotationStep as u8;
             }
             2 => {
-                i = 0;
-                while i < MAX_MONS_ON_SCREEN {
+                for i in 0..MAX_MONS_ON_SCREEN {
                     if (*sPokedexView).monSpriteIds[i] != 0xFFFF {
                         gSprites[(*sPokedexView).monSpriteIds[i]].data[5] -=
                             monMoveIncrement as i16;
                     }
-                    i += 1;
                 }
                 step = div_i32(
                     LIST_SCROLL_STEP as i32
@@ -1741,10 +1785,10 @@ pub(crate) unsafe extern "C" fn UpdateDexListScroll(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn CreateScrollingPokemonSprite(direction: u8, selectedMon: u16) {
+unsafe fn CreateScrollingPokemonSprite(direction: u8, selectedMon: u16) {
     let mut dexNum: u16 = 0;
     let mut spriteId: u8 = 0;
     (*sPokedexView).listMovingVOffset = (*sPokedexView).listVOffset;
@@ -1778,10 +1822,7 @@ pub(crate) unsafe extern "C" fn CreateScrollingPokemonSprite(direction: u8, sele
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn TryDoPokedexScroll(mut selectedMon: u16, ignored: u16) -> u16 {
-    let mut scrollTimer: u8 = 0;
-    let mut scrollMonIncrement: u8 = 0;
-    let mut i: u8 = 0;
+unsafe fn TryDoPokedexScroll(mut selectedMon: u16, ignored: u16) -> u16 {
     let mut startingPos: u16 = 0;
     let mut scrollDir: u8 = 0;
     if gMain.heldKeys as i32 & DPAD_UP != 0 && selectedMon > 0 {
@@ -1800,10 +1841,8 @@ pub(crate) unsafe extern "C" fn TryDoPokedexScroll(mut selectedMon: u16, ignored
         PlaySE(SE_DEX_SCROLL);
     } else if gMain.newKeys as i32 & DPAD_LEFT != 0 && selectedMon > 0 {
         startingPos = selectedMon;
-        i = 0;
-        while i < 7 {
+        for i in 0..7u8 {
             selectedMon = GetNextPosition(1, selectedMon, 0, (*sPokedexView).pokemonListCount - 1);
-            i += 1;
         }
         (*sPokedexView).pokeBallRotation += 16 * (selectedMon as u8 - startingPos as u8);
         ClearMonSprites();
@@ -1813,10 +1852,8 @@ pub(crate) unsafe extern "C" fn TryDoPokedexScroll(mut selectedMon: u16, ignored
         && (selectedMon as i32) < (*sPokedexView).pokemonListCount as i32 - 1
     {
         startingPos = selectedMon;
-        i = 0;
-        while i < 7 {
+        for i in 0..7u8 {
             selectedMon = GetNextPosition(0, selectedMon, 0, (*sPokedexView).pokemonListCount - 1);
-            i += 1;
         }
         (*sPokedexView).pokeBallRotation += 16 * (selectedMon as u8 - startingPos as u8);
         ClearMonSprites();
@@ -1827,8 +1864,8 @@ pub(crate) unsafe extern "C" fn TryDoPokedexScroll(mut selectedMon: u16, ignored
         (*sPokedexView).scrollSpeed = 0;
         return selectedMon;
     }
-    scrollMonIncrement = sScrollMonIncrements[(*sPokedexView).scrollSpeed as i32 / 4];
-    scrollTimer = sScrollTimers[(*sPokedexView).scrollSpeed as i32 / 4];
+    let scrollMonIncrement: u8 = sScrollMonIncrements[(*sPokedexView).scrollSpeed as i32 / 4];
+    let scrollTimer: u8 = sScrollTimers[(*sPokedexView).scrollSpeed as i32 / 4];
     (*sPokedexView).scrollTimer = scrollTimer;
     (*sPokedexView).maxScrollTimer = scrollTimer as u16;
     (*sPokedexView).scrollMonIncrement = scrollMonIncrement as u16;
@@ -1842,20 +1879,17 @@ pub(crate) unsafe extern "C" fn TryDoPokedexScroll(mut selectedMon: u16, ignored
     if (*sPokedexView).scrollSpeed < 12 {
         (*sPokedexView).scrollSpeed += 1;
     }
-    return selectedMon;
+    selectedMon
 }
-pub(crate) unsafe extern "C" fn UpdateSelectedMonSpriteId() {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < MAX_MONS_ON_SCREEN {
-        let mut spriteId: u16 = (*sPokedexView).monSpriteIds[i];
+unsafe fn UpdateSelectedMonSpriteId() {
+    for i in 0..MAX_MONS_ON_SCREEN {
+        let spriteId: u16 = (*sPokedexView).monSpriteIds[i];
         if gSprites[spriteId].x2 == 0 && gSprites[spriteId].y2 == 0 && spriteId != 0xFFFF {
             (*sPokedexView).selectedMonSpriteId = spriteId;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn TryDoInfoScreenScroll() -> u8 {
+unsafe fn TryDoInfoScreenScroll() -> u8 {
     let mut nextPokemon: u16 = 0;
     let mut selectedPokemon: u16 = (*sPokedexView).selectedPokemon;
     if gMain.newKeys as i32 & DPAD_UP != 0 && selectedPokemon != 0 {
@@ -1893,21 +1927,18 @@ pub(crate) unsafe extern "C" fn TryDoInfoScreenScroll() -> u8 {
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn ClearMonSprites() -> u8 {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < MAX_MONS_ON_SCREEN {
+unsafe fn ClearMonSprites() -> u8 {
+    for i in 0..MAX_MONS_ON_SCREEN {
         if (*sPokedexView).monSpriteIds[i] != 0xFFFF {
             FreeAndDestroyMonPicSprite((*sPokedexView).monSpriteIds[i]);
             (*sPokedexView).monSpriteIds[i] = 0xFFFF;
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn GetPokemonSpriteToDisplay(species: u16) -> u16 {
+unsafe fn GetPokemonSpriteToDisplay(species: u16) -> u16 {
     if species >= NATIONAL_DEX_DEOXYS || (*sPokedexView).pokedexList[species].dexNum == 0xFFFF {
         return 0xFFFF;
     } else if (*sPokedexView).pokedexList[species].seen() != 0 {
@@ -1917,15 +1948,13 @@ pub(crate) unsafe extern "C" fn GetPokemonSpriteToDisplay(species: u16) -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn CreatePokedexMonSprite(num: u16, x: i16, y: i16) -> u32 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < MAX_MONS_ON_SCREEN as u8 {
+unsafe fn CreatePokedexMonSprite(num: u16, x: i16, y: i16) -> u32 {
+    for i in 0..(MAX_MONS_ON_SCREEN as u8) {
         if (*sPokedexView).monSpriteIds[i] == 0xFFFF {
-            let mut spriteId: u8 = CreateMonSpriteFromNationalDexNumber(num, x, y, i as u16) as u8;
+            let spriteId: u8 = CreateMonSpriteFromNationalDexNumber(num, x, y, i as u16) as u8;
             gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
             gSprites[spriteId].oam.set_priority(3);
             gSprites[spriteId].data[0] = 0;
@@ -1934,14 +1963,12 @@ pub(crate) unsafe extern "C" fn CreatePokedexMonSprite(num: u16, x: i16, y: i16)
             (*sPokedexView).monSpriteIds[i] = spriteId as u16;
             return spriteId as u32;
         }
-        i += 1;
     }
-    return 0xFFFF;
+    0xFFFF
 }
-pub(crate) unsafe extern "C" fn CreateInterfaceSprites(page: u8) {
-    let mut spriteId: u8 = 0;
+pub(crate) unsafe fn CreateInterfaceSprites(page: u8) {
     let mut digitNum: u16 = 0;
-    spriteId = CreateSprite(
+    let mut spriteId: u8 = CreateSprite(
         (&raw const *sScrollArrowSpriteTemplate).cast_mut(),
         184,
         4,
@@ -2095,7 +2122,6 @@ pub(crate) unsafe extern "C" fn CreateInterfaceSprites(page: u8) {
             digitNum = ((*sPokedexView).ownCount as i32 % 100 % 10) as u16;
             StartSpriteAnim(&raw mut gSprites[spriteId], digitNum as u8);
         } else {
-            let mut seenOwnedCount: u16 = 0;
             CreateSprite(
                 (&raw const *sSeenOwnTextSpriteTemplate).cast_mut(),
                 32,
@@ -2135,7 +2161,7 @@ pub(crate) unsafe extern "C" fn CreateInterfaceSprites(page: u8) {
                 1,
             );
             StartSpriteAnim(&raw mut gSprites[spriteId], 1);
-            seenOwnedCount = GetHoennPokedexCount(FLAG_GET_SEEN);
+            let mut seenOwnedCount: u16 = GetHoennPokedexCount(FLAG_GET_SEEN);
             drawNextDigit = FALSE as u32;
             spriteId = CreateSprite(
                 (&raw const *sNationalDexSeenOwnNumberSpriteTemplate).cast_mut(),
@@ -2291,14 +2317,13 @@ pub(crate) unsafe extern "C" fn CreateInterfaceSprites(page: u8) {
         gSprites[spriteId].set_invisible(TRUE as u16);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_EndMoveMonForInfoScreen(sprite: *mut Sprite) {}
-pub(crate) unsafe extern "C" fn SpriteCB_SeenOwnInfo(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_EndMoveMonForInfoScreen(sprite: *mut Sprite) {}
+pub(crate) unsafe fn SpriteCB_SeenOwnInfo(sprite: *mut Sprite) {
     if (*sPokedexView).currentPage != PAGE_MAIN {
         DestroySprite(sprite);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpriteCB_MoveMonForInfoScreen(sprite: *mut Sprite) {
+pub unsafe fn SpriteCB_MoveMonForInfoScreen(sprite: *mut Sprite) {
     (*sprite).oam.set_priority(0);
     (*sprite).oam.set_affineMode(ST_OAM_AFFINE_OFF);
     (*sprite).x2 = 0;
@@ -2320,18 +2345,27 @@ pub unsafe extern "C" fn SpriteCB_MoveMonForInfoScreen(sprite: *mut Sprite) {
         (*sprite).callback = Some(SpriteCB_EndMoveMonForInfoScreen);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_PokedexListMonSprite(sprite: *mut Sprite) {
-    let mut monId: u8 = (*sprite).data[1] as u8;
+pub(crate) unsafe fn SpriteCB_PokedexListMonSprite(sprite: *mut Sprite) {
+    let monId: u8 = (*sprite).data[1] as u8;
     if (*sPokedexView).currentPage != PAGE_MAIN
         && (*sPokedexView).currentPage != PAGE_SEARCH_RESULTS
     {
         FreeAndDestroyMonPicSprite((*sPokedexView).monSpriteIds[monId]);
         (*sPokedexView).monSpriteIds[monId] = 0xFFFF;
     } else {
-        let mut var: u32 = 0;
-        (*sprite).y2 = (gSineTable[(*sprite).data[5] as u8] as i32 * 76 / 256) as i16;
-        var = (if gSineTable[(*sprite).data[5] as i32 + 64] != 0 {
-            div_i32(0x10000, gSineTable[(*sprite).data[5] as i32 + 64] as i32)
+        (*sprite).y2 = ((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+            [(*sprite).data[5] as u8] as i32
+            * 76
+            / 256) as i16;
+        let mut var: u32 = (if (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+            [(*sprite).data[5] as i32 + 64]
+            != 0
+        {
+            div_i32(
+                0x10000,
+                (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+                    [(*sprite).data[5] as i32 + 64] as i32,
+            )
         } else {
             0
         }) as u32;
@@ -2352,7 +2386,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_PokedexListMonSprite(sprite: *mut Sprit
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Scrollbar(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_Scrollbar(sprite: *mut Sprite) {
     if (*sPokedexView).currentPage != PAGE_MAIN
         && (*sPokedexView).currentPage != PAGE_SEARCH_RESULTS
     {
@@ -2364,14 +2398,14 @@ pub(crate) unsafe extern "C" fn SpriteCB_Scrollbar(sprite: *mut Sprite) {
         ) as i16;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ScrollArrow(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ScrollArrow(sprite: *mut Sprite) {
     if (*sPokedexView).currentPage != PAGE_MAIN
         && (*sPokedexView).currentPage != PAGE_SEARCH_RESULTS
     {
         DestroySprite(sprite);
     } else {
         let mut r0: u8 = 0;
-        if (*sprite).data[1] != 0 {
+        if (*sprite).data[sIsDownArrow] != 0 {
             if (*sPokedexView).selectedPokemon as i32 == (*sPokedexView).pokemonListCount as i32 - 1
             {
                 (*sprite).set_invisible(TRUE as u16);
@@ -2387,8 +2421,8 @@ pub(crate) unsafe extern "C" fn SpriteCB_ScrollArrow(sprite: *mut Sprite) {
             }
             r0 = (*sprite).data[2] as u8 - 128;
         }
-        (*sprite).y2 = gSineTable[r0] / 64;
-        (*sprite).data[2] = (*sprite).data[2] + 8;
+        (*sprite).y2 = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[r0] / 64;
+        (*sprite).data[2] += 8;
         if (*sPokedexView).menuIsOpen == 0
             && (*sPokedexView).menuY == 0
             && (*sprite).invisible() == 0
@@ -2399,25 +2433,23 @@ pub(crate) unsafe extern "C" fn SpriteCB_ScrollArrow(sprite: *mut Sprite) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DexListInterfaceText(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_DexListInterfaceText(sprite: *mut Sprite) {
     if (*sPokedexView).currentPage != PAGE_MAIN
         && (*sPokedexView).currentPage != PAGE_SEARCH_RESULTS
     {
         DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_RotatingPokeBall(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_RotatingPokeBall(sprite: *mut Sprite) {
     if (*sPokedexView).currentPage != PAGE_MAIN
         && (*sPokedexView).currentPage != PAGE_SEARCH_RESULTS
     {
         DestroySprite(sprite);
     } else {
-        let mut val: u8 = 0;
-        let mut r3: i16 = 0;
-        let mut r0: i16 = 0;
-        val = (*sPokedexView).pokeBallRotation + (*sprite).data[1] as u8;
-        r3 = gSineTable[val];
-        r0 = gSineTable[val as i32 + 64];
+        let mut val: u8 = (*sPokedexView).pokeBallRotation + (*sprite).data[1] as u8;
+        let mut r3: i16 = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[val];
+        let mut r0: i16 =
+            (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[val as i32 + 64];
         SetOamMatrix(
             (*sprite).data[0] as u8,
             r0 as u16,
@@ -2426,19 +2458,19 @@ pub(crate) unsafe extern "C" fn SpriteCB_RotatingPokeBall(sprite: *mut Sprite) {
             r0 as u16,
         );
         val = (*sPokedexView).pokeBallRotation + ((*sprite).data[1] as u8 + 64);
-        r3 = gSineTable[val];
-        r0 = gSineTable[val as i32 + 64];
+        r3 = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[val];
+        r0 = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[val as i32 + 64];
         (*sprite).x2 = (r0 as i32 * 40 / 256) as i16;
         (*sprite).y2 = (r3 as i32 * 40 / 256) as i16;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DexListStartMenuCursor(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_DexListStartMenuCursor(sprite: *mut Sprite) {
     if (*sPokedexView).currentPage != PAGE_MAIN
         && (*sPokedexView).currentPage != PAGE_SEARCH_RESULTS
     {
         DestroySprite(sprite);
     } else {
-        let mut r1: u16 = (if (*sPokedexView).currentPage == PAGE_MAIN {
+        let r1: u16 = (if (*sPokedexView).currentPage == PAGE_MAIN {
             80
         } else {
             96
@@ -2446,14 +2478,16 @@ pub(crate) unsafe extern "C" fn SpriteCB_DexListStartMenuCursor(sprite: *mut Spr
         if (*sPokedexView).menuIsOpen != 0 && (*sPokedexView).menuY as i32 == r1 as i32 {
             (*sprite).set_invisible(FALSE as u16);
             (*sprite).y2 = (*sPokedexView).menuCursorPos as i16 * 16;
-            (*sprite).x2 = gSineTable[(*sprite).data[2] as u8] / 64;
+            (*sprite).x2 = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+                [(*sprite).data[2] as u8]
+                / 64;
             (*sprite).data[2] += 8;
         } else {
             (*sprite).set_invisible(TRUE as u16);
         }
     }
 }
-pub(crate) unsafe extern "C" fn PrintInfoScreenText(str: *mut u8, left: u8, top: u8) {
+unsafe fn PrintInfoScreenText(str: *mut u8, left: u8, top: u8) {
     let mut color: CArray<u8, 3> = zeroed();
     color[0] = 0x0;
     color[1] = TEXT_DYNAMIC_COLOR_6;
@@ -2470,16 +2504,15 @@ pub(crate) unsafe extern "C" fn PrintInfoScreenText(str: *mut u8, left: u8, top:
         str,
     );
 }
-pub(crate) unsafe extern "C" fn LoadInfoScreen(item: *mut PokedexListItem, monSpriteId: u8) -> u8 {
-    let mut taskId: u8 = 0;
+unsafe fn LoadInfoScreen(item: *mut PokedexListItem, monSpriteId: u8) -> u8 {
     sPokedexListItem = item;
-    taskId = CreateTask(Some(Task_LoadInfoScreen), 0);
-    gTasks[taskId].data[0] = FALSE as i16;
-    gTasks[taskId].data[1] = TRUE as i16;
-    gTasks[taskId].data[2] = FALSE as i16;
-    gTasks[taskId].data[3] = FALSE as i16;
-    gTasks[taskId].data[4] = monSpriteId as i16;
-    gTasks[taskId].data[5] = SPRITE_NONE as i16;
+    let taskId: u8 = CreateTask(Some(Task_LoadInfoScreen), 0);
+    task_set(taskId, tScrolling, FALSE as i16);
+    task_set(taskId, tMonSpriteDone, TRUE as i16);
+    task_set(taskId, tBgLoaded, FALSE as i16);
+    task_set(taskId, tSkipCry, FALSE as i16);
+    task_set(taskId, 4, monSpriteId as i16);
+    task_set(taskId, tTrainerSpriteId, SPRITE_NONE as i16);
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sInfoScreen_BgTemplate.as_ptr().cast_mut(), 4);
     SetBgTilemapBuffer(3, AllocZeroed(BG_SCREEN_SIZE));
@@ -2488,11 +2521,11 @@ pub(crate) unsafe extern "C" fn LoadInfoScreen(item: *mut PokedexListItem, monSp
     SetBgTilemapBuffer(0, AllocZeroed(BG_SCREEN_SIZE));
     InitWindows(sInfoScreen_WindowTemplates.as_ptr().cast_mut());
     DeactivateAllTextPrinters();
-    return taskId;
+    taskId
 }
-pub(crate) unsafe extern "C" fn IsInfoScreenScrolling(taskId: u8) -> u8 {
-    if gTasks[taskId].data[0] == 0
-        && gTasks[taskId].func == Some(Task_HandleInfoScreenInput as unsafe extern "C" fn(u8))
+fn IsInfoScreenScrolling(taskId: u8) -> u8 {
+    if task_get(taskId, tScrolling) == 0
+        && task_func(taskId) == Some(Task_HandleInfoScreenInput as unsafe fn(u8))
     {
         return FALSE;
     } else {
@@ -2500,33 +2533,35 @@ pub(crate) unsafe extern "C" fn IsInfoScreenScrolling(taskId: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn StartInfoScreenScroll(
-    item: *mut PokedexListItem,
-    taskId: u8,
-) -> u8 {
+unsafe fn StartInfoScreenScroll(item: *mut PokedexListItem, taskId: u8) -> u8 {
     sPokedexListItem = item;
-    gTasks[taskId].data[0] = TRUE as i16;
-    gTasks[taskId].data[1] = FALSE as i16;
-    gTasks[taskId].data[2] = FALSE as i16;
-    gTasks[taskId].data[3] = FALSE as i16;
-    return taskId;
+    task_set(taskId, tScrolling, TRUE as i16);
+    task_set(taskId, tMonSpriteDone, FALSE as i16);
+    task_set(taskId, tBgLoaded, FALSE as i16);
+    task_set(taskId, tSkipCry, FALSE as i16);
+    taskId
 }
-pub(crate) unsafe extern "C" fn Task_LoadInfoScreen(taskId: u8) {
+pub(crate) unsafe fn Task_LoadInfoScreen(taskId: u8) {
     match gMain.state {
         1 => {
             DecompressAndLoadBgGfxUsingHeap(
                 3,
-                gPokedexMenu_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gPokedexMenu_Gfx).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0x2000,
                 0,
                 0,
             );
             CopyToBgTilemapBuffer(
                 3,
-                gPokedexInfoScreen_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gPokedexInfoScreen_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0,
                 0,
             );
@@ -2558,7 +2593,13 @@ pub(crate) unsafe extern "C" fn Task_LoadInfoScreen(taskId: u8) {
                 0,
             );
             if (*sPokedexListItem).owned() == 0 {
-                LoadPalette(&raw mut gPlttBufferUnfaded[1] as *mut c_void, 49, 30);
+                LoadPalette(
+                    &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                        .cast::<CArray<u16, 512>>()
+                        .cast_mut())[1] as *mut c_void,
+                    49,
+                    30,
+                );
             }
             CopyWindowToVram(WIN_INFO, COPYWIN_FULL);
             CopyBgTilemapBufferToVram(1);
@@ -2567,26 +2608,30 @@ pub(crate) unsafe extern "C" fn Task_LoadInfoScreen(taskId: u8) {
             gMain.state += 1;
         }
         5 => {
-            if gTasks[taskId].data[1] == 0 {
-                gTasks[taskId].data[4] = CreateMonSpriteFromNationalDexNumber(
-                    (*sPokedexListItem).dexNum,
-                    MON_PAGE_X,
-                    MON_PAGE_Y,
-                    0,
-                ) as i16;
-                gSprites[gTasks[taskId].data[4]].oam.set_priority(0);
+            if task_get(taskId, tMonSpriteDone) == 0 {
+                task_set(
+                    taskId,
+                    4,
+                    CreateMonSpriteFromNationalDexNumber(
+                        (*sPokedexListItem).dexNum,
+                        MON_PAGE_X,
+                        MON_PAGE_Y,
+                        0,
+                    ) as i16,
+                );
+                gSprites[task_get(taskId, 4)].oam.set_priority(0);
             }
             gMain.state += 1;
         }
         6 => {
             let mut preservedPalettes: u32 = 0;
-            if gTasks[taskId].data[2] != 0 {
+            if task_get(taskId, tBgLoaded) != 0 {
                 preservedPalettes = 0x14;
             }
-            if gTasks[taskId].data[1] != 0 {
+            if task_get(taskId, tMonSpriteDone) != 0 {
                 preservedPalettes |= shl_i32(
                     1,
-                    gSprites[gTasks[taskId].data[4]].oam.paletteNum() as u32 + 16,
+                    gSprites[task_get(taskId, 4)].oam.paletteNum() as u32 + 16,
                 ) as u32;
             }
             BeginNormalPaletteFade(!preservedPalettes, 0, 16, 0, 0);
@@ -2607,7 +2652,7 @@ pub(crate) unsafe extern "C" fn Task_LoadInfoScreen(taskId: u8) {
         8 => {
             if gPaletteFade.active() == 0 {
                 gMain.state += 1;
-                if gTasks[taskId].data[3] == 0 {
+                if task_get(taskId, tSkipCry) == 0 {
                     StopCryAndClearCrySongs();
                     PlayCry_NormalNoDucking(
                         NationalPokedexNumToSpecies((*sPokedexListItem).dexNum),
@@ -2626,24 +2671,23 @@ pub(crate) unsafe extern "C" fn Task_LoadInfoScreen(taskId: u8) {
             }
         }
         10 => {
-            gTasks[taskId].data[0] = FALSE as i16;
-            gTasks[taskId].data[1] = FALSE as i16;
-            gTasks[taskId].data[2] = TRUE as i16;
-            gTasks[taskId].data[3] = TRUE as i16;
-            gTasks[taskId].func = Some(Task_HandleInfoScreenInput);
+            task_set(taskId, tScrolling, FALSE as i16);
+            task_set(taskId, tMonSpriteDone, FALSE as i16);
+            task_set(taskId, tBgLoaded, TRUE as i16);
+            task_set(taskId, tSkipCry, TRUE as i16);
+            task_set_func(taskId, Some(Task_HandleInfoScreenInput));
             gMain.state = 0;
         }
         _ => {
             if gPaletteFade.active() == 0 {
-                let mut r2: u16 = 0;
                 (*sPokedexView).currentPage = PAGE_INFO;
                 gPokedexVBlankCB = gMain.vblankCallback;
                 SetVBlankCallback(None);
-                r2 = 0;
-                if gTasks[taskId].data[1] != 0 {
+                let mut r2: u16 = 0;
+                if task_get(taskId, tMonSpriteDone) != 0 {
                     r2 += DISPCNT_OBJ_ON;
                 }
-                if gTasks[taskId].data[2] != 0 {
+                if task_get(taskId, tBgLoaded) != 0 {
                     r2 |= DISPCNT_BG1_ON;
                 }
                 ResetOtherVideoRegisters(r2);
@@ -2652,10 +2696,9 @@ pub(crate) unsafe extern "C" fn Task_LoadInfoScreen(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn FreeInfoScreenWindowAndBgBuffers() {
-    let mut tilemapBuffer: *mut c_void = null_mut();
+unsafe fn FreeInfoScreenWindowAndBgBuffers() {
     FreeAllWindowBuffers();
-    tilemapBuffer = GetBgTilemapBuffer(0);
+    let mut tilemapBuffer: *mut c_void = GetBgTilemapBuffer(0);
     if !tilemapBuffer.is_null() {
         Free(tilemapBuffer);
     }
@@ -2672,16 +2715,16 @@ pub(crate) unsafe extern "C" fn FreeInfoScreenWindowAndBgBuffers() {
         Free(tilemapBuffer);
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleInfoScreenInput(taskId: u8) {
-    if gTasks[taskId].data[0] != 0 {
+pub(crate) unsafe fn Task_HandleInfoScreenInput(taskId: u8) {
+    if task_get(taskId, tScrolling) != 0 {
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-        gTasks[taskId].func = Some(Task_LoadInfoScreenWaitForFade);
+        task_set_func(taskId, Some(Task_LoadInfoScreenWaitForFade));
         PlaySE(SE_DEX_SCROLL);
         return;
     }
     if gMain.newKeys as i32 & B_BUTTON != 0 {
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-        gTasks[taskId].func = Some(Task_ExitInfoScreen);
+        task_set_func(taskId, Some(Task_ExitInfoScreen));
         PlaySE(SE_PC_OFF);
         return;
     }
@@ -2690,13 +2733,13 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoScreenInput(taskId: u8) {
             AREA_SCREEN => {
                 BeginNormalPaletteFade(0xffffffeb, 0, 0, 16, 0);
                 (*sPokedexView).screenSwitchState = 1;
-                gTasks[taskId].func = Some(Task_SwitchScreensFromInfoScreen);
+                task_set_func(taskId, Some(Task_SwitchScreensFromInfoScreen));
                 PlaySE(SE_PIN);
             }
             CRY_SCREEN => {
                 BeginNormalPaletteFade(0xffffffeb, 0, 0, 0x10, 0);
                 (*sPokedexView).screenSwitchState = 2;
-                gTasks[taskId].func = Some(Task_SwitchScreensFromInfoScreen);
+                task_set_func(taskId, Some(Task_SwitchScreensFromInfoScreen));
                 PlaySE(SE_PIN);
             }
             SIZE_SCREEN => {
@@ -2705,13 +2748,13 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoScreenInput(taskId: u8) {
                 } else {
                     BeginNormalPaletteFade(0xffffffeb, 0, 0, 0x10, 0);
                     (*sPokedexView).screenSwitchState = 3;
-                    gTasks[taskId].func = Some(Task_SwitchScreensFromInfoScreen);
+                    task_set_func(taskId, Some(Task_SwitchScreensFromInfoScreen));
                     PlaySE(SE_PIN);
                 }
             }
             CANCEL_SCREEN => {
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-                gTasks[taskId].func = Some(Task_ExitInfoScreen);
+                task_set_func(taskId, Some(Task_ExitInfoScreen));
                 PlaySE(SE_PC_OFF);
             }
             _ => {}
@@ -2736,39 +2779,38 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoScreenInput(taskId: u8) {
         (*sPokedexView).selectedScreen += 1;
         HighlightScreenSelectBarItem((*sPokedexView).selectedScreen, 0xD);
         PlaySE(SE_DEX_PAGE);
-        return;
     }
 }
-pub(crate) unsafe extern "C" fn Task_SwitchScreensFromInfoScreen(taskId: u8) {
+pub(crate) unsafe fn Task_SwitchScreensFromInfoScreen(taskId: u8) {
     if gPaletteFade.active() == 0 {
-        FreeAndDestroyMonPicSprite(gTasks[taskId].data[4] as u16);
+        FreeAndDestroyMonPicSprite(task_get(taskId, 4) as u16);
         match (*sPokedexView).screenSwitchState {
             2 => {
-                gTasks[taskId].func = Some(Task_LoadCryScreen);
+                task_set_func(taskId, Some(Task_LoadCryScreen));
             }
             3 => {
-                gTasks[taskId].func = Some(Task_LoadSizeScreen);
+                task_set_func(taskId, Some(Task_LoadSizeScreen));
             }
             _ => {
-                gTasks[taskId].func = Some(Task_LoadAreaScreen);
+                task_set_func(taskId, Some(Task_LoadAreaScreen));
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_LoadInfoScreenWaitForFade(taskId: u8) {
+pub(crate) unsafe fn Task_LoadInfoScreenWaitForFade(taskId: u8) {
     if gPaletteFade.active() == 0 {
-        FreeAndDestroyMonPicSprite(gTasks[taskId].data[4] as u16);
-        gTasks[taskId].func = Some(Task_LoadInfoScreen);
+        FreeAndDestroyMonPicSprite(task_get(taskId, 4) as u16);
+        task_set_func(taskId, Some(Task_LoadInfoScreen));
     }
 }
-pub(crate) unsafe extern "C" fn Task_ExitInfoScreen(taskId: u8) {
+pub(crate) unsafe fn Task_ExitInfoScreen(taskId: u8) {
     if gPaletteFade.active() == 0 {
-        FreeAndDestroyMonPicSprite(gTasks[taskId].data[4] as u16);
+        FreeAndDestroyMonPicSprite(task_get(taskId, 4) as u16);
         FreeInfoScreenWindowAndBgBuffers();
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_LoadAreaScreen(taskId: u8) {
+pub(crate) unsafe fn Task_LoadAreaScreen(taskId: u8) {
     match gMain.state {
         1 => {
             LoadScreenSelectBarSubmenu(0xD);
@@ -2785,7 +2827,7 @@ pub(crate) unsafe extern "C" fn Task_LoadAreaScreen(taskId: u8) {
             SetVBlankCallback(gPokedexVBlankCB);
             (*sPokedexView).screenSwitchState = 0;
             gMain.state = 0;
-            gTasks[taskId].func = Some(Task_WaitForAreaScreenInput);
+            task_set_func(taskId, Some(Task_WaitForAreaScreenInput));
         }
         _ => {
             if gPaletteFade.active() == 0 {
@@ -2799,36 +2841,40 @@ pub(crate) unsafe extern "C" fn Task_LoadAreaScreen(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_WaitForAreaScreenInput(taskId: u8) {
+pub(crate) unsafe fn Task_WaitForAreaScreenInput(taskId: u8) {
     if (*sPokedexView).screenSwitchState != 0 {
-        gTasks[taskId].func = Some(Task_SwitchScreensFromAreaScreen);
+        task_set_func(taskId, Some(Task_SwitchScreensFromAreaScreen));
     }
 }
-pub(crate) unsafe extern "C" fn Task_SwitchScreensFromAreaScreen(taskId: u8) {
+pub(crate) unsafe fn Task_SwitchScreensFromAreaScreen(taskId: u8) {
     if gPaletteFade.active() == 0 {
         match (*sPokedexView).screenSwitchState {
             2 => {
-                gTasks[taskId].func = Some(Task_LoadCryScreen);
+                task_set_func(taskId, Some(Task_LoadCryScreen));
             }
             _ => {
-                gTasks[taskId].func = Some(Task_LoadInfoScreen);
+                task_set_func(taskId, Some(Task_LoadInfoScreen));
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_LoadCryScreen(taskId: u8) {
+pub(crate) unsafe fn Task_LoadCryScreen(taskId: u8) {
     match gMain.state {
         1 => {
             DecompressAndLoadBgGfxUsingHeap(
                 3,
-                (&raw const gPokedexMenu_Gfx).cast_mut() as *mut c_void,
+                (&raw const (*(&raw const crate::data::graphics::gPokedexMenu_Gfx)
+                    .cast::<CArray<u32, 0>>()))
+                    .cast_mut() as *mut c_void,
                 0x2000,
                 0,
                 0,
             );
             CopyToBgTilemapBuffer(
                 3,
-                (&raw const gPokedexCryScreen_Tilemap).cast_mut() as *mut c_void,
+                (&raw const (*(&raw const crate::data::graphics::gPokedexCryScreen_Tilemap)
+                    .cast::<CArray<u32, 0>>()))
+                    .cast_mut() as *mut c_void,
                 0,
                 0,
             );
@@ -2849,18 +2895,28 @@ pub(crate) unsafe extern "C" fn Task_LoadCryScreen(taskId: u8) {
             gMain.state += 1;
         }
         4 => {
-            PrintInfoScreenText(gText_CryOf.as_ptr().cast_mut(), 82, 33);
+            PrintInfoScreenText(
+                (*(&raw const crate::data::strings::gText_CryOf).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                82,
+                33,
+            );
             PrintCryScreenSpeciesName(0, (*sPokedexListItem).dexNum, 82, 49);
             gMain.state += 1;
         }
         5 => {
-            gTasks[taskId].data[4] = CreateMonSpriteFromNationalDexNumber(
-                (*sPokedexListItem).dexNum,
-                MON_PAGE_X,
-                MON_PAGE_Y,
-                0,
-            ) as i16;
-            gSprites[gTasks[taskId].data[4]].oam.set_priority(0);
+            task_set(
+                taskId,
+                4,
+                CreateMonSpriteFromNationalDexNumber(
+                    (*sPokedexListItem).dexNum,
+                    MON_PAGE_X,
+                    MON_PAGE_Y,
+                    0,
+                ) as i16,
+            );
+            gSprites[task_get(taskId, 4)].oam.set_priority(0);
             gDexCryScreenState = 0;
             gMain.state += 1;
         }
@@ -2910,7 +2966,7 @@ pub(crate) unsafe extern "C" fn Task_LoadCryScreen(taskId: u8) {
         10 => {
             (*sPokedexView).screenSwitchState = 0;
             gMain.state = 0;
-            gTasks[taskId].func = Some(Task_HandleCryScreenInput);
+            task_set_func(taskId, Some(Task_HandleCryScreenInput));
         }
         _ => {
             if gPaletteFade.active() == 0 {
@@ -2925,7 +2981,7 @@ pub(crate) unsafe extern "C" fn Task_LoadCryScreen(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleCryScreenInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandleCryScreenInput(taskId: u8) {
     UpdateCryWaveformWindow(2);
     if IsCryPlaying() != 0 {
         LoadPlayArrowPalette(TRUE);
@@ -2935,13 +2991,12 @@ pub(crate) unsafe extern "C" fn Task_HandleCryScreenInput(taskId: u8) {
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         LoadPlayArrowPalette(TRUE);
         CryScreenPlayButton(NationalPokedexNumToSpecies((*sPokedexListItem).dexNum));
-        return;
     } else if gPaletteFade.active() == 0 {
         if gMain.newKeys as i32 & B_BUTTON != 0 {
             BeginNormalPaletteFade(0xffffffeb, 0, 0, 0x10, 0);
             m4aMPlayContinue(&raw mut gMPlayInfo_BGM);
             (*sPokedexView).screenSwitchState = 1;
-            gTasks[taskId].func = Some(Task_SwitchScreensFromCryScreen);
+            task_set_func(taskId, Some(Task_SwitchScreensFromCryScreen));
             PlaySE(SE_PC_OFF);
             return;
         }
@@ -2952,7 +3007,7 @@ pub(crate) unsafe extern "C" fn Task_HandleCryScreenInput(taskId: u8) {
             BeginNormalPaletteFade(0xffffffeb, 0, 0, 0x10, 0);
             m4aMPlayContinue(&raw mut gMPlayInfo_BGM);
             (*sPokedexView).screenSwitchState = 2;
-            gTasks[taskId].func = Some(Task_SwitchScreensFromCryScreen);
+            task_set_func(taskId, Some(Task_SwitchScreensFromCryScreen));
             PlaySE(SE_DEX_PAGE);
             return;
         }
@@ -2966,31 +3021,30 @@ pub(crate) unsafe extern "C" fn Task_HandleCryScreenInput(taskId: u8) {
                 BeginNormalPaletteFade(0xffffffeb, 0, 0, 0x10, 0);
                 m4aMPlayContinue(&raw mut gMPlayInfo_BGM);
                 (*sPokedexView).screenSwitchState = 3;
-                gTasks[taskId].func = Some(Task_SwitchScreensFromCryScreen);
+                task_set_func(taskId, Some(Task_SwitchScreensFromCryScreen));
                 PlaySE(SE_DEX_PAGE);
             }
-            return;
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_SwitchScreensFromCryScreen(taskId: u8) {
+pub(crate) unsafe fn Task_SwitchScreensFromCryScreen(taskId: u8) {
     if gPaletteFade.active() == 0 {
         FreeCryScreen();
-        FreeAndDestroyMonPicSprite(gTasks[taskId].data[4] as u16);
+        FreeAndDestroyMonPicSprite(task_get(taskId, 4) as u16);
         match (*sPokedexView).screenSwitchState {
             2 => {
-                gTasks[taskId].func = Some(Task_LoadAreaScreen);
+                task_set_func(taskId, Some(Task_LoadAreaScreen));
             }
             3 => {
-                gTasks[taskId].func = Some(Task_LoadSizeScreen);
+                task_set_func(taskId, Some(Task_LoadSizeScreen));
             }
             _ => {
-                gTasks[taskId].func = Some(Task_LoadInfoScreen);
+                task_set_func(taskId, Some(Task_LoadInfoScreen));
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn LoadPlayArrowPalette(cryPlaying: u8) {
+unsafe fn LoadPlayArrowPalette(cryPlaying: u8) {
     let mut color: u16 = 0;
     if cryPlaying != 0 {
         color = 914;
@@ -2999,20 +3053,25 @@ pub(crate) unsafe extern "C" fn LoadPlayArrowPalette(cryPlaying: u8) {
     }
     LoadPalette(&raw mut color as *mut c_void, 93, 2);
 }
-pub(crate) unsafe extern "C" fn Task_LoadSizeScreen(taskId: u8) {
+pub(crate) unsafe fn Task_LoadSizeScreen(taskId: u8) {
     let mut spriteId: u8 = 0;
     match gMain.state {
         1 => {
             DecompressAndLoadBgGfxUsingHeap(
                 3,
-                gPokedexMenu_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gPokedexMenu_Gfx).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0x2000,
                 0,
                 0,
             );
             CopyToBgTilemapBuffer(
                 3,
-                gPokedexSizeScreen_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gPokedexSizeScreen_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0,
                 0,
             );
@@ -3030,7 +3089,9 @@ pub(crate) unsafe extern "C" fn Task_LoadSizeScreen(taskId: u8) {
             let mut string: CArray<u8, 64> = zeroed();
             StringCopy(
                 string.as_mut_ptr(),
-                gText_SizeComparedTo.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_SizeComparedTo).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
             );
             StringAppend(
                 string.as_mut_ptr(),
@@ -3075,7 +3136,7 @@ pub(crate) unsafe extern "C" fn Task_LoadSizeScreen(taskId: u8) {
                 (gSprites[spriteId].oam.paletteNum() + 16) * 16,
                 32,
             );
-            gTasks[taskId].data[5] = spriteId as i16;
+            task_set(taskId, tTrainerSpriteId, spriteId as i16);
             gMain.state += 1;
         }
         6 => {
@@ -3098,7 +3159,7 @@ pub(crate) unsafe extern "C" fn Task_LoadSizeScreen(taskId: u8) {
                 (gSprites[spriteId].oam.paletteNum() + 16) * 16,
                 32,
             );
-            gTasks[taskId].data[4] = spriteId as i16;
+            task_set(taskId, 4, spriteId as i16);
             CopyWindowToVram(WIN_INFO, COPYWIN_FULL);
             CopyBgTilemapBufferToVram(1);
             CopyBgTilemapBufferToVram(2);
@@ -3125,7 +3186,7 @@ pub(crate) unsafe extern "C" fn Task_LoadSizeScreen(taskId: u8) {
             if gPaletteFade.active() == 0 {
                 (*sPokedexView).screenSwitchState = 0;
                 gMain.state = 0;
-                gTasks[taskId].func = Some(Task_HandleSizeScreenInput);
+                task_set_func(taskId, Some(Task_HandleSizeScreenInput));
             }
         }
         _ => {
@@ -3140,11 +3201,11 @@ pub(crate) unsafe extern "C" fn Task_LoadSizeScreen(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleSizeScreenInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandleSizeScreenInput(taskId: u8) {
     if gMain.newKeys as i32 & B_BUTTON != 0 {
         BeginNormalPaletteFade(0xffffffeb, 0, 0, 0x10, 0);
         (*sPokedexView).screenSwitchState = 1;
-        gTasks[taskId].func = Some(Task_SwitchScreensFromSizeScreen);
+        task_set_func(taskId, Some(Task_SwitchScreensFromSizeScreen));
         PlaySE(SE_PC_OFF);
     } else if gMain.newKeys as i32 & DPAD_LEFT != 0
         || gMain.newKeys as i32 & L_BUTTON != 0
@@ -3152,136 +3213,133 @@ pub(crate) unsafe extern "C" fn Task_HandleSizeScreenInput(taskId: u8) {
     {
         BeginNormalPaletteFade(0xffffffeb, 0, 0, 0x10, 0);
         (*sPokedexView).screenSwitchState = 2;
-        gTasks[taskId].func = Some(Task_SwitchScreensFromSizeScreen);
+        task_set_func(taskId, Some(Task_SwitchScreensFromSizeScreen));
         PlaySE(SE_DEX_PAGE);
     }
 }
-pub(crate) unsafe extern "C" fn Task_SwitchScreensFromSizeScreen(taskId: u8) {
+pub(crate) unsafe fn Task_SwitchScreensFromSizeScreen(taskId: u8) {
     if gPaletteFade.active() == 0 {
-        FreeAndDestroyMonPicSprite(gTasks[taskId].data[4] as u16);
-        FreeAndDestroyTrainerPicSprite(gTasks[taskId].data[5] as u16);
+        FreeAndDestroyMonPicSprite(task_get(taskId, 4) as u16);
+        FreeAndDestroyTrainerPicSprite(task_get(taskId, tTrainerSpriteId) as u16);
         match (*sPokedexView).screenSwitchState {
             2 => {
-                gTasks[taskId].func = Some(Task_LoadCryScreen);
+                task_set_func(taskId, Some(Task_LoadCryScreen));
             }
             _ => {
-                gTasks[taskId].func = Some(Task_LoadInfoScreen);
+                task_set_func(taskId, Some(Task_LoadInfoScreen));
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn LoadScreenSelectBarMain(unused: u16) {
+unsafe fn LoadScreenSelectBarMain(unused: u16) {
     CopyToBgTilemapBuffer(
         1,
-        gPokedexScreenSelectBarMain_Tilemap.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gPokedexScreenSelectBarMain_Tilemap)
+            .cast::<CArray<u32, 0>>())
+        .as_ptr()
+        .cast_mut() as *mut c_void,
         0,
         0,
     );
 }
-pub(crate) unsafe extern "C" fn LoadScreenSelectBarSubmenu(unused: u16) {
+unsafe fn LoadScreenSelectBarSubmenu(unused: u16) {
     CopyToBgTilemapBuffer(
         1,
-        gPokedexScreenSelectBarSubmenu_Tilemap.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gPokedexScreenSelectBarSubmenu_Tilemap)
+            .cast::<CArray<u32, 0>>())
+        .as_ptr()
+        .cast_mut() as *mut c_void,
         0,
         0,
     );
 }
-pub(crate) unsafe extern "C" fn HighlightScreenSelectBarItem(selectedScreen: u8, unused: u16) {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
-    let mut ptr: *mut u16 = GetBgTilemapBuffer(1) as *mut u16;
-    i = 0;
-    while i < SCREEN_COUNT {
-        let mut row: u8 = i * 7 + 1;
-        let mut newPalette: u16 = 0;
-        newPalette = 0x4000;
+unsafe fn HighlightScreenSelectBarItem(selectedScreen: u8, unused: u16) {
+    let ptr: *mut u16 = GetBgTilemapBuffer(1) as *mut u16;
+    for i in 0..SCREEN_COUNT {
+        let row: u8 = i * 7 + 1;
+        let mut newPalette: u16 = 0x4000;
         if i == selectedScreen {
             newPalette = 0x2000;
         }
-        j = 0;
-        while j < 7 {
+        for j in 0..7u8 {
             *ptr.at(row as i32 + j as i32) =
                 (*ptr.at(row as i32 + j as i32) as i32 % 4096) as u16 | newPalette;
             *ptr.at(row as i32 + j as i32 + 0x20) =
                 (*ptr.at(row as i32 + j as i32 + 0x20) as i32 % 4096) as u16 | newPalette;
-            j += 1;
         }
-        i += 1;
     }
     CopyBgTilemapBufferToVram(1);
 }
-pub(crate) unsafe extern "C" fn HighlightSubmenuScreenSelectBarItem(a: u8, b: u16) {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
-    let mut ptr: *mut u16 = GetBgTilemapBuffer(1) as *mut u16;
-    i = 0;
-    while i < 4 {
-        let mut row: u8 = i * 7 + 1;
+unsafe fn HighlightSubmenuScreenSelectBarItem(a: u8, b: u16) {
+    let ptr: *mut u16 = GetBgTilemapBuffer(1) as *mut u16;
+    for i in 0..4u8 {
+        let row: u8 = i * 7 + 1;
         let mut newPalette: u32 = 0;
         if i == a || i == 3 {
             newPalette = 0x2000;
         } else {
             newPalette = 0x4000;
         }
-        j = 0;
-        while j < 7 {
+        for j in 0..7u8 {
             *ptr.at(row as i32 + j as i32) =
                 (*ptr.at(row as i32 + j as i32) as i32 % 4096) as u16 | newPalette as u16;
             *ptr.at(row as i32 + j as i32 + 0x20) =
                 (*ptr.at(row as i32 + j as i32 + 0x20) as i32 % 4096) as u16 | newPalette as u16;
-            j += 1;
         }
-        i += 1;
     }
     CopyBgTilemapBufferToVram(1);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DisplayCaughtMonDexPage(dexNum: u16, otId: u32, personality: u32) -> u8 {
-    let mut taskId: u8 = CreateTask(Some(Task_DisplayCaughtMonDexPage), 0);
-    gTasks[taskId].data[0] = 0;
-    gTasks[taskId].data[1] = dexNum as i16;
-    gTasks[taskId].data[12] = otId as i16;
-    gTasks[taskId].data[13] = (otId >> 16) as i16;
-    gTasks[taskId].data[14] = personality as i16;
-    gTasks[taskId].data[15] = (personality >> 16) as i16;
-    return taskId;
+pub unsafe fn DisplayCaughtMonDexPage(dexNum: u16, otId: u32, personality: u32) -> u8 {
+    let taskId: u8 = CreateTask(Some(Task_DisplayCaughtMonDexPage), 0);
+    task_set(taskId, tState, 0);
+    task_set(taskId, tDexNum, dexNum as i16);
+    task_set(taskId, tOtIdLo, otId as i16);
+    task_set(taskId, tOtIdHi, (otId >> 16) as i16);
+    task_set(taskId, tPersonalityLo, personality as i16);
+    task_set(taskId, tPersonalityHi, (personality >> 16) as i16);
+    taskId
 }
-pub(crate) unsafe extern "C" fn Task_DisplayCaughtMonDexPage(taskId: u8) {
+pub(crate) unsafe fn Task_DisplayCaughtMonDexPage(taskId: u8) {
     let mut spriteId: u8 = 0;
-    let mut dexNum: u16 = gTasks[taskId].data[1] as u16;
-    match gTasks[taskId].data[0] {
+    let dexNum: u16 = task_get(taskId, tDexNum) as u16;
+    match task_get(taskId, tState) {
         1 => {
             DecompressAndLoadBgGfxUsingHeap(
                 3,
-                gPokedexMenu_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gPokedexMenu_Gfx).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0x2000,
                 0,
                 0,
             );
             CopyToBgTilemapBuffer(
                 3,
-                gPokedexInfoScreen_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gPokedexInfoScreen_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0,
                 0,
             );
             FillWindowPixelBuffer(WIN_INFO, 0);
             PutWindowTilemap(WIN_INFO);
             PutWindowTilemap(WIN_FOOTPRINT);
-            DrawFootprint(WIN_FOOTPRINT, gTasks[taskId].data[1] as u16);
+            DrawFootprint(WIN_FOOTPRINT, task_get(taskId, tDexNum) as u16);
             CopyWindowToVram(WIN_FOOTPRINT, COPYWIN_GFX);
             ResetPaletteFade();
             LoadPokedexBgPalette(FALSE);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         2 => {
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         3 => {
             PrintMonInfo(dexNum as u32, IsNationalPokedexEnabled(), 1, 1);
             CopyWindowToVram(WIN_INFO, COPYWIN_FULL);
             CopyBgTilemapBufferToVram(2);
             CopyBgTilemapBufferToVram(3);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         4 => {
             spriteId =
@@ -3289,8 +3347,8 @@ pub(crate) unsafe extern "C" fn Task_DisplayCaughtMonDexPage(taskId: u8) {
             gSprites[spriteId].oam.set_priority(0);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
             SetVBlankCallback(gPokedexVBlankCB);
-            gTasks[taskId].data[3] = spriteId as i16;
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, 3, spriteId as i16);
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         5 => {
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
@@ -3299,13 +3357,13 @@ pub(crate) unsafe extern "C" fn Task_DisplayCaughtMonDexPage(taskId: u8) {
             SetGpuReg(REG_OFFSET_DISPCNT, 4160);
             ShowBg(2);
             ShowBg(3);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         6 => {
             if gPaletteFade.active() == 0 {
                 PlayCry_Normal(NationalPokedexNumToSpecies(dexNum), 0);
-                gTasks[taskId].data[2] = 0;
-                gTasks[taskId].func = Some(Task_HandleCaughtMonPageInput);
+                task_set(taskId, tPalTimer, 0);
+                task_set_func(taskId, Some(Task_HandleCaughtMonPageInput));
             }
         }
         _ => {
@@ -3319,47 +3377,48 @@ pub(crate) unsafe extern "C" fn Task_DisplayCaughtMonDexPage(taskId: u8) {
                 SetBgTilemapBuffer(2, AllocZeroed(BG_SCREEN_SIZE));
                 InitWindows(sNewEntryInfoScreen_WindowTemplates.as_ptr().cast_mut());
                 DeactivateAllTextPrinters();
-                gTasks[taskId].data[0] = 1;
+                task_set(taskId, tState, 1);
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleCaughtMonPageInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandleCaughtMonPageInput(taskId: u8) {
     if gMain.newKeys as i32 & 3 != 0 {
         BeginNormalPaletteFade(PALETTES_BG, 0, 0, 16, 0);
-        gSprites[gTasks[taskId].data[3]].callback = Some(SpriteCB_SlideCaughtMonToCenter);
-        gTasks[taskId].func = Some(Task_ExitCaughtMonPage);
+        gSprites[task_get(taskId, 3)].callback = Some(SpriteCB_SlideCaughtMonToCenter);
+        task_set_func(taskId, Some(Task_ExitCaughtMonPage));
     } else if ({
-        gTasks[taskId].data[2] += 1;
-        gTasks[taskId].data[2]
+        task_set(taskId, tPalTimer, task_get(taskId, tPalTimer) + 1);
+        task_get(taskId, tPalTimer)
     }) as i32
         & 16
         != 0
     {
         LoadPalette(
-            gPokedexBgHoenn_Pal.as_ptr().cast_mut().at(1) as *mut c_void,
+            (*(&raw const crate::data::graphics::gPokedexBgHoenn_Pal).cast::<CArray<u16, 0>>())
+                .as_ptr()
+                .cast_mut()
+                .at(1) as *mut c_void,
             49,
             14,
         );
     } else {
         LoadPalette(
-            gPokedexBgHoenn_Pal.as_ptr().cast_mut().at(49) as *mut c_void,
+            (*(&raw const crate::data::graphics::gPokedexBgHoenn_Pal).cast::<CArray<u16, 0>>())
+                .as_ptr()
+                .cast_mut()
+                .at(49) as *mut c_void,
             49,
             14,
         );
     }
 }
-pub(crate) unsafe extern "C" fn Task_ExitCaughtMonPage(taskId: u8) {
+pub(crate) unsafe fn Task_ExitCaughtMonPage(taskId: u8) {
     if gPaletteFade.active() == 0 {
-        let mut species: u16 = 0;
-        let mut otId: u32 = 0;
-        let mut personality: u32 = 0;
         let mut paletteNum: u8 = 0;
-        let mut lzPaletteData: *mut u32 = null_mut();
-        let mut buffer: *mut c_void = null_mut();
         SetGpuReg(REG_OFFSET_DISPCNT, 4160);
         FreeAllWindowBuffers();
-        buffer = GetBgTilemapBuffer(2);
+        let mut buffer: *mut c_void = GetBgTilemapBuffer(2);
         if !buffer.is_null() {
             Free(buffer);
         }
@@ -3367,18 +3426,19 @@ pub(crate) unsafe extern "C" fn Task_ExitCaughtMonPage(taskId: u8) {
         if !buffer.is_null() {
             Free(buffer);
         }
-        species = NationalPokedexNumToSpecies(gTasks[taskId].data[1] as u16);
-        otId =
-            (gTasks[taskId].data[13] as u16 as u32) << 16 | gTasks[taskId].data[12] as u16 as u32;
-        personality =
-            (gTasks[taskId].data[15] as u16 as u32) << 16 | gTasks[taskId].data[14] as u16 as u32;
-        paletteNum = gSprites[gTasks[taskId].data[3]].oam.paletteNum() as u8;
-        lzPaletteData = GetMonSpritePalFromSpeciesAndPersonality(species, otId, personality);
+        let species: u16 = NationalPokedexNumToSpecies(task_get(taskId, tDexNum) as u16);
+        let otId: u32 = (task_get(taskId, tOtIdHi) as u16 as u32) << 16
+            | task_get(taskId, tOtIdLo) as u16 as u32;
+        let personality: u32 = (task_get(taskId, tPersonalityHi) as u16 as u32) << 16
+            | task_get(taskId, tPersonalityLo) as u16 as u32;
+        paletteNum = gSprites[task_get(taskId, 3)].oam.paletteNum() as u8;
+        let lzPaletteData: *mut u32 =
+            GetMonSpritePalFromSpeciesAndPersonality(species, otId, personality);
         LoadCompressedPalette(lzPaletteData, 0x100 + paletteNum as u16 * 16, 32);
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_SlideCaughtMonToCenter(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_SlideCaughtMonToCenter(sprite: *mut Sprite) {
     if (*sprite).x < 120 {
         (*sprite).x += 2;
     }
@@ -3392,19 +3452,23 @@ pub(crate) unsafe extern "C" fn SpriteCB_SlideCaughtMonToCenter(sprite: *mut Spr
         (*sprite).y -= 1;
     }
 }
-pub(crate) unsafe extern "C" fn PrintMonInfo(num: u32, mut value: u32, owned: u32, newEntry: u32) {
+pub(crate) unsafe fn PrintMonInfo(num: u32, mut value: u32, owned: u32, newEntry: u32) {
     let mut str: CArray<u8, 16> = zeroed();
     let mut str2: CArray<u8, 32> = zeroed();
-    let mut natNum: u16 = 0;
     let mut name: *mut u8 = null_mut();
     let mut category: *mut u8 = null_mut();
     let mut description: *mut u8 = null_mut();
     if newEntry != 0 {
         PrintInfoScreenText(
-            gText_PokedexRegistration.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_PokedexRegistration).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             GetStringCenterAlignXOffset(
                 FONT_NORMAL as i32,
-                gText_PokedexRegistration.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_PokedexRegistration)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 DISPLAY_WIDTH as i32,
             ) as u8,
             0,
@@ -3416,15 +3480,23 @@ pub(crate) unsafe extern "C" fn PrintMonInfo(num: u32, mut value: u32, owned: u3
         value = num;
     }
     ConvertIntToDecimalStringN(
-        StringCopy(str.as_mut_ptr(), gText_NumberClear01.as_ptr().cast_mut()),
+        StringCopy(
+            str.as_mut_ptr(),
+            (*(&raw const crate::data::strings::gText_NumberClear01).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        ),
         value as i32,
         STR_CONV_MODE_LEADING_ZEROS,
         3,
     );
     PrintInfoScreenText(str.as_mut_ptr(), 0x60, 0x19);
-    natNum = NationalPokedexNumToSpecies(num as u16);
+    let natNum: u16 = NationalPokedexNumToSpecies(num as u16);
     if natNum != 0 {
-        name = gSpeciesNames[natNum].as_ptr().cast_mut();
+        name = (*(&raw const crate::data::data_tables::gSpeciesNames)
+            .cast::<CArray<CArray<u8, 11>, 0>>())[natNum]
+            .as_ptr()
+            .cast_mut();
     } else {
         name = sText_TenDashes2.as_ptr().cast_mut();
     }
@@ -3433,17 +3505,44 @@ pub(crate) unsafe extern "C" fn PrintMonInfo(num: u32, mut value: u32, owned: u3
         CopyMonCategoryText(num as i32, str2.as_mut_ptr());
         category = str2.as_mut_ptr();
     } else {
-        category = gText_5MarksPokemon.as_ptr().cast_mut();
+        category = (*(&raw const crate::data::strings::gText_5MarksPokemon)
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     }
     PrintInfoScreenText(category, 0x64, 0x29);
-    PrintInfoScreenText(gText_HTHeight.as_ptr().cast_mut(), 0x60, 0x39);
-    PrintInfoScreenText(gText_WTWeight.as_ptr().cast_mut(), 0x60, 0x49);
+    PrintInfoScreenText(
+        (*(&raw const crate::data::strings::gText_HTHeight).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0x60,
+        0x39,
+    );
+    PrintInfoScreenText(
+        (*(&raw const crate::data::strings::gText_WTWeight).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0x60,
+        0x49,
+    );
     if owned != 0 {
         PrintMonHeight(gPokedexEntries[num].height, 0x81, 0x39);
         PrintMonWeight(gPokedexEntries[num].weight, 0x81, 0x49);
     } else {
-        PrintInfoScreenText(gText_UnkHeight.as_ptr().cast_mut(), 0x81, 0x39);
-        PrintInfoScreenText(gText_UnkWeight.as_ptr().cast_mut(), 0x81, 0x49);
+        PrintInfoScreenText(
+            (*(&raw const crate::data::strings::gText_UnkHeight).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            0x81,
+            0x39,
+        );
+        PrintInfoScreenText(
+            (*(&raw const crate::data::strings::gText_UnkWeight).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            0x81,
+            0x49,
+        );
     }
     if owned != 0 {
         description = gPokedexEntries[num].description;
@@ -3456,16 +3555,14 @@ pub(crate) unsafe extern "C" fn PrintMonInfo(num: u32, mut value: u32, owned: u3
         95,
     );
 }
-pub(crate) unsafe extern "C" fn PrintMonHeight(height: u16, left: u8, top: u8) {
+unsafe fn PrintMonHeight(height: u16, left: u8, top: u8) {
     let mut buffer: CArray<u8, 16> = zeroed();
-    let mut inches: u32 = 0;
-    let mut feet: u32 = 0;
     let mut i: u8 = 0;
-    inches = (height as i32 * 10000 / 254) as u32;
+    let mut inches: u32 = (height as i32 * 10000 / 254) as u32;
     if inches % 10 >= 5 {
         inches += 10;
     }
-    feet = inches / 120;
+    let feet: u32 = inches / 120;
     inches = (inches - feet * 120) / 10;
     buffer[{
         let t1 = i;
@@ -3532,16 +3629,14 @@ pub(crate) unsafe extern "C" fn PrintMonHeight(height: u16, left: u8, top: u8) {
     }] = EOS;
     PrintInfoScreenText(buffer.as_mut_ptr(), left, top);
 }
-pub(crate) unsafe extern "C" fn PrintMonWeight(weight: u16, left: u8, top: u8) {
+unsafe fn PrintMonWeight(weight: u16, left: u8, top: u8) {
     let mut buffer: CArray<u8, 16> = zeroed();
-    let mut output: u8 = 0;
-    let mut i: u8 = 0;
     let mut lbs: u32 = (weight as i32 * 100000 / 4536) as u32;
     if lbs % 10 >= 5 {
         lbs += 10;
     }
-    i = 0;
-    output = FALSE;
+    let mut i: u8 = 0;
+    let mut output: u8 = FALSE;
     if ({
         buffer[i] = (lbs / 0x186a0) as u8 + CHAR_0;
         buffer[i]
@@ -3557,7 +3652,7 @@ pub(crate) unsafe extern "C" fn PrintMonWeight(weight: u16, left: u8, top: u8) {
         output = TRUE;
         i += 1;
     }
-    lbs = lbs % 0x186a0;
+    lbs %= 0x186a0;
     if ({
         buffer[i] = (lbs / 10000) as u8 + CHAR_0;
         buffer[i]
@@ -3573,7 +3668,7 @@ pub(crate) unsafe extern "C" fn PrintMonWeight(weight: u16, left: u8, top: u8) {
         output = TRUE;
         i += 1;
     }
-    lbs = lbs % 10000;
+    lbs %= 10000;
     if ({
         buffer[i] = (lbs / 1000) as u8 + CHAR_0;
         buffer[i]
@@ -3586,16 +3681,15 @@ pub(crate) unsafe extern "C" fn PrintMonWeight(weight: u16, left: u8, top: u8) {
             t3
         }] = CHAR_SPACER;
     } else {
-        output = TRUE;
         i += 1;
     }
-    lbs = lbs % 1000;
+    lbs %= 1000;
     buffer[{
         let t4 = i;
         i += 1;
         t4
     }] = (lbs / 100) as u8 + CHAR_0;
-    lbs = lbs % 100;
+    lbs %= 100;
     buffer[{
         let t5 = i;
         i += 1;
@@ -3638,12 +3732,11 @@ pub(crate) unsafe extern "C" fn PrintMonWeight(weight: u16, left: u8, top: u8) {
     }] = EOS;
     PrintInfoScreenText(buffer.as_mut_ptr(), left, top);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPokedexCategoryName(dexNum: u16) -> *mut u8 {
-    return gPokedexEntries[dexNum].categoryName.as_ptr().cast_mut();
+pub fn GetPokedexCategoryName(dexNum: u16) -> *mut u8 {
+    gPokedexEntries[dexNum].categoryName.as_ptr().cast_mut()
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPokedexHeightWeight(dexNum: u16, data: u8) -> u16 {
+pub fn GetPokedexHeightWeight(dexNum: u16, data: u8) -> u16 {
     match data {
         0 => {
             return gPokedexEntries[dexNum].height;
@@ -3657,20 +3750,16 @@ pub unsafe extern "C" fn GetPokedexHeightWeight(dexNum: u16, data: u8) -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSetPokedexFlag(mut nationalDexNo: u16, caseID: u8) -> i8 {
-    let mut index: u8 = 0;
-    let mut bit: u8 = 0;
-    let mut mask: u8 = 0;
-    let mut retVal: i8 = 0;
+pub unsafe fn GetSetPokedexFlag(mut nationalDexNo: u16, caseID: u8) -> i8 {
     nationalDexNo -= 1;
-    index = (nationalDexNo as i32 / 8) as u8;
-    bit = (nationalDexNo as i32 % 8) as u8;
-    mask = shl_i32(1, bit as u32) as u8;
-    retVal = 0;
+    let index: u8 = (nationalDexNo as i32 / 8) as u8;
+    let bit: u8 = (nationalDexNo as i32 % 8) as u8;
+    let mask: u8 = shl_i32(1, bit as u32) as u8;
+    let mut retVal: i8 = 0;
     match caseID {
         FLAG_GET_SEEN => {
             if (*gSaveBlock2Ptr).pokedex.seen[index] as i32 & mask as i32 != 0 {
@@ -3717,128 +3806,100 @@ pub unsafe extern "C" fn GetSetPokedexFlag(mut nationalDexNo: u16, caseID: u8) -
         }
         _ => {}
     }
-    return retVal;
+    retVal
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetNationalPokedexCount(caseID: u8) -> u16 {
+pub unsafe fn GetNationalPokedexCount(caseID: u8) -> u16 {
     let mut count: u16 = 0;
-    let mut i: u16 = 0;
-    i = 0;
-    while i < NATIONAL_DEX_DEOXYS {
+    for i in 0..NATIONAL_DEX_DEOXYS {
         match caseID {
             FLAG_GET_SEEN => {
                 if GetSetPokedexFlag(i + 1, FLAG_GET_SEEN) != 0 {
                     count += 1;
                 }
             }
-            FLAG_GET_CAUGHT => {
-                if GetSetPokedexFlag(i + 1, FLAG_GET_CAUGHT) != 0 {
-                    count += 1;
-                }
+            FLAG_GET_CAUGHT if GetSetPokedexFlag(i + 1, FLAG_GET_CAUGHT) != 0 => {
+                count += 1;
             }
             _ => {}
         }
-        i += 1;
     }
-    return count;
+    count
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetHoennPokedexCount(caseID: u8) -> u16 {
+pub unsafe fn GetHoennPokedexCount(caseID: u8) -> u16 {
     let mut count: u16 = 0;
-    let mut i: u16 = 0;
-    i = 0;
-    while i < HOENN_DEX_DEOXYS {
+    for i in 0..HOENN_DEX_DEOXYS {
         match caseID {
             FLAG_GET_SEEN => {
                 if GetSetPokedexFlag(HoennToNationalOrder(i + 1), FLAG_GET_SEEN) != 0 {
                     count += 1;
                 }
             }
-            FLAG_GET_CAUGHT => {
-                if GetSetPokedexFlag(HoennToNationalOrder(i + 1), FLAG_GET_CAUGHT) != 0 {
-                    count += 1;
-                }
+            FLAG_GET_CAUGHT
+                if GetSetPokedexFlag(HoennToNationalOrder(i + 1), FLAG_GET_CAUGHT) != 0 =>
+            {
+                count += 1;
             }
             _ => {}
         }
-        i += 1;
     }
-    return count;
+    count
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetKantoPokedexCount(caseID: u8) -> u16 {
+pub unsafe fn GetKantoPokedexCount(caseID: u8) -> u16 {
     let mut count: u16 = 0;
-    let mut i: u16 = 0;
-    i = 0;
-    while i < NATIONAL_DEX_MEW {
+    for i in 0..NATIONAL_DEX_MEW {
         match caseID {
             FLAG_GET_SEEN => {
                 if GetSetPokedexFlag(i + 1, FLAG_GET_SEEN) != 0 {
                     count += 1;
                 }
             }
-            FLAG_GET_CAUGHT => {
-                if GetSetPokedexFlag(i + 1, FLAG_GET_CAUGHT) != 0 {
-                    count += 1;
-                }
+            FLAG_GET_CAUGHT if GetSetPokedexFlag(i + 1, FLAG_GET_CAUGHT) != 0 => {
+                count += 1;
             }
             _ => {}
         }
-        i += 1;
     }
-    return count;
+    count
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HasAllHoennMons() -> u16 {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < 200 {
+pub unsafe fn HasAllHoennMons() -> u16 {
+    for i in 0..200u16 {
         if GetSetPokedexFlag(HoennToNationalOrder(i + 1), FLAG_GET_CAUGHT) == 0 {
             return FALSE as u16;
         }
-        i += 1;
     }
-    return TRUE as u16;
+    TRUE as u16
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HasAllKantoMons() -> u8 {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < 150 {
+pub unsafe fn HasAllKantoMons() -> u8 {
+    for i in 0..150u16 {
         if GetSetPokedexFlag(i + 1, FLAG_GET_CAUGHT) == 0 {
             return FALSE;
         }
-        i += 1;
     }
-    return TRUE;
+    TRUE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HasAllMons() -> u16 {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < 150 {
+pub unsafe fn HasAllMons() -> u16 {
+    for i in 0..150u16 {
         if GetSetPokedexFlag(i + 1, FLAG_GET_CAUGHT) == 0 {
             return FALSE as u16;
         }
-        i += 1;
     }
-    i = NATIONAL_DEX_MEW;
+    let mut i: u16 = NATIONAL_DEX_MEW;
     while i < 248 {
         if GetSetPokedexFlag(i + 1, FLAG_GET_CAUGHT) == 0 {
             return FALSE as u16;
         }
         i += 1;
     }
-    i = NATIONAL_DEX_CELEBI;
-    while i < 384 {
+    for i in NATIONAL_DEX_CELEBI..384 {
         if GetSetPokedexFlag(i + 1, FLAG_GET_CAUGHT) == 0 {
             return FALSE as u16;
         }
-        i += 1;
     }
-    return TRUE as u16;
+    TRUE as u16
 }
-pub(crate) unsafe extern "C" fn ResetOtherVideoRegisters(regBits: u16) {
+unsafe fn ResetOtherVideoRegisters(regBits: u16) {
     if regBits as i32 & DISPCNT_BG0_ON as i32 == 0 {
         ClearGpuRegBits(0, DISPCNT_BG0_ON);
         SetGpuReg(REG_OFFSET_BG0CNT, 0);
@@ -3870,12 +3931,7 @@ pub(crate) unsafe extern "C" fn ResetOtherVideoRegisters(regBits: u16) {
         gReservedSpritePaletteCount = 8;
     }
 }
-pub(crate) unsafe extern "C" fn PrintInfoSubMenuText(
-    windowId: u8,
-    str: *mut u8,
-    left: u8,
-    top: u8,
-) {
+unsafe fn PrintInfoSubMenuText(windowId: u8, str: *mut u8, left: u8, top: u8) {
     let mut color: CArray<u8, 3> = zeroed();
     color[0] = 0x0;
     color[1] = TEXT_DYNAMIC_COLOR_6;
@@ -3892,7 +3948,7 @@ pub(crate) unsafe extern "C" fn PrintInfoSubMenuText(
         str,
     );
 }
-pub(crate) unsafe extern "C" fn UnusedPrintNum(windowId: u8, num: u16, left: u8, top: u8) {
+unsafe fn UnusedPrintNum(windowId: u8, num: u16, left: u8, top: u8) {
     let mut str: CArray<u8, 4> = zeroed();
     str[0] = CHAR_0 + (num as i32 / 100) as u8;
     str[1] = CHAR_0 + (num as i32 % 100 / 10) as u8;
@@ -3900,15 +3956,9 @@ pub(crate) unsafe extern "C" fn UnusedPrintNum(windowId: u8, num: u16, left: u8,
     str[3] = EOS;
     PrintInfoSubMenuText(windowId, str.as_mut_ptr(), left, top);
 }
-pub(crate) unsafe extern "C" fn PrintCryScreenSpeciesName(
-    windowId: u8,
-    mut num: u16,
-    left: u8,
-    top: u8,
-) -> u8 {
+unsafe fn PrintCryScreenSpeciesName(windowId: u8, mut num: u16, left: u8, top: u8) -> u8 {
     let mut str: CArray<u8, 11> = zeroed();
     let mut i: u8 = 0;
-    i = 0;
     while i < 11 {
         str[i] = EOS;
         i += 1;
@@ -3916,49 +3966,48 @@ pub(crate) unsafe extern "C" fn PrintCryScreenSpeciesName(
     num = NationalPokedexNumToSpecies(num);
     match num {
         0 => {
-            i = 0;
-            while i < 5 {
+            for i in 0..5u8 {
                 str[i] = CHAR_HYPHEN;
-                i += 1;
             }
         }
         _ => {
             i = 0;
-            while gSpeciesNames[num][i] != EOS && i < POKEMON_NAME_LENGTH as u8 {
-                str[i] = gSpeciesNames[num][i];
+            while (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())[num][i]
+                != EOS
+                && i < POKEMON_NAME_LENGTH as u8
+            {
+                str[i] =
+                    (*(&raw const crate::data::data_tables::gSpeciesNames)
+                        .cast::<CArray<CArray<u8, 11>, 0>>())[num][i];
                 i += 1;
             }
         }
     }
     PrintInfoSubMenuText(windowId, str.as_mut_ptr(), left, top);
-    return i;
+    i
 }
-pub(crate) unsafe extern "C" fn UnusedPrintMonName(windowId: u8, name: *mut u8, left: u8, top: u8) {
+unsafe fn UnusedPrintMonName(windowId: u8, name: *mut u8, left: u8, top: u8) {
     let mut str: CArray<u8, 11> = zeroed();
     let mut i: u8 = 0;
-    let mut nameLength: u8 = 0;
-    i = 0;
     while i < 11 {
         str[i] = CHAR_SPACE;
         i += 1;
     }
-    nameLength = 0;
+    let mut nameLength: u8 = 0;
     while *name.at(nameLength) != 0x00 && nameLength < 11 {
         nameLength += 1;
     }
-    i = 0;
-    while i < nameLength {
+    for i in 0..nameLength {
         str[11 - nameLength as u32 + i as u32] = *name.at(i);
-        i += 1;
     }
     str[10] = EOS;
     PrintInfoSubMenuText(windowId, str.as_mut_ptr(), left, top);
 }
-pub(crate) unsafe extern "C" fn PrintDecimalNum(windowId: u8, num: u16, left: u8, top: u8) {
+unsafe fn PrintDecimalNum(windowId: u8, num: u16, left: u8, top: u8) {
     let mut str: CArray<u8, 6> = zeroed();
     let mut outputted: u8 = FALSE;
-    let mut result: u8 = 0;
-    result = (num as i32 / 1000) as u8;
+    let mut result: u8 = (num as i32 / 1000) as u8;
     if result == 0 {
         str[0] = CHAR_SPACER;
         outputted = FALSE;
@@ -3969,10 +4018,8 @@ pub(crate) unsafe extern "C" fn PrintDecimalNum(windowId: u8, num: u16, left: u8
     result = (num as i32 % 1000 / 100) as u8;
     if result == 0 && outputted == 0 {
         str[1] = CHAR_SPACER;
-        outputted = FALSE;
     } else {
         str[1] = CHAR_0 + result;
-        outputted = TRUE;
     }
     str[2] = CHAR_0 + (num as i32 % 1000 % 100 / 10) as u8;
     str[3] = CHAR_DEC_SEPARATOR;
@@ -3980,17 +4027,13 @@ pub(crate) unsafe extern "C" fn PrintDecimalNum(windowId: u8, num: u16, left: u8
     str[5] = EOS;
     PrintInfoSubMenuText(windowId, str.as_mut_ptr(), left, top);
 }
-pub(crate) unsafe extern "C" fn DrawFootprint(windowId: u8, dexNum: u16) {
+unsafe fn DrawFootprint(windowId: u8, dexNum: u16) {
     let mut footprint4bpp: CArray<u8, 128> = zeroed();
-    let mut footprintGfx: *mut u8 = gMonFootprintTable[NationalPokedexNumToSpecies(dexNum)];
+    let footprintGfx: *mut u8 = gMonFootprintTable[NationalPokedexNumToSpecies(dexNum)];
     let mut tileIdx: u16 = 0;
-    let mut i: u16 = 0;
-    let mut j: u16 = 0;
-    i = 0;
-    while i < 32 {
-        let mut footprint1bpp: u8 = *footprintGfx.at(i);
-        j = 0;
-        while j < 4 {
+    for i in 0..32u16 {
+        let footprint1bpp: u8 = *footprintGfx.at(i);
+        for j in 0..4u16 {
             let mut tile: u8 = 0;
             if footprint1bpp as i32 & shl_i32(1, 2 * j as u32) != 0 {
                 tile |= FOOTPRINT_COLOR_IDX;
@@ -4000,24 +4043,17 @@ pub(crate) unsafe extern "C" fn DrawFootprint(windowId: u8, dexNum: u16) {
             }
             footprint4bpp[tileIdx] = tile;
             tileIdx += 1;
-            j += 1;
         }
-        i += 1;
     }
     CopyToWindowPixelBuffer(windowId, footprint4bpp.as_mut_ptr() as *mut c_void, 128, 0);
 }
-pub(crate) unsafe extern "C" fn RS_DrawFootprint(offset: u16, tileNum: u16) {
-    *((VRAM + offset as i32 * 0x800 + 0x232) as usize as *mut u16) = 0xF000 + tileNum + 0;
+unsafe fn RS_DrawFootprint(offset: u16, tileNum: u16) {
+    *((VRAM + offset as i32 * 0x800 + 0x232) as usize as *mut u16) = 0xF000 + tileNum;
     *((VRAM + offset as i32 * 0x800 + 0x234) as usize as *mut u16) = 0xF000 + tileNum + 1;
     *((VRAM + offset as i32 * 0x800 + 0x272) as usize as *mut u16) = 0xF000 + tileNum + 2;
     *((VRAM + offset as i32 * 0x800 + 0x274) as usize as *mut u16) = 0xF000 + tileNum + 3;
 }
-pub(crate) unsafe extern "C" fn GetNextPosition(
-    direction: u8,
-    mut position: u16,
-    min: u16,
-    max: u16,
-) -> u16 {
+unsafe fn GetNextPosition(direction: u8, mut position: u16, min: u16, max: u16) -> u16 {
     match direction {
         1 => {
             if position > min {
@@ -4045,9 +4081,9 @@ pub(crate) unsafe extern "C" fn GetNextPosition(
         }
         _ => {}
     }
-    return position;
+    position
 }
-pub(crate) unsafe extern "C" fn GetPokedexMonPersonality(species: u16) -> u32 {
+unsafe fn GetPokedexMonPersonality(species: u16) -> u32 {
     if species == SPECIES_UNOWN || species == SPECIES_SPINDA {
         if species == SPECIES_UNOWN {
             return (*gSaveBlock2Ptr).pokedex.unownPersonality;
@@ -4059,18 +4095,17 @@ pub(crate) unsafe extern "C" fn GetPokedexMonPersonality(species: u16) -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateMonSpriteFromNationalDexNumber(
+pub unsafe fn CreateMonSpriteFromNationalDexNumber(
     mut nationalNum: u16,
     x: i16,
     y: i16,
     paletteSlot: u16,
 ) -> u16 {
     nationalNum = NationalPokedexNumToSpecies(nationalNum);
-    return CreateMonPicSprite_HandleDeoxys(
+    CreateMonPicSprite_HandleDeoxys(
         nationalNum,
         SHINY_ODDS,
         GetPokedexMonPersonality(nationalNum),
@@ -4079,17 +4114,12 @@ pub unsafe extern "C" fn CreateMonSpriteFromNationalDexNumber(
         y,
         paletteSlot as u8,
         TAG_NONE,
-    );
+    )
 }
-pub(crate) unsafe extern "C" fn CreateSizeScreenTrainerPic(
-    species: u16,
-    x: i16,
-    y: i16,
-    paletteSlot: i8,
-) -> u16 {
-    return CreateTrainerPicSprite(species, TRUE, x, y, paletteSlot as u8, TAG_NONE);
+unsafe fn CreateSizeScreenTrainerPic(species: u16, x: i16, y: i16, paletteSlot: i8) -> u16 {
+    CreateTrainerPicSprite(species, TRUE, x, y, paletteSlot as u8, TAG_NONE)
 }
-pub(crate) unsafe extern "C" fn DoPokedexSearch(
+unsafe fn DoPokedexSearch(
     dexMode: u8,
     order: u8,
     abcGroup: u8,
@@ -4098,12 +4128,10 @@ pub(crate) unsafe extern "C" fn DoPokedexSearch(
     mut type2: u8,
 ) -> i32 {
     let mut species: u16 = 0;
-    let mut i: u16 = 0;
-    let mut resultsCount: u16 = 0;
     let mut types: CArray<u8, 2> = zeroed();
     CreatePokedexList(dexMode, order);
-    i = 0;
-    resultsCount = 0;
+    let mut i: u16 = 0;
+    let mut resultsCount: u16 = 0;
     while i < NATIONAL_DEX_DEOXYS {
         if (*sPokedexView).pokedexList[i].seen() != 0 {
             (*sPokedexView).pokedexList[resultsCount] = (*sPokedexView).pokedexList[i];
@@ -4116,9 +4144,9 @@ pub(crate) unsafe extern "C" fn DoPokedexSearch(
         i = 0;
         resultsCount = 0;
         while i < (*sPokedexView).pokemonListCount {
-            let mut firstLetter: u8 = 0;
             species = NationalPokedexNumToSpecies((*sPokedexView).pokedexList[i].dexNum);
-            firstLetter = gSpeciesNames[species][0];
+            let firstLetter: u8 = (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())[species][0];
             if firstLetter >= sLetterSearchRanges[abcGroup][0]
                 && (firstLetter as i32)
                     < sLetterSearchRanges[abcGroup][0] as i32
@@ -4140,7 +4168,11 @@ pub(crate) unsafe extern "C" fn DoPokedexSearch(
         resultsCount = 0;
         while i < (*sPokedexView).pokemonListCount {
             species = NationalPokedexNumToSpecies((*sPokedexView).pokedexList[i].dexNum);
-            if bodyColor == gSpeciesInfo[species].bodyColor() {
+            if bodyColor
+                == (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                    .cast::<CArray<SpeciesInfo, 0>>())[species]
+                    .bodyColor()
+            {
                 (*sPokedexView).pokedexList[resultsCount] = (*sPokedexView).pokedexList[i];
                 resultsCount += 1;
             }
@@ -4159,8 +4191,14 @@ pub(crate) unsafe extern "C" fn DoPokedexSearch(
             while i < (*sPokedexView).pokemonListCount {
                 if (*sPokedexView).pokedexList[i].owned() != 0 {
                     species = NationalPokedexNumToSpecies((*sPokedexView).pokedexList[i].dexNum);
-                    types[0] = gSpeciesInfo[species].types[0];
-                    types[1] = gSpeciesInfo[species].types[1];
+                    types[0] =
+                        (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[species]
+                            .types[0];
+                    types[1] =
+                        (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[species]
+                            .types[1];
                     if types[0] == type1 || types[1] == type1 {
                         (*sPokedexView).pokedexList[resultsCount] = (*sPokedexView).pokedexList[i];
                         resultsCount += 1;
@@ -4174,8 +4212,14 @@ pub(crate) unsafe extern "C" fn DoPokedexSearch(
             while i < (*sPokedexView).pokemonListCount {
                 if (*sPokedexView).pokedexList[i].owned() != 0 {
                     species = NationalPokedexNumToSpecies((*sPokedexView).pokedexList[i].dexNum);
-                    types[0] = gSpeciesInfo[species].types[0];
-                    types[1] = gSpeciesInfo[species].types[1];
+                    types[0] =
+                        (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[species]
+                            .types[0];
+                    types[1] =
+                        (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[species]
+                            .types[1];
                     if types[0] == type1 && types[1] == type2
                         || types[0] == type2 && types[1] == type1
                     {
@@ -4189,20 +4233,18 @@ pub(crate) unsafe extern "C" fn DoPokedexSearch(
         (*sPokedexView).pokemonListCount = resultsCount;
     }
     if (*sPokedexView).pokemonListCount != 0 {
-        i = (*sPokedexView).pokemonListCount;
-        while i < NATIONAL_DEX_DEOXYS {
+        for i in (*sPokedexView).pokemonListCount..NATIONAL_DEX_DEOXYS {
             (*sPokedexView).pokedexList[i].dexNum = 0xFFFF;
             (*sPokedexView).pokedexList[i].set_seen(FALSE as u16);
             (*sPokedexView).pokedexList[i].set_owned(FALSE as u16);
-            i += 1;
         }
     }
-    return resultsCount as i32;
+    resultsCount as i32
 }
-pub(crate) unsafe extern "C" fn LoadSearchMenu() -> u8 {
-    return CreateTask(Some(Task_LoadSearchMenu), 0);
+unsafe fn LoadSearchMenu() -> u8 {
+    CreateTask(Some(Task_LoadSearchMenu), 0)
 }
-pub(crate) unsafe extern "C" fn PrintSearchText(str: *mut u8, x: u32, y: u32) {
+unsafe fn PrintSearchText(str: *mut u8, x: u32, y: u32) {
     let mut color: CArray<u8, 3> = zeroed();
     color[0] = 0x0;
     color[1] = TEXT_DYNAMIC_COLOR_6;
@@ -4219,20 +4261,17 @@ pub(crate) unsafe extern "C" fn PrintSearchText(str: *mut u8, x: u32, y: u32) {
         str,
     );
 }
-pub(crate) unsafe extern "C" fn ClearSearchMenuRect(x: u32, y: u32, width: u32, height: u32) {
+unsafe fn ClearSearchMenuRect(x: u32, y: u32, width: u32, height: u32) {
     FillWindowPixelRect(0, 0, x as u16, y as u16, width as u16, height as u16);
 }
-pub(crate) unsafe extern "C" fn Task_LoadSearchMenu(taskId: u8) {
-    let mut i: u16 = 0;
+pub(crate) unsafe fn Task_LoadSearchMenu(taskId: u8) {
     match gMain.state {
         1 => {
             LoadCompressedSpriteSheet(sInterfaceSpriteSheet.as_ptr().cast_mut());
             LoadSpritePalettes(sInterfaceSpritePalette.as_ptr().cast_mut());
             CreateSearchParameterScrollArrows(taskId);
-            i = 0;
-            while i < NUM_TASK_DATA as u16 {
-                gTasks[taskId].data[i] = 0;
-                i += 1;
+            for i in 0..(NUM_TASK_DATA as u16) {
+                task_set(taskId, i, 0);
             }
             SetDefaultSearchModeAndOrder(taskId);
             HighlightSelectedSearchTopBarItem(SEARCH_TOPBAR_SEARCH);
@@ -4260,7 +4299,7 @@ pub(crate) unsafe extern "C" fn Task_LoadSearchMenu(taskId: u8) {
         }
         4 => {
             if gPaletteFade.active() == 0 {
-                gTasks[taskId].func = Some(Task_SwitchToSearchMenuTopBar);
+                task_set_func(taskId, Some(Task_SwitchToSearchMenuTopBar));
                 gMain.state = 0;
             }
         }
@@ -4279,7 +4318,10 @@ pub(crate) unsafe extern "C" fn Task_LoadSearchMenu(taskId: u8) {
                 PutWindowTilemap(0);
                 DecompressAndLoadBgGfxUsingHeap(
                     3,
-                    gPokedexSearchMenu_Gfx.as_ptr().cast_mut() as *mut c_void,
+                    (*(&raw const crate::data::graphics::gPokedexSearchMenu_Gfx)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                     0x2000,
                     0,
                     0,
@@ -4287,20 +4329,30 @@ pub(crate) unsafe extern "C" fn Task_LoadSearchMenu(taskId: u8) {
                 if IsNationalPokedexEnabled() == 0 {
                     CopyToBgTilemapBuffer(
                         3,
-                        gPokedexSearchMenuHoenn_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                        (*(&raw const crate::data::graphics::gPokedexSearchMenuHoenn_Tilemap)
+                            .cast::<CArray<u32, 0>>())
+                        .as_ptr()
+                        .cast_mut() as *mut c_void,
                         0,
                         0,
                     );
                 } else {
                     CopyToBgTilemapBuffer(
                         3,
-                        gPokedexSearchMenuNational_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                        (*(&raw const crate::data::graphics::gPokedexSearchMenuNational_Tilemap)
+                            .cast::<CArray<u32, 0>>())
+                        .as_ptr()
+                        .cast_mut() as *mut c_void,
                         0,
                         0,
                     );
                 }
                 LoadPalette(
-                    gPokedexSearchMenu_Pal.as_ptr().cast_mut().at(1) as *mut c_void,
+                    (*(&raw const crate::data::graphics::gPokedexSearchMenu_Pal)
+                        .cast::<CArray<u16, 0>>())
+                    .as_ptr()
+                    .cast_mut()
+                    .at(1) as *mut c_void,
                     1,
                     126,
                 );
@@ -4309,10 +4361,9 @@ pub(crate) unsafe extern "C" fn Task_LoadSearchMenu(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn FreeSearchWindowAndBgBuffers() {
-    let mut tilemapBuffer: *mut c_void = null_mut();
+unsafe fn FreeSearchWindowAndBgBuffers() {
     FreeAllWindowBuffers();
-    tilemapBuffer = GetBgTilemapBuffer(0);
+    let mut tilemapBuffer: *mut c_void = GetBgTilemapBuffer(0);
     if !tilemapBuffer.is_null() {
         Free(tilemapBuffer);
     }
@@ -4329,67 +4380,71 @@ pub(crate) unsafe extern "C" fn FreeSearchWindowAndBgBuffers() {
         Free(tilemapBuffer);
     }
 }
-pub(crate) unsafe extern "C" fn Task_SwitchToSearchMenuTopBar(taskId: u8) {
-    HighlightSelectedSearchTopBarItem(gTasks[taskId].data[0] as u8);
+pub(crate) unsafe fn Task_SwitchToSearchMenuTopBar(taskId: u8) {
+    HighlightSelectedSearchTopBarItem(task_get(taskId, tTopBarItem) as u8);
     PrintSelectedSearchParameters(taskId);
     CopyWindowToVram(0, COPYWIN_GFX);
     CopyBgTilemapBufferToVram(3);
-    gTasks[taskId].func = Some(Task_HandleSearchTopBarInput);
+    task_set_func(taskId, Some(Task_HandleSearchTopBarInput));
 }
-pub(crate) unsafe extern "C" fn Task_HandleSearchTopBarInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandleSearchTopBarInput(taskId: u8) {
     if gMain.newKeys as i32 & B_BUTTON != 0 {
         PlaySE(SE_PC_OFF);
-        gTasks[taskId].func = Some(Task_ExitSearch);
+        task_set_func(taskId, Some(Task_ExitSearch));
         return;
     }
     if gMain.newKeys as i32 & A_BUTTON != 0 {
-        match gTasks[taskId].data[0] {
+        match task_get(taskId, tTopBarItem) {
             0 => {
                 PlaySE(SE_PIN);
-                gTasks[taskId].data[1] = SEARCH_NAME as i16;
-                gTasks[taskId].func = Some(Task_SwitchToSearchMenu);
+                task_set(taskId, tMenuItem, SEARCH_NAME as i16);
+                task_set_func(taskId, Some(Task_SwitchToSearchMenu));
             }
             1 => {
                 PlaySE(SE_PIN);
-                gTasks[taskId].data[1] = SEARCH_ORDER as i16;
-                gTasks[taskId].func = Some(Task_SwitchToSearchMenu);
+                task_set(taskId, tMenuItem, SEARCH_ORDER as i16);
+                task_set_func(taskId, Some(Task_SwitchToSearchMenu));
             }
             2 => {
                 PlaySE(SE_PC_OFF);
-                gTasks[taskId].func = Some(Task_ExitSearch);
+                task_set_func(taskId, Some(Task_ExitSearch));
             }
             _ => {}
         }
         return;
     }
-    if gMain.newKeys as i32 & DPAD_LEFT != 0 && gTasks[taskId].data[0] > SEARCH_TOPBAR_SEARCH as i16
+    if gMain.newKeys as i32 & DPAD_LEFT != 0
+        && task_get(taskId, tTopBarItem) > SEARCH_TOPBAR_SEARCH as i16
     {
         PlaySE(SE_DEX_PAGE);
-        gTasks[taskId].data[0] -= 1;
-        HighlightSelectedSearchTopBarItem(gTasks[taskId].data[0] as u8);
+        task_set(taskId, tTopBarItem, task_get(taskId, tTopBarItem) - 1);
+        HighlightSelectedSearchTopBarItem(task_get(taskId, tTopBarItem) as u8);
         CopyWindowToVram(0, COPYWIN_GFX);
         CopyBgTilemapBufferToVram(3);
     }
     if gMain.newKeys as i32 & DPAD_RIGHT != 0
-        && gTasks[taskId].data[0] < SEARCH_TOPBAR_CANCEL as i16
+        && task_get(taskId, tTopBarItem) < SEARCH_TOPBAR_CANCEL as i16
     {
         PlaySE(SE_DEX_PAGE);
-        gTasks[taskId].data[0] += 1;
-        HighlightSelectedSearchTopBarItem(gTasks[taskId].data[0] as u8);
+        task_set(taskId, tTopBarItem, task_get(taskId, tTopBarItem) + 1);
+        HighlightSelectedSearchTopBarItem(task_get(taskId, tTopBarItem) as u8);
         CopyWindowToVram(0, COPYWIN_GFX);
         CopyBgTilemapBufferToVram(3);
     }
 }
-pub(crate) unsafe extern "C" fn Task_SwitchToSearchMenu(taskId: u8) {
-    HighlightSelectedSearchMenuItem(gTasks[taskId].data[0] as u8, gTasks[taskId].data[1] as u8);
+pub(crate) unsafe fn Task_SwitchToSearchMenu(taskId: u8) {
+    HighlightSelectedSearchMenuItem(
+        task_get(taskId, tTopBarItem) as u8,
+        task_get(taskId, tMenuItem) as u8,
+    );
     PrintSelectedSearchParameters(taskId);
     CopyWindowToVram(0, COPYWIN_GFX);
     CopyBgTilemapBufferToVram(3);
-    gTasks[taskId].func = Some(Task_HandleSearchMenuInput);
+    task_set_func(taskId, Some(Task_HandleSearchMenuInput));
 }
-pub(crate) unsafe extern "C" fn Task_HandleSearchMenuInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandleSearchMenuInput(taskId: u8) {
     let mut movementMap: *mut CArray<u8, 4> = null_mut();
-    if gTasks[taskId].data[0] != SEARCH_TOPBAR_SEARCH as i16 {
+    if task_get(taskId, tTopBarItem) != SEARCH_TOPBAR_SEARCH as i16 {
         if IsNationalPokedexEnabled() == 0 {
             movementMap = sSearchMovementMap_ShiftHoennDex.as_ptr().cast_mut();
         } else {
@@ -4405,15 +4460,15 @@ pub(crate) unsafe extern "C" fn Task_HandleSearchMenuInput(taskId: u8) {
     if gMain.newKeys as i32 & B_BUTTON != 0 {
         PlaySE(SE_BALL);
         SetDefaultSearchModeAndOrder(taskId);
-        gTasks[taskId].func = Some(Task_SwitchToSearchMenuTopBar);
+        task_set_func(taskId, Some(Task_SwitchToSearchMenuTopBar));
         return;
     }
     if gMain.newKeys as i32 & A_BUTTON != 0 {
-        if gTasks[taskId].data[1] == SEARCH_OK {
-            if gTasks[taskId].data[0] != SEARCH_TOPBAR_SEARCH as i16 {
-                sPokeBallRotation = POKEBALL_ROTATION_TOP;
+        if task_get(taskId, tMenuItem) == SEARCH_OK {
+            if task_get(taskId, tTopBarItem) != SEARCH_TOPBAR_SEARCH as i16 {
+                sPokeBallRotation.set(POKEBALL_ROTATION_TOP);
                 (*sPokedexView).pokeBallRotationBackup = POKEBALL_ROTATION_TOP as u16;
-                sLastSelectedPokemon = 0;
+                sLastSelectedPokemon.set(0);
                 (*sPokedexView).selectedPokemonBackup = 0;
                 (*gSaveBlock2Ptr).pokedex.mode = GetSearchModeSelection(taskId, SEARCH_MODE);
                 if IsNationalPokedexEnabled() == 0 {
@@ -4423,126 +4478,164 @@ pub(crate) unsafe extern "C" fn Task_HandleSearchMenuInput(taskId: u8) {
                 (*gSaveBlock2Ptr).pokedex.order = GetSearchModeSelection(taskId, SEARCH_ORDER);
                 (*sPokedexView).dexOrderBackup = (*gSaveBlock2Ptr).pokedex.order as u16;
                 PlaySE(SE_PC_OFF);
-                gTasks[taskId].func = Some(Task_ExitSearch);
+                task_set_func(taskId, Some(Task_ExitSearch));
             } else {
-                EraseAndPrintSearchTextBox(gText_SearchingPleaseWait.as_ptr().cast_mut());
-                gTasks[taskId].func = Some(Task_StartPokedexSearch);
+                EraseAndPrintSearchTextBox(
+                    (*(&raw const crate::data::strings::gText_SearchingPleaseWait)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                );
+                task_set_func(taskId, Some(Task_StartPokedexSearch));
                 PlaySE(SE_DEX_SEARCH);
                 CopyWindowToVram(0, COPYWIN_GFX);
             }
         } else {
             PlaySE(SE_PIN);
-            gTasks[taskId].func = Some(Task_SelectSearchMenuItem);
+            task_set_func(taskId, Some(Task_SelectSearchMenuItem));
         }
         return;
     }
-    if gMain.newKeys as i32 & DPAD_LEFT != 0 && (*movementMap.at(gTasks[taskId].data[1]))[0] != 0xFF
+    if gMain.newKeys as i32 & DPAD_LEFT != 0
+        && (*movementMap.at(task_get(taskId, tMenuItem)))[0] != 0xFF
     {
         PlaySE(SE_SELECT);
-        gTasks[taskId].data[1] = (*movementMap.at(gTasks[taskId].data[1]))[0] as i16;
-        HighlightSelectedSearchMenuItem(gTasks[taskId].data[0] as u8, gTasks[taskId].data[1] as u8);
+        task_set(
+            taskId,
+            tMenuItem,
+            (*movementMap.at(task_get(taskId, tMenuItem)))[0] as i16,
+        );
+        HighlightSelectedSearchMenuItem(
+            task_get(taskId, tTopBarItem) as u8,
+            task_get(taskId, tMenuItem) as u8,
+        );
         CopyWindowToVram(0, COPYWIN_GFX);
         CopyBgTilemapBufferToVram(3);
     }
     if gMain.newKeys as i32 & DPAD_RIGHT != 0
-        && (*movementMap.at(gTasks[taskId].data[1]))[1] != 0xFF
+        && (*movementMap.at(task_get(taskId, tMenuItem)))[1] != 0xFF
     {
         PlaySE(SE_SELECT);
-        gTasks[taskId].data[1] = (*movementMap.at(gTasks[taskId].data[1]))[1] as i16;
-        HighlightSelectedSearchMenuItem(gTasks[taskId].data[0] as u8, gTasks[taskId].data[1] as u8);
+        task_set(
+            taskId,
+            tMenuItem,
+            (*movementMap.at(task_get(taskId, tMenuItem)))[1] as i16,
+        );
+        HighlightSelectedSearchMenuItem(
+            task_get(taskId, tTopBarItem) as u8,
+            task_get(taskId, tMenuItem) as u8,
+        );
         CopyWindowToVram(0, COPYWIN_GFX);
         CopyBgTilemapBufferToVram(3);
     }
-    if gMain.newKeys as i32 & DPAD_UP != 0 && (*movementMap.at(gTasks[taskId].data[1]))[2] != 0xFF {
+    if gMain.newKeys as i32 & DPAD_UP != 0
+        && (*movementMap.at(task_get(taskId, tMenuItem)))[2] != 0xFF
+    {
         PlaySE(SE_SELECT);
-        gTasks[taskId].data[1] = (*movementMap.at(gTasks[taskId].data[1]))[2] as i16;
-        HighlightSelectedSearchMenuItem(gTasks[taskId].data[0] as u8, gTasks[taskId].data[1] as u8);
+        task_set(
+            taskId,
+            tMenuItem,
+            (*movementMap.at(task_get(taskId, tMenuItem)))[2] as i16,
+        );
+        HighlightSelectedSearchMenuItem(
+            task_get(taskId, tTopBarItem) as u8,
+            task_get(taskId, tMenuItem) as u8,
+        );
         CopyWindowToVram(0, COPYWIN_GFX);
         CopyBgTilemapBufferToVram(3);
     }
-    if gMain.newKeys as i32 & DPAD_DOWN != 0 && (*movementMap.at(gTasks[taskId].data[1]))[3] != 0xFF
+    if gMain.newKeys as i32 & DPAD_DOWN != 0
+        && (*movementMap.at(task_get(taskId, tMenuItem)))[3] != 0xFF
     {
         PlaySE(SE_SELECT);
-        gTasks[taskId].data[1] = (*movementMap.at(gTasks[taskId].data[1]))[3] as i16;
-        HighlightSelectedSearchMenuItem(gTasks[taskId].data[0] as u8, gTasks[taskId].data[1] as u8);
+        task_set(
+            taskId,
+            tMenuItem,
+            (*movementMap.at(task_get(taskId, tMenuItem)))[3] as i16,
+        );
+        HighlightSelectedSearchMenuItem(
+            task_get(taskId, tTopBarItem) as u8,
+            task_get(taskId, tMenuItem) as u8,
+        );
         CopyWindowToVram(0, COPYWIN_GFX);
         CopyBgTilemapBufferToVram(3);
     }
 }
-pub(crate) unsafe extern "C" fn Task_StartPokedexSearch(taskId: u8) {
-    let mut dexMode: u8 = GetSearchModeSelection(taskId, SEARCH_MODE);
-    let mut order: u8 = GetSearchModeSelection(taskId, SEARCH_ORDER);
-    let mut abcGroup: u8 = GetSearchModeSelection(taskId, SEARCH_NAME);
-    let mut bodyColor: u8 = GetSearchModeSelection(taskId, SEARCH_COLOR);
-    let mut type1: u8 = GetSearchModeSelection(taskId, SEARCH_TYPE_LEFT);
-    let mut type2: u8 = GetSearchModeSelection(taskId, SEARCH_TYPE_RIGHT);
+pub(crate) unsafe fn Task_StartPokedexSearch(taskId: u8) {
+    let dexMode: u8 = GetSearchModeSelection(taskId, SEARCH_MODE);
+    let order: u8 = GetSearchModeSelection(taskId, SEARCH_ORDER);
+    let abcGroup: u8 = GetSearchModeSelection(taskId, SEARCH_NAME);
+    let bodyColor: u8 = GetSearchModeSelection(taskId, SEARCH_COLOR);
+    let type1: u8 = GetSearchModeSelection(taskId, SEARCH_TYPE_LEFT);
+    let type2: u8 = GetSearchModeSelection(taskId, SEARCH_TYPE_RIGHT);
     DoPokedexSearch(dexMode, order, abcGroup, bodyColor, type1, type2);
-    gTasks[taskId].func = Some(Task_WaitAndCompleteSearch);
+    task_set_func(taskId, Some(Task_WaitAndCompleteSearch));
 }
-pub(crate) unsafe extern "C" fn Task_WaitAndCompleteSearch(taskId: u8) {
+pub(crate) unsafe fn Task_WaitAndCompleteSearch(taskId: u8) {
     if IsSEPlaying() == 0 {
         if (*sPokedexView).pokemonListCount != 0 {
             PlaySE(SE_SUCCESS);
-            EraseAndPrintSearchTextBox(gText_SearchCompleted.as_ptr().cast_mut());
+            EraseAndPrintSearchTextBox(
+                (*(&raw const crate::data::strings::gText_SearchCompleted).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
         } else {
             PlaySE(SE_FAILURE);
-            EraseAndPrintSearchTextBox(gText_NoMatchingPkmnWereFound.as_ptr().cast_mut());
+            EraseAndPrintSearchTextBox(
+                (*(&raw const crate::data::strings::gText_NoMatchingPkmnWereFound)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            );
         }
-        gTasks[taskId].func = Some(Task_SearchCompleteWaitForInput);
+        task_set_func(taskId, Some(Task_SearchCompleteWaitForInput));
         CopyWindowToVram(0, COPYWIN_GFX);
     }
 }
-pub(crate) unsafe extern "C" fn Task_SearchCompleteWaitForInput(taskId: u8) {
+pub(crate) unsafe fn Task_SearchCompleteWaitForInput(taskId: u8) {
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         if (*sPokedexView).pokemonListCount != 0 {
             (*sPokedexView).screenSwitchState = 1;
             (*sPokedexView).dexMode = GetSearchModeSelection(taskId, SEARCH_MODE) as u16;
             (*sPokedexView).dexOrder = GetSearchModeSelection(taskId, SEARCH_ORDER) as u16;
-            gTasks[taskId].func = Some(Task_ExitSearch);
+            task_set_func(taskId, Some(Task_ExitSearch));
             PlaySE(SE_PC_OFF);
         } else {
-            gTasks[taskId].func = Some(Task_SwitchToSearchMenu);
+            task_set_func(taskId, Some(Task_SwitchToSearchMenu));
             PlaySE(SE_BALL);
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_SelectSearchMenuItem(taskId: u8) {
-    let mut menuItem: u8 = 0;
-    let mut cursorPos: *mut u16 = null_mut();
-    let mut scrollOffset: *mut u16 = null_mut();
+pub(crate) unsafe fn Task_SelectSearchMenuItem(taskId: u8) {
     DrawOrEraseSearchParameterBox(FALSE);
-    menuItem = gTasks[taskId].data[1] as u8;
-    cursorPos =
-        &raw mut gTasks[taskId].data[sSearchOptions[menuItem].taskDataCursorPos] as *mut u16;
-    scrollOffset =
-        &raw mut gTasks[taskId].data[sSearchOptions[menuItem].taskDataScrollOffset] as *mut u16;
-    gTasks[taskId].data[14] = *cursorPos as i16;
-    gTasks[taskId].data[15] = *scrollOffset as i16;
+    let menuItem: u8 = task_get(taskId, tMenuItem) as u8;
+    let cursorPos: *mut u16 =
+        task_data_ptr(taskId, sSearchOptions[menuItem].taskDataCursorPos) as *mut u16;
+    let scrollOffset: *mut u16 =
+        task_data_ptr(taskId, sSearchOptions[menuItem].taskDataScrollOffset) as *mut u16;
+    task_set(taskId, tCursorPos, *cursorPos as i16);
+    task_set(taskId, tScrollOffset, *scrollOffset as i16);
     PrintSearchParameterText(taskId);
     PrintSelectorArrow(*cursorPos as u32);
-    gTasks[taskId].func = Some(Task_HandleSearchParameterInput);
+    task_set_func(taskId, Some(Task_HandleSearchParameterInput));
     CopyWindowToVram(0, COPYWIN_GFX);
     CopyBgTilemapBufferToVram(3);
 }
-pub(crate) unsafe extern "C" fn Task_HandleSearchParameterInput(taskId: u8) {
-    let mut menuItem: u8 = 0;
+pub(crate) unsafe fn Task_HandleSearchParameterInput(taskId: u8) {
     let mut texts: *mut SearchOptionText = null_mut();
-    let mut cursorPos: *mut u16 = null_mut();
-    let mut scrollOffset: *mut u16 = null_mut();
-    let mut maxOption: u16 = 0;
-    let mut moved: u8 = 0;
-    menuItem = gTasks[taskId].data[1] as u8;
+    let menuItem: u8 = task_get(taskId, tMenuItem) as u8;
     texts = sSearchOptions[menuItem].texts;
-    cursorPos =
-        &raw mut gTasks[taskId].data[sSearchOptions[menuItem].taskDataCursorPos] as *mut u16;
-    scrollOffset =
-        &raw mut gTasks[taskId].data[sSearchOptions[menuItem].taskDataScrollOffset] as *mut u16;
-    maxOption = sSearchOptions[menuItem].numOptions - 1;
+    let cursorPos: *mut u16 =
+        task_data_ptr(taskId, sSearchOptions[menuItem].taskDataCursorPos) as *mut u16;
+    let scrollOffset: *mut u16 =
+        task_data_ptr(taskId, sSearchOptions[menuItem].taskDataScrollOffset) as *mut u16;
+    let maxOption: u16 = sSearchOptions[menuItem].numOptions - 1;
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         PlaySE(SE_PIN);
         ClearSearchParameterBoxText();
         DrawOrEraseSearchParameterBox(TRUE);
-        gTasks[taskId].func = Some(Task_SwitchToSearchMenu);
+        task_set_func(taskId, Some(Task_SwitchToSearchMenu));
         CopyWindowToVram(0, COPYWIN_GFX);
         CopyBgTilemapBufferToVram(3);
         return;
@@ -4551,14 +4644,14 @@ pub(crate) unsafe extern "C" fn Task_HandleSearchParameterInput(taskId: u8) {
         PlaySE(SE_BALL);
         ClearSearchParameterBoxText();
         DrawOrEraseSearchParameterBox(TRUE);
-        *cursorPos = gTasks[taskId].data[14] as u16;
-        *scrollOffset = gTasks[taskId].data[15] as u16;
-        gTasks[taskId].func = Some(Task_SwitchToSearchMenu);
+        *cursorPos = task_get(taskId, tCursorPos) as u16;
+        *scrollOffset = task_get(taskId, tScrollOffset) as u16;
+        task_set_func(taskId, Some(Task_SwitchToSearchMenu));
         CopyWindowToVram(0, COPYWIN_GFX);
         CopyBgTilemapBufferToVram(3);
         return;
     }
-    moved = FALSE;
+    let mut moved: u8 = FALSE;
     if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
         if *cursorPos != 0 {
             EraseSelectorArrow(*cursorPos as u32);
@@ -4601,49 +4694,39 @@ pub(crate) unsafe extern "C" fn Task_HandleSearchParameterInput(taskId: u8) {
             );
             CopyWindowToVram(0, COPYWIN_GFX);
         }
-        return;
     }
 }
-pub(crate) unsafe extern "C" fn Task_ExitSearch(taskId: u8) {
+pub(crate) unsafe fn Task_ExitSearch(taskId: u8) {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-    gTasks[taskId].func = Some(Task_ExitSearchWaitForFade);
+    task_set_func(taskId, Some(Task_ExitSearchWaitForFade));
 }
-pub(crate) unsafe extern "C" fn Task_ExitSearchWaitForFade(taskId: u8) {
+pub(crate) unsafe fn Task_ExitSearchWaitForFade(taskId: u8) {
     if gPaletteFade.active() == 0 {
         FreeSearchWindowAndBgBuffers();
         DestroyTask(taskId);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetSearchRectHighlight(flags: u8, x: u8, y: u8, width: u8) {
-    let mut i: u16 = 0;
+pub unsafe fn SetSearchRectHighlight(flags: u8, x: u8, y: u8, width: u8) {
     let mut temp: u16 = 0;
-    let mut ptr: u32 = GetBgTilemapBuffer(3) as usize as u32;
-    i = 0;
-    while i < width as u16 {
-        temp = *((ptr + (y as u32 + 0) * 64 + (x as u32 + i as u32) * 2) as usize as *mut u16);
+    let ptr: u32 = GetBgTilemapBuffer(3) as usize as u32;
+    for i in 0..(width as u16) {
+        temp = *((ptr + (y as u32) * 64 + (x as u32 + i as u32) * 2) as usize as *mut u16);
         temp &= 0x0fff;
         temp |= (flags as u16) << 12;
-        *((ptr + (y as u32 + 0) * 64 + (x as u32 + i as u32) * 2) as usize as *mut u16) = temp;
+        *((ptr + (y as u32) * 64 + (x as u32 + i as u32) * 2) as usize as *mut u16) = temp;
         temp = *((ptr + (y as u32 + 1) * 64 + (x as u32 + i as u32) * 2) as usize as *mut u16);
         temp &= 0x0fff;
         temp |= (flags as u16) << 12;
         *((ptr + (y as u32 + 1) * 64 + (x as u32 + i as u32) * 2) as usize as *mut u16) = temp;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn DrawSearchMenuItemBgHighlight(
-    searchBg: u8,
-    unselected: u8,
-    disabled: u8,
-) {
-    let mut highlightFlags: u8 = unselected & 1 | (disabled & 1) << 1;
+unsafe fn DrawSearchMenuItemBgHighlight(searchBg: u8, unselected: u8, disabled: u8) {
+    let highlightFlags: u8 = unselected & 1 | (disabled & 1) << 1;
     'l1: {
         let sw1: u8 = searchBg;
         let mut fall = false;
         if sw1 == SEARCH_TOPBAR_SEARCH || sw1 == SEARCH_TOPBAR_SHIFT || sw1 == SEARCH_TOPBAR_CANCEL
         {
-            fall = true;
             SetSearchRectHighlight(
                 highlightFlags,
                 sSearchMenuTopBarItems[searchBg].highlightX,
@@ -4662,7 +4745,6 @@ pub(crate) unsafe extern "C" fn DrawSearchMenuItemBgHighlight(
             );
         }
         if fall || sw1 == 5 || sw1 == 6 {
-            fall = true;
             SetSearchRectHighlight(
                 highlightFlags,
                 sSearchMenuItems[searchBg as i32 - SEARCH_TOPBAR_COUNT].selectionBgX,
@@ -4672,7 +4754,6 @@ pub(crate) unsafe extern "C" fn DrawSearchMenuItemBgHighlight(
             break 'l1;
         }
         if sw1 == 10 {
-            fall = true;
             SetSearchRectHighlight(
                 highlightFlags,
                 sSearchMenuItems[2].titleBgX,
@@ -4682,7 +4763,6 @@ pub(crate) unsafe extern "C" fn DrawSearchMenuItemBgHighlight(
             break 'l1;
         }
         if sw1 == 9 {
-            fall = true;
             if IsNationalPokedexEnabled() == 0 {
                 SetSearchRectHighlight(
                     highlightFlags,
@@ -4702,7 +4782,7 @@ pub(crate) unsafe extern "C" fn DrawSearchMenuItemBgHighlight(
         }
     }
 }
-pub(crate) unsafe extern "C" fn SetInitialSearchMenuBgHighlights(topBarItem: u8) {
+unsafe fn SetInitialSearchMenuBgHighlights(topBarItem: u8) {
     match topBarItem {
         SEARCH_TOPBAR_SEARCH => {
             DrawSearchMenuItemBgHighlight(SEARCH_TOPBAR_SEARCH, FALSE, FALSE);
@@ -4746,11 +4826,11 @@ pub(crate) unsafe extern "C" fn SetInitialSearchMenuBgHighlights(topBarItem: u8)
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn HighlightSelectedSearchTopBarItem(topBarItem: u8) {
+unsafe fn HighlightSelectedSearchTopBarItem(topBarItem: u8) {
     SetInitialSearchMenuBgHighlights(topBarItem);
     EraseAndPrintSearchTextBox(sSearchMenuTopBarItems[topBarItem].description);
 }
-pub(crate) unsafe extern "C" fn HighlightSelectedSearchMenuItem(topBarItem: u8, menuItem: u8) {
+unsafe fn HighlightSelectedSearchMenuItem(topBarItem: u8, menuItem: u8) {
     SetInitialSearchMenuBgHighlights(topBarItem);
     match menuItem {
         SEARCH_NAME => {
@@ -4780,28 +4860,32 @@ pub(crate) unsafe extern "C" fn HighlightSelectedSearchMenuItem(topBarItem: u8, 
     }
     EraseAndPrintSearchTextBox(sSearchMenuItems[menuItem].description);
 }
-pub(crate) unsafe extern "C" fn PrintSelectedSearchParameters(taskId: u8) {
-    let mut searchParamId: u16 = 0;
+unsafe fn PrintSelectedSearchParameters(taskId: u8) {
     ClearSearchMenuRect(40, 16, 96, 80);
-    searchParamId = gTasks[taskId].data[6] as u16 + gTasks[taskId].data[7] as u16;
+    let mut searchParamId: u16 =
+        task_get(taskId, tCursorPos_Name) as u16 + task_get(taskId, tScrollOffset_Name) as u16;
     PrintSearchText(sDexSearchNameOptions[searchParamId].title, 0x2D, 0x11);
-    searchParamId = gTasks[taskId].data[8] as u16 + gTasks[taskId].data[9] as u16;
+    searchParamId =
+        task_get(taskId, tCursorPos_Color) as u16 + task_get(taskId, tScrollOffset_Color) as u16;
     PrintSearchText(sDexSearchColorOptions[searchParamId].title, 0x2D, 0x21);
-    searchParamId = gTasks[taskId].data[10] as u16 + gTasks[taskId].data[11] as u16;
+    searchParamId = task_get(taskId, tCursorPos_TypeLeft) as u16
+        + task_get(taskId, tScrollOffset_TypeLeft) as u16;
     PrintSearchText(sDexSearchTypeOptions[searchParamId].title, 0x2D, 0x31);
-    searchParamId = gTasks[taskId].data[12] as u16 + gTasks[taskId].data[13] as u16;
+    searchParamId = task_get(taskId, tCursorPos_TypeRight) as u16
+        + task_get(taskId, tScrollOffset_TypeRight) as u16;
     PrintSearchText(sDexSearchTypeOptions[searchParamId].title, 0x5D, 0x31);
-    searchParamId = gTasks[taskId].data[4] as u16 + gTasks[taskId].data[5] as u16;
+    searchParamId =
+        task_get(taskId, tCursorPos_Order) as u16 + task_get(taskId, tScrollOffset_Order) as u16;
     PrintSearchText(sDexOrderOptions[searchParamId].title, 0x2D, 0x41);
     if IsNationalPokedexEnabled() != 0 {
-        searchParamId = gTasks[taskId].data[2] as u16 + gTasks[taskId].data[3] as u16;
+        searchParamId =
+            task_get(taskId, tCursorPos_Mode) as u16 + task_get(taskId, tScrollOffset_Mode) as u16;
         PrintSearchText(sDexModeOptions[searchParamId].title, 0x2D, 0x51);
     }
 }
-pub(crate) unsafe extern "C" fn DrawOrEraseSearchParameterBox(erase: u8) {
+unsafe fn DrawOrEraseSearchParameterBox(erase: u8) {
     let mut i: u16 = 0;
-    let mut j: u16 = 0;
-    let mut ptr: *mut u16 = GetBgTilemapBuffer(3) as *mut u16;
+    let ptr: *mut u16 = GetBgTilemapBuffer(3) as *mut u16;
     if erase == 0 {
         *ptr.at(17) = 0xC0B;
         i = 0x12;
@@ -4809,47 +4893,35 @@ pub(crate) unsafe extern "C" fn DrawOrEraseSearchParameterBox(erase: u8) {
             *ptr.at(i) = 0x80D;
             i += 1;
         }
-        j = 1;
-        while j < 13 {
+        for j in 1..13u16 {
             *ptr.at(17).at(j as i32 * 32) = 0x40A;
-            i = 0x12;
-            while i < 0x1F {
+            for i in 0x12..0x1F {
                 *ptr.at(j as i32 * 32).at(i) = 2;
-                i += 1;
             }
-            j += 1;
         }
         *ptr.at(433) = 0x40B;
-        i = 0x12;
-        while i < 0x1F {
+        for i in 0x12..0x1F {
             *ptr.at(416).at(i) = 0xD;
-            i += 1;
         }
     } else {
-        j = 0;
-        while j < 14 {
-            i = 0x11;
-            while i < 0x1E {
+        for j in 0..14u16 {
+            for i in 0x11..0x1E {
                 *ptr.at(j as i32 * 32).at(i) = 0x4F;
-                i += 1;
             }
-            j += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn PrintSearchParameterText(taskId: u8) {
-    let mut texts: *mut SearchOptionText = sSearchOptions[gTasks[taskId].data[1]].texts;
-    let mut cursorPos: *mut u16 = &raw mut gTasks[taskId].data
-        [sSearchOptions[gTasks[taskId].data[1]].taskDataCursorPos]
+unsafe fn PrintSearchParameterText(taskId: u8) {
+    let texts: *mut SearchOptionText = sSearchOptions[task_get(taskId, tMenuItem)].texts;
+    let cursorPos: *mut u16 = &raw mut (*gTasks.as_ptr())[taskId].data
+        [sSearchOptions[task_get(taskId, tMenuItem)].taskDataCursorPos]
         as *mut u16;
-    let mut scrollOffset: *mut u16 = &raw mut gTasks[taskId].data
-        [sSearchOptions[gTasks[taskId].data[1]].taskDataScrollOffset]
+    let scrollOffset: *mut u16 = &raw mut (*gTasks.as_ptr())[taskId].data
+        [sSearchOptions[task_get(taskId, tMenuItem)].taskDataScrollOffset]
         as *mut u16;
-    let mut i: u16 = 0;
-    let mut j: u16 = 0;
     ClearSearchParameterBoxText();
-    i = 0;
-    j = *scrollOffset;
+    let mut i: u16 = 0;
+    let mut j: u16 = *scrollOffset;
     while i < MAX_SEARCH_PARAM_ON_SCREEN && !(*texts.at(j)).title.is_null() {
         PrintSearchParameterTitle(i as u32, (*texts.at(j)).title);
         i += 1;
@@ -4857,12 +4929,12 @@ pub(crate) unsafe extern "C" fn PrintSearchParameterText(taskId: u8) {
     }
     EraseAndPrintSearchTextBox((*texts.at(*cursorPos as i32 + *scrollOffset as i32)).description);
 }
-pub(crate) unsafe extern "C" fn GetSearchModeSelection(taskId: u8, option: u8) -> u8 {
-    let mut cursorPos: *mut u16 =
-        &raw mut gTasks[taskId].data[sSearchOptions[option].taskDataCursorPos] as *mut u16;
-    let mut scrollOffset: *mut u16 =
-        &raw mut gTasks[taskId].data[sSearchOptions[option].taskDataScrollOffset] as *mut u16;
-    let mut id: u16 = *cursorPos + *scrollOffset;
+unsafe fn GetSearchModeSelection(taskId: u8, option: u8) -> u8 {
+    let cursorPos: *mut u16 =
+        task_data_ptr(taskId, sSearchOptions[option].taskDataCursorPos) as *mut u16;
+    let scrollOffset: *mut u16 =
+        task_data_ptr(taskId, sSearchOptions[option].taskDataScrollOffset) as *mut u16;
+    let id: u16 = *cursorPos + *scrollOffset;
     'l1: {
         let sw1: u8 = option;
         let matched = sw1 == SEARCH_MODE
@@ -4871,21 +4943,17 @@ pub(crate) unsafe extern "C" fn GetSearchModeSelection(taskId: u8, option: u8) -
             || sw1 == SEARCH_COLOR
             || sw1 == SEARCH_TYPE_LEFT
             || sw1 == SEARCH_TYPE_RIGHT;
-        let mut fall = false;
+        let fall = false;
         if !matched {
-            fall = true;
             return 0;
         }
         if sw1 == SEARCH_MODE {
-            fall = true;
             return sPokedexModes[id];
         }
         if sw1 == SEARCH_ORDER {
-            fall = true;
             return sOrderOptions[id];
         }
         if sw1 == SEARCH_NAME {
-            fall = true;
             if id == 0 {
                 return 0xFF;
             } else {
@@ -4893,7 +4961,6 @@ pub(crate) unsafe extern "C" fn GetSearchModeSelection(taskId: u8, option: u8) -
             }
         }
         if fall || sw1 == SEARCH_COLOR {
-            fall = true;
             if id == 0 {
                 return 0xFF;
             } else {
@@ -4901,16 +4968,15 @@ pub(crate) unsafe extern "C" fn GetSearchModeSelection(taskId: u8, option: u8) -
             }
         }
         if fall || sw1 == SEARCH_TYPE_LEFT || sw1 == SEARCH_TYPE_RIGHT {
-            fall = true;
             return sDexSearchTypeIds[id];
         }
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn SetDefaultSearchModeAndOrder(taskId: u8) {
+unsafe fn SetDefaultSearchModeAndOrder(taskId: u8) {
     let mut selected: u16 = 0;
     match (*sPokedexView).dexModeBackup {
         DEX_MODE_NATIONAL => {
@@ -4920,7 +4986,7 @@ pub(crate) unsafe extern "C" fn SetDefaultSearchModeAndOrder(taskId: u8) {
             selected = DEX_MODE_HOENN;
         }
     }
-    gTasks[taskId].data[2] = selected as i16;
+    task_set(taskId, tCursorPos_Mode, selected as i16);
     match (*sPokedexView).dexOrderBackup {
         ORDER_ALPHABETICAL => {
             selected = ORDER_ALPHABETICAL;
@@ -4941,13 +5007,13 @@ pub(crate) unsafe extern "C" fn SetDefaultSearchModeAndOrder(taskId: u8) {
             selected = ORDER_NUMERICAL;
         }
     }
-    gTasks[taskId].data[4] = selected as i16;
+    task_set(taskId, tCursorPos_Order, selected as i16);
 }
-pub(crate) unsafe extern "C" fn SearchParamCantScrollUp(taskId: u8) -> u8 {
-    let mut menuItem: u8 = gTasks[taskId].data[1] as u8;
-    let mut scrollOffset: *mut u16 =
-        &raw mut gTasks[taskId].data[sSearchOptions[menuItem].taskDataScrollOffset] as *mut u16;
-    let mut lastOption: u16 = sSearchOptions[menuItem].numOptions - 1;
+unsafe fn SearchParamCantScrollUp(taskId: u8) -> u8 {
+    let menuItem: u8 = task_get(taskId, tMenuItem) as u8;
+    let scrollOffset: *mut u16 =
+        task_data_ptr(taskId, sSearchOptions[menuItem].taskDataScrollOffset) as *mut u16;
+    let lastOption: u16 = sSearchOptions[menuItem].numOptions - 1;
     if lastOption > MAX_SEARCH_PARAM_CURSOR_POS && *scrollOffset != 0 {
         return FALSE;
     } else {
@@ -4955,14 +5021,14 @@ pub(crate) unsafe extern "C" fn SearchParamCantScrollUp(taskId: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn SearchParamCantScrollDown(taskId: u8) -> u8 {
-    let mut menuItem: u8 = gTasks[taskId].data[1] as u8;
-    let mut scrollOffset: *mut u16 =
-        &raw mut gTasks[taskId].data[sSearchOptions[menuItem].taskDataScrollOffset] as *mut u16;
-    let mut lastOption: u16 = sSearchOptions[menuItem].numOptions - 1;
+unsafe fn SearchParamCantScrollDown(taskId: u8) -> u8 {
+    let menuItem: u8 = task_get(taskId, tMenuItem) as u8;
+    let scrollOffset: *mut u16 =
+        task_data_ptr(taskId, sSearchOptions[menuItem].taskDataScrollOffset) as *mut u16;
+    let lastOption: u16 = sSearchOptions[menuItem].numOptions - 1;
     if lastOption > MAX_SEARCH_PARAM_CURSOR_POS
         && (*scrollOffset as i32) < lastOption as i32 - MAX_SEARCH_PARAM_CURSOR_POS as i32
     {
@@ -4972,44 +5038,41 @@ pub(crate) unsafe extern "C" fn SearchParamCantScrollDown(taskId: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_SearchParameterScrollArrow(sprite: *mut Sprite) {
-    if gTasks[(*sprite).data[0]].func
-        == Some(Task_HandleSearchParameterInput as unsafe extern "C" fn(u8))
+pub(crate) unsafe fn SpriteCB_SearchParameterScrollArrow(sprite: *mut Sprite) {
+    if task_func((*sprite).data[sTaskId]) == Some(Task_HandleSearchParameterInput as unsafe fn(u8))
     {
-        let mut val: u8 = 0;
-        if (*sprite).data[1] != 0 {
-            if SearchParamCantScrollDown((*sprite).data[0] as u8) != 0 {
+        if (*sprite).data[sIsDownArrow] != 0 {
+            if SearchParamCantScrollDown((*sprite).data[sTaskId] as u8) != 0 {
                 (*sprite).set_invisible(TRUE as u16);
             } else {
                 (*sprite).set_invisible(FALSE as u16);
             }
         } else {
-            if SearchParamCantScrollUp((*sprite).data[0] as u8) != 0 {
+            if SearchParamCantScrollUp((*sprite).data[sTaskId] as u8) != 0 {
                 (*sprite).set_invisible(TRUE as u16);
             } else {
                 (*sprite).set_invisible(FALSE as u16);
             }
         }
-        val = (*sprite).data[2] as u8 + (*sprite).data[1] as u8 * 128;
-        (*sprite).y2 = gSineTable[val] / 128;
+        let val: u8 = (*sprite).data[2] as u8 + (*sprite).data[sIsDownArrow] as u8 * 128;
+        (*sprite).y2 = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[val] / 128;
         (*sprite).data[2] += 8;
     } else {
         (*sprite).set_invisible(TRUE as u16);
     }
 }
-pub(crate) unsafe extern "C" fn CreateSearchParameterScrollArrows(taskId: u8) {
-    let mut spriteId: u8 = 0;
-    spriteId = CreateSprite(
+unsafe fn CreateSearchParameterScrollArrows(taskId: u8) {
+    let mut spriteId: u8 = CreateSprite(
         (&raw const *sScrollArrowSpriteTemplate).cast_mut(),
         184,
         4,
         0,
     );
-    gSprites[spriteId].data[0] = taskId as i16;
-    gSprites[spriteId].data[1] = FALSE as i16;
+    gSprites[spriteId].data[sTaskId] = taskId as i16;
+    gSprites[spriteId].data[sIsDownArrow] = FALSE as i16;
     gSprites[spriteId].callback = Some(SpriteCB_SearchParameterScrollArrow);
     spriteId = CreateSprite(
         (&raw const *sScrollArrowSpriteTemplate).cast_mut(),
@@ -5017,24 +5080,30 @@ pub(crate) unsafe extern "C" fn CreateSearchParameterScrollArrows(taskId: u8) {
         108,
         0,
     );
-    gSprites[spriteId].data[0] = taskId as i16;
-    gSprites[spriteId].data[1] = TRUE as i16;
+    gSprites[spriteId].data[sTaskId] = taskId as i16;
+    gSprites[spriteId].data[sIsDownArrow] = TRUE as i16;
     gSprites[spriteId].set_vFlip(TRUE as u16);
     gSprites[spriteId].callback = Some(SpriteCB_SearchParameterScrollArrow);
 }
-pub(crate) unsafe extern "C" fn EraseAndPrintSearchTextBox(str: *mut u8) {
+unsafe fn EraseAndPrintSearchTextBox(str: *mut u8) {
     ClearSearchMenuRect(8, 120, 224, 32);
     PrintSearchText(str, 8, 121);
 }
-pub(crate) unsafe extern "C" fn EraseSelectorArrow(y: u32) {
+unsafe fn EraseSelectorArrow(y: u32) {
     ClearSearchMenuRect(144, y * 16 + 8, 8, 16);
 }
-pub(crate) unsafe extern "C" fn PrintSelectorArrow(y: u32) {
-    PrintSearchText(gText_SelectorArrow.as_ptr().cast_mut(), 144, y * 16 + 9);
+pub(crate) unsafe fn PrintSelectorArrow(y: u32) {
+    PrintSearchText(
+        (*(&raw const crate::data::strings::gText_SelectorArrow).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        144,
+        y * 16 + 9,
+    );
 }
-pub(crate) unsafe extern "C" fn PrintSearchParameterTitle(y: u32, str: *mut u8) {
+unsafe fn PrintSearchParameterTitle(y: u32, str: *mut u8) {
     PrintSearchText(str, 152, y * 16 + 9);
 }
-pub(crate) unsafe extern "C" fn ClearSearchParameterBoxText() {
+unsafe fn ClearSearchParameterBoxText() {
     ClearSearchMenuRect(144, 8, 96, 96);
 }

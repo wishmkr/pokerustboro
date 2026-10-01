@@ -1,219 +1,237 @@
-const CATEGORY_COUNT: usize = 8;
-const INVENTORY_SIZE: usize = 8;
-const DECORATION_SIZE: usize = 32;
-const DECORATION_CATEGORY_OFFSET: usize = 19;
+//! The player's decorations for their secret base (was
+//! src/decoration_inventory.c).
+//!
+//! Decorations come in eight categories (desks, chairs, plants, ...), each
+//! a short list of decoration ids in the save, kept sorted with the empty
+//! slots (0) last. `gDecorationInventories` points each category at its
+//! list.
 
-const INVENTORY_OFFSETS_AND_SIZES: [(usize, u8); CATEGORY_COUNT] = [
-    (0x2734, 10),
-    (0x273e, 10),
-    (0x2748, 10),
-    (0x2752, 30),
-    (0x2770, 30),
-    (0x278e, 10),
-    (0x2798, 40),
-    (0x27c0, 10),
-];
+use crate::c::CArray;
+use crate::save_blocks::save_block1;
+use crate::types::{Decoration, DecorationInventory};
+
+pub const DECORCAT_COUNT: usize = 8;
+pub const DECOR_NONE: u8 = 0;
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gDecorationInventories: crate::ffi::Align4<[[u8; INVENTORY_SIZE]; CATEGORY_COUNT]> =
-    crate::ffi::Align4([[0; INVENTORY_SIZE]; CATEGORY_COUNT]);
+pub static mut gDecorationInventories: CArray<DecorationInventory, DECORCAT_COUNT> =
+    unsafe { core::mem::zeroed() };
 
-unsafe extern "C" {
-    static mut gSaveBlock1Ptr: *mut u8;
-    static gDecorations: u8;
-
-    fn InitDecorationContextItems();
-}
-
-unsafe fn inventory(category: u8) -> *mut u8 {
+/// `InitDecorationContextItems` with this module's view of its types.
+#[inline]
+unsafe fn InitDecorationContextItems() {
     unsafe {
-        (&raw mut gDecorationInventories)
-            .cast::<u8>()
-            .add(category as usize * INVENTORY_SIZE)
+        crate::decoration::InitDecorationContextItems();
     }
 }
 
-unsafe fn inventory_items(category: u8) -> *mut u8 {
-    unsafe { inventory(category).cast::<*mut u8>().read() }
-}
-
-unsafe fn inventory_size(category: u8) -> u8 {
-    unsafe { inventory(category).add(4).read() }
-}
-
-unsafe fn decoration_category(decoration: u8) -> u8 {
+/// The category of decoration `decor`.
+fn category_of(decor: u8) -> u8 {
+    // SAFETY: the decoration table covers every decoration id.
     unsafe {
-        (&raw const gDecorations)
-            .add(decoration as usize * DECORATION_SIZE + DECORATION_CATEGORY_OFFSET)
-            .read()
+        (&*(&raw const crate::data::decoration::gDecorations).cast::<CArray<Decoration, 0>>())
+            [decor]
+            .category
     }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetDecorationInventoriesPointers() {
-    let save = unsafe { gSaveBlock1Ptr };
-    let mut category = 0usize;
-    while category < CATEGORY_COUNT {
-        let entry = unsafe { inventory(category as u8) };
-        let (offset, size) = INVENTORY_OFFSETS_AND_SIZES[category];
-        unsafe { entry.cast::<*mut u8>().write(save.add(offset)) };
-        unsafe { entry.add(4).write(size) };
-        category += 1;
-    }
-    unsafe { InitDecorationContextItems() };
-}
-
-unsafe fn clear_inventory(category: u8) {
-    let items = unsafe { inventory_items(category) };
-    let size = unsafe { inventory_size(category) } as usize;
-    let mut index = 0usize;
-    while index < size {
-        unsafe { items.add(index).write(0) };
-        index += 1;
+/// Category `category`'s list.
+///
+/// # Safety
+/// The inventories must be set up ([`set_decoration_inventories_pointers`])
+/// and the list not in use elsewhere while the result lives.
+unsafe fn inventory<'a>(category: u8) -> &'a mut [u8] {
+    unsafe {
+        let inventories = &*(&raw const gDecorationInventories);
+        let inv = inventories[category];
+        core::slice::from_raw_parts_mut(inv.items, usize::from(inv.size))
     }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearDecorationInventories() {
-    let mut category = 0u8;
-    while category < CATEGORY_COUNT as u8 {
-        unsafe { clear_inventory(category) };
-        category += 1;
-    }
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFirstEmptyDecorSlot(category: u8) -> i8 {
-    let items = unsafe { inventory_items(category) };
-    let size = unsafe { inventory_size(category) } as usize;
-    let mut index = 0usize;
-    while index < size {
-        if unsafe { items.add(index).read() } == 0 {
-            return index as i8;
+/// Points each category at its list in the save.
+pub fn set_decoration_inventories_pointers() {
+    // SAFETY: the save blocks are set up at boot; the inventories are only
+    // pointed at them here.
+    unsafe {
+        let save = save_block1();
+        let lists: [(*mut u8, usize); DECORCAT_COUNT] = [
+            (
+                save.decorationDesks.as_mut_ptr(),
+                save.decorationDesks.len(),
+            ),
+            (
+                save.decorationChairs.as_mut_ptr(),
+                save.decorationChairs.len(),
+            ),
+            (
+                save.decorationPlants.as_mut_ptr(),
+                save.decorationPlants.len(),
+            ),
+            (
+                save.decorationOrnaments.as_mut_ptr(),
+                save.decorationOrnaments.len(),
+            ),
+            (save.decorationMats.as_mut_ptr(), save.decorationMats.len()),
+            (
+                save.decorationPosters.as_mut_ptr(),
+                save.decorationPosters.len(),
+            ),
+            (
+                save.decorationDolls.as_mut_ptr(),
+                save.decorationDolls.len(),
+            ),
+            (
+                save.decorationCushions.as_mut_ptr(),
+                save.decorationCushions.len(),
+            ),
+        ];
+        let inventories = &mut *(&raw mut gDecorationInventories);
+        for (inv, (items, size)) in inventories.0.iter_mut().zip(lists) {
+            *inv = DecorationInventory {
+                items,
+                size: size as u8,
+            };
         }
-        index += 1;
+        InitDecorationContextItems();
     }
-    -1
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckHasDecoration(decoration: u8) -> u8 {
-    let category = unsafe { decoration_category(decoration) };
-    let items = unsafe { inventory_items(category) };
-    let size = unsafe { inventory_size(category) } as usize;
-    let mut index = 0usize;
-    while index < size {
-        if unsafe { items.add(index).read() } == decoration {
-            return 1;
-        }
-        index += 1;
+pub fn clear_decoration_inventories() {
+    for category in 0..DECORCAT_COUNT as u8 {
+        // SAFETY: set up with the save; the borrow ends here.
+        unsafe { inventory(category) }.fill(DECOR_NONE);
     }
-    0
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DecorationAdd(decoration: u8) -> u8 {
-    if decoration == 0 {
-        return 0;
+/// The first empty slot of a category.
+pub fn first_empty_decor_slot(category: u8) -> Option<usize> {
+    // SAFETY: as in clear_decoration_inventories.
+    unsafe { inventory(category) }
+        .iter()
+        .position(|&d| d == DECOR_NONE)
+}
+
+pub fn has_decoration(decor: u8) -> bool {
+    // SAFETY: as in clear_decoration_inventories.
+    unsafe { inventory(category_of(decor)) }
+        .iter()
+        .any(|&d| d == decor)
+}
+
+/// Adds a decoration; false if it's none or its category is full.
+pub fn add_decoration(decor: u8) -> bool {
+    if decor == DECOR_NONE {
+        return false;
     }
-    let category = unsafe { decoration_category(decoration) };
-    let index = unsafe { GetFirstEmptyDecorSlot(category) };
-    if index < 0 {
-        return 0;
-    }
-    unsafe {
-        inventory_items(category)
-            .add(index as usize)
-            .write(decoration)
+    let category = category_of(decor);
+    let Some(slot) = first_empty_decor_slot(category) else {
+        return false;
     };
-    1
+    // SAFETY: as in clear_decoration_inventories.
+    if let Some(item) = unsafe { inventory(category) }.get_mut(slot) {
+        *item = decor;
+    }
+    true
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DecorationCheckSpace(decoration: u8) -> u8 {
-    if decoration == 0 {
-        return 0;
-    }
-    let category = unsafe { decoration_category(decoration) };
-    (unsafe { GetFirstEmptyDecorSlot(category) } != -1) as u8
+pub fn has_space_for(decor: u8) -> bool {
+    decor != DECOR_NONE && first_empty_decor_slot(category_of(decor)).is_some()
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DecorationRemove(decoration: u8) -> i8 {
-    if decoration == 0 {
-        return 0;
+/// Removes one of a decoration (keeping its category sorted); false if the
+/// player has none.
+pub fn remove_decoration(decor: u8) -> bool {
+    if decor == DECOR_NONE {
+        return false;
     }
-    let category = unsafe { decoration_category(decoration) };
-    let items = unsafe { inventory_items(category) };
-    let size = unsafe { inventory_size(category) } as usize;
-    let mut index = 0usize;
-    while index < size {
-        if unsafe { items.add(index).read() } == decoration {
-            unsafe { items.add(index).write(0) };
-            unsafe { CondenseDecorationsInCategory(category) };
-            return 1;
-        }
-        index += 1;
-    }
-    0
+    let category = category_of(decor);
+    // SAFETY: as in clear_decoration_inventories.
+    let list = unsafe { inventory(category) };
+    let Some(item) = list.iter_mut().find(|d| **d == decor) else {
+        return false;
+    };
+    *item = DECOR_NONE;
+    condense_decorations_in_category(category);
+    true
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CondenseDecorationsInCategory(category: u8) {
-    let items = unsafe { inventory_items(category) };
-    let size = unsafe { inventory_size(category) } as usize;
-    let mut left = 0usize;
-    while left < size {
-        let mut right = left + 1;
-        while right < size {
-            let left_value = unsafe { items.add(left).read() };
-            let right_value = unsafe { items.add(right).read() };
-            if right_value != 0 && (left_value == 0 || left_value > right_value) {
-                unsafe { items.add(left).write(right_value) };
-                unsafe { items.add(right).write(left_value) };
+/// Sorts a category by id with the empty slots last (C's exact swap order).
+pub fn condense_decorations_in_category(category: u8) {
+    // SAFETY: as in clear_decoration_inventories.
+    let list = unsafe { inventory(category) };
+    let n = list.len();
+    for i in 0..n {
+        for j in i + 1..n {
+            if let Ok([a, b]) = list.get_disjoint_mut([i, j]) {
+                if *b != DECOR_NONE && (*a == DECOR_NONE || *a > *b) {
+                    core::mem::swap(a, b);
+                }
             }
-            right += 1;
         }
-        left += 1;
     }
+}
+
+pub fn owned_in_category(category: u8) -> u8 {
+    // SAFETY: as in clear_decoration_inventories.
+    unsafe { inventory(category) }
+        .iter()
+        .filter(|&&d| d != DECOR_NONE)
+        .count() as u8
+}
+
+pub fn owned_decorations() -> u8 {
+    (0..DECORCAT_COUNT as u8).fold(0u8, |sum, c| sum.wrapping_add(owned_in_category(c)))
+}
+
+// ------------------------------------------------------------------ C names
+
+#[unsafe(no_mangle)]
+pub fn SetDecorationInventoriesPointers() {
+    set_decoration_inventories_pointers();
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetNumOwnedDecorationsInCategory(category: u8) -> u8 {
-    let items = unsafe { inventory_items(category) };
-    let size = unsafe { inventory_size(category) } as usize;
-    let mut count = 0u8;
-    let mut index = 0usize;
-    while index < size {
-        if unsafe { items.add(index).read() } != 0 {
-            count += 1;
-        }
-        index += 1;
-    }
-    count
+pub fn ClearDecorationInventories() {
+    clear_decoration_inventories();
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetNumOwnedDecorations() -> u8 {
-    let mut count = 0u8;
-    let mut category = 0u8;
-    while category < CATEGORY_COUNT as u8 {
-        count = count.wrapping_add(unsafe { GetNumOwnedDecorationsInCategory(category) });
-        category += 1;
-    }
-    count
+pub fn GetFirstEmptyDecorSlot(category: u8) -> i8 {
+    first_empty_decor_slot(category).map_or(-1, |slot| slot as i8)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[unsafe(no_mangle)]
+pub fn CheckHasDecoration(decor: u8) -> u8 {
+    has_decoration(decor).into()
+}
 
-    #[test]
-    fn save_offsets_and_arm_inventory_shape_match_c() {
-        assert_eq!(INVENTORY_OFFSETS_AND_SIZES[0], (0x2734, 10));
-        assert_eq!(INVENTORY_OFFSETS_AND_SIZES[7], (0x27c0, 10));
-        assert_eq!(INVENTORY_SIZE, 8);
-        assert_eq!(DECORATION_CATEGORY_OFFSET, 19);
-    }
+#[unsafe(no_mangle)]
+pub fn DecorationAdd(decor: u8) -> u8 {
+    add_decoration(decor).into()
+}
+
+#[unsafe(no_mangle)]
+pub fn DecorationCheckSpace(decor: u8) -> u8 {
+    has_space_for(decor).into()
+}
+
+#[unsafe(no_mangle)]
+pub fn DecorationRemove(decor: u8) -> i8 {
+    remove_decoration(decor).into()
+}
+
+#[unsafe(no_mangle)]
+pub fn CondenseDecorationsInCategory(category: u8) {
+    condense_decorations_in_category(category);
+}
+
+#[unsafe(no_mangle)]
+pub fn GetNumOwnedDecorationsInCategory(category: u8) -> u8 {
+    owned_in_category(category)
+}
+
+#[unsafe(no_mangle)]
+pub fn GetNumOwnedDecorations() -> u8 {
+    owned_decorations()
 }

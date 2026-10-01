@@ -44,15 +44,7 @@ pub struct SiiRtcInfo {
     pub alarm_minute: u8,
 }
 
-/// `struct Time { s16 days; s8 hours; s8 minutes; s8 seconds; }`
-#[repr(C, align(4))]
-#[derive(Clone, Copy)]
-pub struct Time {
-    pub days: i16,
-    pub hours: i8,
-    pub minutes: i8,
-    pub seconds: i8,
-}
+pub use crate::types::Time;
 
 const RTC_DUMMY: SiiRtcInfo = SiiRtcInfo {
     year: 0,
@@ -69,7 +61,7 @@ const RTC_DUMMY: SiiRtcInfo = SiiRtcInfo {
 
 static NUM_DAYS_IN_MONTHS: [i32; 12] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
-static mut ERROR_STATUS: u16 = 0;
+static ERROR_STATUS: crate::global::Global<u16> = crate::global::Global::new(0);
 static mut RTC: SiiRtcInfo = SiiRtcInfo {
     year: 0,
     month: 0,
@@ -82,8 +74,8 @@ static mut RTC: SiiRtcInfo = SiiRtcInfo {
     alarm_hour: 0,
     alarm_minute: 0,
 };
-static mut PROBE_RESULT: u8 = 0;
-static mut SAVED_IME: u16 = 0;
+static PROBE_RESULT: crate::global::Global<u8> = crate::global::Global::new(0);
+static SAVED_IME: crate::global::Global<u16> = crate::global::Global::new(0);
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
@@ -94,12 +86,32 @@ pub static mut gLocalTime: Time = Time {
     seconds: 0,
 };
 
-unsafe extern "C" {
-    fn SiiRtcUnprotect();
-    fn SiiRtcProbe() -> u8;
-    fn SiiRtcReset() -> u8;
-    fn SiiRtcGetStatus(rtc: *mut SiiRtcInfo) -> u8;
-    fn SiiRtcGetDateTime(rtc: *mut SiiRtcInfo) -> u8;
+/// `SiiRtcUnprotect` with this module's view of its types.
+#[inline]
+unsafe fn SiiRtcUnprotect() {
+    unsafe {
+        crate::siirtc::SiiRtcUnprotect();
+    }
+}
+/// `SiiRtcProbe` with this module's view of its types.
+#[inline]
+unsafe fn SiiRtcProbe() -> u8 {
+    unsafe { crate::siirtc::SiiRtcProbe() }
+}
+/// `SiiRtcReset` with this module's view of its types.
+#[inline]
+unsafe fn SiiRtcReset() -> u8 {
+    unsafe { crate::siirtc::SiiRtcReset() }
+}
+/// `SiiRtcGetStatus` with this module's view of its types.
+#[inline]
+unsafe fn SiiRtcGetStatus(a0: *mut SiiRtcInfo) -> u8 {
+    unsafe { crate::siirtc::SiiRtcGetStatus(a0 as _) }
+}
+/// `SiiRtcGetDateTime` with this module's view of its types.
+#[inline]
+unsafe fn SiiRtcGetDateTime(a0: *mut SiiRtcInfo) -> u8 {
+    unsafe { crate::siirtc::SiiRtcGetDateTime(a0 as _) }
 }
 
 /// `sNumDaysInMonths[month - 1]`. An invalid month reads outside the table
@@ -112,18 +124,18 @@ fn days_in_month(month: i32) -> i32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcDisableInterrupts() {
-    unsafe { (&raw mut SAVED_IME).write(REG_IME.read_volatile()) };
+pub unsafe fn RtcDisableInterrupts() {
+    unsafe { (SAVED_IME.as_ptr()).write(REG_IME.read_volatile()) };
     unsafe { REG_IME.write_volatile(0) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcRestoreInterrupts() {
-    unsafe { REG_IME.write_volatile((&raw const SAVED_IME).read()) };
+pub unsafe fn RtcRestoreInterrupts() {
+    unsafe { REG_IME.write_volatile((SAVED_IME.as_ptr().cast_const()).read()) };
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn ConvertBcdToBinary(bcd: u8) -> u32 {
+pub fn ConvertBcdToBinary(bcd: u8) -> u32 {
     if bcd > 0x9f || (bcd & 0xf) > 9 {
         return 0xff;
     }
@@ -131,12 +143,12 @@ pub extern "C" fn ConvertBcdToBinary(bcd: u8) -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn IsLeapYear(year: u32) -> u8 {
+pub fn IsLeapYear(year: u32) -> u8 {
     u8::from((year % 4 == 0 && year % 100 != 0) || year % 400 == 0)
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn ConvertDateToDayCount(year: u8, month: u8, day: u8) -> u16 {
+pub fn ConvertDateToDayCount(year: u8, month: u8, day: u8) -> u16 {
     let mut day_count: u16 = 0;
     let mut i = i32::from(year) - 1;
     while i >= 0 {
@@ -156,7 +168,7 @@ pub extern "C" fn ConvertDateToDayCount(year: u8, month: u8, day: u8) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcGetDayCount(rtc: *const SiiRtcInfo) -> u16 {
+pub unsafe fn RtcGetDayCount(rtc: *const SiiRtcInfo) -> u16 {
     let rtc = unsafe { rtc.read() };
     ConvertDateToDayCount(
         ConvertBcdToBinary(rtc.year) as u8,
@@ -166,16 +178,16 @@ pub unsafe extern "C" fn RtcGetDayCount(rtc: *const SiiRtcInfo) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcInit() {
-    unsafe { (&raw mut ERROR_STATUS).write(0) };
+pub unsafe fn RtcInit() {
+    unsafe { (ERROR_STATUS.as_ptr()).write(0) };
     unsafe { RtcDisableInterrupts() };
     unsafe { SiiRtcUnprotect() };
     let probe = unsafe { SiiRtcProbe() };
-    unsafe { (&raw mut PROBE_RESULT).write(probe) };
+    unsafe { (PROBE_RESULT.as_ptr()).write(probe) };
     unsafe { RtcRestoreInterrupts() };
 
     if probe & 0xf != 1 {
-        unsafe { (&raw mut ERROR_STATUS).write(RTC_INIT_ERROR) };
+        unsafe { (ERROR_STATUS.as_ptr()).write(RTC_INIT_ERROR) };
         return;
     }
     let status = if probe & 0xf0 != 0 {
@@ -183,20 +195,20 @@ pub unsafe extern "C" fn RtcInit() {
     } else {
         0
     };
-    unsafe { (&raw mut ERROR_STATUS).write(status) };
+    unsafe { (ERROR_STATUS.as_ptr()).write(status) };
     unsafe { RtcGetRawInfo(&raw mut RTC) };
     let checked = unsafe { RtcCheckInfo(&raw const RTC) };
-    unsafe { (&raw mut ERROR_STATUS).write(checked) };
+    unsafe { (ERROR_STATUS.as_ptr()).write(checked) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcGetErrorStatus() -> u16 {
-    unsafe { (&raw const ERROR_STATUS).read() }
+pub unsafe fn RtcGetErrorStatus() -> u16 {
+    unsafe { (ERROR_STATUS.as_ptr().cast_const()).read() }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcGetInfo(rtc: *mut SiiRtcInfo) {
-    if unsafe { (&raw const ERROR_STATUS).read() } & RTC_ERR_FLAG_MASK != 0 {
+pub unsafe fn RtcGetInfo(rtc: *mut SiiRtcInfo) {
+    if unsafe { (ERROR_STATUS.as_ptr().cast_const()).read() } & RTC_ERR_FLAG_MASK != 0 {
         unsafe { rtc.write(RTC_DUMMY) };
     } else {
         unsafe { RtcGetRawInfo(rtc) };
@@ -204,27 +216,27 @@ pub unsafe extern "C" fn RtcGetInfo(rtc: *mut SiiRtcInfo) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcGetDateTime(rtc: *mut SiiRtcInfo) {
+pub unsafe fn RtcGetDateTime(rtc: *mut SiiRtcInfo) {
     unsafe { RtcDisableInterrupts() };
     unsafe { SiiRtcGetDateTime(rtc) };
     unsafe { RtcRestoreInterrupts() };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcGetStatus(rtc: *mut SiiRtcInfo) {
+pub unsafe fn RtcGetStatus(rtc: *mut SiiRtcInfo) {
     unsafe { RtcDisableInterrupts() };
     unsafe { SiiRtcGetStatus(rtc) };
     unsafe { RtcRestoreInterrupts() };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcGetRawInfo(rtc: *mut SiiRtcInfo) {
+pub unsafe fn RtcGetRawInfo(rtc: *mut SiiRtcInfo) {
     unsafe { RtcGetStatus(rtc) };
     unsafe { RtcGetDateTime(rtc) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcCheckInfo(rtc: *const SiiRtcInfo) -> u16 {
+pub unsafe fn RtcCheckInfo(rtc: *const SiiRtcInfo) -> u16 {
     let rtc = unsafe { rtc.read() };
     let mut errors = 0u16;
     if rtc.status & SIIRTCINFO_POWER != 0 {
@@ -266,7 +278,7 @@ pub unsafe extern "C" fn RtcCheckInfo(rtc: *const SiiRtcInfo) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcReset() {
+pub unsafe fn RtcReset() {
     unsafe { RtcDisableInterrupts() };
     unsafe { SiiRtcReset() };
     unsafe { RtcRestoreInterrupts() };
@@ -289,11 +301,7 @@ fn normalize(result: &mut Time) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcCalcTimeDifference(
-    rtc: *const SiiRtcInfo,
-    result: *mut Time,
-    t: *const Time,
-) {
+pub unsafe fn RtcCalcTimeDifference(rtc: *const SiiRtcInfo, result: *mut Time, t: *const Time) {
     let days = unsafe { RtcGetDayCount(rtc) };
     let (rtc, t) = unsafe { (rtc.read(), t.read()) };
     let mut out = Time {
@@ -310,24 +318,25 @@ unsafe fn local_time_offset() -> *mut Time {
     unsafe {
         (&raw const gSaveBlock2Ptr)
             .read()
+            .cast::<u8>()
             .add(SB2_LOCAL_TIME_OFFSET)
             .cast()
     }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcCalcLocalTime() {
+pub unsafe fn RtcCalcLocalTime() {
     unsafe { RtcGetInfo(&raw mut RTC) };
     unsafe { RtcCalcTimeDifference(&raw const RTC, &raw mut gLocalTime, local_time_offset()) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcInitLocalTimeOffset(hour: i32, minute: i32) {
+pub unsafe fn RtcInitLocalTimeOffset(hour: i32, minute: i32) {
     unsafe { RtcCalcLocalTimeOffset(0, hour, minute, 0) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcCalcLocalTimeOffset(days: i32, hours: i32, minutes: i32, seconds: i32) {
+pub unsafe fn RtcCalcLocalTimeOffset(days: i32, hours: i32, minutes: i32, seconds: i32) {
     let local = Time {
         days: days as i16,
         hours: hours as i8,
@@ -340,7 +349,7 @@ pub unsafe extern "C" fn RtcCalcLocalTimeOffset(days: i32, hours: i32, minutes: 
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CalcTimeDifference(result: *mut Time, t1: *const Time, t2: *const Time) {
+pub unsafe fn CalcTimeDifference(result: *mut Time, t1: *const Time, t2: *const Time) {
     let (t1, t2) = unsafe { (t1.read(), t2.read()) };
     let mut out = Time {
         seconds: t2.seconds.wrapping_sub(t1.seconds),
@@ -353,7 +362,7 @@ pub unsafe extern "C" fn CalcTimeDifference(result: *mut Time, t1: *const Time, 
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcGetMinuteCount() -> u32 {
+pub unsafe fn RtcGetMinuteCount() -> u32 {
     unsafe { RtcGetInfo(&raw mut RTC) };
     let rtc = unsafe { (&raw const RTC).read() };
     // Hour and minute are used as raw BCD here, as in the original.
@@ -364,7 +373,7 @@ pub unsafe extern "C" fn RtcGetMinuteCount() -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RtcGetLocalDayCount() -> u32 {
+pub unsafe fn RtcGetLocalDayCount() -> u32 {
     u32::from(unsafe { RtcGetDayCount(&raw const RTC) })
 }
 

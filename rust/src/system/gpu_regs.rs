@@ -22,9 +22,9 @@ struct RegBuffer([u8; GPU_REG_BUF_SIZE]);
 
 static mut GPU_REG_BUFFER: RegBuffer = RegBuffer([0; GPU_REG_BUF_SIZE]);
 static mut GPU_REG_WAITING_LIST: [u8; GPU_REG_BUF_SIZE] = [0; GPU_REG_BUF_SIZE];
-static mut GPU_REG_BUFFER_LOCKED: bool = false;
-static mut SHOULD_SYNC_REG_IE: bool = false;
-static mut REG_IE_SHADOW: u16 = 0;
+static GPU_REG_BUFFER_LOCKED: crate::global::Global<bool> = crate::global::Global::new(false);
+static SHOULD_SYNC_REG_IE: crate::global::Global<bool> = crate::global::Global::new(false);
+static REG_IE_SHADOW: crate::global::Global<u16> = crate::global::Global::new(0);
 
 /// `GPU_REG_BUF(offset)`
 #[inline]
@@ -71,11 +71,11 @@ unsafe fn set_waiting(index: usize, value: u8) {
 
 #[inline]
 unsafe fn set_locked(locked: bool) {
-    unsafe { (&raw mut GPU_REG_BUFFER_LOCKED).write_volatile(locked) };
+    unsafe { (GPU_REG_BUFFER_LOCKED.as_ptr()).write_volatile(locked) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitGpuRegManager() {
+pub unsafe fn InitGpuRegManager() {
     let mut i = 0usize;
     while i < GPU_REG_BUF_SIZE {
         unsafe {
@@ -89,8 +89,8 @@ pub unsafe extern "C" fn InitGpuRegManager() {
     }
 
     unsafe { set_locked(false) };
-    unsafe { (&raw mut SHOULD_SYNC_REG_IE).write_volatile(false) };
-    unsafe { (&raw mut REG_IE_SHADOW).write_volatile(0) };
+    unsafe { (SHOULD_SYNC_REG_IE.as_ptr()).write_volatile(false) };
+    unsafe { (REG_IE_SHADOW.as_ptr()).write_volatile(0) };
 }
 
 unsafe fn copy_buffered_value_to_gpu_reg(reg_offset: u8) {
@@ -117,8 +117,8 @@ unsafe fn copy_buffered_value_to_gpu_reg(reg_offset: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyBufferedValuesToGpuRegs() {
-    if unsafe { (&raw const GPU_REG_BUFFER_LOCKED).read_volatile() } {
+pub unsafe fn CopyBufferedValuesToGpuRegs() {
+    if unsafe { (GPU_REG_BUFFER_LOCKED.as_ptr().cast_const()).read_volatile() } {
         return;
     }
 
@@ -152,7 +152,7 @@ unsafe fn queue_register(reg_offset: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetGpuReg(reg_offset: u8, value: u16) {
+pub unsafe fn SetGpuReg(reg_offset: u8, value: u16) {
     if reg_offset as usize >= GPU_REG_BUF_SIZE {
         return;
     }
@@ -170,7 +170,7 @@ pub unsafe extern "C" fn SetGpuReg(reg_offset: u8, value: u16) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetGpuReg_ForcedBlank(reg_offset: u8, value: u16) {
+pub unsafe fn SetGpuReg_ForcedBlank(reg_offset: u8, value: u16) {
     if reg_offset as usize >= GPU_REG_BUF_SIZE {
         return;
     }
@@ -185,7 +185,7 @@ pub unsafe extern "C" fn SetGpuReg_ForcedBlank(reg_offset: u8, value: u16) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetGpuReg(reg_offset: u8) -> u16 {
+pub unsafe fn GetGpuReg(reg_offset: u8) -> u16 {
     if reg_offset as usize == REG_OFFSET_DISPSTAT {
         return unsafe { read_reg16(REG_OFFSET_DISPSTAT) };
     }
@@ -196,19 +196,19 @@ pub unsafe extern "C" fn GetGpuReg(reg_offset: u8) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetGpuRegBits(reg_offset: u8, mask: u16) {
+pub unsafe fn SetGpuRegBits(reg_offset: u8, mask: u16) {
     let value = unsafe { buffered(reg_offset) };
     unsafe { SetGpuReg(reg_offset, value | mask) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearGpuRegBits(reg_offset: u8, mask: u16) {
+pub unsafe fn ClearGpuRegBits(reg_offset: u8, mask: u16) {
     let value = unsafe { buffered(reg_offset) };
     unsafe { SetGpuReg(reg_offset, value & !mask) };
 }
 
 unsafe fn sync_reg_ie() {
-    if !unsafe { (&raw const SHOULD_SYNC_REG_IE).read_volatile() } {
+    if !unsafe { (SHOULD_SYNC_REG_IE.as_ptr().cast_const()).read_volatile() } {
         return;
     }
 
@@ -216,9 +216,14 @@ unsafe fn sync_reg_ie() {
     // half-updated.
     let ime = unsafe { read_reg16(REG_OFFSET_IME) };
     unsafe { write_reg16(REG_OFFSET_IME, 0) };
-    unsafe { write_reg16(REG_OFFSET_IE, (&raw const REG_IE_SHADOW).read_volatile()) };
+    unsafe {
+        write_reg16(
+            REG_OFFSET_IE,
+            (REG_IE_SHADOW.as_ptr().cast_const()).read_volatile(),
+        )
+    };
     unsafe { write_reg16(REG_OFFSET_IME, ime) };
-    unsafe { (&raw mut SHOULD_SYNC_REG_IE).write_volatile(false) };
+    unsafe { (SHOULD_SYNC_REG_IE.as_ptr()).write_volatile(false) };
 }
 
 unsafe fn update_reg_dispstat_intr_bits(reg_ie: u16) {
@@ -239,19 +244,19 @@ unsafe fn update_reg_dispstat_intr_bits(reg_ie: u16) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn EnableInterrupts(mask: u16) {
-    let value = unsafe { (&raw const REG_IE_SHADOW).read_volatile() } | mask;
-    unsafe { (&raw mut REG_IE_SHADOW).write_volatile(value) };
-    unsafe { (&raw mut SHOULD_SYNC_REG_IE).write_volatile(true) };
+pub unsafe fn EnableInterrupts(mask: u16) {
+    let value = unsafe { (REG_IE_SHADOW.as_ptr().cast_const()).read_volatile() } | mask;
+    unsafe { (REG_IE_SHADOW.as_ptr()).write_volatile(value) };
+    unsafe { (SHOULD_SYNC_REG_IE.as_ptr()).write_volatile(true) };
     unsafe { sync_reg_ie() };
     unsafe { update_reg_dispstat_intr_bits(value) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DisableInterrupts(mask: u16) {
-    let value = unsafe { (&raw const REG_IE_SHADOW).read_volatile() } & !mask;
-    unsafe { (&raw mut REG_IE_SHADOW).write_volatile(value) };
-    unsafe { (&raw mut SHOULD_SYNC_REG_IE).write_volatile(true) };
+pub unsafe fn DisableInterrupts(mask: u16) {
+    let value = unsafe { (REG_IE_SHADOW.as_ptr().cast_const()).read_volatile() } & !mask;
+    unsafe { (REG_IE_SHADOW.as_ptr()).write_volatile(value) };
+    unsafe { (SHOULD_SYNC_REG_IE.as_ptr()).write_volatile(true) };
     unsafe { sync_reg_ie() };
     unsafe { update_reg_dispstat_intr_bits(value) };
 }

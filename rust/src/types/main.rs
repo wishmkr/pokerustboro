@@ -9,13 +9,13 @@ use core::mem::{offset_of, size_of};
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Main {
-    pub callback1: Option<unsafe extern "C" fn()>,
-    pub callback2: Option<unsafe extern "C" fn()>,
-    pub savedCallback: Option<unsafe extern "C" fn()>,
-    pub vblankCallback: Option<unsafe extern "C" fn()>,
-    pub hblankCallback: Option<unsafe extern "C" fn()>,
-    pub vcountCallback: Option<unsafe extern "C" fn()>,
-    pub serialCallback: Option<unsafe extern "C" fn()>,
+    pub callback1: Option<unsafe fn()>,
+    pub callback2: Option<unsafe fn()>,
+    pub savedCallback: Option<unsafe fn()>,
+    pub vblankCallback: Option<unsafe fn()>,
+    pub hblankCallback: Option<unsafe fn()>,
+    pub vcountCallback: Option<unsafe fn()>,
+    pub serialCallback: Option<unsafe fn()>,
     pub intrCheck: u16,
     pub vblankCounter1: u32,
     pub vblankCounter2: u32,

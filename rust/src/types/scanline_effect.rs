@@ -24,7 +24,7 @@ pub struct ScanlineEffect {
     pub dmaSrcBuffers: CArray<*mut core::ffi::c_void, 2>,
     pub dmaDest: *mut core::ffi::c_void,
     pub dmaControl: u32,
-    pub setFirstScanlineReg: Option<unsafe extern "C" fn()>,
+    pub setFirstScanlineReg: Option<unsafe fn()>,
     pub srcBuffer: u8,
     pub state: u8,
     pub unused16: u8,

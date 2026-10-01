@@ -3,37 +3,404 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::explicit_counter_loop,
+    clippy::if_same_then_else,
+    clippy::manual_swap,
+    clippy::missing_transmute_annotations,
+    clippy::too_many_arguments,
+    clippy::type_complexity,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::agb_main::{SetVBlankCallback, gKeyRepeatStartDelay};
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect,
+    FillBgTilemapBufferRect_Palette0, GetBgAttribute, HideBg, IsDma3ManagerBusyWithBgCopy,
+    SetBgAttribute, ShowBg, WriteSequenceToBgTilemapBuffer,
+};
+use crate::box_mon::{GetBoxMonData2, GetBoxMonData3};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::dma3_manager::{CheckForSpaceForDma3Request, ClearDma3Requests};
+use crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_Reset;
+use crate::event_data::{FlagClear, VarSet};
+use crate::ffi::gSpecialVar_0x8004;
+use crate::field_screen_effect::FadeInFromBlack;
+use crate::field_weather::{FadeScreen, IsWeatherNotFadingIn};
+use crate::fldeff_misc::{
+    ComputerScreenCloseEffect, ComputerScreenOpenEffect, IsComputerScreenCloseEffectActive,
+    IsComputerScreenOpenEffectActive,
+};
+use crate::gpu_regs::{ClearGpuRegBits, SetGpuReg, SetGpuRegBits};
+use crate::item::{AddBagItem, RemoveBagItem};
+use crate::item_menu::{GoToBagMenu, gSpecialVar_ItemId};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::mail_data::ItemIsMail;
+use crate::menu::{
+    AddTextPrinterParameterized2, AddTextPrinterParameterized3, AddTextPrinterParameterized4,
+    AddTextPrinterParameterized5, ClearScheduledBgCopiesToVram, ClearStdWindowAndFrame,
+    ClearStdWindowAndFrameToTransparent, CreateYesNoMenu, DecompressAndLoadBgGfxUsingHeap,
+    DoScheduledBgTilemapCopiesToVram, DrawDialogueFrame, DrawStdFrameWithCustomTileAndPalette,
+    DrawStdWindowFrame, InitMenuInUpperLeftCornerNormal, LoadMessageBoxAndBorderGfx,
+    Menu_GetCursorPos, Menu_MoveCursor, Menu_MoveCursorNoWrapAround, Menu_ProcessInput,
+    Menu_ProcessInputNoWrapClearOnChoose, PrintMenuTable, ScheduleBgCopyTilemapToVram,
+    malloc_and_decompress,
+};
+use crate::mon_markings::{
+    BufferMonMarkingsMenuTiles, CreateMonMarkingComboSprite, FreeMonMarkingsMenu,
+    HandleMonMarkingsMenuInput, InitMonMarkingsMenu, OpenMonMarkingsMenu, UpdateMonMarkingTiles,
+};
+use crate::naming_screen::DoNamingScreen;
+use crate::overworld::{CB2_ReturnToField, CleanupOverworldWindowsAndTilemaps, gFieldCallback};
+use crate::palette::{
+    BeginNormalPaletteFade, BlendPalettes, LoadPalette, ResetPaletteFade, TransferPlttBuffer,
+    UpdatePaletteFade, gPaletteFade,
+};
+use crate::pokemon::{
+    BoxMonRestorePP, BoxMonToMon, CalculatePlayerPartyCount, CreateBoxMon,
+    GetGenderFromSpeciesAndPersonality, GetLevelFromBoxMonExp, GetMonData2, GetMonData3,
+    GetMonFrontSpritePal, GetMonGender, GetMonSpritePalFromSpeciesAndPersonality, SetMonData,
+    ZeroBoxMonData, ZeroMonData, gPlayerParty, gPlayerPartyCount,
+};
+use crate::pokemon_icon::{
+    GetIconSpecies, GetMonIconPtr, GetMonIconTiles, GetValidMonIconPalIndex, LoadMonIconPalettes,
+    TryLoadAllMonIconPalettesAtOffset,
+};
+use crate::pokemon_summary_screen::{
+    ShowPokemonSummaryScreen, ShowPokemonSummaryScreenHandleDeoxys, gLastViewedMonIndex,
+};
+use crate::script::{LockPlayerFieldControls, ScriptContext_Enable, UnlockPlayerFieldControls};
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AllocSpritePalette, AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, FreeOamMatrix,
+    FreeSpritePaletteByTag, FreeSpriteTileRanges, FreeSpriteTilesByTag, GetSpriteTileStartByTag,
+    IndexOfSpritePaletteTag, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData,
+    gReservedSpriteTileCount,
+};
+use crate::string_util::{StringFill, StringGet_Nickname};
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::task::{gTasks, task_set, task_set_func};
+use crate::text::DeactivateAllTextPrinters;
+use crate::text_window::{DrawTextBorderOuter, LoadUserWindowBorderGfx};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    ClearWindowTilemap, CopyWindowToVram, CopyWindowToVram8Bit, FillWindowPixelBuffer,
+    FillWindowPixelBuffer8Bit, FillWindowPixelRect8Bit, FreeAllWindowBuffers, GetWindowAttribute,
+    PutWindowTilemap, RemoveWindow,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `AddWindow8Bit` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow8Bit(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow8Bit(a0 as _) }
+}
+/// `BlitBitmapRectToWindow4BitTo8Bit` with this module's view of its types.
+#[inline]
+unsafe fn BlitBitmapRectToWindow4BitTo8Bit(
+    a0: u8,
+    a1: *mut u8,
+    a2: u16,
+    a3: u16,
+    a4: u16,
+    a5: i32,
+    a6: u16,
+    a7: u16,
+    a8: u16,
+    a9: u16,
+    a10: u8,
+) {
+    unsafe {
+        crate::window::BlitBitmapRectToWindow4BitTo8Bit(
+            a0, a1 as _, a2, a3, a4, a5, a6, a7, a8, a9, a10,
+        );
+    }
+}
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `CopyRectToBgTilemapBufferRect` with this module's view of its types.
+#[inline]
+unsafe fn CopyRectToBgTilemapBufferRect(
+    a0: u8,
+    a1: *mut c_void,
+    a2: u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: u8,
+    a7: u8,
+    a8: u8,
+    a9: u8,
+    a10: u8,
+    a11: i16,
+    a12: i16,
+) {
+    unsafe {
+        crate::bg::CopyRectToBgTilemapBufferRect(
+            a0, a1 as _, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
+        );
+    }
+}
+/// `CopyToBgTilemapBufferRect` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut c_void, a2: u8, a3: u8, a4: u8, a5: u8) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBufferRect(a0, a1 as _, a2, a3, a4, a5);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `DynamicPlaceholderTextUtil_ExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn DynamicPlaceholderTextUtil_ExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe {
+        crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_ExpandPlaceholders(
+            a0 as _, a1 as _,
+        ) as *mut u8
+    }
+}
+/// `DynamicPlaceholderTextUtil_SetPlaceholderPtr` with this module's view of its types.
+#[inline]
+unsafe fn DynamicPlaceholderTextUtil_SetPlaceholderPtr(a0: u8, a1: *mut u8) {
+    unsafe {
+        crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_SetPlaceholderPtr(
+            a0, a1 as _,
+        );
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `GetMaxWidthInMenuTable` with this module's view of its types.
+#[inline]
+unsafe fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32 {
+    unsafe { crate::international_string_util::GetMaxWidthInMenuTable(a0 as _, a1) }
+}
+/// `GetStringCenterAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringCenterAlignXOffset(a0, a1 as _, a2) }
+}
+/// `GetStringWidth` with this module's view of its types.
+#[inline]
+unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
+    unsafe { crate::text::GetStringWidth(a0, a1 as _, a2) }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn InitSpriteAffineAnim(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::InitSpriteAffineAnim(a0 as _);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LoadBgTiles` with this module's view of its types.
+#[inline]
+unsafe fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
+    unsafe { crate::bg::LoadBgTiles(a0, a1 as _, a2, a3) }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `LoadSpecialPokePic` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpecialPokePic(
+    a0: *mut CompressedSpriteSheet,
+    a1: *mut c_void,
+    a2: i32,
+    a3: u32,
+    a4: u8,
+) {
+    unsafe {
+        crate::decompress::LoadSpecialPokePic(a0 as _, a1 as _, a2, a3, a4);
+    }
+}
+/// `LoadSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
+    unsafe { crate::sprite::LoadSpritePalette(a0 as _) }
+}
+/// `LoadSpritePalettes` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+    unsafe {
+        crate::sprite::LoadSpritePalettes(a0 as _);
+    }
+}
+/// `LoadSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
+    unsafe { crate::sprite::LoadSpriteSheet(a0 as _) }
+}
+/// `LoadSpriteSheets` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheets(a0: *mut SpriteSheet) {
+    unsafe {
+        crate::sprite::LoadSpriteSheets(a0 as _);
+    }
+}
+/// `RequestDma3Fill` with this module's view of its types.
+#[inline]
+unsafe fn RequestDma3Fill(a0: i32, a1: *mut c_void, a2: u16, a3: u8) -> i16 {
+    unsafe { crate::dma3_manager::RequestDma3Fill(a0, a1 as _, a2, a3) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SetBoxMonData` with this module's view of its types.
+#[inline]
+unsafe fn SetBoxMonData(a0: *mut BoxPokemon, a1: i32, a2: *mut c_void) {
+    unsafe {
+        crate::box_mon::SetBoxMonData(a0 as _, a1, a2 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAffineAnim(a0 as _, a1);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StartSpriteAnimIfDifferent` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnimIfDifferent(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnimIfDifferent(a0 as _, a1);
+    }
+}
+/// `StringAppend` with this module's view of its types.
+#[inline]
+unsafe fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringAppend(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringCopyPadded` with this module's view of its types.
+#[inline]
+unsafe fn StringCopyPadded(a0: *mut u8, a1: *mut u8, a2: u8, a3: u16) -> *mut u8 {
+    unsafe { crate::string_util::StringCopyPadded(a0 as _, a1 as _, a2, a3) as *mut u8 }
+}
+/// `StringLength` with this module's view of its types.
+#[inline]
+unsafe fn StringLength(a0: *mut u8) -> u16 {
+    unsafe { crate::string_util::StringLength(a0 as _) }
+}
+/// `StringLength_Multibyte` with this module's view of its types.
+#[inline]
+unsafe fn StringLength_Multibyte(a0: *mut u8) -> u32 {
+    unsafe { crate::string_util::StringLength_Multibyte(a0 as _) }
+}
+// The C's names for task and sprite data slots.
+const sItemIconId: usize = 0;
+const sState: usize = 0;
+const tState: usize = 0;
+const sDistance: usize = 1;
+const sIncomingX: usize = 1;
+const sOutgoingDelay: usize = 1;
+const sPartyId: usize = 1;
+const sTimer: usize = 1;
+const tDmaIdx: usize = 1;
+const tSelectedOption: usize = 1;
+const sIncomingDelay: usize = 2;
+const sMonX: usize = 2;
+const sOutgoingX: usize = 2;
+const tBoxId: usize = 2;
+const tInput: usize = 2;
+const sMonY: usize = 3;
+const sScrollInDestX: usize = 3;
+const tNextOption: usize = 3;
+const sDelay: usize = 4;
+const sSpeedX: usize = 4;
+const sScrollOutX: usize = 5;
+const sSpeedY: usize = 5;
+const sMoveSteps: usize = 6;
+const sCursorPos: usize = 7;
+const tWindowId: usize = 15;
 // Data tables (translate with cdata.py): sMainMenuTexts sWindowTemplate_MainMenu sAnim_ChooseBoxMenu_TopLeft sAnim_ChooseBoxMenu_BottomLeft sAnim_ChooseBoxMenu_TopRight sAnim_ChooseBoxMenu_BottomRight sAnims_ChooseBoxMenu sAffineAnim_ChooseBoxMenu sAffineAnims_ChooseBoxMenu sChooseBoxMenu_TextColors sText_OutOf30 sChooseBoxMenu_Pal sChooseBoxMenuCenter_Gfx sChooseBoxMenuSides_Gfx sScrollingBg_Gfx sScrollingBg_Tilemap sDisplayMenu_Pal sDisplayMenu_Tilemap sPkmnData_Tilemap sInterface_Pal sPkmnDataGray_Pal sScrollingBg_Pal sScrollingBgMoveItems_Pal sCloseBoxButton_Tilemap sPartySlotFilled_Tilemap sPartySlotEmpty_Tilemap sWaveform_Pal sWaveform_Gfx sUnused_Pal sTextWindows_Pal sWindowTemplates sBgTemplates sWaveformSpritePalette sSpriteSheet_Waveform sOamData_DisplayMon sSpriteTemplate_DisplayMon sMessages sYesNoWindowTemplate sOamData_DisplayMon sOamData_Waveform sAnim_Waveform_LeftOff sAnim_Waveform_LeftOn sAnim_Waveform_RightOff sAnim_Waveform_RightOn sAnims_Waveform sSpriteTemplate_Waveform sOamData_MonIcon sSpriteTemplate_MonIcon sOamData_MonIcon sAffineAnim_ReleaseMon_Release sAffineAnim_ReleaseMon_CameBack sAffineAnims_ReleaseMon sWallpaperPalettes_Forest sWallpaperTiles_Forest sWallpaperTilemap_Forest sWallpaperPalettes_City sWallpaperTiles_City sWallpaperTilemap_City sWallpaperPalettes_Desert sWallpaperTiles_Desert sWallpaperTilemap_Desert sWallpaperPalettes_Savanna sWallpaperTiles_Savanna sWallpaperTilemap_Savanna sWallpaperPalettes_Crag sWallpaperTiles_Crag sWallpaperTilemap_Crag sWallpaperPalettes_Volcano sWallpaperTiles_Volcano sWallpaperTilemap_Volcano sWallpaperPalettes_Snow sWallpaperTiles_Snow sWallpaperTilemap_Snow sWallpaperPalettes_Cave sWallpaperTiles_Cave sWallpaperTilemap_Cave sWallpaperPalettes_Beach sWallpaperTiles_Beach sWallpaperTilemap_Beach sWallpaperPalettes_Seafloor sWallpaperTiles_Seafloor sWallpaperTilemap_Seafloor sWallpaperPalettes_River sWallpaperTiles_River sWallpaperTilemap_River sWallpaperPalettes_Sky sWallpaperTiles_Sky sWallpaperTilemap_Sky sWallpaperPalettes_PolkaDot sWallpaperTiles_PolkaDot sWallpaperTilemap_PolkaDot sWallpaperPalettes_Pokecenter sWallpaperTiles_Pokecenter sWallpaperTilemap_Pokecenter sWallpaperPalettes_Machine sWallpaperTiles_Machine sWallpaperTilemap_Machine sWallpaperPalettes_Plain sWallpaperTiles_Plain sWallpaperTilemap_Plain sWallpaperTilemap_Unused sBoxTitleColors sWallpapers sArrow_Gfx sWallpaperPalettes_Zigzagoon sWallpaperTiles_Zigzagoon sWallpaperTilemap_Zigzagoon sWallpaperPalettes_Screen sWallpaperTiles_Screen sWallpaperTilemap_Screen sWallpaperPalettes_Diagonal sWallpaperTiles_Diagonal sWallpaperTilemap_Diagonal sWallpaperPalettes_Block sWallpaperTiles_Block sWallpaperTilemap_Block sWallpaperPalettes_Pokecenter2 sWallpaperTiles_Pokecenter2 sWallpaperTilemap_Pokecenter2 sWallpaperPalettes_Frame sWallpaperTiles_Frame sWallpaperTilemap_Frame sWallpaperPalettes_Blank sWallpaperTiles_Blank sWallpaperTilemap_Blank sWallpaperPalettes_Circles sWallpaperTiles_Circles sWallpaperTilemap_Circles sWallpaperPalettes_Azumarill sWallpaperTiles_Azumarill sWallpaperTilemap_Azumarill sWallpaperPalettes_Pikachu sWallpaperTiles_Pikachu sWallpaperTilemap_Pikachu sWallpaperPalettes_Legendary sWallpaperTiles_Legendary sWallpaperTilemap_Legendary sWallpaperPalettes_Dusclops sWallpaperTiles_Dusclops sWallpaperTilemap_Dusclops sWallpaperPalettes_Ludicolo sWallpaperTiles_Ludicolo sWallpaperTilemap_Ludicolo sWallpaperPalettes_Whiscash sWallpaperTiles_Whiscash sWallpaperTilemap_Whiscash sWallpaperIcon_Aqua sWallpaperIcon_Heart sWallpaperIcon_FiveStar sWallpaperIcon_Brick sWallpaperIcon_FourStar sWallpaperIcon_Asterisk sWallpaperIcon_Dot sWallpaperIcon_LineCircle sWallpaperIcon_PokeBall sWallpaperIcon_Maze sWallpaperIcon_Footprint sWallpaperIcon_BigAsterisk sWallpaperIcon_Circle sWallpaperIcon_Koffing sWallpaperIcon_Ribbon sWallpaperIcon_FourCircles sWallpaperIcon_Lotad sWallpaperIcon_Crystal sWallpaperIcon_Pichu sWallpaperIcon_Diglett sWallpaperIcon_Luvdisc sWallpaperIcon_StarInCircle sWallpaperIcon_Spinda sWallpaperIcon_Latis sWallpaperIcon_Minun sWallpaperIcon_Togepi sWallpaperIcon_Magma sWaldaWallpapers sWaldaWallpaperIcons sUnusedColor sSpriteSheet_Arrow sOamData_BoxTitle sAnim_BoxTitle_Left sAnim_BoxTitle_Right sAnims_BoxTitle sSpriteTemplate_BoxTitle sOamData_Arrow sAnim_Arrow_Left sAnim_Arrow_Right sAnims_Arrow sSpriteTemplate_Arrow sHandCursor_Pal sHandCursor_Gfx sHandCursorShadow_Gfx sRestrictedReleaseMoves sMenuTexts sWindowTemplate_MultiMove sItemInfoFrame_Gfx sOamData_ItemIcon sAffineAnim_ItemIcon_Small sAffineAnim_ItemIcon_Appear sAffineAnim_ItemIcon_Disappear sAffineAnim_ItemIcon_PickUp sAffineAnim_ItemIcon_PutDown sAffineAnim_ItemIcon_PutAway sAffineAnim_ItemIcon_Large sAffineAnims_ItemIcon sSpriteTemplate_ItemIcon sTilemapDimensions inputFuncs.9 placeChangeFuncs.10 sAnim_Cursor_Bouncing.2 sAnim_Cursor_Fist.5 sAnim_Cursor_Open.4 sAnim_Cursor_Still.3 sAnims_Cursor.6 sOamData_Cursor.0 sOamData_CursorShadow.1 sSpriteTemplate_Cursor.8 sSpriteTemplate_CursorShadow.7
 
 /// `struct ChooseBoxMenu`
@@ -167,7 +534,7 @@ pub struct PokemonStorageSystemData {
     pub displayMonSpeciesName: CArray<u8, 36>,
     pub displayMonGenderLvlText: CArray<u8, 36>,
     pub displayMonItemName: CArray<u8, 36>,
-    pub monPlaceChangeFunc: Option<unsafe extern "C" fn() -> u8>,
+    pub monPlaceChangeFunc: Option<unsafe fn() -> u8>,
     pub monPlaceChangeState: u8,
     pub shiftBoxId: u8,
     pub markingComboSprite: *mut Sprite,
@@ -286,7 +653,7 @@ pub struct UnkUtilData {
     pub size: u16,
     pub unk: u16,
     pub height: u16,
-    pub func: Option<unsafe extern "C" fn(*mut UnkUtilData)>,
+    pub func: Option<unsafe fn(*mut UnkUtilData)>,
 }
 
 unsafe impl Sync for UnkUtilData {}
@@ -330,7 +697,7 @@ unsafe impl Sync for TilemapUtil_RectData {}
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Anon1 {
-    pub func: Option<unsafe extern "C" fn() -> u8>,
+    pub func: Option<unsafe fn() -> u8>,
     pub area: i8,
 }
 
@@ -837,7 +1204,7 @@ const WIN_MESSAGE: u8 = 1;
 
 static inputFuncs_9: Table<CArray<Anon1, 5>> =
     Table((&raw const crate::data::pokemon_storage_system::inputFuncs_9).cast());
-static placeChangeFuncs_10: Table<CArray<Option<unsafe extern "C" fn() -> u8>, 3>> =
+static placeChangeFuncs_10: Table<CArray<Option<unsafe fn() -> u8>, 3>> =
     Table((&raw const crate::data::pokemon_storage_system::placeChangeFuncs_10).cast());
 static sAffineAnims_ReleaseMon: Table<CArray<*mut AffineAnimCmd, 2>> =
     Table((&raw const crate::data::pokemon_storage_system::sAffineAnims_ReleaseMon).cast());
@@ -952,364 +1319,132 @@ static sYesNoWindowTemplate: Table<WindowTemplate> =
 
 pub(crate) static mut sItemIconGfxBuffer: CArray<u32, 98> = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPreviousBoxOption: u8 = 0;
+pub(crate) static sPreviousBoxOption: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sChooseBoxMenu: *mut ChooseBoxMenu = null_mut();
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sStorage: *mut PokemonStorageSystemData = null_mut();
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sInPartyMenu: u8 = 0;
+pub(crate) static sInPartyMenu: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCurrentBoxOption: u8 = 0;
+pub(crate) static sCurrentBoxOption: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sDepositBoxId: u8 = 0;
+pub(crate) static sDepositBoxId: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sWhichToReshow: u8 = 0;
+pub(crate) static sWhichToReshow: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sLastUsedBox: u8 = 0;
+pub(crate) static sLastUsedBox: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMovingItemId: u16 = 0;
+pub(crate) static sMovingItemId: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sSavedMovingMon: Pokemon = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCursorArea: i8 = 0;
+pub(crate) static sCursorArea: crate::global::Global<i8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sCursorPosition: i8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sIsMonBeingMoved: u8 = 0;
+pub(crate) static sIsMonBeingMoved: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMovingMonOrigBoxId: u8 = 0;
+pub(crate) static sMovingMonOrigBoxId: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMovingMonOrigBoxPos: u8 = 0;
+pub(crate) static sMovingMonOrigBoxPos: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sAutoActionOn: u8 = 0;
+pub(crate) static sAutoActionOn: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSavedCursorPosition: u8 = 0;
+pub(crate) static sSavedCursorPosition: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static mut sMultiMove: *mut typeof___sMultiMove_0_t = null_mut();
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sTilemapUtil: *mut TilemapUtil = null_mut();
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sNumTilemapUtilIds: u16 = 0;
+pub(crate) static sNumTilemapUtilIds: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sUnkUtil: *mut UnkUtil = null_mut();
 
-unsafe extern "C" {
-    static gDummySpriteAffineAnimTable: CArray<*mut AffineAnimCmd, 0>;
-    static gDummySpriteAnimTable: CArray<*mut AnimCmd, 0>;
-    static mut gFieldCallback: Option<unsafe extern "C" fn()>;
-    static mut gKeyRepeatStartDelay: u16;
-    static mut gLastViewedMonIndex: u8;
-    static mut gMain: Main;
-    static gMonFrontPicTable: CArray<CompressedSpriteSheet, 0>;
-    static gMonIconPaletteIndices: CArray<u8, 0>;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gPlayerPartyCount: u8;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static mut gPokemonStoragePtr: *mut PokemonStorage;
-    static mut gReservedSpriteTileCount: u16;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static gSineTable: CArray<i16, 0>;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_ItemId: u16;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static gStorageSystemMenu_Gfx: CArray<u32, 0>;
-    static gStorageSystemPartyMenu_Pal: CArray<u16, 0>;
-    static gStorageSystemPartyMenu_Tilemap: CArray<u32, 0>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_Box: CArray<u8, 0>;
-    static gText_EggNickname: CArray<u8, 0>;
-    static gText_JustOnePkmn: CArray<u8, 0>;
-    static gText_PartyFull: CArray<u8, 0>;
-    fn AddBagItem(a0: u16, a1: u16) -> u8;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddTextPrinterParameterized2(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-        a5: u8,
-        a6: u8,
-        a7: u8,
-    ) -> u16;
-    fn AddTextPrinterParameterized3(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: *mut u8,
-        a5: i8,
-        a6: *mut u8,
-    );
-    fn AddTextPrinterParameterized4(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: i8,
-        a8: *mut u8,
-    );
-    fn AddTextPrinterParameterized5(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-        a7: u8,
-        a8: u8,
-    );
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AddWindow8Bit(a0: *mut WindowTemplate) -> u16;
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AllocSpritePalette(a0: u16) -> u8;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn BlitBitmapRectToWindow4BitTo8Bit(
-        a0: u8,
-        a1: *mut u8,
-        a2: u16,
-        a3: u16,
-        a4: u16,
-        a5: i32,
-        a6: u16,
-        a7: u16,
-        a8: u16,
-        a9: u16,
-        a10: u8,
-    );
-    fn BoxMonRestorePP(a0: *mut BoxPokemon);
-    fn BoxMonToMon(a0: *mut BoxPokemon, a1: *mut Pokemon);
-    fn BufferMonMarkingsMenuTiles();
-    fn BuildOamBuffer();
-    fn CB2_ReturnToField();
-    fn CalculatePlayerPartyCount() -> u8;
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CheckForSpaceForDma3Request(a0: i16) -> i16;
-    fn CleanupOverworldWindowsAndTilemaps();
-    fn ClearDma3Requests();
-    fn ClearGpuRegBits(a0: u8, a1: u16);
-    fn ClearScheduledBgCopiesToVram();
-    fn ClearStdWindowAndFrame(a0: u8, a1: u8);
-    fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8);
-    fn ClearWindowTilemap(a0: u8);
-    fn ComputerScreenCloseEffect(a0: u16, a1: u16, a2: u8);
-    fn ComputerScreenOpenEffect(a0: u16, a1: u16, a2: u8);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyRectToBgTilemapBufferRect(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-        a7: u8,
-        a8: u8,
-        a9: u8,
-        a10: u8,
-        a11: i16,
-        a12: i16,
-    );
-    fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut c_void, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CopyWindowToVram8Bit(a0: u8, a1: u8);
-    fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateBoxMon(a0: *mut BoxPokemon, a1: u16, a2: u8, a3: u8, a4: u8, a5: u32, a6: u8, a7: u32);
-    fn CreateMonMarkingComboSprite(a0: u16, a1: u16, a2: *mut u16) -> *mut Sprite;
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateYesNoMenu(a0: *mut WindowTemplate, a1: u16, a2: u8, a3: u8);
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut c_void, a2: u32, a3: u16, a4: u8);
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DoNamingScreen(
-        a0: u8,
-        a1: *mut u8,
-        a2: u16,
-        a3: u16,
-        a4: u32,
-        a5: Option<unsafe extern "C" fn()>,
-    );
-    fn DoScheduledBgTilemapCopiesToVram();
-    fn DrawDialogueFrame(a0: u8, a1: u8);
-    fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
-    fn DrawStdWindowFrame(a0: u8, a1: u8);
-    fn DrawTextBorderOuter(a0: u8, a1: u16, a2: u8);
-    fn DynamicPlaceholderTextUtil_ExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn DynamicPlaceholderTextUtil_Reset();
-    fn DynamicPlaceholderTextUtil_SetPlaceholderPtr(a0: u8, a1: *mut u8);
-    fn FadeInFromBlack();
-    fn FadeScreen(a0: u8, a1: i8);
-    fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FillWindowPixelBuffer8Bit(a0: u8, a1: u8);
-    fn FillWindowPixelRect8Bit(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn FlagClear(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeMonMarkingsMenu();
-    fn FreeOamMatrix(a0: u8);
-    fn FreeSpritePaletteByTag(a0: u16);
-    fn FreeSpriteTileRanges();
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetBgAttribute(a0: u8, a1: u8) -> u16;
-    fn GetBoxMonData2(a0: *mut BoxPokemon, a1: i32) -> u32;
-    fn GetBoxMonData3(a0: *mut BoxPokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetGenderFromSpeciesAndPersonality(a0: u16, a1: u32) -> u8;
-    fn GetIconSpecies(a0: u16, a1: u32) -> u16;
-    fn GetItemDescription(a0: u16) -> *mut u8;
-    fn GetItemIconPicOrPalette(a0: u16, a1: u8) -> *mut c_void;
-    fn GetItemName(a0: u16) -> *mut u8;
-    fn GetLevelFromBoxMonExp(a0: *mut BoxPokemon) -> u8;
-    fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetMonFrontSpritePal(a0: *mut Pokemon) -> *mut u32;
-    fn GetMonGender(a0: *mut Pokemon) -> u8;
-    fn GetMonIconPtr(a0: u16, a1: u32, a2: u32) -> *mut u8;
-    fn GetMonIconTiles(a0: u16, a1: u32) -> *mut u8;
-    fn GetMonSpritePalFromSpeciesAndPersonality(a0: u16, a1: u32, a2: u32) -> *mut u32;
-    fn GetSpriteTileStartByTag(a0: u16) -> u16;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32;
-    fn GetTextWindowPalette(a0: u8) -> *mut u16;
-    fn GetValidMonIconPalIndex(a0: u16) -> u8;
-    fn GetWindowAttribute(a0: u8, a1: u8) -> u32;
-    fn GoToBagMenu(a0: u8, a1: u8, a2: Option<unsafe extern "C" fn()>);
-    fn HandleMonMarkingsMenuInput() -> u8;
-    fn HideBg(a0: u8);
-    fn IndexOfSpritePaletteTag(a0: u16) -> u8;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitMenuInUpperLeftCornerNormal(a0: u8, a1: u8, a2: u8) -> u8;
-    fn InitMonMarkingsMenu(a0: *mut MonMarkingsMenu);
-    fn InitSpriteAffineAnim(a0: *mut Sprite);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsComputerScreenCloseEffectActive() -> u8;
-    fn IsComputerScreenOpenEffectActive() -> u8;
-    fn IsDma3ManagerBusyWithBgCopy() -> u8;
-    fn IsWeatherNotFadingIn() -> u8;
-    fn ItemIsMail(a0: u16) -> u8;
-    fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void);
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadMessageBoxAndBorderGfx();
-    fn LoadMonIconPalettes();
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpecialPokePic(
-        a0: *mut CompressedSpriteSheet,
-        a1: *mut c_void,
-        a2: i32,
-        a3: u32,
-        a4: u8,
-    );
-    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
-    fn LoadSpritePalettes(a0: *mut SpritePalette);
-    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
-    fn LoadSpriteSheets(a0: *mut SpriteSheet);
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn LockPlayerFieldControls();
-    fn Menu_GetCursorPos() -> u8;
-    fn Menu_MoveCursor(a0: i8) -> u8;
-    fn Menu_MoveCursorNoWrapAround(a0: i8) -> u8;
-    fn Menu_ProcessInput() -> i8;
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn OpenMonMarkingsMenu(a0: u8, a1: i16, a2: i16);
-    fn PlaySE(a0: u16);
-    fn PrintMenuTable(a0: u8, a1: u8, a2: *mut MenuAction);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveBagItem(a0: u16, a1: u16) -> u8;
-    fn RemoveWindow(a0: u8);
-    fn RequestDma3Fill(a0: i32, a1: *mut c_void, a2: u16, a3: u8) -> i16;
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn RunTasks();
-    fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn ScriptContext_Enable();
-    fn SetBgAttribute(a0: u8, a1: u8, a2: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetBoxMonData(a0: *mut BoxPokemon, a1: i32, a2: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetGpuRegBits(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn ShowPokemonSummaryScreen(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u8,
-        a3: u8,
-        a4: Option<unsafe extern "C" fn()>,
-    );
-    fn ShowPokemonSummaryScreenHandleDeoxys(
-        a0: u8,
-        a1: *mut BoxPokemon,
-        a2: u8,
-        a3: u8,
-        a4: Option<unsafe extern "C" fn()>,
-    );
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StartSpriteAnimIfDifferent(a0: *mut Sprite, a1: u8);
-    fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopyPadded(a0: *mut u8, a1: *mut u8, a2: u8, a3: u16) -> *mut u8;
-    fn StringFill(a0: *mut u8, a1: u8, a2: u16) -> *mut u8;
-    fn StringGet_Nickname(a0: *mut u8) -> *mut u8;
-    fn StringLength(a0: *mut u8) -> u16;
-    fn StringLength_Multibyte(a0: *mut u8) -> u32;
-    fn TransferPlttBuffer();
-    fn TryLoadAllMonIconPalettesAtOffset(a0: u16);
-    fn UnlockPlayerFieldControls();
-    fn UpdateMonMarkingTiles(a0: u8, a1: *mut c_void);
-    fn UpdatePaletteFade() -> u8;
-    fn VarSet(a0: u16, a1: u16) -> u8;
-    fn WriteSequenceToBgTilemapBuffer(
-        a0: u8,
-        a1: u16,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-        a7: i16,
-    );
-    fn ZeroBoxMonData(a0: *mut BoxPokemon);
-    fn ZeroMonData(a0: *mut Pokemon);
-    fn malloc_and_decompress(a0: *mut c_void, a1: *mut u32) -> *mut c_void;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `CpuFastSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuFastSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `GetItemDescription` with this module's view of its types.
+#[inline]
+unsafe fn GetItemDescription(a0: u16) -> *mut u8 {
+    crate::item::GetItemDescription(a0) as *mut u8
+}
+/// `GetItemIconPicOrPalette` with this module's view of its types.
+#[inline]
+unsafe fn GetItemIconPicOrPalette(a0: u16, a1: u8) -> *mut c_void {
+    crate::item_icon::GetItemIconPicOrPalette(a0, a1) as *mut c_void
+}
+/// `GetItemName` with this module's view of its types.
+#[inline]
+unsafe fn GetItemName(a0: u16) -> *mut u8 {
+    crate::item::GetItemName(a0) as *mut u8
+}
+/// `GetTextWindowPalette` with this module's view of its types.
+#[inline]
+unsafe fn GetTextWindowPalette(a0: u8) -> *mut u16 {
+    unsafe { crate::text_window::GetTextWindowPalette(a0) as *mut u16 }
+}
+/// `LZ77UnCompVram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
+    }
+}
+/// `LZ77UnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawTextWindowAndBufferTiles(
+pub unsafe fn DrawTextWindowAndBufferTiles(
     string: *mut u8,
     mut dst: *mut c_void,
     zero1: u8,
@@ -1317,20 +1452,16 @@ pub unsafe extern "C" fn DrawTextWindowAndBufferTiles(
     bytesToBuffer: i32,
 ) {
     let mut i: i32 = 0;
-    let mut tileBytesToBuffer: i32 = 0;
-    let mut remainingBytes: i32 = 0;
-    let mut windowId: u16 = 0;
     let mut txtColor: CArray<u8, 3> = zeroed();
-    let mut tileData1: *mut u8 = null_mut();
-    let mut tileData2: *mut u8 = null_mut();
     let mut winTemplate: WindowTemplate = zeroed();
     winTemplate.bg = 0;
     winTemplate.width = 24;
     winTemplate.height = 2;
-    windowId = AddWindow(&raw mut winTemplate);
+    let windowId: u16 = AddWindow(&raw mut winTemplate);
     FillWindowPixelBuffer(windowId as u8, zero2 | zero2 << 4);
-    tileData1 = GetWindowAttribute(windowId as u8, WINDOW_TILE_DATA) as usize as *mut u8;
-    tileData2 = tileData1.at(winTemplate.width as i32 * 32);
+    let mut tileData1: *mut u8 =
+        GetWindowAttribute(windowId as u8, WINDOW_TILE_DATA) as usize as *mut u8;
+    let mut tileData2: *mut u8 = tileData1.at(winTemplate.width as i32 * 32);
     if zero1 == 0 {
         txtColor[0] = 0x0;
     } else {
@@ -1349,11 +1480,11 @@ pub unsafe extern "C" fn DrawTextWindowAndBufferTiles(
         TEXT_SKIP_DRAW as i8,
         string,
     );
-    tileBytesToBuffer = bytesToBuffer;
+    let mut tileBytesToBuffer: i32 = bytesToBuffer;
     if tileBytesToBuffer > 6 {
         tileBytesToBuffer = 6;
     }
-    remainingBytes = bytesToBuffer - 6;
+    let remainingBytes: i32 = bytesToBuffer - 6;
     if tileBytesToBuffer > 0 {
         i = tileBytesToBuffer;
         while i != 0 {
@@ -1377,14 +1508,14 @@ pub unsafe extern "C" fn DrawTextWindowAndBufferTiles(
                 CpuSet(
                     &raw mut tmp as *mut c_void,
                     dst,
-                    0x1000000 | remainingBytes as u32 * 0x100 / 2 & 0x1FFFFF,
+                    0x1000000 | (remainingBytes as u32 * 0x100 / 2) & 0x1FFFFF,
                 );
             }
         }
     }
     RemoveWindow(windowId as u8);
 }
-pub(crate) unsafe extern "C" fn UnusedDrawTextWindow(
+unsafe fn UnusedDrawTextWindow(
     string: *mut u8,
     dst: *mut c_void,
     offset: u16,
@@ -1392,20 +1523,16 @@ pub(crate) unsafe extern "C" fn UnusedDrawTextWindow(
     fgColor: u8,
     shadowColor: u8,
 ) {
-    let mut tilesSize: u32 = 0;
-    let mut windowId: u8 = 0;
     let mut txtColor: CArray<u8, 3> = zeroed();
-    let mut tileData1: *mut u8 = null_mut();
-    let mut tileData2: *mut u8 = null_mut();
     let mut winTemplate: WindowTemplate = zeroed();
     winTemplate.bg = 0;
     winTemplate.width = StringLength_Multibyte(string) as u8;
     winTemplate.height = 2;
-    tilesSize = winTemplate.width as u32 * 32;
-    windowId = AddWindow(&raw mut winTemplate) as u8;
+    let tilesSize: u32 = winTemplate.width as u32 * 32;
+    let windowId: u8 = AddWindow(&raw mut winTemplate) as u8;
     FillWindowPixelBuffer(windowId, bgColor | bgColor << 4);
-    tileData1 = GetWindowAttribute(windowId, WINDOW_TILE_DATA) as usize as *mut u8;
-    tileData2 = tileData1.at(winTemplate.width as i32 * 32);
+    let tileData1: *mut u8 = GetWindowAttribute(windowId, WINDOW_TILE_DATA) as usize as *mut u8;
+    let tileData2: *mut u8 = tileData1.at(winTemplate.width as i32 * 32);
     txtColor[0] = bgColor;
     txtColor[1] = fgColor;
     txtColor[2] = shadowColor;
@@ -1420,67 +1547,46 @@ pub(crate) unsafe extern "C" fn UnusedDrawTextWindow(
         TEXT_SKIP_DRAW as i8,
         string,
     );
-    CpuSet(
-        tileData1 as *mut c_void,
-        dst,
-        0x00000000 | tilesSize / 2 & 0x1FFFFF,
-    );
+    CpuSet(tileData1 as *mut c_void, dst, (tilesSize / 2) & 0x1FFFFF);
     CpuSet(
         tileData2 as *mut c_void,
         (dst as *mut u8).at(offset) as *mut c_void,
-        0x00000000 | tilesSize / 2 & 0x1FFFFF,
+        (tilesSize / 2) & 0x1FFFFF,
     );
     RemoveWindow(windowId);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CountMonsInBox(boxId: u8) -> u8 {
-    let mut i: u16 = 0;
+pub unsafe fn CountMonsInBox(boxId: u8) -> u8 {
     let mut count: u16 = 0;
-    i = 0;
-    count = 0;
-    while i < IN_BOX_COUNT as u16 {
+    for i in 0..(IN_BOX_COUNT as u16) {
         if GetBoxMonDataAt(boxId, i as u8, MON_DATA_SPECIES) != SPECIES_NONE as u32 {
             count += 1;
         }
-        i += 1;
     }
-    return count as u8;
+    count as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFirstFreeBoxSpot(boxId: u8) -> i16 {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < IN_BOX_COUNT as u16 {
+pub unsafe fn GetFirstFreeBoxSpot(boxId: u8) -> i16 {
+    for i in 0..(IN_BOX_COUNT as u16) {
         if GetBoxMonDataAt(boxId, i as u8, MON_DATA_SPECIES) == SPECIES_NONE as u32 {
             return i as i16;
         }
-        i += 1;
     }
-    return -1;
+    -1
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CountPartyNonEggMons() -> u8 {
-    let mut i: u16 = 0;
+pub unsafe fn CountPartyNonEggMons() -> u8 {
     let mut count: u16 = 0;
-    i = 0;
-    count = 0;
-    while i < PARTY_SIZE as u16 {
+    for i in 0..(PARTY_SIZE as u16) {
         if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) != SPECIES_NONE as u32
             && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) == 0
         {
             count += 1;
         }
-        i += 1;
     }
-    return count as u8;
+    count as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CountPartyAliveNonEggMonsExcept(slotToIgnore: u8) -> u8 {
-    let mut i: u16 = 0;
+pub unsafe fn CountPartyAliveNonEggMonsExcept(slotToIgnore: u8) -> u8 {
     let mut count: u16 = 0;
-    i = 0;
-    count = 0;
-    while i < PARTY_SIZE as u16 {
+    for i in 0..(PARTY_SIZE as u16) {
         if i != slotToIgnore as u16
             && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) != SPECIES_NONE as u32
             && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) == 0
@@ -1488,44 +1594,32 @@ pub unsafe extern "C" fn CountPartyAliveNonEggMonsExcept(slotToIgnore: u8) -> u8
         {
             count += 1;
         }
-        i += 1;
     }
-    return count as u8;
+    count as u8
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CountPartyAliveNonEggMons_IgnoreVar0x8004Slot() -> u16 {
-    return CountPartyAliveNonEggMonsExcept(gSpecialVar_0x8004 as u8) as u16;
+pub unsafe fn CountPartyAliveNonEggMons_IgnoreVar0x8004Slot() -> u16 {
+    CountPartyAliveNonEggMonsExcept(gSpecialVar_0x8004 as u8) as u16
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CountPartyMons() -> u8 {
-    let mut i: u16 = 0;
+pub unsafe fn CountPartyMons() -> u8 {
     let mut count: u16 = 0;
-    i = 0;
-    count = 0;
-    while i < PARTY_SIZE as u16 {
+    for i in 0..(PARTY_SIZE as u16) {
         if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) != SPECIES_NONE as u32 {
             count += 1;
         }
-        i += 1;
     }
-    return count as u8;
+    count as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn StringCopyAndFillWithSpaces(
-    dst: *mut u8,
-    src: *mut u8,
-    n: u16,
-) -> *mut u8 {
-    let mut str: *mut u8 = null_mut();
-    str = StringCopy(dst, src);
+pub unsafe fn StringCopyAndFillWithSpaces(dst: *mut u8, src: *mut u8, n: u16) -> *mut u8 {
+    let mut str: *mut u8 = StringCopy(dst, src);
     while str < dst.at(n) {
         *str = CHAR_SPACE;
         str = str.at(1);
     }
     *str = EOS;
-    return str;
+    str
 }
-pub(crate) unsafe extern "C" fn UnusedWriteRectCpu(
+unsafe fn UnusedWriteRectCpu(
     mut dest: *mut u16,
     dest_left: u16,
     dest_top: u16,
@@ -1536,34 +1630,29 @@ pub(crate) unsafe extern "C" fn UnusedWriteRectCpu(
     dest_height: u16,
     src_width: u16,
 ) {
-    let mut i: u16 = 0;
     dest_width *= 2;
     dest = dest.at(dest_top as i32 * 0x20 + dest_left as i32);
     src = src.at(src_top as i32 * src_width as i32 + src_left as i32);
-    i = 0;
-    while i < dest_height {
+    for i in 0..dest_height {
         CpuSet(
             src as *mut c_void,
             dest as *mut c_void,
-            0x00000000 | (dest_width as i32 / 2) as u32 & 0x1FFFFF,
+            (dest_width as i32 / 2) as u32 & 0x1FFFFF,
         );
         dest = dest.at(32);
         src = src.at(src_width);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn UnusedWriteRectDma(
+unsafe fn UnusedWriteRectDma(
     mut dest: *mut u16,
     dest_left: u16,
     dest_top: u16,
     mut width: u16,
     height: u16,
 ) {
-    let mut i: u16 = 0;
     dest = dest.at(dest_top as i32 * 0x20 + dest_left as i32);
     width *= 2;
-    i = 0;
-    while i < height {
+    for i in 0..height {
         let mut _dest: *mut c_void = dest as *mut c_void;
         let mut _size: u32 = width as u32;
         loop {
@@ -1574,10 +1663,10 @@ pub(crate) unsafe extern "C" fn UnusedWriteRectDma(
                         volatile_write(&raw mut tmp, 0);
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                volatile_write(dmaRegs.at(2), 0x81000000 | (_size / 2));
                                 let _ = (dmaRegs.at(2)).read_volatile();
                             }
                         }
@@ -1591,7 +1680,7 @@ pub(crate) unsafe extern "C" fn UnusedWriteRectDma(
                     volatile_write(&raw mut tmp, 0);
                     {
                         {
-                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                             volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                             volatile_write(dmaRegs.at(1), _dest as usize as u32);
                             volatile_write(dmaRegs.at(2), 0x81000800);
@@ -1604,21 +1693,23 @@ pub(crate) unsafe extern "C" fn UnusedWriteRectDma(
             _size -= 0x1000;
         }
         dest = dest.at(32);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn Task_PCMainMenu(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_PCMainMenu(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         STATE_LOAD => {
-            CreateMainMenu((*task).data[1] as u8, &raw mut (*task).data[15]);
+            CreateMainMenu(
+                (*task).data[tSelectedOption] as u8,
+                &raw mut (*task).data[tWindowId],
+            );
             LoadMessageBoxAndBorderGfx();
             DrawDialogueFrame(0, 0);
             FillWindowPixelBuffer(0, 17);
             AddTextPrinterParameterized2(
                 0,
                 FONT_NORMAL,
-                sMainMenuTexts[(*task).data[1]].desc,
+                sMainMenuTexts[(*task).data[tSelectedOption]].desc,
                 TEXT_SKIP_DRAW,
                 None,
                 TEXT_COLOR_DARK_GRAY,
@@ -1626,42 +1717,42 @@ pub(crate) unsafe extern "C" fn Task_PCMainMenu(taskId: u8) {
                 TEXT_COLOR_LIGHT_GRAY,
             );
             CopyWindowToVram(0, COPYWIN_FULL);
-            CopyWindowToVram((*task).data[15] as u8, COPYWIN_FULL);
-            (*task).data[0] += 1;
+            CopyWindowToVram((*task).data[tWindowId] as u8, COPYWIN_FULL);
+            (*task).data[tState] += 1;
         }
         STATE_FADE_IN => {
             if IsWeatherNotFadingIn() != 0 {
-                (*task).data[0] += 1;
+                (*task).data[tState] += 1;
             }
         }
         STATE_HANDLE_INPUT => {
-            (*task).data[2] = Menu_ProcessInput() as i16;
-            match (*task).data[2] {
+            (*task).data[tInput] = Menu_ProcessInput() as i16;
+            match (*task).data[tInput] {
                 -2 => {
-                    (*task).data[3] = (*task).data[1];
+                    (*task).data[tNextOption] = (*task).data[tSelectedOption];
                     if gMain.newKeys as i32 & DPAD_UP != 0
                         && ({
-                            (*task).data[3] -= 1;
-                            (*task).data[3]
+                            (*task).data[tNextOption] -= 1;
+                            (*task).data[tNextOption]
                         }) < 0
                     {
-                        (*task).data[3] = 4;
+                        (*task).data[tNextOption] = 4;
                     }
                     if gMain.newKeys as i32 & DPAD_DOWN != 0
                         && ({
-                            (*task).data[3] += 1;
-                            (*task).data[3]
+                            (*task).data[tNextOption] += 1;
+                            (*task).data[tNextOption]
                         }) > 4
                     {
-                        (*task).data[3] = 0;
+                        (*task).data[tNextOption] = 0;
                     }
-                    if (*task).data[1] != (*task).data[3] {
-                        (*task).data[1] = (*task).data[3];
+                    if (*task).data[tSelectedOption] != (*task).data[tNextOption] {
+                        (*task).data[tSelectedOption] = (*task).data[tNextOption];
                         FillWindowPixelBuffer(0, 17);
                         AddTextPrinterParameterized2(
                             0,
                             FONT_NORMAL,
-                            sMainMenuTexts[(*task).data[1]].desc,
+                            sMainMenuTexts[(*task).data[tSelectedOption]].desc,
                             0,
                             None,
                             TEXT_COLOR_DARK_GRAY,
@@ -1671,42 +1762,51 @@ pub(crate) unsafe extern "C" fn Task_PCMainMenu(taskId: u8) {
                     }
                 }
                 -1 | OPTION_EXIT => {
-                    ClearStdWindowAndFrame((*task).data[15] as u8, TRUE);
+                    ClearStdWindowAndFrame((*task).data[tWindowId] as u8, TRUE);
                     UnlockPlayerFieldControls();
                     ScriptContext_Enable();
-                    RemoveWindow((*task).data[15] as u8);
+                    RemoveWindow((*task).data[tWindowId] as u8);
                     DestroyTask(taskId);
                 }
                 _ => {
-                    if (*task).data[2] == OPTION_WITHDRAW && CountPartyMons() == PARTY_SIZE as u8 {
+                    if (*task).data[tInput] == OPTION_WITHDRAW
+                        && CountPartyMons() == PARTY_SIZE as u8
+                    {
                         FillWindowPixelBuffer(0, 17);
                         AddTextPrinterParameterized2(
                             0,
                             FONT_NORMAL,
-                            gText_PartyFull.as_ptr().cast_mut(),
+                            (*(&raw const crate::data::strings::gText_PartyFull)
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
                             0,
                             None,
                             TEXT_COLOR_DARK_GRAY,
                             TEXT_COLOR_WHITE,
                             TEXT_COLOR_LIGHT_GRAY,
                         );
-                        (*task).data[0] = STATE_ERROR_MSG;
-                    } else if (*task).data[2] == OPTION_DEPOSIT as i16 && CountPartyMons() == 1 {
+                        (*task).data[tState] = STATE_ERROR_MSG;
+                    } else if (*task).data[tInput] == OPTION_DEPOSIT as i16 && CountPartyMons() == 1
+                    {
                         FillWindowPixelBuffer(0, 17);
                         AddTextPrinterParameterized2(
                             0,
                             FONT_NORMAL,
-                            gText_JustOnePkmn.as_ptr().cast_mut(),
+                            (*(&raw const crate::data::strings::gText_JustOnePkmn)
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
                             0,
                             None,
                             TEXT_COLOR_DARK_GRAY,
                             TEXT_COLOR_WHITE,
                             TEXT_COLOR_LIGHT_GRAY,
                         );
-                        (*task).data[0] = STATE_ERROR_MSG;
+                        (*task).data[tState] = STATE_ERROR_MSG;
                     } else {
                         FadeScreen(FADE_TO_BLACK, 0);
-                        (*task).data[0] = STATE_ENTER_PC;
+                        (*task).data[tState] = STATE_ENTER_PC;
                     }
                 }
             }
@@ -1717,98 +1817,93 @@ pub(crate) unsafe extern "C" fn Task_PCMainMenu(taskId: u8) {
                 AddTextPrinterParameterized2(
                     0,
                     FONT_NORMAL,
-                    sMainMenuTexts[(*task).data[1]].desc,
+                    sMainMenuTexts[(*task).data[tSelectedOption]].desc,
                     0,
                     None,
                     TEXT_COLOR_DARK_GRAY,
                     TEXT_COLOR_WHITE,
                     TEXT_COLOR_LIGHT_GRAY,
                 );
-                (*task).data[0] = STATE_HANDLE_INPUT;
+                (*task).data[tState] = STATE_HANDLE_INPUT;
             } else if gMain.newKeys as i32 & DPAD_UP != 0 {
                 if ({
-                    (*task).data[1] -= 1;
-                    (*task).data[1]
+                    (*task).data[tSelectedOption] -= 1;
+                    (*task).data[tSelectedOption]
                 }) < 0
                 {
-                    (*task).data[1] = 4;
+                    (*task).data[tSelectedOption] = 4;
                 }
                 Menu_MoveCursor(-1);
-                (*task).data[1] = Menu_GetCursorPos() as i16;
+                (*task).data[tSelectedOption] = Menu_GetCursorPos() as i16;
                 FillWindowPixelBuffer(0, 17);
                 AddTextPrinterParameterized2(
                     0,
                     FONT_NORMAL,
-                    sMainMenuTexts[(*task).data[1]].desc,
+                    sMainMenuTexts[(*task).data[tSelectedOption]].desc,
                     0,
                     None,
                     TEXT_COLOR_DARK_GRAY,
                     TEXT_COLOR_WHITE,
                     TEXT_COLOR_LIGHT_GRAY,
                 );
-                (*task).data[0] = STATE_HANDLE_INPUT;
+                (*task).data[tState] = STATE_HANDLE_INPUT;
             } else if gMain.newKeys as i32 & DPAD_DOWN != 0 {
                 if ({
-                    (*task).data[1] += 1;
-                    (*task).data[1]
+                    (*task).data[tSelectedOption] += 1;
+                    (*task).data[tSelectedOption]
                 }) >= 4
                 {
-                    (*task).data[1] = 0;
+                    (*task).data[tSelectedOption] = 0;
                 }
                 Menu_MoveCursor(1);
-                (*task).data[1] = Menu_GetCursorPos() as i16;
+                (*task).data[tSelectedOption] = Menu_GetCursorPos() as i16;
                 FillWindowPixelBuffer(0, 17);
                 AddTextPrinterParameterized2(
                     0,
                     FONT_NORMAL,
-                    sMainMenuTexts[(*task).data[1]].desc,
+                    sMainMenuTexts[(*task).data[tSelectedOption]].desc,
                     0,
                     None,
                     TEXT_COLOR_DARK_GRAY,
                     TEXT_COLOR_WHITE,
                     TEXT_COLOR_LIGHT_GRAY,
                 );
-                (*task).data[0] = STATE_HANDLE_INPUT;
+                (*task).data[tState] = STATE_HANDLE_INPUT;
             }
         }
-        STATE_ENTER_PC => {
-            if gPaletteFade.active() == 0 {
-                CleanupOverworldWindowsAndTilemaps();
-                EnterPokeStorage((*task).data[2] as u8);
-                RemoveWindow((*task).data[15] as u8);
-                DestroyTask(taskId);
-            }
+        STATE_ENTER_PC if gPaletteFade.active() == 0 => {
+            CleanupOverworldWindowsAndTilemaps();
+            EnterPokeStorage((*task).data[tInput] as u8);
+            RemoveWindow((*task).data[tWindowId] as u8);
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowPokemonStorageSystemPC() {
-    let mut taskId: u8 = CreateTask(Some(Task_PCMainMenu), 80);
-    gTasks[taskId].data[0] = 0;
-    gTasks[taskId].data[1] = 0;
+pub unsafe fn ShowPokemonStorageSystemPC() {
+    let taskId: u8 = CreateTask(Some(Task_PCMainMenu), 80);
+    task_set(taskId, tState, 0);
+    task_set(taskId, tSelectedOption, 0);
     LockPlayerFieldControls();
 }
-pub(crate) unsafe extern "C" fn FieldTask_ReturnToPcMenu() {
-    let mut taskId: u8 = 0;
-    let mut vblankCb: Option<unsafe extern "C" fn()> = gMain.vblankCallback;
+pub(crate) unsafe fn FieldTask_ReturnToPcMenu() {
+    let vblankCb: Option<unsafe fn()> = gMain.vblankCallback;
     SetVBlankCallback(None);
-    taskId = CreateTask(Some(Task_PCMainMenu), 80);
-    gTasks[taskId].data[0] = 0;
-    gTasks[taskId].data[1] = sPreviousBoxOption as i16;
+    let taskId: u8 = CreateTask(Some(Task_PCMainMenu), 80);
+    task_set(taskId, tState, 0);
+    task_set(taskId, tSelectedOption, sPreviousBoxOption.get() as i16);
     Task_PCMainMenu(taskId);
     SetVBlankCallback(vblankCb);
     FadeInFromBlack();
 }
-pub(crate) unsafe extern "C" fn CreateMainMenu(whichMenu: u8, windowIdPtr: *mut i16) {
-    let mut windowId: i16 = 0;
-    let mut template: WindowTemplate = zeroed();
-    template = *sWindowTemplate_MainMenu;
+unsafe fn CreateMainMenu(whichMenu: u8, windowIdPtr: *mut i16) {
+    let mut template: WindowTemplate = *sWindowTemplate_MainMenu;
     template.width = GetMaxWidthInMenuTable(
         sMainMenuTexts.as_ptr().cast_mut() as *mut c_void as *mut MenuAction,
         OPTIONS_COUNT as i32,
     ) as u8;
-    windowId = AddWindow(&raw mut template) as i16;
+    let windowId: i16 = AddWindow(&raw mut template) as i16;
     DrawStdWindowFrame(windowId as u8, FALSE);
     PrintMenuTable(
         windowId as u8,
@@ -1818,12 +1913,12 @@ pub(crate) unsafe extern "C" fn CreateMainMenu(whichMenu: u8, windowIdPtr: *mut 
     InitMenuInUpperLeftCornerNormal(windowId as u8, OPTIONS_COUNT, whichMenu);
     *windowIdPtr = windowId;
 }
-pub(crate) unsafe extern "C" fn CB2_ExitPokeStorage() {
-    sPreviousBoxOption = GetCurrentBoxOption();
+pub(crate) unsafe fn CB2_ExitPokeStorage() {
+    sPreviousBoxOption.set(GetCurrentBoxOption());
     gFieldCallback = Some(FieldTask_ReturnToPcMenu);
     SetMainCallback2(Some(CB2_ReturnToField));
 }
-pub(crate) unsafe extern "C" fn StorageSystemGetNextMonIndex(
+unsafe fn StorageSystemGetNextMonIndex(
     r#box: *mut BoxPokemon,
     startIdx: i8,
     stopIdx: u8,
@@ -1855,37 +1950,33 @@ pub(crate) unsafe extern "C" fn StorageSystemGetNextMonIndex(
             i += direction;
         }
     }
-    return -1;
+    -1
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetPokemonStorageSystem() {
-    let mut boxId: u16 = 0;
-    let mut boxPosition: u16 = 0;
+pub unsafe fn ResetPokemonStorageSystem() {
     SetCurrentBox(0);
-    boxId = 0;
-    while boxId < TOTAL_BOXES_COUNT as u16 {
-        boxPosition = 0;
-        while boxPosition < IN_BOX_COUNT as u16 {
+    for boxId in 0..(TOTAL_BOXES_COUNT as u16) {
+        for boxPosition in 0..(IN_BOX_COUNT as u16) {
             ZeroBoxMonAt(boxId as u8, boxPosition as u8);
-            boxPosition += 1;
         }
-        boxId += 1;
     }
-    boxId = 0;
+    let mut boxId: u16 = 0;
     while boxId < TOTAL_BOXES_COUNT as u16 {
-        let mut dest: *mut u8 =
-            StringCopy(GetBoxNamePtr(boxId as u8), gText_Box.as_ptr().cast_mut());
+        let dest: *mut u8 = StringCopy(
+            GetBoxNamePtr(boxId as u8),
+            (*(&raw const crate::data::strings::gText_Box).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
         ConvertIntToDecimalStringN(dest, boxId as i32 + 1, STR_CONV_MODE_LEFT_ALIGN, 2);
         boxId += 1;
     }
-    boxId = 0;
-    while boxId < TOTAL_BOXES_COUNT as u16 {
+    for boxId in 0..(TOTAL_BOXES_COUNT as u16) {
         SetBoxWallpaper(boxId as u8, (boxId as i32 % 4) as u8);
-        boxId += 1;
     }
     ResetWaldaWallpaper();
 }
-pub(crate) unsafe extern "C" fn LoadChooseBoxMenuGfx(
+unsafe fn LoadChooseBoxMenuGfx(
     menu: *mut ChooseBoxMenu,
     tileTag: u16,
     palTag: u16,
@@ -1912,20 +2003,20 @@ pub(crate) unsafe extern "C" fn LoadChooseBoxMenuGfx(
     (*menu).subpriority = subpriority;
     (*menu).loadedPalette = loadPal;
 }
-pub(crate) unsafe extern "C" fn FreeChooseBoxMenu() {
+unsafe fn FreeChooseBoxMenu() {
     if (*sChooseBoxMenu).loadedPalette != 0 {
         FreeSpritePaletteByTag((*sChooseBoxMenu).paletteTag);
     }
     FreeSpriteTilesByTag((*sChooseBoxMenu).tileTag);
     FreeSpriteTilesByTag((*sChooseBoxMenu).tileTag + 1);
 }
-pub(crate) unsafe extern "C" fn CreateChooseBoxMenuSprites(curBox: u8) {
+unsafe fn CreateChooseBoxMenuSprites(curBox: u8) {
     ChooseBoxMenu_CreateSprites(curBox);
 }
-pub(crate) unsafe extern "C" fn DestroyChooseBoxMenuSprites() {
+unsafe fn DestroyChooseBoxMenuSprites() {
     ChooseBoxMenu_DestroySprites();
 }
-pub(crate) unsafe extern "C" fn HandleChooseBoxMenuInput() -> u8 {
+unsafe fn HandleChooseBoxMenuInput() -> u8 {
     if gMain.newKeys as i32 & B_BUTTON != 0 {
         PlaySE(SE_SELECT);
         return BOXID_CANCELED;
@@ -1941,41 +2032,42 @@ pub(crate) unsafe extern "C" fn HandleChooseBoxMenuInput() -> u8 {
         PlaySE(SE_SELECT);
         ChooseBoxMenu_MoveRight();
     }
-    return BOXID_NONE_CHOSEN;
+    BOXID_NONE_CHOSEN
 }
-pub(crate) unsafe extern "C" fn ChooseBoxMenu_CreateSprites(curBox: u8) {
-    let mut i: u16 = 0;
-    let mut spriteId: u8 = 0;
-    let mut template: SpriteTemplate = zeroed();
+unsafe fn ChooseBoxMenu_CreateSprites(curBox: u8) {
     let mut oamData: OamData = zeroed();
     oamData.set_size(3);
     oamData.set_paletteNum(1);
-    template = {
+    let mut template: SpriteTemplate = {
         let mut lit1: SpriteTemplate = zeroed();
         lit1.tileTag = 0;
         lit1.paletteTag = 0;
         lit1.oam = &raw mut oamData;
-        lit1.anims = gDummySpriteAnimTable.as_ptr().cast_mut();
+        lit1.anims = (*(&raw const crate::sprite::gDummySpriteAnimTable)
+            .cast::<CArray<*mut AnimCmd, 0>>())
+        .as_ptr()
+        .cast_mut();
         lit1.images = null_mut();
-        lit1.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+        lit1.affineAnims = (*(&raw const crate::sprite::gDummySpriteAffineAnimTable)
+            .cast::<CArray<*mut AffineAnimCmd, 0>>())
+        .as_ptr()
+        .cast_mut();
         lit1.callback = Some(SpriteCallbackDummy);
         lit1
     };
     (*sChooseBoxMenu).curBox = curBox;
     template.tileTag = (*sChooseBoxMenu).tileTag;
     template.paletteTag = (*sChooseBoxMenu).paletteTag;
-    spriteId = CreateSprite(&raw mut template, 160, 96, 0);
+    let mut spriteId: u8 = CreateSprite(&raw mut template, 160, 96, 0);
     (*sChooseBoxMenu).menuSprite = &raw mut gSprites[spriteId];
     oamData.set_shape(2);
     oamData.set_size(1);
     template.tileTag = (*sChooseBoxMenu).tileTag + 1;
     template.anims = sAnims_ChooseBoxMenu.as_ptr().cast_mut();
-    i = 0;
-    while i < 4 {
-        let mut anim: u16 = 0;
+    for i in 0..4u16 {
         spriteId = CreateSprite(&raw mut template, 124, 80, (*sChooseBoxMenu).subpriority);
         (*sChooseBoxMenu).menuSideSprites[i] = &raw mut gSprites[spriteId];
-        anim = 0;
+        let mut anim: u16 = 0;
         if i as i32 & 2 != 0 {
             (*(*sChooseBoxMenu).menuSideSprites[i]).x = 196;
             anim = 2;
@@ -1986,43 +2078,35 @@ pub(crate) unsafe extern "C" fn ChooseBoxMenu_CreateSprites(curBox: u8) {
             anim += 1;
         }
         StartSpriteAnim((*sChooseBoxMenu).menuSideSprites[i], anim as u8);
-        i += 1;
     }
-    i = 0;
-    while i < 2 {
+    for i in 0..2u16 {
         (*sChooseBoxMenu).arrowSprites[i] =
             CreateChooseBoxArrows(72 * i + 124, 88, i as u8, 0, (*sChooseBoxMenu).subpriority);
         if !(*sChooseBoxMenu).arrowSprites[i].is_null() {
             (*(*sChooseBoxMenu).arrowSprites[i]).data[0] = (if i == 0 { -1 } else { 1 }) as i16;
             (*(*sChooseBoxMenu).arrowSprites[i]).callback = Some(SpriteCB_ChooseBoxArrow);
         }
-        i += 1;
     }
     ChooseBoxMenu_PrintInfo();
 }
-pub(crate) unsafe extern "C" fn ChooseBoxMenu_DestroySprites() {
-    let mut i: u16 = 0;
+unsafe fn ChooseBoxMenu_DestroySprites() {
     if !(*sChooseBoxMenu).menuSprite.is_null() {
         DestroySprite((*sChooseBoxMenu).menuSprite);
         (*sChooseBoxMenu).menuSprite = null_mut();
     }
-    i = 0;
-    while i < 4 {
+    for i in 0..4u16 {
         if !(*sChooseBoxMenu).menuSideSprites[i].is_null() {
             DestroySprite((*sChooseBoxMenu).menuSideSprites[i]);
             (*sChooseBoxMenu).menuSideSprites[i] = null_mut();
         }
-        i += 1;
     }
-    i = 0;
-    while i < 2 {
+    for i in 0..2u16 {
         if !(*sChooseBoxMenu).arrowSprites[i].is_null() {
             DestroySprite((*sChooseBoxMenu).arrowSprites[i]);
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ChooseBoxMenu_MoveRight() {
+unsafe fn ChooseBoxMenu_MoveRight() {
     if ({
         (*sChooseBoxMenu).curBox += 1;
         (*sChooseBoxMenu).curBox
@@ -2032,7 +2116,7 @@ pub(crate) unsafe extern "C" fn ChooseBoxMenu_MoveRight() {
     }
     ChooseBoxMenu_PrintInfo();
 }
-pub(crate) unsafe extern "C" fn ChooseBoxMenu_MoveLeft() {
+unsafe fn ChooseBoxMenu_MoveLeft() {
     (*sChooseBoxMenu).curBox = (if (*sChooseBoxMenu).curBox == 0 {
         13
     } else {
@@ -2040,20 +2124,17 @@ pub(crate) unsafe extern "C" fn ChooseBoxMenu_MoveLeft() {
     }) as u8;
     ChooseBoxMenu_PrintInfo();
 }
-pub(crate) unsafe extern "C" fn ChooseBoxMenu_PrintInfo() {
+unsafe fn ChooseBoxMenu_PrintInfo() {
     let mut numBoxMonsText: CArray<u8, 16> = zeroed();
     let mut template: WindowTemplate = zeroed();
-    let mut windowId: u8 = 0;
-    let mut boxName: *mut u8 = GetBoxNamePtr((*sChooseBoxMenu).curBox);
-    let mut numInBox: u8 = CountMonsInBox((*sChooseBoxMenu).curBox);
-    let mut winTileData: u32 = 0;
-    let mut center: i32 = 0;
+    let boxName: *mut u8 = GetBoxNamePtr((*sChooseBoxMenu).curBox);
+    let numInBox: u8 = CountMonsInBox((*sChooseBoxMenu).curBox);
     memset(&raw mut template as *mut u8, 0, 8);
     template.width = 8;
     template.height = 4;
-    windowId = AddWindow(&raw mut template) as u8;
+    let windowId: u8 = AddWindow(&raw mut template) as u8;
     FillWindowPixelBuffer(windowId, 68);
-    center = GetStringCenterAlignXOffset(FONT_NORMAL as i32, boxName, 64);
+    let mut center: i32 = GetStringCenterAlignXOffset(FONT_NORMAL as i32, boxName, 64);
     AddTextPrinterParameterized3(
         windowId,
         FONT_NORMAL,
@@ -2083,7 +2164,7 @@ pub(crate) unsafe extern "C" fn ChooseBoxMenu_PrintInfo() {
         TEXT_SKIP_DRAW as i8,
         numBoxMonsText.as_mut_ptr(),
     );
-    winTileData = GetWindowAttribute(windowId, WINDOW_TILE_DATA);
+    let winTileData: u32 = GetWindowAttribute(windowId, WINDOW_TILE_DATA);
     CpuSet(
         winTileData as usize as *mut c_void,
         ((OBJ_VRAM0 as usize as *mut c_void as *mut u8).at(256) as *mut c_void as *mut u8)
@@ -2093,7 +2174,7 @@ pub(crate) unsafe extern "C" fn ChooseBoxMenu_PrintInfo() {
     );
     RemoveWindow(windowId);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ChooseBoxArrow(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ChooseBoxArrow(sprite: *mut Sprite) {
     if ({
         (*sprite).data[1] += 1;
         (*sprite).data[1]
@@ -2111,14 +2192,14 @@ pub(crate) unsafe extern "C" fn SpriteCB_ChooseBoxArrow(sprite: *mut Sprite) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn VBlankCB_PokeStorage() {
+pub(crate) unsafe fn VBlankCB_PokeStorage() {
     LoadOam();
     ProcessSpriteCopyRequests();
     UnkUtil_Run();
     TransferPlttBuffer();
     SetGpuReg(REG_OFFSET_BG2HOFS, (*sStorage).bg2_X);
 }
-pub(crate) unsafe extern "C" fn CB2_PokeStorage() {
+pub(crate) unsafe fn CB2_PokeStorage() {
     RunTasks();
     DoScheduledBgTilemapCopiesToVram();
     ScrollBackground();
@@ -2126,36 +2207,36 @@ pub(crate) unsafe extern "C" fn CB2_PokeStorage() {
     AnimateSprites();
     BuildOamBuffer();
 }
-pub(crate) unsafe extern "C" fn EnterPokeStorage(boxOption: u8) {
+unsafe fn EnterPokeStorage(boxOption: u8) {
     ResetTasks();
-    sCurrentBoxOption = boxOption;
+    sCurrentBoxOption.set(boxOption);
     sStorage = Alloc(25284) as *mut PokemonStorageSystemData;
     if sStorage.is_null() {
         SetMainCallback2(Some(CB2_ExitPokeStorage));
     } else {
         (*sStorage).boxOption = boxOption;
         (*sStorage).isReopening = FALSE;
-        sMovingItemId = ITEM_NONE;
+        sMovingItemId.set(ITEM_NONE);
         (*sStorage).state = 0;
         (*sStorage).taskId = CreateTask(Some(Task_InitPokeStorage), 3);
-        sLastUsedBox = StorageGetCurrentBox();
+        sLastUsedBox.set(StorageGetCurrentBox());
         SetMainCallback2(Some(CB2_PokeStorage));
     }
 }
-pub(crate) unsafe extern "C" fn CB2_ReturnToPokeStorage() {
+pub(crate) unsafe fn CB2_ReturnToPokeStorage() {
     ResetTasks();
     sStorage = Alloc(25284) as *mut PokemonStorageSystemData;
     if sStorage.is_null() {
         SetMainCallback2(Some(CB2_ExitPokeStorage));
     } else {
-        (*sStorage).boxOption = sCurrentBoxOption;
+        (*sStorage).boxOption = sCurrentBoxOption.get();
         (*sStorage).isReopening = TRUE;
         (*sStorage).state = 0;
         (*sStorage).taskId = CreateTask(Some(Task_InitPokeStorage), 3);
         SetMainCallback2(Some(CB2_PokeStorage));
     }
 }
-pub(crate) unsafe extern "C" fn ResetAllBgCoords() {
+unsafe fn ResetAllBgCoords() {
     SetGpuReg(REG_OFFSET_BG0HOFS, 0);
     SetGpuReg(REG_OFFSET_BG0VOFS, 0);
     SetGpuReg(REG_OFFSET_BG1HOFS, 0);
@@ -2165,7 +2246,7 @@ pub(crate) unsafe extern "C" fn ResetAllBgCoords() {
     SetGpuReg(REG_OFFSET_BG3HOFS, 0);
     SetGpuReg(REG_OFFSET_BG3VOFS, 0);
 }
-pub(crate) unsafe extern "C" fn ResetForPokeStorage() {
+unsafe fn ResetForPokeStorage() {
     ResetPaletteFade();
     ResetSpriteData();
     FreeSpriteTileRanges();
@@ -2190,30 +2271,30 @@ pub(crate) unsafe extern "C" fn ResetForPokeStorage() {
     TilemapUtil_SetPos(TILEMAPID_PKMN_DATA, 1, 0);
     (*sStorage).closeBoxFlashing = FALSE;
 }
-pub(crate) unsafe extern "C" fn InitStartingPosData() {
+unsafe fn InitStartingPosData() {
     ClearSavedCursorPos();
-    sInPartyMenu = ((*sStorage).boxOption == OPTION_DEPOSIT) as u8;
-    sDepositBoxId = 0;
+    sInPartyMenu.set(((*sStorage).boxOption == OPTION_DEPOSIT) as u8);
+    sDepositBoxId.set(0);
 }
-pub(crate) unsafe extern "C" fn SetMonIconTransparency() {
+unsafe fn SetMonIconTransparency() {
     if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
         SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT2_ALL);
         SetGpuReg(REG_OFFSET_BLDALPHA, 2823);
     }
     SetGpuReg(REG_OFFSET_DISPCNT, 8000);
 }
-pub(crate) unsafe extern "C" fn SetPokeStorageTask(newFunc: Option<unsafe extern "C" fn(u8)>) {
-    gTasks[(*sStorage).taskId].func = newFunc;
+unsafe fn SetPokeStorageTask(newFunc: Option<unsafe fn(u8)>) {
+    task_set_func((*sStorage).taskId, newFunc);
     (*sStorage).state = 0;
 }
-pub(crate) unsafe extern "C" fn Task_InitPokeStorage(taskId: u8) {
+pub(crate) unsafe fn Task_InitPokeStorage(taskId: u8) {
     match (*sStorage).state {
         0 => {
             SetVBlankCallback(None);
             SetGpuReg(0x0, 0);
             ResetForPokeStorage();
             if (*sStorage).isReopening != 0 {
-                match sWhichToReshow {
+                match sWhichToReshow.get() {
                     1 => {
                         LoadSavedMovingMon();
                     }
@@ -2315,22 +2396,20 @@ pub(crate) unsafe extern "C" fn Task_InitPokeStorage(taskId: u8) {
     }
     (*sStorage).state += 1;
 }
-pub(crate) unsafe extern "C" fn Task_ShowPokeStorage(taskId: u8) {
+pub(crate) unsafe fn Task_ShowPokeStorage(taskId: u8) {
     match (*sStorage).state {
         0 => {
             PlaySE(SE_PC_LOGIN);
             ComputerScreenOpenEffect(20, 0, 1);
             (*sStorage).state += 1;
         }
-        1 => {
-            if IsComputerScreenOpenEffectActive() == 0 {
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
-            }
+        1 if IsComputerScreenOpenEffectActive() == 0 => {
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_ReshowPokeStorage(taskId: u8) {
+pub(crate) unsafe fn Task_ReshowPokeStorage(taskId: u8) {
     match (*sStorage).state {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, -1, 0x10, 0, 0);
@@ -2338,7 +2417,7 @@ pub(crate) unsafe extern "C" fn Task_ReshowPokeStorage(taskId: u8) {
         }
         1 => {
             if UpdatePaletteFade() == 0 {
-                if sWhichToReshow == 2 && gSpecialVar_ItemId != ITEM_NONE {
+                if sWhichToReshow.get() == 2 && gSpecialVar_ItemId != ITEM_NONE {
                     PrintMessage(MSG_ITEM_IS_HELD);
                     (*sStorage).state += 1;
                 } else {
@@ -2352,15 +2431,13 @@ pub(crate) unsafe extern "C" fn Task_ReshowPokeStorage(taskId: u8) {
                 (*sStorage).state += 1;
             }
         }
-        3 => {
-            if IsDma3ManagerBusyWithBgCopy() == 0 {
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
-            }
+        3 if IsDma3ManagerBusyWithBgCopy() == 0 => {
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_PokeStorageMain(taskId: u8) {
+pub(crate) unsafe fn Task_PokeStorageMain(taskId: u8) {
     match (*sStorage).state {
         MSTATE_HANDLE_INPUT => match HandleInput() {
             INPUT_MOVE_CURSOR => {
@@ -2527,7 +2604,7 @@ pub(crate) unsafe extern "C" fn Task_PokeStorageMain(taskId: u8) {
         MSTATE_SCROLL_BOX => {
             if ScrollToBox() == 0 {
                 SetCurrentBox((*sStorage).newCurrBoxId as u8);
-                if sInPartyMenu == 0 && IsMonBeingMoved() == 0 {
+                if sInPartyMenu.get() == 0 && IsMonBeingMoved() == 0 {
                     RefreshDisplayMon();
                     StartDisplayMonMosaicEffect();
                 }
@@ -2585,29 +2662,25 @@ pub(crate) unsafe extern "C" fn Task_PokeStorageMain(taskId: u8) {
                 (*sStorage).state = MSTATE_SCROLL_BOX;
             }
         }
-        MSTATE_WAIT_ITEM_ANIM => {
-            if IsItemIconAnimActive() == 0 {
-                (*sStorage).state = MSTATE_HANDLE_INPUT;
-            }
+        MSTATE_WAIT_ITEM_ANIM if IsItemIconAnimActive() == 0 => {
+            (*sStorage).state = MSTATE_HANDLE_INPUT;
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_ShowPartyPokemon(taskId: u8) {
+pub(crate) unsafe fn Task_ShowPartyPokemon(taskId: u8) {
     match (*sStorage).state {
         0 => {
             SetUpDoShowPartyMenu();
             (*sStorage).state += 1;
         }
-        1 => {
-            if DoShowPartyMenu() == 0 {
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
-            }
+        1 if DoShowPartyMenu() == 0 => {
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_HidePartyPokemon(taskId: u8) {
+pub(crate) unsafe fn Task_HidePartyPokemon(taskId: u8) {
     match (*sStorage).state {
         0 => {
             PlaySE(SE_SELECT);
@@ -2620,18 +2693,16 @@ pub(crate) unsafe extern "C" fn Task_HidePartyPokemon(taskId: u8) {
                 (*sStorage).state += 1;
             }
         }
-        2 => {
-            if UpdateCursorPos() == 0 {
-                if (*sStorage).setMosaic != 0 {
-                    StartDisplayMonMosaicEffect();
-                }
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
+        2 if UpdateCursorPos() == 0 => {
+            if (*sStorage).setMosaic != 0 {
+                StartDisplayMonMosaicEffect();
             }
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_OnSelectedMon(taskId: u8) {
+pub(crate) unsafe fn Task_OnSelectedMon(taskId: u8) {
     match (*sStorage).state {
         0 => {
             if IsDisplayMosaicActive() == 0 {
@@ -2755,67 +2826,59 @@ pub(crate) unsafe extern "C" fn Task_OnSelectedMon(taskId: u8) {
             PrintMessage(MSG_PLEASE_REMOVE_MAIL);
             (*sStorage).state = 6;
         }
-        6 => {
-            if gMain.newKeys as i32 & 243 != 0 {
-                ClearBottomWindow();
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
-            }
+        6 if gMain.newKeys as i32 & 243 != 0 => {
+            ClearBottomWindow();
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_MoveMon(taskId: u8) {
+pub(crate) unsafe fn Task_MoveMon(taskId: u8) {
     match (*sStorage).state {
         0 => {
             InitMonPlaceChange(CHANGE_GRAB);
             (*sStorage).state += 1;
         }
-        1 => {
-            if DoMonPlaceChange() == 0 {
-                if sInPartyMenu != 0 {
-                    SetPokeStorageTask(Some(Task_HandleMovingMonFromParty));
-                } else {
-                    SetPokeStorageTask(Some(Task_PokeStorageMain));
-                }
-            }
-        }
-        _ => {}
-    }
-}
-pub(crate) unsafe extern "C" fn Task_PlaceMon(taskId: u8) {
-    match (*sStorage).state {
-        0 => {
-            InitMonPlaceChange(CHANGE_PLACE);
-            (*sStorage).state += 1;
-        }
-        1 => {
-            if DoMonPlaceChange() == 0 {
-                if sInPartyMenu != 0 {
-                    SetPokeStorageTask(Some(Task_HandleMovingMonFromParty));
-                } else {
-                    SetPokeStorageTask(Some(Task_PokeStorageMain));
-                }
-            }
-        }
-        _ => {}
-    }
-}
-pub(crate) unsafe extern "C" fn Task_ShiftMon(taskId: u8) {
-    match (*sStorage).state {
-        0 => {
-            InitMonPlaceChange(CHANGE_SHIFT);
-            (*sStorage).state += 1;
-        }
-        1 => {
-            if DoMonPlaceChange() == 0 {
-                StartDisplayMonMosaicEffect();
+        1 if DoMonPlaceChange() == 0 => {
+            if sInPartyMenu.get() != 0 {
+                SetPokeStorageTask(Some(Task_HandleMovingMonFromParty));
+            } else {
                 SetPokeStorageTask(Some(Task_PokeStorageMain));
             }
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_WithdrawMon(taskId: u8) {
+pub(crate) unsafe fn Task_PlaceMon(taskId: u8) {
+    match (*sStorage).state {
+        0 => {
+            InitMonPlaceChange(CHANGE_PLACE);
+            (*sStorage).state += 1;
+        }
+        1 if DoMonPlaceChange() == 0 => {
+            if sInPartyMenu.get() != 0 {
+                SetPokeStorageTask(Some(Task_HandleMovingMonFromParty));
+            } else {
+                SetPokeStorageTask(Some(Task_PokeStorageMain));
+            }
+        }
+        _ => {}
+    }
+}
+pub(crate) unsafe fn Task_ShiftMon(taskId: u8) {
+    match (*sStorage).state {
+        0 => {
+            InitMonPlaceChange(CHANGE_SHIFT);
+            (*sStorage).state += 1;
+        }
+        1 if DoMonPlaceChange() == 0 => {
+            StartDisplayMonMosaicEffect();
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
+        }
+        _ => {}
+    }
+}
+pub(crate) unsafe fn Task_WithdrawMon(taskId: u8) {
     match (*sStorage).state {
         0 => {
             if CalculatePlayerPartyCount() == PARTY_SIZE as u8 {
@@ -2858,7 +2921,7 @@ pub(crate) unsafe extern "C" fn Task_WithdrawMon(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_DepositMenu(taskId: u8) {
+pub(crate) unsafe fn Task_DepositMenu(taskId: u8) {
     let mut boxId: u8 = 0;
     match (*sStorage).state {
         0 => {
@@ -2870,7 +2933,7 @@ pub(crate) unsafe extern "C" fn Task_DepositMenu(taskId: u8) {
                 3,
                 FALSE as u32,
             );
-            CreateChooseBoxMenuSprites(sDepositBoxId);
+            CreateChooseBoxMenuSprites(sDepositBoxId.get());
             (*sStorage).state += 1;
         }
         1 => {
@@ -2885,7 +2948,7 @@ pub(crate) unsafe extern "C" fn Task_DepositMenu(taskId: u8) {
                 }
                 _ => {
                     if TryStorePartyMonInBox(boxId) != 0 {
-                        sDepositBoxId = boxId;
+                        sDepositBoxId.set(boxId);
                         ClearBottomWindow();
                         DestroyChooseBoxMenuSprites();
                         FreeChooseBoxMenu();
@@ -2910,16 +2973,14 @@ pub(crate) unsafe extern "C" fn Task_DepositMenu(taskId: u8) {
                 SetPokeStorageTask(Some(Task_PokeStorageMain));
             }
         }
-        4 => {
-            if gMain.newKeys as i32 & 243 != 0 {
-                PrintMessage(MSG_DEPOSIT_IN_WHICH_BOX);
-                (*sStorage).state = 1;
-            }
+        4 if gMain.newKeys as i32 & 243 != 0 => {
+            PrintMessage(MSG_DEPOSIT_IN_WHICH_BOX);
+            (*sStorage).state = 1;
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_ReleaseMon(taskId: u8) {
+pub(crate) unsafe fn Task_ReleaseMon(taskId: u8) {
     'l1: {
         let sw1: u8 = (*sStorage).state;
         let mut fall = false;
@@ -2930,7 +2991,6 @@ pub(crate) unsafe extern "C" fn Task_ReleaseMon(taskId: u8) {
             (*sStorage).state += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             match Menu_ProcessInputNoWrapClearOnChoose() {
                 MENU_B_PRESSED | 1 => {
                     ClearBottomWindow();
@@ -2947,11 +3007,10 @@ pub(crate) unsafe extern "C" fn Task_ReleaseMon(taskId: u8) {
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             RunCanReleaseMon();
             if TryHideReleaseMon() == 0 {
                 loop {
-                    let mut canRelease: i8 = RunCanReleaseMon();
+                    let canRelease: i8 = RunCanReleaseMon();
                     if canRelease == TRUE as i8 {
                         (*sStorage).state += 1;
                         break;
@@ -2964,7 +3023,6 @@ pub(crate) unsafe extern "C" fn Task_ReleaseMon(taskId: u8) {
             break 'l1;
         }
         if sw1 == 3 {
-            fall = true;
             ReleaseMon();
             RefreshDisplayMonData();
             PrintMessage(MSG_WAS_RELEASED);
@@ -2972,7 +3030,6 @@ pub(crate) unsafe extern "C" fn Task_ReleaseMon(taskId: u8) {
             break 'l1;
         }
         if sw1 == 4 {
-            fall = true;
             if gMain.newKeys as i32 & 243 != 0 {
                 PrintMessage(MSG_BYE_BYE);
                 (*sStorage).state += 1;
@@ -2980,10 +3037,9 @@ pub(crate) unsafe extern "C" fn Task_ReleaseMon(taskId: u8) {
             break 'l1;
         }
         if sw1 == 5 {
-            fall = true;
             if gMain.newKeys as i32 & 243 != 0 {
                 ClearBottomWindow();
-                if sInPartyMenu != 0 {
+                if sInPartyMenu.get() != 0 {
                     CompactPartySlots();
                     CompactPartySprites();
                     (*sStorage).state += 1;
@@ -2994,7 +3050,6 @@ pub(crate) unsafe extern "C" fn Task_ReleaseMon(taskId: u8) {
             break 'l1;
         }
         if sw1 == 6 {
-            fall = true;
             if GetNumPartySpritesCompacting() == 0 {
                 RefreshDisplayMon();
                 StartDisplayMonMosaicEffect();
@@ -3004,18 +3059,15 @@ pub(crate) unsafe extern "C" fn Task_ReleaseMon(taskId: u8) {
             break 'l1;
         }
         if sw1 == 7 {
-            fall = true;
             SetPokeStorageTask(Some(Task_PokeStorageMain));
             break 'l1;
         }
         if sw1 == 8 {
-            fall = true;
             PrintMessage(MSG_WAS_RELEASED);
             (*sStorage).state += 1;
             break 'l1;
         }
         if sw1 == 9 {
-            fall = true;
             if gMain.newKeys as i32 & 243 != 0 {
                 PrintMessage(MSG_SURPRISE);
                 (*sStorage).state += 1;
@@ -3023,7 +3075,6 @@ pub(crate) unsafe extern "C" fn Task_ReleaseMon(taskId: u8) {
             break 'l1;
         }
         if sw1 == 10 {
-            fall = true;
             if gMain.newKeys as i32 & 243 != 0 {
                 ClearBottomWindow();
                 ReshowReleaseMon();
@@ -3032,7 +3083,6 @@ pub(crate) unsafe extern "C" fn Task_ReleaseMon(taskId: u8) {
             break 'l1;
         }
         if sw1 == 11 {
-            fall = true;
             if ResetReleaseMonSpritePtr() == 0 {
                 TrySetCursorFistAnim();
                 PrintMessage(MSG_CAME_BACK);
@@ -3041,7 +3091,6 @@ pub(crate) unsafe extern "C" fn Task_ReleaseMon(taskId: u8) {
             break 'l1;
         }
         if sw1 == 12 {
-            fall = true;
             if gMain.newKeys as i32 & 243 != 0 {
                 PrintMessage(MSG_WORRIED);
                 (*sStorage).state += 1;
@@ -3049,7 +3098,6 @@ pub(crate) unsafe extern "C" fn Task_ReleaseMon(taskId: u8) {
             break 'l1;
         }
         if sw1 == 13 {
-            fall = true;
             if gMain.newKeys as i32 & 243 != 0 {
                 ClearBottomWindow();
                 SetPokeStorageTask(Some(Task_PokeStorageMain));
@@ -3058,7 +3106,7 @@ pub(crate) unsafe extern "C" fn Task_ReleaseMon(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_ShowMarkMenu(taskId: u8) {
+pub(crate) unsafe fn Task_ShowMarkMenu(taskId: u8) {
     match (*sStorage).state {
         0 => {
             PrintMessage(MSG_MARK_POKE);
@@ -3066,19 +3114,17 @@ pub(crate) unsafe extern "C" fn Task_ShowMarkMenu(taskId: u8) {
             OpenMonMarkingsMenu((*sStorage).displayMonMarkings, 0xb0, 0x10);
             (*sStorage).state += 1;
         }
-        1 => {
-            if HandleMonMarkingsMenuInput() == 0 {
-                FreeMonMarkingsMenu();
-                ClearBottomWindow();
-                SetMonMarkings((*sStorage).markMenu.markings);
-                RefreshDisplayMonData();
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
-            }
+        1 if HandleMonMarkingsMenuInput() == 0 => {
+            FreeMonMarkingsMenu();
+            ClearBottomWindow();
+            SetMonMarkings((*sStorage).markMenu.markings);
+            RefreshDisplayMonData();
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_TakeItemForMoving(taskId: u8) {
+pub(crate) unsafe fn Task_TakeItemForMoving(taskId: u8) {
     match (*sStorage).state {
         0 => {
             if ItemIsMail((*sStorage).displayMonItemId) == 0 {
@@ -3091,7 +3137,7 @@ pub(crate) unsafe extern "C" fn Task_TakeItemForMoving(taskId: u8) {
         1 => {
             StartCursorAnim(CURSOR_ANIM_OPEN);
             TakeItemFromMon(
-                (if sInPartyMenu != 0 {
+                (if sInPartyMenu.get() != 0 {
                     CURSOR_AREA_IN_PARTY as i32
                 } else {
                     CURSOR_AREA_IN_BOX as i32
@@ -3109,15 +3155,13 @@ pub(crate) unsafe extern "C" fn Task_TakeItemForMoving(taskId: u8) {
                 (*sStorage).state += 1;
             }
         }
-        3 => {
-            if IsDma3ManagerBusyWithBgCopy() == 0 {
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
-            }
+        3 if IsDma3ManagerBusyWithBgCopy() == 0 => {
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_GiveMovingItemToMon(taskId: u8) {
+pub(crate) unsafe fn Task_GiveMovingItemToMon(taskId: u8) {
     match (*sStorage).state {
         0 => {
             ClearBottomWindow();
@@ -3126,7 +3170,7 @@ pub(crate) unsafe extern "C" fn Task_GiveMovingItemToMon(taskId: u8) {
         1 => {
             StartCursorAnim(CURSOR_ANIM_OPEN);
             GiveItemToMon(
-                (if sInPartyMenu != 0 {
+                (if sInPartyMenu.get() != 0 {
                     CURSOR_AREA_IN_PARTY as i32
                 } else {
                     CURSOR_AREA_IN_BOX as i32
@@ -3150,15 +3194,13 @@ pub(crate) unsafe extern "C" fn Task_GiveMovingItemToMon(taskId: u8) {
                 (*sStorage).state += 1;
             }
         }
-        4 => {
-            if IsDma3ManagerBusyWithBgCopy() == 0 {
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
-            }
+        4 if IsDma3ManagerBusyWithBgCopy() == 0 => {
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_ItemToBag(taskId: u8) {
+pub(crate) unsafe fn Task_ItemToBag(taskId: u8) {
     match (*sStorage).state {
         0 => {
             if AddBagItem((*sStorage).displayMonItemId, 1) == 0 {
@@ -3168,7 +3210,7 @@ pub(crate) unsafe extern "C" fn Task_ItemToBag(taskId: u8) {
             } else {
                 PlaySE(SE_SELECT);
                 MoveItemFromMonToBag(
-                    (if sInPartyMenu != 0 {
+                    (if sInPartyMenu.get() != 0 {
                         CURSOR_AREA_IN_PARTY as i32
                     } else {
                         CURSOR_AREA_IN_BOX as i32
@@ -3197,16 +3239,14 @@ pub(crate) unsafe extern "C" fn Task_ItemToBag(taskId: u8) {
                 SetPokeStorageTask(Some(Task_PokeStorageMain));
             }
         }
-        3 => {
-            if gMain.newKeys as i32 & 243 != 0 {
-                ClearBottomWindow();
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
-            }
+        3 if gMain.newKeys as i32 & 243 != 0 => {
+            ClearBottomWindow();
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_SwitchSelectedItem(taskId: u8) {
+pub(crate) unsafe fn Task_SwitchSelectedItem(taskId: u8) {
     match (*sStorage).state {
         0 => {
             if ItemIsMail((*sStorage).displayMonItemId) == 0 {
@@ -3219,7 +3259,7 @@ pub(crate) unsafe extern "C" fn Task_SwitchSelectedItem(taskId: u8) {
         1 => {
             StartCursorAnim(CURSOR_ANIM_OPEN);
             SwapItemsWithMon(
-                (if sInPartyMenu != 0 {
+                (if sInPartyMenu.get() != 0 {
                     CURSOR_AREA_IN_PARTY as i32
                 } else {
                     CURSOR_AREA_IN_BOX as i32
@@ -3243,15 +3283,13 @@ pub(crate) unsafe extern "C" fn Task_SwitchSelectedItem(taskId: u8) {
                 (*sStorage).state += 1;
             }
         }
-        4 => {
-            if IsDma3ManagerBusyWithBgCopy() == 0 {
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
-            }
+        4 if IsDma3ManagerBusyWithBgCopy() == 0 => {
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_ShowItemInfo(taskId: u8) {
+pub(crate) unsafe fn Task_ShowItemInfo(taskId: u8) {
     match (*sStorage).state {
         0 => {
             ClearBottomWindow();
@@ -3286,15 +3324,13 @@ pub(crate) unsafe extern "C" fn Task_ShowItemInfo(taskId: u8) {
                 (*sStorage).state += 1;
             }
         }
-        6 => {
-            if IsDma3ManagerBusyWithBgCopy() == 0 {
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
-            }
+        6 if IsDma3ManagerBusyWithBgCopy() == 0 => {
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_CloseBoxWhileHoldingItem(taskId: u8) {
+pub(crate) unsafe fn Task_CloseBoxWhileHoldingItem(taskId: u8) {
     match (*sStorage).state {
         0 => {
             PlaySE(SE_SELECT);
@@ -3334,31 +3370,27 @@ pub(crate) unsafe extern "C" fn Task_CloseBoxWhileHoldingItem(taskId: u8) {
                 SetPokeStorageTask(Some(Task_PokeStorageMain));
             }
         }
-        5 => {
-            if IsDma3ManagerBusyWithBgCopy() == 0 {
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
-            }
+        5 if IsDma3ManagerBusyWithBgCopy() == 0 => {
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleMovingMonFromParty(taskId: u8) {
+pub(crate) unsafe fn Task_HandleMovingMonFromParty(taskId: u8) {
     match (*sStorage).state {
         0 => {
             CompactPartySlots();
             CompactPartySprites();
             (*sStorage).state += 1;
         }
-        1 => {
-            if GetNumPartySpritesCompacting() == 0 {
-                UpdatePartySlotColors();
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
-            }
+        1 if GetNumPartySpritesCompacting() == 0 => {
+            UpdatePartySlotColors();
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_PrintCantStoreMail(taskId: u8) {
+pub(crate) unsafe fn Task_PrintCantStoreMail(taskId: u8) {
     match (*sStorage).state {
         0 => {
             PrintMessage(MSG_CANT_STORE_MAIL);
@@ -3375,20 +3407,17 @@ pub(crate) unsafe extern "C" fn Task_PrintCantStoreMail(taskId: u8) {
                 (*sStorage).state += 1;
             }
         }
-        3 => {
-            if IsDma3ManagerBusyWithBgCopy() == 0 {
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
-            }
+        3 if IsDma3ManagerBusyWithBgCopy() == 0 => {
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleBoxOptions(taskId: u8) {
+pub(crate) unsafe fn Task_HandleBoxOptions(taskId: u8) {
     'l1: {
         let sw1: u8 = (*sStorage).state;
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             PrintMessage(MSG_WHAT_YOU_DO);
             AddMenu();
             (*sStorage).state += 1;
@@ -3402,7 +3431,6 @@ pub(crate) unsafe extern "C" fn Task_HandleBoxOptions(taskId: u8) {
             (*sStorage).state += 1;
         }
         if fall || sw1 == 2 {
-            fall = true;
             match HandleMenuInput() {
                 -1 | 0 => {
                     AnimateBoxScrollArrows(TRUE);
@@ -3429,7 +3457,7 @@ pub(crate) unsafe extern "C" fn Task_HandleBoxOptions(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleWallpapers(taskId: u8) {
+pub(crate) unsafe fn Task_HandleWallpapers(taskId: u8) {
     match (*sStorage).state {
         0 => {
             AddWallpaperSetsMenu();
@@ -3495,16 +3523,14 @@ pub(crate) unsafe extern "C" fn Task_HandleWallpapers(taskId: u8) {
                 SetPokeStorageTask(Some(Task_PokeStorageMain));
             }
         }
-        6 => {
-            if IsDma3ManagerBusyWithBgCopy() == 0 {
-                SetWallpaperForCurrentBox((*sStorage).wallpaperId as u8);
-                (*sStorage).state = 5;
-            }
+        6 if IsDma3ManagerBusyWithBgCopy() == 0 => {
+            SetWallpaperForCurrentBox((*sStorage).wallpaperId as u8);
+            (*sStorage).state = 5;
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_JumpBox(taskId: u8) {
+pub(crate) unsafe fn Task_JumpBox(taskId: u8) {
     match (*sStorage).state {
         0 => {
             PrintMessage(MSG_JUMP_TO_WHICH_BOX);
@@ -3541,66 +3567,58 @@ pub(crate) unsafe extern "C" fn Task_JumpBox(taskId: u8) {
             SetUpScrollToBox((*sStorage).newCurrBoxId as u8);
             (*sStorage).state += 1;
         }
-        3 => {
-            if ScrollToBox() == 0 {
-                SetCurrentBox((*sStorage).newCurrBoxId as u8);
-                SetPokeStorageTask(Some(Task_PokeStorageMain));
-            }
+        3 if ScrollToBox() == 0 => {
+            SetCurrentBox((*sStorage).newCurrBoxId as u8);
+            SetPokeStorageTask(Some(Task_PokeStorageMain));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_NameBox(taskId: u8) {
+pub(crate) unsafe fn Task_NameBox(taskId: u8) {
     match (*sStorage).state {
         0 => {
             SaveMovingMon();
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
             (*sStorage).state += 1;
         }
-        1 => {
-            if UpdatePaletteFade() == 0 {
-                sWhichToReshow = 1;
-                (*sStorage).screenChangeType = SCREEN_CHANGE_NAME_BOX;
-                SetPokeStorageTask(Some(Task_ChangeScreen));
-            }
+        1 if UpdatePaletteFade() == 0 => {
+            sWhichToReshow.set(1);
+            (*sStorage).screenChangeType = SCREEN_CHANGE_NAME_BOX;
+            SetPokeStorageTask(Some(Task_ChangeScreen));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_ShowMonSummary(taskId: u8) {
+pub(crate) unsafe fn Task_ShowMonSummary(taskId: u8) {
     match (*sStorage).state {
         0 => {
             InitSummaryScreenData();
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
             (*sStorage).state += 1;
         }
-        1 => {
-            if UpdatePaletteFade() == 0 {
-                sWhichToReshow = 0;
-                (*sStorage).screenChangeType = SCREEN_CHANGE_SUMMARY_SCREEN;
-                SetPokeStorageTask(Some(Task_ChangeScreen));
-            }
+        1 if UpdatePaletteFade() == 0 => {
+            sWhichToReshow.set(0);
+            (*sStorage).screenChangeType = SCREEN_CHANGE_SUMMARY_SCREEN;
+            SetPokeStorageTask(Some(Task_ChangeScreen));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_GiveItemFromBag(taskId: u8) {
+pub(crate) unsafe fn Task_GiveItemFromBag(taskId: u8) {
     match (*sStorage).state {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
             (*sStorage).state += 1;
         }
-        1 => {
-            if UpdatePaletteFade() == 0 {
-                sWhichToReshow = 2;
-                (*sStorage).screenChangeType = SCREEN_CHANGE_ITEM_FROM_BAG;
-                SetPokeStorageTask(Some(Task_ChangeScreen));
-            }
+        1 if UpdatePaletteFade() == 0 => {
+            sWhichToReshow.set(2);
+            (*sStorage).screenChangeType = SCREEN_CHANGE_ITEM_FROM_BAG;
+            SetPokeStorageTask(Some(Task_ChangeScreen));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_OnCloseBoxPressed(taskId: u8) {
+pub(crate) unsafe fn Task_OnCloseBoxPressed(taskId: u8) {
     match (*sStorage).state {
         0 => {
             if IsMonBeingMoved() != 0 {
@@ -3638,18 +3656,16 @@ pub(crate) unsafe extern "C" fn Task_OnCloseBoxPressed(taskId: u8) {
             ComputerScreenCloseEffect(20, 0, 1);
             (*sStorage).state += 1;
         }
-        4 => {
-            if IsComputerScreenCloseEffectActive() == 0 {
-                UpdateBoxToSendMons();
-                gPlayerPartyCount = CalculatePlayerPartyCount();
-                (*sStorage).screenChangeType = SCREEN_CHANGE_EXIT_BOX;
-                SetPokeStorageTask(Some(Task_ChangeScreen));
-            }
+        4 if IsComputerScreenCloseEffectActive() == 0 => {
+            UpdateBoxToSendMons();
+            gPlayerPartyCount = CalculatePlayerPartyCount();
+            (*sStorage).screenChangeType = SCREEN_CHANGE_EXIT_BOX;
+            SetPokeStorageTask(Some(Task_ChangeScreen));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_OnBPressed(taskId: u8) {
+pub(crate) unsafe fn Task_OnBPressed(taskId: u8) {
     match (*sStorage).state {
         0 => {
             if IsMonBeingMoved() != 0 {
@@ -3687,27 +3703,25 @@ pub(crate) unsafe extern "C" fn Task_OnBPressed(taskId: u8) {
             ComputerScreenCloseEffect(20, 0, 0);
             (*sStorage).state += 1;
         }
-        4 => {
-            if IsComputerScreenCloseEffectActive() == 0 {
-                UpdateBoxToSendMons();
-                gPlayerPartyCount = CalculatePlayerPartyCount();
-                (*sStorage).screenChangeType = SCREEN_CHANGE_EXIT_BOX;
-                SetPokeStorageTask(Some(Task_ChangeScreen));
-            }
+        4 if IsComputerScreenCloseEffectActive() == 0 => {
+            UpdateBoxToSendMons();
+            gPlayerPartyCount = CalculatePlayerPartyCount();
+            (*sStorage).screenChangeType = SCREEN_CHANGE_EXIT_BOX;
+            SetPokeStorageTask(Some(Task_ChangeScreen));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_ChangeScreen(taskId: u8) {
+pub(crate) unsafe fn Task_ChangeScreen(taskId: u8) {
     let mut boxMons: *mut BoxPokemon = null_mut();
     let mut mode: u8 = 0;
     let mut monIndex: u8 = 0;
     let mut maxMonIndex: u8 = 0;
-    let mut screenChangeType: u8 = (*sStorage).screenChangeType;
+    let screenChangeType: u8 = (*sStorage).screenChangeType;
     if (*sStorage).boxOption == OPTION_MOVE_ITEMS && IsMovingItem() == TRUE {
-        sMovingItemId = GetMovingItemId();
+        sMovingItemId.set(GetMovingItemId());
     } else {
-        sMovingItemId = ITEM_NONE;
+        sMovingItemId.set(ITEM_NONE);
     }
     match screenChangeType {
         SCREEN_CHANGE_SUMMARY_SCREEN => {
@@ -3756,11 +3770,11 @@ pub(crate) unsafe extern "C" fn Task_ChangeScreen(taskId: u8) {
     }
     DestroyTask(taskId);
 }
-pub(crate) unsafe extern "C" fn GiveChosenBagItem() {
+unsafe fn GiveChosenBagItem() {
     let mut itemId: u16 = gSpecialVar_ItemId;
     if itemId != ITEM_NONE {
-        let mut pos: u8 = GetCursorPosition();
-        if sInPartyMenu != 0 {
+        let pos: u8 = GetCursorPosition();
+        if sInPartyMenu.get() != 0 {
             SetMonData(
                 &raw mut gPlayerParty[pos],
                 MON_DATA_HELD_ITEM,
@@ -3772,14 +3786,14 @@ pub(crate) unsafe extern "C" fn GiveChosenBagItem() {
         RemoveBagItem(itemId, 1);
     }
 }
-pub(crate) unsafe extern "C" fn FreePokeStorageData() {
+unsafe fn FreePokeStorageData() {
     TilemapUtil_Free();
     MultiMove_Free();
     Free(sStorage as *mut c_void);
     sStorage = null_mut();
     FreeAllWindowBuffers();
 }
-pub(crate) unsafe extern "C" fn SetScrollingBackground() {
+unsafe fn SetScrollingBackground() {
     SetGpuReg(REG_OFFSET_BG3CNT, 7951);
     DecompressAndLoadBgGfxUsingHeap(
         3,
@@ -3790,18 +3804,20 @@ pub(crate) unsafe extern "C" fn SetScrollingBackground() {
     );
     LZ77UnCompVram(
         sScrollingBg_Tilemap.as_ptr().cast_mut(),
-        0x600f800 as usize as *mut c_void,
+        0x600f800_usize as *mut c_void,
     );
 }
-pub(crate) unsafe extern "C" fn ScrollBackground() {
+unsafe fn ScrollBackground() {
     ChangeBgX(3, 128, BG_COORD_ADD);
     ChangeBgY(3, 128, BG_COORD_SUB);
 }
-pub(crate) unsafe extern "C" fn LoadPokeStorageMenuGfx() {
+unsafe fn LoadPokeStorageMenuGfx() {
     InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 4);
     DecompressAndLoadBgGfxUsingHeap(
         1,
-        gStorageSystemMenu_Gfx.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gStorageSystemMenu_Gfx).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         0,
         0,
         0,
@@ -3817,7 +3833,7 @@ pub(crate) unsafe extern "C" fn LoadPokeStorageMenuGfx() {
     ShowBg(1);
     ScheduleBgCopyTilemapToVram(1);
 }
-pub(crate) unsafe extern "C" fn InitPokeStorageWindows() -> u8 {
+unsafe fn InitPokeStorageWindows() -> u8 {
     if InitWindows(sWindowTemplates.as_ptr().cast_mut()) == 0 {
         return FALSE;
     } else {
@@ -3826,13 +3842,13 @@ pub(crate) unsafe extern "C" fn InitPokeStorageWindows() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn LoadWaveformSpritePalette() {
+unsafe fn LoadWaveformSpritePalette() {
     LoadSpritePalette((&raw const *sWaveformSpritePalette).cast_mut());
 }
-pub(crate) unsafe extern "C" fn InitPalettesAndSprites() {
+unsafe fn InitPalettesAndSprites() {
     LoadPalette(sInterface_Pal.as_ptr().cast_mut() as *mut c_void, 0, 32);
     LoadPalette(sPkmnDataGray_Pal.as_ptr().cast_mut() as *mut c_void, 32, 32);
     LoadPalette(sTextWindows_Pal.as_ptr().cast_mut() as *mut c_void, 240, 32);
@@ -3851,7 +3867,7 @@ pub(crate) unsafe extern "C" fn InitPalettesAndSprites() {
     CreateWaveformSprites();
     RefreshDisplayMonData();
 }
-pub(crate) unsafe extern "C" fn CreateMarkingComboSprite() {
+pub(crate) unsafe fn CreateMarkingComboSprite() {
     (*sStorage).markingComboSprite =
         CreateMonMarkingComboSprite(GFXTAG_MARKING_COMBO, PALTAG_MARKING_COMBO, null_mut());
     (*(*sStorage).markingComboSprite).oam.set_priority(1);
@@ -3862,24 +3878,20 @@ pub(crate) unsafe extern "C" fn CreateMarkingComboSprite() {
         .at(32 * GetSpriteTileStartByTag(GFXTAG_MARKING_COMBO) as i32)
         as *mut c_void as *mut u16;
 }
-pub(crate) unsafe extern "C" fn CreateWaveformSprites() {
-    let mut i: u16 = 0;
-    let mut sheet: SpriteSheet = zeroed();
-    sheet = *sSpriteSheet_Waveform;
+unsafe fn CreateWaveformSprites() {
+    let mut sheet: SpriteSheet = *sSpriteSheet_Waveform;
     LoadSpriteSheet(&raw mut sheet);
-    i = 0;
-    while i < 2 {
-        let mut spriteId: u8 = CreateSprite(
+    for i in 0..2u16 {
+        let spriteId: u8 = CreateSprite(
             (&raw const *sSpriteTemplate_Waveform).cast_mut(),
             i as i16 * 63 + 8,
             9,
             2,
         );
         (*sStorage).waveformSprites[i] = &raw mut gSprites[spriteId];
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn RefreshDisplayMonData() {
+unsafe fn RefreshDisplayMonData() {
     LoadDisplayMonGfx(
         (*sStorage).displayMonSpecies,
         (*sStorage).displayMonPersonality,
@@ -3888,7 +3900,7 @@ pub(crate) unsafe extern "C" fn RefreshDisplayMonData() {
     UpdateWaveformAnimation();
     ScheduleBgCopyTilemapToVram(0);
 }
-pub(crate) unsafe extern "C" fn StartDisplayMonMosaicEffect() {
+unsafe fn StartDisplayMonMosaicEffect() {
     RefreshDisplayMonData();
     if !(*sStorage).displayMonSprite.is_null() {
         (*(*sStorage).displayMonSprite).oam.set_mosaic(TRUE as u32);
@@ -3902,10 +3914,10 @@ pub(crate) unsafe extern "C" fn StartDisplayMonMosaicEffect() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn IsDisplayMosaicActive() -> u8 {
-    return (*(*sStorage).displayMonSprite).oam.mosaic() as u8;
+unsafe fn IsDisplayMosaicActive() -> u8 {
+    (*(*sStorage).displayMonSprite).oam.mosaic() as u8
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DisplayMonMosaic(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_DisplayMonMosaic(sprite: *mut Sprite) {
     (*sprite).data[0] -= (*sprite).data[1];
     if (*sprite).data[0] < 0 {
         (*sprite).data[0] = 0;
@@ -3919,8 +3931,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_DisplayMonMosaic(sprite: *mut Sprite) {
         (*sprite).callback = Some(SpriteCallbackDummy);
     }
 }
-pub(crate) unsafe extern "C" fn CreateDisplayMonSprite() {
-    let mut i: u16 = 0;
+unsafe fn CreateDisplayMonSprite() {
     let mut tileStart: u16 = 0;
     let mut palSlot: u8 = 0;
     let mut spriteId: u8 = 0;
@@ -3931,17 +3942,12 @@ pub(crate) unsafe extern "C" fn CreateDisplayMonSprite() {
     let mut palette: SpritePalette = zeroed();
     palette.data = (*sStorage).displayMonPalBuffer.as_mut_ptr();
     palette.tag = PALTAG_DISPLAY_MON;
-    let mut template: SpriteTemplate = zeroed();
-    template = *sSpriteTemplate_DisplayMon;
-    i = 0;
-    while i < MON_PIC_SIZE {
+    let mut template: SpriteTemplate = *sSpriteTemplate_DisplayMon;
+    for i in 0..MON_PIC_SIZE {
         (*sStorage).tileBuffer[i] = 0;
-        i += 1;
     }
-    i = 0;
-    while i < 16 {
+    for i in 0..16u16 {
         (*sStorage).displayMonPalBuffer[i] = 0;
-        i += 1;
     }
     (*sStorage).displayMonSprite = null_mut();
     'l4: {
@@ -3968,13 +3974,18 @@ pub(crate) unsafe extern "C" fn CreateDisplayMonSprite() {
         FreeSpritePaletteByTag(PALTAG_DISPLAY_MON);
     }
 }
-pub(crate) unsafe extern "C" fn LoadDisplayMonGfx(species: u16, pid: u32) {
+unsafe fn LoadDisplayMonGfx(species: u16, pid: u32) {
     if (*sStorage).displayMonSprite.is_null() {
         return;
     }
     if species != SPECIES_NONE {
         LoadSpecialPokePic(
-            (&raw const gMonFrontPicTable[species]).cast_mut(),
+            (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable).cast::<CArray<
+                CompressedSpriteSheet,
+                0,
+            >>(
+            ))[species])
+                .cast_mut(),
             (*sStorage).tileBuffer.as_mut_ptr() as *mut c_void,
             species as i32,
             pid,
@@ -3999,7 +4010,7 @@ pub(crate) unsafe extern "C" fn LoadDisplayMonGfx(species: u16, pid: u32) {
         (*(*sStorage).displayMonSprite).set_invisible(TRUE as u16);
     }
 }
-pub(crate) unsafe extern "C" fn PrintDisplayMonInfo() {
+unsafe fn PrintDisplayMonInfo() {
     FillWindowPixelBuffer(WIN_DISPLAY_INFO, 17);
     if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
         AddTextPrinterParameterized(
@@ -4087,33 +4098,33 @@ pub(crate) unsafe extern "C" fn PrintDisplayMonInfo() {
         (*(*sStorage).markingComboSprite).set_invisible(TRUE as u16);
     }
 }
-pub(crate) unsafe extern "C" fn UpdateWaveformAnimation() {
-    let mut i: u16 = 0;
+unsafe fn UpdateWaveformAnimation() {
     if (*sStorage).displayMonSpecies != SPECIES_NONE {
         TilemapUtil_SetRect(TILEMAPID_PKMN_DATA, 0, 0, 8, 2);
-        i = 0;
-        while i < 2 {
+        for i in 0..2u16 {
             StartSpriteAnimIfDifferent((*sStorage).waveformSprites[i], i as u8 * 2 + 1);
-            i += 1;
         }
     } else {
         TilemapUtil_SetRect(TILEMAPID_PKMN_DATA, 0, 2, 8, 2);
-        i = 0;
-        while i < 2 {
+        for i in 0..2u16 {
             StartSpriteAnim((*sStorage).waveformSprites[i], i as u8 * 2);
-            i += 1;
         }
     }
     TilemapUtil_Update(TILEMAPID_PKMN_DATA);
     ScheduleBgCopyTilemapToVram(1);
 }
-pub(crate) unsafe extern "C" fn InitSupplementalTilemaps() {
+unsafe fn InitSupplementalTilemaps() {
     LZ77UnCompWram(
-        gStorageSystemPartyMenu_Tilemap.as_ptr().cast_mut(),
+        (*(&raw const crate::data::graphics::gStorageSystemPartyMenu_Tilemap)
+            .cast::<CArray<u32, 0>>())
+        .as_ptr()
+        .cast_mut(),
         (*sStorage).partyMenuTilemapBuffer.as_mut_ptr() as *mut c_void,
     );
     LoadPalette(
-        gStorageSystemPartyMenu_Pal.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gStorageSystemPartyMenu_Pal).cast::<CArray<u16, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         16,
         32,
     );
@@ -4134,7 +4145,7 @@ pub(crate) unsafe extern "C" fn InitSupplementalTilemaps() {
     TilemapUtil_SetPos(TILEMAPID_PARTY_MENU, 10, 0);
     TilemapUtil_SetPos(TILEMAPID_CLOSE_BUTTON, 21, 0);
     SetPartySlotTilemaps();
-    if sInPartyMenu != 0 {
+    if sInPartyMenu.get() != 0 {
         UpdateCloseBoxButtonTilemap(TRUE);
         CreatePartyMonsSprites(TRUE);
         TilemapUtil_Update(TILEMAPID_CLOSE_BUTTON);
@@ -4148,13 +4159,13 @@ pub(crate) unsafe extern "C" fn InitSupplementalTilemaps() {
     ScheduleBgCopyTilemapToVram(1);
     (*sStorage).closeBoxFlashing = FALSE;
 }
-pub(crate) unsafe extern "C" fn SetUpShowPartyMenu() {
+unsafe fn SetUpShowPartyMenu() {
     (*sStorage).partyMenuUnused1 = 20;
     (*sStorage).partyMenuY = 2;
     (*sStorage).partyMenuMoveTimer = 0;
     CreatePartyMonsSprites(FALSE);
 }
-pub(crate) unsafe extern "C" fn ShowPartyMenu() -> u8 {
+pub(crate) unsafe fn ShowPartyMenu() -> u8 {
     if (*sStorage).partyMenuMoveTimer == 20 {
         return FALSE;
     }
@@ -4169,17 +4180,17 @@ pub(crate) unsafe extern "C" fn ShowPartyMenu() -> u8 {
         (*sStorage).partyMenuMoveTimer
     }) == 20
     {
-        sInPartyMenu = TRUE;
+        sInPartyMenu.set(TRUE);
         return FALSE;
     } else {
         return TRUE;
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn SetUpHidePartyMenu() {
+unsafe fn SetUpHidePartyMenu() {
     (*sStorage).partyMenuUnused1 = 0;
     (*sStorage).partyMenuY = 22;
     (*sStorage).partyMenuMoveTimer = 0;
@@ -4187,7 +4198,7 @@ pub(crate) unsafe extern "C" fn SetUpHidePartyMenu() {
         MoveHeldItemWithPartyMenu();
     }
 }
-pub(crate) unsafe extern "C" fn HidePartyMenu() -> u8 {
+unsafe fn HidePartyMenu() -> u8 {
     if (*sStorage).partyMenuMoveTimer != 20 {
         (*sStorage).partyMenuUnused1 += 1;
         (*sStorage).partyMenuY -= 1;
@@ -4203,7 +4214,7 @@ pub(crate) unsafe extern "C" fn HidePartyMenu() -> u8 {
             ScheduleBgCopyTilemapToVram(1);
             return TRUE;
         } else {
-            sInPartyMenu = FALSE;
+            sInPartyMenu.set(FALSE);
             DestroyAllPartyMonIcons();
             CompactPartySlots();
             TilemapUtil_SetRect(TILEMAPID_CLOSE_BUTTON, 0, 0, 9, 2);
@@ -4212,9 +4223,9 @@ pub(crate) unsafe extern "C" fn HidePartyMenu() -> u8 {
             return FALSE;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn UpdateCloseBoxButtonTilemap(normal: u8) {
+unsafe fn UpdateCloseBoxButtonTilemap(normal: u8) {
     if normal != 0 {
         TilemapUtil_SetRect(TILEMAPID_CLOSE_BUTTON, 0, 0, 9, 2);
     } else {
@@ -4223,18 +4234,18 @@ pub(crate) unsafe extern "C" fn UpdateCloseBoxButtonTilemap(normal: u8) {
     TilemapUtil_Update(TILEMAPID_CLOSE_BUTTON);
     ScheduleBgCopyTilemapToVram(1);
 }
-pub(crate) unsafe extern "C" fn StartFlashingCloseBoxButton() {
+unsafe fn StartFlashingCloseBoxButton() {
     (*sStorage).closeBoxFlashing = TRUE;
     (*sStorage).closeBoxFlashTimer = 30;
     (*sStorage).closeBoxFlashState = TRUE;
 }
-pub(crate) unsafe extern "C" fn StopFlashingCloseBoxButton() {
+unsafe fn StopFlashingCloseBoxButton() {
     if (*sStorage).closeBoxFlashing != 0 {
         (*sStorage).closeBoxFlashing = FALSE;
         UpdateCloseBoxButtonTilemap(TRUE);
     }
 }
-pub(crate) unsafe extern "C" fn UpdateCloseBoxButtonFlash() {
+unsafe fn UpdateCloseBoxButtonFlash() {
     if (*sStorage).closeBoxFlashing != 0
         && ({
             (*sStorage).closeBoxFlashTimer += 1;
@@ -4246,52 +4257,42 @@ pub(crate) unsafe extern "C" fn UpdateCloseBoxButtonFlash() {
         UpdateCloseBoxButtonTilemap((*sStorage).closeBoxFlashState);
     }
 }
-pub(crate) unsafe extern "C" fn SetPartySlotTilemaps() {
-    let mut i: u8 = 0;
-    i = 1;
-    while i < PARTY_SIZE as u8 {
-        let mut species: i32 = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) as i32;
+unsafe fn SetPartySlotTilemaps() {
+    for i in 1..(PARTY_SIZE as u8) {
+        let species: i32 = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) as i32;
         SetPartySlotTilemap(i, (species != SPECIES_NONE as i32) as u8);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetPartySlotTilemap(partyId: u8, hasMon: u8) {
-    let mut i: u16 = 0;
-    let mut j: u16 = 0;
-    let mut index: u16 = 0;
+unsafe fn SetPartySlotTilemap(partyId: u8, hasMon: u8) {
     let mut data: *mut u16 = null_mut();
     if hasMon != 0 {
         data = sPartySlotFilled_Tilemap.as_ptr().cast_mut();
     } else {
         data = sPartySlotEmpty_Tilemap.as_ptr().cast_mut();
     }
-    index = 3 * (3 * (partyId as u16 - 1) + 1);
+    let mut index: u16 = 3 * (3 * (partyId as u16 - 1) + 1);
     index *= 4;
     index += 7;
-    i = 0;
-    while i < 3 {
-        j = 0;
-        while j < 4 {
+    for i in 0..3u16 {
+        for j in 0..4u16 {
             (*sStorage).partyMenuTilemapBuffer[index as i32 + j as i32] = *data.at(j);
-            j += 1;
         }
         data = data.at(4);
         index += 12;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn UpdatePartySlotColors() {
+unsafe fn UpdatePartySlotColors() {
     SetPartySlotTilemaps();
     TilemapUtil_SetRect(TILEMAPID_PARTY_MENU, 0, 0, 12, 22);
     TilemapUtil_Update(TILEMAPID_PARTY_MENU);
     ScheduleBgCopyTilemapToVram(1);
 }
-pub(crate) unsafe extern "C" fn SetUpDoShowPartyMenu() {
+unsafe fn SetUpDoShowPartyMenu() {
     (*sStorage).showPartyMenuState = 0;
     PlaySE(SE_WIN_OPEN);
     SetUpShowPartyMenu();
 }
-pub(crate) unsafe extern "C" fn DoShowPartyMenu() -> u8 {
+unsafe fn DoShowPartyMenu() -> u8 {
     match (*sStorage).showPartyMenuState {
         0 => {
             if ShowPartyMenu() == 0 {
@@ -4312,21 +4313,21 @@ pub(crate) unsafe extern "C" fn DoShowPartyMenu() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn UpdateBoxToSendMons() {
-    if sLastUsedBox != StorageGetCurrentBox() {
+unsafe fn UpdateBoxToSendMons() {
+    if sLastUsedBox.get() != StorageGetCurrentBox() {
         FlagClear(FLAG_SHOWN_BOX_WAS_FULL_MESSAGE);
         VarSet(VAR_PC_BOX_TO_SEND_MON, StorageGetCurrentBox() as u16);
     }
 }
-pub(crate) unsafe extern "C" fn InitPokeStorageBg0() {
+unsafe fn InitPokeStorageBg0() {
     SetGpuReg(REG_OFFSET_BG0CNT, 7424);
     LoadUserWindowBorderGfx(WIN_MESSAGE, 2, 208);
     FillBgTilemapBufferRect(0, 0, 0, 0, 32, 20, 17);
     CopyBgTilemapBufferToVram(0);
 }
-pub(crate) unsafe extern "C" fn PrintMessage(id: u8) {
+pub(crate) unsafe fn PrintMessage(id: u8) {
     let mut txtPtr: *mut u8 = null_mut();
     DynamicPlaceholderTextUtil_Reset();
     match sMessages[id].format {
@@ -4379,15 +4380,15 @@ pub(crate) unsafe extern "C" fn PrintMessage(id: u8) {
     CopyWindowToVram(WIN_MESSAGE, COPYWIN_GFX);
     ScheduleBgCopyTilemapToVram(0);
 }
-pub(crate) unsafe extern "C" fn ShowYesNoWindow(cursorPos: i8) {
+unsafe fn ShowYesNoWindow(cursorPos: i8) {
     CreateYesNoMenu((&raw const *sYesNoWindowTemplate).cast_mut(), 11, 14, 0);
     Menu_MoveCursorNoWrapAround(cursorPos);
 }
-pub(crate) unsafe extern "C" fn ClearBottomWindow() {
+unsafe fn ClearBottomWindow() {
     ClearStdWindowAndFrameToTransparent(WIN_MESSAGE, FALSE);
     ScheduleBgCopyTilemapToVram(0);
 }
-pub(crate) unsafe extern "C" fn AddWallpaperSetsMenu() {
+unsafe fn AddWallpaperSetsMenu() {
     InitMenu();
     SetMenuText(MENU_SCENERY_1 as u8);
     SetMenuText(MENU_SCENERY_2 as u8);
@@ -4398,7 +4399,7 @@ pub(crate) unsafe extern "C" fn AddWallpaperSetsMenu() {
     }
     AddMenu();
 }
-pub(crate) unsafe extern "C" fn AddWallpapersMenu(wallpaperSet: u8) {
+unsafe fn AddWallpapersMenu(wallpaperSet: u8) {
     InitMenu();
     match wallpaperSet {
         0 => {
@@ -4429,26 +4430,25 @@ pub(crate) unsafe extern "C" fn AddWallpapersMenu(wallpaperSet: u8) {
     }
     AddMenu();
 }
-pub(crate) unsafe extern "C" fn GetCurrentBoxOption() -> u8 {
-    return sCurrentBoxOption;
+fn GetCurrentBoxOption() -> u8 {
+    sCurrentBoxOption.get()
 }
-pub(crate) unsafe extern "C" fn InitCursorItemIcon() {
+unsafe fn InitCursorItemIcon() {
     if IsCursorOnBoxTitle() == 0 {
-        if sInPartyMenu != 0 {
+        if sInPartyMenu.get() != 0 {
             TryLoadItemIconAtPos(CURSOR_AREA_IN_PARTY as u8, GetCursorPosition());
         } else {
             TryLoadItemIconAtPos(CURSOR_AREA_IN_BOX, GetCursorPosition());
         }
     }
-    if sMovingItemId != ITEM_NONE {
-        InitItemIconInCursor(sMovingItemId);
+    if sMovingItemId.get() != ITEM_NONE {
+        InitItemIconInCursor(sMovingItemId.get());
         StartCursorAnim(CURSOR_ANIM_FIST);
     }
 }
-pub(crate) unsafe extern "C" fn InitMonIconFields() {
-    let mut i: u16 = 0;
+unsafe fn InitMonIconFields() {
     LoadMonIconPalettes();
-    i = 0;
+    let mut i: u16 = 0;
     while (i as i32) < (if 37 >= 40 { 37 } else { 40 }) {
         (*sStorage).numIconsPerSpecies[i] = 0;
         i += 1;
@@ -4463,38 +4463,29 @@ pub(crate) unsafe extern "C" fn InitMonIconFields() {
         (*sStorage).partySprites[i] = null_mut();
         i += 1;
     }
-    i = 0;
-    while i < IN_BOX_COUNT as u16 {
+    for i in 0..(IN_BOX_COUNT as u16) {
         (*sStorage).boxMonsSprites[i] = null_mut();
-        i += 1;
     }
     (*sStorage).movingMonSprite = null_mut();
     (*sStorage).unkUnused1 = 0;
 }
-pub(crate) unsafe extern "C" fn GetMonIconPriorityByCursorPos() -> u8 {
-    return (if IsCursorInBox() != 0 { 2 } else { 1 }) as u8;
+fn GetMonIconPriorityByCursorPos() -> u8 {
+    (if IsCursorInBox() != 0 { 2 } else { 1 }) as u8
 }
-pub(crate) unsafe extern "C" fn CreateMovingMonIcon() {
-    let mut personality: u32 = GetMonData2(&raw mut (*sStorage).movingMon, MON_DATA_PERSONALITY);
-    let mut species: u16 =
-        GetMonData2(&raw mut (*sStorage).movingMon, MON_DATA_SPECIES_OR_EGG) as u16;
-    let mut priority: u8 = GetMonIconPriorityByCursorPos();
+unsafe fn CreateMovingMonIcon() {
+    let personality: u32 = GetMonData2(&raw mut (*sStorage).movingMon, MON_DATA_PERSONALITY);
+    let species: u16 = GetMonData2(&raw mut (*sStorage).movingMon, MON_DATA_SPECIES_OR_EGG) as u16;
+    let priority: u8 = GetMonIconPriorityByCursorPos();
     (*sStorage).movingMonSprite = CreateMonIconSprite(species, personality, 0, 0, priority, 7);
     (*(*sStorage).movingMonSprite).callback = Some(SpriteCB_HeldMon);
 }
-pub(crate) unsafe extern "C" fn InitBoxMonSprites(boxId: u8) {
-    let mut boxPosition: u8 = 0;
-    let mut i: u16 = 0;
-    let mut j: u16 = 0;
-    let mut count: u16 = 0;
+unsafe fn InitBoxMonSprites(boxId: u8) {
     let mut species: u16 = 0;
     let mut personality: u32 = 0;
-    count = 0;
-    boxPosition = 0;
-    i = 0;
-    while i < IN_BOX_ROWS as u16 {
-        j = 0;
-        while j < IN_BOX_COLUMNS as u16 {
+    let mut count: u16 = 0;
+    let mut boxPosition: u8 = 0;
+    for i in 0..(IN_BOX_ROWS as u16) {
+        for j in 0..(IN_BOX_COLUMNS as u16) {
             species = GetBoxMonDataAt(boxId, boxPosition, MON_DATA_SPECIES_OR_EGG) as u16;
             if species != SPECIES_NONE {
                 personality = GetBoxMonDataAt(boxId, boxPosition, MON_DATA_PERSONALITY);
@@ -4511,28 +4502,24 @@ pub(crate) unsafe extern "C" fn InitBoxMonSprites(boxId: u8) {
             }
             boxPosition += 1;
             count += 1;
-            j += 1;
         }
-        i += 1;
     }
     if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
-        boxPosition = 0;
-        while boxPosition < IN_BOX_COUNT as u8 {
+        for boxPosition in 0..(IN_BOX_COUNT as u8) {
             if GetBoxMonDataAt(boxId, boxPosition, MON_DATA_HELD_ITEM) == ITEM_NONE as u32 {
                 (*(*sStorage).boxMonsSprites[boxPosition])
                     .oam
                     .set_objMode(ST_OAM_OBJ_BLEND);
             }
-            boxPosition += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn CreateBoxMonIconAtPos(boxPosition: u8) {
-    let mut species: u16 = GetCurrentBoxMonData(boxPosition, MON_DATA_SPECIES_OR_EGG) as u16;
+unsafe fn CreateBoxMonIconAtPos(boxPosition: u8) {
+    let species: u16 = GetCurrentBoxMonData(boxPosition, MON_DATA_SPECIES_OR_EGG) as u16;
     if species != SPECIES_NONE {
-        let mut x: i16 = 8 * (3 * (boxPosition as i32 % 6) as i16) + 100;
-        let mut y: i16 = 8 * (3 * (boxPosition as i32 / 6) as i16) + 44;
-        let mut personality: u32 = GetCurrentBoxMonData(boxPosition, MON_DATA_PERSONALITY);
+        let x: i16 = 8 * (3 * (boxPosition as i32 % 6) as i16) + 100;
+        let y: i16 = 8 * (3 * (boxPosition as i32 / 6) as i16) + 44;
+        let personality: u32 = GetCurrentBoxMonData(boxPosition, MON_DATA_PERSONALITY);
         (*sStorage).boxMonsSprites[boxPosition] = CreateMonIconSprite(
             species,
             personality,
@@ -4548,67 +4535,55 @@ pub(crate) unsafe extern "C" fn CreateBoxMonIconAtPos(boxPosition: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn StartBoxMonIconsScrollOut(speed: i16) {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < IN_BOX_COUNT as u16 {
+unsafe fn StartBoxMonIconsScrollOut(speed: i16) {
+    for i in 0..(IN_BOX_COUNT as u16) {
         if !(*sStorage).boxMonsSprites[i].is_null() {
             (*(*sStorage).boxMonsSprites[i]).data[2] = speed;
-            (*(*sStorage).boxMonsSprites[i]).data[4] = 1;
+            (*(*sStorage).boxMonsSprites[i]).data[sDelay] = 1;
             (*(*sStorage).boxMonsSprites[i]).callback = Some(SpriteCB_BoxMonIconScrollOut);
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_BoxMonIconScrollIn(sprite: *mut Sprite) {
-    if (*sprite).data[1] != 0 {
-        (*sprite).data[1] -= 1;
+pub(crate) unsafe fn SpriteCB_BoxMonIconScrollIn(sprite: *mut Sprite) {
+    if (*sprite).data[sDistance] != 0 {
+        (*sprite).data[sDistance] -= 1;
         (*sprite).x += (*sprite).data[2];
     } else {
         (*sStorage).iconScrollNumIncoming -= 1;
-        (*sprite).x = (*sprite).data[3];
+        (*sprite).x = (*sprite).data[sScrollInDestX];
         (*sprite).callback = Some(SpriteCallbackDummy);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_BoxMonIconScrollOut(sprite: *mut Sprite) {
-    if (*sprite).data[4] != 0 {
-        (*sprite).data[4] -= 1;
+pub(crate) unsafe fn SpriteCB_BoxMonIconScrollOut(sprite: *mut Sprite) {
+    if (*sprite).data[sDelay] != 0 {
+        (*sprite).data[sDelay] -= 1;
     } else {
         (*sprite).x += (*sprite).data[2];
-        (*sprite).data[5] = (*sprite).x + (*sprite).x2;
-        if (*sprite).data[5] <= 68 || (*sprite).data[5] >= 252 {
+        (*sprite).data[sScrollOutX] = (*sprite).x + (*sprite).x2;
+        if (*sprite).data[sScrollOutX] <= 68 || (*sprite).data[sScrollOutX] >= 252 {
             (*sprite).callback = Some(SpriteCallbackDummy);
         }
     }
 }
-pub(crate) unsafe extern "C" fn DestroyBoxMonIconsInColumn(column: u8) {
-    let mut row: u16 = 0;
+unsafe fn DestroyBoxMonIconsInColumn(column: u8) {
     let mut boxPosition: u8 = column;
-    row = 0;
-    while row < IN_BOX_ROWS as u16 {
+    for row in 0..(IN_BOX_ROWS as u16) {
         if !(*sStorage).boxMonsSprites[boxPosition].is_null() {
             DestroyBoxMonIcon((*sStorage).boxMonsSprites[boxPosition]);
             (*sStorage).boxMonsSprites[boxPosition] = null_mut();
         }
         boxPosition += IN_BOX_COLUMNS;
-        row += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateBoxMonIconsInColumn(
-    column: u8,
-    distance: u16,
-    speed: i16,
-) -> u8 {
-    let mut i: i32 = 0;
+unsafe fn CreateBoxMonIconsInColumn(column: u8, distance: u16, speed: i16) -> u8 {
     let mut y: u16 = 44;
-    let mut xDest: i16 = 8 * (3 * column as i16) + 100;
-    let mut x: u16 = xDest as u16 - (distance + 1) * speed as u16;
-    let mut subpriority: u8 = 19 - column;
+    let xDest: i16 = 8 * (3 * column as i16) + 100;
+    let x: u16 = xDest as u16 - (distance + 1) * speed as u16;
+    let subpriority: u8 = 19 - column;
     let mut iconsCreated: u8 = 0;
     let mut boxPosition: u8 = column;
     if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
-        i = 0;
-        while i < IN_BOX_ROWS {
+        for i in 0..IN_BOX_ROWS {
             if (*sStorage).boxSpecies[boxPosition] != SPECIES_NONE {
                 (*sStorage).boxMonsSprites[boxPosition] = CreateMonIconSprite(
                     (*sStorage).boxSpecies[boxPosition],
@@ -4619,9 +4594,9 @@ pub(crate) unsafe extern "C" fn CreateBoxMonIconsInColumn(
                     subpriority,
                 );
                 if !(*sStorage).boxMonsSprites[boxPosition].is_null() {
-                    (*(*sStorage).boxMonsSprites[boxPosition]).data[1] = distance as i16;
+                    (*(*sStorage).boxMonsSprites[boxPosition]).data[sDistance] = distance as i16;
                     (*(*sStorage).boxMonsSprites[boxPosition]).data[2] = speed;
-                    (*(*sStorage).boxMonsSprites[boxPosition]).data[3] = xDest;
+                    (*(*sStorage).boxMonsSprites[boxPosition]).data[sScrollInDestX] = xDest;
                     (*(*sStorage).boxMonsSprites[boxPosition]).callback =
                         Some(SpriteCB_BoxMonIconScrollIn);
                     iconsCreated += 1;
@@ -4629,11 +4604,9 @@ pub(crate) unsafe extern "C" fn CreateBoxMonIconsInColumn(
             }
             boxPosition += IN_BOX_COLUMNS;
             y += 24;
-            i += 1;
         }
     } else {
-        i = 0;
-        while i < IN_BOX_ROWS {
+        for i in 0..IN_BOX_ROWS {
             if (*sStorage).boxSpecies[boxPosition] != SPECIES_NONE {
                 (*sStorage).boxMonsSprites[boxPosition] = CreateMonIconSprite(
                     (*sStorage).boxSpecies[boxPosition],
@@ -4644,9 +4617,9 @@ pub(crate) unsafe extern "C" fn CreateBoxMonIconsInColumn(
                     subpriority,
                 );
                 if !(*sStorage).boxMonsSprites[boxPosition].is_null() {
-                    (*(*sStorage).boxMonsSprites[boxPosition]).data[1] = distance as i16;
+                    (*(*sStorage).boxMonsSprites[boxPosition]).data[sDistance] = distance as i16;
                     (*(*sStorage).boxMonsSprites[boxPosition]).data[2] = speed;
-                    (*(*sStorage).boxMonsSprites[boxPosition]).data[3] = xDest;
+                    (*(*sStorage).boxMonsSprites[boxPosition]).data[sScrollInDestX] = xDest;
                     (*(*sStorage).boxMonsSprites[boxPosition]).callback =
                         Some(SpriteCB_BoxMonIconScrollIn);
                     if GetBoxMonDataAt((*sStorage).incomingBoxId, boxPosition, MON_DATA_HELD_ITEM)
@@ -4661,12 +4634,11 @@ pub(crate) unsafe extern "C" fn CreateBoxMonIconsInColumn(
             }
             boxPosition += IN_BOX_COLUMNS;
             y += 24;
-            i += 1;
         }
     }
-    return iconsCreated;
+    iconsCreated
 }
-pub(crate) unsafe extern "C" fn InitBoxMonIconScroll(boxId: u8, direction: i8) {
+unsafe fn InitBoxMonIconScroll(boxId: u8, direction: i8) {
     (*sStorage).iconScrollState = 0;
     (*sStorage).iconScrollToBoxId = boxId;
     (*sStorage).iconScrollDirection = direction;
@@ -4682,7 +4654,7 @@ pub(crate) unsafe extern "C" fn InitBoxMonIconScroll(boxId: u8, direction: i8) {
     (*sStorage).iconScrollPos = 24 * (*sStorage).iconScrollCurColumn as i16 + 100;
     StartBoxMonIconsScrollOut((*sStorage).iconScrollSpeed);
 }
-pub(crate) unsafe extern "C" fn UpdateBoxMonIconScroll() -> u8 {
+unsafe fn UpdateBoxMonIconScroll() -> u8 {
     if (*sStorage).iconScrollDistance != 0 {
         (*sStorage).iconScrollDistance -= 1;
     }
@@ -4721,17 +4693,12 @@ pub(crate) unsafe extern "C" fn UpdateBoxMonIconScroll() -> u8 {
             return FALSE;
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn GetIncomingBoxMonData(boxId: u8) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+unsafe fn GetIncomingBoxMonData(boxId: u8) {
     let mut boxPosition: i32 = 0;
-    boxPosition = 0;
-    i = 0;
-    while i < IN_BOX_ROWS {
-        j = 0;
-        while j < IN_BOX_COLUMNS as i32 {
+    for i in 0..IN_BOX_ROWS {
+        for j in 0..(IN_BOX_COLUMNS as i32) {
             (*sStorage).boxSpecies[boxPosition] =
                 GetBoxMonDataAt(boxId, boxPosition as u8, MON_DATA_SPECIES_OR_EGG) as u16;
             if (*sStorage).boxSpecies[boxPosition] != SPECIES_NONE {
@@ -4739,33 +4706,29 @@ pub(crate) unsafe extern "C" fn GetIncomingBoxMonData(boxId: u8) {
                     GetBoxMonDataAt(boxId, boxPosition as u8, MON_DATA_PERSONALITY);
             }
             boxPosition += 1;
-            j += 1;
         }
-        i += 1;
     }
     (*sStorage).incomingBoxId = boxId;
 }
-pub(crate) unsafe extern "C" fn DestroyBoxMonIconAtPosition(boxPosition: u8) {
+unsafe fn DestroyBoxMonIconAtPosition(boxPosition: u8) {
     if !(*sStorage).boxMonsSprites[boxPosition].is_null() {
         DestroyBoxMonIcon((*sStorage).boxMonsSprites[boxPosition]);
         (*sStorage).boxMonsSprites[boxPosition] = null_mut();
     }
 }
-pub(crate) unsafe extern "C" fn SetBoxMonIconObjMode(boxPosition: u8, objMode: u8) {
+unsafe fn SetBoxMonIconObjMode(boxPosition: u8, objMode: u8) {
     if !(*sStorage).boxMonsSprites[boxPosition].is_null() {
         (*(*sStorage).boxMonsSprites[boxPosition])
             .oam
             .set_objMode(objMode as u32);
     }
 }
-pub(crate) unsafe extern "C" fn CreatePartyMonsSprites(visible: u8) {
-    let mut i: u16 = 0;
-    let mut count: u16 = 0;
+unsafe fn CreatePartyMonsSprites(visible: u8) {
     let mut species: u16 = GetMonData2(&raw mut gPlayerParty[0], MON_DATA_SPECIES_OR_EGG) as u16;
     let mut personality: u32 = GetMonData2(&raw mut gPlayerParty[0], MON_DATA_PERSONALITY);
     (*sStorage).partySprites[0] = CreateMonIconSprite(species, personality, 104, 64, 1, 12);
-    count = 1;
-    i = 1;
+    let mut count: u16 = 1;
+    let mut i: u16 = 1;
     while i < PARTY_SIZE as u16 {
         species = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) as u16;
         if species != SPECIES_NONE {
@@ -4785,16 +4748,13 @@ pub(crate) unsafe extern "C" fn CreatePartyMonsSprites(visible: u8) {
         i += 1;
     }
     if visible == 0 {
-        i = 0;
-        while i < count {
+        for i in 0..count {
             (*(*sStorage).partySprites[i]).y -= DISPLAY_HEIGHT as i16;
             (*(*sStorage).partySprites[i]).set_invisible(TRUE as u16);
-            i += 1;
         }
     }
     if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
-        i = 0;
-        while i < PARTY_SIZE as u16 {
+        for i in 0..(PARTY_SIZE as u16) {
             if !(*sStorage).partySprites[i].is_null()
                 && GetMonData2(&raw mut gPlayerParty[i], MON_DATA_HELD_ITEM) == ITEM_NONE as u32
             {
@@ -4802,17 +4762,13 @@ pub(crate) unsafe extern "C" fn CreatePartyMonsSprites(visible: u8) {
                     .oam
                     .set_objMode(ST_OAM_OBJ_BLEND);
             }
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn CompactPartySprites() {
-    let mut i: u16 = 0;
-    let mut targetSlot: u16 = 0;
+unsafe fn CompactPartySprites() {
     (*sStorage).numPartyToCompact = 0;
-    i = 0;
-    targetSlot = 0;
-    while i < PARTY_SIZE as u16 {
+    let mut targetSlot: u16 = 0;
+    for i in 0..(PARTY_SIZE as u16) {
         if !(*sStorage).partySprites[i].is_null() {
             if i != targetSlot {
                 MovePartySpriteToNextSlot((*sStorage).partySprites[i], targetSlot);
@@ -4821,16 +4777,15 @@ pub(crate) unsafe extern "C" fn CompactPartySprites() {
             }
             targetSlot += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn GetNumPartySpritesCompacting() -> u8 {
-    return (*sStorage).numPartyToCompact;
+unsafe fn GetNumPartySpritesCompacting() -> u8 {
+    (*sStorage).numPartyToCompact
 }
-pub(crate) unsafe extern "C" fn MovePartySpriteToNextSlot(sprite: *mut Sprite, partyId: u16) {
+unsafe fn MovePartySpriteToNextSlot(sprite: *mut Sprite, partyId: u16) {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
-    (*sprite).data[1] = partyId as i16;
+    (*sprite).data[sPartyId] = partyId as i16;
     if partyId == 0 {
         x = 104;
         y = 64;
@@ -4838,50 +4793,48 @@ pub(crate) unsafe extern "C" fn MovePartySpriteToNextSlot(sprite: *mut Sprite, p
         x = 152;
         y = 8 * (3 * (partyId as i16 - 1)) + 16;
     }
-    (*sprite).data[2] = (*sprite).x as u16 as i16 * 8;
-    (*sprite).data[3] = (*sprite).y as u16 as i16 * 8;
-    (*sprite).data[4] = ((x as i32 * 8 - (*sprite).data[2] as i32) / 8) as i16;
-    (*sprite).data[5] = ((y as i32 * 8 - (*sprite).data[3] as i32) / 8) as i16;
-    (*sprite).data[6] = 8;
+    (*sprite).data[sMonX] = (*sprite).x as u16 as i16 * 8;
+    (*sprite).data[sMonY] = (*sprite).y as u16 as i16 * 8;
+    (*sprite).data[sSpeedX] = ((x as i32 * 8 - (*sprite).data[sMonX] as i32) / 8) as i16;
+    (*sprite).data[sSpeedY] = ((y as i32 * 8 - (*sprite).data[sMonY] as i32) / 8) as i16;
+    (*sprite).data[sMoveSteps] = 8;
     (*sprite).callback = Some(SpriteCB_MovePartyMonToNextSlot);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_MovePartyMonToNextSlot(sprite: *mut Sprite) {
-    if (*sprite).data[6] != 0 {
-        let mut x: i16 = {
-            (*sprite).data[2] += (*sprite).data[4];
-            (*sprite).data[2]
+pub(crate) unsafe fn SpriteCB_MovePartyMonToNextSlot(sprite: *mut Sprite) {
+    if (*sprite).data[sMoveSteps] != 0 {
+        let x: i16 = {
+            (*sprite).data[sMonX] += (*sprite).data[sSpeedX];
+            (*sprite).data[sMonX]
         };
-        let mut y: i16 = {
-            (*sprite).data[3] += (*sprite).data[5];
-            (*sprite).data[3]
+        let y: i16 = {
+            (*sprite).data[sMonY] += (*sprite).data[sSpeedY];
+            (*sprite).data[sMonY]
         };
         (*sprite).x = (x as u32 / 8) as i16;
         (*sprite).y = (y as u32 / 8) as i16;
-        (*sprite).data[6] -= 1;
+        (*sprite).data[sMoveSteps] -= 1;
     } else {
-        if (*sprite).data[1] == 0 {
+        if (*sprite).data[sPartyId] == 0 {
             (*sprite).x = 104;
             (*sprite).y = 64;
         } else {
             (*sprite).x = 152;
-            (*sprite).y = 8 * (3 * ((*sprite).data[1] - 1)) + 16;
+            (*sprite).y = 8 * (3 * ((*sprite).data[sPartyId] - 1)) + 16;
         }
         (*sprite).callback = Some(SpriteCallbackDummy);
-        (*sStorage).partySprites[(*sprite).data[1]] = sprite;
+        (*sStorage).partySprites[(*sprite).data[sPartyId]] = sprite;
         (*sStorage).numPartyToCompact -= 1;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyMovingMonIcon() {
+unsafe fn DestroyMovingMonIcon() {
     if !(*sStorage).movingMonSprite.is_null() {
         DestroyBoxMonIcon((*sStorage).movingMonSprite);
         (*sStorage).movingMonSprite = null_mut();
     }
 }
-pub(crate) unsafe extern "C" fn MovePartySprites(yDelta: i16) {
-    let mut i: u16 = 0;
+unsafe fn MovePartySprites(yDelta: i16) {
     let mut posY: u16 = 0;
-    i = 0;
-    while i < PARTY_SIZE as u16 {
+    for i in 0..(PARTY_SIZE as u16) {
         if !(*sStorage).partySprites[i].is_null() {
             (*(*sStorage).partySprites[i]).y += yDelta;
             posY = (*(*sStorage).partySprites[i]).y as u16
@@ -4894,34 +4847,30 @@ pub(crate) unsafe extern "C" fn MovePartySprites(yDelta: i16) {
                 (*(*sStorage).partySprites[i]).set_invisible(FALSE as u16);
             }
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyPartyMonIcon(partyId: u8) {
+unsafe fn DestroyPartyMonIcon(partyId: u8) {
     if !(*sStorage).partySprites[partyId].is_null() {
         DestroyBoxMonIcon((*sStorage).partySprites[partyId]);
         (*sStorage).partySprites[partyId] = null_mut();
     }
 }
-pub(crate) unsafe extern "C" fn DestroyAllPartyMonIcons() {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < PARTY_SIZE as u16 {
+unsafe fn DestroyAllPartyMonIcons() {
+    for i in 0..(PARTY_SIZE as u16) {
         if !(*sStorage).partySprites[i].is_null() {
             DestroyBoxMonIcon((*sStorage).partySprites[i]);
             (*sStorage).partySprites[i] = null_mut();
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetPartyMonIconObjMode(partyId: u8, objMode: u8) {
+unsafe fn SetPartyMonIconObjMode(partyId: u8, objMode: u8) {
     if !(*sStorage).partySprites[partyId].is_null() {
         (*(*sStorage).partySprites[partyId])
             .oam
             .set_objMode(objMode as u32);
     }
 }
-pub(crate) unsafe extern "C" fn SetMovingMonSprite(mode: u8, id: u8) {
+unsafe fn SetMovingMonSprite(mode: u8, id: u8) {
     if mode == MODE_PARTY {
         (*sStorage).movingMonSprite = (*sStorage).partySprites[id];
         (*sStorage).partySprites[id] = null_mut();
@@ -4937,7 +4886,7 @@ pub(crate) unsafe extern "C" fn SetMovingMonSprite(mode: u8, id: u8) {
         .set_priority(GetMonIconPriorityByCursorPos() as u16);
     (*(*sStorage).movingMonSprite).subpriority = 7;
 }
-pub(crate) unsafe extern "C" fn SetPlacedMonSprite(boxId: u8, position: u8) {
+unsafe fn SetPlacedMonSprite(boxId: u8, position: u8) {
     if boxId == TOTAL_BOXES_COUNT {
         (*sStorage).partySprites[position] = (*sStorage).movingMonSprite;
         (*(*sStorage).partySprites[position]).oam.set_priority(1);
@@ -4950,7 +4899,7 @@ pub(crate) unsafe extern "C" fn SetPlacedMonSprite(boxId: u8, position: u8) {
     (*(*sStorage).movingMonSprite).callback = Some(SpriteCallbackDummy);
     (*sStorage).movingMonSprite = null_mut();
 }
-pub(crate) unsafe extern "C" fn SaveMonSpriteAtPos(boxId: u8, position: u8) {
+unsafe fn SaveMonSpriteAtPos(boxId: u8, position: u8) {
     if boxId == TOTAL_BOXES_COUNT {
         (*sStorage).shiftMonSpritePtr = &raw mut (*sStorage).partySprites[position];
     } else {
@@ -4959,7 +4908,7 @@ pub(crate) unsafe extern "C" fn SaveMonSpriteAtPos(boxId: u8, position: u8) {
     (*(*sStorage).movingMonSprite).callback = Some(SpriteCallbackDummy);
     (*sStorage).shiftTimer = 0;
 }
-pub(crate) unsafe extern "C" fn MoveShiftingMons() -> u8 {
+unsafe fn MoveShiftingMons() -> u8 {
     if (*sStorage).shiftTimer == 16 {
         return FALSE;
     }
@@ -4968,8 +4917,12 @@ pub(crate) unsafe extern "C" fn MoveShiftingMons() -> u8 {
         (*(*(*sStorage).shiftMonSpritePtr)).y -= 1;
         (*(*sStorage).movingMonSprite).y += 1;
     }
-    (*(*(*sStorage).shiftMonSpritePtr)).x2 = gSineTable[(*sStorage).shiftTimer as i32 * 8] / 16;
-    (*(*sStorage).movingMonSprite).x2 = -(gSineTable[(*sStorage).shiftTimer as i32 * 8] / 16);
+    (*(*(*sStorage).shiftMonSpritePtr)).x2 = (*(&raw const crate::trig::gSineTable)
+        .cast::<CArray<i16, 0>>())[(*sStorage).shiftTimer as i32 * 8]
+        / 16;
+    (*(*sStorage).movingMonSprite).x2 = -((*(&raw const crate::trig::gSineTable)
+        .cast::<CArray<i16, 0>>())[(*sStorage).shiftTimer as i32 * 8]
+        / 16);
     if (*sStorage).shiftTimer == 8 {
         (*(*sStorage).movingMonSprite)
             .oam
@@ -4982,15 +4935,15 @@ pub(crate) unsafe extern "C" fn MoveShiftingMons() -> u8 {
         (*(*(*sStorage).shiftMonSpritePtr)).subpriority = 7;
     }
     if (*sStorage).shiftTimer == 16 {
-        let mut sprite: *mut Sprite = (*sStorage).movingMonSprite;
+        let sprite: *mut Sprite = (*sStorage).movingMonSprite;
         (*sStorage).movingMonSprite = *(*sStorage).shiftMonSpritePtr;
         *(*sStorage).shiftMonSpritePtr = sprite;
         (*(*sStorage).movingMonSprite).callback = Some(SpriteCB_HeldMon);
         (*(*(*sStorage).shiftMonSpritePtr)).callback = Some(SpriteCallbackDummy);
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn SetReleaseMon(mode: u8, position: u8) {
+unsafe fn SetReleaseMon(mode: u8, position: u8) {
     match mode {
         MODE_PARTY => {
             (*sStorage).releaseMonSpritePtr = &raw mut (*sStorage).partySprites[position];
@@ -5015,7 +4968,7 @@ pub(crate) unsafe extern "C" fn SetReleaseMon(mode: u8, position: u8) {
         StartSpriteAffineAnim(*(*sStorage).releaseMonSpritePtr, RELEASE_ANIM_RELEASE);
     }
 }
-pub(crate) unsafe extern "C" fn TryHideReleaseMonSprite() -> u8 {
+unsafe fn TryHideReleaseMonSprite() -> u8 {
     if (*(*sStorage).releaseMonSpritePtr).is_null()
         || (*(*(*sStorage).releaseMonSpritePtr)).invisible() != 0
     {
@@ -5024,43 +4977,41 @@ pub(crate) unsafe extern "C" fn TryHideReleaseMonSprite() -> u8 {
     if (*(*(*sStorage).releaseMonSpritePtr)).affineAnimEnded() != 0 {
         (*(*(*sStorage).releaseMonSpritePtr)).set_invisible(TRUE as u16);
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn DestroyReleaseMonIcon() {
+unsafe fn DestroyReleaseMonIcon() {
     if !(*(*sStorage).releaseMonSpritePtr).is_null() {
         FreeOamMatrix((*(*(*sStorage).releaseMonSpritePtr)).oam.matrixNum() as u8);
         DestroyBoxMonIcon(*(*sStorage).releaseMonSpritePtr);
         *(*sStorage).releaseMonSpritePtr = null_mut();
     }
 }
-pub(crate) unsafe extern "C" fn ReshowReleaseMon() {
+unsafe fn ReshowReleaseMon() {
     if !(*(*sStorage).releaseMonSpritePtr).is_null() {
         (*(*(*sStorage).releaseMonSpritePtr)).set_invisible(FALSE as u16);
         StartSpriteAffineAnim(*(*sStorage).releaseMonSpritePtr, RELEASE_ANIM_CAME_BACK);
     }
 }
-pub(crate) unsafe extern "C" fn ResetReleaseMonSpritePtr() -> u8 {
+unsafe fn ResetReleaseMonSpritePtr() -> u8 {
     if (*sStorage).releaseMonSpritePtr.is_null() {
         return FALSE;
     }
     if (*(*(*sStorage).releaseMonSpritePtr)).affineAnimEnded() != 0 {
         (*sStorage).releaseMonSpritePtr = null_mut();
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn SetMovingMonPriority(priority: u8) {
+unsafe fn SetMovingMonPriority(priority: u8) {
     (*(*sStorage).movingMonSprite)
         .oam
         .set_priority(priority as u16);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_HeldMon(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_HeldMon(sprite: *mut Sprite) {
     (*sprite).x = (*(*sStorage).cursorSprite).x;
     (*sprite).y = (*(*sStorage).cursorSprite).y + (*(*sStorage).cursorSprite).y2 + 4;
 }
-pub(crate) unsafe extern "C" fn TryLoadMonIconTiles(species: u16) -> u16 {
+unsafe fn TryLoadMonIconTiles(species: u16) -> u16 {
     let mut i: u16 = 0;
-    let mut offset: u16 = 0;
-    i = 0;
     while (i as i32) < (if 37 >= 40 { 37 } else { 40 }) {
         if (*sStorage).iconSpeciesList[i] == species {
             break;
@@ -5081,17 +5032,16 @@ pub(crate) unsafe extern "C" fn TryLoadMonIconTiles(species: u16) -> u16 {
     }
     (*sStorage).iconSpeciesList[i] = species;
     (*sStorage).numIconsPerSpecies[i] += 1;
-    offset = 16 * i;
+    let offset: u16 = 16 * i;
     CpuSet(
         GetMonIconTiles(species, TRUE as u32) as *mut c_void,
         (OBJ_VRAM0 as usize as *mut c_void as *mut u8).at(offset as i32 * 32) as *mut c_void,
         0x4000080,
     );
-    return offset;
+    offset
 }
-pub(crate) unsafe extern "C" fn RemoveSpeciesFromIconList(species: u16) {
+unsafe fn RemoveSpeciesFromIconList(species: u16) {
     let mut i: u16 = 0;
-    i = 0;
     while (i as i32) < (if 37 >= 40 { 37 } else { 40 }) {
         if (*sStorage).iconSpeciesList[i] == species {
             if ({
@@ -5106,7 +5056,7 @@ pub(crate) unsafe extern "C" fn RemoveSpeciesFromIconList(species: u16) {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateMonIconSprite(
+pub(crate) unsafe fn CreateMonIconSprite(
     mut species: u16,
     personality: u32,
     x: i16,
@@ -5114,17 +5064,16 @@ pub(crate) unsafe extern "C" fn CreateMonIconSprite(
     oamPriority: u8,
     subpriority: u8,
 ) -> *mut Sprite {
-    let mut tileNum: u16 = 0;
-    let mut spriteId: u8 = 0;
-    let mut template: SpriteTemplate = zeroed();
-    template = *sSpriteTemplate_MonIcon;
+    let mut template: SpriteTemplate = *sSpriteTemplate_MonIcon;
     species = GetIconSpecies(species, personality);
-    template.paletteTag = PALTAG_MON_ICON_0 + gMonIconPaletteIndices[species] as u16;
-    tileNum = TryLoadMonIconTiles(species);
+    template.paletteTag = PALTAG_MON_ICON_0
+        + (*(&raw const crate::data::pokemon_icon::gMonIconPaletteIndices).cast::<CArray<u8, 0>>())
+            [species] as u16;
+    let tileNum: u16 = TryLoadMonIconTiles(species);
     if tileNum == 0xFFFF {
         return null_mut();
     }
-    spriteId = CreateSprite(&raw mut template, x, y, subpriority);
+    let spriteId: u8 = CreateSprite(&raw mut template, x, y, subpriority);
     if spriteId == MAX_SPRITES {
         RemoveSpeciesFromIconList(species);
         return null_mut();
@@ -5132,26 +5081,26 @@ pub(crate) unsafe extern "C" fn CreateMonIconSprite(
     gSprites[spriteId].oam.set_tileNum(tileNum);
     gSprites[spriteId].oam.set_priority(oamPriority as u16);
     gSprites[spriteId].data[0] = species as i16;
-    return &raw mut gSprites[spriteId];
+    &raw mut gSprites[spriteId]
 }
-pub(crate) unsafe extern "C" fn DestroyBoxMonIcon(sprite: *mut Sprite) {
+unsafe fn DestroyBoxMonIcon(sprite: *mut Sprite) {
     RemoveSpeciesFromIconList((*sprite).data[0] as u16);
     DestroySprite(sprite);
 }
-pub(crate) unsafe extern "C" fn CreateInitBoxTask(boxId: u8) {
-    let mut taskId: u8 = CreateTask(Some(Task_InitBox), 2);
-    gTasks[taskId].data[2] = boxId as i16;
+unsafe fn CreateInitBoxTask(boxId: u8) {
+    let taskId: u8 = CreateTask(Some(Task_InitBox), 2);
+    task_set(taskId, tBoxId, boxId as i16);
 }
-pub(crate) unsafe extern "C" fn IsInitBoxActive() -> u8 {
-    return FuncIsActiveTask(Some(Task_InitBox));
+unsafe fn IsInitBoxActive() -> u8 {
+    FuncIsActiveTask(Some(Task_InitBox))
 }
-pub(crate) unsafe extern "C" fn Task_InitBox(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub(crate) unsafe fn Task_InitBox(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         0 => {
             (*sStorage).wallpaperOffset = 0;
             (*sStorage).bg2_X = 0;
-            (*task).data[1] = RequestDma3Fill(
+            (*task).data[tDmaIdx] = RequestDma3Fill(
                 0,
                 (*sStorage).wallpaperBgTilemapBuffer.as_mut_ptr() as *mut c_void,
                 4096,
@@ -5159,7 +5108,7 @@ pub(crate) unsafe extern "C" fn Task_InitBox(taskId: u8) {
             );
         }
         1 => {
-            if CheckForSpaceForDma3Request((*task).data[1]) == -1 {
+            if CheckForSpaceForDma3Request((*task).data[tDmaIdx]) == -1 {
                 return;
             }
             SetBgTilemapBuffer(
@@ -5169,29 +5118,29 @@ pub(crate) unsafe extern "C" fn Task_InitBox(taskId: u8) {
             ShowBg(2);
         }
         2 => {
-            LoadWallpaperGfx((*task).data[2] as u8, 0);
+            LoadWallpaperGfx((*task).data[tBoxId] as u8, 0);
         }
         3 => {
             if WaitForWallpaperGfxLoad() == 0 {
                 return;
             }
-            InitBoxTitle((*task).data[2] as u8);
+            InitBoxTitle((*task).data[tBoxId] as u8);
             CreateBoxScrollArrows();
-            InitBoxMonSprites((*task).data[2] as u8);
+            InitBoxMonSprites((*task).data[tBoxId] as u8);
             SetGpuReg(REG_OFFSET_BG2CNT, 23306);
         }
         4 => {
             DestroyTask(taskId);
         }
         _ => {
-            (*task).data[0] = 0;
+            (*task).data[tState] = 0;
             return;
         }
     }
-    (*task).data[0] += 1;
+    (*task).data[tState] += 1;
 }
-pub(crate) unsafe extern "C" fn SetUpScrollToBox(boxId: u8) {
-    let mut direction: i8 = DetermineBoxScrollDirection(boxId);
+unsafe fn SetUpScrollToBox(boxId: u8) {
+    let direction: i8 = DetermineBoxScrollDirection(boxId);
     (*sStorage).scrollSpeed = (if direction > 0 { 6 } else { -6 }) as i16;
     (*sStorage).scrollUnused1 = (if direction > 0 { 1 } else { 2 }) as u8;
     (*sStorage).scrollTimer = 32;
@@ -5206,7 +5155,7 @@ pub(crate) unsafe extern "C" fn SetUpScrollToBox(boxId: u8) {
     (*sStorage).scrollDirection = direction;
     (*sStorage).scrollState = 0;
 }
-pub(crate) unsafe extern "C" fn ScrollToBox() -> u8 {
+unsafe fn ScrollToBox() -> u8 {
     let mut iconsScrolling: u8 = 0;
     'l1: {
         let sw1: u8 = (*sStorage).scrollState;
@@ -5217,7 +5166,6 @@ pub(crate) unsafe extern "C" fn ScrollToBox() -> u8 {
             (*sStorage).scrollState += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             if WaitForWallpaperGfxLoad() == 0 {
                 return TRUE;
             }
@@ -5227,7 +5175,6 @@ pub(crate) unsafe extern "C" fn ScrollToBox() -> u8 {
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             iconsScrolling = UpdateBoxMonIconScroll();
             if (*sStorage).scrollTimer != 0 {
                 (*sStorage).bg2_X += (*sStorage).scrollSpeed as u16;
@@ -5245,12 +5192,11 @@ pub(crate) unsafe extern "C" fn ScrollToBox() -> u8 {
         }
     }
     (*sStorage).scrollState += 1;
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn DetermineBoxScrollDirection(boxId: u8) -> i8 {
-    let mut i: u8 = 0;
+unsafe fn DetermineBoxScrollDirection(boxId: u8) -> i8 {
     let mut currentBox: u8 = StorageGetCurrentBox();
-    i = 0;
+    let mut i: u8 = 0;
     while currentBox != boxId {
         currentBox += 1;
         if currentBox >= TOTAL_BOXES_COUNT {
@@ -5258,14 +5204,14 @@ pub(crate) unsafe extern "C" fn DetermineBoxScrollDirection(boxId: u8) -> i8 {
         }
         i += 1;
     }
-    return (if i < 7 { 1 } else { -1 }) as i8;
+    (if i < 7 { 1 } else { -1 }) as i8
 }
-pub(crate) unsafe extern "C" fn SetWallpaperForCurrentBox(wallpaperId: u8) {
-    let mut boxId: u8 = StorageGetCurrentBox();
+unsafe fn SetWallpaperForCurrentBox(wallpaperId: u8) {
+    let boxId: u8 = StorageGetCurrentBox();
     SetBoxWallpaper(boxId, wallpaperId);
     (*sStorage).wallpaperChangeState = 0;
 }
-pub(crate) unsafe extern "C" fn DoWallpaperGfxChange() -> u8 {
+unsafe fn DoWallpaperGfxChange() -> u8 {
     match (*sStorage).wallpaperChangeState {
         0 => {
             BeginNormalPaletteFade((*sStorage).wallpaperPalBits, 1, 0, 16, 65535);
@@ -5273,7 +5219,7 @@ pub(crate) unsafe extern "C" fn DoWallpaperGfxChange() -> u8 {
         }
         1 => {
             if UpdatePaletteFade() == 0 {
-                let mut curBox: u8 = StorageGetCurrentBox();
+                let curBox: u8 = StorageGetCurrentBox();
                 LoadWallpaperGfx(curBox, 0);
                 (*sStorage).wallpaperChangeState += 1;
             }
@@ -5295,10 +5241,9 @@ pub(crate) unsafe extern "C" fn DoWallpaperGfxChange() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn LoadWallpaperGfx(boxId: u8, direction: i8) {
-    let mut wallpaperId: u8 = 0;
+unsafe fn LoadWallpaperGfx(boxId: u8, direction: i8) {
     let mut wallpaper: *mut Wallpaper = null_mut();
     let mut iconGfx: *mut c_void = null_mut();
     let mut tilesSize: u32 = 0;
@@ -5310,7 +5255,7 @@ pub(crate) unsafe extern "C" fn LoadWallpaperGfx(boxId: u8, direction: i8) {
         (*sStorage).wallpaperOffset = ((*sStorage).wallpaperOffset == 0) as u8;
         TrimOldWallpaper((*sStorage).wallpaperBgTilemapBuffer.as_mut_ptr() as *mut c_void);
     }
-    wallpaperId = GetBoxWallpaper((*sStorage).wallpaperLoadBoxId);
+    let wallpaperId: u8 = GetBoxWallpaper((*sStorage).wallpaperLoadBoxId);
     if wallpaperId != WALLPAPER_FRIENDS as u8 {
         wallpaper = (&raw const sWallpapers[wallpaperId]).cast_mut();
         LZ77UnCompWram(
@@ -5325,14 +5270,15 @@ pub(crate) unsafe extern "C" fn LoadWallpaperGfx(boxId: u8, direction: i8) {
         if (*sStorage).wallpaperLoadDir != 0 {
             LoadPalette(
                 (*wallpaper).palettes as *mut c_void,
-                64 + (0x000 + (*sStorage).wallpaperOffset as u16 * 2 * 16),
+                64 + ((*sStorage).wallpaperOffset as u16 * 2 * 16),
                 64,
             );
         } else {
             CpuSet(
                 (*wallpaper).palettes as *mut c_void,
-                &raw mut gPlttBufferUnfaded
-                    [64 + (0x000 + (*sStorage).wallpaperOffset as i32 * 2 * 16)]
+                &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                    .cast::<CArray<u16, 512>>()
+                    .cast_mut())[64 + ((*sStorage).wallpaperOffset as i32 * 2 * 16)]
                     as *mut c_void,
                 32,
             );
@@ -5374,14 +5320,15 @@ pub(crate) unsafe extern "C" fn LoadWallpaperGfx(boxId: u8, direction: i8) {
         if (*sStorage).wallpaperLoadDir != 0 {
             LoadPalette(
                 (*sStorage).wallpaperTilemap.as_mut_ptr() as *mut c_void,
-                64 + (0x000 + (*sStorage).wallpaperOffset as u16 * 2 * 16),
+                64 + ((*sStorage).wallpaperOffset as u16 * 2 * 16),
                 64,
             );
         } else {
             CpuSet(
                 (*sStorage).wallpaperTilemap.as_mut_ptr() as *mut c_void,
-                &raw mut gPlttBufferUnfaded
-                    [64 + (0x000 + (*sStorage).wallpaperOffset as i32 * 2 * 16)]
+                &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                    .cast::<CArray<u16, 512>>()
+                    .cast_mut())[64 + ((*sStorage).wallpaperOffset as i32 * 2 * 16)]
                     as *mut c_void,
                 32,
             );
@@ -5395,7 +5342,7 @@ pub(crate) unsafe extern "C" fn LoadWallpaperGfx(boxId: u8, direction: i8) {
         CpuSet(
             iconGfx,
             (*sStorage).wallpaperTiles.at(2048) as *mut c_void,
-            0x04000000 | iconSize / 4 & 0x1FFFFF,
+            0x04000000 | (iconSize / 4) & 0x1FFFFF,
         );
         Free(iconGfx);
         LoadBgTiles(
@@ -5407,7 +5354,7 @@ pub(crate) unsafe extern "C" fn LoadWallpaperGfx(boxId: u8, direction: i8) {
     }
     CopyBgTilemapBufferToVram(2);
 }
-pub(crate) unsafe extern "C" fn WaitForWallpaperGfxLoad() -> u32 {
+unsafe fn WaitForWallpaperGfxLoad() -> u32 {
     if IsDma3ManagerBusyWithBgCopy() != 0 {
         return FALSE as u32;
     }
@@ -5415,12 +5362,12 @@ pub(crate) unsafe extern "C" fn WaitForWallpaperGfxLoad() -> u32 {
         Free((*sStorage).wallpaperTiles as *mut c_void);
         (*sStorage).wallpaperTiles = null_mut();
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn DrawWallpaper(tilemap: *mut c_void, direction: i8, offset: u8) {
-    let mut tileOffset: i16 = offset as i16 * 256;
-    let mut paletteNum: i16 = offset as i16 * 2 + 3;
-    let mut x: i16 = ((*sStorage).bg2_X as i32 / 8) as i16 + 10 + direction as i16 * 24 & 0x3F;
+unsafe fn DrawWallpaper(tilemap: *mut c_void, direction: i8, offset: u8) {
+    let tileOffset: i16 = offset as i16 * 256;
+    let paletteNum: i16 = offset as i16 * 2 + 3;
+    let mut x: i16 = (((*sStorage).bg2_X as i32 / 8) as i16 + 10 + direction as i16 * 24) & 0x3F;
     CopyRectToBgTilemapBufferRect(
         2, tilemap, 0, 0, 20, 18, x as u8, 2, 20, 18, 17, tileOffset, paletteNum,
     );
@@ -5434,36 +5381,30 @@ pub(crate) unsafe extern "C" fn DrawWallpaper(tilemap: *mut c_void, direction: i
     }
     FillBgTilemapBufferRect(2, 0, x as u8, 2, 4, 0x12, 17);
 }
-pub(crate) unsafe extern "C" fn TrimOldWallpaper(tilemap: *mut c_void) {
-    let mut i: u16 = 0;
+unsafe fn TrimOldWallpaper(tilemap: *mut c_void) {
     let mut dest: *mut u16 = tilemap as *mut u16;
-    let mut r3: i16 = ((*sStorage).bg2_X as i32 / 8) as i16 + 30 & 0x3F;
+    let mut r3: i16 = (((*sStorage).bg2_X as i32 / 8) as i16 + 30) & 0x3F;
     if r3 <= 31 {
         dest = dest.at(r3 as i32 + 0x260);
     } else {
         dest = dest.at(r3 as i32 + 0x640);
     }
-    i = 0;
-    while i < 0x2C {
+    for i in 0..0x2C {
         *({
             let t1 = dest;
             dest = dest.at(1);
             t1
         }) = 0;
-        r3 = r3 + 1 & 0x3F;
+        r3 = (r3 + 1) & 0x3F;
         if r3 == 0 {
             dest = dest.at(-1056);
         }
         if r3 == 0x20 {
             dest = dest.at(992);
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn InitBoxTitle(boxId: u8) {
-    let mut tagIndex: u8 = 0;
-    let mut x: i16 = 0;
-    let mut i: u16 = 0;
+unsafe fn InitBoxTitle(boxId: u8) {
     let mut spriteSheet: SpriteSheet = zeroed();
     spriteSheet.data = (*sStorage).boxTitleTiles.as_mut_ptr() as *mut c_void;
     spriteSheet.size = 0x200;
@@ -5471,12 +5412,12 @@ pub(crate) unsafe extern "C" fn InitBoxTitle(boxId: u8) {
     let mut palettes: CArray<SpritePalette, 2> = zeroed();
     palettes[0].data = (*sStorage).boxTitlePal.as_mut_ptr();
     palettes[0].tag = PALTAG_BOX_TITLE;
-    let mut wallpaperId: u16 = GetBoxWallpaper(boxId) as u16;
+    let wallpaperId: u16 = GetBoxWallpaper(boxId) as u16;
     (*sStorage).boxTitlePal[14] = sBoxTitleColors[wallpaperId][0];
     (*sStorage).boxTitlePal[15] = sBoxTitleColors[wallpaperId][1];
     LoadSpritePalettes(palettes.as_mut_ptr());
     (*sStorage).wallpaperPalBits = 0x3f0;
-    tagIndex = IndexOfSpritePaletteTag(PALTAG_BOX_TITLE);
+    let mut tagIndex: u8 = IndexOfSpritePaletteTag(PALTAG_BOX_TITLE);
     (*sStorage).boxTitlePalOffset = 0x100 + tagIndex as u16 * 16 + 14;
     (*sStorage).wallpaperPalBits |= shl_i32(0x10000, tagIndex as u32) as u32;
     tagIndex = IndexOfSpritePaletteTag(PALTAG_BOX_TITLE);
@@ -5496,10 +5437,9 @@ pub(crate) unsafe extern "C" fn InitBoxTitle(boxId: u8) {
         2,
     );
     LoadSpriteSheet(&raw mut spriteSheet);
-    x = GetBoxTitleBaseX(GetBoxNamePtr(boxId));
-    i = 0;
-    while i < 2 {
-        let mut spriteId: u8 = CreateSprite(
+    let x: i16 = GetBoxTitleBaseX(GetBoxNamePtr(boxId));
+    for i in 0..2u16 {
+        let spriteId: u8 = CreateSprite(
             (&raw const *sSpriteTemplate_BoxTitle).cast_mut(),
             x + i as i16 * 32,
             28,
@@ -5507,21 +5447,16 @@ pub(crate) unsafe extern "C" fn InitBoxTitle(boxId: u8) {
         );
         (*sStorage).curBoxTitleSprites[i] = &raw mut gSprites[spriteId];
         StartSpriteAnim((*sStorage).curBoxTitleSprites[i], i as u8);
-        i += 1;
     }
     (*sStorage).boxTitleCycleId = 0;
 }
-pub(crate) unsafe extern "C" fn CreateIncomingBoxTitle(boxId: u8, direction: i8) {
+unsafe fn CreateIncomingBoxTitle(boxId: u8, direction: i8) {
     let mut palOffset: u16 = 0;
-    let mut x: i16 = 0;
-    let mut adjustedX: i16 = 0;
-    let mut i: u16 = 0;
     let mut spriteSheet: SpriteSheet = zeroed();
     spriteSheet.data = (*sStorage).boxTitleTiles.as_mut_ptr() as *mut c_void;
     spriteSheet.size = 0x200;
     spriteSheet.tag = GFXTAG_BOX_TITLE;
-    let mut template: SpriteTemplate = zeroed();
-    template = *sSpriteTemplate_BoxTitle;
+    let mut template: SpriteTemplate = *sSpriteTemplate_BoxTitle;
     (*sStorage).boxTitleCycleId = ((*sStorage).boxTitleCycleId == 0) as u8;
     if (*sStorage).boxTitleCycleId == 0 {
         spriteSheet.tag = GFXTAG_BOX_TITLE;
@@ -5551,25 +5486,23 @@ pub(crate) unsafe extern "C" fn CreateIncomingBoxTitle(boxId: u8, direction: i8)
         palOffset,
         4,
     );
-    x = GetBoxTitleBaseX(GetBoxNamePtr(boxId));
-    adjustedX = x;
+    let x: i16 = GetBoxTitleBaseX(GetBoxNamePtr(boxId));
+    let mut adjustedX: i16 = x;
     adjustedX += direction as i16 * 192;
-    i = 0;
-    while i < 2 {
-        let mut spriteId: u8 = CreateSprite(&raw mut template, i as i16 * 32 + adjustedX, 28, 24);
+    for i in 0..2u16 {
+        let spriteId: u8 = CreateSprite(&raw mut template, i as i16 * 32 + adjustedX, 28, 24);
         (*sStorage).nextBoxTitleSprites[i] = &raw mut gSprites[spriteId];
         (*(*sStorage).nextBoxTitleSprites[i]).data[0] = -(direction as i16) * 6;
         (*(*sStorage).nextBoxTitleSprites[i]).data[1] = i as i16 * 32 + x;
-        (*(*sStorage).nextBoxTitleSprites[i]).data[2] = 0;
+        (*(*sStorage).nextBoxTitleSprites[i]).data[sIncomingDelay] = 0;
         (*(*sStorage).nextBoxTitleSprites[i]).callback = Some(SpriteCB_IncomingBoxTitle);
         StartSpriteAnim((*sStorage).nextBoxTitleSprites[i], i as u8);
         (*(*sStorage).curBoxTitleSprites[i]).data[0] = -(direction as i16) * 6;
         (*(*sStorage).curBoxTitleSprites[i]).data[1] = 1;
         (*(*sStorage).curBoxTitleSprites[i]).callback = Some(SpriteCB_OutgoingBoxTitle);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CycleBoxTitleSprites() {
+unsafe fn CycleBoxTitleSprites() {
     if (*sStorage).boxTitleCycleId == 0 {
         FreeSpriteTilesByTag(GFXTAG_BOX_TITLE_ALT);
     } else {
@@ -5578,135 +5511,125 @@ pub(crate) unsafe extern "C" fn CycleBoxTitleSprites() {
     (*sStorage).curBoxTitleSprites[0] = (*sStorage).nextBoxTitleSprites[0];
     (*sStorage).curBoxTitleSprites[1] = (*sStorage).nextBoxTitleSprites[1];
 }
-pub(crate) unsafe extern "C" fn SpriteCB_IncomingBoxTitle(sprite: *mut Sprite) {
-    if (*sprite).data[2] != 0 {
-        (*sprite).data[2] -= 1;
+pub(crate) unsafe fn SpriteCB_IncomingBoxTitle(sprite: *mut Sprite) {
+    if (*sprite).data[sIncomingDelay] != 0 {
+        (*sprite).data[sIncomingDelay] -= 1;
     } else if ({
         (*sprite).x += (*sprite).data[0];
         (*sprite).x
-    }) == (*sprite).data[1]
+    }) == (*sprite).data[sIncomingX]
     {
         (*sprite).callback = Some(SpriteCallbackDummy);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_OutgoingBoxTitle(sprite: *mut Sprite) {
-    if (*sprite).data[1] != 0 {
-        (*sprite).data[1] -= 1;
+pub(crate) unsafe fn SpriteCB_OutgoingBoxTitle(sprite: *mut Sprite) {
+    if (*sprite).data[sOutgoingDelay] != 0 {
+        (*sprite).data[sOutgoingDelay] -= 1;
     } else {
         (*sprite).x += (*sprite).data[0];
-        (*sprite).data[2] = (*sprite).x + (*sprite).x2;
-        if (*sprite).data[2] < 64 || (*sprite).data[2] > 256 {
+        (*sprite).data[sOutgoingX] = (*sprite).x + (*sprite).x2;
+        if (*sprite).data[sOutgoingX] < 64 || (*sprite).data[sOutgoingX] > 256 {
             DestroySprite(sprite);
         }
     }
 }
-pub(crate) unsafe extern "C" fn CycleBoxTitleColor() {
-    let mut boxId: u8 = StorageGetCurrentBox();
-    let mut wallpaperId: u8 = GetBoxWallpaper(boxId);
+unsafe fn CycleBoxTitleColor() {
+    let boxId: u8 = StorageGetCurrentBox();
+    let wallpaperId: u8 = GetBoxWallpaper(boxId);
     if (*sStorage).boxTitleCycleId == 0 {
         CpuSet(
             sBoxTitleColors[wallpaperId].as_ptr().cast_mut() as *mut c_void,
-            &raw mut gPlttBufferUnfaded[(*sStorage).boxTitlePalOffset] as *mut c_void,
+            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                .cast::<CArray<u16, 512>>()
+                .cast_mut())[(*sStorage).boxTitlePalOffset] as *mut c_void,
             2,
         );
     } else {
         CpuSet(
             sBoxTitleColors[wallpaperId].as_ptr().cast_mut() as *mut c_void,
-            &raw mut gPlttBufferUnfaded[(*sStorage).boxTitleAltPalOffset] as *mut c_void,
+            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                .cast::<CArray<u16, 512>>()
+                .cast_mut())[(*sStorage).boxTitleAltPalOffset] as *mut c_void,
             2,
         );
     }
 }
-pub(crate) unsafe extern "C" fn GetBoxTitleBaseX(string: *mut u8) -> i16 {
-    return 176 - (GetStringWidth(FONT_NORMAL, string, 0) / 2) as i16;
+unsafe fn GetBoxTitleBaseX(string: *mut u8) -> i16 {
+    176 - (GetStringWidth(FONT_NORMAL, string, 0) / 2) as i16
 }
-pub(crate) unsafe extern "C" fn CreateBoxScrollArrows() {
-    let mut i: u16 = 0;
+unsafe fn CreateBoxScrollArrows() {
     LoadSpriteSheet((&raw const *sSpriteSheet_Arrow).cast_mut());
-    i = 0;
-    while i < 2 {
-        let mut spriteId: u8 = CreateSprite(
+    for i in 0..2u16 {
+        let spriteId: u8 = CreateSprite(
             (&raw const *sSpriteTemplate_Arrow).cast_mut(),
             92 + i as i16 * 136,
             28,
             22,
         );
         if spriteId != MAX_SPRITES {
-            let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+            let sprite: *mut Sprite = &raw mut gSprites[spriteId];
             StartSpriteAnim(sprite, i as u8);
             (*sprite).data[3] = (if i == 0 { -1 } else { 1 }) as i16;
             (*sStorage).arrowSprites[i] = sprite;
         }
-        i += 1;
     }
     if IsCursorOnBoxTitle() != 0 {
         AnimateBoxScrollArrows(TRUE);
     }
 }
-pub(crate) unsafe extern "C" fn StartBoxScrollArrowsSlide(direction: i8) {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < 2 {
+unsafe fn StartBoxScrollArrowsSlide(direction: i8) {
+    for i in 0..2u16 {
         (*(*sStorage).arrowSprites[i]).x2 = 0;
-        (*(*sStorage).arrowSprites[i]).data[0] = 2;
-        i += 1;
+        (*(*sStorage).arrowSprites[i]).data[sState] = 2;
     }
     if direction < 0 {
-        (*(*sStorage).arrowSprites[0]).data[1] = 29;
-        (*(*sStorage).arrowSprites[1]).data[1] = 5;
+        (*(*sStorage).arrowSprites[0]).data[sTimer] = 29;
+        (*(*sStorage).arrowSprites[1]).data[sTimer] = 5;
         (*(*sStorage).arrowSprites[0]).data[2] = 72;
         (*(*sStorage).arrowSprites[1]).data[2] = 72;
     } else {
-        (*(*sStorage).arrowSprites[0]).data[1] = 5;
-        (*(*sStorage).arrowSprites[1]).data[1] = 29;
+        (*(*sStorage).arrowSprites[0]).data[sTimer] = 5;
+        (*(*sStorage).arrowSprites[1]).data[sTimer] = 29;
         (*(*sStorage).arrowSprites[0]).data[2] = 248;
         (*(*sStorage).arrowSprites[1]).data[2] = 248;
     }
     (*(*sStorage).arrowSprites[0]).data[7] = 0;
     (*(*sStorage).arrowSprites[1]).data[7] = 1;
 }
-pub(crate) unsafe extern "C" fn StopBoxScrollArrowsSlide() {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < 2 {
+unsafe fn StopBoxScrollArrowsSlide() {
+    for i in 0..2u16 {
         (*(*sStorage).arrowSprites[i]).x = 136 * i as i16 + 92;
         (*(*sStorage).arrowSprites[i]).x2 = 0;
         (*(*sStorage).arrowSprites[i]).set_invisible(FALSE as u16);
-        i += 1;
     }
     AnimateBoxScrollArrows(TRUE);
 }
-pub(crate) unsafe extern "C" fn AnimateBoxScrollArrows(animate: u8) {
-    let mut i: u16 = 0;
+unsafe fn AnimateBoxScrollArrows(animate: u8) {
     if animate != 0 {
-        i = 0;
-        while i < 2 {
-            (*(*sStorage).arrowSprites[i]).data[0] = 1;
-            (*(*sStorage).arrowSprites[i]).data[1] = 0;
+        for i in 0..2u16 {
+            (*(*sStorage).arrowSprites[i]).data[sState] = 1;
+            (*(*sStorage).arrowSprites[i]).data[sTimer] = 0;
             (*(*sStorage).arrowSprites[i]).data[2] = 0;
             (*(*sStorage).arrowSprites[i]).data[4] = 0;
-            i += 1;
         }
     } else {
-        i = 0;
-        while i < 2 {
-            (*(*sStorage).arrowSprites[i]).data[0] = 0;
-            i += 1;
+        for i in 0..2u16 {
+            (*(*sStorage).arrowSprites[i]).data[sState] = 0;
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Arrow(sprite: *mut Sprite) {
-    match (*sprite).data[0] {
+pub(crate) unsafe fn SpriteCB_Arrow(sprite: *mut Sprite) {
+    match (*sprite).data[sState] {
         0 => {
             (*sprite).x2 = 0;
         }
         1 => {
             if ({
-                (*sprite).data[1] += 1;
-                (*sprite).data[1]
+                (*sprite).data[sTimer] += 1;
+                (*sprite).data[sTimer]
             }) > 3
             {
-                (*sprite).data[1] = 0;
+                (*sprite).data[sTimer] = 0;
                 (*sprite).x2 += (*sprite).data[3];
                 if ({
                     (*sprite).data[2] += 1;
@@ -5719,7 +5642,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_Arrow(sprite: *mut Sprite) {
             }
         }
         2 => {
-            (*sprite).data[0] = 3;
+            (*sprite).data[sState] = 3;
         }
         3 => {
             (*sprite).x -= (*sStorage).scrollSpeed;
@@ -5727,13 +5650,13 @@ pub(crate) unsafe extern "C" fn SpriteCB_Arrow(sprite: *mut Sprite) {
                 (*sprite).set_invisible(TRUE as u16);
             }
             if ({
-                (*sprite).data[1] -= 1;
-                (*sprite).data[1]
+                (*sprite).data[sTimer] -= 1;
+                (*sprite).data[sTimer]
             }) == 0
             {
                 (*sprite).x = (*sprite).data[2];
                 (*sprite).set_invisible(FALSE as u16);
-                (*sprite).data[0] = 4;
+                (*sprite).data[sState] = 4;
             }
         }
         4 => {
@@ -5742,14 +5665,14 @@ pub(crate) unsafe extern "C" fn SpriteCB_Arrow(sprite: *mut Sprite) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CreateChooseBoxArrows(
+unsafe fn CreateChooseBoxArrows(
     x: u16,
     y: u16,
     mut animId: u8,
     priority: u8,
     subpriority: u8,
 ) -> *mut Sprite {
-    let mut spriteId: u8 = CreateSprite(
+    let spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_Arrow).cast_mut(),
         x as i16,
         y as i16,
@@ -5762,41 +5685,36 @@ pub(crate) unsafe extern "C" fn CreateChooseBoxArrows(
     StartSpriteAnim(&raw mut gSprites[spriteId], animId);
     gSprites[spriteId].oam.set_priority(priority as u16);
     gSprites[spriteId].callback = Some(SpriteCallbackDummy);
-    return &raw mut gSprites[spriteId];
+    &raw mut gSprites[spriteId]
 }
-pub(crate) unsafe extern "C" fn InitCursor() {
+unsafe fn InitCursor() {
     if (*sStorage).boxOption != OPTION_DEPOSIT {
-        sCursorArea = CURSOR_AREA_IN_BOX as i8;
+        sCursorArea.set(CURSOR_AREA_IN_BOX as i8);
     } else {
-        sCursorArea = CURSOR_AREA_IN_PARTY;
+        sCursorArea.set(CURSOR_AREA_IN_PARTY);
     }
     sCursorPosition = 0;
-    sIsMonBeingMoved = FALSE;
-    sMovingMonOrigBoxId = 0;
-    sMovingMonOrigBoxPos = 0;
-    sAutoActionOn = FALSE;
+    sIsMonBeingMoved.set(FALSE);
+    sMovingMonOrigBoxId.set(0);
+    sMovingMonOrigBoxPos.set(0);
+    sAutoActionOn.set(FALSE);
     ClearSavedCursorPos();
     CreateCursorSprites();
     (*sStorage).cursorPrevHorizPos = 1;
     (*sStorage).inBoxMovingMode = MOVE_MODE_NORMAL;
     TryRefreshDisplayMon();
 }
-pub(crate) unsafe extern "C" fn InitCursorOnReopen() {
+unsafe fn InitCursorOnReopen() {
     CreateCursorSprites();
     ReshowDisplayMon();
     (*sStorage).cursorPrevHorizPos = 1;
     (*sStorage).inBoxMovingMode = MOVE_MODE_NORMAL;
-    if sIsMonBeingMoved != 0 {
+    if sIsMonBeingMoved.get() != 0 {
         (*sStorage).movingMon = sSavedMovingMon;
         CreateMovingMonIcon();
     }
 }
-pub(crate) unsafe extern "C" fn GetCursorCoordsByPos(
-    cursorArea: u8,
-    cursorPosition: u8,
-    x: *mut u16,
-    y: *mut u16,
-) {
+unsafe fn GetCursorCoordsByPos(cursorArea: u8, cursorPosition: u8, x: *mut u16, y: *mut u16) {
     match cursorArea {
         CURSOR_AREA_IN_BOX => {
             *x = (cursorPosition as i32 % 6) as u16 * 24 + 100;
@@ -5819,7 +5737,7 @@ pub(crate) unsafe extern "C" fn GetCursorCoordsByPos(
             *y = 12;
         }
         3 => {
-            *y = (if sIsMonBeingMoved != 0 { 8 } else { 14 }) as u16;
+            *y = (if sIsMonBeingMoved.get() != 0 { 8 } else { 14 }) as u16;
             *x = cursorPosition as u16 * 88 + 120;
         }
         4 => {
@@ -5829,8 +5747,8 @@ pub(crate) unsafe extern "C" fn GetCursorCoordsByPos(
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn GetSpeciesAtCursorPosition() -> u16 {
-    match sCursorArea {
+unsafe fn GetSpeciesAtCursorPosition() -> u16 {
+    match sCursorArea.get() {
         CURSOR_AREA_IN_PARTY => {
             return GetMonData2(&raw mut gPlayerParty[sCursorPosition], MON_DATA_SPECIES) as u16;
         }
@@ -5843,10 +5761,10 @@ pub(crate) unsafe extern "C" fn GetSpeciesAtCursorPosition() -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn UpdateCursorPos() -> u8 {
+unsafe fn UpdateCursorPos() -> u8 {
     let mut tmp: i16 = 0;
     if (*sStorage).cursorMoveSteps == 0 {
         if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
@@ -5893,9 +5811,9 @@ pub(crate) unsafe extern "C" fn UpdateCursorPos() -> u8 {
         (*(*sStorage).cursorSprite).y = (*sStorage).cursorTargetY;
         DoCursorNewPosUpdate();
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn InitNewCursorPos(newCursorArea: u8, newCursorPosition: u8) {
+unsafe fn InitNewCursorPos(newCursorArea: u8, newCursorPosition: u8) {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
     GetCursorCoordsByPos(newCursorArea, newCursorPosition, &raw mut x, &raw mut y);
@@ -5904,7 +5822,7 @@ pub(crate) unsafe extern "C" fn InitNewCursorPos(newCursorArea: u8, newCursorPos
     (*sStorage).cursorTargetX = x as i16;
     (*sStorage).cursorTargetY = y as i16;
 }
-pub(crate) unsafe extern "C" fn InitCursorMove() {
+unsafe fn InitCursorMove() {
     let mut yDistance: i32 = 0;
     let mut xDistance: i32 = 0;
     if (*sStorage).cursorVerticalWrap != 0 || (*sStorage).cursorHorizontalWrap != 0 {
@@ -5948,11 +5866,11 @@ pub(crate) unsafe extern "C" fn InitCursorMove() {
     (*sStorage).cursorNewX = ((*(*sStorage).cursorSprite).x as i32) << 8;
     (*sStorage).cursorNewY = ((*(*sStorage).cursorSprite).y as i32) << 8;
 }
-pub(crate) unsafe extern "C" fn SetCursorPosition(newCursorArea: u8, newCursorPosition: u8) {
+unsafe fn SetCursorPosition(newCursorArea: u8, newCursorPosition: u8) {
     InitNewCursorPos(newCursorArea, newCursorPosition);
     InitCursorMove();
     if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
-        if (*sStorage).inBoxMovingMode == MOVE_MODE_NORMAL && sIsMonBeingMoved == 0 {
+        if (*sStorage).inBoxMovingMode == MOVE_MODE_NORMAL && sIsMonBeingMoved.get() == 0 {
             StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_STILL);
         }
     } else {
@@ -5961,9 +5879,9 @@ pub(crate) unsafe extern "C" fn SetCursorPosition(newCursorArea: u8, newCursorPo
         }
     }
     if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
-        if sCursorArea == CURSOR_AREA_IN_BOX as i8 {
+        if sCursorArea.get() == CURSOR_AREA_IN_BOX as i8 {
             TryHideItemIconAtPos(CURSOR_AREA_IN_BOX, sCursorPosition as u8);
-        } else if sCursorArea == CURSOR_AREA_IN_PARTY {
+        } else if sCursorArea.get() == CURSOR_AREA_IN_PARTY {
             TryHideItemIconAtPos(CURSOR_AREA_IN_PARTY as u8, sCursorPosition as u8);
         }
         if newCursorArea == CURSOR_AREA_IN_BOX {
@@ -5972,7 +5890,7 @@ pub(crate) unsafe extern "C" fn SetCursorPosition(newCursorArea: u8, newCursorPo
             TryLoadItemIconAtPos(newCursorArea, newCursorPosition);
         }
     }
-    if newCursorArea == CURSOR_AREA_IN_PARTY as u8 && sCursorArea != CURSOR_AREA_IN_PARTY {
+    if newCursorArea == CURSOR_AREA_IN_PARTY as u8 && sCursorArea.get() != CURSOR_AREA_IN_PARTY {
         (*sStorage).cursorPrevHorizPos = 1;
         (*(*sStorage).cursorShadowSprite).set_invisible(TRUE as u16);
     }
@@ -5988,7 +5906,7 @@ pub(crate) unsafe extern "C" fn SetCursorPosition(newCursorArea: u8, newCursorPo
                 (*(*sStorage).cursorShadowSprite).set_invisible(TRUE as u16);
             } else {
                 (*(*sStorage).cursorSprite).oam.set_priority(2);
-                if sCursorArea == CURSOR_AREA_IN_BOX as i8 && sIsMonBeingMoved != 0 {
+                if sCursorArea.get() == CURSOR_AREA_IN_BOX as i8 && sIsMonBeingMoved.get() != 0 {
                     SetMovingMonPriority(2);
                 }
             }
@@ -5996,11 +5914,11 @@ pub(crate) unsafe extern "C" fn SetCursorPosition(newCursorArea: u8, newCursorPo
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn DoCursorNewPosUpdate() {
-    sCursorArea = (*sStorage).newCursorArea as i8;
+unsafe fn DoCursorNewPosUpdate() {
+    sCursorArea.set((*sStorage).newCursorArea as i8);
     sCursorPosition = (*sStorage).newCursorPosition as i8;
     if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
-        if (*sStorage).inBoxMovingMode == MOVE_MODE_NORMAL && sIsMonBeingMoved == 0 {
+        if (*sStorage).inBoxMovingMode == MOVE_MODE_NORMAL && sIsMonBeingMoved.get() == 0 {
             StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_BOUNCE);
         }
     } else {
@@ -6009,7 +5927,7 @@ pub(crate) unsafe extern "C" fn DoCursorNewPosUpdate() {
         }
     }
     TryRefreshDisplayMon();
-    match sCursorArea {
+    match sCursorArea.get() {
         CURSOR_AREA_BUTTONS => {
             SetMovingMonPriority(1);
         }
@@ -6020,21 +5938,19 @@ pub(crate) unsafe extern "C" fn DoCursorNewPosUpdate() {
             (*(*sStorage).cursorShadowSprite).subpriority = 13;
             SetMovingMonPriority(1);
         }
-        0 => {
-            if (*sStorage).inBoxMovingMode == MOVE_MODE_NORMAL {
-                (*(*sStorage).cursorSprite).oam.set_priority(1);
-                (*(*sStorage).cursorShadowSprite).oam.set_priority(2);
-                (*(*sStorage).cursorShadowSprite).subpriority = 21;
-                (*(*sStorage).cursorShadowSprite).set_invisible(FALSE as u16);
-                SetMovingMonPriority(2);
-            }
+        0 if (*sStorage).inBoxMovingMode == MOVE_MODE_NORMAL => {
+            (*(*sStorage).cursorSprite).oam.set_priority(1);
+            (*(*sStorage).cursorShadowSprite).oam.set_priority(2);
+            (*(*sStorage).cursorShadowSprite).subpriority = 21;
+            (*(*sStorage).cursorShadowSprite).set_invisible(FALSE as u16);
+            SetMovingMonPriority(2);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SetCursorInParty() {
+unsafe fn SetCursorInParty() {
     let mut partyCount: u8 = 0;
-    if sIsMonBeingMoved == 0 {
+    if sIsMonBeingMoved.get() == 0 {
         partyCount = 0;
     } else {
         partyCount = CalculatePlayerPartyCount();
@@ -6047,23 +5963,23 @@ pub(crate) unsafe extern "C" fn SetCursorInParty() {
     }
     SetCursorPosition(CURSOR_AREA_IN_PARTY as u8, partyCount);
 }
-pub(crate) unsafe extern "C" fn SetCursorBoxPosition(cursorBoxPosition: u8) {
+unsafe fn SetCursorBoxPosition(cursorBoxPosition: u8) {
     SetCursorPosition(CURSOR_AREA_IN_BOX, cursorBoxPosition);
 }
-pub(crate) unsafe extern "C" fn ClearSavedCursorPos() {
-    sSavedCursorPosition = 0;
+fn ClearSavedCursorPos() {
+    sSavedCursorPosition.set(0);
 }
-pub(crate) unsafe extern "C" fn SaveCursorPos() {
-    sSavedCursorPosition = sCursorPosition as u8;
+unsafe fn SaveCursorPos() {
+    sSavedCursorPosition.set(sCursorPosition as u8);
 }
-pub(crate) unsafe extern "C" fn GetSavedCursorPos() -> u8 {
-    return sSavedCursorPosition;
+fn GetSavedCursorPos() -> u8 {
+    sSavedCursorPosition.get()
 }
-pub(crate) unsafe extern "C" fn InitMonPlaceChange(r#type: u8) {
+unsafe fn InitMonPlaceChange(r#type: u8) {
     (*sStorage).monPlaceChangeFunc = placeChangeFuncs_10[r#type];
     (*sStorage).monPlaceChangeState = 0;
 }
-pub(crate) unsafe extern "C" fn InitMultiMonPlaceChange(up: u8) {
+unsafe fn InitMultiMonPlaceChange(up: u8) {
     if up == 0 {
         (*sStorage).monPlaceChangeFunc = Some(MultiMonPlaceChange_Down);
     } else {
@@ -6071,13 +5987,13 @@ pub(crate) unsafe extern "C" fn InitMultiMonPlaceChange(up: u8) {
     }
     (*sStorage).monPlaceChangeState = 0;
 }
-pub(crate) unsafe extern "C" fn DoMonPlaceChange() -> u8 {
-    return (*sStorage).monPlaceChangeFunc.unwrap_unchecked()();
+unsafe fn DoMonPlaceChange() -> u8 {
+    (*sStorage).monPlaceChangeFunc.unwrap_unchecked()()
 }
-pub(crate) unsafe extern "C" fn MonPlaceChange_Grab() -> u8 {
+pub(crate) unsafe fn MonPlaceChange_Grab() -> u8 {
     match (*sStorage).monPlaceChangeState {
         0 => {
-            if sIsMonBeingMoved != 0 {
+            if sIsMonBeingMoved.get() != 0 {
                 return FALSE;
             }
             StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_OPEN);
@@ -6100,9 +6016,9 @@ pub(crate) unsafe extern "C" fn MonPlaceChange_Grab() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn MonPlaceChange_Place() -> u8 {
+pub(crate) unsafe fn MonPlaceChange_Place() -> u8 {
     match (*sStorage).monPlaceChangeState {
         0 => {
             if MonPlaceChange_CursorDown() == 0 {
@@ -6122,12 +6038,12 @@ pub(crate) unsafe extern "C" fn MonPlaceChange_Place() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn MonPlaceChange_Shift() -> u8 {
+pub(crate) unsafe fn MonPlaceChange_Shift() -> u8 {
     match (*sStorage).monPlaceChangeState {
         0 => {
-            match sCursorArea {
+            match sCursorArea.get() {
                 CURSOR_AREA_IN_PARTY => {
                     (*sStorage).shiftBoxId = TOTAL_BOXES_COUNT;
                 }
@@ -6154,15 +6070,15 @@ pub(crate) unsafe extern "C" fn MonPlaceChange_Shift() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn MultiMonPlaceChange_Down() -> u8 {
-    return MonPlaceChange_CursorDown();
+pub(crate) unsafe fn MultiMonPlaceChange_Down() -> u8 {
+    MonPlaceChange_CursorDown()
 }
-pub(crate) unsafe extern "C" fn MultiMonPlaceChange_Up() -> u8 {
-    return MonPlaceChange_CursorUp();
+pub(crate) unsafe fn MultiMonPlaceChange_Up() -> u8 {
+    MonPlaceChange_CursorUp()
 }
-pub(crate) unsafe extern "C" fn MonPlaceChange_CursorDown() -> u8 {
+unsafe fn MonPlaceChange_CursorDown() -> u8 {
     match (*(*sStorage).cursorSprite).y2 {
         0 => {
             (*(*sStorage).cursorSprite).y2 += 1;
@@ -6174,9 +6090,9 @@ pub(crate) unsafe extern "C" fn MonPlaceChange_CursorDown() -> u8 {
             (*(*sStorage).cursorSprite).y2 += 1;
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn MonPlaceChange_CursorUp() -> u8 {
+unsafe fn MonPlaceChange_CursorUp() -> u8 {
     match (*(*sStorage).cursorSprite).y2 {
         0 => {
             return FALSE;
@@ -6185,10 +6101,10 @@ pub(crate) unsafe extern "C" fn MonPlaceChange_CursorUp() -> u8 {
             (*(*sStorage).cursorSprite).y2 -= 1;
         }
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn MoveMon() {
-    match sCursorArea {
+unsafe fn MoveMon() {
+    match sCursorArea.get() {
         CURSOR_AREA_IN_PARTY => {
             SetMovingMonData(TOTAL_BOXES_COUNT, sCursorPosition as u8);
             SetMovingMonSprite(MODE_PARTY, sCursorPosition as u8);
@@ -6203,11 +6119,11 @@ pub(crate) unsafe extern "C" fn MoveMon() {
             return;
         }
     }
-    sIsMonBeingMoved = TRUE;
+    sIsMonBeingMoved.set(TRUE);
 }
-pub(crate) unsafe extern "C" fn PlaceMon() {
+unsafe fn PlaceMon() {
     let mut boxId: u8 = 0;
-    match sCursorArea {
+    match sCursorArea.get() {
         CURSOR_AREA_IN_PARTY => {
             SetPlacedMonData(TOTAL_BOXES_COUNT, sCursorPosition as u8);
             SetPlacedMonSprite(TOTAL_BOXES_COUNT, sCursorPosition as u8);
@@ -6221,22 +6137,22 @@ pub(crate) unsafe extern "C" fn PlaceMon() {
             return;
         }
     }
-    sIsMonBeingMoved = FALSE;
+    sIsMonBeingMoved.set(FALSE);
 }
-pub(crate) unsafe extern "C" fn RefreshDisplayMon() {
+unsafe fn RefreshDisplayMon() {
     TryRefreshDisplayMon();
 }
-pub(crate) unsafe extern "C" fn SetMovingMonData(boxId: u8, position: u8) {
+unsafe fn SetMovingMonData(boxId: u8, position: u8) {
     if boxId == TOTAL_BOXES_COUNT {
         (*sStorage).movingMon = gPlayerParty[sCursorPosition];
     } else {
         BoxMonAtToMon(boxId, position, &raw mut (*sStorage).movingMon);
     }
     PurgeMonOrBoxMon(boxId, position);
-    sMovingMonOrigBoxId = boxId;
-    sMovingMonOrigBoxPos = position;
+    sMovingMonOrigBoxId.set(boxId);
+    sMovingMonOrigBoxPos.set(position);
 }
-pub(crate) unsafe extern "C" fn SetPlacedMonData(boxId: u8, position: u8) {
+unsafe fn SetPlacedMonData(boxId: u8, position: u8) {
     if boxId == TOTAL_BOXES_COUNT {
         gPlayerParty[position] = (*sStorage).movingMon;
     } else {
@@ -6244,14 +6160,14 @@ pub(crate) unsafe extern "C" fn SetPlacedMonData(boxId: u8, position: u8) {
         SetBoxMonAt(boxId, position, &raw mut (*sStorage).movingMon.r#box);
     }
 }
-pub(crate) unsafe extern "C" fn PurgeMonOrBoxMon(boxId: u8, position: u8) {
+unsafe fn PurgeMonOrBoxMon(boxId: u8, position: u8) {
     if boxId == TOTAL_BOXES_COUNT {
         ZeroMonData(&raw mut gPlayerParty[position]);
     } else {
         ZeroBoxMonAt(boxId, position);
     }
 }
-pub(crate) unsafe extern "C" fn SetShiftedMonData(boxId: u8, position: u8) {
+unsafe fn SetShiftedMonData(boxId: u8, position: u8) {
     if boxId == TOTAL_BOXES_COUNT {
         (*sStorage).tempMon = gPlayerParty[position];
     } else {
@@ -6260,18 +6176,18 @@ pub(crate) unsafe extern "C" fn SetShiftedMonData(boxId: u8, position: u8) {
     SetPlacedMonData(boxId, position);
     (*sStorage).movingMon = (*sStorage).tempMon;
     SetDisplayMonData(&raw mut (*sStorage).movingMon as *mut c_void, MODE_PARTY);
-    sMovingMonOrigBoxId = boxId;
-    sMovingMonOrigBoxPos = position;
+    sMovingMonOrigBoxId.set(boxId);
+    sMovingMonOrigBoxPos.set(position);
 }
-pub(crate) unsafe extern "C" fn TryStorePartyMonInBox(boxId: u8) -> u8 {
-    let mut boxPosition: i16 = GetFirstFreeBoxSpot(boxId);
+unsafe fn TryStorePartyMonInBox(boxId: u8) -> u8 {
+    let boxPosition: i16 = GetFirstFreeBoxSpot(boxId);
     if boxPosition == -1 {
         return FALSE;
     }
-    if sIsMonBeingMoved != 0 {
+    if sIsMonBeingMoved.get() != 0 {
         SetPlacedMonData(boxId, boxPosition as u8);
         DestroyMovingMonIcon();
-        sIsMonBeingMoved = FALSE;
+        sIsMonBeingMoved.set(FALSE);
     } else {
         SetMovingMonData(TOTAL_BOXES_COUNT, sCursorPosition as u8);
         SetPlacedMonData(boxId, boxPosition as u8);
@@ -6281,17 +6197,17 @@ pub(crate) unsafe extern "C" fn TryStorePartyMonInBox(boxId: u8) -> u8 {
         CreateBoxMonIconAtPos(boxPosition as u8);
     }
     StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_STILL);
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ResetSelectionAfterDeposit() {
+unsafe fn ResetSelectionAfterDeposit() {
     StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_BOUNCE);
     TryRefreshDisplayMon();
 }
-pub(crate) unsafe extern "C" fn InitReleaseMon() {
+unsafe fn InitReleaseMon() {
     let mut mode: u8 = 0;
-    if sIsMonBeingMoved != 0 {
+    if sIsMonBeingMoved.get() != 0 {
         mode = MODE_MOVE;
-    } else if sCursorArea == CURSOR_AREA_IN_PARTY {
+    } else if sCursorArea.get() == CURSOR_AREA_IN_PARTY {
         mode = MODE_PARTY;
     } else {
         mode = MODE_BOX;
@@ -6302,7 +6218,7 @@ pub(crate) unsafe extern "C" fn InitReleaseMon() {
         (*sStorage).displayMonName.as_mut_ptr(),
     );
 }
-pub(crate) unsafe extern "C" fn TryHideReleaseMon() -> u8 {
+unsafe fn TryHideReleaseMon() -> u8 {
     if TryHideReleaseMonSprite() == 0 {
         StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_BOUNCE);
         return FALSE;
@@ -6311,16 +6227,16 @@ pub(crate) unsafe extern "C" fn TryHideReleaseMon() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ReleaseMon() {
+unsafe fn ReleaseMon() {
     let mut boxId: u8 = 0;
     DestroyReleaseMonIcon();
-    if sIsMonBeingMoved != 0 {
-        sIsMonBeingMoved = FALSE;
+    if sIsMonBeingMoved.get() != 0 {
+        sIsMonBeingMoved.set(FALSE);
     } else {
-        if sCursorArea == CURSOR_AREA_IN_PARTY {
+        if sCursorArea.get() == CURSOR_AREA_IN_PARTY {
             boxId = TOTAL_BOXES_COUNT;
         } else {
             boxId = StorageGetCurrentBox();
@@ -6329,15 +6245,13 @@ pub(crate) unsafe extern "C" fn ReleaseMon() {
     }
     TryRefreshDisplayMon();
 }
-pub(crate) unsafe extern "C" fn TrySetCursorFistAnim() {
-    if sIsMonBeingMoved != 0 {
+unsafe fn TrySetCursorFistAnim() {
+    if sIsMonBeingMoved.get() != 0 {
         StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_FIST);
     }
 }
-pub(crate) unsafe extern "C" fn GetRestrictedReleaseMoves(mut moves: *mut u16) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 6 {
+unsafe fn GetRestrictedReleaseMoves(mut moves: *mut u16) {
+    for i in 0..6i32 {
         if sRestrictedReleaseMoves[i].mapGroup == MAP_GROUPS_COUNT
             || sRestrictedReleaseMoves[i].mapGroup == (*gSaveBlock1Ptr).location.mapGroup
                 && sRestrictedReleaseMoves[i].mapNum == (*gSaveBlock1Ptr).location.mapNum
@@ -6345,22 +6259,21 @@ pub(crate) unsafe extern "C" fn GetRestrictedReleaseMoves(mut moves: *mut u16) {
             *moves = sRestrictedReleaseMoves[i].r#move;
             moves = moves.at(1);
         }
-        i += 1;
     }
     *moves = MOVES_COUNT;
 }
-pub(crate) unsafe extern "C" fn InitCanReleaseMonVars() {
+unsafe fn InitCanReleaseMonVars() {
     if AtLeastThreeUsableMons() == 0 {
         (*sStorage).releaseStatusResolved = TRUE;
         (*sStorage).canReleaseMon = FALSE as i8;
         return;
     }
-    if sIsMonBeingMoved != 0 {
+    if sIsMonBeingMoved.get() != 0 {
         (*sStorage).tempMon = (*sStorage).movingMon;
         (*sStorage).releaseBoxId = -1;
         (*sStorage).releaseBoxPos = -1;
     } else {
-        if sCursorArea == CURSOR_AREA_IN_PARTY {
+        if sCursorArea.get() == CURSOR_AREA_IN_PARTY {
             (*sStorage).tempMon = gPlayerParty[sCursorPosition];
             (*sStorage).releaseBoxId = TOTAL_BOXES_COUNT as i8;
         } else {
@@ -6387,11 +6300,9 @@ pub(crate) unsafe extern "C" fn InitCanReleaseMonVars() {
     }
     (*sStorage).releaseCheckState = 0;
 }
-pub(crate) unsafe extern "C" fn AtLeastThreeUsableMons() -> u32 {
-    let mut i: i32 = 0;
+unsafe fn AtLeastThreeUsableMons() -> u32 {
+    let mut count: i32 = (sIsMonBeingMoved.get() != FALSE) as i32;
     let mut j: i32 = 0;
-    let mut count: i32 = (sIsMonBeingMoved != FALSE) as i32;
-    j = 0;
     while j < PARTY_SIZE {
         if GetMonData2(&raw mut gPlayerParty[j], MON_DATA_SANITY_HAS_SPECIES) != 0 {
             count += 1;
@@ -6401,35 +6312,28 @@ pub(crate) unsafe extern "C" fn AtLeastThreeUsableMons() -> u32 {
     if count >= 3 {
         return TRUE as u32;
     }
-    i = 0;
-    while i < TOTAL_BOXES_COUNT as i32 {
-        j = 0;
-        while j < IN_BOX_COUNT {
-            if CheckBoxMonSanityAt(i as u32, j as u32) != 0 {
-                if ({
+    for i in 0..(TOTAL_BOXES_COUNT as i32) {
+        for j in 0..IN_BOX_COUNT {
+            if CheckBoxMonSanityAt(i as u32, j as u32) != 0
+                && ({
                     count += 1;
                     count
                 }) >= 3
-                {
-                    return TRUE as u32;
-                }
+            {
+                return TRUE as u32;
             }
-            j += 1;
         }
-        i += 1;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn RunCanReleaseMon() -> i8 {
-    let mut i: u16 = 0;
+unsafe fn RunCanReleaseMon() -> i8 {
     let mut knownMoves: u16 = 0;
     if (*sStorage).releaseStatusResolved != 0 {
         return (*sStorage).canReleaseMon;
     }
     match (*sStorage).releaseCheckState {
         0 => {
-            i = 0;
-            while i < PARTY_SIZE as u16 {
+            for i in 0..(PARTY_SIZE as u16) {
                 if (*sStorage).releaseBoxId != TOTAL_BOXES_COUNT as i8
                     || (*sStorage).releaseBoxPos as i32 != i as i32
                 {
@@ -6440,7 +6344,6 @@ pub(crate) unsafe extern "C" fn RunCanReleaseMon() -> i8 {
                     ) as u16;
                     (*sStorage).restrictedReleaseMonMoves &= !knownMoves;
                 }
-                i += 1;
             }
             if (*sStorage).restrictedReleaseMonMoves == 0 {
                 (*sStorage).releaseStatusResolved = TRUE;
@@ -6452,8 +6355,7 @@ pub(crate) unsafe extern "C" fn RunCanReleaseMon() -> i8 {
             }
         }
         1 => {
-            i = 0;
-            while i < IN_BOX_COUNT as u16 {
+            for i in 0..(IN_BOX_COUNT as u16) {
                 knownMoves = GetAndCopyBoxMonDataAt(
                     (*sStorage).releaseCheckBoxId as u8,
                     (*sStorage).releaseCheckBoxPos as u8,
@@ -6486,35 +6388,34 @@ pub(crate) unsafe extern "C" fn RunCanReleaseMon() -> i8 {
                         (*sStorage).canReleaseMon = FALSE as i8;
                     }
                 }
-                i += 1;
             }
         }
         _ => {}
     }
-    return -1;
+    -1
 }
-pub(crate) unsafe extern "C" fn SaveMovingMon() {
-    if sIsMonBeingMoved != 0 {
+unsafe fn SaveMovingMon() {
+    if sIsMonBeingMoved.get() != 0 {
         sSavedMovingMon = (*sStorage).movingMon;
     }
 }
-pub(crate) unsafe extern "C" fn LoadSavedMovingMon() {
-    if sIsMonBeingMoved != 0 {
-        if sMovingMonOrigBoxId == TOTAL_BOXES_COUNT {
+unsafe fn LoadSavedMovingMon() {
+    if sIsMonBeingMoved.get() != 0 {
+        if sMovingMonOrigBoxId.get() == TOTAL_BOXES_COUNT {
             (*sStorage).movingMon = sSavedMovingMon;
         } else {
             (*sStorage).movingMon.r#box = sSavedMovingMon.r#box;
         }
     }
 }
-pub(crate) unsafe extern "C" fn InitSummaryScreenData() {
-    if sIsMonBeingMoved != 0 {
+unsafe fn InitSummaryScreenData() {
+    if sIsMonBeingMoved.get() != 0 {
         SaveMovingMon();
         (*sStorage).summaryMon.mon = &raw mut sSavedMovingMon;
         (*sStorage).summaryStartPos = 0;
         (*sStorage).summaryMaxPos = 0;
         (*sStorage).summaryScreenMode = SUMMARY_MODE_NORMAL;
-    } else if sCursorArea == CURSOR_AREA_IN_PARTY {
+    } else if sCursorArea.get() == CURSOR_AREA_IN_PARTY {
         (*sStorage).summaryMon.mon = gPlayerParty.as_mut_ptr();
         (*sStorage).summaryStartPos = sCursorPosition as u8;
         (*sStorage).summaryMaxPos = CountPartyMons() - 1;
@@ -6526,22 +6427,19 @@ pub(crate) unsafe extern "C" fn InitSummaryScreenData() {
         (*sStorage).summaryScreenMode = SUMMARY_MODE_BOX;
     }
 }
-pub(crate) unsafe extern "C" fn SetSelectionAfterSummaryScreen() {
-    if sIsMonBeingMoved != 0 {
+unsafe fn SetSelectionAfterSummaryScreen() {
+    if sIsMonBeingMoved.get() != 0 {
         LoadSavedMovingMon();
     } else {
         sCursorPosition = gLastViewedMonIndex as i8;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CompactPartySlots() -> i16 {
+pub unsafe fn CompactPartySlots() -> i16 {
     let mut retVal: i16 = -1;
-    let mut i: u16 = 0;
     let mut last: u16 = 0;
-    i = 0;
-    last = 0;
-    while i < PARTY_SIZE as u16 {
-        let mut species: u16 = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) as u16;
+    for i in 0..(PARTY_SIZE as u16) {
+        let species: u16 = GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SPECIES) as u16;
         if species != SPECIES_NONE {
             if i != last {
                 gPlayerParty[last] = gPlayerParty[i];
@@ -6550,31 +6448,30 @@ pub unsafe extern "C" fn CompactPartySlots() -> i16 {
         } else if retVal == -1 {
             retVal = i as i16;
         }
-        i += 1;
     }
     while last < PARTY_SIZE as u16 {
         ZeroMonData(&raw mut gPlayerParty[last]);
         last += 1;
     }
-    return retVal;
+    retVal
 }
-pub(crate) unsafe extern "C" fn SetMonMarkings(mut markings: u8) {
+unsafe fn SetMonMarkings(mut markings: u8) {
     (*sStorage).displayMonMarkings = markings;
-    if sIsMonBeingMoved != 0 {
+    if sIsMonBeingMoved.get() != 0 {
         SetMonData(
             &raw mut (*sStorage).movingMon,
             MON_DATA_MARKINGS,
             &raw mut markings as *mut c_void,
         );
     } else {
-        if sCursorArea == CURSOR_AREA_IN_PARTY {
+        if sCursorArea.get() == CURSOR_AREA_IN_PARTY {
             SetMonData(
                 &raw mut gPlayerParty[sCursorPosition],
                 MON_DATA_MARKINGS,
                 &raw mut markings as *mut c_void,
             );
         }
-        if sCursorArea == CURSOR_AREA_IN_BOX as i8 {
+        if sCursorArea.get() == CURSOR_AREA_IN_BOX as i8 {
             SetCurrentBoxMonData(
                 sCursorPosition as u8,
                 MON_DATA_MARKINGS,
@@ -6583,9 +6480,9 @@ pub(crate) unsafe extern "C" fn SetMonMarkings(mut markings: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn IsRemovingLastPartyMon() -> u8 {
-    if sCursorArea == CURSOR_AREA_IN_PARTY
-        && sIsMonBeingMoved == 0
+unsafe fn IsRemovingLastPartyMon() -> u8 {
+    if sCursorArea.get() == CURSOR_AREA_IN_PARTY
+        && sIsMonBeingMoved.get() == 0
         && CountPartyAliveNonEggMonsExcept(sCursorPosition as u8) == 0
     {
         return TRUE;
@@ -6594,41 +6491,39 @@ pub(crate) unsafe extern "C" fn IsRemovingLastPartyMon() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn CanShiftMon() -> u8 {
-    if sIsMonBeingMoved != 0 {
-        if sCursorArea == CURSOR_AREA_IN_PARTY
+unsafe fn CanShiftMon() -> u8 {
+    if sIsMonBeingMoved.get() != 0 {
+        if sCursorArea.get() == CURSOR_AREA_IN_PARTY
             && CountPartyAliveNonEggMonsExcept(sCursorPosition as u8) == 0
+            && ((*sStorage).displayMonIsEgg != 0
+                || GetMonData2(&raw mut (*sStorage).movingMon, MON_DATA_HP) == 0)
         {
-            if (*sStorage).displayMonIsEgg != 0
-                || GetMonData2(&raw mut (*sStorage).movingMon, MON_DATA_HP) == 0
-            {
-                return FALSE;
-            }
+            return FALSE;
         }
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn IsMonBeingMoved() -> u8 {
-    return sIsMonBeingMoved;
+unsafe fn IsMonBeingMoved() -> u8 {
+    sIsMonBeingMoved.get()
 }
-pub(crate) unsafe extern "C" fn IsCursorOnBoxTitle() -> u8 {
-    return (sCursorArea == CURSOR_AREA_BOX_TITLE as i8) as u8;
+fn IsCursorOnBoxTitle() -> u8 {
+    (sCursorArea.get() == CURSOR_AREA_BOX_TITLE as i8) as u8
 }
-pub(crate) unsafe extern "C" fn IsCursorOnCloseBox() -> u8 {
-    return (sCursorArea == CURSOR_AREA_BUTTONS && sCursorPosition == 1) as u8;
+unsafe fn IsCursorOnCloseBox() -> u8 {
+    (sCursorArea.get() == CURSOR_AREA_BUTTONS && sCursorPosition == 1) as u8
 }
-pub(crate) unsafe extern "C" fn IsCursorInBox() -> u8 {
-    return (sCursorArea == CURSOR_AREA_IN_BOX as i8) as u8;
+fn IsCursorInBox() -> u8 {
+    (sCursorArea.get() == CURSOR_AREA_IN_BOX as i8) as u8
 }
-pub(crate) unsafe extern "C" fn TryRefreshDisplayMon() {
-    (*sStorage).setMosaic = (sIsMonBeingMoved == FALSE) as u8;
-    if sIsMonBeingMoved == 0 {
+unsafe fn TryRefreshDisplayMon() {
+    (*sStorage).setMosaic = (sIsMonBeingMoved.get() == FALSE) as u8;
+    if sIsMonBeingMoved.get() == 0 {
         'l1: {
-            let sw1: i8 = sCursorArea;
+            let sw1: i8 = sCursorArea.get();
             let mut fall = false;
             if sw1 == CURSOR_AREA_IN_PARTY {
                 fall = true;
@@ -6641,12 +6536,10 @@ pub(crate) unsafe extern "C" fn TryRefreshDisplayMon() {
                 }
             }
             if fall || sw1 == CURSOR_AREA_BUTTONS || sw1 == 2 {
-                fall = true;
                 SetDisplayMonData(null_mut(), MODE_MOVE);
                 break 'l1;
             }
             if sw1 == 0 {
-                fall = true;
                 SetDisplayMonData(
                     GetBoxedMonPtr(StorageGetCurrentBox(), sCursorPosition as u8) as *mut c_void,
                     MODE_BOX,
@@ -6656,22 +6549,20 @@ pub(crate) unsafe extern "C" fn TryRefreshDisplayMon() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn ReshowDisplayMon() {
-    if sIsMonBeingMoved != 0 {
+unsafe fn ReshowDisplayMon() {
+    if sIsMonBeingMoved.get() != 0 {
         SetDisplayMonData(&raw mut sSavedMovingMon as *mut c_void, MODE_PARTY);
     } else {
         TryRefreshDisplayMon();
     }
 }
-pub(crate) unsafe extern "C" fn SetDisplayMonData(pokemon: *mut c_void, mode: u8) {
+unsafe fn SetDisplayMonData(pokemon: *mut c_void, mode: u8) {
     let mut txtPtr: *mut u8 = null_mut();
-    let mut gender: u16 = 0;
-    let mut sanityIsBadEgg: u8 = 0;
     (*sStorage).displayMonItemId = ITEM_NONE;
-    gender = MON_MALE as u16;
-    sanityIsBadEgg = FALSE;
+    let mut gender: u16 = MON_MALE as u16;
+    let mut sanityIsBadEgg: u8 = FALSE;
     if mode == MODE_PARTY {
-        let mut mon: *mut Pokemon = pokemon as *mut Pokemon;
+        let mon: *mut Pokemon = pokemon as *mut Pokemon;
         (*sStorage).displayMonSpecies = GetMonData2(mon, MON_DATA_SPECIES_OR_EGG) as u16;
         if (*sStorage).displayMonSpecies != SPECIES_NONE {
             sanityIsBadEgg = GetMonData2(mon, MON_DATA_SANITY_IS_BAD_EGG) as u8;
@@ -6694,11 +6585,11 @@ pub(crate) unsafe extern "C" fn SetDisplayMonData(pokemon: *mut c_void, mode: u8
             (*sStorage).displayMonItemId = GetMonData2(mon, MON_DATA_HELD_ITEM) as u16;
         }
     } else if mode == MODE_BOX {
-        let mut boxMon: *mut BoxPokemon = pokemon as *mut BoxPokemon;
+        let boxMon: *mut BoxPokemon = pokemon as *mut BoxPokemon;
         (*sStorage).displayMonSpecies =
             GetBoxMonData2(pokemon as *mut BoxPokemon, MON_DATA_SPECIES_OR_EGG) as u16;
         if (*sStorage).displayMonSpecies != SPECIES_NONE {
-            let mut otId: u32 = GetBoxMonData2(boxMon, MON_DATA_OT_ID);
+            let otId: u32 = GetBoxMonData2(boxMon, MON_DATA_OT_ID);
             sanityIsBadEgg = GetBoxMonData2(boxMon, MON_DATA_SANITY_IS_BAD_EGG) as u8;
             if sanityIsBadEgg != 0 {
                 (*sStorage).displayMonIsEgg = TRUE;
@@ -6754,7 +6645,9 @@ pub(crate) unsafe extern "C" fn SetDisplayMonData(pokemon: *mut c_void, mode: u8
         } else {
             StringCopyPadded(
                 (*sStorage).displayMonNameText.as_mut_ptr(),
-                gText_EggNickname.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_EggNickname).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 CHAR_SPACE,
                 8,
             );
@@ -6790,7 +6683,8 @@ pub(crate) unsafe extern "C" fn SetDisplayMonData(pokemon: *mut c_void, mode: u8
         }) = CHAR_SLASH;
         StringCopyPadded(
             txtPtr,
-            gSpeciesNames[(*sStorage).displayMonSpecies]
+            (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())[(*sStorage).displayMonSpecies]
                 .as_ptr()
                 .cast_mut(),
             CHAR_SPACE,
@@ -6935,7 +6829,7 @@ pub(crate) unsafe extern "C" fn SetDisplayMonData(pokemon: *mut c_void, mode: u8
         }
     }
 }
-pub(crate) unsafe extern "C" fn HandleInput_InBox() -> u8 {
+pub(crate) unsafe fn HandleInput_InBox() -> u8 {
     match (*sStorage).inBoxMovingMode {
         MOVE_MODE_MULTIPLE_SELECTING => {
             return InBoxInput_SelectingMultiple();
@@ -6949,15 +6843,15 @@ pub(crate) unsafe extern "C" fn HandleInput_InBox() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn InBoxInput_Normal() -> u8 {
+unsafe fn InBoxInput_Normal() -> u8 {
     let mut retVal: u8 = 0;
     let mut cursorArea: i8 = 0;
     let mut cursorPosition: i8 = 0;
     'l2: {
-        cursorArea = sCursorArea;
+        cursorArea = sCursorArea.get();
         cursorPosition = sCursorPosition;
         (*sStorage).cursorVerticalWrap = 0;
         (*sStorage).cursorHorizontalWrap = 0;
@@ -6977,7 +6871,7 @@ pub(crate) unsafe extern "C" fn InBoxInput_Normal() -> u8 {
             if cursorPosition >= IN_BOX_COUNT as i8 {
                 cursorArea = CURSOR_AREA_BUTTONS;
                 cursorPosition -= IN_BOX_COUNT as i8;
-                cursorPosition = cursorPosition / 3;
+                cursorPosition /= 3;
                 (*sStorage).cursorVerticalWrap = 1;
                 (*sStorage).cursorFlipTimer = 1;
             }
@@ -7007,10 +6901,10 @@ pub(crate) unsafe extern "C" fn InBoxInput_Normal() -> u8 {
             break 'l2;
         }
         if gMain.newKeys as i32 & A_BUTTON != 0 && SetSelectionMenuTexts() != 0 {
-            if sAutoActionOn == 0 {
+            if sAutoActionOn.get() == 0 {
                 return INPUT_IN_MENU;
             }
-            if (*sStorage).boxOption != OPTION_MOVE_MONS || sIsMonBeingMoved == TRUE {
+            if (*sStorage).boxOption != OPTION_MOVE_MONS || sIsMonBeingMoved.get() == TRUE {
                 match GetMenuItemTextId(0) {
                     MENU_STORE => {
                         return INPUT_DEPOSIT;
@@ -7063,9 +6957,9 @@ pub(crate) unsafe extern "C" fn InBoxInput_Normal() -> u8 {
     if retVal != 0 {
         SetCursorPosition(cursorArea as u8, cursorPosition as u8);
     }
-    return retVal;
+    retVal
 }
-pub(crate) unsafe extern "C" fn InBoxInput_SelectingMultiple() -> u8 {
+unsafe fn InBoxInput_SelectingMultiple() -> u8 {
     if gMain.heldKeys as i32 & A_BUTTON != 0 {
         if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
             if sCursorPosition / 6 != 0 {
@@ -7104,18 +6998,18 @@ pub(crate) unsafe extern "C" fn InBoxInput_SelectingMultiple() -> u8 {
             (*(*sStorage).cursorShadowSprite).set_invisible(FALSE as u16);
             return INPUT_MULTIMOVE_SINGLE;
         } else {
-            sIsMonBeingMoved = ((*sStorage).displayMonSpecies != SPECIES_NONE) as u8;
+            sIsMonBeingMoved.set(((*sStorage).displayMonSpecies != SPECIES_NONE) as u8);
             (*sStorage).inBoxMovingMode = MOVE_MODE_MULTIPLE_MOVING;
-            sMovingMonOrigBoxId = StorageGetCurrentBox();
+            sMovingMonOrigBoxId.set(StorageGetCurrentBox());
             return INPUT_MULTIMOVE_GRAB_SELECTION;
         }
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn InBoxInput_MovingMultiple() -> u8 {
+unsafe fn InBoxInput_MovingMultiple() -> u8 {
     if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
         if MultiMove_TryMoveGroup(0) != 0 {
             SetCursorPosition(CURSOR_AREA_IN_BOX, sCursorPosition as u8 - IN_BOX_COLUMNS);
@@ -7146,7 +7040,7 @@ pub(crate) unsafe extern "C" fn InBoxInput_MovingMultiple() -> u8 {
         }
     } else if gMain.newKeys as i32 & A_BUTTON != 0 {
         if MultiMove_CanPlaceSelection() != 0 {
-            sIsMonBeingMoved = FALSE;
+            sIsMonBeingMoved.set(FALSE);
             (*sStorage).inBoxMovingMode = MOVE_MODE_NORMAL;
             return INPUT_MULTIMOVE_PLACE_MONS;
         } else {
@@ -7167,16 +7061,16 @@ pub(crate) unsafe extern "C" fn InBoxInput_MovingMultiple() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn HandleInput_InParty() -> u8 {
+pub(crate) unsafe fn HandleInput_InParty() -> u8 {
     let mut retVal: u8 = 0;
     let mut gotoBox: u8 = 0;
     let mut cursorArea: i8 = 0;
     let mut cursorPosition: i8 = 0;
     'l2: {
-        cursorArea = sCursorArea;
+        cursorArea = sCursorArea.get();
         cursorPosition = sCursorPosition;
         (*sStorage).cursorHorizontalWrap = 0;
         (*sStorage).cursorVerticalWrap = 0;
@@ -7230,7 +7124,7 @@ pub(crate) unsafe extern "C" fn HandleInput_InParty() -> u8 {
                 }
                 gotoBox = TRUE;
             } else if SetSelectionMenuTexts() != 0 {
-                if sAutoActionOn == 0 {
+                if sAutoActionOn.get() == 0 {
                     return INPUT_IN_MENU;
                 }
                 match GetMenuItemTextId(0) {
@@ -7277,14 +7171,12 @@ pub(crate) unsafe extern "C" fn HandleInput_InParty() -> u8 {
             return INPUT_NONE;
         }
     }
-    if retVal != INPUT_NONE {
-        if retVal != INPUT_HIDE_PARTY {
-            SetCursorPosition(cursorArea as u8, cursorPosition as u8);
-        }
+    if retVal != INPUT_NONE && retVal != INPUT_HIDE_PARTY {
+        SetCursorPosition(cursorArea as u8, cursorPosition as u8);
     }
-    return retVal;
+    retVal
 }
-pub(crate) unsafe extern "C" fn HandleInput_OnBox() -> u8 {
+pub(crate) unsafe fn HandleInput_OnBox() -> u8 {
     let mut retVal: u8 = 0;
     let mut cursorArea: i8 = 0;
     let mut cursorPosition: i8 = 0;
@@ -7338,14 +7230,14 @@ pub(crate) unsafe extern "C" fn HandleInput_OnBox() -> u8 {
         }
         SetCursorPosition(cursorArea as u8, cursorPosition as u8);
     }
-    return retVal;
+    retVal
 }
-pub(crate) unsafe extern "C" fn HandleInput_OnButtons() -> u8 {
+pub(crate) unsafe fn HandleInput_OnButtons() -> u8 {
     let mut retVal: u8 = 0;
     let mut cursorArea: i8 = 0;
     let mut cursorPosition: i8 = 0;
     'l2: {
-        cursorArea = sCursorArea;
+        cursorArea = sCursorArea.get();
         cursorPosition = sCursorPosition;
         (*sStorage).cursorHorizontalWrap = 0;
         (*sStorage).cursorVerticalWrap = 0;
@@ -7409,26 +7301,26 @@ pub(crate) unsafe extern "C" fn HandleInput_OnButtons() -> u8 {
     if retVal != INPUT_NONE {
         SetCursorPosition(cursorArea as u8, cursorPosition as u8);
     }
-    return retVal;
+    retVal
 }
-pub(crate) unsafe extern "C" fn HandleInput() -> u8 {
+pub(crate) unsafe fn HandleInput() -> u8 {
     let mut i: u16 = 0;
     while inputFuncs_9[i].func.is_some() {
-        if inputFuncs_9[i].area == sCursorArea {
+        if inputFuncs_9[i].area == sCursorArea.get() {
             return inputFuncs_9[i].func.unwrap_unchecked()();
         }
         i += 1;
     }
-    return INPUT_NONE;
+    INPUT_NONE
 }
-pub(crate) unsafe extern "C" fn AddBoxOptionsMenu() {
+unsafe fn AddBoxOptionsMenu() {
     InitMenu();
     SetMenuText(MENU_JUMP as u8);
     SetMenuText(MENU_WALLPAPER as u8);
     SetMenuText(MENU_NAME as u8);
     SetMenuText(MENU_CANCEL);
 }
-pub(crate) unsafe extern "C" fn SetSelectionMenuTexts() -> u8 {
+unsafe fn SetSelectionMenuTexts() -> u8 {
     InitMenu();
     if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
         return SetMenuTexts_Mon();
@@ -7437,11 +7329,11 @@ pub(crate) unsafe extern "C" fn SetSelectionMenuTexts() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn SetMenuTexts_Mon() -> u8 {
-    let mut species: u16 = GetSpeciesAtCursorPosition();
+unsafe fn SetMenuTexts_Mon() -> u8 {
+    let species: u16 = GetSpeciesAtCursorPosition();
     match (*sStorage).boxOption {
         OPTION_DEPOSIT => {
             if species != SPECIES_NONE {
@@ -7458,7 +7350,7 @@ pub(crate) unsafe extern "C" fn SetMenuTexts_Mon() -> u8 {
             }
         }
         OPTION_MOVE_MONS => {
-            if sIsMonBeingMoved != 0 {
+            if sIsMonBeingMoved.get() != 0 {
                 if species != SPECIES_NONE {
                     SetMenuText(MENU_SHIFT as u8);
                 } else {
@@ -7478,7 +7370,7 @@ pub(crate) unsafe extern "C" fn SetMenuTexts_Mon() -> u8 {
     }
     SetMenuText(MENU_SUMMARY as u8);
     if (*sStorage).boxOption == OPTION_MOVE_MONS {
-        if sCursorArea == CURSOR_AREA_IN_BOX as i8 {
+        if sCursorArea.get() == CURSOR_AREA_IN_BOX as i8 {
             SetMenuText(MENU_WITHDRAW as u8);
         } else {
             SetMenuText(MENU_STORE as u8);
@@ -7487,9 +7379,9 @@ pub(crate) unsafe extern "C" fn SetMenuTexts_Mon() -> u8 {
     SetMenuText(MENU_MARK as u8);
     SetMenuText(MENU_RELEASE as u8);
     SetMenuText(MENU_CANCEL);
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn SetMenuTexts_Item() -> u8 {
+unsafe fn SetMenuTexts_Item() -> u8 {
     if (*sStorage).displayMonSpecies == SPECIES_EGG as u16 {
         return FALSE;
     }
@@ -7520,16 +7412,15 @@ pub(crate) unsafe extern "C" fn SetMenuTexts_Item() -> u8 {
         }
     }
     SetMenuText(MENU_CANCEL);
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn SpriteCB_CursorShadow(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_CursorShadow(sprite: *mut Sprite) {
     (*sprite).x = (*(*sStorage).cursorSprite).x;
     (*sprite).y = (*(*sStorage).cursorSprite).y + 20;
 }
-pub(crate) unsafe extern "C" fn CreateCursorSprites() {
+unsafe fn CreateCursorSprites() {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
-    let mut spriteId: u8 = 0;
     let mut priority: u8 = 0;
     let mut subpriority: u8 = 0;
     let mut spriteSheets: CArray<SpriteSheet, 3> = zeroed();
@@ -7547,12 +7438,12 @@ pub(crate) unsafe extern "C" fn CreateCursorSprites() {
     (*sStorage).cursorPalNums[0] = IndexOfSpritePaletteTag(PALTAG_MISC_2);
     (*sStorage).cursorPalNums[1] = IndexOfSpritePaletteTag(PALTAG_MISC_1);
     GetCursorCoordsByPos(
-        sCursorArea as u8,
+        sCursorArea.get() as u8,
         sCursorPosition as u8,
         &raw mut x,
         &raw mut y,
     );
-    spriteId = CreateSprite(
+    let mut spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_Cursor_8).cast_mut(),
         x as i16,
         y as i16,
@@ -7562,15 +7453,15 @@ pub(crate) unsafe extern "C" fn CreateCursorSprites() {
         (*sStorage).cursorSprite = &raw mut gSprites[spriteId];
         (*(*sStorage).cursorSprite)
             .oam
-            .set_paletteNum((*sStorage).cursorPalNums[sAutoActionOn] as u16);
+            .set_paletteNum((*sStorage).cursorPalNums[sAutoActionOn.get()] as u16);
         (*(*sStorage).cursorSprite).oam.set_priority(1);
-        if sIsMonBeingMoved != 0 {
+        if sIsMonBeingMoved.get() != 0 {
             StartSpriteAnim((*sStorage).cursorSprite, CURSOR_ANIM_FIST);
         }
     } else {
         (*sStorage).cursorSprite = null_mut();
     }
-    if sCursorArea == CURSOR_AREA_IN_PARTY {
+    if sCursorArea.get() == CURSOR_AREA_IN_PARTY {
         subpriority = 13;
         priority = 1;
     } else {
@@ -7588,24 +7479,24 @@ pub(crate) unsafe extern "C" fn CreateCursorSprites() {
         (*(*sStorage).cursorShadowSprite)
             .oam
             .set_priority(priority as u16);
-        if sCursorArea != 0 {
+        if sCursorArea.get() != 0 {
             (*(*sStorage).cursorShadowSprite).set_invisible(TRUE as u16);
         }
     } else {
         (*sStorage).cursorShadowSprite = null_mut();
     }
 }
-pub(crate) unsafe extern "C" fn ToggleCursorAutoAction() {
-    sAutoActionOn = (sAutoActionOn == 0) as u8;
+unsafe fn ToggleCursorAutoAction() {
+    sAutoActionOn.set((sAutoActionOn.get() == 0) as u8);
     (*(*sStorage).cursorSprite)
         .oam
-        .set_paletteNum((*sStorage).cursorPalNums[sAutoActionOn] as u16);
+        .set_paletteNum((*sStorage).cursorPalNums[sAutoActionOn.get()] as u16);
 }
-pub(crate) unsafe extern "C" fn GetCursorPosition() -> u8 {
-    return sCursorPosition as u8;
+unsafe fn GetCursorPosition() -> u8 {
+    sCursorPosition as u8
 }
-pub(crate) unsafe extern "C" fn GetCursorBoxColumnAndRow(column: *mut u8, row: *mut u8) {
-    if sCursorArea == CURSOR_AREA_IN_BOX as i8 {
+unsafe fn GetCursorBoxColumnAndRow(column: *mut u8, row: *mut u8) {
+    if sCursorArea.get() == CURSOR_AREA_IN_BOX as i8 {
         *column = (sCursorPosition % 6) as u8;
         *row = (sCursorPosition / 6) as u8;
     } else {
@@ -7613,46 +7504,45 @@ pub(crate) unsafe extern "C" fn GetCursorBoxColumnAndRow(column: *mut u8, row: *
         *row = 0;
     }
 }
-pub(crate) unsafe extern "C" fn StartCursorAnim(animNum: u8) {
+unsafe fn StartCursorAnim(animNum: u8) {
     StartSpriteAnim((*sStorage).cursorSprite, animNum);
 }
-pub(crate) unsafe extern "C" fn GetMovingMonOriginalBoxId() -> u8 {
-    return sMovingMonOrigBoxId;
+fn GetMovingMonOriginalBoxId() -> u8 {
+    sMovingMonOrigBoxId.get()
 }
-pub(crate) unsafe extern "C" fn SetCursorPriorityTo1() {
+unsafe fn SetCursorPriorityTo1() {
     (*(*sStorage).cursorSprite).oam.set_priority(1);
 }
-pub(crate) unsafe extern "C" fn TryHideItemAtCursor() {
-    if sCursorArea == CURSOR_AREA_IN_BOX as i8 {
+unsafe fn TryHideItemAtCursor() {
+    if sCursorArea.get() == CURSOR_AREA_IN_BOX as i8 {
         TryHideItemIconAtPos(CURSOR_AREA_IN_BOX, sCursorPosition as u8);
     }
 }
-pub(crate) unsafe extern "C" fn TryShowItemAtCursor() {
-    if sCursorArea == CURSOR_AREA_IN_BOX as i8 {
+unsafe fn TryShowItemAtCursor() {
+    if sCursorArea.get() == CURSOR_AREA_IN_BOX as i8 {
         TryLoadItemIconAtPos(CURSOR_AREA_IN_BOX, sCursorPosition as u8);
     }
 }
-pub(crate) unsafe extern "C" fn InitMenu() {
+pub(crate) unsafe fn InitMenu() {
     (*sStorage).menuItemsCount = 0;
     (*sStorage).menuWidth = 0;
     (*sStorage).menuWindow.bg = 0;
     (*sStorage).menuWindow.paletteNum = 15;
     (*sStorage).menuWindow.baseBlock = 92;
 }
-pub(crate) unsafe extern "C" fn SetMenuText(textId: u8) {
+unsafe fn SetMenuText(textId: u8) {
     if (*sStorage).menuItemsCount < 7 {
-        let mut len: u8 = 0;
-        let mut menu: *mut StorageMenu = &raw mut (*sStorage).menuItems[(*sStorage).menuItemsCount];
+        let menu: *mut StorageMenu = &raw mut (*sStorage).menuItems[(*sStorage).menuItemsCount];
         (*menu).text = sMenuTexts[textId];
         (*menu).textId = textId as i32;
-        len = StringLength((*menu).text) as u8;
+        let len: u8 = StringLength((*menu).text) as u8;
         if len > (*sStorage).menuWidth {
             (*sStorage).menuWidth = len;
         }
         (*sStorage).menuItemsCount += 1;
     }
 }
-pub(crate) unsafe extern "C" fn GetMenuItemTextId(menuIdx: u8) -> i8 {
+unsafe fn GetMenuItemTextId(menuIdx: u8) -> i8 {
     if menuIdx >= (*sStorage).menuItemsCount {
         return -1;
     } else {
@@ -7660,10 +7550,10 @@ pub(crate) unsafe extern "C" fn GetMenuItemTextId(menuIdx: u8) -> i8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn AddMenu() {
+unsafe fn AddMenu() {
     (*sStorage).menuWindow.width = (*sStorage).menuWidth + 2;
     (*sStorage).menuWindow.height = 2 * (*sStorage).menuItemsCount;
     (*sStorage).menuWindow.tilemapLeft = 29 - (*sStorage).menuWindow.width;
@@ -7684,10 +7574,10 @@ pub(crate) unsafe extern "C" fn AddMenu() {
     ScheduleBgCopyTilemapToVram(0);
     (*sStorage).menuUnusedField = 0;
 }
-pub(crate) unsafe extern "C" fn IsMenuLoading() -> u8 {
-    return FALSE;
+fn IsMenuLoading() -> u8 {
+    FALSE
 }
-pub(crate) unsafe extern "C" fn HandleMenuInput() -> i16 {
+unsafe fn HandleMenuInput() -> i16 {
     let mut input: i32 = MENU_NOTHING_CHOSEN as i32;
     'l2: {
         if gMain.newKeys as i32 & A_BUTTON != 0 {
@@ -7711,13 +7601,13 @@ pub(crate) unsafe extern "C" fn HandleMenuInput() -> i16 {
     if input >= 0 {
         input = (*sStorage).menuItems[input].textId;
     }
-    return input as i16;
+    input as i16
 }
-pub(crate) unsafe extern "C" fn RemoveMenu() {
+unsafe fn RemoveMenu() {
     ClearStdWindowAndFrameToTransparent((*sStorage).menuWindowId as u8, TRUE);
     RemoveWindow((*sStorage).menuWindowId as u8);
 }
-pub(crate) unsafe extern "C" fn MultiMove_Init() -> u8 {
+unsafe fn MultiMove_Init() -> u8 {
     sMultiMove = Alloc(2420) as *mut typeof___sMultiMove_0_t;
     if !sMultiMove.is_null() {
         (*sStorage).multiMoveWindowId =
@@ -7727,18 +7617,18 @@ pub(crate) unsafe extern "C" fn MultiMove_Init() -> u8 {
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn MultiMove_Free() {
+unsafe fn MultiMove_Free() {
     if !sMultiMove.is_null() {
         Free(sMultiMove as *mut c_void);
     }
 }
-pub(crate) unsafe extern "C" fn MultiMove_SetFunction(id: u8) {
+unsafe fn MultiMove_SetFunction(id: u8) {
     (*sMultiMove).funcId = id;
     (*sMultiMove).state = 0;
 }
-pub(crate) unsafe extern "C" fn MultiMove_RunFunction() -> u8 {
+unsafe fn MultiMove_RunFunction() -> u8 {
     match (*sMultiMove).funcId {
         MULTIMOVE_START => {
             return MultiMove_Start();
@@ -7760,9 +7650,9 @@ pub(crate) unsafe extern "C" fn MultiMove_RunFunction() -> u8 {
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn MultiMove_Start() -> u8 {
+unsafe fn MultiMove_Start() -> u8 {
     match (*sMultiMove).state {
         0 => {
             HideBg(0);
@@ -7789,17 +7679,15 @@ pub(crate) unsafe extern "C" fn MultiMove_Start() -> u8 {
             SetGpuRegBits(REG_OFFSET_BG0CNT, BGCNT_256COLOR);
             (*sMultiMove).state += 1;
         }
-        2 => {
-            if IsDma3ManagerBusyWithBgCopy() == 0 {
-                ShowBg(0);
-                return FALSE;
-            }
+        2 if IsDma3ManagerBusyWithBgCopy() == 0 => {
+            ShowBg(0);
+            return FALSE;
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn MultiMove_Cancel() -> u8 {
+unsafe fn MultiMove_Cancel() -> u8 {
     match (*sMultiMove).state {
         0 => {
             HideBg(0);
@@ -7810,19 +7698,17 @@ pub(crate) unsafe extern "C" fn MultiMove_Cancel() -> u8 {
             StartCursorAnim(CURSOR_ANIM_BOUNCE);
             (*sMultiMove).state += 1;
         }
-        2 => {
-            if IsDma3ManagerBusyWithBgCopy() == 0 {
-                SetCursorPriorityTo1();
-                LoadPalette(GetTextWindowPalette(3) as *mut c_void, 208, 32);
-                ShowBg(0);
-                return FALSE;
-            }
+        2 if IsDma3ManagerBusyWithBgCopy() == 0 => {
+            SetCursorPriorityTo1();
+            LoadPalette(GetTextWindowPalette(3) as *mut c_void, 208, 32);
+            ShowBg(0);
+            return FALSE;
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn MultiMove_ChangeSelection() -> u8 {
+unsafe fn MultiMove_ChangeSelection() -> u8 {
     match (*sMultiMove).state {
         0 => {
             if UpdateCursorPos() == 0 {
@@ -7842,9 +7728,9 @@ pub(crate) unsafe extern "C" fn MultiMove_ChangeSelection() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn MultiMove_GrabSelection() -> u8 {
+unsafe fn MultiMove_GrabSelection() -> u8 {
     let mut movingBg: u8 = 0;
     let mut movingMon: u8 = 0;
     match (*sMultiMove).state {
@@ -7871,11 +7757,11 @@ pub(crate) unsafe extern "C" fn MultiMove_GrabSelection() -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn MultiMove_MoveMons() -> u8 {
-    let mut movingCursor: u8 = UpdateCursorPos();
-    let mut movingBg: u8 = MultiMove_UpdateMove();
+unsafe fn MultiMove_MoveMons() -> u8 {
+    let movingCursor: u8 = UpdateCursorPos();
+    let movingBg: u8 = MultiMove_UpdateMove();
     if movingCursor == 0 && movingBg == 0 {
         return FALSE;
     } else {
@@ -7883,10 +7769,10 @@ pub(crate) unsafe extern "C" fn MultiMove_MoveMons() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn MultiMove_PlaceMons() -> u8 {
+unsafe fn MultiMove_PlaceMons() -> u8 {
     match (*sMultiMove).state {
         0 => {
             MultiMove_SetPlacedMonData();
@@ -7910,19 +7796,17 @@ pub(crate) unsafe extern "C" fn MultiMove_PlaceMons() -> u8 {
                 (*sMultiMove).state += 1;
             }
         }
-        3 => {
-            if IsDma3ManagerBusyWithBgCopy() == 0 {
-                LoadPalette(GetTextWindowPalette(3) as *mut c_void, 208, 32);
-                SetCursorPriorityTo1();
-                ShowBg(0);
-                return FALSE;
-            }
+        3 if IsDma3ManagerBusyWithBgCopy() == 0 => {
+            LoadPalette(GetTextWindowPalette(3) as *mut c_void, 208, 32);
+            SetCursorPriorityTo1();
+            ShowBg(0);
+            return FALSE;
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn MultiMove_TryMoveGroup(dir: u8) -> u8 {
+unsafe fn MultiMove_TryMoveGroup(dir: u8) -> u8 {
     match dir {
         0 => {
             if (*sMultiMove).minRow == 0 {
@@ -7956,10 +7840,10 @@ pub(crate) unsafe extern "C" fn MultiMove_TryMoveGroup(dir: u8) -> u8 {
         }
         _ => {}
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn MultiMove_UpdateSelectedIcons() {
-    let mut columnChange: i16 =
+unsafe fn MultiMove_UpdateSelectedIcons() {
+    let columnChange: i16 =
         (if ((*sMultiMove).fromColumn as i32 - (*sMultiMove).cursorColumn as i32) < 0 {
             -((*sMultiMove).fromColumn as i32 - (*sMultiMove).cursorColumn as i32)
         } else {
@@ -7970,8 +7854,7 @@ pub(crate) unsafe extern "C" fn MultiMove_UpdateSelectedIcons() {
             } else {
                 (*sMultiMove).fromColumn as i32 - (*sMultiMove).toColumn as i32
             }) as i16;
-    let mut rowChange: i16 = (if ((*sMultiMove).fromRow as i32 - (*sMultiMove).cursorRow as i32) < 0
-    {
+    let rowChange: i16 = (if ((*sMultiMove).fromRow as i32 - (*sMultiMove).cursorRow as i32) < 0 {
         -((*sMultiMove).fromRow as i32 - (*sMultiMove).cursorRow as i32)
     } else {
         (*sMultiMove).fromRow as i32 - (*sMultiMove).cursorRow as i32
@@ -8020,10 +7903,9 @@ pub(crate) unsafe extern "C" fn MultiMove_UpdateSelectedIcons() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn MultiMove_SelectColumn(column: u8, mut minRow: u8, mut maxRow: u8) {
+unsafe fn MultiMove_SelectColumn(column: u8, mut minRow: u8, mut maxRow: u8) {
     if minRow > maxRow {
-        let mut temp: u8 = 0;
-        temp = minRow;
+        let temp: u8 = minRow;
         minRow = maxRow;
         maxRow = temp;
     }
@@ -8035,10 +7917,9 @@ pub(crate) unsafe extern "C" fn MultiMove_SelectColumn(column: u8, mut minRow: u
         });
     }
 }
-pub(crate) unsafe extern "C" fn MultiMove_SelectRow(row: u8, mut minColumn: u8, mut maxColumn: u8) {
+unsafe fn MultiMove_SelectRow(row: u8, mut minColumn: u8, mut maxColumn: u8) {
     if minColumn > maxColumn {
-        let mut temp: u8 = 0;
-        temp = minColumn;
+        let temp: u8 = minColumn;
         minColumn = maxColumn;
         maxColumn = temp;
     }
@@ -8053,14 +7934,9 @@ pub(crate) unsafe extern "C" fn MultiMove_SelectRow(row: u8, mut minColumn: u8, 
         );
     }
 }
-pub(crate) unsafe extern "C" fn MultiMove_DeselectColumn(
-    column: u8,
-    mut minRow: u8,
-    mut maxRow: u8,
-) {
+unsafe fn MultiMove_DeselectColumn(column: u8, mut minRow: u8, mut maxRow: u8) {
     if minRow > maxRow {
-        let mut temp: u8 = 0;
-        temp = minRow;
+        let temp: u8 = minRow;
         minRow = maxRow;
         maxRow = temp;
     }
@@ -8072,14 +7948,9 @@ pub(crate) unsafe extern "C" fn MultiMove_DeselectColumn(
         });
     }
 }
-pub(crate) unsafe extern "C" fn MultiMove_DeselectRow(
-    row: u8,
-    mut minColumn: u8,
-    mut maxColumn: u8,
-) {
+unsafe fn MultiMove_DeselectRow(row: u8, mut minColumn: u8, mut maxColumn: u8) {
     if minColumn > maxColumn {
-        let mut temp: u8 = 0;
-        temp = minColumn;
+        let temp: u8 = minColumn;
         minColumn = maxColumn;
         maxColumn = temp;
     }
@@ -8094,13 +7965,13 @@ pub(crate) unsafe extern "C" fn MultiMove_DeselectRow(
         );
     }
 }
-pub(crate) unsafe extern "C" fn MultiMove_SetIconToBg(x: u8, y: u8) {
-    let mut position: u8 = x + IN_BOX_COLUMNS * y;
-    let mut species: u16 = GetCurrentBoxMonData(position, MON_DATA_SPECIES_OR_EGG) as u16;
-    let mut personality: u32 = GetCurrentBoxMonData(position, MON_DATA_PERSONALITY);
+unsafe fn MultiMove_SetIconToBg(x: u8, y: u8) {
+    let position: u8 = x + IN_BOX_COLUMNS * y;
+    let species: u16 = GetCurrentBoxMonData(position, MON_DATA_SPECIES_OR_EGG) as u16;
+    let personality: u32 = GetCurrentBoxMonData(position, MON_DATA_PERSONALITY);
     if species != SPECIES_NONE {
-        let mut iconGfx: *mut u8 = GetMonIconPtr(species, personality, 1);
-        let mut index: u8 = GetValidMonIconPalIndex(species) + 8;
+        let iconGfx: *mut u8 = GetMonIconPtr(species, personality, 1);
+        let index: u8 = GetValidMonIconPalIndex(species) + 8;
         BlitBitmapRectToWindow4BitTo8Bit(
             (*sStorage).multiMoveWindowId as u8,
             iconGfx,
@@ -8116,9 +7987,9 @@ pub(crate) unsafe extern "C" fn MultiMove_SetIconToBg(x: u8, y: u8) {
         );
     }
 }
-pub(crate) unsafe extern "C" fn MultiMove_ClearIconFromBg(x: u8, y: u8) {
-    let mut position: u8 = x + IN_BOX_COLUMNS * y;
-    let mut species: u16 = GetCurrentBoxMonData(position, MON_DATA_SPECIES_OR_EGG) as u16;
+unsafe fn MultiMove_ClearIconFromBg(x: u8, y: u8) {
+    let position: u8 = x + IN_BOX_COLUMNS * y;
+    let species: u16 = GetCurrentBoxMonData(position, MON_DATA_SPECIES_OR_EGG) as u16;
     if species != SPECIES_NONE {
         FillWindowPixelRect8Bit(
             (*sStorage).multiMoveWindowId as u8,
@@ -8130,26 +8001,20 @@ pub(crate) unsafe extern "C" fn MultiMove_ClearIconFromBg(x: u8, y: u8) {
         );
     }
 }
-pub(crate) unsafe extern "C" fn MultiMove_InitMove(x: u16, y: u16, moveSteps: u16) {
+unsafe fn MultiMove_InitMove(x: u16, y: u16, moveSteps: u16) {
     (*sMultiMove).bgX = x;
     (*sMultiMove).bgY = y;
     (*sMultiMove).bgMoveSteps = moveSteps;
 }
-pub(crate) unsafe extern "C" fn MultiMove_UpdateMove() -> u8 {
+unsafe fn MultiMove_UpdateMove() -> u8 {
     if (*sMultiMove).bgMoveSteps != 0 {
         ChangeBgX(0, (*sMultiMove).bgX as i32, BG_COORD_ADD);
         ChangeBgY(0, (*sMultiMove).bgY as i32, BG_COORD_ADD);
         (*sMultiMove).bgMoveSteps -= 1;
     }
-    return (*sMultiMove).bgMoveSteps as u8;
+    (*sMultiMove).bgMoveSteps as u8
 }
-pub(crate) unsafe extern "C" fn MultiMove_GetMonsFromSelection() {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    let mut columnCount: i32 = 0;
-    let mut rowCount: i32 = 0;
-    let mut boxId: u8 = 0;
-    let mut monArrayId: u8 = 0;
+unsafe fn MultiMove_GetMonsFromSelection() {
     (*sMultiMove).minColumn = if (*sMultiMove).fromColumn < (*sMultiMove).toColumn {
         (*sMultiMove).fromColumn
     } else {
@@ -8173,56 +8038,42 @@ pub(crate) unsafe extern "C" fn MultiMove_GetMonsFromSelection() {
         (*sMultiMove).fromRow as i32 - (*sMultiMove).toRow as i32
     }) as u8
         + 1;
-    boxId = StorageGetCurrentBox();
-    monArrayId = 0;
-    columnCount = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
-    rowCount = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
-    i = (*sMultiMove).minRow as i32;
-    while i < rowCount {
+    let boxId: u8 = StorageGetCurrentBox();
+    let mut monArrayId: u8 = 0;
+    let columnCount: i32 = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
+    let rowCount: i32 = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
+    for i in ((*sMultiMove).minRow as i32)..rowCount {
         let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*sMultiMove).minColumn;
-        j = (*sMultiMove).minColumn as i32;
-        while j < columnCount {
-            let mut boxMon: *mut BoxPokemon = GetBoxedMonPtr(boxId, boxPosition);
+        for j in ((*sMultiMove).minColumn as i32)..columnCount {
+            let boxMon: *mut BoxPokemon = GetBoxedMonPtr(boxId, boxPosition);
             if !boxMon.is_null() {
                 (*sMultiMove).boxMons[monArrayId] = *boxMon;
             }
             monArrayId += 1;
             boxPosition += 1;
-            j += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn MultiMove_RemoveMonsFromBox() {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    let mut columnCount: i32 = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
-    let mut rowCount: i32 = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
-    let mut boxId: u8 = StorageGetCurrentBox();
-    i = (*sMultiMove).minRow as i32;
-    while i < rowCount {
+unsafe fn MultiMove_RemoveMonsFromBox() {
+    let columnCount: i32 = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
+    let rowCount: i32 = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
+    let boxId: u8 = StorageGetCurrentBox();
+    for i in ((*sMultiMove).minRow as i32)..rowCount {
         let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*sMultiMove).minColumn;
-        j = (*sMultiMove).minColumn as i32;
-        while j < columnCount {
+        for j in ((*sMultiMove).minColumn as i32)..columnCount {
             DestroyBoxMonIconAtPosition(boxPosition);
             ZeroBoxMonAt(boxId, boxPosition);
             boxPosition += 1;
-            j += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn MultiMove_CreatePlacedMonIcons() {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    let mut columnCount: i32 = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
-    let mut rowCount: i32 = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
+unsafe fn MultiMove_CreatePlacedMonIcons() {
+    let columnCount: i32 = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
+    let rowCount: i32 = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
     let mut monArrayId: u8 = 0;
-    i = (*sMultiMove).minRow as i32;
-    while i < rowCount {
+    for i in ((*sMultiMove).minRow as i32)..rowCount {
         let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*sMultiMove).minColumn;
-        j = (*sMultiMove).minColumn as i32;
-        while j < columnCount {
+        for j in ((*sMultiMove).minColumn as i32)..columnCount {
             if GetBoxMonData2(
                 &raw mut (*sMultiMove).boxMons[monArrayId],
                 MON_DATA_SANITY_HAS_SPECIES,
@@ -8232,23 +8083,17 @@ pub(crate) unsafe extern "C" fn MultiMove_CreatePlacedMonIcons() {
             }
             monArrayId += 1;
             boxPosition += 1;
-            j += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn MultiMove_SetPlacedMonData() {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    let mut columnCount: i32 = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
-    let mut rowCount: i32 = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
-    let mut boxId: u8 = StorageGetCurrentBox();
+unsafe fn MultiMove_SetPlacedMonData() {
+    let columnCount: i32 = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
+    let rowCount: i32 = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
+    let boxId: u8 = StorageGetCurrentBox();
     let mut monArrayId: u8 = 0;
-    i = (*sMultiMove).minRow as i32;
-    while i < rowCount {
+    for i in ((*sMultiMove).minRow as i32)..rowCount {
         let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*sMultiMove).minColumn;
-        j = (*sMultiMove).minColumn as i32;
-        while j < columnCount {
+        for j in ((*sMultiMove).minColumn as i32)..columnCount {
             if GetBoxMonData2(
                 &raw mut (*sMultiMove).boxMons[monArrayId],
                 MON_DATA_SANITY_HAS_SPECIES,
@@ -8262,12 +8107,10 @@ pub(crate) unsafe extern "C" fn MultiMove_SetPlacedMonData() {
             }
             boxPosition += 1;
             monArrayId += 1;
-            j += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn MultiMove_ResetBg() {
+unsafe fn MultiMove_ResetBg() {
     ChangeBgX(0, 0, BG_COORD_SET);
     ChangeBgY(0, 0, BG_COORD_SET);
     SetBgAttribute(0, BG_ATTR_PALETTEMODE, 0);
@@ -8275,20 +8118,16 @@ pub(crate) unsafe extern "C" fn MultiMove_ResetBg() {
     FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, 32, 32);
     CopyBgTilemapBufferToVram(0);
 }
-pub(crate) unsafe extern "C" fn MultiMove_GetOrigin() -> u8 {
-    return IN_BOX_COLUMNS * (*sMultiMove).fromRow + (*sMultiMove).fromColumn;
+unsafe fn MultiMove_GetOrigin() -> u8 {
+    IN_BOX_COLUMNS * (*sMultiMove).fromRow + (*sMultiMove).fromColumn
 }
-pub(crate) unsafe extern "C" fn MultiMove_CanPlaceSelection() -> u8 {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    let mut columnCount: i32 = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
-    let mut rowCount: i32 = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
+unsafe fn MultiMove_CanPlaceSelection() -> u8 {
+    let columnCount: i32 = (*sMultiMove).minColumn as i32 + (*sMultiMove).columnsTotal as i32;
+    let rowCount: i32 = (*sMultiMove).minRow as i32 + (*sMultiMove).rowsTotal as i32;
     let mut monArrayId: u8 = 0;
-    i = (*sMultiMove).minRow as i32;
-    while i < rowCount {
+    for i in ((*sMultiMove).minRow as i32)..rowCount {
         let mut boxPosition: u8 = IN_BOX_COLUMNS * i as u8 + (*sMultiMove).minColumn;
-        j = (*sMultiMove).minColumn as i32;
-        while j < columnCount {
+        for j in ((*sMultiMove).minColumn as i32)..columnCount {
             if GetBoxMonData2(
                 &raw mut (*sMultiMove).boxMons[monArrayId],
                 MON_DATA_SANITY_HAS_SPECIES,
@@ -8299,14 +8138,11 @@ pub(crate) unsafe extern "C" fn MultiMove_CanPlaceSelection() -> u8 {
             }
             monArrayId += 1;
             boxPosition += 1;
-            j += 1;
         }
-        i += 1;
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn CreateItemIconSprites() {
-    let mut i: i32 = 0;
+unsafe fn CreateItemIconSprites() {
     let mut spriteId: u8 = 0;
     let mut spriteSheet: CompressedSpriteSheet = zeroed();
     let mut spriteTemplate: SpriteTemplate = zeroed();
@@ -8314,8 +8150,7 @@ pub(crate) unsafe extern "C" fn CreateItemIconSprites() {
         spriteSheet.data = sItemIconGfxBuffer.as_mut_ptr();
         spriteSheet.size = 0x200;
         spriteTemplate = *sSpriteTemplate_ItemIcon;
-        i = 0;
-        while i < MAX_ITEM_ICONS as i32 {
+        for i in 0..(MAX_ITEM_ICONS as i32) {
             spriteSheet.tag = GFXTAG_ITEM_ICON_0 + i as u16;
             LoadCompressedSpriteSheet(&raw mut spriteSheet);
             (*sStorage).itemIcons[i].tiles = (OBJ_VRAM0 as usize as *mut c_void as *mut u8)
@@ -8330,12 +8165,11 @@ pub(crate) unsafe extern "C" fn CreateItemIconSprites() {
             (*sStorage).itemIcons[i].sprite = &raw mut gSprites[spriteId];
             (*(*sStorage).itemIcons[i].sprite).set_invisible(TRUE as u16);
             (*sStorage).itemIcons[i].active = FALSE;
-            i += 1;
         }
     }
     (*sStorage).movingItemId = ITEM_NONE;
 }
-pub(crate) unsafe extern "C" fn TryLoadItemIconAtPos(cursorArea: u8, cursorPos: u8) {
+unsafe fn TryLoadItemIconAtPos(cursorArea: u8, cursorPos: u8) {
     let mut heldItem: u16 = 0;
     if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
         return;
@@ -8366,32 +8200,29 @@ pub(crate) unsafe extern "C" fn TryLoadItemIconAtPos(cursorArea: u8, cursorPos: 
         }
     }
     if heldItem != ITEM_NONE {
-        let mut tiles: *mut u32 = GetItemIconPic(heldItem);
-        let mut pal: *mut u32 = GetItemIconPalette(heldItem);
-        let mut id: u8 = GetNewItemIconIdx();
+        let tiles: *mut u32 = GetItemIconPic(heldItem);
+        let pal: *mut u32 = GetItemIconPalette(heldItem);
+        let id: u8 = GetNewItemIconIdx();
         SetItemIconPosition(id, cursorArea, cursorPos);
         LoadItemIconGfx(id, tiles, pal);
         SetItemIconAffineAnim(id, ITEM_ANIM_APPEAR);
         SetItemIconActive(id, TRUE);
     }
 }
-pub(crate) unsafe extern "C" fn TryHideItemIconAtPos(cursorArea: u8, cursorPos: u8) {
-    let mut id: u8 = 0;
+unsafe fn TryHideItemIconAtPos(cursorArea: u8, cursorPos: u8) {
     if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
         return;
     }
-    id = GetItemIconIdxByPosition(cursorArea, cursorPos);
+    let id: u8 = GetItemIconIdxByPosition(cursorArea, cursorPos);
     SetItemIconAffineAnim(id, ITEM_ANIM_DISAPPEAR);
     SetItemIconCallback(id, ITEM_CB_WAIT_ANIM, cursorArea, cursorPos);
 }
-pub(crate) unsafe extern "C" fn TakeItemFromMon(cursorArea: u8, cursorPos: u8) {
-    let mut id: u8 = 0;
-    let mut itemId: u16 = 0;
+unsafe fn TakeItemFromMon(cursorArea: u8, cursorPos: u8) {
     if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
         return;
     }
-    id = GetItemIconIdxByPosition(cursorArea, cursorPos);
-    itemId = ITEM_NONE;
+    let id: u8 = GetItemIconIdxByPosition(cursorArea, cursorPos);
+    let mut itemId: u16 = ITEM_NONE;
     SetItemIconAffineAnim(id, ITEM_ANIM_PICK_UP);
     SetItemIconCallback(id, ITEM_CB_TO_HAND, cursorArea, cursorPos);
     SetItemIconPosition(id, CURSOR_AREA_BOX_TITLE, 0);
@@ -8412,10 +8243,10 @@ pub(crate) unsafe extern "C" fn TakeItemFromMon(cursorArea: u8, cursorPos: u8) {
     }
     (*sStorage).movingItemId = (*sStorage).displayMonItemId;
 }
-pub(crate) unsafe extern "C" fn InitItemIconInCursor(itemId: u16) {
-    let mut tiles: *mut u32 = GetItemIconPic(itemId);
-    let mut pal: *mut u32 = GetItemIconPalette(itemId);
-    let mut id: u8 = GetNewItemIconIdx();
+unsafe fn InitItemIconInCursor(itemId: u16) {
+    let tiles: *mut u32 = GetItemIconPic(itemId);
+    let pal: *mut u32 = GetItemIconPalette(itemId);
+    let id: u8 = GetNewItemIconIdx();
     LoadItemIconGfx(id, tiles, pal);
     SetItemIconAffineAnim(id, ITEM_ANIM_LARGE);
     SetItemIconCallback(id, ITEM_CB_TO_HAND, CURSOR_AREA_IN_BOX, 0);
@@ -8423,13 +8254,12 @@ pub(crate) unsafe extern "C" fn InitItemIconInCursor(itemId: u16) {
     SetItemIconActive(id, TRUE);
     (*sStorage).movingItemId = itemId;
 }
-pub(crate) unsafe extern "C" fn SwapItemsWithMon(cursorArea: u8, cursorPos: u8) {
-    let mut id: u8 = 0;
+unsafe fn SwapItemsWithMon(cursorArea: u8, cursorPos: u8) {
     let mut itemId: u16 = 0;
     if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
         return;
     }
-    id = GetItemIconIdxByPosition(cursorArea, cursorPos);
+    let mut id: u8 = GetItemIconIdxByPosition(cursorArea, cursorPos);
     SetItemIconAffineAnim(id, ITEM_ANIM_PICK_UP);
     SetItemIconCallback(id, ITEM_CB_SWAP_TO_HAND, CURSOR_AREA_BOX_TITLE, 0);
     if cursorArea == CURSOR_AREA_IN_BOX {
@@ -8453,12 +8283,11 @@ pub(crate) unsafe extern "C" fn SwapItemsWithMon(cursorArea: u8, cursorPos: u8) 
     SetItemIconAffineAnim(id, ITEM_ANIM_PUT_DOWN);
     SetItemIconCallback(id, ITEM_CB_SWAP_TO_MON, cursorArea, cursorPos);
 }
-pub(crate) unsafe extern "C" fn GiveItemToMon(cursorArea: u8, cursorPos: u8) {
-    let mut id: u8 = 0;
+pub(crate) unsafe fn GiveItemToMon(cursorArea: u8, cursorPos: u8) {
     if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
         return;
     }
-    id = GetItemIconIdxByPosition(CURSOR_AREA_BOX_TITLE, 0);
+    let id: u8 = GetItemIconIdxByPosition(CURSOR_AREA_BOX_TITLE, 0);
     SetItemIconAffineAnim(id, ITEM_ANIM_PUT_DOWN);
     SetItemIconCallback(id, ITEM_CB_TO_MON, cursorArea, cursorPos);
     if cursorArea == CURSOR_AREA_IN_BOX {
@@ -8477,14 +8306,12 @@ pub(crate) unsafe extern "C" fn GiveItemToMon(cursorArea: u8, cursorPos: u8) {
         SetPartyMonIconObjMode(cursorPos, ST_OAM_OBJ_NORMAL);
     }
 }
-pub(crate) unsafe extern "C" fn MoveItemFromMonToBag(cursorArea: u8, cursorPos: u8) {
-    let mut id: u8 = 0;
-    let mut itemId: u16 = 0;
+unsafe fn MoveItemFromMonToBag(cursorArea: u8, cursorPos: u8) {
     if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
         return;
     }
-    itemId = ITEM_NONE;
-    id = GetItemIconIdxByPosition(cursorArea, cursorPos);
+    let mut itemId: u16 = ITEM_NONE;
+    let id: u8 = GetItemIconIdxByPosition(cursorArea, cursorPos);
     SetItemIconAffineAnim(id, ITEM_ANIM_DISAPPEAR);
     SetItemIconCallback(id, ITEM_CB_WAIT_ANIM, cursorArea, cursorPos);
     if cursorArea == CURSOR_AREA_IN_BOX {
@@ -8503,32 +8330,27 @@ pub(crate) unsafe extern "C" fn MoveItemFromMonToBag(cursorArea: u8, cursorPos: 
         SetPartyMonIconObjMode(cursorPos, ST_OAM_OBJ_BLEND as u8);
     }
 }
-pub(crate) unsafe extern "C" fn MoveItemFromCursorToBag() {
+unsafe fn MoveItemFromCursorToBag() {
     if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
-        let mut id: u8 = GetItemIconIdxByPosition(CURSOR_AREA_BOX_TITLE, 0);
+        let id: u8 = GetItemIconIdxByPosition(CURSOR_AREA_BOX_TITLE, 0);
         SetItemIconAffineAnim(id, ITEM_ANIM_PUT_AWAY);
         SetItemIconCallback(id, ITEM_CB_WAIT_ANIM, CURSOR_AREA_BOX_TITLE, 0);
     }
 }
-pub(crate) unsafe extern "C" fn MoveHeldItemWithPartyMenu() {
-    let mut i: i32 = 0;
+unsafe fn MoveHeldItemWithPartyMenu() {
     if (*sStorage).boxOption != OPTION_MOVE_ITEMS {
         return;
     }
-    i = 0;
-    while i < MAX_ITEM_ICONS as i32 {
+    for i in 0..(MAX_ITEM_ICONS as i32) {
         if (*sStorage).itemIcons[i].active != 0
             && (*sStorage).itemIcons[i].area == CURSOR_AREA_IN_PARTY as u8
         {
             SetItemIconCallback(i as u8, ITEM_CB_HIDE_PARTY, CURSOR_AREA_BOX_TITLE, 0);
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn IsItemIconAnimActive() -> u8 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < MAX_ITEM_ICONS as i32 {
+unsafe fn IsItemIconAnimActive() -> u8 {
+    for i in 0..(MAX_ITEM_ICONS as i32) {
         if (*sStorage).itemIcons[i].active != 0 {
             if (*(*sStorage).itemIcons[i].sprite).affineAnimEnded() == 0
                 && (*(*sStorage).itemIcons[i].sprite).affineAnimBeginning() != 0
@@ -8536,90 +8358,74 @@ pub(crate) unsafe extern "C" fn IsItemIconAnimActive() -> u8 {
                 return TRUE;
             }
             if (*(*sStorage).itemIcons[i].sprite).callback
-                != Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
+                != Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
                 && (*(*sStorage).itemIcons[i].sprite).callback
-                    != Some(SpriteCB_ItemIcon_SetPosToCursor as unsafe extern "C" fn(*mut Sprite))
+                    != Some(SpriteCB_ItemIcon_SetPosToCursor as unsafe fn(*mut Sprite))
             {
                 return TRUE;
             }
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn IsMovingItem() -> u8 {
-    let mut i: i32 = 0;
+unsafe fn IsMovingItem() -> u8 {
     if (*sStorage).boxOption == OPTION_MOVE_ITEMS {
-        i = 0;
-        while i < MAX_ITEM_ICONS as i32 {
+        for i in 0..(MAX_ITEM_ICONS as i32) {
             if (*sStorage).itemIcons[i].active != 0
                 && (*sStorage).itemIcons[i].area == CURSOR_AREA_BOX_TITLE
             {
                 return TRUE;
             }
-            i += 1;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn GetMovingItemName() -> *mut u8 {
-    return GetItemName((*sStorage).movingItemId);
+unsafe fn GetMovingItemName() -> *mut u8 {
+    GetItemName((*sStorage).movingItemId)
 }
-pub(crate) unsafe extern "C" fn GetMovingItemId() -> u16 {
-    return (*sStorage).movingItemId;
+unsafe fn GetMovingItemId() -> u16 {
+    (*sStorage).movingItemId
 }
-pub(crate) unsafe extern "C" fn GetNewItemIconIdx() -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < MAX_ITEM_ICONS {
+unsafe fn GetNewItemIconIdx() -> u8 {
+    for i in 0..MAX_ITEM_ICONS {
         if (*sStorage).itemIcons[i].active == 0 {
             (*sStorage).itemIcons[i].active = TRUE;
             return i;
         }
-        i += 1;
     }
-    return MAX_ITEM_ICONS;
+    MAX_ITEM_ICONS
 }
-pub(crate) unsafe extern "C" fn IsItemIconAtPosition(cursorArea: u8, cursorPos: u8) -> u32 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < MAX_ITEM_ICONS as i32 {
+unsafe fn IsItemIconAtPosition(cursorArea: u8, cursorPos: u8) -> u32 {
+    for i in 0..(MAX_ITEM_ICONS as i32) {
         if (*sStorage).itemIcons[i].active != 0
             && (*sStorage).itemIcons[i].area == cursorArea
             && (*sStorage).itemIcons[i].pos == cursorPos
         {
             return TRUE as u32;
         }
-        i += 1;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn GetItemIconIdxByPosition(cursorArea: u8, cursorPos: u8) -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < MAX_ITEM_ICONS {
+unsafe fn GetItemIconIdxByPosition(cursorArea: u8, cursorPos: u8) -> u8 {
+    for i in 0..MAX_ITEM_ICONS {
         if (*sStorage).itemIcons[i].active != 0
             && (*sStorage).itemIcons[i].area == cursorArea
             && (*sStorage).itemIcons[i].pos == cursorPos
         {
             return i;
         }
-        i += 1;
     }
-    return MAX_ITEM_ICONS;
+    MAX_ITEM_ICONS
 }
-pub(crate) unsafe extern "C" fn GetItemIconIdxBySprite(sprite: *mut Sprite) -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < MAX_ITEM_ICONS {
+unsafe fn GetItemIconIdxBySprite(sprite: *mut Sprite) -> u8 {
+    for i in 0..MAX_ITEM_ICONS {
         if (*sStorage).itemIcons[i].active != 0 && (*sStorage).itemIcons[i].sprite == sprite {
             return i;
         }
-        i += 1;
     }
-    return MAX_ITEM_ICONS;
+    MAX_ITEM_ICONS
 }
-pub(crate) unsafe extern "C" fn SetItemIconPosition(id: u8, cursorArea: u8, cursorPos: u8) {
+unsafe fn SetItemIconPosition(id: u8, cursorArea: u8, cursorPos: u8) {
     let mut x: u8 = 0;
     let mut y: u8 = 0;
     if id >= MAX_ITEM_ICONS {
@@ -8648,8 +8454,7 @@ pub(crate) unsafe extern "C" fn SetItemIconPosition(id: u8, cursorArea: u8, curs
     (*sStorage).itemIcons[id].area = cursorArea;
     (*sStorage).itemIcons[id].pos = cursorPos;
 }
-pub(crate) unsafe extern "C" fn LoadItemIconGfx(id: u8, itemTiles: *mut u32, itemPal: *mut u32) {
-    let mut i: i32 = 0;
+unsafe fn LoadItemIconGfx(id: u8, itemTiles: *mut u32, itemPal: *mut u32) {
     if id >= MAX_ITEM_ICONS {
         return;
     }
@@ -8666,14 +8471,12 @@ pub(crate) unsafe extern "C" fn LoadItemIconGfx(id: u8, itemTiles: *mut u32, ite
         itemTiles,
         (*sStorage).tileBuffer.as_mut_ptr() as *mut c_void,
     );
-    i = 0;
-    while i < 3 {
+    for i in 0..3i32 {
         CpuFastSet(
             &raw mut (*sStorage).tileBuffer[i * 0x60] as *mut c_void,
             &raw mut (*sStorage).itemIconBuffer[i * 0x80] as *mut c_void,
             24,
         );
-        i += 1;
     }
     CpuFastSet(
         (*sStorage).itemIconBuffer.as_mut_ptr() as *mut c_void,
@@ -8690,18 +8493,13 @@ pub(crate) unsafe extern "C" fn LoadItemIconGfx(id: u8, itemTiles: *mut u32, ite
         32,
     );
 }
-pub(crate) unsafe extern "C" fn SetItemIconAffineAnim(id: u8, animNum: u8) {
+unsafe fn SetItemIconAffineAnim(id: u8, animNum: u8) {
     if id >= MAX_ITEM_ICONS {
         return;
     }
     StartSpriteAffineAnim((*sStorage).itemIcons[id].sprite, animNum);
 }
-pub(crate) unsafe extern "C" fn SetItemIconCallback(
-    id: u8,
-    callbackId: u8,
-    cursorArea: u8,
-    cursorPos: u8,
-) {
+unsafe fn SetItemIconCallback(id: u8, callbackId: u8, cursorArea: u8, cursorPos: u8) {
     if id >= MAX_ITEM_ICONS {
         return;
     }
@@ -8717,19 +8515,19 @@ pub(crate) unsafe extern "C" fn SetItemIconCallback(
         ITEM_CB_TO_MON => {
             (*(*sStorage).itemIcons[id].sprite).data[0] = 0;
             (*(*sStorage).itemIcons[id].sprite).data[6] = cursorArea as i16;
-            (*(*sStorage).itemIcons[id].sprite).data[7] = cursorPos as i16;
+            (*(*sStorage).itemIcons[id].sprite).data[sCursorPos] = cursorPos as i16;
             (*(*sStorage).itemIcons[id].sprite).callback = Some(SpriteCB_ItemIcon_ToMon);
         }
         ITEM_CB_SWAP_TO_HAND => {
             (*(*sStorage).itemIcons[id].sprite).data[0] = 0;
             (*(*sStorage).itemIcons[id].sprite).callback = Some(SpriteCB_ItemIcon_SwapToHand);
             (*(*sStorage).itemIcons[id].sprite).data[6] = cursorArea as i16;
-            (*(*sStorage).itemIcons[id].sprite).data[7] = cursorPos as i16;
+            (*(*sStorage).itemIcons[id].sprite).data[sCursorPos] = cursorPos as i16;
         }
         ITEM_CB_SWAP_TO_MON => {
             (*(*sStorage).itemIcons[id].sprite).data[0] = 0;
             (*(*sStorage).itemIcons[id].sprite).data[6] = cursorArea as i16;
-            (*(*sStorage).itemIcons[id].sprite).data[7] = cursorPos as i16;
+            (*(*sStorage).itemIcons[id].sprite).data[sCursorPos] = cursorPos as i16;
             (*(*sStorage).itemIcons[id].sprite).callback = Some(SpriteCB_ItemIcon_SwapToMon);
         }
         ITEM_CB_HIDE_PARTY => {
@@ -8738,20 +8536,20 @@ pub(crate) unsafe extern "C" fn SetItemIconCallback(
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SetItemIconActive(id: u8, active: u8) {
+unsafe fn SetItemIconActive(id: u8, active: u8) {
     if id >= MAX_ITEM_ICONS {
         return;
     }
     (*sStorage).itemIcons[id].active = active;
     (*(*sStorage).itemIcons[id].sprite).set_invisible((active == FALSE) as u16);
 }
-pub(crate) unsafe extern "C" fn GetItemIconPic(itemId: u16) -> *mut u32 {
-    return GetItemIconPicOrPalette(itemId, 0) as *mut u32;
+unsafe fn GetItemIconPic(itemId: u16) -> *mut u32 {
+    GetItemIconPicOrPalette(itemId, 0) as *mut u32
 }
-pub(crate) unsafe extern "C" fn GetItemIconPalette(itemId: u16) -> *mut u32 {
-    return GetItemIconPicOrPalette(itemId, 1) as *mut u32;
+unsafe fn GetItemIconPalette(itemId: u16) -> *mut u32 {
+    GetItemIconPicOrPalette(itemId, 1) as *mut u32
 }
-pub(crate) unsafe extern "C" fn PrintItemDescription() {
+pub(crate) unsafe fn PrintItemDescription() {
     let mut description: *mut u8 = null_mut();
     if IsMovingItem() != 0 {
         description = GetItemDescription((*sStorage).movingItemId);
@@ -8761,7 +8559,7 @@ pub(crate) unsafe extern "C" fn PrintItemDescription() {
     FillWindowPixelBuffer(WIN_ITEM_DESC, 17);
     AddTextPrinterParameterized5(WIN_ITEM_DESC, FONT_NORMAL, description, 4, 0, 0, None, 0, 1);
 }
-pub(crate) unsafe extern "C" fn InitItemInfoWindow() {
+unsafe fn InitItemInfoWindow() {
     (*sStorage).itemInfoWindowOffset = 21;
     LoadBgTiles(
         0,
@@ -8771,16 +8569,13 @@ pub(crate) unsafe extern "C" fn InitItemInfoWindow() {
     );
     DrawItemInfoWindow(0);
 }
-pub(crate) unsafe extern "C" fn UpdateItemInfoWindowSlideIn() -> u8 {
-    let mut i: i32 = 0;
-    let mut pos: i32 = 0;
+unsafe fn UpdateItemInfoWindowSlideIn() -> u8 {
     if (*sStorage).itemInfoWindowOffset == 0 {
         return FALSE;
     }
     (*sStorage).itemInfoWindowOffset -= 1;
-    pos = 21 - (*sStorage).itemInfoWindowOffset as i32;
-    i = 0;
-    while i < pos {
+    let pos: i32 = 21 - (*sStorage).itemInfoWindowOffset as i32;
+    for i in 0..pos {
         WriteSequenceToBgTilemapBuffer(
             0,
             GetBgAttribute(0, BG_ATTR_BASETILE)
@@ -8794,14 +8589,11 @@ pub(crate) unsafe extern "C" fn UpdateItemInfoWindowSlideIn() -> u8 {
             15,
             21,
         );
-        i += 1;
     }
     DrawItemInfoWindow(pos as u32);
-    return ((*sStorage).itemInfoWindowOffset != 0) as u8;
+    ((*sStorage).itemInfoWindowOffset != 0) as u8
 }
-pub(crate) unsafe extern "C" fn UpdateItemInfoWindowSlideOut() -> u8 {
-    let mut i: i32 = 0;
-    let mut pos: i32 = 0;
+unsafe fn UpdateItemInfoWindowSlideOut() -> u8 {
     if (*sStorage).itemInfoWindowOffset == 22 {
         return FALSE;
     }
@@ -8809,9 +8601,8 @@ pub(crate) unsafe extern "C" fn UpdateItemInfoWindowSlideOut() -> u8 {
         FillBgTilemapBufferRect(0, 0, 21, 12, 1, 9, 17);
     }
     (*sStorage).itemInfoWindowOffset += 1;
-    pos = 21 - (*sStorage).itemInfoWindowOffset as i32;
-    i = 0;
-    while i < pos {
+    let pos: i32 = 21 - (*sStorage).itemInfoWindowOffset as i32;
+    for i in 0..pos {
         WriteSequenceToBgTilemapBuffer(
             0,
             GetBgAttribute(0, BG_ATTR_BASETILE)
@@ -8825,16 +8616,15 @@ pub(crate) unsafe extern "C" fn UpdateItemInfoWindowSlideOut() -> u8 {
             15,
             21,
         );
-        i += 1;
     }
     if pos >= 0 {
         DrawItemInfoWindow(pos as u32);
     }
     FillBgTilemapBufferRect(0, 0, pos as u8 + 1, 12, 1, 9, 17);
     ScheduleBgCopyTilemapToVram(0);
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn DrawItemInfoWindow(x: u32) {
+unsafe fn DrawItemInfoWindow(x: u32) {
     if x != 0 {
         FillBgTilemapBufferRect(0, 0x13A, 0, 0xC, x as u8, 1, 15);
         FillBgTilemapBufferRect(0, 0x93A, 0, 0x14, x as u8, 1, 15);
@@ -8844,15 +8634,15 @@ pub(crate) unsafe extern "C" fn DrawItemInfoWindow(x: u32) {
     FillBgTilemapBufferRect(0, 0x13D, x as u8, 0x14, 1, 1, 15);
     ScheduleBgCopyTilemapToVram(0);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_WaitAnim(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ItemIcon_WaitAnim(sprite: *mut Sprite) {
     if (*sprite).affineAnimEnded() != 0 {
-        SetItemIconActive((*sprite).data[0] as u8, FALSE);
+        SetItemIconActive((*sprite).data[sItemIconId] as u8, FALSE);
         (*sprite).callback = Some(SpriteCallbackDummy);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_ToHand(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ItemIcon_ToHand(sprite: *mut Sprite) {
     'l1: {
-        let sw1: i16 = (*sprite).data[0];
+        let sw1: i16 = (*sprite).data[sState];
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
@@ -8861,10 +8651,9 @@ pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_ToHand(sprite: *mut Sprite) {
             (*sprite).data[3] = 10;
             (*sprite).data[4] = 21;
             (*sprite).data[5] = 0;
-            (*sprite).data[0] += 1;
+            (*sprite).data[sState] += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             (*sprite).data[1] -= (*sprite).data[3];
             (*sprite).data[2] -= (*sprite).data[4];
             (*sprite).x = (*sprite).data[1] >> 4;
@@ -8880,16 +8669,16 @@ pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_ToHand(sprite: *mut Sprite) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_SetPosToCursor(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ItemIcon_SetPosToCursor(sprite: *mut Sprite) {
     (*sprite).x = (*(*sStorage).cursorSprite).x + 4;
     (*sprite).y = (*(*sStorage).cursorSprite).y + (*(*sStorage).cursorSprite).y2 + 8;
     (*sprite)
         .oam
         .set_priority((*(*sStorage).cursorSprite).oam.priority());
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_ToMon(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ItemIcon_ToMon(sprite: *mut Sprite) {
     'l1: {
-        let sw1: i16 = (*sprite).data[0];
+        let sw1: i16 = (*sprite).data[sState];
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
@@ -8898,10 +8687,9 @@ pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_ToMon(sprite: *mut Sprite) {
             (*sprite).data[3] = 10;
             (*sprite).data[4] = 21;
             (*sprite).data[5] = 0;
-            (*sprite).data[0] += 1;
+            (*sprite).data[sState] += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             (*sprite).data[1] += (*sprite).data[3];
             (*sprite).data[2] += (*sprite).data[4];
             (*sprite).x = (*sprite).data[1] >> 4;
@@ -8914,7 +8702,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_ToMon(sprite: *mut Sprite) {
                 SetItemIconPosition(
                     GetItemIconIdxBySprite(sprite),
                     (*sprite).data[6] as u8,
-                    (*sprite).data[7] as u8,
+                    (*sprite).data[sCursorPos] as u8,
                 );
                 (*sprite).callback = Some(SpriteCallbackDummy);
             }
@@ -8922,9 +8710,9 @@ pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_ToMon(sprite: *mut Sprite) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_SwapToHand(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ItemIcon_SwapToHand(sprite: *mut Sprite) {
     'l1: {
-        let sw1: i16 = (*sprite).data[0];
+        let sw1: i16 = (*sprite).data[sState];
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
@@ -8933,15 +8721,16 @@ pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_SwapToHand(sprite: *mut Sprite
             (*sprite).data[3] = 10;
             (*sprite).data[4] = 21;
             (*sprite).data[5] = 0;
-            (*sprite).data[0] += 1;
+            (*sprite).data[sState] += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             (*sprite).data[1] -= (*sprite).data[3];
             (*sprite).data[2] -= (*sprite).data[4];
             (*sprite).x = (*sprite).data[1] >> 4;
             (*sprite).y = (*sprite).data[2] >> 4;
-            (*sprite).x2 = gSineTable[(*sprite).data[5] as i32 * 8] >> 4;
+            (*sprite).x2 = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+                [(*sprite).data[5] as i32 * 8]
+                >> 4;
             if ({
                 (*sprite).data[5] += 1;
                 (*sprite).data[5]
@@ -8950,7 +8739,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_SwapToHand(sprite: *mut Sprite
                 SetItemIconPosition(
                     GetItemIconIdxBySprite(sprite),
                     (*sprite).data[6] as u8,
-                    (*sprite).data[7] as u8,
+                    (*sprite).data[sCursorPos] as u8,
                 );
                 (*sprite).x2 = 0;
                 (*sprite).callback = Some(SpriteCB_ItemIcon_SetPosToCursor);
@@ -8959,9 +8748,9 @@ pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_SwapToHand(sprite: *mut Sprite
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_SwapToMon(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ItemIcon_SwapToMon(sprite: *mut Sprite) {
     'l1: {
-        let sw1: i16 = (*sprite).data[0];
+        let sw1: i16 = (*sprite).data[sState];
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
@@ -8970,15 +8759,16 @@ pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_SwapToMon(sprite: *mut Sprite)
             (*sprite).data[3] = 10;
             (*sprite).data[4] = 21;
             (*sprite).data[5] = 0;
-            (*sprite).data[0] += 1;
+            (*sprite).data[sState] += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             (*sprite).data[1] += (*sprite).data[3];
             (*sprite).data[2] += (*sprite).data[4];
             (*sprite).x = (*sprite).data[1] >> 4;
             (*sprite).y = (*sprite).data[2] >> 4;
-            (*sprite).x2 = -(gSineTable[(*sprite).data[5] as i32 * 8] >> 4);
+            (*sprite).x2 = -((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+                [(*sprite).data[5] as i32 * 8]
+                >> 4);
             if ({
                 (*sprite).data[5] += 1;
                 (*sprite).data[5]
@@ -8987,7 +8777,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_SwapToMon(sprite: *mut Sprite)
                 SetItemIconPosition(
                     GetItemIconIdxBySprite(sprite),
                     (*sprite).data[6] as u8,
-                    (*sprite).data[7] as u8,
+                    (*sprite).data[sCursorPos] as u8,
                 );
                 (*sprite).callback = Some(SpriteCallbackDummy);
                 (*sprite).x2 = 0;
@@ -8996,29 +8786,36 @@ pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_SwapToMon(sprite: *mut Sprite)
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ItemIcon_HideParty(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ItemIcon_HideParty(sprite: *mut Sprite) {
     (*sprite).y -= 8;
     if ((*sprite).y as i32 + (*sprite).y2 as i32) < -16 {
         (*sprite).callback = Some(SpriteCallbackDummy);
         SetItemIconActive(GetItemIconIdxBySprite(sprite), FALSE);
     }
 }
-pub(crate) unsafe extern "C" fn BackupPokemonStorage() {}
-pub(crate) unsafe extern "C" fn RestorePokemonStorage() {}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn StorageGetCurrentBox() -> u8 {
-    return (*gPokemonStoragePtr).currentBox;
+fn BackupPokemonStorage() {}
+fn RestorePokemonStorage() {}
+pub unsafe fn StorageGetCurrentBox() -> u8 {
+    (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+        .cast::<*mut PokemonStorage>()
+        .cast_mut()))
+    .currentBox
 }
-pub(crate) unsafe extern "C" fn SetCurrentBox(boxId: u8) {
+unsafe fn SetCurrentBox(boxId: u8) {
     if boxId < TOTAL_BOXES_COUNT {
-        (*gPokemonStoragePtr).currentBox = boxId;
+        (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
+        .currentBox = boxId;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBoxMonDataAt(boxId: u8, boxPosition: u8, request: i32) -> u32 {
+pub unsafe fn GetBoxMonDataAt(boxId: u8, boxPosition: u8, request: i32) -> u32 {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         return GetBoxMonData2(
-            &raw mut (*gPokemonStoragePtr).boxes[boxId][boxPosition],
+            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
+            .boxes[boxId][boxPosition],
             request,
         );
     } else {
@@ -9026,42 +8823,49 @@ pub unsafe extern "C" fn GetBoxMonDataAt(boxId: u8, boxPosition: u8, request: i3
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBoxMonDataAt(
-    boxId: u8,
-    boxPosition: u8,
-    request: i32,
-    value: *mut c_void,
-) {
+pub unsafe fn SetBoxMonDataAt(boxId: u8, boxPosition: u8, request: i32, value: *mut c_void) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         SetBoxMonData(
-            &raw mut (*gPokemonStoragePtr).boxes[boxId][boxPosition],
+            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
+            .boxes[boxId][boxPosition],
             request,
             value,
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetCurrentBoxMonData(boxPosition: u8, request: i32) -> u32 {
-    return GetBoxMonDataAt((*gPokemonStoragePtr).currentBox, boxPosition, request);
+pub unsafe fn GetCurrentBoxMonData(boxPosition: u8, request: i32) -> u32 {
+    GetBoxMonDataAt(
+        (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
+        .currentBox,
+        boxPosition,
+        request,
+    )
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCurrentBoxMonData(boxPosition: u8, request: i32, value: *mut c_void) {
+pub unsafe fn SetCurrentBoxMonData(boxPosition: u8, request: i32, value: *mut c_void) {
     SetBoxMonDataAt(
-        (*gPokemonStoragePtr).currentBox,
+        (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
+        .currentBox,
         boxPosition,
         request,
         value,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBoxMonNickAt(boxId: u8, boxPosition: u8, dst: *mut u8) {
+pub unsafe fn GetBoxMonNickAt(boxId: u8, boxPosition: u8, dst: *mut u8) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         GetBoxMonData3(
-            &raw mut (*gPokemonStoragePtr).boxes[boxId][boxPosition],
+            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
+            .boxes[boxId][boxPosition],
             MON_DATA_NICKNAME,
             dst,
         );
@@ -9069,34 +8873,41 @@ pub unsafe extern "C" fn GetBoxMonNickAt(boxId: u8, boxPosition: u8, dst: *mut u
         *dst = EOS;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBoxMonLevelAt(boxId: u8, boxPosition: u8) -> u32 {
+pub unsafe fn GetBoxMonLevelAt(boxId: u8, boxPosition: u8) -> u32 {
     let mut lvl: u32 = 0;
     if boxId < TOTAL_BOXES_COUNT
         && boxPosition < IN_BOX_COUNT as u8
         && GetBoxMonData2(
-            &raw mut (*gPokemonStoragePtr).boxes[boxId][boxPosition],
+            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
+            .boxes[boxId][boxPosition],
             MON_DATA_SANITY_HAS_SPECIES,
         ) != 0
     {
-        lvl =
-            GetLevelFromBoxMonExp(&raw mut (*gPokemonStoragePtr).boxes[boxId][boxPosition]) as u32;
+        lvl = GetLevelFromBoxMonExp(
+            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
+            .boxes[boxId][boxPosition],
+        ) as u32;
     }
     lvl = 0;
-    return lvl;
+    lvl
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBoxMonNickAt(boxId: u8, boxPosition: u8, nick: *mut u8) {
+pub unsafe fn SetBoxMonNickAt(boxId: u8, boxPosition: u8, nick: *mut u8) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         SetBoxMonData(
-            &raw mut (*gPokemonStoragePtr).boxes[boxId][boxPosition],
+            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
+            .boxes[boxId][boxPosition],
             MON_DATA_NICKNAME,
             nick as *mut c_void,
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetAndCopyBoxMonDataAt(
+pub unsafe fn GetAndCopyBoxMonDataAt(
     boxId: u8,
     boxPosition: u8,
     request: i32,
@@ -9104,7 +8915,10 @@ pub unsafe extern "C" fn GetAndCopyBoxMonDataAt(
 ) -> u32 {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         return GetBoxMonData3(
-            &raw mut (*gPokemonStoragePtr).boxes[boxId][boxPosition],
+            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
+            .boxes[boxId][boxPosition],
             request,
             dst as *mut u8,
         );
@@ -9113,23 +8927,26 @@ pub unsafe extern "C" fn GetAndCopyBoxMonDataAt(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBoxMonAt(boxId: u8, boxPosition: u8, src: *mut BoxPokemon) {
+pub unsafe fn SetBoxMonAt(boxId: u8, boxPosition: u8, src: *mut BoxPokemon) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
-        (*gPokemonStoragePtr).boxes[boxId][boxPosition] = *src;
+        (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
+        .boxes[boxId][boxPosition] = *src;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyBoxMonAt(boxId: u8, boxPosition: u8, dst: *mut BoxPokemon) {
+pub unsafe fn CopyBoxMonAt(boxId: u8, boxPosition: u8, dst: *mut BoxPokemon) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
-        *dst = (*gPokemonStoragePtr).boxes[boxId][boxPosition];
+        *dst = (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
+        .boxes[boxId][boxPosition];
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateBoxMonAt(
+pub unsafe fn CreateBoxMonAt(
     boxId: u8,
     boxPosition: u8,
     species: u16,
@@ -9142,7 +8959,10 @@ pub unsafe extern "C" fn CreateBoxMonAt(
 ) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         CreateBoxMon(
-            &raw mut (*gPokemonStoragePtr).boxes[boxId][boxPosition],
+            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
+            .boxes[boxId][boxPosition],
             species,
             level,
             fixedIV,
@@ -9153,64 +8973,80 @@ pub unsafe extern "C" fn CreateBoxMonAt(
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ZeroBoxMonAt(boxId: u8, boxPosition: u8) {
+pub unsafe fn ZeroBoxMonAt(boxId: u8, boxPosition: u8) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
-        ZeroBoxMonData(&raw mut (*gPokemonStoragePtr).boxes[boxId][boxPosition]);
+        ZeroBoxMonData(
+            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
+            .boxes[boxId][boxPosition],
+        );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BoxMonAtToMon(boxId: u8, boxPosition: u8, dst: *mut Pokemon) {
+pub unsafe fn BoxMonAtToMon(boxId: u8, boxPosition: u8, dst: *mut Pokemon) {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
         BoxMonToMon(
-            &raw mut (*gPokemonStoragePtr).boxes[boxId][boxPosition],
+            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
+            .boxes[boxId][boxPosition],
             dst,
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBoxedMonPtr(boxId: u8, boxPosition: u8) -> *mut BoxPokemon {
+pub unsafe fn GetBoxedMonPtr(boxId: u8, boxPosition: u8) -> *mut BoxPokemon {
     if boxId < TOTAL_BOXES_COUNT && boxPosition < IN_BOX_COUNT as u8 {
-        return &raw mut (*gPokemonStoragePtr).boxes[boxId][boxPosition];
+        return &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
+        .boxes[boxId][boxPosition];
     } else {
         return null_mut();
     }
     #[allow(unreachable_code)]
     {
-        return null_mut();
+        null_mut()
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBoxNamePtr(boxId: u8) -> *mut u8 {
+pub unsafe fn GetBoxNamePtr(boxId: u8) -> *mut u8 {
     if boxId < TOTAL_BOXES_COUNT {
-        return (*gPokemonStoragePtr).boxNames[boxId].as_mut_ptr();
+        return (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
+        .boxNames[boxId]
+            .as_mut_ptr();
     } else {
         return null_mut();
     }
     #[allow(unreachable_code)]
     {
-        return null_mut();
+        null_mut()
     }
 }
-pub(crate) unsafe extern "C" fn GetBoxWallpaper(boxId: u8) -> u8 {
+unsafe fn GetBoxWallpaper(boxId: u8) -> u8 {
     if boxId < TOTAL_BOXES_COUNT {
-        return (*gPokemonStoragePtr).boxWallpapers[boxId];
+        return (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
+        .boxWallpapers[boxId];
     } else {
         return 0;
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn SetBoxWallpaper(boxId: u8, wallpaperId: u8) {
+unsafe fn SetBoxWallpaper(boxId: u8, wallpaperId: u8) {
     if boxId < TOTAL_BOXES_COUNT && wallpaperId < WALLPAPER_COUNT {
-        (*gPokemonStoragePtr).boxWallpapers[boxId] = wallpaperId;
+        (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+            .cast::<*mut PokemonStorage>()
+            .cast_mut()))
+        .boxWallpapers[boxId] = wallpaperId;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AdvanceStorageMonIndex(
-    mut boxMons: *mut BoxPokemon,
+pub unsafe fn AdvanceStorageMonIndex(
+    boxMons: *mut BoxPokemon,
     currIndex: u8,
     maxIndex: u8,
     mode: u8,
@@ -9239,43 +9075,47 @@ pub unsafe extern "C" fn AdvanceStorageMonIndex(
             i += direction;
         }
     }
-    return -1;
+    -1
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckFreePokemonStorageSpace() -> u8 {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    i = 0;
-    while i < TOTAL_BOXES_COUNT as i32 {
-        j = 0;
-        while j < IN_BOX_COUNT {
+pub unsafe fn CheckFreePokemonStorageSpace() -> u8 {
+    for i in 0..(TOTAL_BOXES_COUNT as i32) {
+        for j in 0..IN_BOX_COUNT {
             if GetBoxMonData2(
-                &raw mut (*gPokemonStoragePtr).boxes[i][j],
+                &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                    .cast::<*mut PokemonStorage>()
+                    .cast_mut()))
+                .boxes[i][j],
                 MON_DATA_SANITY_HAS_SPECIES,
             ) == 0
             {
                 return TRUE;
             }
-            j += 1;
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckBoxMonSanityAt(boxId: u32, boxPosition: u32) -> u32 {
+pub unsafe fn CheckBoxMonSanityAt(boxId: u32, boxPosition: u32) -> u32 {
     if boxId < TOTAL_BOXES_COUNT as u32
         && boxPosition < IN_BOX_COUNT as u32
         && GetBoxMonData2(
-            &raw mut (*gPokemonStoragePtr).boxes[boxId][boxPosition],
+            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
+            .boxes[boxId][boxPosition],
             MON_DATA_SANITY_HAS_SPECIES,
         ) != 0
         && GetBoxMonData2(
-            &raw mut (*gPokemonStoragePtr).boxes[boxId][boxPosition],
+            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
+            .boxes[boxId][boxPosition],
             MON_DATA_SANITY_IS_EGG,
         ) == 0
         && GetBoxMonData2(
-            &raw mut (*gPokemonStoragePtr).boxes[boxId][boxPosition],
+            &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                .cast::<*mut PokemonStorage>()
+                .cast_mut()))
+            .boxes[boxId][boxPosition],
             MON_DATA_SANITY_IS_BAD_EGG,
         ) == 0
     {
@@ -9285,96 +9125,95 @@ pub unsafe extern "C" fn CheckBoxMonSanityAt(boxId: u32, boxPosition: u32) -> u3
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CountStorageNonEggMons() -> u32 {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+pub unsafe fn CountStorageNonEggMons() -> u32 {
     let mut count: u32 = 0;
-    i = 0;
-    while i < TOTAL_BOXES_COUNT as i32 {
-        j = 0;
-        while j < IN_BOX_COUNT {
+    for i in 0..(TOTAL_BOXES_COUNT as i32) {
+        for j in 0..IN_BOX_COUNT {
             if GetBoxMonData2(
-                &raw mut (*gPokemonStoragePtr).boxes[i][j],
+                &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                    .cast::<*mut PokemonStorage>()
+                    .cast_mut()))
+                .boxes[i][j],
                 MON_DATA_SANITY_HAS_SPECIES,
             ) != 0
                 && GetBoxMonData2(
-                    &raw mut (*gPokemonStoragePtr).boxes[i][j],
+                    &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                        .cast::<*mut PokemonStorage>()
+                        .cast_mut()))
+                    .boxes[i][j],
                     MON_DATA_SANITY_IS_EGG,
                 ) == 0
             {
                 count += 1;
             }
-            j += 1;
         }
-        i += 1;
     }
-    return count;
+    count
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CountAllStorageMons() -> u32 {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+pub unsafe fn CountAllStorageMons() -> u32 {
     let mut count: u32 = 0;
-    i = 0;
-    while i < TOTAL_BOXES_COUNT as i32 {
-        j = 0;
-        while j < IN_BOX_COUNT {
+    for i in 0..(TOTAL_BOXES_COUNT as i32) {
+        for j in 0..IN_BOX_COUNT {
             if GetBoxMonData2(
-                &raw mut (*gPokemonStoragePtr).boxes[i][j],
+                &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                    .cast::<*mut PokemonStorage>()
+                    .cast_mut()))
+                .boxes[i][j],
                 MON_DATA_SANITY_HAS_SPECIES,
             ) != 0
                 || GetBoxMonData2(
-                    &raw mut (*gPokemonStoragePtr).boxes[i][j],
+                    &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                        .cast::<*mut PokemonStorage>()
+                        .cast_mut()))
+                    .boxes[i][j],
                     MON_DATA_SANITY_IS_EGG,
                 ) != 0
             {
                 count += 1;
             }
-            j += 1;
         }
-        i += 1;
     }
-    return count;
+    count
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AnyStorageMonWithMove(r#move: u16) -> u32 {
+pub unsafe fn AnyStorageMonWithMove(r#move: u16) -> u32 {
     let mut moves: CArray<u16, 2> = zeroed();
     moves[0] = r#move;
     moves[1] = MOVES_COUNT;
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    i = 0;
-    while i < TOTAL_BOXES_COUNT as i32 {
-        j = 0;
-        while j < IN_BOX_COUNT {
+    for i in 0..(TOTAL_BOXES_COUNT as i32) {
+        for j in 0..IN_BOX_COUNT {
             if GetBoxMonData2(
-                &raw mut (*gPokemonStoragePtr).boxes[i][j],
+                &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                    .cast::<*mut PokemonStorage>()
+                    .cast_mut()))
+                .boxes[i][j],
                 MON_DATA_SANITY_HAS_SPECIES,
             ) != 0
                 && GetBoxMonData2(
-                    &raw mut (*gPokemonStoragePtr).boxes[i][j],
+                    &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                        .cast::<*mut PokemonStorage>()
+                        .cast_mut()))
+                    .boxes[i][j],
                     MON_DATA_SANITY_IS_EGG,
                 ) == 0
                 && GetBoxMonData3(
-                    &raw mut (*gPokemonStoragePtr).boxes[i][j],
+                    &raw mut (*(*(&raw const crate::load_save::gPokemonStoragePtr)
+                        .cast::<*mut PokemonStorage>()
+                        .cast_mut()))
+                    .boxes[i][j],
                     MON_DATA_KNOWN_MOVES,
                     moves.as_mut_ptr() as *mut u8,
                 ) != 0
             {
                 return TRUE as u32;
             }
-            j += 1;
         }
-        i += 1;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetWaldaWallpaper() {
+pub unsafe fn ResetWaldaWallpaper() {
     (*gSaveBlock1Ptr).waldaPhrase.iconId = 0;
     (*gSaveBlock1Ptr).waldaPhrase.patternId = 0;
     (*gSaveBlock1Ptr).waldaPhrase.patternUnlocked = FALSE;
@@ -9383,92 +9222,80 @@ pub unsafe extern "C" fn ResetWaldaWallpaper() {
     (*gSaveBlock1Ptr).waldaPhrase.text[0] = EOS;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWaldaWallpaperLockedOrUnlocked(unlocked: u32) {
+pub unsafe fn SetWaldaWallpaperLockedOrUnlocked(unlocked: u32) {
     (*gSaveBlock1Ptr).waldaPhrase.patternUnlocked = unlocked as u8;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsWaldaWallpaperUnlocked() -> u32 {
-    return (*gSaveBlock1Ptr).waldaPhrase.patternUnlocked as u32;
+pub unsafe fn IsWaldaWallpaperUnlocked() -> u32 {
+    (*gSaveBlock1Ptr).waldaPhrase.patternUnlocked as u32
+}
+pub unsafe fn GetWaldaWallpaperPatternId() -> u32 {
+    (*gSaveBlock1Ptr).waldaPhrase.patternId as u32
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetWaldaWallpaperPatternId() -> u32 {
-    return (*gSaveBlock1Ptr).waldaPhrase.patternId as u32;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWaldaWallpaperPatternId(id: u8) {
+pub unsafe fn SetWaldaWallpaperPatternId(id: u8) {
     if id < 16 {
         (*gSaveBlock1Ptr).waldaPhrase.patternId = id;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetWaldaWallpaperIconId() -> u32 {
-    return (*gSaveBlock1Ptr).waldaPhrase.iconId as u32;
+pub unsafe fn GetWaldaWallpaperIconId() -> u32 {
+    (*gSaveBlock1Ptr).waldaPhrase.iconId as u32
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWaldaWallpaperIconId(id: u8) {
+pub unsafe fn SetWaldaWallpaperIconId(id: u8) {
     if id < 30 {
         (*gSaveBlock1Ptr).waldaPhrase.iconId = id;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetWaldaWallpaperColorsPtr() -> *mut u16 {
-    return (*gSaveBlock1Ptr).waldaPhrase.colors.as_mut_ptr();
+pub unsafe fn GetWaldaWallpaperColorsPtr() -> *mut u16 {
+    (*gSaveBlock1Ptr).waldaPhrase.colors.as_mut_ptr()
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWaldaWallpaperColors(color1: u16, color2: u16) {
+pub unsafe fn SetWaldaWallpaperColors(color1: u16, color2: u16) {
     (*gSaveBlock1Ptr).waldaPhrase.colors[0] = color1;
     (*gSaveBlock1Ptr).waldaPhrase.colors[1] = color2;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetWaldaPhrasePtr() -> *mut u8 {
-    return (*gSaveBlock1Ptr).waldaPhrase.text.as_mut_ptr();
+pub unsafe fn GetWaldaPhrasePtr() -> *mut u8 {
+    (*gSaveBlock1Ptr).waldaPhrase.text.as_mut_ptr()
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWaldaPhrase(src: *mut u8) {
+pub unsafe fn SetWaldaPhrase(src: *mut u8) {
     StringCopy((*gSaveBlock1Ptr).waldaPhrase.text.as_mut_ptr(), src);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsWaldaPhraseEmpty() -> u32 {
-    return ((*gSaveBlock1Ptr).waldaPhrase.text[0] == EOS) as u32;
+pub unsafe fn IsWaldaPhraseEmpty() -> u32 {
+    ((*gSaveBlock1Ptr).waldaPhrase.text[0] == EOS) as u32
 }
-pub(crate) unsafe extern "C" fn TilemapUtil_Init(count: u8) {
-    let mut i: u16 = 0;
+unsafe fn TilemapUtil_Init(count: u8) {
     sTilemapUtil = Alloc(48 * count as u32) as *mut TilemapUtil;
-    sNumTilemapUtilIds = (if sTilemapUtil.is_null() {
-        0
-    } else {
-        count as i32
-    }) as u16;
-    i = 0;
-    while i < sNumTilemapUtilIds {
+    sNumTilemapUtilIds.set(
+        (if sTilemapUtil.is_null() {
+            0
+        } else {
+            count as i32
+        }) as u16,
+    );
+    let mut i: u16 = 0;
+    while i < sNumTilemapUtilIds.get() {
         (*sTilemapUtil.at(i)).savedTilemap = null_mut();
         (*sTilemapUtil.at(i)).active = FALSE;
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn TilemapUtil_Free() {
+unsafe fn TilemapUtil_Free() {
     Free(sTilemapUtil as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn TilemapUtil_UpdateAll() {
+unsafe fn TilemapUtil_UpdateAll() {
     let mut i: i32 = 0;
-    i = 0;
-    while i < sNumTilemapUtilIds as i32 {
+    while i < sNumTilemapUtilIds.get() as i32 {
         if (*sTilemapUtil.at(i)).active == TRUE {
             TilemapUtil_Update(i as u8);
         }
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn TilemapUtil_SetMap(
-    id: u8,
-    bg: u8,
-    tilemap: *mut c_void,
-    width: u16,
-    height: u16,
-) {
-    let mut bgScreenSize: u16 = 0;
-    let mut bgType: u16 = 0;
-    if id as u16 >= sNumTilemapUtilIds {
+unsafe fn TilemapUtil_SetMap(id: u8, bg: u8, tilemap: *mut c_void, width: u16, height: u16) {
+    if id as u16 >= sNumTilemapUtilIds.get() {
         return;
     }
     (*sTilemapUtil.at(id)).savedTilemap = null_mut();
@@ -9476,8 +9303,8 @@ pub(crate) unsafe extern "C" fn TilemapUtil_SetMap(
     (*sTilemapUtil.at(id)).bg = bg;
     (*sTilemapUtil.at(id)).width = width;
     (*sTilemapUtil.at(id)).height = height;
-    bgScreenSize = GetBgAttribute(bg, BG_ATTR_SCREENSIZE);
-    bgType = GetBgAttribute(bg, BG_ATTR_TYPE);
+    let bgScreenSize: u16 = GetBgAttribute(bg, BG_ATTR_SCREENSIZE);
+    let bgType: u16 = GetBgAttribute(bg, BG_ATTR_TYPE);
     (*sTilemapUtil.at(id)).altWidth = sTilemapDimensions[bgType][bgScreenSize].width;
     (*sTilemapUtil.at(id)).altHeight = sTilemapDimensions[bgType][bgScreenSize].height;
     if bgType != BG_TYPE_NORMAL {
@@ -9495,29 +9322,23 @@ pub(crate) unsafe extern "C" fn TilemapUtil_SetMap(
     (*sTilemapUtil.at(id)).prev = (*sTilemapUtil.at(id)).cur;
     (*sTilemapUtil.at(id)).active = TRUE;
 }
-pub(crate) unsafe extern "C" fn TilemapUtil_SetSavedMap(id: u8, tilemap: *mut c_void) {
-    if id as u16 >= sNumTilemapUtilIds {
+unsafe fn TilemapUtil_SetSavedMap(id: u8, tilemap: *mut c_void) {
+    if id as u16 >= sNumTilemapUtilIds.get() {
         return;
     }
     (*sTilemapUtil.at(id)).savedTilemap = tilemap;
     (*sTilemapUtil.at(id)).active = TRUE;
 }
-pub(crate) unsafe extern "C" fn TilemapUtil_SetPos(id: u8, x: u16, y: u16) {
-    if id as u16 >= sNumTilemapUtilIds {
+unsafe fn TilemapUtil_SetPos(id: u8, x: u16, y: u16) {
+    if id as u16 >= sNumTilemapUtilIds.get() {
         return;
     }
     (*sTilemapUtil.at(id)).cur.destX = x as i16;
     (*sTilemapUtil.at(id)).cur.destY = y as i16;
     (*sTilemapUtil.at(id)).active = TRUE;
 }
-pub(crate) unsafe extern "C" fn TilemapUtil_SetRect(
-    id: u8,
-    x: u16,
-    y: u16,
-    width: u16,
-    height: u16,
-) {
-    if id as u16 >= sNumTilemapUtilIds {
+unsafe fn TilemapUtil_SetRect(id: u8, x: u16, y: u16, width: u16, height: u16) {
+    if id as u16 >= sNumTilemapUtilIds.get() {
         return;
     }
     (*sTilemapUtil.at(id)).cur.x = x as i16;
@@ -9526,8 +9347,8 @@ pub(crate) unsafe extern "C" fn TilemapUtil_SetRect(
     (*sTilemapUtil.at(id)).cur.height = height;
     (*sTilemapUtil.at(id)).active = TRUE;
 }
-pub(crate) unsafe extern "C" fn TilemapUtil_Move(id: u8, mode: u8, val: i8) {
-    if id as u16 >= sNumTilemapUtilIds {
+unsafe fn TilemapUtil_Move(id: u8, mode: u8, val: i8) {
+    if id as u16 >= sNumTilemapUtilIds.get() {
         return;
     }
     match mode {
@@ -9557,8 +9378,8 @@ pub(crate) unsafe extern "C" fn TilemapUtil_Move(id: u8, mode: u8, val: i8) {
     }
     (*sTilemapUtil.at(id)).active = TRUE;
 }
-pub(crate) unsafe extern "C" fn TilemapUtil_Update(id: u8) {
-    if id as u16 >= sNumTilemapUtilIds {
+unsafe fn TilemapUtil_Update(id: u8) {
+    if id as u16 >= sNumTilemapUtilIds.get() {
         return;
     }
     if !(*sTilemapUtil.at(id)).savedTilemap.is_null() {
@@ -9567,16 +9388,15 @@ pub(crate) unsafe extern "C" fn TilemapUtil_Update(id: u8) {
     TilemapUtil_Draw(id);
     (*sTilemapUtil.at(id)).prev = (*sTilemapUtil.at(id)).cur;
 }
-pub(crate) unsafe extern "C" fn TilemapUtil_DrawPrev(id: u8) {
-    let mut i: i32 = 0;
-    let mut adder: u32 =
+unsafe fn TilemapUtil_DrawPrev(id: u8) {
+    let adder: u32 =
         (*sTilemapUtil.at(id)).tileSize as u32 * (*sTilemapUtil.at(id)).altWidth as u32;
     let mut tiles: *mut c_void = (((*sTilemapUtil.at(id)).savedTilemap as *mut u8)
         .at(adder * (*sTilemapUtil.at(id)).prev.destY as u32)
         as *mut c_void as *mut u8)
         .at((*sTilemapUtil.at(id)).tileSize as i32 * (*sTilemapUtil.at(id)).prev.destX as i32)
         as *mut c_void;
-    i = 0;
+    let mut i: i32 = 0;
     while i < (*sTilemapUtil.at(id)).prev.height as i32 {
         CopyToBgTilemapBufferRect(
             (*sTilemapUtil.at(id)).bg,
@@ -9590,16 +9410,14 @@ pub(crate) unsafe extern "C" fn TilemapUtil_DrawPrev(id: u8) {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn TilemapUtil_Draw(id: u8) {
-    let mut i: i32 = 0;
-    let mut adder: u32 =
-        (*sTilemapUtil.at(id)).tileSize as u32 * (*sTilemapUtil.at(id)).width as u32;
+unsafe fn TilemapUtil_Draw(id: u8) {
+    let adder: u32 = (*sTilemapUtil.at(id)).tileSize as u32 * (*sTilemapUtil.at(id)).width as u32;
     let mut tiles: *mut c_void = (((*sTilemapUtil.at(id)).tilemap as *mut u8)
         .at(adder * (*sTilemapUtil.at(id)).cur.y as u32)
         as *mut c_void as *mut u8)
         .at((*sTilemapUtil.at(id)).tileSize as i32 * (*sTilemapUtil.at(id)).cur.x as i32)
         as *mut c_void;
-    i = 0;
+    let mut i: i32 = 0;
     while i < (*sTilemapUtil.at(id)).cur.height as i32 {
         CopyToBgTilemapBufferRect(
             (*sTilemapUtil.at(id)).bg,
@@ -9613,25 +9431,25 @@ pub(crate) unsafe extern "C" fn TilemapUtil_Draw(id: u8) {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn UnkUtil_Init(util: *mut UnkUtil, data: *mut UnkUtilData, max: u32) {
+unsafe fn UnkUtil_Init(util: *mut UnkUtil, data: *mut UnkUtilData, max: u32) {
     sUnkUtil = util;
     (*util).data = data;
     (*util).max = max as u8;
     (*util).numActive = 0;
 }
-pub(crate) unsafe extern "C" fn UnkUtil_Run() {
+unsafe fn UnkUtil_Run() {
     let mut i: u16 = 0;
     if (*sUnkUtil).numActive != 0 {
         i = 0;
         while i < (*sUnkUtil).numActive as u16 {
-            let mut data: *mut UnkUtilData = (*sUnkUtil).data.at(i);
+            let data: *mut UnkUtilData = (*sUnkUtil).data.at(i);
             (*data).func.unwrap_unchecked()(data);
             i += 1;
         }
         (*sUnkUtil).numActive = 0;
     }
 }
-pub(crate) unsafe extern "C" fn UnkUtil_CpuAdd(
+unsafe fn UnkUtil_CpuAdd(
     dest: *mut u8,
     dLeft: u16,
     dTop: u16,
@@ -9657,29 +9475,22 @@ pub(crate) unsafe extern "C" fn UnkUtil_CpuAdd(
     (*data).height = height;
     (*data).unk = unkArg;
     (*data).func = Some(UnkUtil_CpuRun);
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn UnkUtil_CpuRun(data: *mut UnkUtilData) {
+pub(crate) unsafe fn UnkUtil_CpuRun(data: *mut UnkUtilData) {
     let mut i: u16 = 0;
-    i = 0;
     while i < (*data).height {
         CpuSet(
             (*data).src as *mut c_void,
             (*data).dest as *mut c_void,
-            0x00000000 | ((*data).size as i32 / 2) as u32 & 0x1FFFFF,
+            ((*data).size as i32 / 2) as u32 & 0x1FFFFF,
         );
         (*data).dest = (*data).dest.at(64);
         (*data).src = (*data).src.at((*data).unk as i32 * 2);
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn UnkUtil_DmaAdd(
-    dest: *mut c_void,
-    dLeft: u16,
-    dTop: u16,
-    width: u16,
-    height: u16,
-) -> u8 {
+unsafe fn UnkUtil_DmaAdd(dest: *mut c_void, dLeft: u16, dTop: u16, width: u16, height: u16) -> u8 {
     let mut data: *mut UnkUtilData = null_mut();
     if (*sUnkUtil).numActive >= (*sUnkUtil).max {
         return FALSE;
@@ -9694,11 +9505,10 @@ pub(crate) unsafe extern "C" fn UnkUtil_DmaAdd(
         (dest as *mut u8).at((dTop as i32 * 32 + dLeft as i32) * 2) as *mut c_void as *mut u8;
     (*data).height = height;
     (*data).func = Some(UnkUtil_DmaRun);
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn UnkUtil_DmaRun(data: *mut UnkUtilData) {
+pub(crate) unsafe fn UnkUtil_DmaRun(data: *mut UnkUtilData) {
     let mut i: u16 = 0;
-    i = 0;
     while i < (*data).height {
         {
             let mut _dest: *mut c_void = (*data).dest as *mut c_void;
@@ -9711,10 +9521,10 @@ pub(crate) unsafe extern "C" fn UnkUtil_DmaRun(data: *mut UnkUtilData) {
                             volatile_write(&raw mut tmp, 0);
                             {
                                 {
-                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                     volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                    volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                    volatile_write(dmaRegs.at(2), 0x81000000 | (_size / 2));
                                     let _ = (dmaRegs.at(2)).read_volatile();
                                 }
                             }
@@ -9728,7 +9538,7 @@ pub(crate) unsafe extern "C" fn UnkUtil_DmaRun(data: *mut UnkUtilData) {
                         volatile_write(&raw mut tmp, 0);
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
                                 volatile_write(dmaRegs.at(2), 0x81000800);

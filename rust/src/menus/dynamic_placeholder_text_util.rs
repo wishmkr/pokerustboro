@@ -11,7 +11,7 @@ unsafe extern "C" {}
 static mut STRING_POINTERS: [*const u8; PLACEHOLDER_COUNT] = [ptr::null(); PLACEHOLDER_COUNT];
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DynamicPlaceholderTextUtil_Reset() {
+pub unsafe fn DynamicPlaceholderTextUtil_Reset() {
     let base = (&raw mut STRING_POINTERS).cast::<*const u8>();
     let mut index = 0;
     while index < PLACEHOLDER_COUNT {
@@ -21,7 +21,7 @@ pub unsafe extern "C" fn DynamicPlaceholderTextUtil_Reset() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DynamicPlaceholderTextUtil_SetPlaceholderPtr(index: u8, value: *const u8) {
+pub unsafe fn DynamicPlaceholderTextUtil_SetPlaceholderPtr(index: u8, value: *const u8) {
     if usize::from(index) < PLACEHOLDER_COUNT {
         unsafe {
             (&raw mut STRING_POINTERS)
@@ -33,7 +33,7 @@ pub unsafe extern "C" fn DynamicPlaceholderTextUtil_SetPlaceholderPtr(index: u8,
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DynamicPlaceholderTextUtil_ExpandPlaceholders(
+pub unsafe fn DynamicPlaceholderTextUtil_ExpandPlaceholders(
     mut destination: *mut u8,
     mut source: *const u8,
 ) -> *mut u8 {
@@ -62,7 +62,7 @@ pub unsafe extern "C" fn DynamicPlaceholderTextUtil_ExpandPlaceholders(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DynamicPlaceholderTextUtil_GetPlaceholderPtr(index: u8) -> *const u8 {
+pub unsafe fn DynamicPlaceholderTextUtil_GetPlaceholderPtr(index: u8) -> *const u8 {
     unsafe {
         (&raw const STRING_POINTERS)
             .cast::<*const u8>()

@@ -214,7 +214,7 @@ unsafe impl Sync for RfuBackupQueue {}
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct RfuManager {
-    pub callback: Option<unsafe extern "C" fn()>,
+    pub callback: Option<unsafe fn()>,
     pub state: u16,
     pub unused1: CArray<u8, 4>,
     pub errorInfo: u16,

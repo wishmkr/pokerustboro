@@ -9,8 +9,8 @@ use core::mem::{offset_of, size_of};
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct YesNoFuncTable {
-    pub yesFunc: Option<unsafe extern "C" fn(u8)>,
-    pub noFunc: Option<unsafe extern "C" fn(u8)>,
+    pub yesFunc: Option<unsafe fn(u8)>,
+    pub noFunc: Option<unsafe fn(u8)>,
 }
 
 unsafe impl Sync for YesNoFuncTable {}

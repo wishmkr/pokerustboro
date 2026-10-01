@@ -5,32 +5,7 @@
 
 use crate::ffi::{RomBytes, RomPtr};
 
-unsafe extern "C" {
-    fn RealClearChain();
-    fn SoundMainBTM();
-    fn TrackStop();
-    fn ply_bend();
-    fn ply_bendr();
-    fn ply_endtie();
-    fn ply_fine();
-    fn ply_goto();
-    fn ply_keysh();
-    fn ply_lfodl();
-    fn ply_lfos();
-    fn ply_mod();
-    fn ply_modt();
-    fn ply_pan();
-    fn ply_patt();
-    fn ply_pend();
-    fn ply_port();
-    fn ply_prio();
-    fn ply_rept();
-    fn ply_tempo();
-    fn ply_tune();
-    fn ply_voice();
-    fn ply_vol();
-    static voicegroup_dummy: u8;
-}
+use crate::m4a_engine::{RealClearChain, SoundMainBTM, TrackStop, ply_bend, ply_bendr, ply_endtie, ply_fine, ply_goto, ply_keysh, ply_lfodl, ply_lfos, ply_mod, ply_modt, ply_pan, ply_patt, ply_pend, ply_port, ply_prio, ply_rept, ply_tempo, ply_tune, ply_voice, ply_vol};
 
 #[unsafe(no_mangle)]
 pub static gMPlayJumpTableTemplate: [RomPtr<u8>; 36] = [
@@ -102,7 +77,7 @@ pub static gClockTable: RomBytes<49> = RomBytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1
 #[unsafe(no_mangle)]
 pub static gPokemonCrySongTemplate: [RomPtr<u8>; 13] = [
     RomPtr(0xff0001 as *const u8),
-    RomPtr((&raw const voicegroup_dummy)),
+    RomPtr((&raw const (*crate::asmdata::voicegroup_dummy.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xb240c800 as *const u8),

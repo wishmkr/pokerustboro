@@ -3,29 +3,44 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments
 )]
 
+use crate::agb_main::gGameVersion;
+use crate::battle_main::{
+    gBattle_BG1_X, gBattle_BG1_Y, gBattle_BG2_X, gBattle_BG2_Y, gBattleAnimBgTilemapBuffer,
+    gBattleEnvironment, gBattleOutcome, gBattleScripting, gBattleStruct, gBattleTypeFlags,
+};
+use crate::battle_message::BattlePutTextOnWindow;
+use crate::battle_setup::{gPartnerTrainerId, gTrainerBattleOpponent_A};
+use crate::bg::{CopyBgTilemapBufferToVram, ResetBgsAndClearDma3BusyFlags, SetBgAttribute};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::gpu_regs::{DisableInterrupts, EnableInterrupts, SetGpuReg};
+use crate::link::gLinkPlayers;
+use crate::menu::Menu_LoadStdPalAt;
+use crate::overworld::GetCurrentMapBattleScene;
+use crate::palette::LoadCompressedPalette;
+use crate::palette::{gPlttBufferFaded, gPlttBufferUnfaded};
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::sprite::{AllocSpritePalette, AnimateSprites, BuildOamBuffer, ResetSpriteData};
+use crate::task::DestroyTask;
+use crate::task::{task_get, task_set};
+use crate::text::DeactivateAllTextPrinters;
+use crate::text_window::{LoadMessageBoxGfx, LoadUserWindowBorderGfx};
+use crate::trig::{Cos2, Sin2};
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,6 +49,64 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CopyToBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBuffer(a0, a1 as _, a2, a3);
+    }
+}
+/// `CopyToBgTilemapBufferRect_ChangePalette` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBufferRect_ChangePalette(
+    a0: u8,
+    a1: *mut c_void,
+    a2: u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: u8,
+) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBufferRect_ChangePalette(a0, a1 as _, a2, a3, a4, a5, a6);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LZDecompressVram` with this module's view of its types.
+#[inline]
+unsafe fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::decompress::LZDecompressVram(a0 as _, a1 as _);
+    }
+}
+/// `LoadCompressedSpriteSheetUsingHeap` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheetUsingHeap(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
 // Data tables (translate with cdata.py): sUnrefArray sVsLetter_V_OamData sVsLetter_S_OamData sVsLetterAffineAnimCmds0 sVsLetterAffineAnimCmds1 sVsLetterAffineAnimTable sVsLetter_V_SpriteTemplate sVsLetter_S_SpriteTemplate sVsLettersSpriteSheet gBattleBgTemplates sStandardBattleWindowTemplates sBattleArenaWindowTemplates gBattleWindowTemplates sBattleEnvironmentTable
 
 /// `struct BattleBackground`
@@ -76,125 +149,40 @@ static sVsLetter_V_SpriteTemplate: Table<SpriteTemplate> =
 static sVsLettersSpriteSheet: Table<CompressedSpriteSheet> =
     Table((&raw const crate::data::battle_bg::sVsLettersSpriteSheet).cast());
 
-unsafe extern "C" {
-    static mut gBattleAnimBgTilemapBuffer: *mut u8;
-    static mut gBattleEnvironment: u8;
-    static gBattleEnvironmentAnimTilemap_Building: CArray<u32, 0>;
-    static gBattleEnvironmentAnimTilemap_Cave: CArray<u32, 0>;
-    static gBattleEnvironmentAnimTilemap_Rayquaza: CArray<u32, 0>;
-    static gBattleEnvironmentAnimTilemap_Underwater: CArray<u32, 0>;
-    static gBattleEnvironmentAnimTiles_Building: CArray<u32, 0>;
-    static gBattleEnvironmentAnimTiles_Cave: CArray<u32, 0>;
-    static gBattleEnvironmentAnimTiles_Rayquaza: CArray<u32, 0>;
-    static gBattleEnvironmentAnimTiles_Underwater: CArray<u32, 0>;
-    static gBattleEnvironmentPalette_BuildingGym: CArray<u32, 0>;
-    static gBattleEnvironmentPalette_BuildingLeader: CArray<u32, 0>;
-    static gBattleEnvironmentPalette_Frontier: CArray<u32, 0>;
-    static gBattleEnvironmentPalette_Groudon: CArray<u32, 0>;
-    static gBattleEnvironmentPalette_Kyogre: CArray<u32, 0>;
-    static gBattleEnvironmentPalette_Rayquaza: CArray<u32, 0>;
-    static gBattleEnvironmentPalette_StadiumAqua: CArray<u32, 0>;
-    static gBattleEnvironmentPalette_StadiumDrake: CArray<u32, 0>;
-    static gBattleEnvironmentPalette_StadiumGlacia: CArray<u32, 0>;
-    static gBattleEnvironmentPalette_StadiumMagma: CArray<u32, 0>;
-    static gBattleEnvironmentPalette_StadiumPhoebe: CArray<u32, 0>;
-    static gBattleEnvironmentPalette_StadiumSidney: CArray<u32, 0>;
-    static gBattleEnvironmentPalette_StadiumWallace: CArray<u32, 0>;
-    static gBattleEnvironmentTilemap_Building: CArray<u32, 0>;
-    static gBattleEnvironmentTilemap_Cave: CArray<u32, 0>;
-    static gBattleEnvironmentTilemap_Rayquaza: CArray<u32, 0>;
-    static gBattleEnvironmentTilemap_Stadium: CArray<u32, 0>;
-    static gBattleEnvironmentTilemap_Water: CArray<u32, 0>;
-    static gBattleEnvironmentTiles_Building: CArray<u32, 0>;
-    static gBattleEnvironmentTiles_Cave: CArray<u32, 0>;
-    static gBattleEnvironmentTiles_Rayquaza: CArray<u32, 0>;
-    static gBattleEnvironmentTiles_Stadium: CArray<u32, 0>;
-    static gBattleEnvironmentTiles_Water: CArray<u32, 0>;
-    static mut gBattleOutcome: u8;
-    static mut gBattleScripting: BattleScripting;
-    static mut gBattleStruct: *mut BattleStruct;
-    static gBattleTextboxPalette: CArray<u32, 0>;
-    static gBattleTextboxTilemap: CArray<u32, 0>;
-    static gBattleTextboxTiles: CArray<u32, 0>;
-    static mut gBattleTypeFlags: u32;
-    static gBattleVSFrame_Gfx: CArray<u32, 0>;
-    static gBattleVSFrame_Pal: CArray<u32, 0>;
-    static gBattleVSFrame_Tilemap: CArray<u32, 0>;
-    static gBattleWindowTextPalette: CArray<u32, 0>;
-    static mut gBattle_BG1_X: u16;
-    static mut gBattle_BG1_Y: u16;
-    static mut gBattle_BG2_X: u16;
-    static mut gBattle_BG2_Y: u16;
-    static gGameVersion: u8;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static gMultiBattleIntroBg_Opponent_Tilemap: CArray<u32, 0>;
-    static gMultiBattleIntroBg_Player_Tilemap: CArray<u32, 0>;
-    static mut gPartnerTrainerId: u16;
-    static mut gPlttBufferFaded: CArray<u16, 512>;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_Draw: CArray<u8, 0>;
-    static gText_Loss: CArray<u8, 0>;
-    static gText_Win: CArray<u8, 0>;
-    static mut gTrainerBattleOpponent_A: u16;
-    static gTrainers: CArray<Trainer, 0>;
-    static gUnusedBattleInitSprite: SpriteTemplate;
-    static gVsLettersGfx: CArray<u32, 0>;
-    fn AllocSpritePalette(a0: u16) -> u8;
-    fn AnimateSprites();
-    fn BattlePutTextOnWindow(a0: *mut u8, a1: u8);
-    fn BuildOamBuffer();
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn CopyToBgTilemapBufferRect_ChangePalette(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-    );
-    fn Cos2(a0: u16) -> i16;
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DeactivateAllTextPrinters();
-    fn DestroyTask(a0: u8);
-    fn DisableInterrupts(a0: u16);
-    fn EnableInterrupts(a0: u16);
-    fn GetCurrentMapBattleScene() -> u8;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn LZDecompressVram(a0: *mut u32, a1: *mut c_void);
-    fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8;
-    fn LoadMessageBoxGfx(a0: u8, a1: u16, a2: u8);
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn Menu_LoadStdPalAt(a0: u16);
-    fn PlaySE(a0: u16);
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetSpriteData();
-    fn SetBgAttribute(a0: u8, a1: u8, a2: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn Sin2(a0: u16) -> i16;
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn UnusedBattleInit() {
-    let mut spriteId: u8 = 0;
+unsafe fn UnusedBattleInit() {
     ResetSpriteData();
-    spriteId = CreateSprite((&raw const gUnusedBattleInitSprite).cast_mut(), 0, 0, 0);
+    let spriteId: u8 = CreateSprite(
+        (&raw const (*(&raw const crate::data::battle_main::gUnusedBattleInitSprite)
+            .cast::<SpriteTemplate>()))
+            .cast_mut(),
+        0,
+        0,
+        0,
+    );
     gSprites[spriteId].set_invisible(TRUE as u16);
     SetMainCallback2(Some(CB2_UnusedBattleInit));
 }
-pub(crate) unsafe extern "C" fn CB2_UnusedBattleInit() {
+pub(crate) unsafe fn CB2_UnusedBattleInit() {
     AnimateSprites();
     BuildOamBuffer();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleInitBgsAndWindows() {
+pub unsafe fn BattleInitBgsAndWindows() {
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, gBattleBgTemplates.as_ptr().cast_mut(), 4);
     if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0 {
@@ -207,8 +195,7 @@ pub unsafe extern "C" fn BattleInitBgsAndWindows() {
     InitWindows(gBattleWindowTemplates[gBattleScripting.windowsType]);
     DeactivateAllTextPrinters();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitBattleBgsVideo() {
+pub unsafe fn InitBattleBgsVideo() {
     DisableInterrupts(INTR_FLAG_HBLANK);
     EnableInterrupts(197);
     BattleInitBgsAndWindows();
@@ -217,105 +204,173 @@ pub unsafe extern "C" fn InitBattleBgsVideo() {
     SetGpuReg(REG_OFFSET_BLDY, 0);
     SetGpuReg(REG_OFFSET_DISPCNT, 45120);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadBattleMenuWindowGfx() {
+pub unsafe fn LoadBattleMenuWindowGfx() {
     LoadUserWindowBorderGfx(2, 0x12, 16);
     LoadUserWindowBorderGfx(2, 0x22, 16);
-    LoadCompressedPalette(gBattleWindowTextPalette.as_ptr().cast_mut(), 80, 32);
+    LoadCompressedPalette(
+        (*(&raw const crate::data::graphics::gBattleWindowTextPalette).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        80,
+        32,
+    );
     if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0 {
         Menu_LoadStdPalAt(112);
         LoadMessageBoxGfx(0, 0x30, 112);
         gPlttBufferUnfaded[118] = 0;
         CpuSet(
-            &raw mut gPlttBufferUnfaded[118] as *mut c_void,
-            &raw mut gPlttBufferFaded[118] as *mut c_void,
+            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                .cast::<CArray<u16, 512>>()
+                .cast_mut())[118] as *mut c_void,
+            &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+                .cast::<CArray<u16, 512>>()
+                .cast_mut())[118] as *mut c_void,
             1,
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawMainBattleBackground() {
+pub unsafe fn DrawMainBattleBackground() {
     if gBattleTypeFlags & 0x23f0902 != 0 {
         LZDecompressVram(
-            gBattleEnvironmentTiles_Building.as_ptr().cast_mut(),
-            0x6008000 as usize as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Building)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            0x6008000_usize as *mut c_void,
         );
         LZDecompressVram(
-            gBattleEnvironmentTilemap_Building.as_ptr().cast_mut(),
-            0x600d000 as usize as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Building)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            0x600d000_usize as *mut c_void,
         );
         LoadCompressedPalette(
-            gBattleEnvironmentPalette_Frontier.as_ptr().cast_mut(),
+            (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_Frontier)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
             32,
             96,
         );
     } else if gBattleTypeFlags & BATTLE_TYPE_GROUDON != 0 {
         LZDecompressVram(
-            gBattleEnvironmentTiles_Cave.as_ptr().cast_mut(),
-            0x6008000 as usize as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Cave)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            0x6008000_usize as *mut c_void,
         );
         LZDecompressVram(
-            gBattleEnvironmentTilemap_Cave.as_ptr().cast_mut(),
-            0x600d000 as usize as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Cave)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            0x600d000_usize as *mut c_void,
         );
         LoadCompressedPalette(
-            gBattleEnvironmentPalette_Groudon.as_ptr().cast_mut(),
+            (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_Groudon)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
             32,
             96,
         );
     } else if gBattleTypeFlags & BATTLE_TYPE_KYOGRE != 0 {
         LZDecompressVram(
-            gBattleEnvironmentTiles_Water.as_ptr().cast_mut(),
-            0x6008000 as usize as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Water)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            0x6008000_usize as *mut c_void,
         );
         LZDecompressVram(
-            gBattleEnvironmentTilemap_Water.as_ptr().cast_mut(),
-            0x600d000 as usize as *mut c_void,
-        );
-        LoadCompressedPalette(gBattleEnvironmentPalette_Kyogre.as_ptr().cast_mut(), 32, 96);
-    } else if gBattleTypeFlags & BATTLE_TYPE_RAYQUAZA != 0 {
-        LZDecompressVram(
-            gBattleEnvironmentTiles_Rayquaza.as_ptr().cast_mut(),
-            0x6008000 as usize as *mut c_void,
-        );
-        LZDecompressVram(
-            gBattleEnvironmentTilemap_Rayquaza.as_ptr().cast_mut(),
-            0x600d000 as usize as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Water)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            0x600d000_usize as *mut c_void,
         );
         LoadCompressedPalette(
-            gBattleEnvironmentPalette_Rayquaza.as_ptr().cast_mut(),
+            (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_Kyogre)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            32,
+            96,
+        );
+    } else if gBattleTypeFlags & BATTLE_TYPE_RAYQUAZA != 0 {
+        LZDecompressVram(
+            (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Rayquaza)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            0x6008000_usize as *mut c_void,
+        );
+        LZDecompressVram(
+            (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Rayquaza)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            0x600d000_usize as *mut c_void,
+        );
+        LoadCompressedPalette(
+            (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_Rayquaza)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
             32,
             96,
         );
     } else {
         if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
-            let mut trainerClass: u8 = gTrainers[gTrainerBattleOpponent_A].trainerClass;
+            let trainerClass: u8 = (*(&raw const crate::data::data_tables::gTrainers)
+                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
+                .trainerClass;
             if trainerClass == TRAINER_CLASS_LEADER {
                 LZDecompressVram(
-                    gBattleEnvironmentTiles_Building.as_ptr().cast_mut(),
-                    0x6008000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Building)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x6008000_usize as *mut c_void,
                 );
                 LZDecompressVram(
-                    gBattleEnvironmentTilemap_Building.as_ptr().cast_mut(),
-                    0x600d000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Building)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x600d000_usize as *mut c_void,
                 );
                 LoadCompressedPalette(
-                    gBattleEnvironmentPalette_BuildingLeader.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_BuildingLeader)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     32,
                     96,
                 );
                 return;
             } else if trainerClass == TRAINER_CLASS_CHAMPION {
                 LZDecompressVram(
-                    gBattleEnvironmentTiles_Stadium.as_ptr().cast_mut(),
-                    0x6008000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Stadium)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x6008000_usize as *mut c_void,
                 );
                 LZDecompressVram(
-                    gBattleEnvironmentTilemap_Stadium.as_ptr().cast_mut(),
-                    0x600d000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Stadium)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x600d000_usize as *mut c_void,
                 );
                 LoadCompressedPalette(
-                    gBattleEnvironmentPalette_StadiumWallace.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_StadiumWallace)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     32,
                     96,
                 );
@@ -325,120 +380,192 @@ pub unsafe extern "C" fn DrawMainBattleBackground() {
         match GetCurrentMapBattleScene() {
             MAP_BATTLE_SCENE_GYM => {
                 LZDecompressVram(
-                    gBattleEnvironmentTiles_Building.as_ptr().cast_mut(),
-                    0x6008000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Building)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x6008000_usize as *mut c_void,
                 );
                 LZDecompressVram(
-                    gBattleEnvironmentTilemap_Building.as_ptr().cast_mut(),
-                    0x600d000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Building)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x600d000_usize as *mut c_void,
                 );
                 LoadCompressedPalette(
-                    gBattleEnvironmentPalette_BuildingGym.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_BuildingGym)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     32,
                     96,
                 );
             }
             MAP_BATTLE_SCENE_MAGMA => {
                 LZDecompressVram(
-                    gBattleEnvironmentTiles_Stadium.as_ptr().cast_mut(),
-                    0x6008000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Stadium)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x6008000_usize as *mut c_void,
                 );
                 LZDecompressVram(
-                    gBattleEnvironmentTilemap_Stadium.as_ptr().cast_mut(),
-                    0x600d000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Stadium)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x600d000_usize as *mut c_void,
                 );
                 LoadCompressedPalette(
-                    gBattleEnvironmentPalette_StadiumMagma.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_StadiumMagma)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     32,
                     96,
                 );
             }
             MAP_BATTLE_SCENE_AQUA => {
                 LZDecompressVram(
-                    gBattleEnvironmentTiles_Stadium.as_ptr().cast_mut(),
-                    0x6008000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Stadium)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x6008000_usize as *mut c_void,
                 );
                 LZDecompressVram(
-                    gBattleEnvironmentTilemap_Stadium.as_ptr().cast_mut(),
-                    0x600d000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Stadium)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x600d000_usize as *mut c_void,
                 );
                 LoadCompressedPalette(
-                    gBattleEnvironmentPalette_StadiumAqua.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_StadiumAqua)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     32,
                     96,
                 );
             }
             MAP_BATTLE_SCENE_SIDNEY => {
                 LZDecompressVram(
-                    gBattleEnvironmentTiles_Stadium.as_ptr().cast_mut(),
-                    0x6008000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Stadium)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x6008000_usize as *mut c_void,
                 );
                 LZDecompressVram(
-                    gBattleEnvironmentTilemap_Stadium.as_ptr().cast_mut(),
-                    0x600d000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Stadium)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x600d000_usize as *mut c_void,
                 );
                 LoadCompressedPalette(
-                    gBattleEnvironmentPalette_StadiumSidney.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_StadiumSidney)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     32,
                     96,
                 );
             }
             MAP_BATTLE_SCENE_PHOEBE => {
                 LZDecompressVram(
-                    gBattleEnvironmentTiles_Stadium.as_ptr().cast_mut(),
-                    0x6008000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Stadium)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x6008000_usize as *mut c_void,
                 );
                 LZDecompressVram(
-                    gBattleEnvironmentTilemap_Stadium.as_ptr().cast_mut(),
-                    0x600d000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Stadium)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x600d000_usize as *mut c_void,
                 );
                 LoadCompressedPalette(
-                    gBattleEnvironmentPalette_StadiumPhoebe.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_StadiumPhoebe)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     32,
                     96,
                 );
             }
             MAP_BATTLE_SCENE_GLACIA => {
                 LZDecompressVram(
-                    gBattleEnvironmentTiles_Stadium.as_ptr().cast_mut(),
-                    0x6008000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Stadium)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x6008000_usize as *mut c_void,
                 );
                 LZDecompressVram(
-                    gBattleEnvironmentTilemap_Stadium.as_ptr().cast_mut(),
-                    0x600d000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Stadium)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x600d000_usize as *mut c_void,
                 );
                 LoadCompressedPalette(
-                    gBattleEnvironmentPalette_StadiumGlacia.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_StadiumGlacia)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     32,
                     96,
                 );
             }
             MAP_BATTLE_SCENE_DRAKE => {
                 LZDecompressVram(
-                    gBattleEnvironmentTiles_Stadium.as_ptr().cast_mut(),
-                    0x6008000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Stadium)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x6008000_usize as *mut c_void,
                 );
                 LZDecompressVram(
-                    gBattleEnvironmentTilemap_Stadium.as_ptr().cast_mut(),
-                    0x600d000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Stadium)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x600d000_usize as *mut c_void,
                 );
                 LoadCompressedPalette(
-                    gBattleEnvironmentPalette_StadiumDrake.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_StadiumDrake)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     32,
                     96,
                 );
             }
             MAP_BATTLE_SCENE_FRONTIER => {
                 LZDecompressVram(
-                    gBattleEnvironmentTiles_Building.as_ptr().cast_mut(),
-                    0x6008000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Building)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x6008000_usize as *mut c_void,
                 );
                 LZDecompressVram(
-                    gBattleEnvironmentTilemap_Building.as_ptr().cast_mut(),
-                    0x600d000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Building)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x600d000_usize as *mut c_void,
                 );
                 LoadCompressedPalette(
-                    gBattleEnvironmentPalette_Frontier.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_Frontier)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     32,
                     96,
                 );
@@ -446,11 +573,11 @@ pub unsafe extern "C" fn DrawMainBattleBackground() {
             _ => {
                 LZDecompressVram(
                     sBattleEnvironmentTable[gBattleEnvironment].tileset as *mut u32,
-                    0x6008000 as usize as *mut c_void,
+                    0x6008000_usize as *mut c_void,
                 );
                 LZDecompressVram(
                     sBattleEnvironmentTable[gBattleEnvironment].tilemap as *mut u32,
-                    0x600d000 as usize as *mut c_void,
+                    0x600d000_usize as *mut c_void,
                 );
                 LoadCompressedPalette(
                     sBattleEnvironmentTable[gBattleEnvironment].palette as *mut u32,
@@ -462,74 +589,81 @@ pub unsafe extern "C" fn DrawMainBattleBackground() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadBattleTextboxAndBackground() {
+pub unsafe fn LoadBattleTextboxAndBackground() {
     LZDecompressVram(
-        gBattleTextboxTiles.as_ptr().cast_mut(),
-        0x6000000 as usize as *mut c_void,
+        (*(&raw const crate::data::graphics::gBattleTextboxTiles).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0x6000000_usize as *mut c_void,
     );
     CopyToBgTilemapBuffer(
         0,
-        gBattleTextboxTilemap.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gBattleTextboxTilemap).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         0,
         0,
     );
     CopyBgTilemapBufferToVram(0);
-    LoadCompressedPalette(gBattleTextboxPalette.as_ptr().cast_mut(), 0, 64);
+    LoadCompressedPalette(
+        (*(&raw const crate::data::graphics::gBattleTextboxPalette).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0,
+        64,
+    );
     LoadBattleMenuWindowGfx();
     DrawMainBattleBackground();
 }
-pub(crate) unsafe extern "C" fn DrawLinkBattleParticipantPokeballs(
+unsafe fn DrawLinkBattleParticipantPokeballs(
     taskId: u8,
     multiplayerId: u8,
     bgId: u8,
     destX: u8,
     destY: u8,
 ) {
-    let mut i: i32 = 0;
     let mut pokeballStatuses: u16 = 0;
     let mut tiles: CArray<u16, 6> = zeroed();
     if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
-        if gTasks[taskId].data[5] != 0 {
+        if task_get(taskId, 5) != 0 {
             match multiplayerId {
                 0 => {
-                    pokeballStatuses = 0x3F & gTasks[taskId].data[3] as u16;
+                    pokeballStatuses = 0x3F & task_get(taskId, 3) as u16;
                 }
                 1 => {
-                    pokeballStatuses = ((0xFC0 & gTasks[taskId].data[4] as i32) >> 6) as u16;
+                    pokeballStatuses = ((0xFC0 & task_get(taskId, 4) as i32) >> 6) as u16;
                 }
                 2 => {
-                    pokeballStatuses = ((0xFC0 & gTasks[taskId].data[3] as i32) >> 6) as u16;
+                    pokeballStatuses = ((0xFC0 & task_get(taskId, 3) as i32) >> 6) as u16;
                 }
                 3 => {
-                    pokeballStatuses = 0x3F & gTasks[taskId].data[4] as u16;
+                    pokeballStatuses = 0x3F & task_get(taskId, 4) as u16;
                 }
                 _ => {}
             }
         } else {
             match multiplayerId {
                 0 => {
-                    pokeballStatuses = 0x3F & gTasks[taskId].data[3] as u16;
+                    pokeballStatuses = 0x3F & task_get(taskId, 3) as u16;
                 }
                 1 => {
-                    pokeballStatuses = 0x3F & gTasks[taskId].data[4] as u16;
+                    pokeballStatuses = 0x3F & task_get(taskId, 4) as u16;
                 }
                 2 => {
-                    pokeballStatuses = ((0xFC0 & gTasks[taskId].data[3] as i32) >> 6) as u16;
+                    pokeballStatuses = ((0xFC0 & task_get(taskId, 3) as i32) >> 6) as u16;
                 }
                 3 => {
-                    pokeballStatuses = ((0xFC0 & gTasks[taskId].data[4] as i32) >> 6) as u16;
+                    pokeballStatuses = ((0xFC0 & task_get(taskId, 4) as i32) >> 6) as u16;
                 }
                 _ => {}
             }
         }
-        i = 0;
-        while i < 3 {
+        for i in 0..3i32 {
             tiles[i] = shr_i32(
                 pokeballStatuses as i32 & shl_i32(3, i as u32 * 2),
                 i as u32 * 2,
             ) as u16
                 + 0x6001;
-            i += 1;
         }
         CopyToBgTilemapBufferRect_ChangePalette(
             bgId,
@@ -543,18 +677,16 @@ pub(crate) unsafe extern "C" fn DrawLinkBattleParticipantPokeballs(
         CopyBgTilemapBufferToVram(bgId);
     } else {
         if multiplayerId == gBattleScripting.multiplayerId {
-            pokeballStatuses = gTasks[taskId].data[3] as u16;
+            pokeballStatuses = task_get(taskId, 3) as u16;
         } else {
-            pokeballStatuses = gTasks[taskId].data[4] as u16;
+            pokeballStatuses = task_get(taskId, 4) as u16;
         }
-        i = 0;
-        while i < 6 {
+        for i in 0..6i32 {
             tiles[i] = shr_i32(
                 pokeballStatuses as i32 & shl_i32(3, i as u32 * 2),
                 i as u32 * 2,
             ) as u16
                 + 0x6001;
-            i += 1;
         }
         CopyToBgTilemapBufferRect_ChangePalette(
             bgId,
@@ -568,80 +700,218 @@ pub(crate) unsafe extern "C" fn DrawLinkBattleParticipantPokeballs(
         CopyBgTilemapBufferToVram(bgId);
     }
 }
-pub(crate) unsafe extern "C" fn DrawLinkBattleVsScreenOutcomeText() {
+unsafe fn DrawLinkBattleVsScreenOutcomeText() {
     if gBattleOutcome == B_OUTCOME_DREW {
-        BattlePutTextOnWindow(gText_Draw.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_DRAW);
+        BattlePutTextOnWindow(
+            (*(&raw const crate::data::battle_message::gText_Draw).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            B_WIN_VS_OUTCOME_DRAW,
+        );
     } else if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
         if gBattleOutcome == B_OUTCOME_WON {
             match gLinkPlayers[gBattleScripting.multiplayerId].id {
                 0 => {
-                    BattlePutTextOnWindow(gText_Win.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_LEFT);
-                    BattlePutTextOnWindow(gText_Loss.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_RIGHT);
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Win)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_LEFT,
+                    );
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Loss)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_RIGHT,
+                    );
                 }
                 1 => {
-                    BattlePutTextOnWindow(gText_Win.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_RIGHT);
-                    BattlePutTextOnWindow(gText_Loss.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_LEFT);
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Win)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_RIGHT,
+                    );
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Loss)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_LEFT,
+                    );
                 }
                 2 => {
-                    BattlePutTextOnWindow(gText_Win.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_LEFT);
-                    BattlePutTextOnWindow(gText_Loss.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_RIGHT);
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Win)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_LEFT,
+                    );
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Loss)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_RIGHT,
+                    );
                 }
                 3 => {
-                    BattlePutTextOnWindow(gText_Win.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_RIGHT);
-                    BattlePutTextOnWindow(gText_Loss.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_LEFT);
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Win)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_RIGHT,
+                    );
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Loss)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_LEFT,
+                    );
                 }
                 _ => {}
             }
         } else {
             match gLinkPlayers[gBattleScripting.multiplayerId].id {
                 0 => {
-                    BattlePutTextOnWindow(gText_Win.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_RIGHT);
-                    BattlePutTextOnWindow(gText_Loss.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_LEFT);
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Win)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_RIGHT,
+                    );
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Loss)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_LEFT,
+                    );
                 }
                 1 => {
-                    BattlePutTextOnWindow(gText_Win.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_LEFT);
-                    BattlePutTextOnWindow(gText_Loss.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_RIGHT);
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Win)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_LEFT,
+                    );
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Loss)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_RIGHT,
+                    );
                 }
                 2 => {
-                    BattlePutTextOnWindow(gText_Win.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_RIGHT);
-                    BattlePutTextOnWindow(gText_Loss.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_LEFT);
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Win)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_RIGHT,
+                    );
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Loss)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_LEFT,
+                    );
                 }
                 3 => {
-                    BattlePutTextOnWindow(gText_Win.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_LEFT);
-                    BattlePutTextOnWindow(gText_Loss.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_RIGHT);
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Win)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_LEFT,
+                    );
+                    BattlePutTextOnWindow(
+                        (*(&raw const crate::data::battle_message::gText_Loss)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        B_WIN_VS_OUTCOME_RIGHT,
+                    );
                 }
                 _ => {}
             }
         }
     } else if gBattleOutcome == B_OUTCOME_WON {
         if gLinkPlayers[gBattleScripting.multiplayerId].id != 0 {
-            BattlePutTextOnWindow(gText_Win.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_RIGHT);
-            BattlePutTextOnWindow(gText_Loss.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_LEFT);
+            BattlePutTextOnWindow(
+                (*(&raw const crate::data::battle_message::gText_Win).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                B_WIN_VS_OUTCOME_RIGHT,
+            );
+            BattlePutTextOnWindow(
+                (*(&raw const crate::data::battle_message::gText_Loss).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                B_WIN_VS_OUTCOME_LEFT,
+            );
         } else {
-            BattlePutTextOnWindow(gText_Win.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_LEFT);
-            BattlePutTextOnWindow(gText_Loss.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_RIGHT);
+            BattlePutTextOnWindow(
+                (*(&raw const crate::data::battle_message::gText_Win).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                B_WIN_VS_OUTCOME_LEFT,
+            );
+            BattlePutTextOnWindow(
+                (*(&raw const crate::data::battle_message::gText_Loss).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                B_WIN_VS_OUTCOME_RIGHT,
+            );
         }
     } else {
         if gLinkPlayers[gBattleScripting.multiplayerId].id != 0 {
-            BattlePutTextOnWindow(gText_Win.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_LEFT);
-            BattlePutTextOnWindow(gText_Loss.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_RIGHT);
+            BattlePutTextOnWindow(
+                (*(&raw const crate::data::battle_message::gText_Win).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                B_WIN_VS_OUTCOME_LEFT,
+            );
+            BattlePutTextOnWindow(
+                (*(&raw const crate::data::battle_message::gText_Loss).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                B_WIN_VS_OUTCOME_RIGHT,
+            );
         } else {
-            BattlePutTextOnWindow(gText_Win.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_RIGHT);
-            BattlePutTextOnWindow(gText_Loss.as_ptr().cast_mut(), B_WIN_VS_OUTCOME_LEFT);
+            BattlePutTextOnWindow(
+                (*(&raw const crate::data::battle_message::gText_Win).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                B_WIN_VS_OUTCOME_RIGHT,
+            );
+            BattlePutTextOnWindow(
+                (*(&raw const crate::data::battle_message::gText_Loss).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                B_WIN_VS_OUTCOME_LEFT,
+            );
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitLinkBattleVsScreen(taskId: u8) {
+pub unsafe fn InitLinkBattleVsScreen(taskId: u8) {
     let mut linkPlayer: *mut LinkPlayer = null_mut();
     let mut name: *mut u8 = null_mut();
-    let mut i: i32 = 0;
     let mut palId: i32 = 0;
-    match gTasks[taskId].data[0] {
+    match task_get(taskId, 0) {
         0 => {
             if gBattleTypeFlags & BATTLE_TYPE_MULTI != 0 {
-                i = 0;
-                while i < MAX_LINK_PLAYERS {
+                for i in 0..MAX_LINK_PLAYERS {
                     name = gLinkPlayers[i].name.as_mut_ptr();
                     linkPlayer = &raw mut gLinkPlayers[i];
                     match (*linkPlayer).id {
@@ -687,12 +957,11 @@ pub unsafe extern "C" fn InitLinkBattleVsScreen(taskId: u8) {
                         }
                         _ => {}
                     }
-                    i += 1;
                 }
             } else {
                 let mut playerId: u8 = gBattleScripting.multiplayerId;
                 let mut opponentId: u8 = playerId ^ BIT_SIDE;
-                let mut opponentId_copy: u8 = opponentId;
+                let opponentId_copy: u8 = opponentId;
                 if gLinkPlayers[playerId].id != 0 {
                     opponentId = playerId;
                     playerId = opponentId_copy;
@@ -704,7 +973,7 @@ pub unsafe extern "C" fn InitLinkBattleVsScreen(taskId: u8) {
                 DrawLinkBattleParticipantPokeballs(taskId, playerId, 1, 2, 7);
                 DrawLinkBattleParticipantPokeballs(taskId, opponentId, 2, 2, 7);
             }
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
         1 => {
             palId = AllocSpritePalette(TAG_VS_LETTERS) as i32;
@@ -726,25 +995,25 @@ pub unsafe extern "C" fn InitLinkBattleVsScreen(taskId: u8) {
             );
             gSprites[(*gBattleStruct).linkBattleVsSpriteId_V].set_invisible(TRUE as u16);
             gSprites[(*gBattleStruct).linkBattleVsSpriteId_S].set_invisible(TRUE as u16);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
         2 => {
-            if gTasks[taskId].data[5] != 0 {
-                gBattle_BG1_X = 65516 - (Sin2(gTasks[taskId].data[1] as u16) / 32) as u16;
-                gBattle_BG2_X = 65396 - (Sin2(gTasks[taskId].data[2] as u16) / 32) as u16;
+            if task_get(taskId, 5) != 0 {
+                gBattle_BG1_X = 65516 - (Sin2(task_get(taskId, 1) as u16) / 32) as u16;
+                gBattle_BG2_X = 65396 - (Sin2(task_get(taskId, 2) as u16) / 32) as u16;
                 gBattle_BG1_Y = 65500;
                 gBattle_BG2_Y = 65500;
             } else {
-                gBattle_BG1_X = 65516 - (Sin2(gTasks[taskId].data[1] as u16) / 32) as u16;
-                gBattle_BG1_Y = (Cos2(gTasks[taskId].data[1] as u16) / 32) as u16 - 164;
-                gBattle_BG2_X = 65396 - (Sin2(gTasks[taskId].data[2] as u16) / 32) as u16;
-                gBattle_BG2_Y = (Cos2(gTasks[taskId].data[2] as u16) / 32) as u16 - 164;
+                gBattle_BG1_X = 65516 - (Sin2(task_get(taskId, 1) as u16) / 32) as u16;
+                gBattle_BG1_Y = (Cos2(task_get(taskId, 1) as u16) / 32) as u16 - 164;
+                gBattle_BG2_X = 65396 - (Sin2(task_get(taskId, 2) as u16) / 32) as u16;
+                gBattle_BG2_Y = (Cos2(task_get(taskId, 2) as u16) / 32) as u16 - 164;
             }
-            if gTasks[taskId].data[2] != 0 {
-                gTasks[taskId].data[2] -= 2;
-                gTasks[taskId].data[1] += 2;
+            if task_get(taskId, 2) != 0 {
+                task_set(taskId, 2, task_get(taskId, 2) - 2);
+                task_set(taskId, 1, task_get(taskId, 1) + 2);
             } else {
-                if gTasks[taskId].data[5] != 0 {
+                if task_get(taskId, 5) != 0 {
                     DrawLinkBattleVsScreenOutcomeText();
                 }
                 PlaySE(SE_M_HARDEN);
@@ -772,29 +1041,42 @@ pub unsafe extern "C" fn InitLinkBattleVsScreen(taskId: u8) {
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawBattleEntryBackground() {
+pub unsafe fn DrawBattleEntryBackground() {
     if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
         LZDecompressVram(
-            gBattleVSFrame_Gfx.as_ptr().cast_mut(),
-            0x6004000 as usize as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleVSFrame_Gfx).cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            0x6004000_usize as *mut c_void,
         );
         LZDecompressVram(
-            gVsLettersGfx.as_ptr().cast_mut(),
+            (*(&raw const crate::data::graphics::gVsLettersGfx).cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
             OBJ_VRAM0 as usize as *mut c_void,
         );
-        LoadCompressedPalette(gBattleVSFrame_Pal.as_ptr().cast_mut(), 96, 32);
+        LoadCompressedPalette(
+            (*(&raw const crate::data::graphics::gBattleVSFrame_Pal).cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            96,
+            32,
+        );
         SetBgAttribute(1, BG_ATTR_SCREENSIZE, 1);
         SetGpuReg(REG_OFFSET_BG1CNT, 0x5C04);
         CopyToBgTilemapBuffer(
             1,
-            gBattleVSFrame_Tilemap.as_ptr().cast_mut() as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleVSFrame_Tilemap).cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
             0,
             0,
         );
         CopyToBgTilemapBuffer(
             2,
-            gBattleVSFrame_Tilemap.as_ptr().cast_mut() as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleVSFrame_Tilemap).cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
             0,
             0,
         );
@@ -810,25 +1092,37 @@ pub unsafe extern "C" fn DrawBattleEntryBackground() {
             || gPartnerTrainerId == TRAINER_STEVEN_PARTNER
         {
             LZDecompressVram(
-                gBattleEnvironmentAnimTiles_Building.as_ptr().cast_mut(),
-                0x6004000 as usize as *mut c_void,
+                (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTiles_Building)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
+                0x6004000_usize as *mut c_void,
             );
             LZDecompressVram(
-                gBattleEnvironmentAnimTilemap_Building.as_ptr().cast_mut(),
-                0x600e000 as usize as *mut c_void,
+                (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTilemap_Building)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
+                0x600e000_usize as *mut c_void,
             );
         } else {
             SetBgAttribute(1, BG_ATTR_CHARBASEINDEX, 2);
             SetBgAttribute(2, BG_ATTR_CHARBASEINDEX, 2);
             CopyToBgTilemapBuffer(
                 1,
-                gMultiBattleIntroBg_Opponent_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gMultiBattleIntroBg_Opponent_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0,
                 0,
             );
             CopyToBgTilemapBuffer(
                 2,
-                gMultiBattleIntroBg_Player_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gMultiBattleIntroBg_Player_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0,
                 0,
             );
@@ -837,52 +1131,84 @@ pub unsafe extern "C" fn DrawBattleEntryBackground() {
         }
     } else if gBattleTypeFlags & BATTLE_TYPE_GROUDON != 0 {
         LZDecompressVram(
-            gBattleEnvironmentAnimTiles_Cave.as_ptr().cast_mut(),
-            0x6004000 as usize as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTiles_Cave)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            0x6004000_usize as *mut c_void,
         );
         LZDecompressVram(
-            gBattleEnvironmentAnimTilemap_Cave.as_ptr().cast_mut(),
-            0x600e000 as usize as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTilemap_Cave)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            0x600e000_usize as *mut c_void,
         );
     } else if gBattleTypeFlags & BATTLE_TYPE_KYOGRE != 0 {
         LZDecompressVram(
-            gBattleEnvironmentAnimTiles_Underwater.as_ptr().cast_mut(),
-            0x6004000 as usize as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTiles_Underwater)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            0x6004000_usize as *mut c_void,
         );
         LZDecompressVram(
-            gBattleEnvironmentAnimTilemap_Underwater.as_ptr().cast_mut(),
-            0x600e000 as usize as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTilemap_Underwater)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            0x600e000_usize as *mut c_void,
         );
     } else if gBattleTypeFlags & BATTLE_TYPE_RAYQUAZA != 0 {
         LZDecompressVram(
-            gBattleEnvironmentAnimTiles_Rayquaza.as_ptr().cast_mut(),
-            0x6004000 as usize as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTiles_Rayquaza)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            0x6004000_usize as *mut c_void,
         );
         LZDecompressVram(
-            gBattleEnvironmentAnimTilemap_Rayquaza.as_ptr().cast_mut(),
-            0x600e000 as usize as *mut c_void,
+            (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTilemap_Rayquaza)
+                .cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+            0x600e000_usize as *mut c_void,
         );
     } else {
         if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
-            let mut trainerClass: u8 = gTrainers[gTrainerBattleOpponent_A].trainerClass;
+            let trainerClass: u8 = (*(&raw const crate::data::data_tables::gTrainers)
+                .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
+                .trainerClass;
             if trainerClass == TRAINER_CLASS_LEADER {
                 LZDecompressVram(
-                    gBattleEnvironmentAnimTiles_Building.as_ptr().cast_mut(),
-                    0x6004000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTiles_Building)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x6004000_usize as *mut c_void,
                 );
                 LZDecompressVram(
-                    gBattleEnvironmentAnimTilemap_Building.as_ptr().cast_mut(),
-                    0x600e000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTilemap_Building)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x600e000_usize as *mut c_void,
                 );
                 return;
             } else if trainerClass == TRAINER_CLASS_CHAMPION {
                 LZDecompressVram(
-                    gBattleEnvironmentAnimTiles_Building.as_ptr().cast_mut(),
-                    0x6004000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTiles_Building)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x6004000_usize as *mut c_void,
                 );
                 LZDecompressVram(
-                    gBattleEnvironmentAnimTilemap_Building.as_ptr().cast_mut(),
-                    0x600e000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTilemap_Building)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x600e000_usize as *mut c_void,
                 );
                 return;
             }
@@ -890,71 +1216,97 @@ pub unsafe extern "C" fn DrawBattleEntryBackground() {
         if GetCurrentMapBattleScene() == MAP_BATTLE_SCENE_NORMAL {
             LZDecompressVram(
                 sBattleEnvironmentTable[gBattleEnvironment].entryTileset as *mut u32,
-                0x6004000 as usize as *mut c_void,
+                0x6004000_usize as *mut c_void,
             );
             LZDecompressVram(
                 sBattleEnvironmentTable[gBattleEnvironment].entryTilemap as *mut u32,
-                0x600e000 as usize as *mut c_void,
+                0x600e000_usize as *mut c_void,
             );
         } else {
             LZDecompressVram(
-                gBattleEnvironmentAnimTiles_Building.as_ptr().cast_mut(),
-                0x6004000 as usize as *mut c_void,
+                (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTiles_Building)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
+                0x6004000_usize as *mut c_void,
             );
             LZDecompressVram(
-                gBattleEnvironmentAnimTilemap_Building.as_ptr().cast_mut(),
-                0x600e000 as usize as *mut c_void,
+                (*(&raw const crate::data::graphics::gBattleEnvironmentAnimTilemap_Building)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
+                0x600e000_usize as *mut c_void,
             );
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadChosenBattleElement(caseId: u8) -> u8 {
+pub unsafe fn LoadChosenBattleElement(caseId: u8) -> u8 {
     let mut ret: u8 = FALSE;
     'l1: {
         match caseId {
             0 => {
                 LZDecompressVram(
-                    gBattleTextboxTiles.as_ptr().cast_mut(),
-                    0x6000000 as usize as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleTextboxTiles)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0x6000000_usize as *mut c_void,
                 );
             }
             1 => {
                 CopyToBgTilemapBuffer(
                     0,
-                    gBattleTextboxTilemap.as_ptr().cast_mut() as *mut c_void,
+                    (*(&raw const crate::data::graphics::gBattleTextboxTilemap)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                     0,
                     0,
                 );
                 CopyBgTilemapBufferToVram(0);
             }
             2 => {
-                LoadCompressedPalette(gBattleTextboxPalette.as_ptr().cast_mut(), 0, 64);
+                LoadCompressedPalette(
+                    (*(&raw const crate::data::graphics::gBattleTextboxPalette)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    0,
+                    64,
+                );
             }
             3 => {
                 if gBattleTypeFlags & 0x23f0902 != 0 {
                     LZDecompressVram(
-                        gBattleEnvironmentTiles_Building.as_ptr().cast_mut(),
-                        0x6008000 as usize as *mut c_void,
+                        (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Building)
+                            .cast::<CArray<u32, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        0x6008000_usize as *mut c_void,
                     );
                 } else if gBattleTypeFlags & BATTLE_TYPE_GROUDON != 0 {
                     LZDecompressVram(
-                        gBattleEnvironmentTiles_Cave.as_ptr().cast_mut(),
-                        0x6008000 as usize as *mut c_void,
+                        (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Cave)
+                            .cast::<CArray<u32, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        0x6008000_usize as *mut c_void,
                     );
                 } else {
                     if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
-                        let mut trainerClass: u8 = gTrainers[gTrainerBattleOpponent_A].trainerClass;
+                        let trainerClass: u8 = (*(&raw const crate::data::data_tables::gTrainers)
+                            .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
+                            .trainerClass;
                         if trainerClass == TRAINER_CLASS_LEADER {
                             LZDecompressVram(
-                                gBattleEnvironmentTiles_Building.as_ptr().cast_mut(),
-                                0x6008000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Building).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x6008000_usize as *mut c_void,
                             );
                             break 'l1;
                         } else if trainerClass == TRAINER_CLASS_CHAMPION {
                             LZDecompressVram(
-                                gBattleEnvironmentTiles_Stadium.as_ptr().cast_mut(),
-                                0x6008000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Stadium).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x6008000_usize as *mut c_void,
                             );
                             break 'l1;
                         }
@@ -962,56 +1314,56 @@ pub unsafe extern "C" fn LoadChosenBattleElement(caseId: u8) -> u8 {
                     match GetCurrentMapBattleScene() {
                         MAP_BATTLE_SCENE_GYM => {
                             LZDecompressVram(
-                                gBattleEnvironmentTiles_Building.as_ptr().cast_mut(),
-                                0x6008000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Building).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x6008000_usize as *mut c_void,
                             );
                         }
                         MAP_BATTLE_SCENE_MAGMA => {
                             LZDecompressVram(
-                                gBattleEnvironmentTiles_Stadium.as_ptr().cast_mut(),
-                                0x6008000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Stadium).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x6008000_usize as *mut c_void,
                             );
                         }
                         MAP_BATTLE_SCENE_AQUA => {
                             LZDecompressVram(
-                                gBattleEnvironmentTiles_Stadium.as_ptr().cast_mut(),
-                                0x6008000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Stadium).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x6008000_usize as *mut c_void,
                             );
                         }
                         MAP_BATTLE_SCENE_SIDNEY => {
                             LZDecompressVram(
-                                gBattleEnvironmentTiles_Stadium.as_ptr().cast_mut(),
-                                0x6008000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Stadium).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x6008000_usize as *mut c_void,
                             );
                         }
                         MAP_BATTLE_SCENE_PHOEBE => {
                             LZDecompressVram(
-                                gBattleEnvironmentTiles_Stadium.as_ptr().cast_mut(),
-                                0x6008000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Stadium).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x6008000_usize as *mut c_void,
                             );
                         }
                         MAP_BATTLE_SCENE_GLACIA => {
                             LZDecompressVram(
-                                gBattleEnvironmentTiles_Stadium.as_ptr().cast_mut(),
-                                0x6008000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Stadium).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x6008000_usize as *mut c_void,
                             );
                         }
                         MAP_BATTLE_SCENE_DRAKE => {
                             LZDecompressVram(
-                                gBattleEnvironmentTiles_Stadium.as_ptr().cast_mut(),
-                                0x6008000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Stadium).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x6008000_usize as *mut c_void,
                             );
                         }
                         MAP_BATTLE_SCENE_FRONTIER => {
                             LZDecompressVram(
-                                gBattleEnvironmentTiles_Building.as_ptr().cast_mut(),
-                                0x6008000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTiles_Building).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x6008000_usize as *mut c_void,
                             );
                         }
                         _ => {
                             LZDecompressVram(
                                 sBattleEnvironmentTable[gBattleEnvironment].tileset as *mut u32,
-                                0x6008000 as usize as *mut c_void,
+                                0x6008000_usize as *mut c_void,
                             );
                         }
                     }
@@ -1020,34 +1372,45 @@ pub unsafe extern "C" fn LoadChosenBattleElement(caseId: u8) -> u8 {
             4 => {
                 if gBattleTypeFlags & 0x23f0902 != 0 {
                     LZDecompressVram(
-                        gBattleEnvironmentTilemap_Building.as_ptr().cast_mut(),
-                        0x600d000 as usize as *mut c_void,
+                        (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Building)
+                            .cast::<CArray<u32, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                        0x600d000_usize as *mut c_void,
                     );
                 } else if gBattleTypeFlags & BATTLE_TYPE_KYOGRE_GROUDON != 0 {
                     if gGameVersion == VERSION_RUBY as u8 {
                         LZDecompressVram(
-                            gBattleEnvironmentTilemap_Cave.as_ptr().cast_mut(),
-                            0x600d000 as usize as *mut c_void,
+                            (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Cave)
+                                .cast::<CArray<u32, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
+                            0x600d000_usize as *mut c_void,
                         );
                     } else {
                         LZDecompressVram(
-                            gBattleEnvironmentTilemap_Water.as_ptr().cast_mut(),
-                            0x600d000 as usize as *mut c_void,
+                            (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Water)
+                                .cast::<CArray<u32, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
+                            0x600d000_usize as *mut c_void,
                         );
                     }
                 } else {
                     if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
-                        let mut trainerClass: u8 = gTrainers[gTrainerBattleOpponent_A].trainerClass;
+                        let trainerClass: u8 = (*(&raw const crate::data::data_tables::gTrainers)
+                            .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
+                            .trainerClass;
                         if trainerClass == TRAINER_CLASS_LEADER {
                             LZDecompressVram(
-                                gBattleEnvironmentTilemap_Building.as_ptr().cast_mut(),
-                                0x600d000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Building).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x600d000_usize as *mut c_void,
                             );
                             break 'l1;
                         } else if trainerClass == TRAINER_CLASS_CHAMPION {
                             LZDecompressVram(
-                                gBattleEnvironmentTilemap_Stadium.as_ptr().cast_mut(),
-                                0x600d000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Stadium).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x600d000_usize as *mut c_void,
                             );
                             break 'l1;
                         }
@@ -1055,56 +1418,56 @@ pub unsafe extern "C" fn LoadChosenBattleElement(caseId: u8) -> u8 {
                     match GetCurrentMapBattleScene() {
                         MAP_BATTLE_SCENE_GYM => {
                             LZDecompressVram(
-                                gBattleEnvironmentTilemap_Building.as_ptr().cast_mut(),
-                                0x600d000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Building).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x600d000_usize as *mut c_void,
                             );
                         }
                         MAP_BATTLE_SCENE_MAGMA => {
                             LZDecompressVram(
-                                gBattleEnvironmentTilemap_Stadium.as_ptr().cast_mut(),
-                                0x600d000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Stadium).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x600d000_usize as *mut c_void,
                             );
                         }
                         MAP_BATTLE_SCENE_AQUA => {
                             LZDecompressVram(
-                                gBattleEnvironmentTilemap_Stadium.as_ptr().cast_mut(),
-                                0x600d000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Stadium).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x600d000_usize as *mut c_void,
                             );
                         }
                         MAP_BATTLE_SCENE_SIDNEY => {
                             LZDecompressVram(
-                                gBattleEnvironmentTilemap_Stadium.as_ptr().cast_mut(),
-                                0x600d000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Stadium).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x600d000_usize as *mut c_void,
                             );
                         }
                         MAP_BATTLE_SCENE_PHOEBE => {
                             LZDecompressVram(
-                                gBattleEnvironmentTilemap_Stadium.as_ptr().cast_mut(),
-                                0x600d000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Stadium).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x600d000_usize as *mut c_void,
                             );
                         }
                         MAP_BATTLE_SCENE_GLACIA => {
                             LZDecompressVram(
-                                gBattleEnvironmentTilemap_Stadium.as_ptr().cast_mut(),
-                                0x600d000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Stadium).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x600d000_usize as *mut c_void,
                             );
                         }
                         MAP_BATTLE_SCENE_DRAKE => {
                             LZDecompressVram(
-                                gBattleEnvironmentTilemap_Stadium.as_ptr().cast_mut(),
-                                0x600d000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Stadium).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x600d000_usize as *mut c_void,
                             );
                         }
                         MAP_BATTLE_SCENE_FRONTIER => {
                             LZDecompressVram(
-                                gBattleEnvironmentTilemap_Building.as_ptr().cast_mut(),
-                                0x600d000 as usize as *mut c_void,
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentTilemap_Building).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
+                                0x600d000_usize as *mut c_void,
                             );
                         }
                         _ => {
                             LZDecompressVram(
                                 sBattleEnvironmentTable[gBattleEnvironment].tilemap as *mut u32,
-                                0x600d000 as usize as *mut c_void,
+                                0x600d000_usize as *mut c_void,
                             );
                         }
                     }
@@ -1113,37 +1476,45 @@ pub unsafe extern "C" fn LoadChosenBattleElement(caseId: u8) -> u8 {
             5 => {
                 if gBattleTypeFlags & 0x23f0902 != 0 {
                     LoadCompressedPalette(
-                        gBattleEnvironmentPalette_Frontier.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_Frontier)
+                            .cast::<CArray<u32, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                         32,
                         96,
                     );
                 } else if gBattleTypeFlags & BATTLE_TYPE_KYOGRE_GROUDON != 0 {
                     if gGameVersion == VERSION_RUBY as u8 {
                         LoadCompressedPalette(
-                            gBattleEnvironmentPalette_Groudon.as_ptr().cast_mut(),
+                            (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_Groudon).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
                             32,
                             96,
                         );
                     } else {
                         LoadCompressedPalette(
-                            gBattleEnvironmentPalette_Kyogre.as_ptr().cast_mut(),
+                            (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_Kyogre)
+                                .cast::<CArray<u32, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
                             32,
                             96,
                         );
                     }
                 } else {
                     if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 {
-                        let mut trainerClass: u8 = gTrainers[gTrainerBattleOpponent_A].trainerClass;
+                        let trainerClass: u8 = (*(&raw const crate::data::data_tables::gTrainers)
+                            .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
+                            .trainerClass;
                         if trainerClass == TRAINER_CLASS_LEADER {
                             LoadCompressedPalette(
-                                gBattleEnvironmentPalette_BuildingLeader.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_BuildingLeader).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
                                 32,
                                 96,
                             );
                             break 'l1;
                         } else if trainerClass == TRAINER_CLASS_CHAMPION {
                             LoadCompressedPalette(
-                                gBattleEnvironmentPalette_StadiumWallace.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_StadiumWallace).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
                                 32,
                                 96,
                             );
@@ -1153,56 +1524,56 @@ pub unsafe extern "C" fn LoadChosenBattleElement(caseId: u8) -> u8 {
                     match GetCurrentMapBattleScene() {
                         MAP_BATTLE_SCENE_GYM => {
                             LoadCompressedPalette(
-                                gBattleEnvironmentPalette_BuildingGym.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_BuildingGym).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
                                 32,
                                 96,
                             );
                         }
                         MAP_BATTLE_SCENE_MAGMA => {
                             LoadCompressedPalette(
-                                gBattleEnvironmentPalette_StadiumMagma.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_StadiumMagma).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
                                 32,
                                 96,
                             );
                         }
                         MAP_BATTLE_SCENE_AQUA => {
                             LoadCompressedPalette(
-                                gBattleEnvironmentPalette_StadiumAqua.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_StadiumAqua).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
                                 32,
                                 96,
                             );
                         }
                         MAP_BATTLE_SCENE_SIDNEY => {
                             LoadCompressedPalette(
-                                gBattleEnvironmentPalette_StadiumSidney.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_StadiumSidney).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
                                 32,
                                 96,
                             );
                         }
                         MAP_BATTLE_SCENE_PHOEBE => {
                             LoadCompressedPalette(
-                                gBattleEnvironmentPalette_StadiumPhoebe.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_StadiumPhoebe).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
                                 32,
                                 96,
                             );
                         }
                         MAP_BATTLE_SCENE_GLACIA => {
                             LoadCompressedPalette(
-                                gBattleEnvironmentPalette_StadiumGlacia.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_StadiumGlacia).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
                                 32,
                                 96,
                             );
                         }
                         MAP_BATTLE_SCENE_DRAKE => {
                             LoadCompressedPalette(
-                                gBattleEnvironmentPalette_StadiumDrake.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_StadiumDrake).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
                                 32,
                                 96,
                             );
                         }
                         MAP_BATTLE_SCENE_FRONTIER => {
                             LoadCompressedPalette(
-                                gBattleEnvironmentPalette_Frontier.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::graphics::gBattleEnvironmentPalette_Frontier).cast::<CArray<u32, 0>>()).as_ptr().cast_mut(),
                                 32,
                                 96,
                             );
@@ -1225,5 +1596,5 @@ pub unsafe extern "C" fn LoadChosenBattleElement(caseId: u8) -> u8 {
             }
         }
     }
-    return ret;
+    ret
 }

@@ -80,16 +80,20 @@ use crate::bg::{
     gWindowTileAutoAllocEnabled,
 };
 
-unsafe extern "C" {
-    fn LZ77UnCompWram(src: *const u32, dest: *mut c_void);
+/// `LZ77UnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompWram(a0: *const u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
+    }
 }
 
 /// The buffer slot for a background is either NULL, a real allocation, or the
 /// address of this function used purely as a "do not free me" marker. That is
 /// what the original does, oddly enough.
-unsafe extern "C" fn dummy_window_bg_tilemap() {}
+unsafe fn dummy_window_bg_tilemap() {}
 
-unsafe extern "C" fn dummy_window_bg_tilemap_8bit() {}
+unsafe fn dummy_window_bg_tilemap_8bit() {}
 
 #[inline]
 fn dummy_marker() -> *mut u8 {
@@ -231,7 +235,7 @@ unsafe fn ensure_bg_tilemap_buffer(bg: usize, zeroed: bool) -> bool {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitWindows(templates: *const WindowTemplate) -> u16 {
+pub unsafe fn InitWindows(templates: *const WindowTemplate) -> u16 {
     for i in 0..NUM_BACKGROUNDS {
         let existing = unsafe { GetBgTilemapBuffer(i as u8) };
         // A background that already has a buffer gets the marker so it is
@@ -322,7 +326,7 @@ unsafe fn first_free_window() -> usize {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddWindow(template: *const WindowTemplate) -> u16 {
+pub unsafe fn AddWindow(template: *const WindowTemplate) -> u16 {
     let win = unsafe { first_free_window() };
     if win == WINDOWS_MAX {
         return u16::from(WINDOW_NONE);
@@ -372,7 +376,7 @@ pub unsafe extern "C" fn AddWindow(template: *const WindowTemplate) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddWindowWithoutTileMap(template: *const WindowTemplate) -> i32 {
+pub unsafe fn AddWindowWithoutTileMap(template: *const WindowTemplate) -> i32 {
     let win = unsafe { first_free_window() };
     if win == WINDOWS_MAX {
         return i32::from(WINDOW_NONE);
@@ -411,7 +415,7 @@ pub unsafe extern "C" fn AddWindowWithoutTileMap(template: *const WindowTemplate
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RemoveWindow(window_id: u8) {
+pub unsafe fn RemoveWindow(window_id: u8) {
     let bg = unsafe { tmpl_u8(window_id, TMPL_BG) };
 
     if unsafe { auto_alloc_enabled() } {
@@ -442,7 +446,7 @@ pub unsafe extern "C" fn RemoveWindow(window_id: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeAllWindowBuffers() {
+pub unsafe fn FreeAllWindowBuffers() {
     for i in 0..NUM_BACKGROUNDS {
         let pointer = unsafe { buffer(i) };
         if !pointer.is_null() && pointer != dummy_marker() {
@@ -461,7 +465,7 @@ pub unsafe extern "C" fn FreeAllWindowBuffers() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyWindowToVram(window_id: u8, mode: u8) {
+pub unsafe fn CopyWindowToVram(window_id: u8, mode: u8) {
     let bg = unsafe { tmpl_u8(window_id, TMPL_BG) };
     let width = unsafe { tmpl_u8(window_id, TMPL_WIDTH) };
     let height = unsafe { tmpl_u8(window_id, TMPL_HEIGHT) };
@@ -476,14 +480,7 @@ pub unsafe extern "C" fn CopyWindowToVram(window_id: u8, mode: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyWindowRectToVram(
-    window_id: u32,
-    mode: u32,
-    x: u32,
-    y: u32,
-    w: u32,
-    h: u32,
-) {
+pub unsafe fn CopyWindowRectToVram(window_id: u32, mode: u32, x: u32, y: u32, w: u32, h: u32) {
     if w == 0 || h == 0 {
         return;
     }
@@ -515,7 +512,7 @@ pub unsafe extern "C" fn CopyWindowRectToVram(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PutWindowTilemap(window_id: u8) {
+pub unsafe fn PutWindowTilemap(window_id: u8) {
     let bg = unsafe { tmpl_u8(window_id, TMPL_BG) };
     unsafe {
         WriteSequenceToBgTilemapBuffer(
@@ -563,7 +560,7 @@ unsafe fn put_window_rect(window_id: u8, x: u8, y: u8, width: u8, height: u8, pa
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PutWindowRectTilemapOverridePalette(
+pub unsafe fn PutWindowRectTilemapOverridePalette(
     window_id: u8,
     x: u8,
     y: u8,
@@ -575,14 +572,14 @@ pub unsafe extern "C" fn PutWindowRectTilemapOverridePalette(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PutWindowRectTilemap(window_id: u8, x: u8, y: u8, width: u8, height: u8) {
+pub unsafe fn PutWindowRectTilemap(window_id: u8, x: u8, y: u8, width: u8, height: u8) {
     let palette = unsafe { tmpl_u8(window_id, TMPL_PALETTE_NUM) };
     unsafe { put_window_rect(window_id, x, y, width, height, palette) };
 }
 
 /// Fills the window's tilemap cells with the transparent tile.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearWindowTilemap(window_id: u8) {
+pub unsafe fn ClearWindowTilemap(window_id: u8) {
     unsafe {
         FillBgTilemapBufferRect(
             tmpl_u8(window_id, TMPL_BG),
@@ -632,7 +629,7 @@ unsafe fn window_bitmap(window_id: u8) -> BitmapArm {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BlitBitmapToWindow(
+pub unsafe fn BlitBitmapToWindow(
     window_id: u8,
     pixels: *const u8,
     x: u16,
@@ -657,7 +654,7 @@ pub unsafe extern "C" fn BlitBitmapToWindow(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BlitBitmapRectToWindow(
+pub unsafe fn BlitBitmapRectToWindow(
     window_id: u8,
     pixels: *const u8,
     src_x: u16,
@@ -688,7 +685,7 @@ pub unsafe extern "C" fn BlitBitmapRectToWindow(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FillWindowPixelRect(
+pub unsafe fn FillWindowPixelRect(
     window_id: u8,
     fill_value: u8,
     x: u16,
@@ -701,7 +698,7 @@ pub unsafe extern "C" fn FillWindowPixelRect(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyToWindowPixelBuffer(
+pub unsafe fn CopyToWindowPixelBuffer(
     window_id: u8,
     src: *const c_void,
     size: u16,
@@ -718,7 +715,7 @@ pub unsafe extern "C" fn CopyToWindowPixelBuffer(
 
 /// Sets every pixel in the window to `fillValue`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FillWindowPixelBuffer(window_id: u8, fill_value: u8) {
+pub unsafe fn FillWindowPixelBuffer(window_id: u8, fill_value: u8) {
     let width = unsafe { tmpl_u8(window_id, TMPL_WIDTH) };
     let height = unsafe { tmpl_u8(window_id, TMPL_HEIGHT) };
     let size = TILE_SIZE_4BPP * usize::from(width) * usize::from(height);
@@ -735,7 +732,7 @@ pub unsafe extern "C" fn FillWindowPixelBuffer(window_id: u8, fill_value: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScrollWindow(window_id: u8, direction: u8, distance: u8, fill_value: u8) {
+pub unsafe fn ScrollWindow(window_id: u8, direction: u8, distance: u8, fill_value: u8) {
     let width = u32::from(unsafe { tmpl_u8(window_id, TMPL_WIDTH) });
     let height = u32::from(unsafe { tmpl_u8(window_id, TMPL_HEIGHT) });
     let fill_word = u32::from_ne_bytes([fill_value; 4]);
@@ -797,10 +794,7 @@ pub unsafe extern "C" fn ScrollWindow(window_id: u8, direction: u8, distance: u8
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CallWindowFunction(
-    window_id: u8,
-    func: unsafe extern "C" fn(u8, u8, u8, u8, u8, u8),
-) {
+pub unsafe fn CallWindowFunction(window_id: u8, func: unsafe fn(u8, u8, u8, u8, u8, u8)) {
     unsafe {
         func(
             tmpl_u8(window_id, TMPL_BG),
@@ -814,7 +808,7 @@ pub unsafe extern "C" fn CallWindowFunction(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWindowAttribute(window_id: u8, attribute_id: u8, value: u32) -> u8 {
+pub unsafe fn SetWindowAttribute(window_id: u8, attribute_id: u8, value: u32) -> u8 {
     match attribute_id {
         WINDOW_TILEMAP_LEFT => {
             unsafe { set_tmpl_u8(window_id, TMPL_TILEMAP_LEFT, value as u8) };
@@ -843,7 +837,7 @@ pub unsafe extern "C" fn SetWindowAttribute(window_id: u8, attribute_id: u8, val
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetWindowAttribute(window_id: u8, attribute_id: u8) -> u32 {
+pub unsafe fn GetWindowAttribute(window_id: u8, attribute_id: u8) -> u32 {
     match attribute_id {
         WINDOW_BG => u32::from(unsafe { tmpl_u8(window_id, TMPL_BG) }),
         WINDOW_TILEMAP_LEFT => u32::from(unsafe { tmpl_u8(window_id, TMPL_TILEMAP_LEFT) }),
@@ -873,7 +867,7 @@ unsafe fn active_windows_on_bg(bg_id: u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddWindow8Bit(template: *const WindowTemplate) -> u16 {
+pub unsafe fn AddWindow8Bit(template: *const WindowTemplate) -> u16 {
     let win = unsafe { first_free_window() };
     if win == WINDOWS_MAX {
         return u16::from(WINDOW_NONE);
@@ -907,7 +901,7 @@ pub unsafe extern "C" fn AddWindow8Bit(template: *const WindowTemplate) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FillWindowPixelBuffer8Bit(window_id: u8, fill_value: u8) {
+pub unsafe fn FillWindowPixelBuffer8Bit(window_id: u8, fill_value: u8) {
     let width = unsafe { tmpl_u8(window_id, TMPL_WIDTH) };
     let height = unsafe { tmpl_u8(window_id, TMPL_HEIGHT) };
     let size = (TILE_SIZE_8BPP as u32 * u32::from(width) * u32::from(height)) as u16;
@@ -921,7 +915,7 @@ pub unsafe extern "C" fn FillWindowPixelBuffer8Bit(window_id: u8, fill_value: u8
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FillWindowPixelRect8Bit(
+pub unsafe fn FillWindowPixelRect8Bit(
     window_id: u8,
     fill_value: u8,
     x: u16,
@@ -934,7 +928,7 @@ pub unsafe extern "C" fn FillWindowPixelRect8Bit(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BlitBitmapRectToWindow4BitTo8Bit(
+pub unsafe fn BlitBitmapRectToWindow4BitTo8Bit(
     window_id: u8,
     pixels: *const u8,
     src_x: u16,
@@ -967,7 +961,7 @@ pub unsafe extern "C" fn BlitBitmapRectToWindow4BitTo8Bit(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyWindowToVram8Bit(window_id: u8, mode: u8) {
+pub unsafe fn CopyWindowToVram8Bit(window_id: u8, mode: u8) {
     unsafe { (&raw mut WINDOW_PTR).write(window(window_id)) };
     let width = unsafe { tmpl_u8(window_id, TMPL_WIDTH) };
     let height = unsafe { tmpl_u8(window_id, TMPL_HEIGHT) };

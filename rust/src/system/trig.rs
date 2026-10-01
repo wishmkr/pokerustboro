@@ -56,7 +56,7 @@ pub static gSineTable: [i16; 320] = build_sine_table();
 pub static gSineDegreeTable: [i16; 180] = build_sine_degree_table();
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Sin(index: i16, amplitude: i16) -> i16 {
+pub unsafe fn Sin(index: i16, amplitude: i16) -> i16 {
     let value = unsafe {
         (&raw const gSineTable)
             .cast::<i16>()
@@ -67,12 +67,12 @@ pub unsafe extern "C" fn Sin(index: i16, amplitude: i16) -> i16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Cos(index: i16, amplitude: i16) -> i16 {
+pub unsafe fn Cos(index: i16, amplitude: i16) -> i16 {
     unsafe { Sin(index.wrapping_add(64), amplitude) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Sin2(angle: u16) -> i16 {
+pub unsafe fn Sin2(angle: u16) -> i16 {
     let angle_mod = usize::from(angle % 180);
     let value = unsafe {
         (&raw const gSineDegreeTable)
@@ -88,7 +88,7 @@ pub unsafe extern "C" fn Sin2(angle: u16) -> i16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Cos2(angle: u16) -> i16 {
+pub unsafe fn Cos2(angle: u16) -> i16 {
     unsafe { Sin2(angle.wrapping_add(90)) }
 }
 

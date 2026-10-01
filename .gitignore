@@ -31,6 +31,7 @@ tools/compresSmol/
 Thumbs.db
 build/
 /rust/target/
+/rust-c-style/target/
 .DS_Store
 *.ddump
 .idea/
@@ -48,3 +49,4 @@ prefabs.json
 
 # Python bytecode (tools/rustport)
 __pycache__/
+tools/rustport/rsfix/target/

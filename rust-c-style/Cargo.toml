@@ -1,0 +1,19 @@
+[package]
+name = "pokeemerald-rust"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+# C's integer arithmetic wraps (unsigned) or is never relied on to trap
+# (signed): plain `+ - *` must not panic in any build.
+[profile.dev]
+overflow-checks = false
+
+[profile.release]
+codegen-units = 1
+lto = false
+opt-level = 2
+panic = "abort"

@@ -3,29 +3,33 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::unnecessary_cast,
+    dead_code,
+    unreachable_code,
+    unused_assignments
 )]
 
+use crate::AgbRfu_LinkManager::lman;
+use crate::agb_main::gMain;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::{FlagGet, IsNationalPokedexEnabled};
+use crate::librfu_rfu::gRfuLinkStatus;
+use crate::link::{GetLinkPlayerCount, GetMultiplayerId, gLinkPlayers, gWirelessCommType};
+use crate::link_rfu_2::gHostRfuUsername;
+use crate::link_rfu_2::{IsRfuRecoveringFromLinkLoss, IsRfuSerialNumberValid, RfuGetStatus};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::random::Random;
+use crate::sprite::GetSpriteTileStartByTag;
+use crate::sprite::gSprites;
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,6 +38,53 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `LoadSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
+    unsafe { crate::sprite::LoadSpritePalette(a0 as _) }
+}
+/// `StringCompare` with this module's view of its types.
+#[inline]
+unsafe fn StringCompare(a0: *mut u8, a1: *mut u8) -> i32 {
+    unsafe { crate::string_util::StringCompare(a0 as _, a1 as _) }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const sNextAnimNum: usize = 0;
+const sSavedAnimNum: usize = 1;
+const sCurrAnimNum: usize = 2;
+const sFrameDelay: usize = 3;
+const sFrameIdx: usize = 4;
+const sTileStart: usize = 6;
+const sValidator: usize = 7;
 // Data tables (translate with cdata.py): sWirelessLinkIconPalette sWirelessLinkIconPic sWireless_ASCIItoRSETable sWireless_RSEtoASCIITable sWirelessStatusIndicatorOamData sWirelessStatusIndicator_3Bars sWirelessStatusIndicator_2Bars sWirelessStatusIndicator_1Bar sWirelessStatusIndicator_Searching sWirelessStatusIndicator_Error sWirelessStatusIndicatorAnims sWirelessStatusIndicatorSpriteSheet sWirelessStatusIndicatorSpritePalette sWirelessStatusIndicatorSpriteTemplate
 
 /// `struct RfuUnusedQueue`
@@ -84,104 +135,64 @@ static sWireless_ASCIItoRSETable: Table<CArray<u8, 256>> =
 static sWireless_RSEtoASCIITable: Table<CArray<u8, 256>> =
     Table((&raw const crate::data::link_rfu_3::sWireless_RSEtoASCIITable).cast());
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gWirelessStatusIndicatorSpriteId: u8 = 0;
-pub(crate) static mut sSequenceArrayValOffset: u8 = 0;
+pub(crate) static sSequenceArrayValOffset: crate::global::Global<u8> =
+    crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static gDummyOamData: OamData;
-    static mut gHostRfuGameData: RfuGameData;
-    static mut gHostRfuUsername: CArray<u8, 0>;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gMain: Main;
-    static mut gRfuLinkStatus: *mut RfuLinkStatus;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gWirelessCommType: u8;
-    static mut lman: linkManagerTag;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DestroySprite(a0: *mut Sprite);
-    fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn GetLinkPlayerCount() -> u8;
-    fn GetMultiplayerId() -> u8;
-    fn GetSpriteTileStartByTag(a0: u16) -> u16;
-    fn IsNationalPokedexEnabled() -> u32;
-    fn IsRfuRecoveringFromLinkLoss() -> u8;
-    fn IsRfuSerialNumberValid(a0: u32) -> u32;
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
-    fn Random() -> u16;
-    fn RfuGetStatus() -> u8;
-    fn StringCompare(a0: *mut u8, a1: *mut u8) -> i32;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuRecvQueue_Reset(queue: *mut RfuRecvQueue) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    i = 0;
-    while i < RECV_QUEUE_NUM_SLOTS {
-        j = 0;
-        while j < 70 {
+pub unsafe fn RfuRecvQueue_Reset(queue: *mut RfuRecvQueue) {
+    for i in 0..RECV_QUEUE_NUM_SLOTS {
+        for j in 0..70i32 {
             (*queue).slots[i][j] = 0;
-            j += 1;
         }
-        i += 1;
     }
     volatile_write(&raw mut (*queue).sendSlot, 0);
     volatile_write(&raw mut (*queue).recvSlot, 0);
     volatile_write(&raw mut (*queue).count, 0);
     volatile_write(&raw mut (*queue).full, FALSE);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuSendQueue_Reset(queue: *mut RfuSendQueue) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    i = 0;
-    while i < SEND_QUEUE_NUM_SLOTS {
-        j = 0;
-        while j < COMM_SLOT_LENGTH {
+pub unsafe fn RfuSendQueue_Reset(queue: *mut RfuSendQueue) {
+    for i in 0..SEND_QUEUE_NUM_SLOTS {
+        for j in 0..COMM_SLOT_LENGTH {
             (*queue).slots[i][j] = 0;
-            j += 1;
         }
-        i += 1;
     }
     volatile_write(&raw mut (*queue).sendSlot, 0);
     volatile_write(&raw mut (*queue).recvSlot, 0);
     volatile_write(&raw mut (*queue).count, 0);
     volatile_write(&raw mut (*queue).full, FALSE);
 }
-pub(crate) unsafe extern "C" fn RfuUnusedQueue_Reset(queue: *mut RfuUnusedQueue) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    i = 0;
-    while i < UNUSED_QUEUE_NUM_SLOTS {
-        j = 0;
-        while j < UNUSED_QUEUE_SLOT_LENGTH {
+unsafe fn RfuUnusedQueue_Reset(queue: *mut RfuUnusedQueue) {
+    for i in 0..UNUSED_QUEUE_NUM_SLOTS {
+        for j in 0..UNUSED_QUEUE_SLOT_LENGTH {
             (*queue).slots[i][j] = 0;
-            j += 1;
         }
-        i += 1;
     }
     volatile_write(&raw mut (*queue).sendSlot, 0);
     volatile_write(&raw mut (*queue).recvSlot, 0);
     volatile_write(&raw mut (*queue).count, 0);
     volatile_write(&raw mut (*queue).full, FALSE);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuRecvQueue_Enqueue(queue: *mut RfuRecvQueue, mut data: *mut u8) {
+pub unsafe fn RfuRecvQueue_Enqueue(queue: *mut RfuRecvQueue, data: *mut u8) {
     let mut i: i32 = 0;
     let mut imeBak: u16 = 0;
     let mut count: u8 = 0;
     if (&raw mut (*queue).count).read_volatile() < RECV_QUEUE_NUM_SLOTS as u8 {
-        imeBak = (67109384 as usize as *mut u16).read_volatile();
-        volatile_write(67109384 as usize as *mut u16, 0);
+        imeBak = (67109384_usize as *mut u16).read_volatile();
+        volatile_write(67109384_usize as *mut u16, 0);
         count = 0;
         i = 0;
         while i < 70 {
@@ -191,10 +202,8 @@ pub unsafe extern "C" fn RfuRecvQueue_Enqueue(queue: *mut RfuRecvQueue, mut data
             i += COMM_SLOT_LENGTH;
         }
         if count != MAX_RFU_PLAYERS as u8 {
-            i = 0;
-            while i < 70 {
+            for i in 0..70i32 {
                 (*queue).slots[(&raw mut (*queue).recvSlot).read_volatile()][i] = *data.at(i);
-                i += 1;
             }
             volatile_write(
                 &raw mut (*queue).recvSlot,
@@ -208,24 +217,21 @@ pub unsafe extern "C" fn RfuRecvQueue_Enqueue(queue: *mut RfuRecvQueue, mut data
                 &raw mut (*queue).count,
                 (&raw mut (*queue).count).read_volatile() + 1,
             );
-            i = 0;
-            while i < 70 {
+            for i in 0..70i32 {
                 *data.at(i) = 0;
-                i += 1;
             }
         }
-        volatile_write(67109384 as usize as *mut u16, imeBak);
+        volatile_write(67109384_usize as *mut u16, imeBak);
     } else {
         volatile_write(&raw mut (*queue).full, TRUE);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuSendQueue_Enqueue(queue: *mut RfuSendQueue, mut data: *mut u8) {
+pub unsafe fn RfuSendQueue_Enqueue(queue: *mut RfuSendQueue, data: *mut u8) {
     let mut i: i32 = 0;
     let mut imeBak: u16 = 0;
     if (&raw mut (*queue).count).read_volatile() < SEND_QUEUE_NUM_SLOTS as u8 {
-        imeBak = (67109384 as usize as *mut u16).read_volatile();
-        volatile_write(67109384 as usize as *mut u16, 0);
+        imeBak = (67109384_usize as *mut u16).read_volatile();
+        volatile_write(67109384_usize as *mut u16, 0);
         i = 0;
         while i < COMM_SLOT_LENGTH {
             if *data.at(i) != 0 {
@@ -251,38 +257,29 @@ pub unsafe extern "C" fn RfuSendQueue_Enqueue(queue: *mut RfuSendQueue, mut data
                 &raw mut (*queue).count,
                 (&raw mut (*queue).count).read_volatile() + 1,
             );
-            i = 0;
-            while i < COMM_SLOT_LENGTH {
+            for i in 0..COMM_SLOT_LENGTH {
                 *data.at(i) = 0;
-                i += 1;
             }
         }
-        volatile_write(67109384 as usize as *mut u16, imeBak);
+        volatile_write(67109384_usize as *mut u16, imeBak);
     } else {
         volatile_write(&raw mut (*queue).full, TRUE);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuRecvQueue_Dequeue(queue: *mut RfuRecvQueue, mut src: *mut u8) -> u8 {
-    let mut imeBak: u16 = 0;
-    let mut i: i32 = 0;
-    imeBak = (67109384 as usize as *mut u16).read_volatile();
-    volatile_write(67109384 as usize as *mut u16, 0);
+pub unsafe fn RfuRecvQueue_Dequeue(queue: *mut RfuRecvQueue, src: *mut u8) -> u8 {
+    let imeBak: u16 = (67109384_usize as *mut u16).read_volatile();
+    volatile_write(67109384_usize as *mut u16, 0);
     if (&raw mut (*queue).recvSlot).read_volatile() == (&raw mut (*queue).sendSlot).read_volatile()
         || (&raw mut (*queue).full).read_volatile() != 0
     {
-        i = 0;
-        while i < 70 {
+        for i in 0..70i32 {
             *src.at(i) = 0;
-            i += 1;
         }
-        volatile_write(67109384 as usize as *mut u16, imeBak);
+        volatile_write(67109384_usize as *mut u16, imeBak);
         return FALSE;
     }
-    i = 0;
-    while i < 70 {
+    for i in 0..70i32 {
         *src.at(i) = (*queue).slots[(&raw mut (*queue).sendSlot).read_volatile()][i];
-        i += 1;
     }
     volatile_write(
         &raw mut (*queue).sendSlot,
@@ -296,24 +293,19 @@ pub unsafe extern "C" fn RfuRecvQueue_Dequeue(queue: *mut RfuRecvQueue, mut src:
         &raw mut (*queue).count,
         (&raw mut (*queue).count).read_volatile() - 1,
     );
-    volatile_write(67109384 as usize as *mut u16, imeBak);
-    return TRUE;
+    volatile_write(67109384_usize as *mut u16, imeBak);
+    TRUE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuSendQueue_Dequeue(queue: *mut RfuSendQueue, mut src: *mut u8) -> u8 {
-    let mut i: i32 = 0;
-    let mut imeBak: u16 = 0;
+pub unsafe fn RfuSendQueue_Dequeue(queue: *mut RfuSendQueue, src: *mut u8) -> u8 {
     if (&raw mut (*queue).recvSlot).read_volatile() == (&raw mut (*queue).sendSlot).read_volatile()
         || (&raw mut (*queue).full).read_volatile() != 0
     {
         return FALSE;
     }
-    imeBak = (67109384 as usize as *mut u16).read_volatile();
-    volatile_write(67109384 as usize as *mut u16, 0);
-    i = 0;
-    while i < COMM_SLOT_LENGTH {
+    let imeBak: u16 = (67109384_usize as *mut u16).read_volatile();
+    volatile_write(67109384_usize as *mut u16, 0);
+    for i in 0..COMM_SLOT_LENGTH {
         *src.at(i) = (*queue).slots[(&raw mut (*queue).sendSlot).read_volatile()][i];
-        i += 1;
     }
     volatile_write(
         &raw mut (*queue).sendSlot,
@@ -327,19 +319,15 @@ pub unsafe extern "C" fn RfuSendQueue_Dequeue(queue: *mut RfuSendQueue, mut src:
         &raw mut (*queue).count,
         (&raw mut (*queue).count).read_volatile() - 1,
     );
-    volatile_write(67109384 as usize as *mut u16, imeBak);
-    return TRUE;
+    volatile_write(67109384_usize as *mut u16, imeBak);
+    TRUE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuBackupQueue_Enqueue(queue: *mut RfuBackupQueue, data: *mut u8) {
-    let mut i: i32 = 0;
+pub unsafe fn RfuBackupQueue_Enqueue(queue: *mut RfuBackupQueue, data: *mut u8) {
     if *data.at(1) == 0 {
         RfuBackupQueue_Dequeue(queue, null_mut());
     } else {
-        i = 0;
-        while i < COMM_SLOT_LENGTH {
+        for i in 0..COMM_SLOT_LENGTH {
             (*queue).slots[(&raw mut (*queue).recvSlot).read_volatile()][i] = *data.at(i);
-            i += 1;
         }
         volatile_write(
             &raw mut (*queue).recvSlot,
@@ -362,20 +350,13 @@ pub unsafe extern "C" fn RfuBackupQueue_Enqueue(queue: *mut RfuBackupQueue, data
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuBackupQueue_Dequeue(
-    queue: *mut RfuBackupQueue,
-    mut src: *mut u8,
-) -> u8 {
-    let mut i: i32 = 0;
+pub unsafe fn RfuBackupQueue_Dequeue(queue: *mut RfuBackupQueue, src: *mut u8) -> u8 {
     if (&raw mut (*queue).count).read_volatile() == 0 {
         return FALSE;
     }
     if !src.is_null() {
-        i = 0;
-        while i < COMM_SLOT_LENGTH {
+        for i in 0..COMM_SLOT_LENGTH {
             *src.at(i) = (*queue).slots[(&raw mut (*queue).sendSlot).read_volatile()][i];
-            i += 1;
         }
     }
     volatile_write(
@@ -390,15 +371,12 @@ pub unsafe extern "C" fn RfuBackupQueue_Dequeue(
         &raw mut (*queue).count,
         (&raw mut (*queue).count).read_volatile() - 1,
     );
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn RfuUnusedQueue_Enqueue(queue: *mut RfuUnusedQueue, data: *mut u8) {
-    let mut i: i32 = 0;
+unsafe fn RfuUnusedQueue_Enqueue(queue: *mut RfuUnusedQueue, data: *mut u8) {
     if (&raw mut (*queue).count).read_volatile() < UNUSED_QUEUE_NUM_SLOTS as u8 {
-        i = 0;
-        while i < UNUSED_QUEUE_SLOT_LENGTH {
+        for i in 0..UNUSED_QUEUE_SLOT_LENGTH {
             (*queue).slots[(&raw mut (*queue).recvSlot).read_volatile()][i] = *data.at(i);
-            i += 1;
         }
         volatile_write(
             &raw mut (*queue).recvSlot,
@@ -416,20 +394,14 @@ pub(crate) unsafe extern "C" fn RfuUnusedQueue_Enqueue(queue: *mut RfuUnusedQueu
         volatile_write(&raw mut (*queue).full, TRUE);
     }
 }
-pub(crate) unsafe extern "C" fn RfuUnusedQueue_Dequeue(
-    queue: *mut RfuUnusedQueue,
-    mut dest: *mut u8,
-) -> u8 {
-    let mut i: i32 = 0;
+unsafe fn RfuUnusedQueue_Dequeue(queue: *mut RfuUnusedQueue, dest: *mut u8) -> u8 {
     if (&raw mut (*queue).recvSlot).read_volatile() == (&raw mut (*queue).sendSlot).read_volatile()
         || (&raw mut (*queue).full).read_volatile() != 0
     {
         return FALSE;
     }
-    i = 0;
-    while i < UNUSED_QUEUE_SLOT_LENGTH {
+    for i in 0..UNUSED_QUEUE_SLOT_LENGTH {
         *dest.at(i) = (*queue).slots[(&raw mut (*queue).sendSlot).read_volatile()][i];
-        i += 1;
     }
     volatile_write(
         &raw mut (*queue).sendSlot,
@@ -443,9 +415,9 @@ pub(crate) unsafe extern "C" fn RfuUnusedQueue_Dequeue(
         &raw mut (*queue).count,
         (&raw mut (*queue).count).read_volatile() - 1,
     );
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn PopulateArrayWithSequence(mut arr: *mut u8, mode: u8) {
+unsafe fn PopulateArrayWithSequence(arr: *mut u8, mode: u8) {
     let mut i: i32 = 0;
     let mut rval: u8 = 0;
     let mut total: u16 = 0;
@@ -460,11 +432,9 @@ pub(crate) unsafe extern "C" fn PopulateArrayWithSequence(mut arr: *mut u8, mode
             *(arr.at(i) as *mut u16) = total;
         }
         1 => {
-            i = 0;
-            while i < 100 {
+            for i in 0..100i32 {
                 *arr.at(i) = i as u8 + 1;
                 total += i as u16 + 1;
-                i += 1;
             }
             *(arr.at(200) as *mut u16) = total;
         }
@@ -481,41 +451,37 @@ pub(crate) unsafe extern "C" fn PopulateArrayWithSequence(mut arr: *mut u8, mode
         3 => {
             i = 0;
             while i < SEQ_ARRAY_MAX_SIZE {
-                *arr.at(i) = i as u8 + 1 + sSequenceArrayValOffset;
-                total += i as u16 + 1 + sSequenceArrayValOffset as u16 & 0xFF;
+                *arr.at(i) = i as u8 + 1 + sSequenceArrayValOffset.get();
+                total += (i as u16 + 1 + sSequenceArrayValOffset.get() as u16) & 0xFF;
                 i += 1;
             }
             *(arr.at(i) as *mut u16) = total;
-            sSequenceArrayValOffset += 1;
+            sSequenceArrayValOffset.set(sSequenceArrayValOffset.get() + 1);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn PkmnStrToASCII(mut asciiStr: *mut u8, pkmnStr: *mut u8) {
+unsafe fn PkmnStrToASCII(asciiStr: *mut u8, pkmnStr: *mut u8) {
     let mut i: i32 = 0;
-    i = 0;
     while *pkmnStr.at(i) != EOS {
         *asciiStr.at(i) = sWireless_RSEtoASCIITable[*pkmnStr.at(i)];
         i += 1;
     }
     *asciiStr.at(i) = 0;
 }
-pub(crate) unsafe extern "C" fn ASCIIToPkmnStr(mut pkmnStr: *mut u8, asciiStr: *mut u8) {
+unsafe fn ASCIIToPkmnStr(pkmnStr: *mut u8, asciiStr: *mut u8) {
     let mut i: i32 = 0;
-    i = 0;
     while *asciiStr.at(i) != 0 {
         *pkmnStr.at(i) = sWireless_ASCIItoRSETable[*asciiStr.at(i)];
         i += 1;
     }
     *pkmnStr.at(i) = EOS;
 }
-pub(crate) unsafe extern "C" fn GetConnectedChildStrength(maxFlags: u8) -> u8 {
+unsafe fn GetConnectedChildStrength(maxFlags: u8) -> u8 {
     let mut flagCount: u8 = 0;
     let mut flags: u32 = (*gRfuLinkStatus).connSlotFlag as u32;
-    let mut i: u8 = 0;
     if (*gRfuLinkStatus).parentChild == MODE_PARENT {
-        i = 0;
-        while i < 4 {
+        for i in 0..4u8 {
             if flags & 1 != 0 {
                 if maxFlags as i32 == flagCount as i32 + 1 {
                     return (*gRfuLinkStatus).strength[i];
@@ -524,38 +490,31 @@ pub(crate) unsafe extern "C" fn GetConnectedChildStrength(maxFlags: u8) -> u8 {
                 flagCount += 1;
             }
             flags >>= 1;
-            i += 1;
         }
     } else {
-        i = 0;
-        while i < 4 {
+        for i in 0..4u8 {
             if flags & 1 != 0 {
                 return (*gRfuLinkStatus).strength[i];
             }
             flags >>= 1;
-            i += 1;
         }
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitHostRfuGameData(
+pub unsafe fn InitHostRfuGameData(
     data: *mut RfuGameData,
     activity: u8,
     startedActivity: u32,
     mut partnerInfo: i32,
 ) {
     let mut i: i32 = 0;
-    i = 0;
     while i < 2 {
         (*data).compatibility.playerTrainerId[i] = (*gSaveBlock2Ptr).playerTrainerId[i];
         i += 1;
     }
-    i = 0;
-    while i < RFU_CHILD_MAX as i32 {
+    for i in 0..(RFU_CHILD_MAX as i32) {
         (*data).partnerInfo[i] = partnerInfo as u8;
         partnerInfo >>= 8;
-        i += 1;
     }
     (*data).set_playerGender((*gSaveBlock2Ptr).playerGender);
     (*data).set_activity(activity);
@@ -575,8 +534,7 @@ pub unsafe extern "C" fn InitHostRfuGameData(
         .compatibility
         .set_gameClear(FlagGet(FLAG_SYS_GAME_CLEAR) as u16);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_GetCompatiblePlayerData(
+pub unsafe fn Rfu_GetCompatiblePlayerData(
     gameData: *mut RfuGameData,
     username: *mut u8,
     idx: u8,
@@ -619,10 +577,9 @@ pub unsafe extern "C" fn Rfu_GetCompatiblePlayerData(
             memset(username, 0, RFU_USER_NAME_LENGTH);
         }
     }
-    return retVal;
+    retVal
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_GetWonderDistributorPlayerData(
+pub unsafe fn Rfu_GetWonderDistributorPlayerData(
     gameData: *mut RfuGameData,
     username: *mut u8,
     idx: u8,
@@ -644,16 +601,14 @@ pub unsafe extern "C" fn Rfu_GetWonderDistributorPlayerData(
         memset(gameData as *mut u8, 0, RFU_GAME_NAME_LENGTH);
         memset(username, 0, RFU_USER_NAME_LENGTH);
     }
-    return retVal;
+    retVal
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyHostRfuGameDataAndUsername(
-    gameData: *mut RfuGameData,
-    username: *mut u8,
-) {
+pub unsafe fn CopyHostRfuGameDataAndUsername(gameData: *mut RfuGameData, username: *mut u8) {
     memcpy(
         gameData as *mut u8,
-        &raw mut gHostRfuGameData as *mut u8,
+        &raw mut (*(&raw const crate::link_rfu_2::gHostRfuGameData)
+            .cast::<RfuGameData>()
+            .cast_mut()) as *mut u8,
         RFU_GAME_NAME_LENGTH,
     );
     memcpy(
@@ -663,7 +618,7 @@ pub unsafe extern "C" fn CopyHostRfuGameDataAndUsername(
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateWirelessStatusIndicatorSprite(mut x: u8, mut y: u8) {
+pub unsafe fn CreateWirelessStatusIndicatorSprite(mut x: u8, mut y: u8) {
     let mut sprId: u8 = 0;
     if x == 0 && y == 0 {
         x = 231;
@@ -676,8 +631,8 @@ pub unsafe extern "C" fn CreateWirelessStatusIndicatorSprite(mut x: u8, mut y: u
             y as i16,
             0,
         );
-        gSprites[sprId].data[7] = STATUS_INDICATOR_ACTIVE;
-        gSprites[sprId].data[6] =
+        gSprites[sprId].data[sValidator] = STATUS_INDICATOR_ACTIVE;
+        gSprites[sprId].data[sTileStart] =
             GetSpriteTileStartByTag(sWirelessStatusIndicatorSpriteSheet.tag) as i16;
         gSprites[sprId].set_invisible(TRUE as u16);
         gWirelessStatusIndicatorSpriteId = sprId;
@@ -688,59 +643,56 @@ pub unsafe extern "C" fn CreateWirelessStatusIndicatorSprite(mut x: u8, mut y: u
             y as i16,
             0,
         );
-        gSprites[gWirelessStatusIndicatorSpriteId].data[7] = STATUS_INDICATOR_ACTIVE;
-        gSprites[gWirelessStatusIndicatorSpriteId].data[6] =
+        gSprites[gWirelessStatusIndicatorSpriteId].data[sValidator] = STATUS_INDICATOR_ACTIVE;
+        gSprites[gWirelessStatusIndicatorSpriteId].data[sTileStart] =
             GetSpriteTileStartByTag(sWirelessStatusIndicatorSpriteSheet.tag) as i16;
         gSprites[gWirelessStatusIndicatorSpriteId].set_invisible(TRUE as u16);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DestroyWirelessStatusIndicatorSprite() {
-    if gSprites[gWirelessStatusIndicatorSpriteId].data[7] == STATUS_INDICATOR_ACTIVE {
-        gSprites[gWirelessStatusIndicatorSpriteId].data[7] = 0;
+pub unsafe fn DestroyWirelessStatusIndicatorSprite() {
+    if gSprites[gWirelessStatusIndicatorSpriteId].data[sValidator] == STATUS_INDICATOR_ACTIVE {
+        gSprites[gWirelessStatusIndicatorSpriteId].data[sValidator] = 0;
         DestroySprite(&raw mut gSprites[gWirelessStatusIndicatorSpriteId]);
-        gMain.oamBuffer[125] = gDummyOamData;
+        gMain.oamBuffer[125] = *(&raw const crate::sprite::gDummyOamData).cast::<OamData>();
         CpuSet(
-            (&raw const gDummyOamData).cast_mut() as *mut c_void,
+            (&raw const (*(&raw const crate::sprite::gDummyOamData).cast::<OamData>())).cast_mut()
+                as *mut c_void,
             (OAM as i32 as usize as *mut OamData).at(125) as *mut c_void,
             4,
         );
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadWirelessStatusIndicatorSpriteGfx() {
+pub unsafe fn LoadWirelessStatusIndicatorSpriteGfx() {
     if GetSpriteTileStartByTag(sWirelessStatusIndicatorSpriteSheet.tag) == 0xFFFF {
         LoadCompressedSpriteSheet((&raw const *sWirelessStatusIndicatorSpriteSheet).cast_mut());
     }
     LoadSpritePalette((&raw const *sWirelessStatusIndicatorSpritePalette).cast_mut());
     gWirelessStatusIndicatorSpriteId = SPRITE_NONE;
 }
-pub(crate) unsafe extern "C" fn GetParentSignalStrength() -> u8 {
-    let mut i: u8 = 0;
+unsafe fn GetParentSignalStrength() -> u8 {
     let mut flags: u8 = (*gRfuLinkStatus).connSlotFlag;
-    i = 0;
-    while i < RFU_CHILD_MAX {
+    for i in 0..RFU_CHILD_MAX {
         if flags as i32 & 1 != 0 {
             return (*gRfuLinkStatus).strength[i];
         }
         flags >>= 1;
-        i += 1;
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn SetWirelessStatusIndicatorAnim(sprite: *mut Sprite, animNum: i32) {
-    if (*sprite).data[2] as i32 != animNum {
-        (*sprite).data[2] = animNum as i16;
-        (*sprite).data[3] = 0;
-        (*sprite).data[4] = 0;
+unsafe fn SetWirelessStatusIndicatorAnim(sprite: *mut Sprite, animNum: i32) {
+    if (*sprite).data[sCurrAnimNum] as i32 != animNum {
+        (*sprite).data[sCurrAnimNum] = animNum as i16;
+        (*sprite).data[sFrameDelay] = 0;
+        (*sprite).data[sFrameIdx] = 0;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateWirelessStatusIndicatorSprite() {
+pub unsafe fn UpdateWirelessStatusIndicatorSprite() {
     if gWirelessStatusIndicatorSpriteId != SPRITE_NONE
-        && gSprites[gWirelessStatusIndicatorSpriteId].data[7] == STATUS_INDICATOR_ACTIVE
+        && gSprites[gWirelessStatusIndicatorSpriteId].data[sValidator] == STATUS_INDICATOR_ACTIVE
     {
-        let mut sprite: *mut Sprite = &raw mut gSprites[gWirelessStatusIndicatorSpriteId];
+        let sprite: *mut Sprite = &raw mut gSprites[gWirelessStatusIndicatorSpriteId];
         let mut signalStrength: u8 = RFU_LINK_ICON_LEVEL4_MAX;
         let mut i: u8 = 0;
         if (*gRfuLinkStatus).parentChild == MODE_PARENT {
@@ -755,46 +707,46 @@ pub unsafe extern "C" fn UpdateWirelessStatusIndicatorSprite() {
             signalStrength = GetParentSignalStrength();
         }
         if IsRfuRecoveringFromLinkLoss() == TRUE {
-            (*sprite).data[0] = WIRELESS_STATUS_ANIM_ERROR;
+            (*sprite).data[sNextAnimNum] = WIRELESS_STATUS_ANIM_ERROR;
         } else if signalStrength <= RFU_LINK_ICON_LEVEL1_MAX {
-            (*sprite).data[0] = WIRELESS_STATUS_ANIM_SEARCHING;
-        } else if signalStrength >= RFU_LINK_ICON_LEVEL2_MIN
-            && signalStrength <= RFU_LINK_ICON_LEVEL2_MAX
-        {
-            (*sprite).data[0] = WIRELESS_STATUS_ANIM_1_BAR;
-        } else if signalStrength >= RFU_LINK_ICON_LEVEL3_MIN
-            && signalStrength <= RFU_LINK_ICON_LEVEL3_MAX
-        {
-            (*sprite).data[0] = WIRELESS_STATUS_ANIM_2_BARS;
+            (*sprite).data[sNextAnimNum] = WIRELESS_STATUS_ANIM_SEARCHING;
+        } else if (RFU_LINK_ICON_LEVEL2_MIN..=RFU_LINK_ICON_LEVEL2_MAX).contains(&signalStrength) {
+            (*sprite).data[sNextAnimNum] = WIRELESS_STATUS_ANIM_1_BAR;
+        } else if (RFU_LINK_ICON_LEVEL3_MIN..=RFU_LINK_ICON_LEVEL3_MAX).contains(&signalStrength) {
+            (*sprite).data[sNextAnimNum] = WIRELESS_STATUS_ANIM_2_BARS;
         } else if signalStrength >= RFU_LINK_ICON_LEVEL4_MIN {
-            (*sprite).data[0] = WIRELESS_STATUS_ANIM_3_BARS;
+            (*sprite).data[sNextAnimNum] = WIRELESS_STATUS_ANIM_3_BARS;
         }
-        if (*sprite).data[0] != (*sprite).data[1] {
-            SetWirelessStatusIndicatorAnim(sprite, (*sprite).data[0] as i32);
-            (*sprite).data[1] = (*sprite).data[0];
+        if (*sprite).data[sNextAnimNum] != (*sprite).data[sSavedAnimNum] {
+            SetWirelessStatusIndicatorAnim(sprite, (*sprite).data[sNextAnimNum] as i32);
+            (*sprite).data[sSavedAnimNum] = (*sprite).data[sNextAnimNum];
         }
-        if (*(*(*sprite).anims.at((*sprite).data[2])).at((*sprite).data[4]))
+        if (*(*(*sprite).anims.at((*sprite).data[sCurrAnimNum])).at((*sprite).data[sFrameIdx]))
             .frame
             .duration()
-            < (*sprite).data[3] as u32
+            < (*sprite).data[sFrameDelay] as u32
         {
-            (*sprite).data[4] += 1;
-            (*sprite).data[3] = 0;
-            if (*(*(*sprite).anims.at((*sprite).data[2])).at((*sprite).data[4])).r#type == -2 {
-                (*sprite).data[4] = 0;
+            (*sprite).data[sFrameIdx] += 1;
+            (*sprite).data[sFrameDelay] = 0;
+            if (*(*(*sprite).anims.at((*sprite).data[sCurrAnimNum])).at((*sprite).data[sFrameIdx]))
+                .r#type
+                == -2
+            {
+                (*sprite).data[sFrameIdx] = 0;
             }
         } else {
-            (*sprite).data[3] += 1;
+            (*sprite).data[sFrameDelay] += 1;
         }
         gMain.oamBuffer[125] = *sWirelessStatusIndicatorOamData;
         gMain.oamBuffer[125].set_x((*sprite).x as u32 + (*sprite).centerToCornerVecX as u32);
         gMain.oamBuffer[125].set_y((*sprite).y as u32 + (*sprite).centerToCornerVecY as u32);
         gMain.oamBuffer[125].set_paletteNum((*sprite).oam.paletteNum());
         gMain.oamBuffer[125].set_tileNum(
-            (*sprite).data[6] as u16
-                + (*(*(*sprite).anims.at((*sprite).data[2])).at((*sprite).data[4]))
-                    .frame
-                    .imageValue() as u16,
+            (*sprite).data[sTileStart] as u16
+                + (*(*(*sprite).anims.at((*sprite).data[sCurrAnimNum]))
+                    .at((*sprite).data[sFrameIdx]))
+                .frame
+                .imageValue() as u16,
         );
         CpuSet(
             &raw mut gMain.oamBuffer[125] as *mut c_void,
@@ -806,38 +758,26 @@ pub unsafe extern "C" fn UpdateWirelessStatusIndicatorSprite() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn CopyTrainerRecord(
-    dest: *mut TrainerNameRecord,
-    trainerId: u32,
-    name: *mut u8,
-) {
+unsafe fn CopyTrainerRecord(dest: *mut TrainerNameRecord, trainerId: u32, name: *mut u8) {
     (*dest).trainerId = trainerId;
     StringCopy((*dest).trainerName.as_mut_ptr(), name);
 }
-pub(crate) unsafe extern "C" fn NameIsNotEmpty(name: *mut u8) -> u32 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 8 {
+unsafe fn NameIsNotEmpty(name: *mut u8) -> u32 {
+    for i in 0..8i32 {
         if *name.at(i) != 0 {
             return TRUE as u32;
         }
-        i += 1;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SaveLinkTrainerNames() {
+pub unsafe fn SaveLinkTrainerNames() {
     if gWirelessCommType != 0 {
-        let mut i: i32 = 0;
-        let mut j: i32 = 0;
-        let mut nextSpace: i32 = 0;
         let mut connectedTrainerRecordIndices: CArray<i32, 5> = zeroed();
-        let mut newRecords: *mut TrainerNameRecord = AllocZeroed(240) as *mut TrainerNameRecord;
-        i = 0;
+        let newRecords: *mut TrainerNameRecord = AllocZeroed(240) as *mut TrainerNameRecord;
+        let mut i: i32 = 0;
         while i < GetLinkPlayerCount() as i32 {
             connectedTrainerRecordIndices[i] = -1;
-            j = 0;
-            while j < 20 {
+            for j in 0..20i32 {
                 if gLinkPlayers[i].trainerId as u16 as u32
                     == (*gSaveBlock1Ptr).trainerNameRecords[j].trainerId
                     && StringCompare(
@@ -849,11 +789,10 @@ pub unsafe extern "C" fn SaveLinkTrainerNames() {
                 {
                     connectedTrainerRecordIndices[i] = j;
                 }
-                j += 1;
             }
             i += 1;
         }
-        nextSpace = 0;
+        let mut nextSpace: i32 = 0;
         i = 0;
         while i < GetLinkPlayerCount() as i32 {
             if i != GetMultiplayerId() as i32
@@ -877,8 +816,7 @@ pub unsafe extern "C" fn SaveLinkTrainerNames() {
             }
             i += 1;
         }
-        i = 0;
-        while i < 20 {
+        for i in 0..20i32 {
             if NameIsNotEmpty(
                 (*gSaveBlock1Ptr).trainerNameRecords[i]
                     .trainerName
@@ -900,7 +838,6 @@ pub unsafe extern "C" fn SaveLinkTrainerNames() {
                     break;
                 }
             }
-            i += 1;
         }
         memcpy(
             (*gSaveBlock1Ptr).trainerNameRecords.as_mut_ptr() as *mut u8,
@@ -910,11 +847,8 @@ pub unsafe extern "C" fn SaveLinkTrainerNames() {
         Free(newRecords as *mut c_void);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerHasMetTrainerBefore(id: u16, name: *mut u8) -> u32 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 20 {
+pub unsafe fn PlayerHasMetTrainerBefore(id: u16, name: *mut u8) -> u32 {
+    for i in 0..20i32 {
         if StringCompare(
             (*gSaveBlock1Ptr).trainerNameRecords[i]
                 .trainerName
@@ -933,15 +867,12 @@ pub unsafe extern "C" fn PlayerHasMetTrainerBefore(id: u16, name: *mut u8) -> u3
         {
             return FALSE as u32;
         }
-        i += 1;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn WipeTrainerNameRecords() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 20 {
+pub unsafe fn WipeTrainerNameRecords() {
+    for i in 0..20i32 {
         (*gSaveBlock1Ptr).trainerNameRecords[i].trainerId = 0;
         {
             {
@@ -956,6 +887,5 @@ pub unsafe extern "C" fn WipeTrainerNameRecords() {
                 );
             }
         }
-        i += 1;
     }
 }

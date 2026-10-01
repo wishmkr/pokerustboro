@@ -2,12 +2,14 @@
 //! interrupt handlers, key reading and soft reset. The interrupt dispatcher
 //! itself (`IntrMain`, crt0.rs) is copied to IWRAM here.
 
+use crate::battle_main::gBattleTypeFlags;
 use crate::bg::ResetBgs;
 use crate::dma3_manager::{ClearDma3Requests, ProcessDma3Requests};
 use crate::ffi::{Align4, MainCallback};
 use crate::gpu_regs::{
     CopyBufferedValuesToGpuRegs, EnableInterrupts, GetGpuReg, InitGpuRegManager, SetGpuReg,
 };
+use crate::link::gWirelessCommType;
 use crate::load_save::{
     CheckForFlashMemory, gFlashMemoryPresent, gPokemonStorage, gPokemonStoragePtr, gSaveBlock2Ptr,
     gSaveblock2,
@@ -18,10 +20,13 @@ use crate::rtc::RtcInit;
 use crate::scanline_effect::ScanlineEffect_Stop;
 use crate::sprite::ClearSpriteCopyRequests;
 use crate::text::SetDefaultFontsPointer;
+use crate::trainer_hill::gTrainerHillVBlankCounter;
 use crate::{Random, SeedRng};
 
-type IntrFunc = unsafe extern "C" fn();
+/// What IntrMain (crt0.rs) calls: the C ABI.
+pub type IntrFunc = unsafe extern "C" fn();
 
+#[cfg(target_arch = "arm")]
 const MAIN_SIZE: usize = 0x43c;
 const M_CALLBACK1: usize = 0x000;
 const M_CALLBACK2: usize = 0x004;
@@ -113,14 +118,25 @@ pub static mut gKeyRepeatStartDelay: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gLinkTransferringData: u8 = 0;
-/// `struct Main`, 0x43c bytes. Exported under its C name; Rust code reaches it
-/// through the byte-typed declaration in `ffi`.
-#[unsafe(export_name = "gMain")]
-#[unsafe(link_section = "common_data")]
-pub static mut MAIN: Align4<[u8; MAIN_SIZE]> = Align4([0; MAIN_SIZE]);
+/// `struct Main`, 0x43c bytes.
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gKeyRepeatContinueDelay: u16 = 0;
+pub static mut gMain: crate::types::Main = unsafe { core::mem::zeroed() };
+
+#[cfg(target_arch = "arm")]
+const _: () = assert!(core::mem::size_of::<crate::types::Main>() == MAIN_SIZE);
+
+/// `gMain`, typed.
+///
+/// # Safety
+/// No other reference to it may be in use while the result lives.
+pub unsafe fn main<'a>() -> &'a mut crate::types::Main {
+    // SAFETY: exclusivity is the caller's promise.
+    unsafe { &mut *(&raw mut gMain) }
+}
+#[unsafe(no_mangle)]
+#[unsafe(link_section = "common_data")]
+pub static gKeyRepeatContinueDelay: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gSoftResetDisabled: u8 = 0;
@@ -137,46 +153,156 @@ pub static mut gLinkVSyncDisabled: u8 = 0;
 pub static mut IntrMain_Buffer: Align4<[u32; 0x80]> = Align4([0; 0x80]);
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gPcmDmaCounter: i8 = 0;
+pub static gPcmDmaCounter: crate::global::Global<i8> = crate::global::Global::new(0);
 
-static mut UNUSED_VAR: u16 = 0;
+static UNUSED_VAR: crate::global::Global<u16> = crate::global::Global::new(0);
 
 #[unsafe(link_section = "ewram_data")]
-static mut TRAINER_ID: u16 = 0;
+static TRAINER_ID: crate::global::Global<u16> = crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static gWirelessCommType: u8;
-    static mut gTrainerHillVBlankCounter: *mut u32;
-    static mut gSoundInfo: u8;
-    static gBattleTypeFlags: u32;
-    static mut gPokemonCrySongs: u8;
-
-    fn m4aSoundInit();
-    fn m4aSoundMain();
-    fn m4aSoundVSync();
-    fn m4aSoundVSyncOff();
-    fn InitRFU();
-    fn InitMapMusic();
-    fn MapMusicMain();
-    fn rfu_REQ_stopMode();
-    fn rfu_waitREQComplete();
-    fn Overworld_SendKeysToLinkIsRunning() -> u8;
-    fn Overworld_RecvKeysFromLinkIsRunning() -> u8;
-    fn HandleLinkConnection() -> u8;
-    fn CB2_InitCopyrightScreenAfterBootup();
-    fn Timer3Intr();
-    fn RfuVSync();
-    fn LinkVSync();
-    fn TryReceiveLinkBattleData();
-    fn UpdateWirelessStatusIndicatorSprite();
-    fn SetFlashTimerIntr(timer_num: u8, intr_func: *mut usize) -> u8;
-    fn SiiRtcProtect();
-    fn SoftReset(reset_flags: u32);
+/// `m4aSoundInit` with this module's view of its types.
+#[inline]
+unsafe fn m4aSoundInit() {
+    unsafe {
+        crate::m4a::m4aSoundInit();
+    }
+}
+/// `m4aSoundMain` with this module's view of its types.
+#[inline]
+unsafe fn m4aSoundMain() {
+    unsafe {
+        crate::m4a::m4aSoundMain();
+    }
+}
+/// `m4aSoundVSync` with this module's view of its types.
+#[inline]
+unsafe fn m4aSoundVSync() {
+    unsafe {
+        crate::m4a_engine::m4aSoundVSync();
+    }
+}
+/// `m4aSoundVSyncOff` with this module's view of its types.
+#[inline]
+unsafe fn m4aSoundVSyncOff() {
+    unsafe {
+        crate::m4a::m4aSoundVSyncOff();
+    }
+}
+/// `InitRFU` with this module's view of its types.
+#[inline]
+unsafe fn InitRFU() {
+    unsafe {
+        crate::link_rfu_2::InitRFU();
+    }
+}
+/// `InitMapMusic` with this module's view of its types.
+#[inline]
+unsafe fn InitMapMusic() {
+    {
+        crate::sound::InitMapMusic();
+    }
+}
+/// `MapMusicMain` with this module's view of its types.
+#[inline]
+unsafe fn MapMusicMain() {
+    unsafe {
+        crate::sound::MapMusicMain();
+    }
+}
+/// `rfu_REQ_stopMode` with this module's view of its types.
+#[inline]
+unsafe fn rfu_REQ_stopMode() {
+    unsafe {
+        crate::librfu_rfu::rfu_REQ_stopMode();
+    }
+}
+/// `rfu_waitREQComplete` with this module's view of its types.
+#[inline]
+unsafe fn rfu_waitREQComplete() {
+    unsafe {
+        crate::librfu_rfu::rfu_waitREQComplete();
+    }
+}
+/// `Overworld_SendKeysToLinkIsRunning` with this module's view of its types.
+#[inline]
+unsafe fn Overworld_SendKeysToLinkIsRunning() -> u8 {
+    unsafe { crate::overworld::Overworld_SendKeysToLinkIsRunning() as u8 }
+}
+/// `Overworld_RecvKeysFromLinkIsRunning` with this module's view of its types.
+#[inline]
+unsafe fn Overworld_RecvKeysFromLinkIsRunning() -> u8 {
+    unsafe { crate::overworld::Overworld_RecvKeysFromLinkIsRunning() as u8 }
+}
+/// `HandleLinkConnection` with this module's view of its types.
+#[inline]
+unsafe fn HandleLinkConnection() -> u8 {
+    unsafe { crate::link::HandleLinkConnection() }
+}
+/// `CB2_InitCopyrightScreenAfterBootup` with this module's view of its types.
+#[inline]
+unsafe fn CB2_InitCopyrightScreenAfterBootup() {
+    unsafe {
+        crate::intro::CB2_InitCopyrightScreenAfterBootup();
+    }
+}
+/// `Timer3Intr` with this module's view of its types.
+#[inline]
+unsafe extern "C" fn Timer3Intr() {
+    unsafe {
+        crate::link::Timer3Intr();
+    }
+}
+/// `RfuVSync` with this module's view of its types.
+#[inline]
+unsafe fn RfuVSync() {
+    unsafe {
+        crate::link_rfu_2::RfuVSync();
+    }
+}
+/// `LinkVSync` with this module's view of its types.
+#[inline]
+unsafe fn LinkVSync() {
+    unsafe {
+        crate::link::LinkVSync();
+    }
+}
+/// `TryReceiveLinkBattleData` with this module's view of its types.
+#[inline]
+unsafe fn TryReceiveLinkBattleData() {
+    unsafe {
+        crate::battle_controllers::TryReceiveLinkBattleData();
+    }
+}
+/// `UpdateWirelessStatusIndicatorSprite` with this module's view of its types.
+#[inline]
+unsafe fn UpdateWirelessStatusIndicatorSprite() {
+    unsafe {
+        crate::link_rfu_3::UpdateWirelessStatusIndicatorSprite();
+    }
+}
+/// `SetFlashTimerIntr` with this module's view of its types.
+#[inline]
+unsafe fn SetFlashTimerIntr(a0: u8, a1: *mut usize) -> u8 {
+    unsafe { crate::agb_flash::SetFlashTimerIntr(a0, a1 as _) as u8 }
+}
+/// `SiiRtcProtect` with this module's view of its types.
+#[inline]
+unsafe fn SiiRtcProtect() {
+    unsafe {
+        crate::siirtc::SiiRtcProtect();
+    }
+}
+/// `SoftReset` with this module's view of its types.
+#[inline]
+unsafe fn SoftReset(a0: u32) {
+    unsafe {
+        crate::syscall::SoftReset(a0);
+    }
 }
 
 #[inline]
 fn main_field(offset: usize) -> *mut u8 {
-    (&raw mut MAIN).cast::<u8>().wrapping_add(offset)
+    (&raw mut gMain).cast::<u8>().wrapping_add(offset)
 }
 
 #[inline]
@@ -185,19 +311,19 @@ unsafe fn u16_field(offset: usize) -> *mut u16 {
 }
 
 #[inline]
-unsafe fn callback(offset: usize) -> Option<unsafe extern "C" fn()> {
+unsafe fn callback(offset: usize) -> Option<unsafe fn()> {
     unsafe {
         main_field(offset)
-            .cast::<Option<unsafe extern "C" fn()>>()
+            .cast::<Option<unsafe fn()>>()
             .read_volatile()
     }
 }
 
 #[inline]
-unsafe fn set_callback(offset: usize, callback: Option<unsafe extern "C" fn()>) {
+unsafe fn set_callback(offset: usize, callback: Option<unsafe fn()>) {
     unsafe {
         main_field(offset)
-            .cast::<Option<unsafe extern "C" fn()>>()
+            .cast::<Option<unsafe fn()>>()
             .write_volatile(callback)
     };
 }
@@ -226,7 +352,7 @@ pub unsafe extern "C" fn AgbMain() -> ! {
         unsafe { SetMainCallback2(None) };
     }
     unsafe { (&raw mut gLinkTransferringData).write(0) };
-    unsafe { (&raw mut UNUSED_VAR).write(0xfc0) };
+    unsafe { (UNUSED_VAR.as_ptr()).write(0xfc0) };
 
     loop {
         unsafe { read_keys() };
@@ -287,39 +413,39 @@ unsafe fn call_callbacks() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetMainCallback2(callback: Option<MainCallback>) {
+pub unsafe fn SetMainCallback2(callback: Option<MainCallback>) {
     unsafe { set_callback(M_CALLBACK2, callback) };
     unsafe { main_field(M_STATE).write(0) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartTimer1() {
+pub unsafe fn StartTimer1() {
     unsafe { REG_TM1CNT_H.write_volatile(0x80) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SeedRngAndSetTrainerId() {
+pub unsafe fn SeedRngAndSetTrainerId() {
     let value = unsafe { REG_TM1CNT_L.read_volatile() };
-    unsafe { SeedRng(value) };
+    SeedRng(value);
     unsafe { REG_TM1CNT_H.write_volatile(0) };
-    unsafe { (&raw mut TRAINER_ID).write(value) };
+    unsafe { (TRAINER_ID.as_ptr()).write(value) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetGeneratedTrainerIdLower() -> u16 {
-    unsafe { (&raw const TRAINER_ID).read() }
+pub unsafe fn GetGeneratedTrainerIdLower() -> u16 {
+    unsafe { (TRAINER_ID.as_ptr().cast_const()).read() }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn EnableVCountIntrAtLine150() {
+pub unsafe fn EnableVCountIntrAtLine150() {
     let value = (unsafe { GetGpuReg(REG_OFFSET_DISPSTAT) } & 0xff) | (150 << 8);
     unsafe { SetGpuReg(REG_OFFSET_DISPSTAT, value | DISPSTAT_VCOUNT_INTR) };
     unsafe { EnableInterrupts(INTR_FLAG_VCOUNT) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitKeys() {
-    unsafe { (&raw mut gKeyRepeatContinueDelay).write(5) };
+pub unsafe fn InitKeys() {
+    unsafe { (gKeyRepeatContinueDelay.as_ptr()).write(5) };
     unsafe { (&raw mut gKeyRepeatStartDelay).write(40) };
     for field in [
         M_HELD_KEYS,
@@ -348,7 +474,8 @@ unsafe fn read_keys() {
         if counter == 0 {
             unsafe { u16_field(M_NEW_AND_REPEATED_KEYS).write(key_input) };
             unsafe {
-                u16_field(M_KEY_REPEAT_COUNTER).write((&raw const gKeyRepeatContinueDelay).read())
+                u16_field(M_KEY_REPEAT_COUNTER)
+                    .write((gKeyRepeatContinueDelay.as_ptr().cast_const()).read())
             };
         }
     } else {
@@ -358,7 +485,7 @@ unsafe fn read_keys() {
     unsafe { u16_field(M_HELD_KEYS_RAW).write(key_input) };
     unsafe { u16_field(M_HELD_KEYS).write(key_input) };
 
-    let sb2 = unsafe { (&raw const gSaveBlock2Ptr).read() };
+    let sb2 = unsafe { (&raw const gSaveBlock2Ptr).read().cast::<u8>() };
     if unsafe { sb2.add(SB2_OPTIONS_BUTTON_MODE).read() } == OPTIONS_BUTTON_MODE_L_EQUALS_A {
         if unsafe { u16_field(M_NEW_KEYS).read() } & L_BUTTON != 0 {
             unsafe { u16_field(M_NEW_KEYS).write(u16_field(M_NEW_KEYS).read() | A_BUTTON) };
@@ -375,7 +502,7 @@ unsafe fn read_keys() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitIntrHandlers() {
+pub unsafe fn InitIntrHandlers() {
     let table = (&raw mut gIntrTable).cast::<usize>();
     for (i, handler) in gIntrTableTemplate.iter().enumerate() {
         unsafe { table.add(i).write(*handler as usize) };
@@ -396,29 +523,29 @@ pub unsafe extern "C" fn InitIntrHandlers() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetVBlankCallback(callback: Option<unsafe extern "C" fn()>) {
+pub unsafe fn SetVBlankCallback(callback: Option<unsafe fn()>) {
     unsafe { set_callback(M_VBLANK_CALLBACK, callback) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetHBlankCallback(callback: Option<unsafe extern "C" fn()>) {
+pub unsafe fn SetHBlankCallback(callback: Option<unsafe fn()>) {
     unsafe { set_callback(M_HBLANK_CALLBACK, callback) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetVCountCallback(callback: Option<unsafe extern "C" fn()>) {
+pub unsafe fn SetVCountCallback(callback: Option<unsafe fn()>) {
     unsafe { set_callback(M_VCOUNT_CALLBACK, callback) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RestoreSerialTimer3IntrHandlers() {
+pub unsafe fn RestoreSerialTimer3IntrHandlers() {
     let table = (&raw mut gIntrTable).cast::<usize>();
     unsafe { table.add(1).write(serial_intr as IntrFunc as usize) };
     unsafe { table.add(2).write(Timer3Intr as IntrFunc as usize) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetSerialCallback(callback: Option<unsafe extern "C" fn()>) {
+pub unsafe fn SetSerialCallback(callback: Option<unsafe fn()>) {
     unsafe { set_callback(M_SERIAL_CALLBACK, callback) };
 }
 
@@ -451,25 +578,25 @@ unsafe extern "C" fn vblank_intr() {
     unsafe { CopyBufferedValuesToGpuRegs() };
     unsafe { ProcessDma3Requests() };
     let pcm = unsafe {
-        (&raw const gSoundInfo)
+        (&raw const (*(&raw const crate::m4a::gSoundInfo).cast::<u8>().cast_mut()))
             .add(SOUND_INFO_PCM_DMA_COUNTER)
             .read_volatile()
     };
-    unsafe { (&raw mut gPcmDmaCounter).write_volatile(pcm as i8) };
+    unsafe { (gPcmDmaCounter.as_ptr()).write_volatile(pcm as i8) };
     unsafe { m4aSoundMain() };
     unsafe { TryReceiveLinkBattleData() };
 
     let in_battle = unsafe { main_field(M_FLAGS).read_volatile() } & M_IN_BATTLE != 0;
     let flags = unsafe { (&raw const gBattleTypeFlags).read_volatile() };
     if !in_battle || flags & BATTLE_TYPE_LINK_FRONTIER_RECORDED == 0 {
-        unsafe { Random() };
+        Random();
     }
     unsafe { UpdateWirelessStatusIndicatorSprite() };
     unsafe { mark_interrupt(INTR_FLAG_VBLANK) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitFlashTimer() {
+pub unsafe fn InitFlashTimer() {
     let table = (&raw mut gIntrTable).cast::<usize>();
     unsafe { SetFlashTimerIntr(2, table.add(7)) };
 }
@@ -505,12 +632,12 @@ unsafe fn wait_for_vblank() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetTrainerHillVBlankCounter(counter: *mut u32) {
+pub unsafe fn SetTrainerHillVBlankCounter(counter: *mut u32) {
     unsafe { (&raw mut gTrainerHillVBlankCounter).write(counter) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearTrainerHillVBlankCounter() {
+pub unsafe fn ClearTrainerHillVBlankCounter() {
     unsafe { (&raw mut gTrainerHillVBlankCounter).write(core::ptr::null_mut()) };
 }
 
@@ -523,7 +650,7 @@ unsafe fn dma_stop(control: usize) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoSoftReset() -> ! {
+pub unsafe fn DoSoftReset() -> ! {
     unsafe { REG_IME.write_volatile(0) };
     unsafe { m4aSoundVSyncOff() };
     unsafe { ScanlineEffect_Stop() };
@@ -537,7 +664,12 @@ pub unsafe extern "C" fn DoSoftReset() -> ! {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearPokemonCrySongs() {
+pub unsafe fn ClearPokemonCrySongs() {
     let bytes = MAX_POKEMON_CRIES * POKEMON_CRY_SONG_SIZE;
-    unsafe { (&raw mut gPokemonCrySongs).write_bytes(0, bytes) };
+    unsafe {
+        (&raw mut (*(&raw const crate::m4a::gPokemonCrySongs)
+            .cast::<u8>()
+            .cast_mut()))
+            .write_bytes(0, bytes)
+    };
 }

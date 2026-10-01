@@ -38,18 +38,28 @@ const SAVE2_PLAYER_NAME_OFFSET: usize = 0x00;
 /// `offsetof(struct SaveBlock2, playerTrainerId)`
 const SAVE2_TRAINER_ID_OFFSET: usize = 0x0a;
 
-unsafe extern "C" {
-    static mut gSaveBlock1Ptr: *mut u8;
-    static mut gSaveBlock2Ptr: *mut u8;
-
-    fn GetUnownLetterByPersonality(personality: u32) -> u16;
-    fn PadNameString(dest: *mut u8, pad_char: u8);
+/// `GetUnownLetterByPersonality` with this module's view of its types.
+#[inline]
+unsafe fn GetUnownLetterByPersonality(a0: u32) -> u16 {
+    crate::pokemon_icon::GetUnownLetterByPersonality(a0)
+}
+/// `PadNameString` with this module's view of its types.
+#[inline]
+unsafe fn PadNameString(a0: *mut u8, a1: u8) {
+    unsafe {
+        crate::international_string_util::PadNameString(a0 as _, a1);
+    }
 }
 
 /// `&gSaveBlock1Ptr->mail[index]`
 #[inline]
 unsafe fn mail_slot(index: usize) -> *mut u8 {
-    unsafe { gSaveBlock1Ptr.add(SAVE1_MAIL_OFFSET + index * MAIL_SIZE) }
+    unsafe {
+        (*(&raw const crate::load_save::gSaveBlock1Ptr)
+            .cast::<*mut u8>()
+            .cast_mut())
+        .add(SAVE1_MAIL_OFFSET + index * MAIL_SIZE)
+    }
 }
 
 #[inline]
@@ -63,7 +73,7 @@ unsafe fn set_mail_item_id(mail: *mut u8, item_id: u16) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearMail(mail: *mut u8) {
+pub unsafe fn ClearMail(mail: *mut u8) {
     let mut i = 0usize;
     while i < MAIL_WORDS_COUNT {
         unsafe {
@@ -95,7 +105,7 @@ pub unsafe extern "C" fn ClearMail(mail: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearAllMail() {
+pub unsafe fn ClearAllMail() {
     let mut i = 0usize;
     while i < MAIL_COUNT {
         unsafe { ClearMail(mail_slot(i)) };
@@ -104,12 +114,12 @@ pub unsafe extern "C" fn ClearAllMail() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ItemIsMail(item_id: u16) -> u8 {
+pub unsafe fn ItemIsMail(item_id: u16) -> u8 {
     u8::from((FIRST_MAIL_ITEM..=LAST_MAIL_ITEM).contains(&item_id))
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MonHasMail(mon: *mut u8) -> u8 {
+pub unsafe fn MonHasMail(mon: *mut u8) -> u8 {
     let held_item = unsafe { GetMonData2(mon, MON_DATA_HELD_ITEM) } as u16;
     let has_mail = unsafe { ItemIsMail(held_item) } != 0
         && unsafe { GetMonData2(mon, MON_DATA_MAIL) } != u32::from(MAIL_NONE);
@@ -117,7 +127,7 @@ pub unsafe extern "C" fn MonHasMail(mon: *mut u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpeciesToMailSpecies(species: u16, personality: u32) -> u16 {
+pub unsafe fn SpeciesToMailSpecies(species: u16, personality: u32) -> u16 {
     if species == SPECIES_UNOWN {
         unsafe { GetUnownLetterByPersonality(personality) }.wrapping_add(UNOWN_OFFSET)
     } else {
@@ -126,7 +136,7 @@ pub unsafe extern "C" fn SpeciesToMailSpecies(species: u16, personality: u32) ->
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MailSpeciesToSpecies(mail_species: u16, buffer: *mut u16) -> u16 {
+pub unsafe fn MailSpeciesToSpecies(mail_species: u16, buffer: *mut u16) -> u16 {
     if mail_species >= UNOWN_OFFSET && mail_species < UNOWN_OFFSET + NUM_UNOWN_FORMS {
         unsafe { buffer.write(mail_species - UNOWN_OFFSET) };
         SPECIES_UNOWN
@@ -136,7 +146,7 @@ pub unsafe extern "C" fn MailSpeciesToSpecies(mail_species: u16, buffer: *mut u1
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GiveMailToMonByItemId(mon: *mut u8, item_id: u16) -> u8 {
+pub unsafe fn GiveMailToMonByItemId(mon: *mut u8, item_id: u16) -> u8 {
     let held_item = [item_id as u8, (item_id >> 8) as u8];
 
     // Only the first PARTY_SIZE slots are handed out here; the rest of the
@@ -161,7 +171,13 @@ pub unsafe extern "C" fn GiveMailToMonByItemId(mon: *mut u8, item_id: u16) -> u8
 
         let mut i = 0usize;
         while i < PLAYER_NAME_LENGTH {
-            let character = unsafe { gSaveBlock2Ptr.add(SAVE2_PLAYER_NAME_OFFSET + i).read() };
+            let character = unsafe {
+                (*(&raw const crate::load_save::gSaveBlock2Ptr)
+                    .cast::<*mut u8>()
+                    .cast_mut())
+                .add(SAVE2_PLAYER_NAME_OFFSET + i)
+                .read()
+            };
             unsafe { mail.add(MAIL_PLAYER_NAME_OFFSET + i).write(character) };
             i += 1;
         }
@@ -173,7 +189,13 @@ pub unsafe extern "C" fn GiveMailToMonByItemId(mon: *mut u8, item_id: u16) -> u8
 
         let mut i = 0usize;
         while i < TRAINER_ID_LENGTH {
-            let byte = unsafe { gSaveBlock2Ptr.add(SAVE2_TRAINER_ID_OFFSET + i).read() };
+            let byte = unsafe {
+                (*(&raw const crate::load_save::gSaveBlock2Ptr)
+                    .cast::<*mut u8>()
+                    .cast_mut())
+                .add(SAVE2_TRAINER_ID_OFFSET + i)
+                .read()
+            };
             unsafe { mail.add(MAIL_TRAINER_ID_OFFSET + i).write(byte) };
             i += 1;
         }
@@ -198,7 +220,7 @@ pub unsafe extern "C" fn GiveMailToMonByItemId(mon: *mut u8, item_id: u16) -> u8
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GiveMailToMon(mon: *mut u8, mail: *mut u8) -> u8 {
+pub unsafe fn GiveMailToMon(mon: *mut u8, mail: *mut u8) -> u8 {
     let item_id = unsafe { mail_item_id(mail) };
     let mail_id = unsafe { GiveMailToMonByItemId(mon, item_id) };
 
@@ -218,7 +240,7 @@ pub unsafe extern "C" fn GiveMailToMon(mon: *mut u8, mail: *mut u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TakeMailFromMon(mon: *mut u8) {
+pub unsafe fn TakeMailFromMon(mon: *mut u8) {
     if unsafe { MonHasMail(mon) } == 0 {
         return;
     }
@@ -233,12 +255,12 @@ pub unsafe extern "C" fn TakeMailFromMon(mon: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearMailItemId(mail_id: u8) {
+pub unsafe fn ClearMailItemId(mail_id: u8) {
     unsafe { set_mail_item_id(mail_slot(mail_id as usize), ITEM_NONE) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TakeMailFromMonAndSave(mon: *mut u8) -> u8 {
+pub unsafe fn TakeMailFromMonAndSave(mon: *mut u8) -> u8 {
     let new_held_item = [ITEM_NONE as u8, (ITEM_NONE << 8) as u8];
     let new_mail_id = MAIL_NONE;
 

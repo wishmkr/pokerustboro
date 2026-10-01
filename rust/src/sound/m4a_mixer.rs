@@ -139,7 +139,7 @@ unsafe fn scanline() -> u32 {
 ///
 /// This one stays in ROM (Thumb), so it uses none of the IWRAM helpers below.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SoundMain() {
+pub unsafe fn SoundMain() {
     unsafe {
         let si = read_volatile(0x0300_7FF0 as *const Ptr);
         let ident = si.add(SI_IDENT).cast::<u32>();
@@ -160,10 +160,10 @@ pub unsafe extern "C" fn SoundMain() {
         }
         let main_head = read_volatile(si.add(SI_MPLAY_MAIN_HEAD).cast::<usize>());
         if main_head != 0 {
-            let f: unsafe extern "C" fn(Ptr) = core::mem::transmute(main_head);
+            let f: unsafe fn(Ptr) = core::mem::transmute(main_head);
             f(read_volatile(si.add(SI_MUSIC_PLAYER_HEAD).cast::<Ptr>()));
         }
-        let cgb: unsafe extern "C" fn() =
+        let cgb: unsafe fn() =
             core::mem::transmute(read_volatile(si.add(SI_CGB_SOUND).cast::<usize>()));
         cgb();
 
@@ -178,14 +178,14 @@ pub unsafe extern "C" fn SoundMain() {
         }
 
         // The mixer is in IWRAM, out of `bl` range: call it through a pointer.
-        let mixer: unsafe extern "C" fn(Ptr, Ptr, u32, u32) = read_volatile(&raw const MIXER);
+        let mixer: unsafe fn(Ptr, Ptr, u32, u32) = read_volatile(&raw const MIXER);
         mixer(si, buf, samples, limit);
 
         write_volatile(ident, ID_NUMBER);
     }
 }
 
-static MIXER: unsafe extern "C" fn(Ptr, Ptr, u32, u32) = SoundMainRAM;
+static MIXER: unsafe fn(Ptr, Ptr, u32, u32) = SoundMainRAM;
 
 /// `SoundMainRAM`: reverb (or clear) this frame's buffer, then mix every
 /// Direct Sound channel into it.
@@ -193,7 +193,7 @@ static MIXER: unsafe extern "C" fn(Ptr, Ptr, u32, u32) = SoundMainRAM;
 #[unsafe(link_section = ".iwram_code")]
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 #[inline(never)]
-pub unsafe extern "C" fn SoundMainRAM(si: Ptr, buf: Ptr, samples: u32, limit: u32) {
+pub unsafe fn SoundMainRAM(si: Ptr, buf: Ptr, samples: u32, limit: u32) {
     unsafe {
         let n = samples as usize;
         let reverb = r8(si, SI_REVERB);
@@ -582,7 +582,9 @@ unsafe fn decode(index: u32) -> i32 {
         if block != r32(c, C_XPI) {
             w32(c, C_XPI, block);
             let mut src = rp(c, C_WAV).add(W_DATA).add((block * 0x21) as usize);
-            let table = (&raw const gDeltaEncodingTable).cast::<i8>();
+            let table = (&raw const (*(&raw const crate::data::m4a_tables::gDeltaEncodingTable)
+                .cast::<u8>()))
+                .cast::<i8>();
             let dst = (&raw mut sDecodingBuffer).cast::<u8>();
             // the first byte is a sample; nibbles of the rest are deltas
             // (the second byte's high nibble is unused)
@@ -772,10 +774,6 @@ unsafe fn mix_special(c: Ptr, out: Out, n: usize, div_freq: u32, kind: u8) {
 #[cfg_attr(target_arch = "arm", instruction_set(arm::a32))]
 unsafe fn stop_special(c: Ptr) {
     unsafe { w8(c, C_STATUS, 0) }
-}
-
-unsafe extern "C" {
-    static gDeltaEncodingTable: u8;
 }
 
 #[cfg(test)]

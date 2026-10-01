@@ -2,6 +2,7 @@
 //! `CallBattlePalaceFunction` with the function id in `gSpecialVar_0x8004`.
 
 use crate::Random;
+use crate::battle_setup::gTrainerBattleOpponent_A;
 use crate::ffi::{
     VarGet, VarSet, gSpecialVar_0x8004, gSpecialVar_0x8005, gSpecialVar_0x8006, gSpecialVar_Result,
     gStringVar1,
@@ -41,21 +42,50 @@ static LATE_PRIZES: [u16; 9] = [0xb3, 0xb4, 0xb7, 0xc8, 0xb9, 0xbb, 0xc4, 0xc6, 
 /// `sWinStreakFlags[battleMode][lvlMode]`, flattened.
 static WIN_STREAK_FLAGS: [u32; 4] = [0x10, 0x20, 0x40_0000, 0x80_0000];
 
-unsafe extern "C" {
-    static mut gTrainerBattleOpponent_A: u16;
-    static gFacilityTrainers: *const u8;
-
-    fn SetDynamicWarp(unused: i32, map_group: i8, map_num: i8, warp_id: i8);
-    fn SetBattleFacilityTrainerGfxId(trainer_id: u16, temp_var_id: u8);
-    fn FrontierSpeechToString(words: *const u16);
-    fn SaveGameFrontier();
-    fn AddBagItem(item_id: u16, count: u16) -> u8;
-    fn CopyItemName(item_id: u16, dst: *mut u8);
+/// `SetDynamicWarp` with this module's view of its types.
+#[inline]
+unsafe fn SetDynamicWarp(a0: i32, a1: i8, a2: i8, a3: i8) {
+    unsafe {
+        crate::overworld::SetDynamicWarp(a0, a1, a2, a3);
+    }
+}
+/// `SetBattleFacilityTrainerGfxId` with this module's view of its types.
+#[inline]
+unsafe fn SetBattleFacilityTrainerGfxId(a0: u16, a1: u8) {
+    unsafe {
+        crate::battle_tower::SetBattleFacilityTrainerGfxId(a0, a1);
+    }
+}
+/// `FrontierSpeechToString` with this module's view of its types.
+#[inline]
+unsafe fn FrontierSpeechToString(a0: *const u16) {
+    unsafe {
+        crate::battle_tower::FrontierSpeechToString(a0 as _);
+    }
+}
+/// `SaveGameFrontier` with this module's view of its types.
+#[inline]
+unsafe fn SaveGameFrontier() {
+    unsafe {
+        crate::frontier_util::SaveGameFrontier();
+    }
+}
+/// `AddBagItem` with this module's view of its types.
+#[inline]
+unsafe fn AddBagItem(a0: u16, a1: u16) -> u8 {
+    crate::item::AddBagItem(a0, a1)
+}
+/// `CopyItemName` with this module's view of its types.
+#[inline]
+unsafe fn CopyItemName(a0: u16, a1: *mut u8) {
+    unsafe {
+        crate::item::CopyItemName(a0, a1 as _);
+    }
 }
 
 #[inline]
 unsafe fn sb2() -> *mut u8 {
-    unsafe { (&raw const gSaveBlock2Ptr).read() }
+    unsafe { (&raw const gSaveBlock2Ptr).read().cast::<u8>() }
 }
 
 #[inline]
@@ -96,7 +126,7 @@ unsafe fn set_result(value: u16) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CallBattlePalaceFunction() {
+pub unsafe fn CallBattlePalaceFunction() {
     match unsafe { (&raw const gSpecialVar_0x8004).read() } {
         0 => unsafe { init_palace_challenge() },
         1 => unsafe { get_palace_data() },
@@ -125,7 +155,7 @@ unsafe fn init_palace_challenge() {
         unsafe { streak(SB2_PALACE_WIN_STREAKS, battle_mode, lvl_mode).write(0) };
     }
 
-    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read() };
+    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read().cast::<u8>() };
     let map_group = unsafe { sb1.add(SB1_LOCATION_MAP_GROUP).read() } as i8;
     let map_num = unsafe { sb1.add(SB1_LOCATION_MAP_NUM).read() } as i8;
     unsafe { SetDynamicWarp(0, map_group, map_num, WARP_ID_NONE) };
@@ -175,7 +205,7 @@ unsafe fn get_palace_comment_id() {
     let lvl_mode = unsafe { lvl_mode() };
     let current = unsafe { streak(SB2_PALACE_WIN_STREAKS, battle_mode, lvl_mode).read() };
     let comment = if current < 50 {
-        let roll = unsafe { Random() };
+        let roll = Random();
         roll % 3
     } else if current < 99 {
         3
@@ -186,7 +216,7 @@ unsafe fn get_palace_comment_id() {
 }
 
 unsafe fn set_palace_opponent() {
-    let roll = u32::from(unsafe { Random() }) % 255;
+    let roll = u32::from(Random()) % 255;
     let opponent = (5 * roll / 64) as u16;
     unsafe { (&raw mut gTrainerBattleOpponent_A).write(opponent) };
     unsafe { SetBattleFacilityTrainerGfxId(opponent, 0) };
@@ -195,7 +225,10 @@ unsafe fn set_palace_opponent() {
 unsafe fn buffer_opponent_intro_speech() {
     let opponent = unsafe { (&raw const gTrainerBattleOpponent_A).read() };
     if opponent < FRONTIER_TRAINERS_COUNT {
-        let trainers = unsafe { (&raw const gFacilityTrainers).read() };
+        let trainers = unsafe {
+            (&raw const (*(&raw const crate::battle_tower::gFacilityTrainers).cast::<*const u8>()))
+                .read()
+        };
         let trainer = unsafe { trainers.add(usize::from(opponent) * FRONTIER_TRAINER_SIZE) };
         unsafe { FrontierSpeechToString(trainer.add(FRONTIER_TRAINER_SPEECH_BEFORE).cast()) };
     }
@@ -229,7 +262,7 @@ unsafe fn save_palace_challenge() {
 unsafe fn set_random_palace_prize() {
     let battle_mode = unsafe { battle_mode() };
     let lvl_mode = unsafe { lvl_mode() };
-    let roll = usize::from(unsafe { Random() });
+    let roll = usize::from(Random());
     let prize = if unsafe { streak(SB2_PALACE_WIN_STREAKS, battle_mode, lvl_mode).read() } > 41 {
         LATE_PRIZES[roll % LATE_PRIZES.len()]
     } else {

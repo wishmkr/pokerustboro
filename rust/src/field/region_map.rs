@@ -3,44 +3,141 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::bg::{ResetBgsAndClearDma3BusyFlags, SetBgAttribute, ShowBg};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::{FlagGet, VarGet};
+use crate::field_effect::ReturnToFieldFromFlyMapSelect;
+use crate::field_specials::GetSSTidalLocation;
+use crate::fieldmap::gMapHeader;
+use crate::gpu_regs::{SetGpuReg, SetGpuRegBits};
+use crate::international_string_util::GetStringRightAlignXOffset;
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::m4a::m4aSongNumStart;
+use crate::menu::{
+    ClearScheduledBgCopiesToVram, ClearStdWindowAndFrameToTransparent,
+    DecompressAndCopyTileDataToVram, DoScheduledBgTilemapCopiesToVram,
+    DrawStdFrameWithCustomTileAndPalette, FreeTempTileDataBuffersIfPossible,
+    ScheduleBgCopyTilemapToVram,
+};
+use crate::overworld::{
+    CB2_ReturnToFieldWithOpenMenu, GetMapTypeByGroupAndId, Overworld_GetMapHeaderByGroupAndId,
+    SetWarpDestinationToHealLocation, SetWarpDestinationToMapWarp,
+};
+use crate::palette::{
+    BeginNormalPaletteFade, BlendPalettes, LoadPalette, ResetPaletteFade, TransferPlttBuffer,
+    UpdatePaletteFade,
+};
+use crate::palette::{gPlttBufferFaded, gPlttBufferUnfaded};
+use crate::party_menu::CB2_ReturnToPartyMenuFromFlyMap;
+use crate::secret_base::GetSecretBaseMapName;
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, FreeSpritePaletteByTag,
+    FreeSpriteTileRanges, FreeSpriteTilesByTag, IndexOfSpritePaletteTag, LoadOam,
+    ProcessSpriteCopyRequests, ResetSpriteData,
+};
+use crate::string_util::StringFill;
+use crate::string_util::{StringCopy, StringLength};
+use crate::text::DeactivateAllTextPrinters;
+use crate::text_window::LoadUserWindowBorderGfx;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, PutWindowTilemap,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LoadSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
+    unsafe { crate::sprite::LoadSpritePalette(a0 as _) }
+}
+/// `LoadSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
+    unsafe { crate::sprite::LoadSpriteSheet(a0 as _) }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+// The C's names for task and sprite data slots.
+const sIconMapSec: usize = 0;
+const sY: usize = 0;
+const sFlickerTimer: usize = 1;
+const sX: usize = 1;
+const sVisible: usize = 2;
+const sTimer: usize = 7;
 // Data tables (translate with cdata.py): sRegionMapCursorPal sRegionMapCursorSmallGfxLZ sRegionMapCursorLargeGfxLZ sRegionMapBg_Pal sRegionMapBg_GfxLZ sRegionMapBg_TilemapLZ sRegionMapPlayerIcon_BrendanPal sRegionMapPlayerIcon_BrendanGfx sRegionMapPlayerIcon_MayPal sRegionMapPlayerIcon_MayGfx sRegionMap_MapSectionLayout sMapName_LITTLEROOT_TOWN sMapName_OLDALE_TOWN sMapName_DEWFORD_TOWN sMapName_LAVARIDGE_TOWN sMapName_FALLARBOR_TOWN sMapName_VERDANTURF_TOWN sMapName_PACIFIDLOG_TOWN sMapName_PETALBURG_CITY sMapName_SLATEPORT_CITY sMapName_MAUVILLE_CITY sMapName_RUSTBORO_CITY sMapName_FORTREE_CITY sMapName_LILYCOVE_CITY sMapName_MOSSDEEP_CITY sMapName_SOOTOPOLIS_CITY sMapName_EVER_GRANDE_CITY sMapName_ROUTE_101 sMapName_ROUTE_102 sMapName_ROUTE_103 sMapName_ROUTE_104 sMapName_ROUTE_105 sMapName_ROUTE_106 sMapName_ROUTE_107 sMapName_ROUTE_108 sMapName_ROUTE_109 sMapName_ROUTE_110 sMapName_ROUTE_111 sMapName_ROUTE_112 sMapName_ROUTE_113 sMapName_ROUTE_114 sMapName_ROUTE_115 sMapName_ROUTE_116 sMapName_ROUTE_117 sMapName_ROUTE_118 sMapName_ROUTE_119 sMapName_ROUTE_120 sMapName_ROUTE_121 sMapName_ROUTE_122 sMapName_ROUTE_123 sMapName_ROUTE_124 sMapName_ROUTE_125 sMapName_ROUTE_126 sMapName_ROUTE_127 sMapName_ROUTE_128 sMapName_ROUTE_129 sMapName_ROUTE_130 sMapName_ROUTE_131 sMapName_ROUTE_132 sMapName_ROUTE_133 sMapName_ROUTE_134 sMapName_UNDERWATER sMapName_GRANITE_CAVE sMapName_MT__CHIMNEY sMapName_SAFARI_ZONE sMapName_BATTLE_FRONTIER sMapName_PETALBURG_WOODS sMapName_RUSTURF_TUNNEL sMapName_ABANDONED_SHIP sMapName_NEW_MAUVILLE sMapName_METEOR_FALLS sMapName_MT__PYRE sMapName__AQUA__HIDEOUT_Clone sMapName_SHOAL_CAVE sMapName_SEAFLOOR_CAVERN sMapName_VICTORY_ROAD sMapName_MIRAGE_ISLAND sMapName_CAVE_OF_ORIGIN sMapName_SOUTHERN_ISLAND sMapName_FIERY_PATH sMapName_JAGGED_PASS sMapName_SEALED_CHAMBER sMapName_SCORCHED_SLAB sMapName_ISLAND_CAVE sMapName_DESERT_RUINS sMapName_ANCIENT_TOMB sMapName_INSIDE_OF_TRUCK sMapName_SKY_PILLAR sMapName_SECRET_BASE sMapName_ sMapName_PALLET_TOWN sMapName_VIRIDIAN_CITY sMapName_PEWTER_CITY sMapName_CERULEAN_CITY sMapName_LAVENDER_TOWN sMapName_VERMILION_CITY sMapName_CELADON_CITY sMapName_FUCHSIA_CITY sMapName_CINNABAR_ISLAND sMapName_INDIGO_PLATEAU sMapName_SAFFRON_CITY sMapName_ROUTE_4_Clone sMapName_ROUTE_10_Clone sMapName_ROUTE_1 sMapName_ROUTE_2 sMapName_ROUTE_3 sMapName_ROUTE_4 sMapName_ROUTE_5 sMapName_ROUTE_6 sMapName_ROUTE_7 sMapName_ROUTE_8 sMapName_ROUTE_9 sMapName_ROUTE_10 sMapName_ROUTE_11 sMapName_ROUTE_12 sMapName_ROUTE_13 sMapName_ROUTE_14 sMapName_ROUTE_15 sMapName_ROUTE_16 sMapName_ROUTE_17 sMapName_ROUTE_18 sMapName_ROUTE_19 sMapName_ROUTE_20 sMapName_ROUTE_21 sMapName_ROUTE_22 sMapName_ROUTE_23 sMapName_ROUTE_24 sMapName_ROUTE_25 sMapName_VIRIDIAN_FOREST sMapName_MT__MOON sMapName_S_S__ANNE sMapName_UNDERGROUND_PATH sMapName_UNDERGROUND_PATH_Clone sMapName_DIGLETT_S_CAVE sMapName_VICTORY_ROAD_Clone sMapName_ROCKET_HIDEOUT sMapName_SILPH_CO_ sMapName_POK__MON_MANSION sMapName_SAFARI_ZONE_Clone sMapName_POK__MON_LEAGUE sMapName_ROCK_TUNNEL sMapName_SEAFOAM_ISLANDS sMapName_POK__MON_TOWER sMapName_CERULEAN_CAVE sMapName_POWER_PLANT sMapName_ONE_ISLAND sMapName_TWO_ISLAND sMapName_THREE_ISLAND sMapName_FOUR_ISLAND sMapName_FIVE_ISLAND sMapName_SEVEN_ISLAND sMapName_SIX_ISLAND sMapName_KINDLE_ROAD sMapName_TREASURE_BEACH sMapName_CAPE_BRINK sMapName_BOND_BRIDGE sMapName_THREE_ISLE_PORT sMapName_SEVII_ISLE_6 sMapName_SEVII_ISLE_7 sMapName_SEVII_ISLE_8 sMapName_SEVII_ISLE_9 sMapName_RESORT_GORGEOUS sMapName_WATER_LABYRINTH sMapName_FIVE_ISLE_MEADOW sMapName_MEMORIAL_PILLAR sMapName_OUTCAST_ISLAND sMapName_GREEN_PATH sMapName_WATER_PATH sMapName_RUIN_VALLEY sMapName_TRAINER_TOWER sMapName_CANYON_ENTRANCE sMapName_SEVAULT_CANYON sMapName_TANOBY_RUINS sMapName_SEVII_ISLE_22 sMapName_SEVII_ISLE_23 sMapName_SEVII_ISLE_24 sMapName_NAVEL_ROCK sMapName_MT__EMBER sMapName_BERRY_FOREST sMapName_ICEFALL_CAVE sMapName_ROCKET_WAREHOUSE sMapName_TRAINER_TOWER_Clone sMapName_DOTTED_HOLE sMapName_LOST_CAVE sMapName_PATTERN_BUSH sMapName_ALTERING_CAVE sMapName_TANOBY_CHAMBERS sMapName_THREE_ISLE_PATH sMapName_TANOBY_KEY sMapName_BIRTH_ISLAND sMapName_MONEAN_CHAMBER sMapName_LIPTOO_CHAMBER sMapName_WEEPTH_CHAMBER sMapName_DILFORD_CHAMBER sMapName_SCUFIB_CHAMBER sMapName_RIXY_CHAMBER sMapName_VIAPOIS_CHAMBER sMapName_EMBER_SPA sMapName_SPECIAL_AREA sMapName_AQUA_HIDEOUT sMapName_MAGMA_HIDEOUT sMapName_MIRAGE_TOWER sMapName_FARAWAY_ISLAND sMapName_ARTISAN_CAVE sMapName_MARINE_CAVE sMapName_TERRA_CAVE sMapName_DESERT_UNDERPASS sMapName_TRAINER_HILL gRegionMapEntries sRegionMap_SpecialPlaceLocations sMarineCaveMapSecIds sTerraOrMarineCaveMapSecIds sMarineCaveLocationCoords sMapSecAquaHideoutOld sRegionMapCursorOam sRegionMapCursorAnim1 sRegionMapCursorAnim2 sRegionMapCursorAnimTable sRegionMapCursorSpritePalette sRegionMapCursorSpriteTemplate sRegionMapPlayerIconOam sRegionMapPlayerIconAnim1 sRegionMapPlayerIconAnimTable sMapSecIdsOffMap sRegionMapFramePal sRegionMapFrameGfxLZ sRegionMapFrameTilemapLZ sFlyTargetIcons_Pal sFlyTargetIcons_Gfx sMapHealLocations sEverGrandeCityNames sMultiNameFlyDestinations sFlyMapBgTemplates sFlyMapWindowTemplates sFlyTargetIconsSpritePalette sRedOutlineFlyDestinations sFlyDestIcon_OamData sFlyDestIcon_Anim_8x8CanFly sFlyDestIcon_Anim_16x8CanFly sFlyDestIcon_Anim_8x16CanFly sFlyDestIcon_Anim_8x8CantFly sFlyDestIcon_Anim_16x8CantFly sFlyDestIcon_Anim_8x16CantFly sFlyDestIcon_Anim_RedOutline sFlyDestIcon_Anims sFlyDestIconSpriteTemplate
 
 /// `__typeof__(*((__typeof__(sFlyMap))0))`
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct typeof___sFlyMap_0_t {
-    pub callback: Option<unsafe extern "C" fn()>,
+    pub callback: Option<unsafe fn()>,
     pub state: u16,
     pub mapSecId: u16,
     pub regionMap: RegionMap,
@@ -160,115 +257,72 @@ static sTerraOrMarineCaveMapSecIds: Table<CArray<u16, 16>> =
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sRegionMap: *mut RegionMap = null_mut();
 pub(crate) static mut sFlyMap: *mut typeof___sFlyMap_0_t = null_mut();
-pub(crate) static mut sDrawFlyDestTextWindow: u32 = 0;
+pub(crate) static sDrawFlyDestTextWindow: crate::global::Global<u32> =
+    crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static gDummySpriteAffineAnimTable: CArray<*mut AffineAnimCmd, 0>;
-    static mut gMain: Main;
-    static mut gMapHeader: MapHeader;
-    static mut gPlttBufferFaded: CArray<u16, 512>;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static gSineTable: CArray<i16, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static gText_Ferry: CArray<u8, 0>;
-    static gText_FlyToWhere: CArray<u8, 0>;
-    static gText_Hideout: CArray<u8, 0>;
-    static gText_SecretBase: CArray<u8, 0>;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn BuildOamBuffer();
-    fn CB2_ReturnToFieldWithOpenMenu();
-    fn CB2_ReturnToPartyMenuFromFlyMap();
-    fn ClearScheduledBgCopiesToVram();
-    fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DestroySprite(a0: *mut Sprite);
-    fn DoScheduledBgTilemapCopiesToVram();
-    fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeSpritePaletteByTag(a0: u16);
-    fn FreeSpriteTileRanges();
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn GetMapTypeByGroupAndId(a0: i8, a1: i8) -> u8;
-    fn GetSSTidalLocation(a0: *mut i8, a1: *mut i8, a2: *mut i16, a3: *mut i16) -> u8;
-    fn GetSecretBaseMapName(a0: *mut u8) -> *mut u8;
-    fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn IndexOfSpritePaletteTag(a0: u16) -> u8;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void);
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
-    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn Overworld_GetMapHeaderByGroupAndId(a0: u16, a1: u16) -> *mut MapHeader;
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ReturnToFieldFromFlyMapSelect();
-    fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn SetBgAttribute(a0: u8, a1: u8, a2: u8);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetGpuRegBits(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetWarpDestinationToHealLocation(a0: u8);
-    fn SetWarpDestinationToMapWarp(a0: i8, a1: i8, a2: i8);
-    fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringFill(a0: *mut u8, a1: u8, a2: u16) -> *mut u8;
-    fn StringLength(a0: *mut u8) -> u16;
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
-    fn VarGet(a0: u16) -> u16;
-    fn m4aSongNumStart(a0: u16);
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `LZ77UnCompVram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
+    }
+}
+/// `LZ77UnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitRegionMap(regionMap: *mut RegionMap, zoomed: u8) {
+pub unsafe fn InitRegionMap(regionMap: *mut RegionMap, zoomed: u8) {
     InitRegionMapData(regionMap, null_mut(), zoomed);
     while LoadRegionMapGfx() != 0 {}
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitRegionMapData(
-    regionMap: *mut RegionMap,
-    template: *mut BgTemplate,
-    zoomed: u8,
-) {
+pub unsafe fn InitRegionMapData(regionMap: *mut RegionMap, template: *mut BgTemplate, zoomed: u8) {
     sRegionMap = regionMap;
     (*sRegionMap).initStep = 0;
     (*sRegionMap).zoomed = zoomed;
@@ -289,15 +343,13 @@ pub unsafe extern "C" fn InitRegionMapData(
         (*sRegionMap).bgManaged = FALSE;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowRegionMapForPokedexAreaScreen(regionMap: *mut RegionMap) {
+pub unsafe fn ShowRegionMapForPokedexAreaScreen(regionMap: *mut RegionMap) {
     sRegionMap = regionMap;
     InitMapBasedOnPlayerLocation();
     (*sRegionMap).playerIconSpritePosX = (*sRegionMap).cursorPosX;
     (*sRegionMap).playerIconSpritePosY = (*sRegionMap).cursorPosY;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadRegionMapGfx() -> u8 {
+pub unsafe fn LoadRegionMapGfx() -> u8 {
     match (*sRegionMap).initStep {
         0 => {
             if (*sRegionMap).bgManaged != 0 {
@@ -311,7 +363,7 @@ pub unsafe extern "C" fn LoadRegionMapGfx() -> u8 {
             } else {
                 LZ77UnCompVram(
                     sRegionMapBg_GfxLZ.as_ptr().cast_mut(),
-                    0x6008000 as usize as *mut u16 as *mut c_void,
+                    0x6008000_usize as *mut u16 as *mut c_void,
                 );
             }
         }
@@ -329,7 +381,7 @@ pub unsafe extern "C" fn LoadRegionMapGfx() -> u8 {
             } else {
                 LZ77UnCompVram(
                     sRegionMapBg_TilemapLZ.as_ptr().cast_mut(),
-                    0x600e000 as usize as *mut u16 as *mut c_void,
+                    0x600e000_usize as *mut u16 as *mut c_void,
                 );
             }
         }
@@ -411,10 +463,9 @@ pub unsafe extern "C" fn LoadRegionMapGfx() -> u8 {
         }
     }
     (*sRegionMap).initStep += 1;
-    return TRUE;
+    TRUE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BlendRegionMap(color: u16, coeff: u32) {
+pub unsafe fn BlendRegionMap(color: u16, coeff: u32) {
     BlendPalettes(0x380, coeff as u8, color);
     CpuSet(
         &raw mut gPlttBufferFaded[112] as *mut c_void,
@@ -423,7 +474,7 @@ pub unsafe extern "C" fn BlendRegionMap(color: u16, coeff: u32) {
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeRegionMapIconResources() {
+pub unsafe fn FreeRegionMapIconResources() {
     if !(*sRegionMap).cursorSprite.is_null() {
         DestroySprite((*sRegionMap).cursorSprite);
         FreeSpriteTilesByTag((*sRegionMap).cursorTileTag);
@@ -436,12 +487,11 @@ pub unsafe extern "C" fn FreeRegionMapIconResources() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoRegionMapInputCallback() -> u8 {
-    return (*sRegionMap).inputCallback.unwrap_unchecked()();
+pub unsafe fn DoRegionMapInputCallback() -> u8 {
+    (*sRegionMap).inputCallback.unwrap_unchecked()()
 }
-pub(crate) unsafe extern "C" fn ProcessRegionMapInput_Full() -> u8 {
-    let mut input: u8 = 0;
-    input = MAP_INPUT_NONE;
+pub(crate) unsafe fn ProcessRegionMapInput_Full() -> u8 {
+    let mut input: u8 = MAP_INPUT_NONE;
     (*sRegionMap).cursorDeltaX = 0;
     (*sRegionMap).cursorDeltaY = 0;
     if gMain.heldKeys as i32 & DPAD_UP != 0 && (*sRegionMap).cursorPosY > MAPCURSOR_Y_MIN {
@@ -469,10 +519,9 @@ pub(crate) unsafe extern "C" fn ProcessRegionMapInput_Full() -> u8 {
         (*sRegionMap).cursorMovementFrameCounter = 4;
         (*sRegionMap).inputCallback = Some(MoveRegionMapCursor_Full);
     }
-    return input;
+    input
 }
-pub(crate) unsafe extern "C" fn MoveRegionMapCursor_Full() -> u8 {
-    let mut mapSecId: u16 = 0;
+pub(crate) unsafe fn MoveRegionMapCursor_Full() -> u8 {
     if (*sRegionMap).cursorMovementFrameCounter != 0 {
         return MAP_INPUT_MOVE_CONT;
     }
@@ -488,7 +537,7 @@ pub(crate) unsafe extern "C" fn MoveRegionMapCursor_Full() -> u8 {
     if (*sRegionMap).cursorDeltaY < 0 {
         (*sRegionMap).cursorPosY -= 1;
     }
-    mapSecId = GetMapSecIdAt((*sRegionMap).cursorPosX, (*sRegionMap).cursorPosY);
+    let mapSecId: u16 = GetMapSecIdAt((*sRegionMap).cursorPosX, (*sRegionMap).cursorPosY);
     (*sRegionMap).mapSecType = GetMapsecType(mapSecId);
     if mapSecId != (*sRegionMap).mapSecId {
         (*sRegionMap).mapSecId = mapSecId;
@@ -500,11 +549,10 @@ pub(crate) unsafe extern "C" fn MoveRegionMapCursor_Full() -> u8 {
     }
     GetPositionOfCursorWithinMapSec();
     (*sRegionMap).inputCallback = Some(ProcessRegionMapInput_Full);
-    return MAP_INPUT_MOVE_END;
+    MAP_INPUT_MOVE_END
 }
-pub(crate) unsafe extern "C" fn ProcessRegionMapInput_Zoomed() -> u8 {
-    let mut input: u8 = 0;
-    input = MAP_INPUT_NONE;
+pub(crate) unsafe fn ProcessRegionMapInput_Zoomed() -> u8 {
+    let mut input: u8 = MAP_INPUT_NONE;
     (*sRegionMap).zoomedCursorDeltaX = 0;
     (*sRegionMap).zoomedCursorDeltaY = 0;
     if gMain.heldKeys as i32 & DPAD_UP != 0 && (*sRegionMap).scrollY > -52 {
@@ -533,9 +581,9 @@ pub(crate) unsafe extern "C" fn ProcessRegionMapInput_Zoomed() -> u8 {
         (*sRegionMap).inputCallback = Some(MoveRegionMapCursor_Zoomed);
         (*sRegionMap).zoomedCursorMovementFrameCounter = 0;
     }
-    return input;
+    input
 }
-pub(crate) unsafe extern "C" fn MoveRegionMapCursor_Zoomed() -> u8 {
+pub(crate) unsafe fn MoveRegionMapCursor_Zoomed() -> u8 {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
     let mut mapSecId: u16 = 0;
@@ -565,10 +613,9 @@ pub(crate) unsafe extern "C" fn MoveRegionMapCursor_Zoomed() -> u8 {
         (*sRegionMap).inputCallback = Some(ProcessRegionMapInput_Zoomed);
         return MAP_INPUT_MOVE_END;
     }
-    return MAP_INPUT_MOVE_CONT;
+    MAP_INPUT_MOVE_CONT
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetRegionMapDataForZoom() {
+pub unsafe fn SetRegionMapDataForZoom() {
     if (*sRegionMap).zoomed == FALSE {
         (*sRegionMap).scrollY = 0;
         (*sRegionMap).scrollX = 0;
@@ -598,8 +645,7 @@ pub unsafe extern "C" fn SetRegionMapDataForZoom() {
     FreeRegionMapCursorSprite();
     HideRegionMapPlayerIcon();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateRegionMapZoom() -> u8 {
+pub unsafe fn UpdateRegionMapZoom() -> u8 {
     let mut retVal: u8 = 0;
     if (*sRegionMap).unk_06e >= 16 {
         return FALSE;
@@ -664,9 +710,9 @@ pub unsafe extern "C" fn UpdateRegionMapZoom() -> u8 {
         ((*sRegionMap).unk_04c >> 8) as u16,
         0,
     );
-    return retVal;
+    retVal
 }
-pub(crate) unsafe extern "C" fn CalcZoomScrollParams(
+unsafe fn CalcZoomScrollParams(
     scrollX: i16,
     scrollY: i16,
     c: i16,
@@ -675,29 +721,34 @@ pub(crate) unsafe extern "C" fn CalcZoomScrollParams(
     f: u16,
     rotation: u8,
 ) {
-    let mut var1: i32 = 0;
-    let mut var2: i32 = 0;
-    let mut var3: i32 = 0;
-    let mut var4: i32 = 0;
-    (*sRegionMap).bg2pa = (e as i32 * gSineTable[rotation as i32 + 64] as i32 >> 8) as u32;
-    (*sRegionMap).bg2pc = (e as i32 * -(gSineTable[rotation] as i32) >> 8) as u32;
-    (*sRegionMap).bg2pb = (f as i32 * gSineTable[rotation] as i32 >> 8) as u32;
-    (*sRegionMap).bg2pd = (f as i32 * gSineTable[rotation as i32 + 64] as i32 >> 8) as u32;
-    var1 = ((scrollX as i32) << 8) + ((c as i32) << 8);
-    var2 = d as i32 * (*sRegionMap).bg2pb as i32 + (*sRegionMap).bg2pa as i32 * c as i32;
+    (*sRegionMap).bg2pa = ((e as i32
+        * (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[rotation as i32 + 64]
+            as i32)
+        >> 8) as u32;
+    (*sRegionMap).bg2pc = ((e as i32
+        * -((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[rotation] as i32))
+        >> 8) as u32;
+    (*sRegionMap).bg2pb = ((f as i32
+        * (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[rotation] as i32)
+        >> 8) as u32;
+    (*sRegionMap).bg2pd = ((f as i32
+        * (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[rotation as i32 + 64]
+            as i32)
+        >> 8) as u32;
+    let var1: i32 = ((scrollX as i32) << 8) + ((c as i32) << 8);
+    let var2: i32 = d as i32 * (*sRegionMap).bg2pb as i32 + (*sRegionMap).bg2pa as i32 * c as i32;
     (*sRegionMap).bg2x = var1 - var2;
-    var3 = ((scrollY as i32) << 8) + ((d as i32) << 8);
-    var4 = (*sRegionMap).bg2pd as i32 * d as i32 + (*sRegionMap).bg2pc as i32 * c as i32;
+    let var3: i32 = ((scrollY as i32) << 8) + ((d as i32) << 8);
+    let var4: i32 = (*sRegionMap).bg2pd as i32 * d as i32 + (*sRegionMap).bg2pc as i32 * c as i32;
     (*sRegionMap).bg2y = var3 - var4;
     (*sRegionMap).needUpdateVideoRegs = TRUE;
 }
-pub(crate) unsafe extern "C" fn RegionMap_SetBG2XAndBG2Y(x: i16, y: i16) {
+unsafe fn RegionMap_SetBG2XAndBG2Y(x: i16, y: i16) {
     (*sRegionMap).bg2x = ((x as i32) << 8) + 0x1c00;
     (*sRegionMap).bg2y = ((y as i32) << 8) + 0x2400;
     (*sRegionMap).needUpdateVideoRegs = TRUE;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateRegionMapVideoRegs() {
+pub unsafe fn UpdateRegionMapVideoRegs() {
     if (*sRegionMap).needUpdateVideoRegs != 0 {
         SetGpuReg(REG_OFFSET_BG2PA, (*sRegionMap).bg2pa as u16);
         SetGpuReg(REG_OFFSET_BG2PB, (*sRegionMap).bg2pb as u16);
@@ -710,8 +761,7 @@ pub unsafe extern "C" fn UpdateRegionMapVideoRegs() {
         (*sRegionMap).needUpdateVideoRegs = FALSE;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokedexAreaScreen_UpdateRegionMapVariablesAndVideoRegs(x: i16, y: i16) {
+pub unsafe fn PokedexAreaScreen_UpdateRegionMapVariablesAndVideoRegs(x: i16, y: i16) {
     CalcZoomScrollParams(x, y, 0x38, 0x48, 0x100, 0x100, 0);
     UpdateRegionMapVideoRegs();
     if !(*sRegionMap).playerIconSprite.is_null() {
@@ -719,22 +769,22 @@ pub unsafe extern "C" fn PokedexAreaScreen_UpdateRegionMapVariablesAndVideoRegs(
         (*(*sRegionMap).playerIconSprite).y2 = -y;
     }
 }
-pub(crate) unsafe extern "C" fn GetMapSecIdAt(mut x: u16, mut y: u16) -> u16 {
-    if y < MAPCURSOR_Y_MIN || y > MAPCURSOR_Y_MAX || x < MAPCURSOR_X_MIN || x > MAPCURSOR_X_MAX {
+unsafe fn GetMapSecIdAt(mut x: u16, mut y: u16) -> u16 {
+    if !(MAPCURSOR_Y_MIN..=MAPCURSOR_Y_MAX).contains(&y)
+        || !(MAPCURSOR_X_MIN..=MAPCURSOR_X_MAX).contains(&x)
+    {
         return MAPSEC_NONE;
     }
     y -= MAPCURSOR_Y_MIN;
     x -= MAPCURSOR_X_MIN;
-    return sRegionMap_MapSectionLayout[y][x] as u16;
+    sRegionMap_MapSectionLayout[y][x] as u16
 }
-pub(crate) unsafe extern "C" fn InitMapBasedOnPlayerLocation() {
+unsafe fn InitMapBasedOnPlayerLocation() {
     let mut mapHeader: *mut MapHeader = null_mut();
     let mut mapWidth: u16 = 0;
     let mut mapHeight: u16 = 0;
     let mut x: u16 = 0;
     let mut y: u16 = 0;
-    let mut dimensionScale: u16 = 0;
-    let mut xOnMap: u16 = 0;
     let mut warp: *mut WarpData = null_mut();
     if (*gSaveBlock1Ptr).location.mapGroup == 25
         && ((*gSaveBlock1Ptr).location.mapNum == 41
@@ -821,8 +871,8 @@ pub(crate) unsafe extern "C" fn InitMapBasedOnPlayerLocation() {
             }
         }
     }
-    xOnMap = x;
-    dimensionScale = div_i32(
+    let xOnMap: u16 = x;
+    let mut dimensionScale: u16 = div_i32(
         mapWidth as i32,
         gRegionMapEntries[(*sRegionMap).mapSecId].width as i32,
     ) as u16;
@@ -892,17 +942,15 @@ pub(crate) unsafe extern "C" fn InitMapBasedOnPlayerLocation() {
     (*sRegionMap).cursorPosY =
         gRegionMapEntries[(*sRegionMap).mapSecId].y as u16 + y + MAPCURSOR_Y_MIN;
 }
-pub(crate) unsafe extern "C" fn RegionMap_InitializeStateBasedOnSSTidalLocation() {
-    let mut y: u16 = 0;
-    let mut x: u16 = 0;
+unsafe fn RegionMap_InitializeStateBasedOnSSTidalLocation() {
     let mut mapGroup: u8 = 0;
     let mut mapNum: u8 = 0;
     let mut dimensionScale: u16 = 0;
     let mut xOnMap: i16 = 0;
     let mut yOnMap: i16 = 0;
     let mut mapHeader: *mut MapHeader = null_mut();
-    y = 0;
-    x = 0;
+    let mut y: u16 = 0;
+    let mut x: u16 = 0;
     match GetSSTidalLocation(
         &raw mut mapGroup as *mut i8,
         &raw mut mapNum as *mut i8,
@@ -954,7 +1002,7 @@ pub(crate) unsafe extern "C" fn RegionMap_InitializeStateBasedOnSSTidalLocation(
     (*sRegionMap).cursorPosY =
         gRegionMapEntries[(*sRegionMap).mapSecId].y as u16 + y + MAPCURSOR_Y_MIN;
 }
-pub(crate) unsafe extern "C" fn GetMapsecType(mapSecId: u16) -> u8 {
+unsafe fn GetMapsecType(mapSecId: u16) -> u8 {
     match mapSecId {
         MAPSEC_NONE => {
             return MAPSECTYPE_NONE;
@@ -1091,65 +1139,55 @@ pub(crate) unsafe extern "C" fn GetMapsecType(mapSecId: u16) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRegionMapSecIdAt(x: u16, y: u16) -> u16 {
-    return GetMapSecIdAt(x, y);
+pub unsafe fn GetRegionMapSecIdAt(x: u16, y: u16) -> u16 {
+    GetMapSecIdAt(x, y)
 }
-pub(crate) unsafe extern "C" fn CorrectSpecialMapSecId_Internal(mapSecId: u16) -> u16 {
-    let mut i: u32 = 0;
-    i = 0;
-    while i < 3 {
+unsafe fn CorrectSpecialMapSecId_Internal(mapSecId: u16) -> u16 {
+    for i in 0..3u32 {
         if sMarineCaveMapSecIds[i] == mapSecId {
             return GetTerraOrMarineCaveMapSecId();
         }
-        i += 1;
     }
-    i = 0;
+    let mut i: u32 = 0;
     while sRegionMap_SpecialPlaceLocations[i][0] != MAPSEC_NONE {
         if sRegionMap_SpecialPlaceLocations[i][0] == mapSecId {
             return sRegionMap_SpecialPlaceLocations[i][1];
         }
         i += 1;
     }
-    return mapSecId;
+    mapSecId
 }
-pub(crate) unsafe extern "C" fn GetTerraOrMarineCaveMapSecId() -> u16 {
-    let mut idx: i16 = 0;
-    idx = VarGet(VAR_ABNORMAL_WEATHER_LOCATION) as i16 - 1;
-    if idx < 0 || idx > 15 {
+unsafe fn GetTerraOrMarineCaveMapSecId() -> u16 {
+    let mut idx: i16 = VarGet(VAR_ABNORMAL_WEATHER_LOCATION) as i16 - 1;
+    if !(0..=15).contains(&idx) {
         idx = 0;
     }
-    return sTerraOrMarineCaveMapSecIds[idx];
+    sTerraOrMarineCaveMapSecIds[idx]
 }
-pub(crate) unsafe extern "C" fn GetMarineCaveCoords(x: *mut u16, y: *mut u16) {
-    let mut idx: u16 = 0;
-    idx = VarGet(VAR_ABNORMAL_WEATHER_LOCATION);
-    if idx < MARINE_CAVE_LOCATIONS_START || idx > ABNORMAL_WEATHER_LOCATIONS {
+unsafe fn GetMarineCaveCoords(x: *mut u16, y: *mut u16) {
+    let mut idx: u16 = VarGet(VAR_ABNORMAL_WEATHER_LOCATION);
+    if !(MARINE_CAVE_LOCATIONS_START..=ABNORMAL_WEATHER_LOCATIONS).contains(&idx) {
         idx = MARINE_CAVE_LOCATIONS_START;
     }
     idx -= MARINE_CAVE_LOCATIONS_START;
     *x = sMarineCaveLocationCoords[idx].x + MAPCURSOR_X_MIN;
     *y = sMarineCaveLocationCoords[idx].y + MAPCURSOR_Y_MIN;
 }
-pub(crate) unsafe extern "C" fn IsPlayerInAquaHideout(mapSecId: u8) -> u32 {
-    let mut i: u32 = 0;
-    i = 0;
-    while i < 1 {
+unsafe fn IsPlayerInAquaHideout(mapSecId: u8) -> u32 {
+    for i in 0..1u32 {
         if sMapSecAquaHideoutOld[i] == mapSecId {
             return TRUE as u32;
         }
-        i += 1;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CorrectSpecialMapSecId(mapSecId: u16) -> u16 {
-    return CorrectSpecialMapSecId_Internal(mapSecId);
+pub unsafe fn CorrectSpecialMapSecId(mapSecId: u16) -> u16 {
+    CorrectSpecialMapSecId_Internal(mapSecId)
 }
-pub(crate) unsafe extern "C" fn GetPositionOfCursorWithinMapSec() {
+unsafe fn GetPositionOfCursorWithinMapSec() {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
     let mut posWithinMapSec: u16 = 0;
@@ -1182,8 +1220,7 @@ pub(crate) unsafe extern "C" fn GetPositionOfCursorWithinMapSec() {
     }
     (*sRegionMap).posWithinMapSec = posWithinMapSec as u8;
 }
-pub(crate) unsafe extern "C" fn RegionMap_IsMapSecIdInNextRow(mut y: u16) -> u8 {
-    let mut x: u16 = 0;
+unsafe fn RegionMap_IsMapSecIdInNextRow(mut y: u16) -> u8 {
     if ({
         let t1 = y;
         y -= 1;
@@ -1192,31 +1229,28 @@ pub(crate) unsafe extern "C" fn RegionMap_IsMapSecIdInNextRow(mut y: u16) -> u8 
     {
         return FALSE;
     }
-    x = MAPCURSOR_X_MIN;
+    let mut x: u16 = MAPCURSOR_X_MIN;
     while x <= MAPCURSOR_X_MAX {
         if GetMapSecIdAt(x, y) == (*sRegionMap).mapSecId {
             return TRUE;
         }
         x += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SpriteCB_CursorMapFull(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_CursorMapFull(sprite: *mut Sprite) {
     if (*sRegionMap).cursorMovementFrameCounter != 0 {
         (*sprite).x += 2 * (*sRegionMap).cursorDeltaX as i16;
         (*sprite).y += 2 * (*sRegionMap).cursorDeltaY as i16;
         (*sRegionMap).cursorMovementFrameCounter -= 1;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_CursorMapZoomed(sprite: *mut Sprite) {}
+pub(crate) fn SpriteCB_CursorMapZoomed(sprite: *mut Sprite) {}
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateRegionMapCursor(tileTag: u16, paletteTag: u16) {
-    let mut spriteId: u8 = 0;
-    let mut template: SpriteTemplate = zeroed();
-    let mut palette: SpritePalette = zeroed();
+pub unsafe fn CreateRegionMapCursor(tileTag: u16, paletteTag: u16) {
     let mut sheet: SpriteSheet = zeroed();
-    palette = *sRegionMapCursorSpritePalette;
-    template = *sRegionMapCursorSpriteTemplate;
+    let mut palette: SpritePalette = *sRegionMapCursorSpritePalette;
+    let mut template: SpriteTemplate = *sRegionMapCursorSpriteTemplate;
     sheet.tag = tileTag;
     template.tileTag = tileTag;
     (*sRegionMap).cursorTileTag = tileTag;
@@ -1234,7 +1268,7 @@ pub unsafe extern "C" fn CreateRegionMapCursor(tileTag: u16, paletteTag: u16) {
     }
     LoadSpriteSheet(&raw mut sheet);
     LoadSpritePalette(&raw mut palette);
-    spriteId = CreateSprite(&raw mut template, 56, 72, 0);
+    let spriteId: u8 = CreateSprite(&raw mut template, 56, 72, 0);
     if spriteId != MAX_SPRITES {
         (*sRegionMap).cursorSprite = &raw mut gSprites[spriteId];
         if (*sRegionMap).zoomed == TRUE {
@@ -1253,22 +1287,21 @@ pub unsafe extern "C" fn CreateRegionMapCursor(tileTag: u16, paletteTag: u16) {
         (*(*sRegionMap).cursorSprite).data[3] = TRUE as i16;
     }
 }
-pub(crate) unsafe extern "C" fn FreeRegionMapCursorSprite() {
+unsafe fn FreeRegionMapCursorSprite() {
     if !(*sRegionMap).cursorSprite.is_null() {
         DestroySprite((*sRegionMap).cursorSprite);
         FreeSpriteTilesByTag((*sRegionMap).cursorTileTag);
         FreeSpritePaletteByTag((*sRegionMap).cursorPaletteTag);
     }
 }
-pub(crate) unsafe extern "C" fn SetUnkCursorSpriteData() {
+unsafe fn SetUnkCursorSpriteData() {
     (*(*sRegionMap).cursorSprite).data[3] = TRUE as i16;
 }
-pub(crate) unsafe extern "C" fn ClearUnkCursorSpriteData() {
+unsafe fn ClearUnkCursorSpriteData() {
     (*(*sRegionMap).cursorSprite).data[3] = FALSE as i16;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateRegionMapPlayerIcon(tileTag: u16, paletteTag: u16) {
-    let mut spriteId: u8 = 0;
+pub unsafe fn CreateRegionMapPlayerIcon(tileTag: u16, paletteTag: u16) {
     let mut sheet: SpriteSheet = zeroed();
     sheet.data = sRegionMapPlayerIcon_BrendanGfx.as_ptr().cast_mut() as *mut c_void;
     sheet.size = 0x80;
@@ -1282,7 +1315,10 @@ pub unsafe extern "C" fn CreateRegionMapPlayerIcon(tileTag: u16, paletteTag: u16
     template.oam = (&raw const *sRegionMapPlayerIconOam).cast_mut();
     template.anims = sRegionMapPlayerIconAnimTable.as_ptr().cast_mut();
     template.images = null_mut();
-    template.affineAnims = gDummySpriteAffineAnimTable.as_ptr().cast_mut();
+    template.affineAnims = (*(&raw const crate::sprite::gDummySpriteAffineAnimTable)
+        .cast::<CArray<*mut AffineAnimCmd, 0>>())
+    .as_ptr()
+    .cast_mut();
     template.callback = Some(SpriteCallbackDummy);
     if IsEventIslandMapSecId(gMapHeader.regionMapSectionId) != 0 {
         (*sRegionMap).playerIconSprite = null_mut();
@@ -1294,7 +1330,7 @@ pub unsafe extern "C" fn CreateRegionMapPlayerIcon(tileTag: u16, paletteTag: u16
     }
     LoadSpriteSheet(&raw mut sheet);
     LoadSpritePalette(&raw mut palette);
-    spriteId = CreateSprite(&raw mut template, 0, 0, 1);
+    let spriteId: u8 = CreateSprite(&raw mut template, 0, 0, 1);
     (*sRegionMap).playerIconSprite = &raw mut gSprites[spriteId];
     if (*sRegionMap).zoomed == 0 {
         (*(*sRegionMap).playerIconSprite).x = (*sRegionMap).playerIconSpritePosX as i16 * 8 + 4;
@@ -1306,13 +1342,13 @@ pub unsafe extern "C" fn CreateRegionMapPlayerIcon(tileTag: u16, paletteTag: u16
         (*(*sRegionMap).playerIconSprite).callback = Some(SpriteCB_PlayerIconMapZoomed);
     }
 }
-pub(crate) unsafe extern "C" fn HideRegionMapPlayerIcon() {
+unsafe fn HideRegionMapPlayerIcon() {
     if !(*sRegionMap).playerIconSprite.is_null() {
         (*(*sRegionMap).playerIconSprite).set_invisible(TRUE as u16);
         (*(*sRegionMap).playerIconSprite).callback = Some(SpriteCallbackDummy);
     }
 }
-pub(crate) unsafe extern "C" fn UnhideRegionMapPlayerIcon() {
+unsafe fn UnhideRegionMapPlayerIcon() {
     if !(*sRegionMap).playerIconSprite.is_null() {
         if (*sRegionMap).zoomed == TRUE {
             (*(*sRegionMap).playerIconSprite).x =
@@ -1331,37 +1367,37 @@ pub(crate) unsafe extern "C" fn UnhideRegionMapPlayerIcon() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_PlayerIconMapZoomed(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_PlayerIconMapZoomed(sprite: *mut Sprite) {
     (*sprite).x2 = -2 * (*sRegionMap).scrollX;
     (*sprite).y2 = -2 * (*sRegionMap).scrollY;
-    (*sprite).data[0] = (*sprite).y + (*sprite).y2 + (*sprite).centerToCornerVecY as i16;
-    (*sprite).data[1] = (*sprite).x + (*sprite).x2 + (*sprite).centerToCornerVecX as i16;
-    if (*sprite).data[0] < -8
-        || (*sprite).data[0] > 168
-        || (*sprite).data[1] < -8
-        || (*sprite).data[1] > 248
+    (*sprite).data[sY] = (*sprite).y + (*sprite).y2 + (*sprite).centerToCornerVecY as i16;
+    (*sprite).data[sX] = (*sprite).x + (*sprite).x2 + (*sprite).centerToCornerVecX as i16;
+    if (*sprite).data[sY] < -8
+        || (*sprite).data[sY] > 168
+        || (*sprite).data[sX] < -8
+        || (*sprite).data[sX] > 248
     {
-        (*sprite).data[2] = FALSE as i16;
+        (*sprite).data[sVisible] = FALSE as i16;
     } else {
-        (*sprite).data[2] = TRUE as i16;
+        (*sprite).data[sVisible] = TRUE as i16;
     }
-    if (*sprite).data[2] == TRUE as i16 {
+    if (*sprite).data[sVisible] == TRUE as i16 {
         SpriteCB_PlayerIcon(sprite);
     } else {
         (*sprite).set_invisible(TRUE as u16);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_PlayerIconMapFull(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_PlayerIconMapFull(sprite: *mut Sprite) {
     SpriteCB_PlayerIcon(sprite);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_PlayerIcon(sprite: *mut Sprite) {
+unsafe fn SpriteCB_PlayerIcon(sprite: *mut Sprite) {
     if (*sRegionMap).blinkPlayerIcon != 0 {
         if ({
-            (*sprite).data[7] += 1;
-            (*sprite).data[7]
+            (*sprite).data[sTimer] += 1;
+            (*sprite).data[sTimer]
         }) > 16
         {
-            (*sprite).data[7] = 0;
+            (*sprite).data[sTimer] = 0;
             (*sprite).set_invisible(
                 (if (*sprite).invisible() != 0 {
                     FALSE as i32
@@ -1374,20 +1410,14 @@ pub(crate) unsafe extern "C" fn SpriteCB_PlayerIcon(sprite: *mut Sprite) {
         (*sprite).set_invisible(FALSE as u16);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TrySetPlayerIconBlink() {
+pub unsafe fn TrySetPlayerIconBlink() {
     if (*sRegionMap).playerIsInCave != 0 {
         (*sRegionMap).blinkPlayerIcon = TRUE;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMapName(
-    dest: *mut u8,
-    regionMapId: u16,
-    mut padLength: u16,
-) -> *mut u8 {
+pub unsafe fn GetMapName(dest: *mut u8, regionMapId: u16, mut padLength: u16) -> *mut u8 {
     let mut str: *mut u8 = null_mut();
-    let mut i: u16 = 0;
     if regionMapId == MAPSEC_SECRET_BASE as u16 {
         str = GetSecretBaseMapName(dest);
     } else if regionMapId < MAPSEC_NONE {
@@ -1399,27 +1429,34 @@ pub unsafe extern "C" fn GetMapName(
         return StringFill(dest, CHAR_SPACE, padLength);
     }
     if padLength != 0 {
-        i = (str as usize).wrapping_sub(dest as usize) as i32 as u16;
-        while i < padLength {
+        for i in ((str as usize).wrapping_sub(dest as usize) as i32 as u16)..padLength {
             *({
                 let t1 = str;
                 str = str.at(1);
                 t1
             }) = CHAR_SPACE;
-            i += 1;
         }
         *str = EOS;
     }
-    return str;
+    str
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMapNameGeneric(dest: *mut u8, mapSecId: u16) -> *mut u8 {
+pub unsafe fn GetMapNameGeneric(dest: *mut u8, mapSecId: u16) -> *mut u8 {
     match mapSecId {
         MAPSEC_DYNAMIC => {
-            return StringCopy(dest, gText_Ferry.as_ptr().cast_mut());
+            return StringCopy(
+                dest,
+                (*(&raw const crate::data::strings::gText_Ferry).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
         }
         86 => {
-            return StringCopy(dest, gText_SecretBase.as_ptr().cast_mut());
+            return StringCopy(
+                dest,
+                (*(&raw const crate::data::strings::gText_SecretBase).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
         }
         _ => {
             return GetMapName(dest, mapSecId, 0);
@@ -1427,22 +1464,26 @@ pub unsafe extern "C" fn GetMapNameGeneric(dest: *mut u8, mapSecId: u16) -> *mut
     }
     #[allow(unreachable_code)]
     {
-        return null_mut();
+        null_mut()
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMapNameHandleAquaHideout(dest: *mut u8, mapSecId: u16) -> *mut u8 {
+pub unsafe fn GetMapNameHandleAquaHideout(dest: *mut u8, mapSecId: u16) -> *mut u8 {
     if mapSecId == MAPSEC_AQUA_HIDEOUT_OLD {
-        return StringCopy(dest, gText_Hideout.as_ptr().cast_mut());
+        return StringCopy(
+            dest,
+            (*(&raw const crate::data::strings::gText_Hideout).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
     } else {
         return GetMapNameGeneric(dest, mapSecId);
     }
     #[allow(unreachable_code)]
     {
-        return null_mut();
+        null_mut()
     }
 }
-pub(crate) unsafe extern "C" fn GetMapSecDimensions(
+unsafe fn GetMapSecDimensions(
     mapSecId: u16,
     x: *mut u16,
     y: *mut u16,
@@ -1454,24 +1495,18 @@ pub(crate) unsafe extern "C" fn GetMapSecDimensions(
     *width = gRegionMapEntries[mapSecId].width as u16;
     *height = gRegionMapEntries[mapSecId].height as u16;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsRegionMapZoomed() -> u8 {
-    return (*sRegionMap).zoomed;
+pub unsafe fn IsRegionMapZoomed() -> u8 {
+    (*sRegionMap).zoomed
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsEventIslandMapSecId(mapSecId: u8) -> u32 {
-    let mut i: u32 = 0;
-    i = 0;
-    while i < 3 {
+pub unsafe fn IsEventIslandMapSecId(mapSecId: u8) -> u32 {
+    for i in 0..3u32 {
         if mapSecId == sMapSecIdsOffMap[i] {
             return TRUE as u32;
         }
-        i += 1;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_OpenFlyMap() {
+pub unsafe fn CB2_OpenFlyMap() {
     match gMain.state {
         0 => {
             SetVBlankCallback(None);
@@ -1520,21 +1555,21 @@ pub unsafe extern "C" fn CB2_OpenFlyMap() {
                 CHAR_SPACE,
                 MAP_NAME_LENGTH,
             );
-            sDrawFlyDestTextWindow = TRUE as u32;
+            sDrawFlyDestTextWindow.set(TRUE as u32);
             DrawFlyDestTextWindow();
             gMain.state += 1;
         }
         5 => {
             LZ77UnCompVram(
                 sRegionMapFrameGfxLZ.as_ptr().cast_mut(),
-                0x600c000 as usize as *mut u16 as *mut c_void,
+                0x600c000_usize as *mut u16 as *mut c_void,
             );
             gMain.state += 1;
         }
         6 => {
             LZ77UnCompVram(
                 sRegionMapFrameTilemapLZ.as_ptr().cast_mut(),
-                0x600f000 as usize as *mut u16 as *mut c_void,
+                0x600f000_usize as *mut u16 as *mut c_void,
             );
             gMain.state += 1;
         }
@@ -1549,7 +1584,9 @@ pub unsafe extern "C" fn CB2_OpenFlyMap() {
             AddTextPrinterParameterized(
                 WIN_FLY_TO_WHERE,
                 FONT_NORMAL,
-                gText_FlyToWhere.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_FlyToWhere).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 0,
                 1,
                 0,
@@ -1580,31 +1617,29 @@ pub unsafe extern "C" fn CB2_OpenFlyMap() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn VBlankCB_FlyMap() {
+pub(crate) unsafe fn VBlankCB_FlyMap() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn CB2_FlyMap() {
+pub(crate) unsafe fn CB2_FlyMap() {
     (*sFlyMap).callback.unwrap_unchecked()();
     AnimateSprites();
     BuildOamBuffer();
     DoScheduledBgTilemapCopiesToVram();
 }
-pub(crate) unsafe extern "C" fn SetFlyMapCallback(callback: Option<unsafe extern "C" fn()>) {
+unsafe fn SetFlyMapCallback(callback: Option<unsafe fn()>) {
     (*sFlyMap).callback = callback;
     (*sFlyMap).state = 0;
 }
-pub(crate) unsafe extern "C" fn DrawFlyDestTextWindow() {
-    let mut i: u16 = 0;
+unsafe fn DrawFlyDestTextWindow() {
     let mut namePrinted: u32 = 0;
     let mut name: *mut u8 = null_mut();
     if (*sFlyMap).regionMap.mapSecType > MAPSECTYPE_NONE
         && (*sFlyMap).regionMap.mapSecType < NUM_MAPSEC_TYPES
     {
         namePrinted = FALSE as u32;
-        i = 0;
-        while i < 1 {
+        for i in 0..1u16 {
             if (*sFlyMap).regionMap.mapSecId == sMultiNameFlyDestinations[i].mapSecId {
                 if FlagGet(sMultiNameFlyDestinations[i].flag) != 0 {
                     StringLength(
@@ -1637,14 +1672,13 @@ pub(crate) unsafe extern "C" fn DrawFlyDestTextWindow() {
                         None,
                     );
                     ScheduleBgCopyTilemapToVram(0);
-                    sDrawFlyDestTextWindow = TRUE as u32;
+                    sDrawFlyDestTextWindow.set(TRUE as u32);
                 }
                 break;
             }
-            i += 1;
         }
         if namePrinted == 0 {
-            if sDrawFlyDestTextWindow == TRUE as u32 {
+            if sDrawFlyDestTextWindow.get() == TRUE as u32 {
                 ClearStdWindowAndFrameToTransparent(WIN_MAPSEC_NAME_TALL, FALSE);
                 DrawStdFrameWithCustomTileAndPalette(WIN_MAPSEC_NAME, FALSE, 101, 13);
             } else {
@@ -1660,20 +1694,20 @@ pub(crate) unsafe extern "C" fn DrawFlyDestTextWindow() {
                 None,
             );
             ScheduleBgCopyTilemapToVram(0);
-            sDrawFlyDestTextWindow = FALSE as u32;
+            sDrawFlyDestTextWindow.set(FALSE as u32);
         }
     } else {
-        if sDrawFlyDestTextWindow == TRUE as u32 {
+        if sDrawFlyDestTextWindow.get() == TRUE as u32 {
             ClearStdWindowAndFrameToTransparent(WIN_MAPSEC_NAME_TALL, FALSE);
             DrawStdFrameWithCustomTileAndPalette(WIN_MAPSEC_NAME, FALSE, 101, 13);
         }
         FillWindowPixelBuffer(WIN_MAPSEC_NAME, 17);
         CopyWindowToVram(WIN_MAPSEC_NAME, COPYWIN_GFX);
         ScheduleBgCopyTilemapToVram(0);
-        sDrawFlyDestTextWindow = FALSE as u32;
+        sDrawFlyDestTextWindow.set(FALSE as u32);
     }
 }
-pub(crate) unsafe extern "C" fn LoadFlyDestIcons() {
+unsafe fn LoadFlyDestIcons() {
     let mut sheet: SpriteSheet = zeroed();
     LZ77UnCompWram(
         sFlyTargetIcons_Gfx.as_ptr().cast_mut(),
@@ -1687,17 +1721,15 @@ pub(crate) unsafe extern "C" fn LoadFlyDestIcons() {
     CreateFlyDestIcons();
     TryCreateRedOutlineFlyDestIcons();
 }
-pub(crate) unsafe extern "C" fn CreateFlyDestIcons() {
-    let mut canFlyFlag: u16 = 0;
-    let mut mapSecId: u16 = 0;
+unsafe fn CreateFlyDestIcons() {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
     let mut width: u16 = 0;
     let mut height: u16 = 0;
     let mut shape: u16 = 0;
     let mut spriteId: u8 = 0;
-    canFlyFlag = FLAG_VISITED_LITTLEROOT_TOWN;
-    mapSecId = MAPSEC_LITTLEROOT_TOWN;
+    let mut canFlyFlag: u16 = FLAG_VISITED_LITTLEROOT_TOWN;
+    let mut mapSecId: u16 = MAPSEC_LITTLEROOT_TOWN;
     while mapSecId <= MAPSEC_EVER_GRANDE_CITY {
         GetMapSecDimensions(
             mapSecId,
@@ -1729,21 +1761,20 @@ pub(crate) unsafe extern "C" fn CreateFlyDestIcons() {
                 shape += 3;
             }
             StartSpriteAnim(&raw mut gSprites[spriteId], shape as u8);
-            gSprites[spriteId].data[0] = mapSecId as i16;
+            gSprites[spriteId].data[sIconMapSec] = mapSecId as i16;
         }
         canFlyFlag += 1;
         mapSecId += 1;
     }
 }
-pub(crate) unsafe extern "C" fn TryCreateRedOutlineFlyDestIcons() {
-    let mut i: u16 = 0;
+unsafe fn TryCreateRedOutlineFlyDestIcons() {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
     let mut width: u16 = 0;
     let mut height: u16 = 0;
     let mut mapSecId: u16 = 0;
     let mut spriteId: u8 = 0;
-    i = 0;
+    let mut i: u16 = 0;
     while sRedOutlineFlyDestinations[i][1] != MAPSEC_NONE {
         if FlagGet(sRedOutlineFlyDestinations[i][0]) != 0 {
             mapSecId = sRedOutlineFlyDestinations[i][1];
@@ -1766,20 +1797,20 @@ pub(crate) unsafe extern "C" fn TryCreateRedOutlineFlyDestIcons() {
                 gSprites[spriteId].oam.set_size(1);
                 gSprites[spriteId].callback = Some(SpriteCB_FlyDestIcon);
                 StartSpriteAnim(&raw mut gSprites[spriteId], FLYDESTICON_RED_OUTLINE);
-                gSprites[spriteId].data[0] = mapSecId as i16;
+                gSprites[spriteId].data[sIconMapSec] = mapSecId as i16;
             }
         }
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_FlyDestIcon(sprite: *mut Sprite) {
-    if (*sFlyMap).regionMap.mapSecId as i32 == (*sprite).data[0] as i32 {
+pub(crate) unsafe fn SpriteCB_FlyDestIcon(sprite: *mut Sprite) {
+    if (*sFlyMap).regionMap.mapSecId as i32 == (*sprite).data[sIconMapSec] as i32 {
         if ({
-            (*sprite).data[1] += 1;
-            (*sprite).data[1]
+            (*sprite).data[sFlickerTimer] += 1;
+            (*sprite).data[sFlickerTimer]
         }) > 16
         {
-            (*sprite).data[1] = 0;
+            (*sprite).data[sFlickerTimer] = 0;
             (*sprite).set_invisible(
                 (if (*sprite).invisible() != 0 {
                     FALSE as i32
@@ -1789,25 +1820,23 @@ pub(crate) unsafe extern "C" fn SpriteCB_FlyDestIcon(sprite: *mut Sprite) {
             );
         }
     } else {
-        (*sprite).data[1] = 16;
+        (*sprite).data[sFlickerTimer] = 16;
         (*sprite).set_invisible(FALSE as u16);
     }
 }
-pub(crate) unsafe extern "C" fn CB_FadeInFlyMap() {
+pub(crate) unsafe fn CB_FadeInFlyMap() {
     match (*sFlyMap).state {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
             (*sFlyMap).state += 1;
         }
-        1 => {
-            if UpdatePaletteFade() == 0 {
-                SetFlyMapCallback(Some(CB_HandleFlyMapInput));
-            }
+        1 if UpdatePaletteFade() == 0 => {
+            SetFlyMapCallback(Some(CB_HandleFlyMapInput));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CB_HandleFlyMapInput() {
+pub(crate) unsafe fn CB_HandleFlyMapInput() {
     if (*sFlyMap).state == 0 {
         match DoRegionMapInputCallback() {
             MAP_INPUT_NONE | MAP_INPUT_MOVE_START | MAP_INPUT_MOVE_CONT => {}
@@ -1832,73 +1861,68 @@ pub(crate) unsafe extern "C" fn CB_HandleFlyMapInput() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn CB_ExitFlyMap() {
+pub(crate) unsafe fn CB_ExitFlyMap() {
     match (*sFlyMap).state {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
             (*sFlyMap).state += 1;
         }
-        1 => {
-            if UpdatePaletteFade() == 0 {
-                FreeRegionMapIconResources();
-                if (*sFlyMap).choseFlyLocation != 0 {
-                    match (*sFlyMap).regionMap.mapSecId {
-                        MAPSEC_SOUTHERN_ISLAND => {
-                            SetWarpDestinationToHealLocation(
-                                HEAL_LOCATION_SOUTHERN_ISLAND_EXTERIOR,
-                            );
-                        }
-                        58 => {
-                            SetWarpDestinationToHealLocation(
-                                HEAL_LOCATION_BATTLE_FRONTIER_OUTSIDE_EAST,
-                            );
-                        }
-                        MAPSEC_LITTLEROOT_TOWN => {
-                            SetWarpDestinationToHealLocation(
-                                (if (*gSaveBlock2Ptr).playerGender == MALE {
-                                    HEAL_LOCATION_LITTLEROOT_TOWN_BRENDANS_HOUSE
-                                } else {
-                                    HEAL_LOCATION_LITTLEROOT_TOWN_MAYS_HOUSE
-                                }) as u8,
-                            );
-                        }
-                        MAPSEC_EVER_GRANDE_CITY => {
-                            SetWarpDestinationToHealLocation(
-                                (if FlagGet(FLAG_LANDMARK_POKEMON_LEAGUE) != 0
-                                    && (*sFlyMap).regionMap.posWithinMapSec == 0
-                                {
-                                    HEAL_LOCATION_EVER_GRANDE_CITY_POKEMON_LEAGUE
-                                } else {
-                                    HEAL_LOCATION_EVER_GRANDE_CITY
-                                }) as u8,
-                            );
-                        }
-                        _ => {
-                            if sMapHealLocations[(*sFlyMap).regionMap.mapSecId][2]
-                                != HEAL_LOCATION_NONE
-                            {
-                                SetWarpDestinationToHealLocation(
-                                    sMapHealLocations[(*sFlyMap).regionMap.mapSecId][2],
-                                );
+        1 if UpdatePaletteFade() == 0 => {
+            FreeRegionMapIconResources();
+            if (*sFlyMap).choseFlyLocation != 0 {
+                match (*sFlyMap).regionMap.mapSecId {
+                    MAPSEC_SOUTHERN_ISLAND => {
+                        SetWarpDestinationToHealLocation(HEAL_LOCATION_SOUTHERN_ISLAND_EXTERIOR);
+                    }
+                    58 => {
+                        SetWarpDestinationToHealLocation(
+                            HEAL_LOCATION_BATTLE_FRONTIER_OUTSIDE_EAST,
+                        );
+                    }
+                    MAPSEC_LITTLEROOT_TOWN => {
+                        SetWarpDestinationToHealLocation(
+                            (if (*gSaveBlock2Ptr).playerGender == MALE {
+                                HEAL_LOCATION_LITTLEROOT_TOWN_BRENDANS_HOUSE
                             } else {
-                                SetWarpDestinationToMapWarp(
-                                    sMapHealLocations[(*sFlyMap).regionMap.mapSecId][0] as i8,
-                                    sMapHealLocations[(*sFlyMap).regionMap.mapSecId][1] as i8,
-                                    WARP_ID_NONE,
-                                );
-                            }
+                                HEAL_LOCATION_LITTLEROOT_TOWN_MAYS_HOUSE
+                            }) as u8,
+                        );
+                    }
+                    MAPSEC_EVER_GRANDE_CITY => {
+                        SetWarpDestinationToHealLocation(
+                            (if FlagGet(FLAG_LANDMARK_POKEMON_LEAGUE) != 0
+                                && (*sFlyMap).regionMap.posWithinMapSec == 0
+                            {
+                                HEAL_LOCATION_EVER_GRANDE_CITY_POKEMON_LEAGUE
+                            } else {
+                                HEAL_LOCATION_EVER_GRANDE_CITY
+                            }) as u8,
+                        );
+                    }
+                    _ => {
+                        if sMapHealLocations[(*sFlyMap).regionMap.mapSecId][2] != HEAL_LOCATION_NONE
+                        {
+                            SetWarpDestinationToHealLocation(
+                                sMapHealLocations[(*sFlyMap).regionMap.mapSecId][2],
+                            );
+                        } else {
+                            SetWarpDestinationToMapWarp(
+                                sMapHealLocations[(*sFlyMap).regionMap.mapSecId][0] as i8,
+                                sMapHealLocations[(*sFlyMap).regionMap.mapSecId][1] as i8,
+                                WARP_ID_NONE,
+                            );
                         }
                     }
-                    ReturnToFieldFromFlyMapSelect();
-                } else {
-                    SetMainCallback2(Some(CB2_ReturnToPartyMenuFromFlyMap));
                 }
-                if !sFlyMap.is_null() {
-                    Free(sFlyMap as *mut c_void);
-                    sFlyMap = null_mut();
-                }
-                FreeAllWindowBuffers();
+                ReturnToFieldFromFlyMapSelect();
+            } else {
+                SetMainCallback2(Some(CB2_ReturnToPartyMenuFromFlyMap));
             }
+            if !sFlyMap.is_null() {
+                Free(sFlyMap as *mut c_void);
+                sFlyMap = null_mut();
+            }
+            FreeAllWindowBuffers();
         }
         _ => {}
     }

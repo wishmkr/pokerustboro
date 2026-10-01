@@ -3,44 +3,191 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::battle_controller_player::CB2_SetUpReshowBattleScreenAfterMenu2;
+use crate::battle_main::gBattleTextBuff1;
+use crate::bg::{FillBgTilemapBufferRect_Palette0, ResetBgsAndClearDma3BusyFlags, ShowBg};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::ffi::{gSpecialVar_0x8004, gSpecialVar_Result};
+use crate::field_screen_effect::FieldCB_ContinueScriptHandleMusic;
+use crate::gpu_regs::SetGpuReg;
+use crate::item_menu::gSpecialVar_ItemId;
+use crate::lilycove_lady::GivePokeblockToContestLady;
+use crate::list_menu::{
+    AddScrollIndicatorArrowPairParameterized, DestroyListMenuTask, ListMenu_ProcessInput,
+    ListMenuGetScrollAndRow, ListMenuInit, RemoveScrollIndicatorArrowPair,
+    gMultiuseListMenuTemplate,
+};
+use crate::load_save::gSaveBlock1Ptr;
+use crate::menu::{
+    AddTextPrinterParameterized4, ClearDialogWindowAndFrameToTransparent,
+    ClearScheduledBgCopiesToVram, ClearStdWindowAndFrameToTransparent,
+    DecompressAndCopyTileDataToVram, DoScheduledBgTilemapCopiesToVram,
+    DrawStdFrameWithCustomTileAndPalette, FreeTempTileDataBuffersIfPossible,
+    GetPlayerTextSpeedDelay, InitMenuInUpperLeftCornerNormal, Menu_ProcessInputNoWrap,
+    PrintMenuActionTextsInUpperLeftCorner, ResetTempTileDataBuffers, ScheduleBgCopyTilemapToVram,
+};
+use crate::menu_helpers::{
+    CreateSwapLineSprites, CreateYesNoMenuWithCallbacks, DisplayMessageAndContinueTask,
+    LoadListMenuSwapLineGfx, MenuHelpers_IsLinkActive, MenuHelpers_ShouldWaitForLinkRecv,
+    ResetAllBgsCoordinates, ResetVramOamAndBgCntRegs, SetSwapLineSpritesInvisibility,
+    SetVBlankHBlankCallbacksToNull, UpdateSwapLineSpritesPos,
+};
+use crate::overworld::{CB2_ReturnToField, gFieldCallback};
+use crate::palette::{
+    BeginNormalPaletteFade, BlendPalettes, LoadCompressedPalette, LoadPalette, ResetPaletteFade,
+    TransferPlttBuffer, UpdatePaletteFade, gPaletteFade,
+};
+use crate::pokemon::{GetNature, gEnemyParty};
+use crate::safari_zone::SafariZoneActivatePokeblockFeeder;
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, FreeOamMatrix, LoadOam,
+    ProcessSpriteCopyRequests, ResetSpriteData,
+};
+use crate::string_util::{gStringVar1, gStringVar4};
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::task::{gTasks, task_set, task_set_func};
+use crate::text::DeactivateAllTextPrinters;
+use crate::text_window::{LoadMessageBoxGfx, LoadUserWindowBorderGfx};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::use_pokeblock::ChooseMonToGivePokeblock;
+use crate::window::{
+    CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, PutWindowTilemap,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `CopyToBgTilemapBufferRect` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut c_void, a2: u8, a3: u8, a4: u8, a5: u8) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBufferRect(a0, a1 as _, a2, a3, a4, a5);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `GetStringCenterAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringCenterAlignXOffset(a0, a1 as _, a2) }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn InitSpriteAffineAnim(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::InitSpriteAffineAnim(a0 as _);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LZDecompressWram` with this module's view of its types.
+#[inline]
+unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::decompress::LZDecompressWram(a0 as _, a1 as _);
+    }
+}
+/// `LoadCompressedSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+    unsafe {
+        crate::decompress::LoadCompressedSpritePalette(a0 as _);
+    }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringExpandPlaceholders(a0 as _, a1 as _) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const sState: usize = 0;
+const tListTaskId: usize = 0;
+const sTimer: usize = 1;
 // Data tables (translate with cdata.py): gPokeblockFlavorCompatibilityTable sBgTemplatesForPokeblockMenu gPokeblockNames sPokeblockMenuActions sActionsOnField sActionsInBattle sActionsOnPokeblockFeeder sActionsWhenGivingToLady sTossYesNoFuncTable sContestStatsMonData sOamData_PokeblockCase sSpriteAnim_PokeblockCase sSpriteAnimTable_PokeblockCase sAffineAnim_PokeblockCaseShake sAffineAnims_PokeblockCaseShake gPokeblockCase_SpriteSheet gPokeblockCase_SpritePal sSpriteTemplate_PokeblockCase sTextColor sFavoritePokeblocksTable sWindowTemplates sTossPkblockWindowTemplate sPokeblockListMenuTemplate
 
 /// `struct PokeblockSavedData`
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PokeblockSavedData {
-    pub callback: Option<unsafe extern "C" fn()>,
+    pub callback: Option<unsafe fn()>,
     pub selectedRow: u16,
     pub scrollOffset: u16,
 }
@@ -52,7 +199,7 @@ unsafe impl Sync for PokeblockSavedData {}
 #[derive(Clone, Copy)]
 pub struct PokeblockMenuStruct {
     pub tilemap: CArray<u8, 2048>,
-    pub callbackOnUse: Option<unsafe extern "C" fn()>,
+    pub callbackOnUse: Option<unsafe fn()>,
     pub pokeblockActionIds: *mut u8,
     pub numActions: u8,
     pub caseId: u8,
@@ -156,169 +303,25 @@ pub(crate) static mut sSavedPokeblockData: PokeblockSavedData = unsafe { zeroed(
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sPokeblockMenu: *mut PokeblockMenuStruct = null_mut();
 
-unsafe extern "C" {
-    static mut gBattleTextBuff1: CArray<u8, 16>;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static mut gFieldCallback: Option<unsafe extern "C" fn()>;
-    static mut gMain: Main;
-    static gMenuPokeblock_Gfx: CArray<u32, 0>;
-    static gMenuPokeblock_Pal: CArray<u32, 0>;
-    static gMenuPokeblock_Tilemap: CArray<u32, 0>;
-    static mut gMultiuseListMenuTemplate: ListMenuTemplate;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_ItemId: u16;
-    static mut gSpecialVar_Result: u16;
-    static mut gSprites: CArray<Sprite, 65>;
-    static gStandardMenuPalette: CArray<u16, 0>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_Bitter: CArray<u8, 0>;
-    static gText_Dry: CArray<u8, 0>;
-    static gText_LvVar1: CArray<u8, 0>;
-    static gText_Sour: CArray<u8, 0>;
-    static gText_Spicy: CArray<u8, 0>;
-    static gText_StowCase: CArray<u8, 0>;
-    static gText_Sweet: CArray<u8, 0>;
-    static gText_ThrowAwayVar1: CArray<u8, 0>;
-    static gText_Var1ThrownAway: CArray<u8, 0>;
-    fn AddScrollIndicatorArrowPairParameterized(
-        a0: u32,
-        a1: i32,
-        a2: i32,
-        a3: i32,
-        a4: i32,
-        a5: i32,
-        a6: i32,
-        a7: *mut u16,
-    ) -> u8;
-    fn AddTextPrinterParameterized4(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: i8,
-        a8: *mut u8,
-    );
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn BuildOamBuffer();
-    fn CB2_ReturnToField();
-    fn CB2_SetUpReshowBattleScreenAfterMenu2();
-    fn ChooseMonToGivePokeblock(a0: *mut Pokeblock, a1: Option<unsafe extern "C" fn()>);
-    fn ClearDialogWindowAndFrameToTransparent(a0: u8, a1: u8);
-    fn ClearScheduledBgCopiesToVram();
-    fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut c_void, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateSwapLineSprites(a0: *mut u8, a1: u8);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateYesNoMenuWithCallbacks(
-        a0: u8,
-        a1: *mut WindowTemplate,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u16,
-        a6: u8,
-        a7: *mut YesNoFuncTable,
-    );
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DestroyListMenuTask(a0: u8, a1: *mut u16, a2: *mut u16);
-    fn DestroyTask(a0: u8);
-    fn DisplayMessageAndContinueTask(
-        a0: u8,
-        a1: u8,
-        a2: u16,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: *mut c_void,
-    );
-    fn DoScheduledBgTilemapCopiesToVram();
-    fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
-    fn FieldCB_ContinueScriptHandleMusic();
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeOamMatrix(a0: u8);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn GetItemName(a0: u16) -> *mut u8;
-    fn GetNature(a0: *mut Pokemon) -> u8;
-    fn GetPlayerTextSpeedDelay() -> u8;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GivePokeblockToContestLady(a0: *mut Pokeblock) -> u8;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitMenuInUpperLeftCornerNormal(a0: u8, a1: u8, a2: u8) -> u8;
-    fn InitSpriteAffineAnim(a0: *mut Sprite);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn LZDecompressWram(a0: *mut u32, a1: *mut c_void);
-    fn ListMenuGetScrollAndRow(a0: u8, a1: *mut u16, a2: *mut u16);
-    fn ListMenuInit(a0: *mut ListMenuTemplate, a1: u16, a2: u16) -> u8;
-    fn ListMenu_ProcessInput(a0: u8) -> i32;
-    fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette);
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadListMenuSwapLineGfx();
-    fn LoadMessageBoxGfx(a0: u8, a1: u16, a2: u8);
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn MenuHelpers_IsLinkActive() -> u8;
-    fn MenuHelpers_ShouldWaitForLinkRecv() -> u8;
-    fn Menu_ProcessInputNoWrap() -> i8;
-    fn PlaySE(a0: u16);
-    fn PrintMenuActionTextsInUpperLeftCorner(a0: u8, a1: u8, a2: *mut MenuAction, a3: *mut u8);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveScrollIndicatorArrowPair(a0: u8);
-    fn ResetAllBgsCoordinates();
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn ResetTempTileDataBuffers();
-    fn ResetVramOamAndBgCntRegs();
-    fn RunTasks();
-    fn SafariZoneActivatePokeblockFeeder(a0: u8);
-    fn ScanlineEffect_Stop();
-    fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetSwapLineSpritesInvisibility(a0: *mut u8, a1: u8, a2: u8);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankHBlankCallbacksToNull();
-    fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
-    fn UpdateSwapLineSpritesPos(a0: *mut u8, a1: u8, a2: i16, a3: u16);
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `GetItemName` with this module's view of its types.
+#[inline]
+unsafe fn GetItemName(a0: u16) -> *mut u8 {
+    crate::item::GetItemName(a0) as *mut u8
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn OpenPokeblockCase(caseId: u8, callback: Option<unsafe extern "C" fn()>) {
+pub unsafe fn OpenPokeblockCase(caseId: u8, callback: Option<unsafe fn()>) {
     sPokeblockMenu = Alloc(3720) as *mut PokeblockMenuStruct;
     (*sPokeblockMenu).caseId = caseId;
     (*sPokeblockMenu).callbackOnUse = None;
@@ -345,30 +348,29 @@ pub unsafe extern "C" fn OpenPokeblockCase(caseId: u8, callback: Option<unsafe e
     }
     SetMainCallback2(Some(CB2_InitPokeblockMenu));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn OpenPokeblockCaseInBattle() {
+pub unsafe fn OpenPokeblockCaseInBattle() {
     OpenPokeblockCase(
         PBLOCK_CASE_BATTLE,
         Some(CB2_SetUpReshowBattleScreenAfterMenu2),
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn OpenPokeblockCaseOnFeeder() {
+pub unsafe fn OpenPokeblockCaseOnFeeder() {
     OpenPokeblockCase(PBLOCK_CASE_FEEDER, Some(CB2_ReturnToField));
 }
-pub(crate) unsafe extern "C" fn CB2_PokeblockMenu() {
+pub(crate) unsafe fn CB2_PokeblockMenu() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
     DoScheduledBgTilemapCopiesToVram();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn VBlankCB_PokeblockMenu() {
+pub(crate) unsafe fn VBlankCB_PokeblockMenu() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn CB2_InitPokeblockMenu() {
+pub(crate) unsafe fn CB2_InitPokeblockMenu() {
     loop {
         if MenuHelpers_ShouldWaitForLinkRecv() == TRUE {
             break;
@@ -381,7 +383,7 @@ pub(crate) unsafe extern "C" fn CB2_InitPokeblockMenu() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn InitPokeblockMenu() -> u8 {
+unsafe fn InitPokeblockMenu() -> u8 {
     let mut taskId: u8 = 0;
     match gMain.state {
         0 => {
@@ -455,11 +457,15 @@ pub(crate) unsafe extern "C" fn InitPokeblockMenu() -> u8 {
         }
         15 => {
             taskId = CreateTask(Some(Task_HandlePokeblockMenuInput), 0);
-            gTasks[taskId].data[0] = ListMenuInit(
-                &raw mut gMultiuseListMenuTemplate,
-                sSavedPokeblockData.scrollOffset,
-                sSavedPokeblockData.selectedRow,
-            ) as i16;
+            task_set(
+                taskId,
+                tListTaskId,
+                ListMenuInit(
+                    &raw mut gMultiuseListMenuTemplate,
+                    sSavedPokeblockData.scrollOffset,
+                    sSavedPokeblockData.selectedRow,
+                ) as i16,
+            );
             gMain.state += 1;
         }
         16 => {
@@ -481,9 +487,9 @@ pub(crate) unsafe extern "C" fn InitPokeblockMenu() -> u8 {
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn HandleInitBackgrounds() {
+pub(crate) unsafe fn HandleInitBackgrounds() {
     ResetVramOamAndBgCntRegs();
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sBgTemplatesForPokeblockMenu.as_ptr().cast_mut(), 3);
@@ -496,13 +502,15 @@ pub(crate) unsafe extern "C" fn HandleInitBackgrounds() {
     ShowBg(2);
     SetGpuReg(REG_OFFSET_BLDCNT, 0);
 }
-pub(crate) unsafe extern "C" fn LoadPokeblockMenuGfx() -> u8 {
+unsafe fn LoadPokeblockMenuGfx() -> u8 {
     match (*sPokeblockMenu).gfxState {
         0 => {
             ResetTempTileDataBuffers();
             DecompressAndCopyTileDataToVram(
                 2,
-                gMenuPokeblock_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gMenuPokeblock_Gfx).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0,
                 0,
                 0,
@@ -512,14 +520,23 @@ pub(crate) unsafe extern "C" fn LoadPokeblockMenuGfx() -> u8 {
         1 => {
             if FreeTempTileDataBuffersIfPossible() != TRUE {
                 LZDecompressWram(
-                    gMenuPokeblock_Tilemap.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gMenuPokeblock_Tilemap)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     (*sPokeblockMenu).tilemap.as_mut_ptr() as *mut c_void,
                 );
                 (*sPokeblockMenu).gfxState += 1;
             }
         }
         2 => {
-            LoadCompressedPalette(gMenuPokeblock_Pal.as_ptr().cast_mut(), 0, 192);
+            LoadCompressedPalette(
+                (*(&raw const crate::data::graphics::gMenuPokeblock_Pal).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                0,
+                192,
+            );
             (*sPokeblockMenu).gfxState += 1;
         }
         3 => {
@@ -537,28 +554,27 @@ pub(crate) unsafe extern "C" fn LoadPokeblockMenuGfx() -> u8 {
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn HandleInitWindows() {
-    let mut i: u8 = 0;
+pub(crate) unsafe fn HandleInitWindows() {
     InitWindows(sWindowTemplates.as_ptr().cast_mut());
     DeactivateAllTextPrinters();
     LoadUserWindowBorderGfx(0, 1, 224);
     LoadMessageBoxGfx(0, 0xA, 208);
     LoadPalette(
-        gStandardMenuPalette.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::menu::gStandardMenuPalette).cast::<CArray<u16, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         240,
         32,
     );
-    i = 0;
-    while i < 11 {
+    for i in 0..11u8 {
         FillWindowPixelBuffer(i, 0);
-        i += 1;
     }
     ScheduleBgCopyTilemapToVram(0);
     ScheduleBgCopyTilemapToVram(1);
 }
-pub(crate) unsafe extern "C" fn PrintOnPokeblockWindow(windowId: u8, string: *mut u8, x: i32) {
+unsafe fn PrintOnPokeblockWindow(windowId: u8, string: *mut u8, x: i32) {
     AddTextPrinterParameterized4(
         windowId,
         FONT_NORMAL,
@@ -571,28 +587,54 @@ pub(crate) unsafe extern "C" fn PrintOnPokeblockWindow(windowId: u8, string: *mu
         string,
     );
 }
-pub(crate) unsafe extern "C" fn DrawPokeblockMenuTitleText() {
-    let mut i: u8 = 0;
-    let mut itemName: *mut u8 = GetItemName(ITEM_POKEBLOCK_CASE);
+unsafe fn DrawPokeblockMenuTitleText() {
+    let itemName: *mut u8 = GetItemName(ITEM_POKEBLOCK_CASE);
     PrintOnPokeblockWindow(
         WIN_TITLE,
         itemName,
         GetStringCenterAlignXOffset(FONT_NORMAL as i32, itemName, 0x48),
     );
-    PrintOnPokeblockWindow(WIN_SPICY, gText_Spicy.as_ptr().cast_mut(), 0);
-    PrintOnPokeblockWindow(WIN_DRY, gText_Dry.as_ptr().cast_mut(), 0);
-    PrintOnPokeblockWindow(WIN_SWEET, gText_Sweet.as_ptr().cast_mut(), 0);
-    PrintOnPokeblockWindow(WIN_BITTER, gText_Bitter.as_ptr().cast_mut(), 0);
-    PrintOnPokeblockWindow(WIN_SOUR, gText_Sour.as_ptr().cast_mut(), 0);
-    i = 0;
-    while i < WIN_ACTIONS_TALL {
+    PrintOnPokeblockWindow(
+        WIN_SPICY,
+        (*(&raw const crate::data::strings::gText_Spicy).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0,
+    );
+    PrintOnPokeblockWindow(
+        WIN_DRY,
+        (*(&raw const crate::data::strings::gText_Dry).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0,
+    );
+    PrintOnPokeblockWindow(
+        WIN_SWEET,
+        (*(&raw const crate::data::strings::gText_Sweet).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0,
+    );
+    PrintOnPokeblockWindow(
+        WIN_BITTER,
+        (*(&raw const crate::data::strings::gText_Bitter).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0,
+    );
+    PrintOnPokeblockWindow(
+        WIN_SOUR,
+        (*(&raw const crate::data::strings::gText_Sour).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0,
+    );
+    for i in 0..WIN_ACTIONS_TALL {
         PutWindowTilemap(i);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn UpdatePokeblockList() {
+unsafe fn UpdatePokeblockList() {
     let mut i: u16 = 0;
-    i = 0;
     while (i as i32) < (*sPokeblockMenu).itemsNo as i32 - 1 {
         PutPokeblockListMenuString((*sPokeblockMenu).menuItemsStrings[i].as_mut_ptr(), i);
         (*sPokeblockMenu).items[i].name = (*sPokeblockMenu).menuItemsStrings[i].as_mut_ptr();
@@ -601,7 +643,9 @@ pub(crate) unsafe extern "C" fn UpdatePokeblockList() {
     }
     StringCopy(
         (*sPokeblockMenu).menuItemsStrings[i].as_mut_ptr(),
-        gText_StowCase.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_StowCase).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     (*sPokeblockMenu).items[i].name = (*sPokeblockMenu).menuItemsStrings[i].as_mut_ptr();
     (*sPokeblockMenu).items[i].id = LIST_CANCEL;
@@ -611,8 +655,8 @@ pub(crate) unsafe extern "C" fn UpdatePokeblockList() {
     gMultiuseListMenuTemplate.items = (*sPokeblockMenu).items.as_mut_ptr();
     gMultiuseListMenuTemplate.maxShowed = (*sPokeblockMenu).maxShowed as u16;
 }
-pub(crate) unsafe extern "C" fn PutPokeblockListMenuString(dst: *mut u8, pkblId: u16) {
-    let mut pkblock: *mut Pokeblock = &raw mut (*gSaveBlock1Ptr).pokeblocks[pkblId];
+unsafe fn PutPokeblockListMenuString(dst: *mut u8, pkblId: u16) {
+    let pkblock: *mut Pokeblock = &raw mut (*gSaveBlock1Ptr).pokeblocks[pkblId];
     let mut txtPtr: *mut u8 = StringCopy(dst, gPokeblockNames[(*pkblock).color]);
     *({
         let t1 = txtPtr;
@@ -635,13 +679,14 @@ pub(crate) unsafe extern "C" fn PutPokeblockListMenuString(dst: *mut u8, pkblId:
         STR_CONV_MODE_LEFT_ALIGN,
         3,
     );
-    StringExpandPlaceholders(txtPtr, gText_LvVar1.as_ptr().cast_mut());
+    StringExpandPlaceholders(
+        txtPtr,
+        (*(&raw const crate::data::strings::gText_LvVar1).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
 }
-pub(crate) unsafe extern "C" fn MovePokeblockMenuCursor(
-    pkblId: i32,
-    onInit: u8,
-    list: *mut ListMenu,
-) {
+pub(crate) unsafe fn MovePokeblockMenuCursor(pkblId: i32, onInit: u8, list: *mut ListMenu) {
     if onInit != TRUE {
         PlaySE(SE_SELECT);
         gSprites[(*sPokeblockMenu).pokeblockCaseSpriteId].callback =
@@ -651,8 +696,7 @@ pub(crate) unsafe extern "C" fn MovePokeblockMenuCursor(
         DrawPokeblockInfo(pkblId);
     }
 }
-pub(crate) unsafe extern "C" fn DrawPokeblockInfo(pkblId: i32) {
-    let mut i: u8 = 0;
+unsafe fn DrawPokeblockInfo(pkblId: i32) {
     let mut pokeblock: *mut Pokeblock = null_mut();
     let mut rectTilemapSrc: CArray<u16, 2> = zeroed();
     FillWindowPixelBuffer(WIN_FEEL, 0);
@@ -660,8 +704,7 @@ pub(crate) unsafe extern "C" fn DrawPokeblockInfo(pkblId: i32) {
         pokeblock = &raw mut (*gSaveBlock1Ptr).pokeblocks[pkblId];
         rectTilemapSrc[0] = 0x17;
         rectTilemapSrc[1] = 0x18;
-        i = 0;
-        while i < FLAVOR_COUNT as u8 {
+        for i in 0..(FLAVOR_COUNT as u8) {
             if GetPokeblockData(pokeblock, PBLOCK_SPICY + i) > 0 {
                 rectTilemapSrc[0] = ((i as u16) << 12) + 0x17;
                 rectTilemapSrc[1] = ((i as u16) << 12) + 0x18;
@@ -677,7 +720,6 @@ pub(crate) unsafe extern "C" fn DrawPokeblockInfo(pkblId: i32) {
                 1,
                 2,
             );
-            i += 1;
         }
         ConvertIntToDecimalStringN(
             gStringVar1.as_mut_ptr(),
@@ -689,8 +731,7 @@ pub(crate) unsafe extern "C" fn DrawPokeblockInfo(pkblId: i32) {
     } else {
         rectTilemapSrc[0] = 0xF;
         rectTilemapSrc[1] = 0xF;
-        i = 0;
-        while i < FLAVOR_COUNT as u8 {
+        for i in 0..(FLAVOR_COUNT as u8) {
             CopyToBgTilemapBufferRect(
                 2,
                 rectTilemapSrc.as_mut_ptr() as *mut c_void,
@@ -699,52 +740,41 @@ pub(crate) unsafe extern "C" fn DrawPokeblockInfo(pkblId: i32) {
                 1,
                 2,
             );
-            i += 1;
         }
         CopyWindowToVram(WIN_FEEL, COPYWIN_GFX);
     }
     ScheduleBgCopyTilemapToVram(0);
     ScheduleBgCopyTilemapToVram(2);
 }
-pub(crate) unsafe extern "C" fn DrawPokeblockMenuHighlight(cursorPos: u16, tileNum: u16) {
+unsafe fn DrawPokeblockMenuHighlight(cursorPos: u16, tileNum: u16) {
     FillBgTilemapBufferRect_Palette0(2, tileNum, 0xF, cursorPos as u8 * 2 + 1, 0xE, 2);
     ScheduleBgCopyTilemapToVram(2);
 }
-pub(crate) unsafe extern "C" fn CompactPokeblockSlots() {
-    let mut i: u16 = 0;
-    let mut j: u16 = 0;
-    i = 0;
-    while i < 39 {
-        j = i + 1;
-        while j < POKEBLOCKS_COUNT {
+unsafe fn CompactPokeblockSlots() {
+    for i in 0..39u16 {
+        for j in (i + 1)..POKEBLOCKS_COUNT {
             if (*gSaveBlock1Ptr).pokeblocks[i].color == PBLOCK_CLR_NONE {
-                let mut temp: Pokeblock = zeroed();
-                temp = (*gSaveBlock1Ptr).pokeblocks[i];
+                let temp: Pokeblock = (*gSaveBlock1Ptr).pokeblocks[i];
                 (*gSaveBlock1Ptr).pokeblocks[i] = (*gSaveBlock1Ptr).pokeblocks[j];
                 (*gSaveBlock1Ptr).pokeblocks[j] = temp;
             }
-            j += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SwapPokeblockMenuItems(id1: u32, mut id2: u32) {
+unsafe fn SwapPokeblockMenuItems(id1: u32, mut id2: u32) {
     let mut i: i16 = 0;
     let mut count: i16 = 0;
-    let mut pokeblocks: *mut Pokeblock = (*gSaveBlock1Ptr).pokeblocks.as_mut_ptr();
-    let mut copyPokeblock1: *mut Pokeblock = null_mut();
+    let pokeblocks: *mut Pokeblock = (*gSaveBlock1Ptr).pokeblocks.as_mut_ptr();
     if id1 == id2 {
         return;
     }
-    copyPokeblock1 = Alloc(8) as *mut Pokeblock;
+    let copyPokeblock1: *mut Pokeblock = Alloc(8) as *mut Pokeblock;
     *copyPokeblock1 = *pokeblocks.at(id1);
     if id2 > id1 {
         id2 -= 1;
         count = id2 as i16;
-        i = id1 as i16;
-        while i < count {
+        for i in (id1 as i16)..count {
             *pokeblocks.at(i) = *pokeblocks.at(i as i32 + 1);
-            i += 1;
         }
     } else {
         count = id2 as i16;
@@ -758,20 +788,17 @@ pub(crate) unsafe extern "C" fn SwapPokeblockMenuItems(id1: u32, mut id2: u32) {
     Free(copyPokeblock1 as *mut c_void);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetPokeblockScrollPositions() {
+pub unsafe fn ResetPokeblockScrollPositions() {
     sSavedPokeblockData.selectedRow = 0;
     sSavedPokeblockData.scrollOffset = 0;
 }
-pub(crate) unsafe extern "C" fn SetMenuItemsCountAndMaxShowed() {
-    let mut i: u16 = 0;
+unsafe fn SetMenuItemsCountAndMaxShowed() {
     CompactPokeblockSlots();
     (*sPokeblockMenu).itemsNo = 0;
-    i = 0;
-    while i < POKEBLOCKS_COUNT {
+    for i in 0..POKEBLOCKS_COUNT {
         if (*gSaveBlock1Ptr).pokeblocks[i].color != PBLOCK_CLR_NONE {
             (*sPokeblockMenu).itemsNo += 1;
         }
-        i += 1;
     }
     (*sPokeblockMenu).itemsNo += 1;
     if (*sPokeblockMenu).itemsNo > MAX_MENU_ITEMS {
@@ -780,14 +807,13 @@ pub(crate) unsafe extern "C" fn SetMenuItemsCountAndMaxShowed() {
         (*sPokeblockMenu).maxShowed = (*sPokeblockMenu).itemsNo;
     }
 }
-pub(crate) unsafe extern "C" fn LimitMenuScrollAndRow() {
-    if sSavedPokeblockData.scrollOffset != 0 {
-        if sSavedPokeblockData.scrollOffset as i32 + (*sPokeblockMenu).maxShowed as i32
+unsafe fn LimitMenuScrollAndRow() {
+    if sSavedPokeblockData.scrollOffset != 0
+        && sSavedPokeblockData.scrollOffset as i32 + (*sPokeblockMenu).maxShowed as i32
             > (*sPokeblockMenu).itemsNo as i32
-        {
-            sSavedPokeblockData.scrollOffset =
-                (*sPokeblockMenu).itemsNo as u16 - (*sPokeblockMenu).maxShowed as u16;
-        }
+    {
+        sSavedPokeblockData.scrollOffset =
+            (*sPokeblockMenu).itemsNo as u16 - (*sPokeblockMenu).maxShowed as u16;
     }
     if sSavedPokeblockData.scrollOffset as i32 + sSavedPokeblockData.selectedRow as i32
         >= (*sPokeblockMenu).itemsNo as i32
@@ -799,10 +825,9 @@ pub(crate) unsafe extern "C" fn LimitMenuScrollAndRow() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SetInitialScroll() {
+unsafe fn SetInitialScroll() {
     if sSavedPokeblockData.selectedRow > MENU_MIDPOINT {
         let mut i: u8 = 0;
-        i = 0;
         while (i as i32) < sSavedPokeblockData.selectedRow as i32 - MENU_MIDPOINT as i32
             && sSavedPokeblockData.scrollOffset as i32 + (*sPokeblockMenu).maxShowed as i32
                 != (*sPokeblockMenu).itemsNo as i32
@@ -813,7 +838,7 @@ pub(crate) unsafe extern "C" fn SetInitialScroll() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn CreateScrollArrows() {
+unsafe fn CreateScrollArrows() {
     if (*sPokeblockMenu).arrowTaskId == TASK_NONE {
         (*sPokeblockMenu).arrowTaskId = AddScrollIndicatorArrowPairParameterized(
             SCROLL_ARROW_UP,
@@ -827,55 +852,52 @@ pub(crate) unsafe extern "C" fn CreateScrollArrows() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn DestroyScrollArrows() {
+unsafe fn DestroyScrollArrows() {
     if (*sPokeblockMenu).arrowTaskId != TASK_NONE {
         RemoveScrollIndicatorArrowPair((*sPokeblockMenu).arrowTaskId);
         (*sPokeblockMenu).arrowTaskId = TASK_NONE;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreatePokeblockCaseSprite(x: i16, y: i16, subpriority: u8) -> u8 {
-    return CreateSprite(
+pub unsafe fn CreatePokeblockCaseSprite(x: i16, y: i16, subpriority: u8) -> u8 {
+    CreateSprite(
         (&raw const *sSpriteTemplate_PokeblockCase).cast_mut(),
         x,
         y,
         subpriority,
-    );
+    )
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ShakePokeblockCase(sprite: *mut Sprite) {
-    if (*sprite).data[0] > 1 {
-        (*sprite).data[0] = 0;
+pub(crate) unsafe fn SpriteCB_ShakePokeblockCase(sprite: *mut Sprite) {
+    if (*sprite).data[sState] > 1 {
+        (*sprite).data[sState] = 0;
     }
-    match (*sprite).data[0] {
+    match (*sprite).data[sState] {
         0 => {
             (*sprite).oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
             (*sprite).affineAnims = sAffineAnims_PokeblockCaseShake.as_ptr().cast_mut();
             InitSpriteAffineAnim(sprite);
-            (*sprite).data[0] = 1;
-            (*sprite).data[1] = 0;
+            (*sprite).data[sState] = 1;
+            (*sprite).data[sTimer] = 0;
         }
-        1 => {
-            if ({
-                (*sprite).data[1] += 1;
-                (*sprite).data[1]
-            }) > 11
-            {
-                (*sprite).oam.set_affineMode(ST_OAM_AFFINE_OFF);
-                (*sprite).data[0] = 0;
-                (*sprite).data[1] = 0;
-                FreeOamMatrix((*sprite).oam.matrixNum() as u8);
-                (*sprite).callback = Some(SpriteCallbackDummy);
-            }
+        1 if ({
+            (*sprite).data[sTimer] += 1;
+            (*sprite).data[sTimer]
+        }) > 11 =>
+        {
+            (*sprite).oam.set_affineMode(ST_OAM_AFFINE_OFF);
+            (*sprite).data[sState] = 0;
+            (*sprite).data[sTimer] = 0;
+            FreeOamMatrix((*sprite).oam.matrixNum() as u8);
+            (*sprite).callback = Some(SpriteCallbackDummy);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn FadePaletteAndSetTaskToClosePokeblockCase(taskId: u8) {
+unsafe fn FadePaletteAndSetTaskToClosePokeblockCase(taskId: u8) {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-    gTasks[taskId].func = Some(Task_FreeDataAndExitPokeblockCase);
+    task_set_func(taskId, Some(Task_FreeDataAndExitPokeblockCase));
 }
-pub(crate) unsafe extern "C" fn Task_FreeDataAndExitPokeblockCase(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_FreeDataAndExitPokeblockCase(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if gPaletteFade.active() == 0 {
         if (*sPokeblockMenu).caseId == PBLOCK_CASE_FEEDER
             || (*sPokeblockMenu).caseId == PBLOCK_CASE_GIVE
@@ -900,8 +922,8 @@ pub(crate) unsafe extern "C" fn Task_FreeDataAndExitPokeblockCase(taskId: u8) {
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandlePokeblockMenuInput(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_HandlePokeblockMenuInput(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if gPaletteFade.active() == 0 && MenuHelpers_ShouldWaitForLinkRecv() != TRUE {
         if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
             ListMenuGetScrollAndRow(
@@ -917,11 +939,11 @@ pub(crate) unsafe extern "C" fn Task_HandlePokeblockMenuInput(taskId: u8) {
                 *data.at(2) = sSavedPokeblockData.scrollOffset as i16
                     + sSavedPokeblockData.selectedRow as i16;
                 (*sPokeblockMenu).isSwapping = TRUE;
-                gTasks[taskId].func = Some(Task_HandlePokeblocksSwapInput);
+                task_set_func(taskId, Some(Task_HandlePokeblocksSwapInput));
             }
         } else {
-            let mut oldPosition: u16 = sSavedPokeblockData.selectedRow;
-            let mut input: i32 = ListMenu_ProcessInput(*data as u8);
+            let oldPosition: u16 = sSavedPokeblockData.selectedRow;
+            let input: i32 = ListMenu_ProcessInput(*data as u8);
             ListMenuGetScrollAndRow(
                 *data as u8,
                 &raw mut sSavedPokeblockData.scrollOffset,
@@ -948,8 +970,8 @@ pub(crate) unsafe extern "C" fn Task_HandlePokeblockMenuInput(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandlePokeblocksSwapInput(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_HandlePokeblocksSwapInput(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if MenuHelpers_ShouldWaitForLinkRecv() == TRUE {
         return;
     }
@@ -962,24 +984,22 @@ pub(crate) unsafe extern "C" fn Task_HandlePokeblocksSwapInput(taskId: u8) {
         );
         UpdatePokeblockSwapMenu(taskId, FALSE);
     } else {
-        let mut i: u16 = sSavedPokeblockData.scrollOffset;
+        let i: u16 = sSavedPokeblockData.scrollOffset;
         let mut row: u16 = sSavedPokeblockData.selectedRow;
-        let mut input: i32 = ListMenu_ProcessInput(*data as u8);
+        let input: i32 = ListMenu_ProcessInput(*data as u8);
         ListMenuGetScrollAndRow(
             *data as u8,
             &raw mut sSavedPokeblockData.scrollOffset,
             &raw mut sSavedPokeblockData.selectedRow,
         );
         if i != sSavedPokeblockData.scrollOffset || row != sSavedPokeblockData.selectedRow {
-            i = 0;
-            while i < MAX_MENU_ITEMS as u16 {
+            for i in 0..(MAX_MENU_ITEMS as u16) {
                 row = i + sSavedPokeblockData.scrollOffset;
                 if row as i32 == *data.at(2) as i32 {
                     DrawPokeblockMenuHighlight(i, TILE_HIGHLIGHT_RED);
                 } else {
                     DrawPokeblockMenuHighlight(i, TILE_HIGHLIGHT_NONE);
                 }
-                i += 1;
             }
         }
         SetSwapLineSpritesInvisibility((*sPokeblockMenu).swapLineSpriteIds.as_mut_ptr(), 7, FALSE);
@@ -1006,10 +1026,9 @@ pub(crate) unsafe extern "C" fn Task_HandlePokeblocksSwapInput(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn UpdatePokeblockSwapMenu(taskId: u8, noSwap: u8) {
-    let mut i: u8 = 0;
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut swappedFromId: u16 = sSavedPokeblockData.scrollOffset + sSavedPokeblockData.selectedRow;
+unsafe fn UpdatePokeblockSwapMenu(taskId: u8, noSwap: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let swappedFromId: u16 = sSavedPokeblockData.scrollOffset + sSavedPokeblockData.selectedRow;
     (*sPokeblockMenu).isSwapping = FALSE;
     DestroyListMenuTask(
         *data as u8,
@@ -1033,16 +1052,14 @@ pub(crate) unsafe extern "C" fn UpdatePokeblockSwapMenu(taskId: u8, noSwap: u8) 
     ) as i16;
     ScheduleBgCopyTilemapToVram(0);
     SetSwapLineSpritesInvisibility((*sPokeblockMenu).swapLineSpriteIds.as_mut_ptr(), 7, TRUE);
-    i = 0;
-    while i < MAX_MENU_ITEMS {
+    for i in 0..MAX_MENU_ITEMS {
         DrawPokeblockMenuHighlight(i as u16, TILE_HIGHLIGHT_NONE);
-        i += 1;
     }
     DrawPokeblockMenuHighlight(sSavedPokeblockData.selectedRow, TILE_HIGHLIGHT_BLUE);
-    gTasks[taskId].func = Some(Task_HandlePokeblockMenuInput);
+    task_set_func(taskId, Some(Task_HandlePokeblockMenuInput));
 }
-pub(crate) unsafe extern "C" fn ShowPokeblockActionsWindow(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+unsafe fn ShowPokeblockActionsWindow(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if (*sPokeblockMenu).numActions == 3 {
         *data.at(1) = WIN_ACTIONS_TALL as i16;
     } else {
@@ -1059,16 +1076,14 @@ pub(crate) unsafe extern "C" fn ShowPokeblockActionsWindow(taskId: u8) {
     InitMenuInUpperLeftCornerNormal(*data.at(1) as u8, (*sPokeblockMenu).numActions, 0);
     PutWindowTilemap(*data.at(1) as u8);
     ScheduleBgCopyTilemapToVram(1);
-    gTasks[taskId].func = Some(Task_HandlePokeblockActionsInput);
+    task_set_func(taskId, Some(Task_HandlePokeblockActionsInput));
 }
-pub(crate) unsafe extern "C" fn Task_HandlePokeblockActionsInput(taskId: u8) {
-    let mut itemId: i8 = 0;
+pub(crate) unsafe fn Task_HandlePokeblockActionsInput(taskId: u8) {
     if MenuHelpers_ShouldWaitForLinkRecv() == TRUE {
         return;
     }
-    itemId = Menu_ProcessInputNoWrap();
+    let itemId: i8 = Menu_ProcessInputNoWrap();
     if itemId == MENU_NOTHING_CHOSEN {
-        return;
     } else if itemId == MENU_B_PRESSED {
         PlaySE(SE_SELECT);
         PokeblockAction_Cancel(taskId);
@@ -1080,21 +1095,21 @@ pub(crate) unsafe extern "C" fn Task_HandlePokeblockActionsInput(taskId: u8) {
             .unwrap_unchecked()(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn PokeblockAction_UseOnField(taskId: u8) {
+pub(crate) unsafe fn PokeblockAction_UseOnField(taskId: u8) {
     (*sPokeblockMenu).callbackOnUse = Some(UsePokeblockOnField);
     FadePaletteAndSetTaskToClosePokeblockCase(taskId);
 }
-pub(crate) unsafe extern "C" fn UsePokeblockOnField() {
+pub(crate) unsafe fn UsePokeblockOnField() {
     ChooseMonToGivePokeblock(
         &raw mut (*gSaveBlock1Ptr).pokeblocks[gSpecialVar_ItemId],
         Some(ReturnToPokeblockCaseOnField),
     );
 }
-pub(crate) unsafe extern "C" fn ReturnToPokeblockCaseOnField() {
+pub(crate) unsafe fn ReturnToPokeblockCaseOnField() {
     OpenPokeblockCase(PBLOCK_CASE_FIELD, sSavedPokeblockData.callback);
 }
-pub(crate) unsafe extern "C" fn PokeblockAction_Toss(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn PokeblockAction_Toss(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     ClearStdWindowAndFrameToTransparent(*data.at(1) as u8, FALSE);
     StringCopy(
         gStringVar1.as_mut_ptr(),
@@ -1102,7 +1117,9 @@ pub(crate) unsafe extern "C" fn PokeblockAction_Toss(taskId: u8) {
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_ThrowAwayVar1.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_ThrowAwayVar1).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     DisplayMessageAndContinueTask(
         taskId,
@@ -1112,12 +1129,12 @@ pub(crate) unsafe extern "C" fn PokeblockAction_Toss(taskId: u8) {
         FONT_NORMAL,
         GetPlayerTextSpeedDelay(),
         gStringVar4.as_mut_ptr(),
-        core::mem::transmute::<Option<unsafe extern "C" fn(u8)>, *mut c_void>(Some(
+        core::mem::transmute::<Option<unsafe fn(u8)>, *mut c_void>(Some(
             CreateTossPokeblockYesNoMenu,
         )),
     );
 }
-pub(crate) unsafe extern "C" fn CreateTossPokeblockYesNoMenu(taskId: u8) {
+pub(crate) unsafe fn CreateTossPokeblockYesNoMenu(taskId: u8) {
     CreateYesNoMenuWithCallbacks(
         taskId,
         (&raw const *sTossPkblockWindowTemplate).cast_mut(),
@@ -1129,10 +1146,12 @@ pub(crate) unsafe extern "C" fn CreateTossPokeblockYesNoMenu(taskId: u8) {
         (&raw const *sTossYesNoFuncTable).cast_mut(),
     );
 }
-pub(crate) unsafe extern "C" fn TossedPokeblockMessage(taskId: u8) {
+pub(crate) unsafe fn TossedPokeblockMessage(taskId: u8) {
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_Var1ThrownAway.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Var1ThrownAway).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     DisplayMessageAndContinueTask(
         taskId,
@@ -1142,10 +1161,10 @@ pub(crate) unsafe extern "C" fn TossedPokeblockMessage(taskId: u8) {
         FONT_NORMAL,
         GetPlayerTextSpeedDelay(),
         gStringVar4.as_mut_ptr(),
-        core::mem::transmute::<Option<unsafe extern "C" fn(u8)>, *mut c_void>(Some(TossPokeblock)),
+        core::mem::transmute::<Option<unsafe fn(u8)>, *mut c_void>(Some(TossPokeblock)),
     );
 }
-pub(crate) unsafe extern "C" fn TossPokeblock(taskId: u8) {
+pub(crate) unsafe fn TossPokeblock(taskId: u8) {
     if gMain.newKeys as i32 & 3 != 0 {
         let mut data: *mut i16 = null_mut();
         let mut scrollOffset: *mut u16 = null_mut();
@@ -1154,7 +1173,7 @@ pub(crate) unsafe extern "C" fn TossPokeblock(taskId: u8) {
         PlaySE(SE_SELECT);
         scrollOffset = &raw mut sSavedPokeblockData.scrollOffset;
         selectedRow = &raw mut sSavedPokeblockData.selectedRow;
-        data = gTasks[taskId].data.as_mut_ptr();
+        data = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
         DestroyListMenuTask(*data as u8, scrollOffset, selectedRow);
         DrawPokeblockMenuHighlight(*selectedRow, TILE_HIGHLIGHT_NONE);
         SetMenuItemsCountAndMaxShowed();
@@ -1171,15 +1190,15 @@ pub(crate) unsafe extern "C" fn TossPokeblock(taskId: u8) {
         CloseTossPokeblockWindow(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn CloseTossPokeblockWindow(taskId: u8) {
+pub(crate) unsafe fn CloseTossPokeblockWindow(taskId: u8) {
     ClearDialogWindowAndFrameToTransparent(WIN_TOSS_MSG, FALSE);
     ScheduleBgCopyTilemapToVram(1);
     CreateScrollArrows();
-    gTasks[taskId].func = Some(Task_HandlePokeblockMenuInput);
+    task_set_func(taskId, Some(Task_HandlePokeblockMenuInput));
 }
-pub(crate) unsafe extern "C" fn PokeblockAction_UseInBattle(taskId: u8) {
-    let mut nature: u8 = GetNature(&raw mut gEnemyParty[0]);
-    let mut gain: i16 = PokeblockGetGain(
+pub(crate) unsafe fn PokeblockAction_UseInBattle(taskId: u8) {
+    let nature: u8 = GetNature(&raw mut gEnemyParty[0]);
+    let gain: i16 = PokeblockGetGain(
         nature,
         &raw mut (*gSaveBlock1Ptr).pokeblocks[gSpecialVar_ItemId],
     );
@@ -1198,7 +1217,7 @@ pub(crate) unsafe extern "C" fn PokeblockAction_UseInBattle(taskId: u8) {
     }
     FadePaletteAndSetTaskToClosePokeblockCase(taskId);
 }
-pub(crate) unsafe extern "C" fn PokeblockAction_UseOnPokeblockFeeder(taskId: u8) {
+pub(crate) unsafe fn PokeblockAction_UseOnPokeblockFeeder(taskId: u8) {
     SafariZoneActivatePokeblockFeeder(gSpecialVar_ItemId as u8);
     StringCopy(
         gStringVar1.as_mut_ptr(),
@@ -1209,7 +1228,7 @@ pub(crate) unsafe extern "C" fn PokeblockAction_UseOnPokeblockFeeder(taskId: u8)
     gSpecialVar_ItemId = 0;
     FadePaletteAndSetTaskToClosePokeblockCase(taskId);
 }
-pub(crate) unsafe extern "C" fn PokeblockAction_GiveToContestLady(taskId: u8) {
+pub(crate) unsafe fn PokeblockAction_GiveToContestLady(taskId: u8) {
     gSpecialVar_0x8004 =
         GivePokeblockToContestLady(&raw mut (*gSaveBlock1Ptr).pokeblocks[gSpecialVar_ItemId])
             as u16;
@@ -1218,14 +1237,14 @@ pub(crate) unsafe extern "C" fn PokeblockAction_GiveToContestLady(taskId: u8) {
     gSpecialVar_ItemId = 0;
     FadePaletteAndSetTaskToClosePokeblockCase(taskId);
 }
-pub(crate) unsafe extern "C" fn PokeblockAction_Cancel(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn PokeblockAction_Cancel(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     ClearStdWindowAndFrameToTransparent(*data.at(1) as u8, FALSE);
     ScheduleBgCopyTilemapToVram(1);
     CreateScrollArrows();
-    gTasks[taskId].func = Some(Task_HandlePokeblockMenuInput);
+    task_set_func(taskId, Some(Task_HandlePokeblockMenuInput));
 }
-pub(crate) unsafe extern "C" fn ClearPokeblock(pkblId: u8) {
+unsafe fn ClearPokeblock(pkblId: u8) {
     (*gSaveBlock1Ptr).pokeblocks[pkblId].color = 0;
     (*gSaveBlock1Ptr).pokeblocks[pkblId].spicy = 0;
     (*gSaveBlock1Ptr).pokeblocks[pkblId].dry = 0;
@@ -1235,51 +1254,39 @@ pub(crate) unsafe extern "C" fn ClearPokeblock(pkblId: u8) {
     (*gSaveBlock1Ptr).pokeblocks[pkblId].feel = 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearPokeblocks() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < POKEBLOCKS_COUNT as u8 {
+pub unsafe fn ClearPokeblocks() {
+    for i in 0..(POKEBLOCKS_COUNT as u8) {
         ClearPokeblock(i);
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetHighestPokeblocksFlavorLevel(pokeblock: *mut Pokeblock) -> u8 {
-    let mut i: u8 = 0;
+pub unsafe fn GetHighestPokeblocksFlavorLevel(pokeblock: *mut Pokeblock) -> u8 {
     let mut maxFlavor: u8 = GetPokeblockData(pokeblock, PBLOCK_SPICY) as u8;
-    i = PBLOCK_SPICY;
-    while i < FLAVOR_COUNT as u8 {
-        let mut currFlavor: u8 = GetPokeblockData(pokeblock, PBLOCK_SPICY + i) as u8;
+    for i in PBLOCK_SPICY..(FLAVOR_COUNT as u8) {
+        let currFlavor: u8 = GetPokeblockData(pokeblock, PBLOCK_SPICY + i) as u8;
         if maxFlavor < currFlavor {
             maxFlavor = currFlavor;
         }
-        i += 1;
     }
-    return maxFlavor;
+    maxFlavor
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPokeblocksFeel(pokeblock: *mut Pokeblock) -> u8 {
+pub unsafe fn GetPokeblocksFeel(pokeblock: *mut Pokeblock) -> u8 {
     let mut feel: u8 = GetPokeblockData(pokeblock, PBLOCK_FEEL) as u8;
     if feel > POKEBLOCK_MAX_FEEL {
         feel = POKEBLOCK_MAX_FEEL;
     }
-    return feel;
+    feel
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFirstFreePokeblockSlot() -> i8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < POKEBLOCKS_COUNT as u8 {
+pub unsafe fn GetFirstFreePokeblockSlot() -> i8 {
+    for i in 0..(POKEBLOCKS_COUNT as u8) {
         if (*gSaveBlock1Ptr).pokeblocks[i].color == PBLOCK_CLR_NONE {
             return i as i8;
         }
-        i += 1;
     }
-    return -1;
+    -1
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddPokeblock(pokeblock: *mut Pokeblock) -> u32 {
-    let mut slot: i8 = GetFirstFreePokeblockSlot();
+pub unsafe fn AddPokeblock(pokeblock: *mut Pokeblock) -> u32 {
+    let slot: i8 = GetFirstFreePokeblockSlot();
     if slot == -1 {
         return FALSE as u32;
     } else {
@@ -1288,11 +1295,10 @@ pub unsafe extern "C" fn AddPokeblock(pokeblock: *mut Pokeblock) -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryClearPokeblock(pkblId: u8) -> u32 {
+pub unsafe fn TryClearPokeblock(pkblId: u8) -> u32 {
     if (*gSaveBlock1Ptr).pokeblocks[pkblId].color == PBLOCK_CLR_NONE {
         return FALSE as u32;
     } else {
@@ -1301,11 +1307,10 @@ pub unsafe extern "C" fn TryClearPokeblock(pkblId: u8) -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPokeblockData(pokeblock: *mut Pokeblock, field: u8) -> i16 {
+pub unsafe fn GetPokeblockData(pokeblock: *mut Pokeblock, field: u8) -> i16 {
     if field == PBLOCK_COLOR {
         return (*pokeblock).color as i16;
     }
@@ -1327,55 +1332,42 @@ pub unsafe extern "C" fn GetPokeblockData(pokeblock: *mut Pokeblock, field: u8) 
     if field == PBLOCK_FEEL {
         return (*pokeblock).feel as i16;
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokeblockGetGain(nature: u8, pokeblock: *mut Pokeblock) -> i16 {
-    let mut flavor: u8 = 0;
+pub unsafe fn PokeblockGetGain(nature: u8, pokeblock: *mut Pokeblock) -> i16 {
     let mut curGain: i16 = 0;
     let mut totalGain: i16 = 0;
-    flavor = 0;
-    while flavor < FLAVOR_COUNT as u8 {
+    for flavor in 0..(FLAVOR_COUNT as u8) {
         curGain = GetPokeblockData(pokeblock, flavor + PBLOCK_SPICY);
         if curGain > 0 {
             totalGain += curGain
                 * gPokeblockFlavorCompatibilityTable[FLAVOR_COUNT * nature as i32 + flavor as i32]
                     as i16;
         }
-        flavor += 1;
     }
-    return totalGain;
+    totalGain
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokeblockCopyName(pokeblock: *mut Pokeblock, dest: *mut u8) {
-    let mut color: u8 = GetPokeblockData(pokeblock, PBLOCK_COLOR) as u8;
+pub unsafe fn PokeblockCopyName(pokeblock: *mut Pokeblock, dest: *mut u8) {
+    let color: u8 = GetPokeblockData(pokeblock, PBLOCK_COLOR) as u8;
     StringCopy(dest, gPokeblockNames[color]);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyMonFavoritePokeblockName(nature: u8, dest: *mut u8) -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < FLAVOR_COUNT as u8 {
+pub unsafe fn CopyMonFavoritePokeblockName(nature: u8, dest: *mut u8) -> u8 {
+    for i in 0..(FLAVOR_COUNT as u8) {
         if PokeblockGetGain(nature, (&raw const sFavoritePokeblocksTable[i]).cast_mut()) > 0 {
             StringCopy(dest, gPokeblockNames[i as i32 + 1]);
             return TRUE;
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPokeblocksFlavor(pokeblock: *mut Pokeblock) -> u8 {
+pub unsafe fn GetPokeblocksFlavor(pokeblock: *mut Pokeblock) -> u8 {
     let mut bestFlavor: i16 = 0;
-    let mut i: i16 = 0;
-    i = 0;
-    while i < FLAVOR_COUNT as i16 {
+    for i in 0..(FLAVOR_COUNT as i16) {
         if GetPokeblockData(pokeblock, bestFlavor as u8 + 1)
             < GetPokeblockData(pokeblock, i as u8 + 1)
         {
             bestFlavor = i;
         }
-        i += 1;
     }
-    return bestFlavor as u8;
+    bestFlavor as u8
 }

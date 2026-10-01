@@ -3,29 +3,41 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::useless_transmute
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::braille_puzzles::{SetUpPuzzleEffectRegisteel, ShouldDoBrailleRegisteelEffect};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::{FlagGet, FlagSet};
+use crate::ffi::gSpecialVar_Result;
+use crate::field_effect::gFieldEffectArguments;
+use crate::fieldmap::gMapHeader;
+use crate::fldeff_rocksmash::CreateFieldMoveTask;
+use crate::gpu_regs::SetGpuReg;
+use crate::overworld::{GetCurrentMapType, GetLastUsedWarpMapType, gFieldCallback2};
+use crate::palette::{LoadPalette, ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade};
+use crate::party_menu::{
+    FieldCallback_PrepareFadeInFromMenu, GetCursorSelectionMonId, gPostMenuFieldCallback,
+};
+use crate::script::ScriptContext_SetupScript;
+use crate::sound::PlaySE;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData,
+};
+use crate::task::{ResetTasks, RunTasks};
+use crate::task::{task_get, task_set, task_set_func};
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,6 +46,11 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
 // Data tables (translate with cdata.py): sTransitionTypes sCaveTransitionPalette_White sCaveTransitionPalette_Black sCaveTransitionPalette_Enter sCaveTransitionTilemap sCaveTransitionTiles
 
 /// `struct FlashStruct`
@@ -44,7 +61,7 @@ pub struct FlashStruct {
     pub toType: u8,
     pub isEnter: u8,
     pub isExit: u8,
-    pub func: Option<unsafe extern "C" fn()>,
+    pub func: Option<unsafe fn()>,
 }
 
 unsafe impl Sync for FlashStruct {}
@@ -74,46 +91,22 @@ static sCaveTransitionTiles: Table<CArray<u32, 45>> =
 static sTransitionTypes: Table<CArray<FlashStruct, 17>> =
     Table((&raw const crate::data::fldeff_flash::sTransitionTypes).cast());
 
-unsafe extern "C" {
-    static EventScript_UseFlash: CArray<u8, 0>;
-    static mut gFieldCallback2: Option<unsafe extern "C" fn() -> u8>;
-    static mut gFieldEffectArguments: CArray<i32, 8>;
-    static mut gMain: Main;
-    static mut gMapHeader: MapHeader;
-    static mut gPostMenuFieldCallback: Option<unsafe extern "C" fn()>;
-    static mut gSpecialVar_Result: u16;
-    static mut gTasks: CArray<Task, 0>;
-    fn AnimateSprites();
-    fn BuildOamBuffer();
-    fn CreateFieldMoveTask() -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn FieldCallback_PrepareFadeInFromMenu() -> u8;
-    fn FlagGet(a0: u16) -> u8;
-    fn FlagSet(a0: u16) -> u8;
-    fn GetCurrentMapType() -> u8;
-    fn GetCursorSelectionMonId() -> u8;
-    fn GetLastUsedWarpMapType() -> u8;
-    fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void);
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn PlaySE(a0: u16);
-    fn ProcessSpriteCopyRequests();
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn RunTasks();
-    fn ScriptContext_SetupScript(a0: *mut u8);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetUpPuzzleEffectRegisteel();
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShouldDoBrailleRegisteelEffect() -> u8;
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
+/// `LZ77UnCompVram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetUpFieldMove_Flash() -> u8 {
+pub unsafe fn SetUpFieldMove_Flash() -> u8 {
     if ShouldDoBrailleRegisteelEffect() != 0 {
         gSpecialVar_Result = GetCursorSelectionMonId() as u16;
         gFieldCallback2 = Some(FieldCallback_PrepareFadeInFromMenu);
@@ -124,32 +117,43 @@ pub unsafe extern "C" fn SetUpFieldMove_Flash() -> u8 {
         gPostMenuFieldCallback = Some(FieldCallback_Flash);
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn FieldCallback_Flash() {
-    let mut taskId: u8 = CreateFieldMoveTask();
+pub(crate) unsafe fn FieldCallback_Flash() {
+    let taskId: u8 = CreateFieldMoveTask();
     gFieldEffectArguments[0] = GetCursorSelectionMonId() as i32;
-    gTasks[taskId].data[8] = (FldEff_UseFlash as *const () as usize as u32 >> 16) as i16;
-    gTasks[taskId].data[9] = FldEff_UseFlash as *const () as usize as u32 as i16;
+    task_set(
+        taskId,
+        8,
+        (FldEff_UseFlash as *const () as usize as u32 >> 16) as i16,
+    );
+    task_set(
+        taskId,
+        9,
+        FldEff_UseFlash as *const () as usize as u32 as i16,
+    );
 }
-pub(crate) unsafe extern "C" fn FldEff_UseFlash() {
+pub(crate) unsafe fn FldEff_UseFlash() {
     PlaySE(SE_M_REFLECT);
     FlagSet(FLAG_SYS_USE_FLASH);
-    ScriptContext_SetupScript(EventScript_UseFlash.as_ptr().cast_mut());
+    ScriptContext_SetupScript(
+        (*crate::asmdata::EventScript_UseFlash.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
 }
-pub(crate) unsafe extern "C" fn CB2_ChangeMapMain() {
+pub(crate) unsafe fn CB2_ChangeMapMain() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn VBC_ChangeMapVBlank() {
+pub(crate) unsafe fn VBC_ChangeMapVBlank() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_DoChangeMap() {
+pub unsafe fn CB2_DoChangeMap() {
     SetVBlankCallback(None);
     SetGpuReg(0x0, 0);
     SetGpuReg(REG_OFFSET_BG2CNT, 0);
@@ -167,7 +171,7 @@ pub unsafe extern "C" fn CB2_DoChangeMap() {
             volatile_write(&raw mut tmp, 0);
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                     volatile_write(dmaRegs.at(1), VRAM as usize as *mut c_void as usize as u32);
                     volatile_write(dmaRegs.at(2), 0x8100c000);
@@ -182,7 +186,7 @@ pub unsafe extern "C" fn CB2_DoChangeMap() {
             volatile_write(&raw mut tmp, 0);
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                     volatile_write(
                         dmaRegs.at(1),
@@ -200,12 +204,9 @@ pub unsafe extern "C" fn CB2_DoChangeMap() {
             volatile_write(&raw mut tmp, 0);
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
-                    volatile_write(
-                        dmaRegs.at(1),
-                        83886082 as usize as *mut c_void as usize as u32,
-                    );
+                    volatile_write(dmaRegs.at(1), 83886082_usize as *mut c_void as usize as u32);
                     volatile_write(dmaRegs.at(2), 0x810001ff);
                     let _ = (dmaRegs.at(2)).read_volatile();
                 }
@@ -216,14 +217,13 @@ pub unsafe extern "C" fn CB2_DoChangeMap() {
     ResetTasks();
     ResetSpriteData();
     {
-        let mut imeTemp: u16 = 0;
-        imeTemp = (67109384 as usize as *mut u16).read_volatile();
-        volatile_write(67109384 as usize as *mut u16, 0);
+        let imeTemp: u16 = (67109384_usize as *mut u16).read_volatile();
+        volatile_write(67109384_usize as *mut u16, 0);
         volatile_write(
-            0x4000200 as usize as *mut u16,
-            (0x4000200 as usize as *mut u16).read_volatile() | INTR_FLAG_VBLANK,
+            0x4000200_usize as *mut u16,
+            (0x4000200_usize as *mut u16).read_volatile() | INTR_FLAG_VBLANK,
         );
-        volatile_write(67109384 as usize as *mut u16, imeTemp);
+        volatile_write(67109384_usize as *mut u16, imeTemp);
     }
     SetVBlankCallback(Some(VBC_ChangeMapVBlank));
     SetMainCallback2(Some(CB2_ChangeMapMain));
@@ -231,11 +231,10 @@ pub unsafe extern "C" fn CB2_DoChangeMap() {
         SetMainCallback2(gMain.savedCallback);
     }
 }
-pub(crate) unsafe extern "C" fn TryDoMapTransition() -> u8 {
+unsafe fn TryDoMapTransition() -> u8 {
+    let fromType: u8 = GetLastUsedWarpMapType();
+    let toType: u8 = GetCurrentMapType();
     let mut i: u8 = 0;
-    let mut fromType: u8 = GetLastUsedWarpMapType();
-    let mut toType: u8 = GetCurrentMapType();
-    i = 0;
     while sTransitionTypes[i].fromType != 0 {
         if sTransitionTypes[i].fromType == fromType && sTransitionTypes[i].toType == toType {
             sTransitionTypes[i].func.unwrap_unchecked()();
@@ -243,51 +242,47 @@ pub(crate) unsafe extern "C" fn TryDoMapTransition() -> u8 {
         }
         i += 1;
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMapPairFadeToType(_fromType: u8, _toType: u8) -> u8 {
+pub unsafe fn GetMapPairFadeToType(_fromType: u8, _toType: u8) -> u8 {
+    let fromType: u8 = _fromType;
+    let toType: u8 = _toType;
     let mut i: u8 = 0;
-    let mut fromType: u8 = _fromType;
-    let mut toType: u8 = _toType;
-    i = 0;
     while sTransitionTypes[i].fromType != 0 {
         if sTransitionTypes[i].fromType == fromType && sTransitionTypes[i].toType == toType {
             return sTransitionTypes[i].isEnter;
         }
         i += 1;
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMapPairFadeFromType(_fromType: u8, _toType: u8) -> u8 {
+pub unsafe fn GetMapPairFadeFromType(_fromType: u8, _toType: u8) -> u8 {
+    let fromType: u8 = _fromType;
+    let toType: u8 = _toType;
     let mut i: u8 = 0;
-    let mut fromType: u8 = _fromType;
-    let mut toType: u8 = _toType;
-    i = 0;
     while sTransitionTypes[i].fromType != 0 {
         if sTransitionTypes[i].fromType == fromType && sTransitionTypes[i].toType == toType {
             return sTransitionTypes[i].isExit;
         }
         i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DoExitCaveTransition() {
+pub(crate) unsafe fn DoExitCaveTransition() {
     CreateTask(Some(Task_ExitCaveTransition1), 0);
 }
-pub(crate) unsafe extern "C" fn Task_ExitCaveTransition1(taskId: u8) {
-    gTasks[taskId].func = Some(Task_ExitCaveTransition2);
+pub(crate) unsafe fn Task_ExitCaveTransition1(taskId: u8) {
+    task_set_func(taskId, Some(Task_ExitCaveTransition2));
 }
-pub(crate) unsafe extern "C" fn Task_ExitCaveTransition2(taskId: u8) {
+pub(crate) unsafe fn Task_ExitCaveTransition2(taskId: u8) {
     SetGpuReg(0x0, 0);
     LZ77UnCompVram(
         sCaveTransitionTiles.as_ptr().cast_mut(),
-        0x600c000 as usize as *mut c_void,
+        0x600c000_usize as *mut c_void,
     );
     LZ77UnCompVram(
         sCaveTransitionTilemap.as_ptr().cast_mut(),
-        0x600f800 as usize as *mut c_void,
+        0x600f800_usize as *mut c_void,
     );
     LoadPalette(
         sCaveTransitionPalette_White.as_ptr().cast_mut() as *mut c_void,
@@ -304,27 +299,26 @@ pub(crate) unsafe extern "C" fn Task_ExitCaveTransition2(taskId: u8) {
     SetGpuReg(REG_OFFSET_BLDY, 0);
     SetGpuReg(REG_OFFSET_BG0CNT, 7948);
     SetGpuReg(0x0, 4416);
-    gTasks[taskId].func = Some(Task_ExitCaveTransition3);
-    gTasks[taskId].data[0] = 16;
-    gTasks[taskId].data[1] = 0;
+    task_set_func(taskId, Some(Task_ExitCaveTransition3));
+    task_set(taskId, 0, 16);
+    task_set(taskId, 1, 0);
 }
-pub(crate) unsafe extern "C" fn Task_ExitCaveTransition3(taskId: u8) {
-    let mut count: u16 = gTasks[taskId].data[1] as u16;
-    let mut blend: u16 = count + 0x1000;
+pub(crate) unsafe fn Task_ExitCaveTransition3(taskId: u8) {
+    let count: u16 = task_get(taskId, 1) as u16;
+    let blend: u16 = count + 0x1000;
     SetGpuReg(REG_OFFSET_BLDALPHA, blend);
     if count <= 16 {
-        gTasks[taskId].data[1] += 1;
+        task_set(taskId, 1, task_get(taskId, 1) + 1);
     } else {
-        gTasks[taskId].data[2] = 0;
-        gTasks[taskId].func = Some(Task_ExitCaveTransition4);
+        task_set(taskId, 2, 0);
+        task_set_func(taskId, Some(Task_ExitCaveTransition4));
     }
 }
-pub(crate) unsafe extern "C" fn Task_ExitCaveTransition4(taskId: u8) {
-    let mut count: u16 = 0;
+pub(crate) unsafe fn Task_ExitCaveTransition4(taskId: u8) {
     SetGpuReg(REG_OFFSET_BLDALPHA, 4112);
-    count = gTasks[taskId].data[2] as u16;
+    let count: u16 = task_get(taskId, 2) as u16;
     if count < 8 {
-        gTasks[taskId].data[2] += 1;
+        task_set(taskId, 2, task_get(taskId, 2) + 1);
         LoadPalette(
             (&raw const sCaveTransitionPalette_Enter[8 + count as i32]).cast_mut() as *mut c_void,
             224,
@@ -336,32 +330,32 @@ pub(crate) unsafe extern "C" fn Task_ExitCaveTransition4(taskId: u8) {
             0,
             32,
         );
-        gTasks[taskId].func = Some(Task_ExitCaveTransition5);
-        gTasks[taskId].data[2] = 8;
+        task_set_func(taskId, Some(Task_ExitCaveTransition5));
+        task_set(taskId, 2, 8);
     }
 }
-pub(crate) unsafe extern "C" fn Task_ExitCaveTransition5(taskId: u8) {
-    if gTasks[taskId].data[2] != 0 {
-        gTasks[taskId].data[2] -= 1;
+pub(crate) unsafe fn Task_ExitCaveTransition5(taskId: u8) {
+    if task_get(taskId, 2) != 0 {
+        task_set(taskId, 2, task_get(taskId, 2) - 1);
     } else {
         SetMainCallback2(gMain.savedCallback);
     }
 }
-pub(crate) unsafe extern "C" fn DoEnterCaveTransition() {
+pub(crate) unsafe fn DoEnterCaveTransition() {
     CreateTask(Some(Task_EnterCaveTransition1), 0);
 }
-pub(crate) unsafe extern "C" fn Task_EnterCaveTransition1(taskId: u8) {
-    gTasks[taskId].func = Some(Task_EnterCaveTransition2);
+pub(crate) unsafe fn Task_EnterCaveTransition1(taskId: u8) {
+    task_set_func(taskId, Some(Task_EnterCaveTransition2));
 }
-pub(crate) unsafe extern "C" fn Task_EnterCaveTransition2(taskId: u8) {
+pub(crate) unsafe fn Task_EnterCaveTransition2(taskId: u8) {
     SetGpuReg(0x0, 0);
     LZ77UnCompVram(
         sCaveTransitionTiles.as_ptr().cast_mut(),
-        0x600c000 as usize as *mut c_void,
+        0x600c000_usize as *mut c_void,
     );
     LZ77UnCompVram(
         sCaveTransitionTilemap.as_ptr().cast_mut(),
-        0x600f800 as usize as *mut c_void,
+        0x600f800_usize as *mut c_void,
     );
     SetGpuReg(REG_OFFSET_BLDCNT, 0);
     SetGpuReg(REG_OFFSET_BLDALPHA, 0);
@@ -378,16 +372,16 @@ pub(crate) unsafe extern "C" fn Task_EnterCaveTransition2(taskId: u8) {
         0,
         32,
     );
-    gTasks[taskId].func = Some(Task_EnterCaveTransition3);
-    gTasks[taskId].data[0] = 16;
-    gTasks[taskId].data[1] = 0;
-    gTasks[taskId].data[2] = 0;
+    task_set_func(taskId, Some(Task_EnterCaveTransition3));
+    task_set(taskId, 0, 16);
+    task_set(taskId, 1, 0);
+    task_set(taskId, 2, 0);
 }
-pub(crate) unsafe extern "C" fn Task_EnterCaveTransition3(taskId: u8) {
-    let mut count: u16 = gTasks[taskId].data[2] as u16;
+pub(crate) unsafe fn Task_EnterCaveTransition3(taskId: u8) {
+    let count: u16 = task_get(taskId, 2) as u16;
     if count < 16 {
-        gTasks[taskId].data[2] += 1;
-        gTasks[taskId].data[2] += 1;
+        task_set(taskId, 2, task_get(taskId, 2) + 1);
+        task_set(taskId, 2, task_get(taskId, 2) + 1);
         LoadPalette(
             (&raw const sCaveTransitionPalette_Enter[15 - count as i32]).cast_mut() as *mut c_void,
             224,
@@ -396,15 +390,15 @@ pub(crate) unsafe extern "C" fn Task_EnterCaveTransition3(taskId: u8) {
     } else {
         SetGpuReg(REG_OFFSET_BLDALPHA, 4112);
         SetGpuReg(REG_OFFSET_BLDCNT, 15937);
-        gTasks[taskId].func = Some(Task_EnterCaveTransition4);
+        task_set_func(taskId, Some(Task_EnterCaveTransition4));
     }
 }
-pub(crate) unsafe extern "C" fn Task_EnterCaveTransition4(taskId: u8) {
-    let mut count: u16 = 16 - gTasks[taskId].data[1] as u16;
-    let mut blend: u16 = count + 0x1000;
+pub(crate) unsafe fn Task_EnterCaveTransition4(taskId: u8) {
+    let count: u16 = 16 - task_get(taskId, 1) as u16;
+    let blend: u16 = count + 0x1000;
     SetGpuReg(REG_OFFSET_BLDALPHA, blend);
     if count != 0 {
-        gTasks[taskId].data[1] += 1;
+        task_set(taskId, 1, task_get(taskId, 1) + 1);
     } else {
         LoadPalette(
             sCaveTransitionPalette_Black.as_ptr().cast_mut() as *mut c_void,

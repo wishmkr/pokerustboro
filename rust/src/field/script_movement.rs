@@ -25,18 +25,37 @@ const T_OBJECT_IDS: usize = 1;
 static mut MOVEMENT_SCRIPTS: [*const u8; OBJECT_EVENTS_COUNT] =
     [core::ptr::null(); OBJECT_EVENTS_COUNT];
 
-unsafe extern "C" {
-    fn TryGetObjectEventIdByLocalIdAndMap(
-        local_id: u8,
-        map_num: u8,
-        map_group_id: u8,
-        object_event_id: *mut u8,
-    ) -> u8;
-    fn ObjectEventIsHeldMovementActive(object_event: *mut u8) -> u8;
-    fn ObjectEventClearHeldMovementIfFinished(object_event: *mut u8) -> u8;
-    fn ObjectEventSetHeldMovement(object_event: *mut u8, movement_action_id: u8) -> u8;
-    fn FreezeObjectEvent(object_event: *mut u8) -> u8;
-    fn UnfreezeObjectEvent(object_event: *mut u8);
+/// `TryGetObjectEventIdByLocalIdAndMap` with this module's view of its types.
+#[inline]
+unsafe fn TryGetObjectEventIdByLocalIdAndMap(a0: u8, a1: u8, a2: u8, a3: *mut u8) -> u8 {
+    unsafe { crate::event_object_movement::TryGetObjectEventIdByLocalIdAndMap(a0, a1, a2, a3 as _) }
+}
+/// `ObjectEventIsHeldMovementActive` with this module's view of its types.
+#[inline]
+unsafe fn ObjectEventIsHeldMovementActive(a0: *mut u8) -> u8 {
+    unsafe { crate::event_object_movement::ObjectEventIsHeldMovementActive(a0 as _) }
+}
+/// `ObjectEventClearHeldMovementIfFinished` with this module's view of its types.
+#[inline]
+unsafe fn ObjectEventClearHeldMovementIfFinished(a0: *mut u8) -> u8 {
+    unsafe { crate::event_object_movement::ObjectEventClearHeldMovementIfFinished(a0 as _) }
+}
+/// `ObjectEventSetHeldMovement` with this module's view of its types.
+#[inline]
+unsafe fn ObjectEventSetHeldMovement(a0: *mut u8, a1: u8) -> u8 {
+    unsafe { crate::event_object_movement::ObjectEventSetHeldMovement(a0 as _, a1) }
+}
+/// `FreezeObjectEvent` with this module's view of its types.
+#[inline]
+unsafe fn FreezeObjectEvent(a0: *mut u8) -> u8 {
+    unsafe { crate::event_object_movement::FreezeObjectEvent(a0 as _) }
+}
+/// `UnfreezeObjectEvent` with this module's view of its types.
+#[inline]
+unsafe fn UnfreezeObjectEvent(a0: *mut u8) {
+    unsafe {
+        crate::event_object_movement::UnfreezeObjectEvent(a0 as _);
+    }
 }
 
 /// `(u8 *)&gTasks[taskId].data[1]` - the packed object event id array.
@@ -153,7 +172,7 @@ unsafe fn try_add_new_movement(task_id: u8, object_event_id: u8, script: *const 
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptMovement_StartObjectMovementScript(
+pub unsafe fn ScriptMovement_StartObjectMovementScript(
     local_id: u8,
     map_num: u8,
     map_group: u8,
@@ -175,7 +194,7 @@ pub unsafe extern "C" fn ScriptMovement_StartObjectMovementScript(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptMovement_IsObjectMovementFinished(
+pub unsafe fn ScriptMovement_IsObjectMovementFinished(
     local_id: u8,
     map_num: u8,
     map_group: u8,
@@ -197,7 +216,7 @@ pub unsafe extern "C" fn ScriptMovement_IsObjectMovementFinished(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptMovement_UnfreezeObjectEvents() {
+pub unsafe fn ScriptMovement_UnfreezeObjectEvents() {
     let task_id = unsafe { move_objects_task_id() };
     if task_id == TASK_NONE {
         return;
@@ -212,7 +231,7 @@ pub unsafe extern "C" fn ScriptMovement_UnfreezeObjectEvents() {
     unsafe { DestroyTask(task_id) };
 }
 
-unsafe extern "C" fn move_objects(task_id: u8) {
+unsafe fn move_objects(task_id: u8) {
     for i in 0..OBJECT_EVENTS_COUNT {
         let id = unsafe { object_id(task_id, i) };
         if id != NO_OBJECT {

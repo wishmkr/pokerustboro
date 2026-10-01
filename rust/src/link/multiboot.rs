@@ -3,23 +3,13 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    unused_variables
 )]
 
 #[allow(unused_imports)]
@@ -38,21 +28,22 @@ use core::ptr::null_mut;
 pub(crate) static mut MultiBoot_required_data: Aligned<CArray<u16, 3>> =
     Aligned(unsafe { zeroed() });
 
-unsafe extern "C" {
-    fn MultiBoot(a0: *mut MultiBootParam) -> i32;
+/// `MultiBoot` with this module's view of its types.
+#[inline]
+unsafe fn MultiBoot(a0: *mut MultiBootParam) -> i32 {
+    unsafe { crate::syscall::MultiBoot(a0 as _) }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MultiBootInit(mp: *mut MultiBootParam) {
+pub unsafe fn MultiBootInit(mp: *mut MultiBootParam) {
     (*mp).client_bit = 0;
     (*mp).probe_count = 0;
     (*mp).response_bit = 0;
     (*mp).check_wait = MULTIBOOT_CONNECTION_CHECK_WAIT;
     (*mp).sendflag = 0;
     (*mp).handshake_timeout = 0;
-    volatile_write(67109172 as usize as *mut u16, 0);
-    volatile_write(67109160 as usize as *mut u16, 8195);
-    volatile_write(67109162 as usize as *mut u16, 0);
+    volatile_write(67109172_usize as *mut u16, 0);
+    volatile_write(67109160_usize as *mut u16, 8195);
+    volatile_write(67109162_usize as *mut u16, 0);
 }
 // hand-written: tools/rustport/overrides/multiboot/MultiBootMain.rs
 // c2rs-uses: MultiBootCheckComplete MultiBootInit MultiBootHandShake MultiBootWaitSendDone MultiBootStartProbe MultiBootSend MultiBoot
@@ -63,7 +54,7 @@ pub unsafe extern "C" fn MultiBootInit(mp: *mut MultiBootParam) {
 /// the jump back is `continue 'output_burst`.
 /// struct MultiBootParam offsets are GCC-probed (see the constants).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MultiBootMain(mp: *mut u8) -> i32 {
+pub unsafe fn MultiBootMain(mp: *mut u8) -> i32 {
     const HANDSHAKE_DATA: usize = 0x14;
     const HANDSHAKE_TIMEOUT: usize = 0x16;
     const PROBE_COUNT: usize = 0x18;
@@ -367,20 +358,18 @@ pub unsafe extern "C" fn MultiBootMain(mp: *mut u8) -> i32 {
     }
 }
 
-pub(crate) unsafe extern "C" fn MultiBootSend(mp: *mut MultiBootParam, data: u16) -> i32 {
-    let mut i: i32 = 0;
-    i = (67109160 as usize as *mut u16).read_volatile() as i32 & 140;
+unsafe fn MultiBootSend(mp: *mut MultiBootParam, data: u16) -> i32 {
+    let i: i32 = (67109160_usize as *mut u16).read_volatile() as i32 & 140;
     if i != SIO_MULTI_SD {
         MultiBootInit(mp);
         return i ^ SIO_MULTI_SD;
     }
-    volatile_write(67109162 as usize as *mut u16, data);
-    volatile_write(67109160 as usize as *mut u16, 8323);
+    volatile_write(67109162_usize as *mut u16, data);
+    volatile_write(67109160_usize as *mut u16, 8323);
     (*mp).sendflag = 1;
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MultiBootStartProbe(mp: *mut MultiBootParam) {
+pub unsafe fn MultiBootStartProbe(mp: *mut MultiBootParam) {
     if (*mp).probe_count != 0 {
         MultiBootInit(mp);
         return;
@@ -389,8 +378,7 @@ pub unsafe extern "C" fn MultiBootStartProbe(mp: *mut MultiBootParam) {
     (*mp).client_bit = 0;
     (*mp).probe_count = 1;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MultiBootStartMaster(
+pub unsafe fn MultiBootStartMaster(
     mp: *mut MultiBootParam,
     srcp: *mut u8,
     mut length: i32,
@@ -403,33 +391,32 @@ pub unsafe extern "C" fn MultiBootStartMaster(
         return;
     }
     (*mp).boot_srcp = srcp;
-    length = length + 15 & -16;
-    if length < MULTIBOOT_SEND_SIZE_MIN || length > MULTIBOOT_SEND_SIZE_MAX {
+    length = (length + 15) & -16;
+    if !(MULTIBOOT_SEND_SIZE_MIN..=MULTIBOOT_SEND_SIZE_MAX).contains(&length) {
         MultiBootInit(mp);
         return;
     }
     (*mp).boot_endp = srcp.at(length);
     match palette_speed {
-        -4 | -3 | -2 | -1 => {
-            i = (palette_color as i32) << 3 | 3 - palette_speed as i32;
+        -4..=-1 => {
+            i = ((palette_color as i32) << 3) | (3 - palette_speed as i32);
         }
         0 => {
             i = 0x38 | palette_color as i32;
         }
-        1 | 2 | 3 | 4 => {
-            i = (palette_color as i32) << 3 | palette_speed as i32 - 1;
+        1..=4 => {
+            i = ((palette_color as i32) << 3) | (palette_speed as i32 - 1);
         }
         _ => {}
     }
     (*mp).palette_data = (i as u8 & 0x3f) << 1 | 0x81;
     (*mp).probe_count = 0xd0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MultiBootCheckComplete(mp: *mut MultiBootParam) -> i32 {
+pub unsafe fn MultiBootCheckComplete(mp: *mut MultiBootParam) -> i32 {
     if (*mp).probe_count == 0xe9 {
         return 1;
     }
-    return 0;
+    0
 }
 // hand-written: tools/rustport/overrides/multiboot/MultiBootHandShake.rs
 // c2rs-uses: MultiBootSend MultiBootInit
@@ -438,7 +425,7 @@ pub unsafe extern "C" fn MultiBootCheckComplete(mp: *mut MultiBootParam) -> i32 
 /// (`goto output_common`); both become explicit steps here.
 /// struct MultiBootParam: system_work @0 (send_data = [0], must_data = [1]),
 /// probe_count @0x18, client_bit @0x1E, masterp @0x28.
-unsafe extern "C" fn MultiBootHandShake(mp: *mut u8) -> i32 {
+fn MultiBootHandShake(mp: *mut u8) -> i32 {
     const MULTIBOOT_NCHILD: i32 = 3;
     const MULTIBOOT_ERROR_HANDSHAKE_FAILURE: i32 = 0x71;
     enum Step {
@@ -546,14 +533,11 @@ unsafe extern "C" fn MultiBootWaitCycles(cycles: u32) {
 #[cfg(not(target_arch = "arm"))]
 unsafe extern "C" fn MultiBootWaitCycles(_cycles: u32) {}
 
-pub(crate) unsafe extern "C" fn MultiBootWaitSendDone() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 31069 {
-        if (67109160 as usize as *mut u16).read_volatile() as i32 & SIO_START as i32 == 0 {
+unsafe fn MultiBootWaitSendDone() {
+    for i in 0..31069i32 {
+        if (67109160_usize as *mut u16).read_volatile() as i32 & SIO_START as i32 == 0 {
             break;
         }
-        i += 1;
     }
     MultiBootWaitCycles(600);
 }

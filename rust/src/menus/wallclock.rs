@@ -3,37 +3,102 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::useless_transmute,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::bg::{ChangeBgX, ChangeBgY, ResetBgsAndClearDma3BusyFlags, ShowBg};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::ffi::gSpecialVar_0x8004;
+use crate::gpu_regs::{EnableInterrupts, SetGpuReg};
+use crate::menu::{
+    ClearScheduledBgCopiesToVram, ClearStdWindowAndFrameToTransparent, CreateYesNoMenu,
+    DoScheduledBgTilemapCopiesToVram, DrawStdFrameWithCustomTileAndPalette,
+    Menu_ProcessInputNoWrapClearOnChoose, ScheduleBgCopyTilemapToVram,
+};
+use crate::palette::{
+    BeginNormalPaletteFade, LoadPalette, ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade,
+    gPaletteFade,
+};
+use crate::rtc::{RtcCalcLocalTime, RtcInitLocalTimeOffset, gLocalTime};
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData, SetOamMatrix,
+};
+use crate::task::{ResetTasks, RunTasks};
+use crate::task::{task_get, task_set, task_set_func};
+use crate::text::DeactivateAllTextPrinters;
+use crate::text_window::LoadUserWindowBorderGfx;
+use crate::trig::{Cos2, Sin2};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{ClearWindowTilemap, FreeAllWindowBuffers, PutWindowTilemap};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `LoadSpritePalettes` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+    unsafe {
+        crate::sprite::LoadSpritePalettes(a0 as _);
+    }
+}
+// The C's names for task and sprite data slots.
+const sTaskId: usize = 0;
+const tMinuteHandAngle: usize = 0;
+const sAngle: usize = 1;
+const tHourHandAngle: usize = 1;
+const tHours: usize = 2;
+const tMinutes: usize = 3;
+const tMoveDir: usize = 4;
+const tPeriod: usize = 5;
+const tMoveSpeed: usize = 6;
 // Data tables (translate with cdata.py): sHand_Gfx sTextPrompt_Pal sWindowTemplates sWindowTemplate_ConfirmYesNo sBgTemplates sSpriteSheet_ClockHand sUnused sSpritePalettes_Clock sOam_ClockHand sAnim_MinuteHand sAnim_HourHand sAnims_MinuteHand sAnims_HourHand sSpriteTemplate_MinuteHand sSpriteTemplate_HourHand sOam_PeriodIndicator sAnim_PM sAnim_AM sAnims_PM sAnims_AM sSpriteTemplate_PM sSpriteTemplate_AM sClockHandCoords
 
 const MOVE_BACKWARD: u8 = 1;
@@ -67,86 +132,55 @@ static sWindowTemplate_ConfirmYesNo: Table<WindowTemplate> =
 static sWindowTemplates: Table<CArray<WindowTemplate, 3>> =
     Table((&raw const crate::data::wallclock::sWindowTemplates).cast());
 
-unsafe extern "C" {
-    static mut gLocalTime: Time;
-    static mut gMain: Main;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_Cancel4: CArray<u8, 0>;
-    static gText_Confirm3: CArray<u8, 0>;
-    static gText_IsThisTheCorrectTime: CArray<u8, 0>;
-    static gWallClockFemale_Pal: CArray<u16, 0>;
-    static gWallClockMale_Pal: CArray<u16, 0>;
-    static gWallClockStart_Tilemap: CArray<u32, 0>;
-    static gWallClockView_Tilemap: CArray<u32, 0>;
-    static gWallClock_Gfx: CArray<u32, 0>;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BuildOamBuffer();
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ClearScheduledBgCopiesToVram();
-    fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8);
-    fn ClearWindowTilemap(a0: u8);
-    fn Cos2(a0: u16) -> i16;
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateYesNoMenu(a0: *mut WindowTemplate, a1: u16, a2: u8, a3: u8);
-    fn DeactivateAllTextPrinters();
-    fn DoScheduledBgTilemapCopiesToVram();
-    fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
-    fn EnableInterrupts(a0: u16);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn GetOverworldTextboxPalettePtr() -> *mut u16;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void);
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpritePalettes(a0: *mut SpritePalette);
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn PlaySE(a0: u16);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn RtcCalcLocalTime();
-    fn RtcInitLocalTimeOffset(a0: i32, a1: i32);
-    fn RunTasks();
-    fn ScanlineEffect_Stop();
-    fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetOamMatrix(a0: u8, a1: u16, a2: u16, a3: u16, a4: u16);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn Sin2(a0: u16) -> i16;
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `GetOverworldTextboxPalettePtr` with this module's view of its types.
+#[inline]
+unsafe fn GetOverworldTextboxPalettePtr() -> *mut u16 {
+    unsafe { crate::text_window::GetOverworldTextboxPalettePtr() as *mut u16 }
+}
+/// `LZ77UnCompVram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn VBlankCB_WallClock() {
+pub(crate) unsafe fn VBlankCB_WallClock() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn LoadWallClockGraphics() {
+unsafe fn LoadWallClockGraphics() {
     SetVBlankCallback(None);
     SetGpuReg(0x0, 0);
     SetGpuReg(REG_OFFSET_BG3CNT, 0);
@@ -171,7 +205,7 @@ pub(crate) unsafe extern "C" fn LoadWallClockGraphics() {
                     volatile_write(&raw mut tmp, 0);
                     {
                         {
-                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                             volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                             volatile_write(dmaRegs.at(1), _dest as usize as u32);
                             volatile_write(dmaRegs.at(2), 0x81000800);
@@ -189,10 +223,10 @@ pub(crate) unsafe extern "C" fn LoadWallClockGraphics() {
                         volatile_write(&raw mut tmp, 0);
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                volatile_write(dmaRegs.at(2), 0x81000000 | (_size / 2));
                                 let _ = (dmaRegs.at(2)).read_volatile();
                             }
                         }
@@ -212,10 +246,10 @@ pub(crate) unsafe extern "C" fn LoadWallClockGraphics() {
                     volatile_write(&raw mut tmp, 0);
                     {
                         {
-                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                             volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                             volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                            volatile_write(dmaRegs.at(2), 0x85000000 | _size / 4);
+                            volatile_write(dmaRegs.at(2), 0x85000000 | (_size / 4));
                             let _ = (dmaRegs.at(2)).read_volatile();
                         }
                     }
@@ -233,10 +267,10 @@ pub(crate) unsafe extern "C" fn LoadWallClockGraphics() {
                     volatile_write(&raw mut tmp, 0);
                     {
                         {
-                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                             volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                             volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                            volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                            volatile_write(dmaRegs.at(2), 0x81000000 | (_size / 2));
                             let _ = (dmaRegs.at(2)).read_volatile();
                         }
                     }
@@ -245,14 +279,24 @@ pub(crate) unsafe extern "C" fn LoadWallClockGraphics() {
         }
     }
     LZ77UnCompVram(
-        gWallClock_Gfx.as_ptr().cast_mut(),
+        (*(&raw const crate::data::graphics::gWallClock_Gfx).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
         VRAM as usize as *mut c_void,
     );
     if gSpecialVar_0x8004 == MALE as u16 {
-        LoadPalette(gWallClockMale_Pal.as_ptr().cast_mut() as *mut c_void, 0, 32);
+        LoadPalette(
+            (*(&raw const crate::data::graphics::gWallClockMale_Pal).cast::<CArray<u16, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
+            0,
+            32,
+        );
     } else {
         LoadPalette(
-            gWallClockFemale_Pal.as_ptr().cast_mut() as *mut c_void,
+            (*(&raw const crate::data::graphics::gWallClockFemale_Pal).cast::<CArray<u16, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
             0,
             32,
         );
@@ -273,7 +317,7 @@ pub(crate) unsafe extern "C" fn LoadWallClockGraphics() {
     LoadCompressedSpriteSheet((&raw const *sSpriteSheet_ClockHand).cast_mut());
     LoadSpritePalettes(sSpritePalettes_Clock.as_ptr().cast_mut());
 }
-pub(crate) unsafe extern "C" fn WallClockInit() {
+unsafe fn WallClockInit() {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
     EnableInterrupts(INTR_FLAG_VBLANK);
     SetVBlankCallback(Some(VBlankCB_WallClock));
@@ -287,23 +331,23 @@ pub(crate) unsafe extern "C" fn WallClockInit() {
     ShowBg(3);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_StartWallClock() {
-    let mut taskId: u8 = 0;
-    let mut spriteId: u8 = 0;
+pub unsafe fn CB2_StartWallClock() {
     LoadWallClockGraphics();
     LZ77UnCompVram(
-        gWallClockStart_Tilemap.as_ptr().cast_mut(),
-        0x6003800 as usize as *mut u16 as *mut c_void,
+        (*(&raw const crate::data::graphics::gWallClockStart_Tilemap).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0x6003800_usize as *mut u16 as *mut c_void,
     );
-    taskId = CreateTask(Some(Task_SetClock_WaitFadeIn), 0);
-    gTasks[taskId].data[2] = 10;
-    gTasks[taskId].data[3] = 0;
-    gTasks[taskId].data[4] = 0;
-    gTasks[taskId].data[5] = 0;
-    gTasks[taskId].data[6] = 0;
-    gTasks[taskId].data[0] = 0;
-    gTasks[taskId].data[1] = 300;
-    spriteId = CreateSprite(
+    let taskId: u8 = CreateTask(Some(Task_SetClock_WaitFadeIn), 0);
+    task_set(taskId, tHours, 10);
+    task_set(taskId, tMinutes, 0);
+    task_set(taskId, tMoveDir, 0);
+    task_set(taskId, tPeriod, 0);
+    task_set(taskId, tMoveSpeed, 0);
+    task_set(taskId, 0, 0);
+    task_set(taskId, 1, 300);
+    let mut spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_MinuteHand).cast_mut(),
         120,
         80,
@@ -331,7 +375,9 @@ pub unsafe extern "C" fn CB2_StartWallClock() {
     AddTextPrinterParameterized(
         WIN_BUTTON_LABEL,
         FONT_NORMAL,
-        gText_Confirm3.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Confirm3).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         0,
@@ -340,33 +386,32 @@ pub unsafe extern "C" fn CB2_StartWallClock() {
     PutWindowTilemap(WIN_BUTTON_LABEL);
     ScheduleBgCopyTilemapToVram(2);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ViewWallClock() {
-    let mut taskId: u8 = 0;
-    let mut spriteId: u8 = 0;
+pub unsafe fn CB2_ViewWallClock() {
     let mut angle1: u8 = 0;
     let mut angle2: u8 = 0;
     LoadWallClockGraphics();
     LZ77UnCompVram(
-        gWallClockView_Tilemap.as_ptr().cast_mut(),
-        0x6003800 as usize as *mut u16 as *mut c_void,
+        (*(&raw const crate::data::graphics::gWallClockView_Tilemap).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0x6003800_usize as *mut u16 as *mut c_void,
     );
-    taskId = CreateTask(Some(Task_ViewClock_WaitFadeIn), 0);
+    let taskId: u8 = CreateTask(Some(Task_ViewClock_WaitFadeIn), 0);
     InitClockWithRtc(taskId);
-    if gTasks[taskId].data[5] == PERIOD_AM {
+    if task_get(taskId, tPeriod) == PERIOD_AM {
         angle1 = 45;
         angle2 = 90;
     } else {
         angle1 = 90;
         angle2 = 135;
     }
-    spriteId = CreateSprite(
+    let mut spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_MinuteHand).cast_mut(),
         120,
         80,
         1,
     );
-    gSprites[spriteId].data[0] = taskId as i16;
+    gSprites[spriteId].data[sTaskId] = taskId as i16;
     gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
     gSprites[spriteId].oam.set_matrixNum(0);
     spriteId = CreateSprite(
@@ -375,20 +420,22 @@ pub unsafe extern "C" fn CB2_ViewWallClock() {
         80,
         0,
     );
-    gSprites[spriteId].data[0] = taskId as i16;
+    gSprites[spriteId].data[sTaskId] = taskId as i16;
     gSprites[spriteId].oam.set_affineMode(ST_OAM_AFFINE_NORMAL);
     gSprites[spriteId].oam.set_matrixNum(1);
     spriteId = CreateSprite((&raw const *sSpriteTemplate_PM).cast_mut(), 120, 80, 2);
-    gSprites[spriteId].data[0] = taskId as i16;
+    gSprites[spriteId].data[sTaskId] = taskId as i16;
     gSprites[spriteId].data[1] = angle1 as i16;
     spriteId = CreateSprite((&raw const *sSpriteTemplate_AM).cast_mut(), 120, 80, 2);
-    gSprites[spriteId].data[0] = taskId as i16;
+    gSprites[spriteId].data[sTaskId] = taskId as i16;
     gSprites[spriteId].data[1] = angle2 as i16;
     WallClockInit();
     AddTextPrinterParameterized(
         WIN_BUTTON_LABEL,
         FONT_NORMAL,
-        gText_Cancel4.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Cancel4).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         0,
@@ -397,60 +444,74 @@ pub unsafe extern "C" fn CB2_ViewWallClock() {
     PutWindowTilemap(WIN_BUTTON_LABEL);
     ScheduleBgCopyTilemapToVram(2);
 }
-pub(crate) unsafe extern "C" fn CB2_WallClock() {
+pub(crate) unsafe fn CB2_WallClock() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
     DoScheduledBgTilemapCopiesToVram();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn Task_SetClock_WaitFadeIn(taskId: u8) {
+pub(crate) unsafe fn Task_SetClock_WaitFadeIn(taskId: u8) {
     if gPaletteFade.active() == 0 {
-        gTasks[taskId].func = Some(Task_SetClock_HandleInput);
+        task_set_func(taskId, Some(Task_SetClock_HandleInput));
     }
 }
-pub(crate) unsafe extern "C" fn Task_SetClock_HandleInput(taskId: u8) {
-    if gTasks[taskId].data[0] % 6 != 0 {
-        gTasks[taskId].data[0] = CalcNewMinHandAngle(
-            gTasks[taskId].data[0] as u16,
-            gTasks[taskId].data[4] as u8,
-            gTasks[taskId].data[6] as u8,
-        ) as i16;
+pub(crate) unsafe fn Task_SetClock_HandleInput(taskId: u8) {
+    if task_get(taskId, tMinuteHandAngle) % 6 != 0 {
+        task_set(
+            taskId,
+            tMinuteHandAngle,
+            CalcNewMinHandAngle(
+                task_get(taskId, tMinuteHandAngle) as u16,
+                task_get(taskId, tMoveDir) as u8,
+                task_get(taskId, tMoveSpeed) as u8,
+            ) as i16,
+        );
     } else {
-        gTasks[taskId].data[0] = gTasks[taskId].data[3] * 6;
-        gTasks[taskId].data[1] = gTasks[taskId].data[2] % 12 * 30 + gTasks[taskId].data[3] / 10 * 5;
+        task_set(taskId, tMinuteHandAngle, task_get(taskId, tMinutes) * 6);
+        task_set(
+            taskId,
+            tHourHandAngle,
+            task_get(taskId, tHours) % 12 * 30 + task_get(taskId, tMinutes) / 10 * 5,
+        );
         if gMain.newKeys as i32 & A_BUTTON != 0 {
-            gTasks[taskId].func = Some(Task_SetClock_AskConfirm);
+            task_set_func(taskId, Some(Task_SetClock_AskConfirm));
         } else {
-            gTasks[taskId].data[4] = MOVE_NONE;
+            task_set(taskId, tMoveDir, MOVE_NONE);
             if gMain.heldKeys as i32 & DPAD_LEFT != 0 {
-                gTasks[taskId].data[4] = MOVE_BACKWARD as i16;
+                task_set(taskId, tMoveDir, MOVE_BACKWARD as i16);
             }
             if gMain.heldKeys as i32 & DPAD_RIGHT != 0 {
-                gTasks[taskId].data[4] = MOVE_FORWARD as i16;
+                task_set(taskId, tMoveDir, MOVE_FORWARD as i16);
             }
-            if gTasks[taskId].data[4] != MOVE_NONE {
-                if gTasks[taskId].data[6] < 0xFF {
-                    gTasks[taskId].data[6] += 1;
+            if task_get(taskId, tMoveDir) != MOVE_NONE {
+                if task_get(taskId, tMoveSpeed) < 0xFF {
+                    task_set(taskId, tMoveSpeed, task_get(taskId, tMoveSpeed) + 1);
                 }
-                gTasks[taskId].data[0] = CalcNewMinHandAngle(
-                    gTasks[taskId].data[0] as u16,
-                    gTasks[taskId].data[4] as u8,
-                    gTasks[taskId].data[6] as u8,
-                ) as i16;
-                AdvanceClock(taskId, gTasks[taskId].data[4] as u8);
+                task_set(
+                    taskId,
+                    tMinuteHandAngle,
+                    CalcNewMinHandAngle(
+                        task_get(taskId, tMinuteHandAngle) as u16,
+                        task_get(taskId, tMoveDir) as u8,
+                        task_get(taskId, tMoveSpeed) as u8,
+                    ) as i16,
+                );
+                AdvanceClock(taskId, task_get(taskId, tMoveDir) as u8);
             } else {
-                gTasks[taskId].data[6] = 0;
+                task_set(taskId, tMoveSpeed, 0);
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_SetClock_AskConfirm(taskId: u8) {
+pub(crate) unsafe fn Task_SetClock_AskConfirm(taskId: u8) {
     DrawStdFrameWithCustomTileAndPalette(WIN_MSG, FALSE, 0x250, 0x0d);
     AddTextPrinterParameterized(
         WIN_MSG,
         FONT_NORMAL,
-        gText_IsThisTheCorrectTime.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_IsThisTheCorrectTime).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         0,
@@ -464,55 +525,58 @@ pub(crate) unsafe extern "C" fn Task_SetClock_AskConfirm(taskId: u8) {
         0x0d,
         1,
     );
-    gTasks[taskId].func = Some(Task_SetClock_HandleConfirmInput);
+    task_set_func(taskId, Some(Task_SetClock_HandleConfirmInput));
 }
-pub(crate) unsafe extern "C" fn Task_SetClock_HandleConfirmInput(taskId: u8) {
+pub(crate) unsafe fn Task_SetClock_HandleConfirmInput(taskId: u8) {
     match Menu_ProcessInputNoWrapClearOnChoose() {
         0 => {
             PlaySE(SE_SELECT);
-            gTasks[taskId].func = Some(Task_SetClock_Confirmed);
+            task_set_func(taskId, Some(Task_SetClock_Confirmed));
         }
         1 | MENU_B_PRESSED => {
             PlaySE(SE_SELECT);
             ClearStdWindowAndFrameToTransparent(WIN_MSG, FALSE);
             ClearWindowTilemap(WIN_MSG);
-            gTasks[taskId].func = Some(Task_SetClock_HandleInput);
+            task_set_func(taskId, Some(Task_SetClock_HandleInput));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_SetClock_Confirmed(taskId: u8) {
-    RtcInitLocalTimeOffset(gTasks[taskId].data[2] as i32, gTasks[taskId].data[3] as i32);
+pub(crate) unsafe fn Task_SetClock_Confirmed(taskId: u8) {
+    RtcInitLocalTimeOffset(
+        task_get(taskId, tHours) as i32,
+        task_get(taskId, tMinutes) as i32,
+    );
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-    gTasks[taskId].func = Some(Task_SetClock_Exit);
+    task_set_func(taskId, Some(Task_SetClock_Exit));
 }
-pub(crate) unsafe extern "C" fn Task_SetClock_Exit(taskId: u8) {
+pub(crate) unsafe fn Task_SetClock_Exit(taskId: u8) {
     if gPaletteFade.active() == 0 {
         FreeAllWindowBuffers();
         SetMainCallback2(gMain.savedCallback);
     }
 }
-pub(crate) unsafe extern "C" fn Task_ViewClock_WaitFadeIn(taskId: u8) {
+pub(crate) unsafe fn Task_ViewClock_WaitFadeIn(taskId: u8) {
     if gPaletteFade.active() == 0 {
-        gTasks[taskId].func = Some(Task_ViewClock_HandleInput);
+        task_set_func(taskId, Some(Task_ViewClock_HandleInput));
     }
 }
-pub(crate) unsafe extern "C" fn Task_ViewClock_HandleInput(taskId: u8) {
+pub(crate) unsafe fn Task_ViewClock_HandleInput(taskId: u8) {
     InitClockWithRtc(taskId);
     if gMain.newKeys as i32 & 3 != 0 {
-        gTasks[taskId].func = Some(Task_ViewClock_FadeOut);
+        task_set_func(taskId, Some(Task_ViewClock_FadeOut));
     }
 }
-pub(crate) unsafe extern "C" fn Task_ViewClock_FadeOut(taskId: u8) {
+pub(crate) unsafe fn Task_ViewClock_FadeOut(taskId: u8) {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-    gTasks[taskId].func = Some(Task_ViewClock_Exit);
+    task_set_func(taskId, Some(Task_ViewClock_Exit));
 }
-pub(crate) unsafe extern "C" fn Task_ViewClock_Exit(taskId: u8) {
+pub(crate) unsafe fn Task_ViewClock_Exit(taskId: u8) {
     if gPaletteFade.active() == 0 {
         SetMainCallback2(gMain.savedCallback);
     }
 }
-pub(crate) unsafe extern "C" fn CalcMinHandDelta(speed: u16) -> u8 {
+fn CalcMinHandDelta(speed: u16) -> u8 {
     if speed > 60 {
         return 6;
     }
@@ -522,14 +586,10 @@ pub(crate) unsafe extern "C" fn CalcMinHandDelta(speed: u16) -> u8 {
     if speed > 10 {
         return 2;
     }
-    return 1;
+    1
 }
-pub(crate) unsafe extern "C" fn CalcNewMinHandAngle(
-    mut angle: u16,
-    direction: u8,
-    speed: u8,
-) -> u16 {
-    let mut delta: u8 = CalcMinHandDelta(speed as u16);
+fn CalcNewMinHandAngle(mut angle: u16, direction: u8, speed: u8) -> u16 {
+    let delta: u8 = CalcMinHandDelta(speed as u16);
     match direction {
         MOVE_BACKWARD => {
             if angle != 0 {
@@ -547,82 +607,84 @@ pub(crate) unsafe extern "C" fn CalcNewMinHandAngle(
         }
         _ => {}
     }
-    return angle;
+    angle
 }
-pub(crate) unsafe extern "C" fn AdvanceClock(taskId: u8, direction: u8) -> u32 {
+fn AdvanceClock(taskId: u8, direction: u8) -> u32 {
     match direction {
         MOVE_BACKWARD => {
-            if gTasks[taskId].data[3] > 0 {
-                gTasks[taskId].data[3] -= 1;
+            if task_get(taskId, tMinutes) > 0 {
+                task_set(taskId, tMinutes, task_get(taskId, tMinutes) - 1);
             } else {
-                gTasks[taskId].data[3] = 59;
-                if gTasks[taskId].data[2] > 0 {
-                    gTasks[taskId].data[2] -= 1;
+                task_set(taskId, tMinutes, 59);
+                if task_get(taskId, tHours) > 0 {
+                    task_set(taskId, tHours, task_get(taskId, tHours) - 1);
                 } else {
-                    gTasks[taskId].data[2] = 23;
+                    task_set(taskId, tHours, 23);
                 }
                 UpdateClockPeriod(taskId, direction);
             }
         }
         MOVE_FORWARD => {
-            if gTasks[taskId].data[3] < 59 {
-                gTasks[taskId].data[3] += 1;
+            if task_get(taskId, tMinutes) < 59 {
+                task_set(taskId, tMinutes, task_get(taskId, tMinutes) + 1);
             } else {
-                gTasks[taskId].data[3] = 0;
-                if gTasks[taskId].data[2] < 23 {
-                    gTasks[taskId].data[2] += 1;
+                task_set(taskId, tMinutes, 0);
+                if task_get(taskId, tHours) < 23 {
+                    task_set(taskId, tHours, task_get(taskId, tHours) + 1);
                 } else {
-                    gTasks[taskId].data[2] = 0;
+                    task_set(taskId, tHours, 0);
                 }
                 UpdateClockPeriod(taskId, direction);
             }
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn UpdateClockPeriod(taskId: u8, direction: u8) {
-    let mut hours: u8 = gTasks[taskId].data[2] as u8;
+fn UpdateClockPeriod(taskId: u8, direction: u8) {
+    let hours: u8 = task_get(taskId, tHours) as u8;
     match direction {
         MOVE_BACKWARD => match hours {
             11 => {
-                gTasks[taskId].data[5] = PERIOD_AM;
+                task_set(taskId, tPeriod, PERIOD_AM);
             }
             23 => {
-                gTasks[taskId].data[5] = PERIOD_PM;
+                task_set(taskId, tPeriod, PERIOD_PM);
             }
             _ => {}
         },
         MOVE_FORWARD => match hours {
             0 => {
-                gTasks[taskId].data[5] = PERIOD_AM;
+                task_set(taskId, tPeriod, PERIOD_AM);
             }
             12 => {
-                gTasks[taskId].data[5] = PERIOD_PM;
+                task_set(taskId, tPeriod, PERIOD_PM);
             }
             _ => {}
         },
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn InitClockWithRtc(taskId: u8) {
+unsafe fn InitClockWithRtc(taskId: u8) {
     RtcCalcLocalTime();
-    gTasks[taskId].data[2] = gLocalTime.hours as i16;
-    gTasks[taskId].data[3] = gLocalTime.minutes as i16;
-    gTasks[taskId].data[0] = gTasks[taskId].data[3] * 6;
-    gTasks[taskId].data[1] = gTasks[taskId].data[2] % 12 * 30 + gTasks[taskId].data[3] / 10 * 5;
+    task_set(taskId, tHours, gLocalTime.hours as i16);
+    task_set(taskId, tMinutes, gLocalTime.minutes as i16);
+    task_set(taskId, tMinuteHandAngle, task_get(taskId, tMinutes) * 6);
+    task_set(
+        taskId,
+        tHourHandAngle,
+        task_get(taskId, tHours) % 12 * 30 + task_get(taskId, tMinutes) / 10 * 5,
+    );
     if gLocalTime.hours < 12 {
-        gTasks[taskId].data[5] = PERIOD_AM;
+        task_set(taskId, tPeriod, PERIOD_AM);
     } else {
-        gTasks[taskId].data[5] = PERIOD_PM;
+        task_set(taskId, tPeriod, PERIOD_PM);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_MinuteHand(sprite: *mut Sprite) {
-    let mut angle: u16 = gTasks[(*sprite).data[0]].data[0] as u16;
-    let mut sin: i16 = Sin2(angle) / 16;
-    let mut cos: i16 = Cos2(angle) / 16;
-    let mut x: u16 = 0;
-    let mut y: u16 = 0;
+pub(crate) unsafe fn SpriteCB_MinuteHand(sprite: *mut Sprite) {
+    let angle: u16 = task_get((*sprite).data[0], 0) as u16;
+    let sin: i16 = Sin2(angle) / 16;
+    let cos: i16 = Cos2(angle) / 16;
     SetOamMatrix(
         0,
         cos as u16,
@@ -630,8 +692,8 @@ pub(crate) unsafe extern "C" fn SpriteCB_MinuteHand(sprite: *mut Sprite) {
         (sin as u16).wrapping_neg(),
         cos as u16,
     );
-    x = sClockHandCoords[angle][0] as u16;
-    y = sClockHandCoords[angle][1] as u16;
+    let mut x: u16 = sClockHandCoords[angle][0] as u16;
+    let mut y: u16 = sClockHandCoords[angle][1] as u16;
     if x > 128 {
         x |= 0xff00;
     }
@@ -641,12 +703,10 @@ pub(crate) unsafe extern "C" fn SpriteCB_MinuteHand(sprite: *mut Sprite) {
     (*sprite).x2 = x as i16;
     (*sprite).y2 = y as i16;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_HourHand(sprite: *mut Sprite) {
-    let mut angle: u16 = gTasks[(*sprite).data[0]].data[1] as u16;
-    let mut sin: i16 = Sin2(angle) / 16;
-    let mut cos: i16 = Cos2(angle) / 16;
-    let mut x: u16 = 0;
-    let mut y: u16 = 0;
+pub(crate) unsafe fn SpriteCB_HourHand(sprite: *mut Sprite) {
+    let angle: u16 = task_get((*sprite).data[sTaskId], tHourHandAngle) as u16;
+    let sin: i16 = Sin2(angle) / 16;
+    let cos: i16 = Cos2(angle) / 16;
     SetOamMatrix(
         1,
         cos as u16,
@@ -654,8 +714,8 @@ pub(crate) unsafe extern "C" fn SpriteCB_HourHand(sprite: *mut Sprite) {
         (sin as u16).wrapping_neg(),
         cos as u16,
     );
-    x = sClockHandCoords[angle][0] as u16;
-    y = sClockHandCoords[angle][1] as u16;
+    let mut x: u16 = sClockHandCoords[angle][0] as u16;
+    let mut y: u16 = sClockHandCoords[angle][1] as u16;
     if x > 128 {
         x |= 0xff00;
     }
@@ -665,41 +725,41 @@ pub(crate) unsafe extern "C" fn SpriteCB_HourHand(sprite: *mut Sprite) {
     (*sprite).x2 = x as i16;
     (*sprite).y2 = y as i16;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_PMIndicator(sprite: *mut Sprite) {
-    if gTasks[(*sprite).data[0]].data[5] != PERIOD_AM {
-        if (*sprite).data[1] >= 60 && (*sprite).data[1] < 90 {
-            (*sprite).data[1] += 5;
+pub(crate) unsafe fn SpriteCB_PMIndicator(sprite: *mut Sprite) {
+    if task_get((*sprite).data[sTaskId], tPeriod) != PERIOD_AM {
+        if (*sprite).data[sAngle] >= 60 && (*sprite).data[sAngle] < 90 {
+            (*sprite).data[sAngle] += 5;
         }
-        if (*sprite).data[1] < 60 {
-            (*sprite).data[1] += 1;
+        if (*sprite).data[sAngle] < 60 {
+            (*sprite).data[sAngle] += 1;
         }
     } else {
-        if (*sprite).data[1] >= 46 && (*sprite).data[1] < 76 {
-            (*sprite).data[1] -= 5;
+        if (*sprite).data[sAngle] >= 46 && (*sprite).data[sAngle] < 76 {
+            (*sprite).data[sAngle] -= 5;
         }
-        if (*sprite).data[1] > 75 {
-            (*sprite).data[1] -= 1;
+        if (*sprite).data[sAngle] > 75 {
+            (*sprite).data[sAngle] -= 1;
         }
     }
-    (*sprite).x2 = (Cos2((*sprite).data[1] as u16) as i32 * 30 / 4096) as i16;
-    (*sprite).y2 = (Sin2((*sprite).data[1] as u16) as i32 * 30 / 4096) as i16;
+    (*sprite).x2 = (Cos2((*sprite).data[sAngle] as u16) as i32 * 30 / 4096) as i16;
+    (*sprite).y2 = (Sin2((*sprite).data[sAngle] as u16) as i32 * 30 / 4096) as i16;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_AMIndicator(sprite: *mut Sprite) {
-    if gTasks[(*sprite).data[0]].data[5] != PERIOD_AM {
-        if (*sprite).data[1] >= 105 && (*sprite).data[1] < 135 {
-            (*sprite).data[1] += 5;
+pub(crate) unsafe fn SpriteCB_AMIndicator(sprite: *mut Sprite) {
+    if task_get((*sprite).data[sTaskId], tPeriod) != PERIOD_AM {
+        if (*sprite).data[sAngle] >= 105 && (*sprite).data[sAngle] < 135 {
+            (*sprite).data[sAngle] += 5;
         }
-        if (*sprite).data[1] < 105 {
-            (*sprite).data[1] += 1;
+        if (*sprite).data[sAngle] < 105 {
+            (*sprite).data[sAngle] += 1;
         }
     } else {
-        if (*sprite).data[1] >= 91 && (*sprite).data[1] < 121 {
-            (*sprite).data[1] -= 5;
+        if (*sprite).data[sAngle] >= 91 && (*sprite).data[sAngle] < 121 {
+            (*sprite).data[sAngle] -= 5;
         }
-        if (*sprite).data[1] > 120 {
-            (*sprite).data[1] -= 1;
+        if (*sprite).data[sAngle] > 120 {
+            (*sprite).data[sAngle] -= 1;
         }
     }
-    (*sprite).x2 = (Cos2((*sprite).data[1] as u16) as i32 * 30 / 4096) as i16;
-    (*sprite).y2 = (Sin2((*sprite).data[1] as u16) as i32 * 30 / 4096) as i16;
+    (*sprite).x2 = (Cos2((*sprite).data[sAngle] as u16) as i32 * 30 / 4096) as i16;
+    (*sprite).y2 = (Sin2((*sprite).data[sAngle] as u16) as i32 * 30 / 4096) as i16;
 }

@@ -4,61 +4,6 @@
 
 use crate::ffi::{RomBytes, RomPtr};
 
-unsafe extern "C" {
-    static CableClub_Text_BattleUsingLinkCable: u8;
-    static CableClub_Text_CanMakeBerryPowder: u8;
-    static CableClub_Text_CanMixRecords: u8;
-    static CableClub_Text_CancelSelectedItem: u8;
-    static CableClub_Text_RecordCornerUsingLinkCable: u8;
-    static CableClub_Text_TradeUsingLinkCable: u8;
-    static CableClub_Text_YouMayBattleHere: u8;
-    static CableClub_Text_YouMayTradeHere: u8;
-    static gTrickHouse_Mechadoll_55Yen: u8;
-    static gTrickHouse_Mechadoll_60Yen: u8;
-    static gTrickHouse_Mechadoll_Azurill: u8;
-    static gTrickHouse_Mechadoll_BurnHeal: u8;
-    static gTrickHouse_Mechadoll_Carvanha: u8;
-    static gTrickHouse_Mechadoll_CostLess: u8;
-    static gTrickHouse_Mechadoll_CostMore: u8;
-    static gTrickHouse_Mechadoll_Dustox: u8;
-    static gTrickHouse_Mechadoll_Eight: u8;
-    static gTrickHouse_Mechadoll_Eight2: u8;
-    static gTrickHouse_Mechadoll_ElderlyLadies: u8;
-    static gTrickHouse_Mechadoll_ElderlyMen: u8;
-    static gTrickHouse_Mechadoll_Female: u8;
-    static gTrickHouse_Mechadoll_Four: u8;
-    static gTrickHouse_Mechadoll_HarborMail: u8;
-    static gTrickHouse_Mechadoll_Lotad: u8;
-    static gTrickHouse_Mechadoll_Male: u8;
-    static gTrickHouse_Mechadoll_Neither: u8;
-    static gTrickHouse_Mechadoll_Nincada: u8;
-    static gTrickHouse_Mechadoll_None: u8;
-    static gTrickHouse_Mechadoll_Nothing: u8;
-    static gTrickHouse_Mechadoll_Oddish: u8;
-    static gTrickHouse_Mechadoll_One: u8;
-    static gTrickHouse_Mechadoll_Poochyena: u8;
-    static gTrickHouse_Mechadoll_Poochyena2: u8;
-    static gTrickHouse_Mechadoll_Poochyena3: u8;
-    static gTrickHouse_Mechadoll_Ralts: u8;
-    static gTrickHouse_Mechadoll_SameNumber: u8;
-    static gTrickHouse_Mechadoll_SamePrice: u8;
-    static gTrickHouse_Mechadoll_SamePrice2: u8;
-    static gTrickHouse_Mechadoll_Seven: u8;
-    static gTrickHouse_Mechadoll_Seven2: u8;
-    static gTrickHouse_Mechadoll_Shroomish: u8;
-    static gTrickHouse_Mechadoll_Six: u8;
-    static gTrickHouse_Mechadoll_Six2: u8;
-    static gTrickHouse_Mechadoll_Slakoth: u8;
-    static gTrickHouse_Mechadoll_Taillow: u8;
-    static gTrickHouse_Mechadoll_Three: u8;
-    static gTrickHouse_Mechadoll_Two: u8;
-    static gTrickHouse_Mechadoll_Two2: u8;
-    static gTrickHouse_Mechadoll_Wingull: u8;
-    static gTrickHouse_Mechadoll_Zigzagoon: u8;
-    static gTrickHouse_Mechadoll_Zigzagoon2: u8;
-    static gTrickHouse_Mechadoll_Zubat: u8;
-    static gTrickHouse_Mechadoll_Zubat2: u8;
-}
 
 pub(crate) static MultichoiceList_BrineyOnDewford: [RomPtr<u8>; 6] = [
     RomPtr((&raw const crate::data::strings::gText_Petalburg).cast::<u8>()),
@@ -199,137 +144,137 @@ pub(crate) static MultichoiceList_LevelMode: [RomPtr<u8>; 6] = [
 ];
 
 pub(crate) static MultichoiceList_Mechadoll1_Q1: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_Oddish)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Oddish.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Poochyena)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Poochyena.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Taillow)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Taillow.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
 pub(crate) static MultichoiceList_Mechadoll1_Q2: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_Azurill)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Azurill.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Lotad)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Lotad.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Wingull)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Wingull.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
 pub(crate) static MultichoiceList_Mechadoll1_Q3: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_Dustox)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Dustox.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Zubat)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Zubat.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Nincada)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Nincada.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
 pub(crate) static MultichoiceList_Mechadoll2_Q1: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_Ralts)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Ralts.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Zigzagoon)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Zigzagoon.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Slakoth)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Slakoth.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
 pub(crate) static MultichoiceList_Mechadoll2_Q2: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_Poochyena2)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Poochyena2.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Shroomish)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Shroomish.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Zigzagoon2)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Zigzagoon2.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
 pub(crate) static MultichoiceList_Mechadoll2_Q3: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_Poochyena3)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Poochyena3.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Zubat2)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Zubat2.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Carvanha)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Carvanha.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
 pub(crate) static MultichoiceList_Mechadoll3_Q1: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_BurnHeal)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_BurnHeal.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_HarborMail)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_HarborMail.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_SamePrice)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_SamePrice.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
 pub(crate) static MultichoiceList_Mechadoll3_Q2: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_60Yen)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_60Yen.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_55Yen)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_55Yen.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Nothing)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Nothing.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
 pub(crate) static MultichoiceList_Mechadoll3_Q3: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_CostMore)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_CostMore.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_CostLess)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_CostLess.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_SamePrice2)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_SamePrice2.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
 pub(crate) static MultichoiceList_Mechadoll4_Q1: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_Male)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Male.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Female)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Female.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Neither)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Neither.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
 pub(crate) static MultichoiceList_Mechadoll4_Q2: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_ElderlyMen)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_ElderlyMen.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_ElderlyLadies)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_ElderlyLadies.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_SameNumber)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_SameNumber.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
 pub(crate) static MultichoiceList_Mechadoll4_Q3: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_None)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_None.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_One)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_One.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Two)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Two.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
 pub(crate) static MultichoiceList_Mechadoll5_Q1: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_Two2)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Two2.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Three)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Three.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Four)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Four.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
 pub(crate) static MultichoiceList_Mechadoll5_Q2: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_Six)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Six.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Seven)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Seven.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Eight)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Eight.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
 pub(crate) static MultichoiceList_Mechadoll5_Q3: [RomPtr<u8>; 6] = [
-    RomPtr((&raw const gTrickHouse_Mechadoll_Six2)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Six2.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Seven2)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Seven2.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
-    RomPtr((&raw const gTrickHouse_Mechadoll_Eight2)),
+    RomPtr((&raw const (*crate::asmdata::gTrickHouse_Mechadoll_Eight2.cast::<u8>()))),
     RomPtr(0x0 as *const u8),
 ];
 
@@ -1355,44 +1300,44 @@ pub(crate) static sLilycoveSSTidalDestinations: [RomPtr<u8>; 7] = [
 ];
 
 pub(crate) static sCableClubOptions_WithRecordMix: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const CableClub_Text_TradeUsingLinkCable)),
-    RomPtr((&raw const CableClub_Text_BattleUsingLinkCable)),
-    RomPtr((&raw const CableClub_Text_RecordCornerUsingLinkCable)),
-    RomPtr((&raw const CableClub_Text_CancelSelectedItem)),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_TradeUsingLinkCable.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_BattleUsingLinkCable.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_RecordCornerUsingLinkCable.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_CancelSelectedItem.cast::<u8>()))),
 ];
 
 pub(crate) static sWirelessOptionsNoBerryCrush: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const CableClub_Text_YouMayTradeHere)),
-    RomPtr((&raw const CableClub_Text_YouMayBattleHere)),
-    RomPtr((&raw const CableClub_Text_CanMixRecords)),
-    RomPtr((&raw const CableClub_Text_CancelSelectedItem)),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_YouMayTradeHere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_YouMayBattleHere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_CanMixRecords.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_CancelSelectedItem.cast::<u8>()))),
 ];
 
 pub(crate) static sWirelessOptions_NoRecordMix: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const CableClub_Text_YouMayTradeHere)),
-    RomPtr((&raw const CableClub_Text_YouMayBattleHere)),
-    RomPtr((&raw const CableClub_Text_CanMakeBerryPowder)),
-    RomPtr((&raw const CableClub_Text_CancelSelectedItem)),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_YouMayTradeHere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_YouMayBattleHere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_CanMakeBerryPowder.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_CancelSelectedItem.cast::<u8>()))),
 ];
 
 pub(crate) static sWirelessOptions_AllServices: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const CableClub_Text_YouMayTradeHere)),
-    RomPtr((&raw const CableClub_Text_YouMayBattleHere)),
-    RomPtr((&raw const CableClub_Text_CanMixRecords)),
-    RomPtr((&raw const CableClub_Text_CanMakeBerryPowder)),
-    RomPtr((&raw const CableClub_Text_CancelSelectedItem)),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_YouMayTradeHere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_YouMayBattleHere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_CanMixRecords.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_CanMakeBerryPowder.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_CancelSelectedItem.cast::<u8>()))),
 ];
 
 pub(crate) static sCableClubOptions_NoRecordMix: [RomPtr<u8>; 3] = [
-    RomPtr((&raw const CableClub_Text_TradeUsingLinkCable)),
-    RomPtr((&raw const CableClub_Text_BattleUsingLinkCable)),
-    RomPtr((&raw const CableClub_Text_CancelSelectedItem)),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_TradeUsingLinkCable.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_BattleUsingLinkCable.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_CancelSelectedItem.cast::<u8>()))),
 ];
 
 pub(crate) static sWirelessOptions_NoRecordMixBerryCrush: [RomPtr<u8>; 3] = [
-    RomPtr((&raw const CableClub_Text_YouMayTradeHere)),
-    RomPtr((&raw const CableClub_Text_YouMayBattleHere)),
-    RomPtr((&raw const CableClub_Text_CancelSelectedItem)),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_YouMayTradeHere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_YouMayBattleHere.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::CableClub_Text_CancelSelectedItem.cast::<u8>()))),
 ];
 
 #[unsafe(no_mangle)]

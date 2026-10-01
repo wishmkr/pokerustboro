@@ -9,7 +9,7 @@ use core::mem::{offset_of, size_of};
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Task {
-    pub func: Option<unsafe extern "C" fn(u8)>,
+    pub func: Option<unsafe fn(u8)>,
     pub isActive: u8,
     pub prev: u8,
     pub next: u8,

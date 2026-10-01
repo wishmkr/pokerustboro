@@ -3,29 +3,29 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::gpu_regs::SetGpuReg;
+use crate::palette::gPlttBufferUnfaded;
+use crate::palette::{LoadPalette, gPaletteFade};
+use crate::sprite::gReservedSpritePaletteCount;
+use crate::sprite::gSprites;
+use crate::task::{task_get, task_set};
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,6 +34,58 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CalcCenterToCornerVec` with this module's view of its types.
+#[inline]
+unsafe fn CalcCenterToCornerVec(a0: *mut Sprite, a1: u8, a2: u8, a3: u8) {
+    unsafe {
+        crate::sprite::CalcCenterToCornerVec(a0 as _, a1, a2, a3);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+// The C's names for task and sprite data slots.
+const sLeftSpriteId: usize = 0;
+const sPlayerSpriteId: usize = 0;
+const tHasVerticalMove: usize = 0;
+const tMode: usize = 0;
+const tBg1Speed: usize = 1;
+const tXOffset: usize = 1;
+const tBg1PosHi: usize = 2;
+const tXPos: usize = 2;
+const tBg1PosLo: usize = 3;
+const tBg2Speed: usize = 4;
+const tBg2PosHi: usize = 5;
+const tBg2PosLo: usize = 6;
+const tBg3Speed: usize = 7;
+const tBg3PosHi: usize = 8;
+const tBg3PosLo: usize = 9;
 // Data tables (translate with cdata.py): sGrass_Pal sGrassSunset_Pal sGrassNight_Pal sGrass_Gfx sGrass_Tilemap sCloudsBg_Pal sCloudsBgSunset_Pal sCloudsBg_Gfx sCloudsBg_Tilemap sClouds_Pal sCloudsSunset_Pal sClouds_Gfx sTrees_Pal sTreesSunset_Pal sTrees_Gfx sTrees_Tilemap sTreesSmall_Pal sTreesSmall_Gfx sHouses_Pal sHouses_Gfx sHouseSilhouette_Pal sHouses_Tilemap sHouseSilhouette_Gfx sBrendanCredits_Pal sBrendanCredits_Gfx sMayCredits_Pal sUnused sMayCredits_Gfx sBicycle_Gfx sLatios_Pal sLatios_Gfx sLatias_Pal sLatias_Gfx sSpriteTemplate_MovingScenery sSpriteSheet_Clouds sAnim_Cloud_Largest sAnim_Cloud_Large sAnim_Cloud_Small sAnim_Cloud_Smallest sAnims_Clouds sSpriteMetadata_Clouds sSpriteSheet_TreesSmall sAnim_Trees_0 sAnim_Trees_1 sAnim_Trees_2 sAnims_Trees sSpriteMetadata_Trees sSpriteSheet_HouseSilhouette sAnim_HouseSilhouette sAnims_HouseSilhouette sSpriteMetadata_HouseSilhouette sOamData_Player sAnim_Player sAnims_Player sSpriteTemplate_Brendan sSpriteTemplate_May sOamData_Bicycle sAnim_Bicycle sAnims_Bicycle sSpriteTemplate_BrendanBicycle sSpriteTemplate_MayBicycle sOamData_Flygon sAnim_FlygonLeft sAnim_FlygonRight sAnims_Flygon sSpriteTemplate_FlygonLatios sSpriteTemplate_FlygonLatias gSpriteSheet_IntroBrendan gSpriteSheet_IntroMay gSpriteSheet_IntroBicycle sSpriteSheet_IntroFlygon_Unused gSpriteSheet_IntroFlygon gSpritePalettes_IntroPlayerFlygon gSpriteSheet_CreditsBrendan gSpriteSheet_CreditsMay gSpriteSheet_CreditsBicycle sSpriteSheet_Latios sSpriteSheet_Latias gSpritePalettes_Credits gSpriteSheet_CreditsRivalBrendan gSpriteSheet_CreditsRivalMay
 
 /// `struct IntroCreditsSpriteMetadata`
@@ -50,11 +102,11 @@ pub struct IntroCreditsSpriteMetadata {
 impl IntroCreditsSpriteMetadata {
     #[inline(always)]
     pub fn animNum(&self) -> u8 {
-        ((self.bits_0 as u32 >> 0) & 0xf) as u8
+        ((self.bits_0 as u32) & 0xf) as u8
     }
     #[inline(always)]
     pub fn set_animNum(&mut self, v: u8) {
-        self.bits_0 = (self.bits_0 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+        self.bits_0 = (self.bits_0 & !0xf) | (v & 0xf);
     }
     #[inline(always)]
     pub fn shape(&self) -> u8 {
@@ -62,7 +114,7 @@ impl IntroCreditsSpriteMetadata {
     }
     #[inline(always)]
     pub fn set_shape(&mut self, v: u8) {
-        self.bits_0 = (self.bits_0 & !(0x3 << 4)) | ((v as u8 & 0x3) << 4);
+        self.bits_0 = (self.bits_0 & !(0x3 << 4)) | ((v & 0x3) << 4);
     }
     #[inline(always)]
     pub fn size(&self) -> u8 {
@@ -70,7 +122,7 @@ impl IntroCreditsSpriteMetadata {
     }
     #[inline(always)]
     pub fn set_size(&mut self, v: u8) {
-        self.bits_0 = (self.bits_0 & !(0x3 << 6)) | ((v as u8 & 0x3) << 6);
+        self.bits_0 = (self.bits_0 & !(0x3 << 6)) | ((v & 0x3) << 6);
     }
 }
 
@@ -163,43 +215,29 @@ static sTrees_Pal: Table<CArray<u16, 16>> =
 static sTrees_Tilemap: Table<CArray<u32, 193>> =
     Table((&raw const crate::data::intro_credits_graphics::sTrees_Tilemap).cast());
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gIntroCredits_MovingSceneryVBase: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gIntroCredits_MovingSceneryVOffset: i16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gIntroCredits_MovingSceneryState: i16 = 0;
 
-unsafe extern "C" {
-    static mut gMain: Main;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static mut gReservedSpritePaletteCount: u8;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTasks: CArray<Task, 0>;
-    fn CalcCenterToCornerVec(a0: *mut Sprite, a1: u8, a2: u8, a3: u8);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DestroySprite(a0: *mut Sprite);
-    fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void);
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
+/// `LZ77UnCompVram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadIntroPart2Graphics(scenery: u8) {
+pub unsafe fn LoadIntroPart2Graphics(scenery: u8) {
     LZ77UnCompVram(
         sGrass_Gfx.as_ptr().cast_mut(),
-        0x6004000 as usize as *mut c_void,
+        0x6004000_usize as *mut c_void,
     );
     LZ77UnCompVram(
         sGrass_Tilemap.as_ptr().cast_mut(),
-        0x6007800 as usize as *mut c_void,
+        0x6007800_usize as *mut c_void,
     );
     LoadPalette((&raw const *sGrass_Pal).cast_mut() as *mut c_void, 240, 32);
     match scenery {
@@ -207,7 +245,7 @@ pub unsafe extern "C" fn LoadIntroPart2Graphics(scenery: u8) {
             LZ77UnCompVram(sTrees_Gfx.as_ptr().cast_mut(), VRAM as usize as *mut c_void);
             LZ77UnCompVram(
                 sTrees_Tilemap.as_ptr().cast_mut(),
-                0x6003000 as usize as *mut c_void,
+                0x6003000_usize as *mut c_void,
             );
             LoadPalette((&raw const *sTrees_Pal).cast_mut() as *mut c_void, 0, 32);
             LoadCompressedSpriteSheet(sSpriteSheet_TreesSmall.as_ptr().cast_mut());
@@ -225,7 +263,7 @@ pub unsafe extern "C" fn LoadIntroPart2Graphics(scenery: u8) {
             );
             LZ77UnCompVram(
                 sCloudsBg_Tilemap.as_ptr().cast_mut(),
-                0x6003000 as usize as *mut c_void,
+                0x6003000_usize as *mut c_void,
             );
             LoadPalette((&raw const *sCloudsBg_Pal).cast_mut() as *mut c_void, 0, 96);
             LoadCompressedSpriteSheet(sSpriteSheet_Clouds.as_ptr().cast_mut());
@@ -236,8 +274,7 @@ pub unsafe extern "C" fn LoadIntroPart2Graphics(scenery: u8) {
     gIntroCredits_MovingSceneryState = INTROCRED_SCENERY_NORMAL;
     gReservedSpritePaletteCount = 8;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetIntroPart2BgCnt(scenery: u8) {
+pub unsafe fn SetIntroPart2BgCnt(scenery: u8) {
     match scenery {
         1 => {
             SetGpuReg(REG_OFFSET_BG3CNT, 1539);
@@ -259,15 +296,14 @@ pub unsafe extern "C" fn SetIntroPart2BgCnt(scenery: u8) {
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadCreditsSceneGraphics(scene: u8) {
+pub unsafe fn LoadCreditsSceneGraphics(scene: u8) {
     LZ77UnCompVram(
         sGrass_Gfx.as_ptr().cast_mut(),
-        0x6004000 as usize as *mut c_void,
+        0x6004000_usize as *mut c_void,
     );
     LZ77UnCompVram(
         sGrass_Tilemap.as_ptr().cast_mut(),
-        0x6007800 as usize as *mut c_void,
+        0x6007800_usize as *mut c_void,
     );
     match scene {
         1 => {
@@ -282,7 +318,7 @@ pub unsafe extern "C" fn LoadCreditsSceneGraphics(scene: u8) {
             );
             LZ77UnCompVram(
                 sCloudsBg_Tilemap.as_ptr().cast_mut(),
-                0x6003000 as usize as *mut c_void,
+                0x6003000_usize as *mut c_void,
             );
             LoadPalette(
                 (&raw const *sCloudsBgSunset_Pal).cast_mut() as *mut c_void,
@@ -310,7 +346,7 @@ pub unsafe extern "C" fn LoadCreditsSceneGraphics(scene: u8) {
             LZ77UnCompVram(sTrees_Gfx.as_ptr().cast_mut(), VRAM as usize as *mut c_void);
             LZ77UnCompVram(
                 sTrees_Tilemap.as_ptr().cast_mut(),
-                0x6003000 as usize as *mut c_void,
+                0x6003000_usize as *mut c_void,
             );
             LoadPalette(
                 (&raw const *sTreesSunset_Pal).cast_mut() as *mut c_void,
@@ -337,7 +373,7 @@ pub unsafe extern "C" fn LoadCreditsSceneGraphics(scene: u8) {
             );
             LZ77UnCompVram(
                 sHouses_Tilemap.as_ptr().cast_mut(),
-                0x6003000 as usize as *mut c_void,
+                0x6003000_usize as *mut c_void,
             );
             LoadPalette((&raw const *sHouses_Pal).cast_mut() as *mut c_void, 0, 64);
             LoadCompressedSpriteSheet(sSpriteSheet_HouseSilhouette.as_ptr().cast_mut());
@@ -356,7 +392,7 @@ pub unsafe extern "C" fn LoadCreditsSceneGraphics(scene: u8) {
             );
             LZ77UnCompVram(
                 sCloudsBg_Tilemap.as_ptr().cast_mut(),
-                0x6003000 as usize as *mut c_void,
+                0x6003000_usize as *mut c_void,
             );
             LoadPalette((&raw const *sCloudsBg_Pal).cast_mut() as *mut c_void, 0, 96);
             LoadCompressedSpriteSheet(sSpriteSheet_Clouds.as_ptr().cast_mut());
@@ -371,59 +407,56 @@ pub unsafe extern "C" fn LoadCreditsSceneGraphics(scene: u8) {
     gReservedSpritePaletteCount = 8;
     gIntroCredits_MovingSceneryState = INTROCRED_SCENERY_NORMAL;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCreditsSceneBgCnt(scene: u8) {
+pub unsafe fn SetCreditsSceneBgCnt(scene: u8) {
     SetGpuReg(REG_OFFSET_BG3CNT, 1539);
     SetGpuReg(REG_OFFSET_BG2CNT, 1794);
     SetGpuReg(REG_OFFSET_BG1CNT, 3845);
     SetGpuReg(0x0, 8000);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateBicycleBgAnimationTask(
+pub unsafe fn CreateBicycleBgAnimationTask(
     mode: u8,
     bg1Speed: u16,
     bg2Speed: u16,
     bg3Speed: u16,
 ) -> u8 {
-    let mut taskId: u8 = CreateTask(Some(Task_BicycleBgAnimation), 0);
-    gTasks[taskId].data[0] = mode as i16;
-    gTasks[taskId].data[1] = bg1Speed as i16;
-    gTasks[taskId].data[2] = 0;
-    gTasks[taskId].data[3] = 0;
-    gTasks[taskId].data[4] = bg2Speed as i16;
-    gTasks[taskId].data[5] = 0;
-    gTasks[taskId].data[6] = 0;
-    gTasks[taskId].data[7] = bg3Speed as i16;
-    gTasks[taskId].data[8] = 8;
-    gTasks[taskId].data[9] = 0;
+    let taskId: u8 = CreateTask(Some(Task_BicycleBgAnimation), 0);
+    task_set(taskId, tMode, mode as i16);
+    task_set(taskId, tBg1Speed, bg1Speed as i16);
+    task_set(taskId, tBg1PosHi, 0);
+    task_set(taskId, tBg1PosLo, 0);
+    task_set(taskId, tBg2Speed, bg2Speed as i16);
+    task_set(taskId, tBg2PosHi, 0);
+    task_set(taskId, tBg2PosLo, 0);
+    task_set(taskId, tBg3Speed, bg3Speed as i16);
+    task_set(taskId, tBg3PosHi, 8);
+    task_set(taskId, tBg3PosLo, 0);
     Task_BicycleBgAnimation(taskId);
-    return taskId;
+    taskId
 }
-pub(crate) unsafe extern "C" fn Task_BicycleBgAnimation(taskId: u8) {
-    let mut bg1Speed: i16 = 0;
-    let mut bg2Speed: i16 = 0;
-    let mut bg3Speed: i16 = 0;
+pub(crate) unsafe fn Task_BicycleBgAnimation(taskId: u8) {
     let mut offset: i32 = 0;
-    bg1Speed = gTasks[taskId].data[1];
+    let bg1Speed: i16 = task_get(taskId, tBg1Speed);
     if bg1Speed != 0 {
-        offset = ((gTasks[taskId].data[2] as i32) << 16) + gTasks[taskId].data[3] as u16 as i32;
+        offset = ((task_get(taskId, tBg1PosHi) as i32) << 16)
+            + task_get(taskId, tBg1PosLo) as u16 as i32;
         offset -= (bg1Speed as u16 as i32) << 4;
-        gTasks[taskId].data[2] = (offset >> 16) as i16;
-        gTasks[taskId].data[3] = offset as i16;
-        SetGpuReg(REG_OFFSET_BG1HOFS, gTasks[taskId].data[2] as u16);
+        task_set(taskId, tBg1PosHi, (offset >> 16) as i16);
+        task_set(taskId, tBg1PosLo, offset as i16);
+        SetGpuReg(REG_OFFSET_BG1HOFS, task_get(taskId, tBg1PosHi) as u16);
         SetGpuReg(
             REG_OFFSET_BG1VOFS,
             gIntroCredits_MovingSceneryVBase + gIntroCredits_MovingSceneryVOffset as u16,
         );
     }
-    bg2Speed = gTasks[taskId].data[4];
+    let bg2Speed: i16 = task_get(taskId, tBg2Speed);
     if bg2Speed != 0 {
-        offset = ((gTasks[taskId].data[5] as i32) << 16) + gTasks[taskId].data[6] as u16 as i32;
+        offset = ((task_get(taskId, tBg2PosHi) as i32) << 16)
+            + task_get(taskId, tBg2PosLo) as u16 as i32;
         offset -= (bg2Speed as u16 as i32) << 4;
-        gTasks[taskId].data[5] = (offset >> 16) as i16;
-        gTasks[taskId].data[6] = offset as i16;
-        SetGpuReg(REG_OFFSET_BG2HOFS, gTasks[taskId].data[5] as u16);
-        if gTasks[taskId].data[0] != 0 {
+        task_set(taskId, tBg2PosHi, (offset >> 16) as i16);
+        task_set(taskId, tBg2PosLo, offset as i16);
+        SetGpuReg(REG_OFFSET_BG2HOFS, task_get(taskId, tBg2PosHi) as u16);
+        if task_get(taskId, tMode) != 0 {
             SetGpuReg(
                 REG_OFFSET_BG2VOFS,
                 gIntroCredits_MovingSceneryVBase + gIntroCredits_MovingSceneryVOffset as u16,
@@ -432,18 +465,18 @@ pub(crate) unsafe extern "C" fn Task_BicycleBgAnimation(taskId: u8) {
             SetGpuReg(REG_OFFSET_BG2VOFS, gIntroCredits_MovingSceneryVBase);
         }
     }
-    bg3Speed = gTasks[taskId].data[7];
+    let bg3Speed: i16 = task_get(taskId, tBg3Speed);
     if bg3Speed != 0 {
-        offset = ((gTasks[taskId].data[8] as i32) << 16) + gTasks[taskId].data[9] as u16 as i32;
+        offset = ((task_get(taskId, tBg3PosHi) as i32) << 16)
+            + task_get(taskId, tBg3PosLo) as u16 as i32;
         offset -= (bg3Speed as u16 as i32) << 4;
-        gTasks[taskId].data[8] = (offset >> 16) as i16;
-        gTasks[taskId].data[9] = offset as i16;
-        SetGpuReg(REG_OFFSET_BG3HOFS, gTasks[taskId].data[8] as u16);
+        task_set(taskId, tBg3PosHi, (offset >> 16) as i16);
+        task_set(taskId, tBg3PosLo, offset as i16);
+        SetGpuReg(REG_OFFSET_BG3HOFS, task_get(taskId, tBg3PosHi) as u16);
         SetGpuReg(REG_OFFSET_BG3VOFS, gIntroCredits_MovingSceneryVBase);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CycleSceneryPalette(mode: u8) {
+pub unsafe fn CycleSceneryPalette(mode: u8) {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
     'l1: {
@@ -480,20 +513,20 @@ pub unsafe extern "C" fn CycleSceneryPalette(mode: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_MovingScenery(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_MovingScenery(sprite: *mut Sprite) {
     let mut x: i32 = 0;
-    let mut state: i16 = gIntroCredits_MovingSceneryState;
+    let state: i16 = gIntroCredits_MovingSceneryState;
     if state != INTROCRED_SCENERY_FROZEN {
         match state {
             INTROCRED_SCENERY_NORMAL => {
-                x = (((*sprite).x as i32) << 16 | (*sprite).data[2] as u16 as i32)
-                    + (*sprite).data[1] as u16 as i32;
+                x = (((*sprite).x as i32) << 16 | (*sprite).data[tXPos] as u16 as i32)
+                    + (*sprite).data[tXOffset] as u16 as i32;
                 (*sprite).x = (x >> 16) as i16;
-                (*sprite).data[2] = x as i16;
+                (*sprite).data[tXPos] = x as i16;
                 if (*sprite).x > 255 {
                     (*sprite).x = -32;
                 }
-                if (*sprite).data[0] != 0 {
+                if (*sprite).data[tHasVerticalMove] != 0 {
                     (*sprite).y2 = -(gIntroCredits_MovingSceneryVBase as i16
                         + gIntroCredits_MovingSceneryVOffset);
                 } else {
@@ -506,16 +539,14 @@ pub(crate) unsafe extern "C" fn SpriteCB_MovingScenery(sprite: *mut Sprite) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn CreateMovingScenerySprites(
+unsafe fn CreateMovingScenerySprites(
     hasVerticalMove: u8,
     metadata: *mut IntroCreditsSpriteMetadata,
     anims: *mut *mut AnimCmd,
     numSprites: u8,
 ) {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < numSprites {
-        let mut sprite: u8 = CreateSprite(
+    for i in 0..numSprites {
+        let sprite: u8 = CreateSprite(
             (&raw const *sSpriteTemplate_MovingScenery).cast_mut(),
             (*metadata.at(i)).x as i16,
             (*metadata.at(i)).y as i16,
@@ -537,13 +568,12 @@ pub(crate) unsafe extern "C" fn CreateMovingScenerySprites(
         gSprites[sprite].oam.set_paletteNum(0);
         gSprites[sprite].anims = anims;
         StartSpriteAnim(&raw mut gSprites[sprite], (*metadata.at(i)).animNum());
-        gSprites[sprite].data[0] = hasVerticalMove as i16;
-        gSprites[sprite].data[1] = (*metadata.at(i)).xOff as i16;
-        gSprites[sprite].data[2] = 0;
-        i += 1;
+        gSprites[sprite].data[tHasVerticalMove] = hasVerticalMove as i16;
+        gSprites[sprite].data[tXOffset] = (*metadata.at(i)).xOff as i16;
+        gSprites[sprite].data[tXPos] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn CreateCloudSprites() {
+pub(crate) unsafe fn CreateCloudSprites() {
     CreateMovingScenerySprites(
         FALSE,
         sSpriteMetadata_Clouds.as_ptr().cast_mut(),
@@ -551,7 +581,7 @@ pub(crate) unsafe extern "C" fn CreateCloudSprites() {
         9,
     );
 }
-pub(crate) unsafe extern "C" fn CreateTreeSprites() {
+unsafe fn CreateTreeSprites() {
     CreateMovingScenerySprites(
         TRUE,
         sSpriteMetadata_Trees.as_ptr().cast_mut(),
@@ -559,7 +589,7 @@ pub(crate) unsafe extern "C" fn CreateTreeSprites() {
         12,
     );
 }
-pub(crate) unsafe extern "C" fn CreateHouseSprites() {
+unsafe fn CreateHouseSprites() {
     CreateMovingScenerySprites(
         TRUE,
         sSpriteMetadata_HouseSilhouette.as_ptr().cast_mut(),
@@ -567,83 +597,77 @@ pub(crate) unsafe extern "C" fn CreateHouseSprites() {
         6,
     );
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Player(sprite: *mut Sprite) {}
-pub(crate) unsafe extern "C" fn SpriteCB_Bicycle(sprite: *mut Sprite) {
-    (*sprite).set_invisible(gSprites[(*sprite).data[0]].invisible());
-    (*sprite).x = gSprites[(*sprite).data[0]].x;
-    (*sprite).y = gSprites[(*sprite).data[0]].y + 8;
-    (*sprite).x2 = gSprites[(*sprite).data[0]].x2;
-    (*sprite).y2 = gSprites[(*sprite).data[0]].y2;
+pub(crate) unsafe fn SpriteCB_Player(sprite: *mut Sprite) {}
+pub(crate) unsafe fn SpriteCB_Bicycle(sprite: *mut Sprite) {
+    (*sprite).set_invisible(gSprites[(*sprite).data[sPlayerSpriteId]].invisible());
+    (*sprite).x = gSprites[(*sprite).data[sPlayerSpriteId]].x;
+    (*sprite).y = gSprites[(*sprite).data[sPlayerSpriteId]].y + 8;
+    (*sprite).x2 = gSprites[(*sprite).data[sPlayerSpriteId]].x2;
+    (*sprite).y2 = gSprites[(*sprite).data[sPlayerSpriteId]].y2;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateIntroBrendanSprite(x: i16, y: i16) -> u8 {
-    let mut playerSpriteId: u8 =
+pub unsafe fn CreateIntroBrendanSprite(x: i16, y: i16) -> u8 {
+    let playerSpriteId: u8 =
         CreateSprite((&raw const *sSpriteTemplate_Brendan).cast_mut(), x, y, 2);
-    let mut bicycleSpriteId: u8 = CreateSprite(
+    let bicycleSpriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_BrendanBicycle).cast_mut(),
         x,
         y + 8,
         3,
     );
-    gSprites[bicycleSpriteId].data[0] = playerSpriteId as i16;
-    return playerSpriteId;
+    gSprites[bicycleSpriteId].data[sPlayerSpriteId] = playerSpriteId as i16;
+    playerSpriteId
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateIntroMaySprite(x: i16, y: i16) -> u8 {
-    let mut playerSpriteId: u8 =
-        CreateSprite((&raw const *sSpriteTemplate_May).cast_mut(), x, y, 2);
-    let mut bicycleSpriteId: u8 = CreateSprite(
+pub unsafe fn CreateIntroMaySprite(x: i16, y: i16) -> u8 {
+    let playerSpriteId: u8 = CreateSprite((&raw const *sSpriteTemplate_May).cast_mut(), x, y, 2);
+    let bicycleSpriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_MayBicycle).cast_mut(),
         x,
         y + 8,
         3,
     );
-    gSprites[bicycleSpriteId].data[0] = playerSpriteId as i16;
-    return playerSpriteId;
+    gSprites[bicycleSpriteId].data[sPlayerSpriteId] = playerSpriteId as i16;
+    playerSpriteId
 }
-pub(crate) unsafe extern "C" fn SpriteCB_FlygonLeftHalf(sprite: *mut Sprite) {}
-pub(crate) unsafe extern "C" fn SpriteCB_FlygonRightHalf(sprite: *mut Sprite) {
-    (*sprite).set_invisible(gSprites[(*sprite).data[0]].invisible());
-    (*sprite).y = gSprites[(*sprite).data[0]].y;
-    (*sprite).x2 = gSprites[(*sprite).data[0]].x2;
-    (*sprite).y2 = gSprites[(*sprite).data[0]].y2;
+pub(crate) fn SpriteCB_FlygonLeftHalf(sprite: *mut Sprite) {}
+pub(crate) unsafe fn SpriteCB_FlygonRightHalf(sprite: *mut Sprite) {
+    (*sprite).set_invisible(gSprites[(*sprite).data[sLeftSpriteId]].invisible());
+    (*sprite).y = gSprites[(*sprite).data[sLeftSpriteId]].y;
+    (*sprite).x2 = gSprites[(*sprite).data[sLeftSpriteId]].x2;
+    (*sprite).y2 = gSprites[(*sprite).data[sLeftSpriteId]].y2;
 }
-pub(crate) unsafe extern "C" fn CreateIntroFlygonSprite_Unused(x: i16, y: i16) -> u8 {
-    let mut leftSpriteId: u8 = CreateSprite(
+unsafe fn CreateIntroFlygonSprite_Unused(x: i16, y: i16) -> u8 {
+    let leftSpriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_FlygonLatios).cast_mut(),
         x - 32,
         y,
         5,
     );
-    let mut rightSpriteId: u8 = CreateSprite(
+    let rightSpriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_FlygonLatios).cast_mut(),
         x + 32,
         y,
         6,
     );
-    gSprites[rightSpriteId].data[0] = leftSpriteId as i16;
+    gSprites[rightSpriteId].data[sLeftSpriteId] = leftSpriteId as i16;
     StartSpriteAnim(&raw mut gSprites[rightSpriteId], 1);
-    gSprites[rightSpriteId].callback =
-        Some(SpriteCB_FlygonRightHalf as unsafe extern "C" fn(*mut Sprite));
-    return leftSpriteId;
+    gSprites[rightSpriteId].callback = Some(SpriteCB_FlygonRightHalf as unsafe fn(*mut Sprite));
+    leftSpriteId
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateIntroFlygonSprite(x: i16, y: i16) -> u8 {
-    let mut leftSpriteId: u8 = CreateSprite(
+pub unsafe fn CreateIntroFlygonSprite(x: i16, y: i16) -> u8 {
+    let leftSpriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_FlygonLatias).cast_mut(),
         x - 32,
         y,
         5,
     );
-    let mut rightSpriteId: u8 = CreateSprite(
+    let rightSpriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_FlygonLatias).cast_mut(),
         x + 32,
         y,
         6,
     );
-    gSprites[rightSpriteId].data[0] = leftSpriteId as i16;
+    gSprites[rightSpriteId].data[sLeftSpriteId] = leftSpriteId as i16;
     StartSpriteAnim(&raw mut gSprites[rightSpriteId], 1);
-    gSprites[rightSpriteId].callback =
-        Some(SpriteCB_FlygonRightHalf as unsafe extern "C" fn(*mut Sprite));
-    return leftSpriteId;
+    gSprites[rightSpriteId].callback = Some(SpriteCB_FlygonRightHalf as unsafe fn(*mut Sprite));
+    leftSpriteId
 }

@@ -3,37 +3,102 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    unused_assignments,
+    unused_labels,
+    unused_variables
 )]
 
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect_Palette0, GetBgY,
+    IsDma3ManagerBusyWithBgCopy,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::menu::{AddTextPrinterParameterized3, BgDmaFill};
+use crate::pokenav::{AllocSubstruct, FreePokenavSubstruct, GetSubstructPtr, IsLoopedTaskActive};
+use crate::pokenav_main_menu::Pokenav_AllocAndLoadPalettes;
+use crate::pokenav_match_call_gfx::ClearRematchPokeballIcon;
+use crate::pokenav_match_call_list::GetMatchCallFlavorText;
+use crate::sprite::gSprites;
+use crate::sprite::{FreeSpritePaletteByTag, FreeSpriteTilesByTag};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    CopyWindowRectToVram, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect,
+    GetWindowAttribute, PutWindowTilemap, RemoveWindow,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `CreateLoopedTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateLoopedTask(a0: Option<unsafe fn(i32) -> u32>, a1: u32) -> u32 {
+    unsafe { crate::pokenav::CreateLoopedTask(a0, a1) }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `FillWindowTilesByRow` with this module's view of its types.
+#[inline]
+unsafe fn FillWindowTilesByRow(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32) {
+    unsafe {
+        crate::international_string_util::FillWindowTilesByRow(a0, a1, a2, a3, a4);
+    }
+}
+/// `FuncIsActiveLoopedTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveLoopedTask(a0: Option<unsafe fn(i32) -> u32>) -> u32 {
+    unsafe { crate::pokenav::FuncIsActiveLoopedTask(a0) }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+// The C's names for task and sprite data slots.
+const sTimer: usize = 0;
+const sOffset: usize = 1;
+const sInvisible: usize = 7;
 // Data tables (translate with cdata.py): sListArrow_Pal sListArrow_Gfx sListArrowSpriteSheets sListArrowPalettes sOamData_RightArrow sSpriteTemplate_RightArrow sOamData_UpDownArrow sSpriteTemplate_UpDownArrow lineOffsets.0
 
 /// `struct PokenavList`
@@ -50,8 +115,8 @@ pub struct PokenavList {
     pub moveListWindowLoopedTaskId: u32,
     pub moveDelta: i32,
     pub bgMoveType: u32,
-    pub bufferItemFunc: Option<unsafe extern "C" fn(*mut PokenavListItem, *mut u8)>,
-    pub iconDrawFunc: Option<unsafe extern "C" fn(u16, u32, u32)>,
+    pub bufferItemFunc: Option<unsafe fn(*mut PokenavListItem, *mut u8)>,
+    pub iconDrawFunc: Option<unsafe fn(u16, u32, u32)>,
     pub rightArrow: *mut Sprite,
     pub upArrow: *mut Sprite,
     pub downArrow: *mut Sprite,
@@ -160,75 +225,50 @@ static sSpriteTemplate_UpDownArrow: Table<SpriteTemplate> =
     Table((&raw const crate::data::pokenav_list::sSpriteTemplate_UpDownArrow).cast());
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sMoveWindowDownIndex: u32 = 0;
+pub(crate) static sMoveWindowDownIndex: crate::global::Global<u32> = crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static mut gSprites: CArray<Sprite, 65>;
-    static gText_PokenavMatchCall_SelfIntroduction: CArray<u8, 0>;
-    static gText_PokenavMatchCall_Strategy: CArray<u8, 0>;
-    static gText_PokenavMatchCall_TrainerPokemon: CArray<u8, 0>;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddTextPrinterParameterized3(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: *mut u8,
-        a5: i8,
-        a6: *mut u8,
-    );
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AllocSubstruct(a0: u32, a1: u32) -> *mut c_void;
-    fn BgDmaFill(a0: u32, a1: u8, a2: i32, a3: i32);
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ClearRematchPokeballIcon(a0: u16, a1: u32);
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyWindowRectToVram(a0: u32, a1: u32, a2: u32, a3: u32, a4: u32, a5: u32);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateLoopedTask(a0: Option<unsafe extern "C" fn(i32) -> u32>, a1: u32) -> u32;
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DestroySprite(a0: *mut Sprite);
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn FillWindowTilesByRow(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32);
-    fn FreePokenavSubstruct(a0: u32);
-    fn FreeSpritePaletteByTag(a0: u16);
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FuncIsActiveLoopedTask(a0: Option<unsafe extern "C" fn(i32) -> u32>) -> u32;
-    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
-    fn GetBgY(a0: u8) -> i32;
-    fn GetMatchCallFlavorText(a0: i32, a1: i32) -> *mut u8;
-    fn GetSubstructPtr(a0: u32) -> *mut c_void;
-    fn GetWindowAttribute(a0: u8, a1: u8) -> u32;
-    fn IsDma3ManagerBusyWithBgCopy() -> u8;
-    fn IsLoopedTaskActive(a0: u32) -> u32;
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn Pokenav_AllocAndLoadPalettes(a0: *mut SpritePalette);
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveWindow(a0: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SpriteCallbackDummy(a0: *mut Sprite);
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `CpuFastSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuFastSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `GetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
+    unsafe { crate::bg::GetBgTilemapBuffer(a0) as *mut c_void }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreatePokenavList(
+pub unsafe fn CreatePokenavList(
     bgTemplate: *mut BgTemplate,
     listTemplate: *mut PokenavListTemplate,
     tileOffset: u32,
 ) -> u32 {
-    let mut list: *mut PokenavList =
-        AllocSubstruct(POKENAV_SUBSTRUCT_LIST, 2212) as *mut PokenavList;
+    let list: *mut PokenavList = AllocSubstruct(POKENAV_SUBSTRUCT_LIST, 2212) as *mut PokenavList;
     if list.is_null() {
         return FALSE as u32;
     }
@@ -237,46 +277,39 @@ pub unsafe extern "C" fn CreatePokenavList(
         return FALSE as u32;
     }
     CreateLoopedTask(Some(LoopedTask_CreatePokenavList), 6);
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsCreatePokenavListTaskActive() -> u32 {
-    return FuncIsActiveLoopedTask(Some(LoopedTask_CreatePokenavList));
+pub unsafe fn IsCreatePokenavListTaskActive() -> u32 {
+    FuncIsActiveLoopedTask(Some(LoopedTask_CreatePokenavList))
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DestroyPokenavList() {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+pub unsafe fn DestroyPokenavList() {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
     DestroyListArrows(list);
     RemoveWindow((*list).listWindow.windowId as u8);
     FreePokenavSubstruct(POKENAV_SUBSTRUCT_LIST);
 }
-pub(crate) unsafe extern "C" fn LoopedTask_CreatePokenavList(state: i32) -> u32 {
-    let mut list: *mut PokenavList = null_mut();
+pub(crate) unsafe fn LoopedTask_CreatePokenavList(state: i32) -> u32 {
     if IsDma3ManagerBusyWithBgCopy() != 0 {
         return LT_PAUSE;
     }
-    list = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
     'l1: {
         let sw1: i32 = state;
         let matched = sw1 == 0 || sw1 == 1 || sw1 == 2 || sw1 == 3 || sw1 == 4;
-        let mut fall = false;
+        let fall = false;
         if sw1 == 0 {
-            fall = true;
             InitPokenavListBg(list);
             return LT_INC_AND_PAUSE;
         }
         if sw1 == 1 {
-            fall = true;
             InitPokenavListWindow(&raw mut (*list).listWindow);
             return LT_INC_AND_PAUSE;
         }
         if sw1 == 2 {
-            fall = true;
             InitListItems(&raw mut (*list).windowState, list);
             return LT_INC_AND_PAUSE;
         }
         if sw1 == 3 {
-            fall = true;
             if IsPrintListItemsTaskActive() != 0 {
                 return LT_PAUSE;
             } else {
@@ -285,23 +318,20 @@ pub(crate) unsafe extern "C" fn LoopedTask_CreatePokenavList(state: i32) -> u32 
             }
         }
         if fall || sw1 == 4 {
-            fall = true;
             CreateListArrowSprites(&raw mut (*list).windowState, list);
             return LT_FINISH;
         }
         if !matched {
-            fall = true;
             return LT_FINISH;
         }
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn InitPokenavListBg(list: *mut PokenavList) {
-    let mut tileNum: u16 =
-        ((*list).listWindow.fillValue as u16) << 12 | (*list).listWindow.tileOffset;
+unsafe fn InitPokenavListBg(list: *mut PokenavList) {
+    let tileNum: u16 = ((*list).listWindow.fillValue as u16) << 12 | (*list).listWindow.tileOffset;
     BgDmaFill(
         (*list).listWindow.bg as u32,
         17,
@@ -328,15 +358,12 @@ pub(crate) unsafe extern "C" fn InitPokenavListBg(list: *mut PokenavList) {
     );
     CopyBgTilemapBufferToVram((*list).listWindow.bg);
 }
-pub(crate) unsafe extern "C" fn InitPokenavListWindow(listWindow: *mut PokenavListMenuWindow) {
+unsafe fn InitPokenavListWindow(listWindow: *mut PokenavListMenuWindow) {
     FillWindowPixelBuffer((*listWindow).windowId as u8, 17);
     PutWindowTilemap((*listWindow).windowId as u8);
     CopyWindowToVram((*listWindow).windowId as u8, COPYWIN_MAP);
 }
-pub(crate) unsafe extern "C" fn InitListItems(
-    windowState: *mut PokenavListWindowState,
-    list: *mut PokenavList,
-) {
+unsafe fn InitListItems(windowState: *mut PokenavListWindowState, list: *mut PokenavList) {
     let mut numToPrint: i32 =
         (*windowState).listLength as i32 - (*windowState).windowTopIndex as i32;
     if numToPrint > (*windowState).entriesOnscreen as i32 {
@@ -351,7 +378,7 @@ pub(crate) unsafe extern "C" fn InitListItems(
         list,
     );
 }
-pub(crate) unsafe extern "C" fn PrintListItems(
+unsafe fn PrintListItems(
     listPtr: *mut c_void,
     topIndex: u32,
     numItems: u32,
@@ -370,20 +397,19 @@ pub(crate) unsafe extern "C" fn PrintListItems(
     (*list).printStart = printStart;
     CreateLoopedTask(Some(LoopedTask_PrintListItems), 5);
 }
-pub(crate) unsafe extern "C" fn IsPrintListItemsTaskActive() -> u32 {
-    return FuncIsActiveLoopedTask(Some(LoopedTask_PrintListItems));
+unsafe fn IsPrintListItemsTaskActive() -> u32 {
+    FuncIsActiveLoopedTask(Some(LoopedTask_PrintListItems))
 }
-pub(crate) unsafe extern "C" fn LoopedTask_PrintListItems(state: i32) -> u32 {
+pub(crate) unsafe fn LoopedTask_PrintListItems(state: i32) -> u32 {
     let mut row: u32 = 0;
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
     'l1: {
         let sw1: i32 = state;
-        let mut fall = false;
+        let fall = false;
         if sw1 == 0 {
-            fall = true;
-            row = (*list).listWindow.unkA as u32
+            row = ((*list).listWindow.unkA as u32
                 + (*list).listWindow.numPrinted as u32
-                + (*list).printStart
+                + (*list).printStart)
                 & 0xF;
             (*list).bufferItemFunc.unwrap_unchecked()(
                 (*list).listPtr as *mut PokenavListItem,
@@ -423,31 +449,30 @@ pub(crate) unsafe extern "C" fn LoopedTask_PrintListItems(state: i32) -> u32 {
             }
         }
         if fall || sw1 == 1 {
-            fall = true;
             if IsDma3ManagerBusyWithBgCopy() != 0 {
                 return LT_PAUSE;
             }
             return LT_FINISH;
         }
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn ShouldShowUpArrow() -> u32 {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
-    return ((*list).windowState.windowTopIndex != 0) as u32;
+unsafe fn ShouldShowUpArrow() -> u32 {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    ((*list).windowState.windowTopIndex != 0) as u32
 }
-pub(crate) unsafe extern "C" fn ShouldShowDownArrow() -> u32 {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
-    let mut windowState: *mut PokenavListWindowState = &raw mut (*list).windowState;
-    return (((*windowState).windowTopIndex as i32 + (*windowState).entriesOnscreen as i32)
-        < (*windowState).listLength as i32) as u32;
+unsafe fn ShouldShowDownArrow() -> u32 {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    let windowState: *mut PokenavListWindowState = &raw mut (*list).windowState;
+    (((*windowState).windowTopIndex as i32 + (*windowState).entriesOnscreen as i32)
+        < (*windowState).listLength as i32) as u32
 }
-pub(crate) unsafe extern "C" fn MoveListWindow(mut delta: i32, printItems: u32) {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
-    let mut windowState: *mut PokenavListWindowState = &raw mut (*list).windowState;
+unsafe fn MoveListWindow(mut delta: i32, printItems: u32) {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    let windowState: *mut PokenavListWindowState = &raw mut (*list).windowState;
     if delta < 0 {
         if (*windowState).windowTopIndex as i32 + delta < 0 {
-            delta = -1 * (*windowState).windowTopIndex as i32;
+            delta = -((*windowState).windowTopIndex as i32);
         }
         if printItems != 0 {
             PrintListItems(
@@ -460,10 +485,10 @@ pub(crate) unsafe extern "C" fn MoveListWindow(mut delta: i32, printItems: u32) 
             );
         }
     } else if printItems != 0 {
-        let mut index: i32 = ({
-            sMoveWindowDownIndex =
-                (*windowState).windowTopIndex as u32 + (*windowState).entriesOnscreen as u32;
+        let index: i32 = ({
             sMoveWindowDownIndex
+                .set((*windowState).windowTopIndex as u32 + (*windowState).entriesOnscreen as u32);
+            sMoveWindowDownIndex.get()
         }) as i32;
         if index + delta >= (*windowState).listLength as i32 {
             delta = (*windowState).listLength as i32 - index;
@@ -480,7 +505,7 @@ pub(crate) unsafe extern "C" fn MoveListWindow(mut delta: i32, printItems: u32) 
     CreateMoveListWindowTask(delta, list);
     (*windowState).windowTopIndex += delta as u16;
 }
-pub(crate) unsafe extern "C" fn CreateMoveListWindowTask(delta: i32, list: *mut PokenavList) {
+unsafe fn CreateMoveListWindowTask(delta: i32, list: *mut PokenavList) {
     (*list).startBgY = GetBgY((*list).listWindow.bg);
     (*list).endBgY = (*list).startBgY + (delta << 12);
     if delta > 0 {
@@ -491,11 +516,11 @@ pub(crate) unsafe extern "C" fn CreateMoveListWindowTask(delta: i32, list: *mut 
     (*list).moveDelta = delta;
     (*list).moveListWindowLoopedTaskId = CreateLoopedTask(Some(LoopedTask_MoveListWindow), 6);
 }
-pub(crate) unsafe extern "C" fn LoopedTask_MoveListWindow(state: i32) -> u32 {
+pub(crate) unsafe fn LoopedTask_MoveListWindow(state: i32) -> u32 {
     let mut oldY: i32 = 0;
     let mut newY: i32 = 0;
     let mut finished: u32 = 0;
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
     match state {
         0 => {
             if IsPrintListItemsTaskActive() == 0 {
@@ -517,7 +542,8 @@ pub(crate) unsafe extern "C" fn LoopedTask_MoveListWindow(state: i32) -> u32 {
                 }
             }
             if finished != 0 {
-                (*list).listWindow.unkA = (*list).listWindow.unkA + (*list).moveDelta as u16 & 0xF;
+                (*list).listWindow.unkA =
+                    ((*list).listWindow.unkA + (*list).moveDelta as u16) & 0xF;
                 ChangeBgY((*list).listWindow.bg, (*list).endBgY, BG_COORD_SET);
                 return LT_FINISH;
             }
@@ -525,20 +551,18 @@ pub(crate) unsafe extern "C" fn LoopedTask_MoveListWindow(state: i32) -> u32 {
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavList_IsMoveWindowTaskActive() -> u32 {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
-    return IsLoopedTaskActive((*list).moveListWindowLoopedTaskId);
+pub unsafe fn PokenavList_IsMoveWindowTaskActive() -> u32 {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    IsLoopedTaskActive((*list).moveListWindowLoopedTaskId)
 }
-pub(crate) unsafe extern "C" fn GetPokenavListWindowState() -> *mut PokenavListWindowState {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
-    return &raw mut (*list).windowState;
+unsafe fn GetPokenavListWindowState() -> *mut PokenavListWindowState {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    &raw mut (*list).windowState
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavList_MoveCursorUp() -> i32 {
-    let mut windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
+pub unsafe fn PokenavList_MoveCursorUp() -> i32 {
+    let windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
     if (*windowState).selectedIndexOffset != 0 {
         (*windowState).selectedIndexOffset -= 1;
         return 1;
@@ -547,11 +571,10 @@ pub unsafe extern "C" fn PokenavList_MoveCursorUp() -> i32 {
         MoveListWindow(-1, 1);
         return 2;
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavList_MoveCursorDown() -> i32 {
-    let mut windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
+pub unsafe fn PokenavList_MoveCursorDown() -> i32 {
+    let windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
     if (*windowState).windowTopIndex as i32 + (*windowState).selectedIndexOffset as i32
         >= (*windowState).listLength as i32 - 1
     {
@@ -565,31 +588,29 @@ pub unsafe extern "C" fn PokenavList_MoveCursorDown() -> i32 {
         MoveListWindow(1, 1);
         return 2;
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavList_PageUp() -> i32 {
+pub unsafe fn PokenavList_PageUp() -> i32 {
     let mut scroll: i32 = 0;
-    let mut windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
+    let windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
     if ShouldShowUpArrow() != 0 {
         if (*windowState).windowTopIndex >= (*windowState).entriesOnscreen {
             scroll = (*windowState).entriesOnscreen as i32;
         } else {
             scroll = (*windowState).windowTopIndex as i32;
         }
-        MoveListWindow(scroll * -1, 1);
+        MoveListWindow(-scroll, 1);
         return 2;
     } else if (*windowState).selectedIndexOffset != 0 {
         (*windowState).selectedIndexOffset = 0;
         return 1;
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavList_PageDown() -> i32 {
-    let mut windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
+pub unsafe fn PokenavList_PageDown() -> i32 {
+    let windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
     if ShouldShowDownArrow() != 0 {
-        let mut windowBottomIndex: i32 =
+        let windowBottomIndex: i32 =
             (*windowState).windowTopIndex as i32 + (*windowState).entriesOnscreen as i32;
         let mut scroll: i32 =
             (*windowState).entriesOffscreen as i32 - (*windowState).windowTopIndex as i32;
@@ -617,56 +638,49 @@ pub unsafe extern "C" fn PokenavList_PageDown() -> i32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavList_GetSelectedIndex() -> u32 {
-    let mut windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
-    return (*windowState).windowTopIndex as u32 + (*windowState).selectedIndexOffset as u32;
+pub unsafe fn PokenavList_GetSelectedIndex() -> u32 {
+    let windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
+    (*windowState).windowTopIndex as u32 + (*windowState).selectedIndexOffset as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavList_GetTopIndex() -> u32 {
-    let mut windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
-    return (*windowState).windowTopIndex as u32;
+pub unsafe fn PokenavList_GetTopIndex() -> u32 {
+    let windowState: *mut PokenavListWindowState = GetPokenavListWindowState();
+    (*windowState).windowTopIndex as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavList_EraseListForCheckPage() {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+pub unsafe fn PokenavList_EraseListForCheckPage() {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
     (*list).eraseIndex = 0;
     (*list).loopedTaskId = CreateLoopedTask(Some(LoopedTask_EraseListForCheckPage), 6);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintCheckPageInfo(delta: i16) {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+pub unsafe fn PrintCheckPageInfo(delta: i16) {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
     (*list).windowState.windowTopIndex += delta as u16;
     (*list).eraseIndex = 0;
     (*list).loopedTaskId = CreateLoopedTask(Some(LoopedTask_PrintCheckPageInfo), 6);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavList_ReshowListFromCheckPage() {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+pub unsafe fn PokenavList_ReshowListFromCheckPage() {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
     (*list).eraseIndex = 0;
     (*list).loopedTaskId = CreateLoopedTask(Some(LoopedTask_ReshowListFromCheckPage), 6);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavList_IsTaskActive() -> u32 {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
-    return IsLoopedTaskActive((*list).loopedTaskId);
+pub unsafe fn PokenavList_IsTaskActive() -> u32 {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    IsLoopedTaskActive((*list).loopedTaskId)
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavList_DrawCurrentItemIcon() {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
-    let mut windowState: *mut PokenavListWindowState = &raw mut (*list).windowState;
+pub unsafe fn PokenavList_DrawCurrentItemIcon() {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    let windowState: *mut PokenavListWindowState = &raw mut (*list).windowState;
     (*list).iconDrawFunc.unwrap_unchecked()(
         (*list).listWindow.windowId,
         (*windowState).windowTopIndex as u32 + (*windowState).selectedIndexOffset as u32,
-        (*list).listWindow.unkA as u32 + (*windowState).selectedIndexOffset as u32 & 0xF,
+        ((*list).listWindow.unkA as u32 + (*windowState).selectedIndexOffset as u32) & 0xF,
     );
     CopyWindowToVram((*list).listWindow.windowId as u8, COPYWIN_MAP);
 }
-pub(crate) unsafe extern "C" fn LoopedTask_EraseListForCheckPage(state: i32) -> u32 {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+pub(crate) unsafe fn LoopedTask_EraseListForCheckPage(state: i32) -> u32 {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
     'l1: {
         let sw1: i32 = state;
         let mut fall = false;
@@ -675,7 +689,6 @@ pub(crate) unsafe extern "C" fn LoopedTask_EraseListForCheckPage(state: i32) -> 
             ToggleListArrows(list, TRUE as u32);
         }
         if fall || sw1 == 1 {
-            fall = true;
             if (*list).eraseIndex != (*list).windowState.selectedIndexOffset as i32 {
                 EraseListEntry(&raw mut (*list).listWindow, (*list).eraseIndex, 1);
             }
@@ -683,7 +696,6 @@ pub(crate) unsafe extern "C" fn LoopedTask_EraseListForCheckPage(state: i32) -> 
             return LT_INC_AND_PAUSE;
         }
         if sw1 == 2 {
-            fall = true;
             if IsDma3ManagerBusyWithBgCopy() == 0 {
                 if (*list).eraseIndex != (*list).windowState.entriesOnscreen as i32 {
                     return 6;
@@ -700,7 +712,6 @@ pub(crate) unsafe extern "C" fn LoopedTask_EraseListForCheckPage(state: i32) -> 
             return LT_PAUSE;
         }
         if sw1 == 3 {
-            fall = true;
             if IsDma3ManagerBusyWithBgCopy() == 0 {
                 if (*list).windowState.selectedIndexOffset != 0 {
                     MoveListWindow((*list).windowState.selectedIndexOffset as i32, FALSE as u32);
@@ -711,7 +722,6 @@ pub(crate) unsafe extern "C" fn LoopedTask_EraseListForCheckPage(state: i32) -> 
             return LT_PAUSE;
         }
         if sw1 == 4 {
-            fall = true;
             if PokenavList_IsMoveWindowTaskActive() != 0 {
                 return LT_PAUSE;
             }
@@ -719,10 +729,10 @@ pub(crate) unsafe extern "C" fn LoopedTask_EraseListForCheckPage(state: i32) -> 
             return LT_FINISH;
         }
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_PrintCheckPageInfo(state: i32) -> u32 {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+pub(crate) unsafe fn LoopedTask_PrintCheckPageInfo(state: i32) -> u32 {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
     if IsDma3ManagerBusyWithBgCopy() != 0 {
         return LT_PAUSE;
     }
@@ -755,18 +765,16 @@ pub(crate) unsafe extern "C" fn LoopedTask_PrintCheckPageInfo(state: i32) -> u32
             return LT_FINISH;
         }
     }
-    return LT_INC_AND_PAUSE;
+    LT_INC_AND_PAUSE
 }
-pub(crate) unsafe extern "C" fn LoopedTask_ReshowListFromCheckPage(state: i32) -> u32 {
-    let mut list: *mut PokenavList = null_mut();
-    let mut listAlias: *mut PokenavList = null_mut();
+pub(crate) unsafe fn LoopedTask_ReshowListFromCheckPage(state: i32) -> u32 {
     let mut windowState: *mut PokenavListWindowState = null_mut();
     if IsDma3ManagerBusyWithBgCopy() != 0 {
         return LT_PAUSE;
     }
-    list = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
     windowState = &raw mut (*list).windowState;
-    listAlias = list;
+    let listAlias: *mut PokenavList = list;
     match state {
         0 => {
             PrintMatchCallListTrainerName(windowState, listAlias);
@@ -784,7 +792,7 @@ pub(crate) unsafe extern "C" fn LoopedTask_ReshowListFromCheckPage(state: i32) -
             (*list).eraseIndex = 0;
             if (*windowState).listLength <= (*windowState).entriesOnscreen {
                 if (*windowState).windowTopIndex != 0 {
-                    let mut entries: i32 = (*windowState).windowTopIndex as i32;
+                    let entries: i32 = (*windowState).windowTopIndex as i32;
                     EraseListEntry(&raw mut (*listAlias).listWindow, -entries, entries);
                     (*windowState).selectedIndexOffset = entries as u16;
                     (*list).eraseIndex = -entries;
@@ -794,7 +802,7 @@ pub(crate) unsafe extern "C" fn LoopedTask_ReshowListFromCheckPage(state: i32) -
                 if (*windowState).windowTopIndex as i32 + (*windowState).entriesOnscreen as i32
                     > (*windowState).listLength as i32
                 {
-                    let mut entries: i32 = (*windowState).windowTopIndex as i32
+                    let entries: i32 = (*windowState).windowTopIndex as i32
                         + (*windowState).entriesOnscreen as i32
                         - (*windowState).listLength as i32;
                     EraseListEntry(&raw mut (*listAlias).listWindow, -entries, entries);
@@ -847,17 +855,17 @@ pub(crate) unsafe extern "C" fn LoopedTask_ReshowListFromCheckPage(state: i32) -
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn EraseListEntry(
+unsafe fn EraseListEntry(
     listWindow: *mut PokenavListMenuWindow,
     mut offset: i32,
     mut entries: i32,
 ) {
-    let mut tileData: *mut u8 =
+    let tileData: *mut u8 =
         GetWindowAttribute((*listWindow).windowId as u8, WINDOW_TILE_DATA) as usize as *mut u8;
-    let mut width: u32 = (*listWindow).width as u32 * 64;
-    offset = (*listWindow).unkA as i32 + offset & 0xF;
+    let width: u32 = (*listWindow).width as u32 * 64;
+    offset = ((*listWindow).unkA as i32 + offset) & 0xF;
     if offset + entries <= 16 {
         {
             let mut tmp: u32 = 0;
@@ -865,20 +873,20 @@ pub(crate) unsafe extern "C" fn EraseListEntry(
             CpuFastSet(
                 &raw mut tmp as *mut c_void,
                 tileData.at(offset as u32 * width) as *mut c_void,
-                0x01000000 | entries as u32 * width / 4 & 0x1FFFFF,
+                0x01000000 | (entries as u32 * width / 4) & 0x1FFFFF,
             );
         }
         CopyWindowToVram((*listWindow).windowId as u8, COPYWIN_GFX);
     } else {
-        let mut v3: u32 = 16 - offset as u32;
-        let mut v4: u32 = entries as u32 - v3;
+        let v3: u32 = 16 - offset as u32;
+        let v4: u32 = entries as u32 - v3;
         {
             let mut tmp: u32 = 0;
             volatile_write(&raw mut tmp, 0x11111111);
             CpuFastSet(
                 &raw mut tmp as *mut c_void,
                 tileData.at(offset as u32 * width) as *mut c_void,
-                0x01000000 | v3 * width / 4 & 0x1FFFFF,
+                0x01000000 | (v3 * width / 4) & 0x1FFFFF,
             );
         }
         {
@@ -887,7 +895,7 @@ pub(crate) unsafe extern "C" fn EraseListEntry(
             CpuFastSet(
                 &raw mut tmp as *mut c_void,
                 tileData as *mut c_void,
-                0x01000000 | v4 * width / 4 & 0x1FFFFF,
+                0x01000000 | (v4 * width / 4) & 0x1FFFFF,
             );
         }
         CopyWindowToVram((*listWindow).windowId as u8, COPYWIN_GFX);
@@ -895,15 +903,12 @@ pub(crate) unsafe extern "C" fn EraseListEntry(
     entries -= 1;
     while entries != -1 {
         ClearRematchPokeballIcon((*listWindow).windowId, offset as u32);
-        offset = offset + 1 & 0xF;
+        offset = (offset + 1) & 0xF;
         entries -= 1;
     }
     CopyWindowToVram((*listWindow).windowId as u8, COPYWIN_MAP);
 }
-pub(crate) unsafe extern "C" fn SetListMarginTile(
-    listWindow: *mut PokenavListMenuWindow,
-    draw: u32,
-) {
+unsafe fn SetListMarginTile(listWindow: *mut PokenavListMenuWindow, draw: u32) {
     let mut var: u16 = 0;
     let mut tilemapBuffer: *mut u16 =
         GetBgTilemapBuffer(GetWindowAttribute((*listWindow).windowId as u8, WINDOW_BG) as u8)
@@ -911,17 +916,14 @@ pub(crate) unsafe extern "C" fn SetListMarginTile(
     tilemapBuffer =
         tilemapBuffer.at((((*listWindow).unkA as i32) << 6) + (*listWindow).x as i32 - 1);
     if draw != 0 {
-        var = ((*listWindow).fillValue as u16) << 12 | (*listWindow).tileOffset + 1;
+        var = (((*listWindow).fillValue as u16) << 12) | ((*listWindow).tileOffset + 1);
     } else {
         var = ((*listWindow).fillValue as u16) << 12 | (*listWindow).tileOffset;
     }
     *tilemapBuffer = var;
     *tilemapBuffer.at(32) = var;
 }
-pub(crate) unsafe extern "C" fn PrintCheckPageTrainerName(
-    state: *mut PokenavListWindowState,
-    list: *mut PokenavList,
-) {
+unsafe fn PrintCheckPageTrainerName(state: *mut PokenavListWindowState, list: *mut PokenavList) {
     let mut colors: CArray<u8, 3> = CArray([0, 2, 5]);
     (*list).bufferItemFunc.unwrap_unchecked()(
         ((*state).listPtr as *mut u8).at((*state).listItemSize * (*state).windowTopIndex as u32)
@@ -960,7 +962,7 @@ pub(crate) unsafe extern "C" fn PrintCheckPageTrainerName(
         2,
     );
 }
-pub(crate) unsafe extern "C" fn PrintMatchCallListTrainerName(
+unsafe fn PrintMatchCallListTrainerName(
     state: *mut PokenavListWindowState,
     list: *mut PokenavList,
 ) {
@@ -989,13 +991,22 @@ pub(crate) unsafe extern "C" fn PrintMatchCallListTrainerName(
     SetListMarginTile(&raw mut (*list).listWindow, FALSE as u32);
     CopyWindowToVram((*list).listWindow.windowId as u8, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn PrintMatchCallFieldNames(list: *mut PokenavList, fieldId: u32) {
+unsafe fn PrintMatchCallFieldNames(list: *mut PokenavList, fieldId: u32) {
     let mut fieldNames: CArray<*mut u8, 3> = zeroed();
-    fieldNames[0] = gText_PokenavMatchCall_Strategy.as_ptr().cast_mut();
-    fieldNames[1] = gText_PokenavMatchCall_TrainerPokemon.as_ptr().cast_mut();
-    fieldNames[2] = gText_PokenavMatchCall_SelfIntroduction.as_ptr().cast_mut();
+    fieldNames[0] = (*(&raw const crate::data::strings::gText_PokenavMatchCall_Strategy)
+        .cast::<CArray<u8, 0>>())
+    .as_ptr()
+    .cast_mut();
+    fieldNames[1] = (*(&raw const crate::data::strings::gText_PokenavMatchCall_TrainerPokemon)
+        .cast::<CArray<u8, 0>>())
+    .as_ptr()
+    .cast_mut();
+    fieldNames[2] = (*(&raw const crate::data::strings::gText_PokenavMatchCall_SelfIntroduction)
+        .cast::<CArray<u8, 0>>())
+    .as_ptr()
+    .cast_mut();
     let mut colors: CArray<u8, 3> = CArray([1, 4, 5]);
-    let mut top: u32 = (*list).listWindow.unkA as u32 + 1 + fieldId * 2 & 0xF;
+    let top: u32 = ((*list).listWindow.unkA as u32 + 1 + fieldId * 2) & 0xF;
     FillWindowPixelRect(
         (*list).listWindow.windowId as u8,
         17,
@@ -1022,13 +1033,13 @@ pub(crate) unsafe extern "C" fn PrintMatchCallFieldNames(list: *mut PokenavList,
         2,
     );
 }
-pub(crate) unsafe extern "C" fn PrintMatchCallFlavorText(
+unsafe fn PrintMatchCallFlavorText(
     windowState: *mut PokenavListWindowState,
     list: *mut PokenavList,
     checkPageEntry: u32,
 ) {
-    let mut r6: u32 = (*list).listWindow.unkA as u32 + lineOffsets_0[checkPageEntry] as u32 & 0xF;
-    let mut str: *mut u8 =
+    let r6: u32 = ((*list).listWindow.unkA as u32 + lineOffsets_0[checkPageEntry] as u32) & 0xF;
+    let str: *mut u8 =
         GetMatchCallFlavorText((*windowState).windowTopIndex as i32, checkPageEntry as i32);
     if !str.is_null() {
         FillWindowTilesByRow(
@@ -1057,25 +1068,17 @@ pub(crate) unsafe extern "C" fn PrintMatchCallFlavorText(
         );
     }
 }
-pub(crate) unsafe extern "C" fn LoadListArrowGfx() {
-    let mut i: u32 = 0;
-    let mut ptr: *mut CompressedSpriteSheet = null_mut();
-    i = 0;
-    ptr = sListArrowSpriteSheets.as_ptr().cast_mut();
-    while i < 1 {
+unsafe fn LoadListArrowGfx() {
+    let mut ptr: *mut CompressedSpriteSheet = sListArrowSpriteSheets.as_ptr().cast_mut();
+    for i in 0..1u32 {
         LoadCompressedSpriteSheet(ptr);
         ptr = ptr.at(1);
-        i += 1;
     }
     Pokenav_AllocAndLoadPalettes(sListArrowPalettes.as_ptr().cast_mut());
 }
-pub(crate) unsafe extern "C" fn CreateListArrowSprites(
-    windowState: *mut PokenavListWindowState,
-    list: *mut PokenavList,
-) {
-    let mut spriteId: u32 = 0;
+unsafe fn CreateListArrowSprites(windowState: *mut PokenavListWindowState, list: *mut PokenavList) {
     let mut x: i16 = 0;
-    spriteId = CreateSprite(
+    let mut spriteId: u32 = CreateSprite(
         (&raw const *sSpriteTemplate_RightArrow).cast_mut(),
         (*list).listWindow.x as i16 * 8 + 3,
         ((*list).listWindow.y as i16 + 1) * 8,
@@ -1106,14 +1109,14 @@ pub(crate) unsafe extern "C" fn CreateListArrowSprites(
         .set_tileNum((*(*list).upArrow).oam.tileNum() + 4);
     (*(*list).upArrow).callback = Some(SpriteCB_UpArrow);
 }
-pub(crate) unsafe extern "C" fn DestroyListArrows(list: *mut PokenavList) {
+unsafe fn DestroyListArrows(list: *mut PokenavList) {
     DestroySprite((*list).rightArrow);
     DestroySprite((*list).upArrow);
     DestroySprite((*list).downArrow);
     FreeSpriteTilesByTag(GFXTAG_ARROW);
     FreeSpritePaletteByTag(PALTAG_ARROW);
 }
-pub(crate) unsafe extern "C" fn ToggleListArrows(list: *mut PokenavList, invisible: u32) {
+unsafe fn ToggleListArrows(list: *mut PokenavList, invisible: u32) {
     if invisible != 0 {
         (*(*list).rightArrow).callback = Some(SpriteCallbackDummy);
         (*(*list).upArrow).callback = Some(SpriteCallbackDummy);
@@ -1127,53 +1130,50 @@ pub(crate) unsafe extern "C" fn ToggleListArrows(list: *mut PokenavList, invisib
     (*(*list).upArrow).set_invisible(invisible as u16);
     (*(*list).downArrow).set_invisible(invisible as u16);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_RightArrow(sprite: *mut Sprite) {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+pub(crate) unsafe fn SpriteCB_RightArrow(sprite: *mut Sprite) {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
     (*sprite).y2 = ((*list).windowState.selectedIndexOffset as i16) << 4;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DownArrow(sprite: *mut Sprite) {
-    if (*sprite).data[7] == 0 && ShouldShowDownArrow() != 0 {
+pub(crate) unsafe fn SpriteCB_DownArrow(sprite: *mut Sprite) {
+    if (*sprite).data[sInvisible] == 0 && ShouldShowDownArrow() != 0 {
         (*sprite).set_invisible(FALSE as u16);
     } else {
         (*sprite).set_invisible(TRUE as u16);
     }
     if ({
-        (*sprite).data[0] += 1;
-        (*sprite).data[0]
+        (*sprite).data[sTimer] += 1;
+        (*sprite).data[sTimer]
     }) > 3
     {
-        let mut offset: i16 = 0;
-        (*sprite).data[0] = 0;
-        offset = (*sprite).data[1] + 1 & 7;
-        (*sprite).data[1] = offset;
+        (*sprite).data[sTimer] = 0;
+        let offset: i16 = ((*sprite).data[sOffset] + 1) & 7;
+        (*sprite).data[sOffset] = offset;
         (*sprite).y2 = offset;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_UpArrow(sprite: *mut Sprite) {
-    if (*sprite).data[7] == 0 && ShouldShowUpArrow() != 0 {
+pub(crate) unsafe fn SpriteCB_UpArrow(sprite: *mut Sprite) {
+    if (*sprite).data[sInvisible] == 0 && ShouldShowUpArrow() != 0 {
         (*sprite).set_invisible(FALSE as u16);
     } else {
         (*sprite).set_invisible(TRUE as u16);
     }
     if ({
-        (*sprite).data[0] += 1;
-        (*sprite).data[0]
+        (*sprite).data[sTimer] += 1;
+        (*sprite).data[sTimer]
     }) > 3
     {
-        let mut offset: i16 = 0;
-        (*sprite).data[0] = 0;
-        offset = (*sprite).data[1] + 1 & 7;
-        (*sprite).data[1] = offset;
-        (*sprite).y2 = -1 * offset;
+        (*sprite).data[sTimer] = 0;
+        let offset: i16 = ((*sprite).data[sOffset] + 1) & 7;
+        (*sprite).data[sOffset] = offset;
+        (*sprite).y2 = -offset;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavList_ToggleVerticalArrows(invisible: u32) {
-    let mut list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
-    (*(*list).upArrow).data[7] = invisible as i16;
-    (*(*list).downArrow).data[7] = invisible as i16;
+pub unsafe fn PokenavList_ToggleVerticalArrows(invisible: u32) {
+    let list: *mut PokenavList = GetSubstructPtr(POKENAV_SUBSTRUCT_LIST) as *mut PokenavList;
+    (*(*list).upArrow).data[sInvisible] = invisible as i16;
+    (*(*list).downArrow).data[sInvisible] = invisible as i16;
 }
-pub(crate) unsafe extern "C" fn InitPokenavListWindowState(
+unsafe fn InitPokenavListWindowState(
     dst: *mut PokenavListWindowState,
     template: *mut PokenavListTemplate,
 ) {
@@ -1197,7 +1197,7 @@ pub(crate) unsafe extern "C" fn InitPokenavListWindowState(
         }
     }
 }
-pub(crate) unsafe extern "C" fn CopyPokenavListMenuTemplate(
+unsafe fn CopyPokenavListMenuTemplate(
     dest: *mut PokenavList,
     bgTemplate: *mut BgTemplate,
     template: *mut PokenavListTemplate,
@@ -1228,5 +1228,5 @@ pub(crate) unsafe extern "C" fn CopyPokenavListMenuTemplate(
     (*dest).rightArrow = null_mut();
     (*dest).upArrow = null_mut();
     (*dest).downArrow = null_mut();
-    return 1;
+    1
 }

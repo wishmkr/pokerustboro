@@ -87,20 +87,51 @@ const CMD_SIZE: usize = 8;
 #[unsafe(link_section = "ewram_data")]
 static mut CLIENT: *mut u8 = core::ptr::null_mut();
 
-unsafe extern "C" {
-    static gMysteryGiftClientScript_Init: u8;
-    static mut gDecompressionBuffer: u8;
-    static mut gSaveBlock1Ptr: *mut u8;
-    static mut gSaveBlock2Ptr: *mut u8;
-
-    fn GetGameStat(index: u8) -> u32;
-    fn MysteryGift_LoadLinkGameData(data: *mut u8, is_wonder_news: u32);
-    fn SaveWonderCard(card: *const u8) -> u32;
-    fn SaveWonderNews(news: *const u8) -> u32;
-    fn IsWonderNewsSameAsSaved(news: *const u8) -> u32;
-    fn MysteryGift_TrySaveStamp(stamp: *const u16) -> u32;
-    fn InitRamScript_NoObjectEvent(script: *mut u8, size: u16);
-    fn ValidateEReaderTrainer();
+/// `GetGameStat` with this module's view of its types.
+#[inline]
+unsafe fn GetGameStat(a0: u8) -> u32 {
+    unsafe { crate::overworld::GetGameStat(a0) }
+}
+/// `MysteryGift_LoadLinkGameData` with this module's view of its types.
+#[inline]
+unsafe fn MysteryGift_LoadLinkGameData(a0: *mut u8, a1: u32) {
+    unsafe {
+        crate::mystery_gift::MysteryGift_LoadLinkGameData(a0 as _, a1);
+    }
+}
+/// `SaveWonderCard` with this module's view of its types.
+#[inline]
+unsafe fn SaveWonderCard(a0: *const u8) -> u32 {
+    unsafe { crate::mystery_gift::SaveWonderCard(a0 as _) }
+}
+/// `SaveWonderNews` with this module's view of its types.
+#[inline]
+unsafe fn SaveWonderNews(a0: *const u8) -> u32 {
+    unsafe { crate::mystery_gift::SaveWonderNews(a0 as _) }
+}
+/// `IsWonderNewsSameAsSaved` with this module's view of its types.
+#[inline]
+unsafe fn IsWonderNewsSameAsSaved(a0: *const u8) -> u32 {
+    unsafe { crate::mystery_gift::IsWonderNewsSameAsSaved(a0 as _) }
+}
+/// `MysteryGift_TrySaveStamp` with this module's view of its types.
+#[inline]
+unsafe fn MysteryGift_TrySaveStamp(a0: *const u16) -> u32 {
+    unsafe { crate::mystery_gift::MysteryGift_TrySaveStamp(a0 as _) }
+}
+/// `InitRamScript_NoObjectEvent` with this module's view of its types.
+#[inline]
+unsafe fn InitRamScript_NoObjectEvent(a0: *mut u8, a1: u16) {
+    unsafe {
+        crate::script::InitRamScript_NoObjectEvent(a0 as _, a1);
+    }
+}
+/// `ValidateEReaderTrainer` with this module's view of its types.
+#[inline]
+unsafe fn ValidateEReaderTrainer() {
+    unsafe {
+        crate::battle_tower::ValidateEReaderTrainer();
+    }
 }
 
 #[inline]
@@ -135,7 +166,7 @@ unsafe fn copy(src: *const u8, dest: *mut u8, size: u32) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MysteryGiftClient_Create(is_wonder_news: u32) {
+pub unsafe fn MysteryGiftClient_Create(is_wonder_news: u32) {
     let client = unsafe { AllocZeroed(C_SIZE) };
     unsafe { (&raw mut CLIENT).write(client) };
     unsafe { client_init(client, 1, 0) };
@@ -143,7 +174,7 @@ pub unsafe extern "C" fn MysteryGiftClient_Create(is_wonder_news: u32) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MysteryGiftClient_Run(end_val: *mut u16) -> u32 {
+pub unsafe fn MysteryGiftClient_Run(end_val: *mut u16) -> u32 {
     let client = unsafe { (&raw const CLIENT).read() };
     if client.is_null() {
         return CLI_RET_END;
@@ -160,19 +191,19 @@ pub unsafe extern "C" fn MysteryGiftClient_Run(end_val: *mut u16) -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MysteryGiftClient_AdvanceState() {
+pub unsafe fn MysteryGiftClient_AdvanceState() {
     let client = unsafe { (&raw const CLIENT).read() };
     let state = unsafe { field(client, C_FUNC_STATE) };
     unsafe { set_field(client, C_FUNC_STATE, state.wrapping_add(1)) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MysteryGiftClient_GetMsg() -> *mut u8 {
+pub unsafe fn MysteryGiftClient_GetMsg() -> *mut u8 {
     unsafe { buffer((&raw const CLIENT).read(), C_MSG) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MysteryGiftClient_SetParam(value: u32) {
+pub unsafe fn MysteryGiftClient_SetParam(value: u32) {
     unsafe { set_field((&raw const CLIENT).read(), C_PARAM, value) };
 }
 
@@ -311,7 +342,12 @@ unsafe fn client_run(client: *mut u8) -> u32 {
         }
         CLI_SAVE_RAM_SCRIPT => unsafe { InitRamScript_NoObjectEvent(recv, RAM_SCRIPT_DATA_SIZE) },
         CLI_RECV_EREADER_TRAINER => {
-            let save2 = unsafe { (&raw const gSaveBlock2Ptr).read() };
+            let save2 = unsafe {
+                (&raw const (*(&raw const crate::load_save::gSaveBlock2Ptr)
+                    .cast::<*mut u8>()
+                    .cast_mut()))
+                    .read()
+            };
             unsafe {
                 copy(
                     recv,
@@ -325,7 +361,10 @@ unsafe fn client_run(client: *mut u8) -> u32 {
             unsafe {
                 copy(
                     recv,
-                    (&raw mut gDecompressionBuffer).cast(),
+                    (&raw mut (*(&raw const crate::decompress::gDecompressionBuffer)
+                        .cast::<u8>()
+                        .cast_mut()))
+                        .cast(),
                     MG_LINK_BUFFER_SIZE,
                 )
             };
@@ -342,7 +381,7 @@ unsafe fn call_func(client: *mut u8) -> u32 {
         FUNC_INIT => {
             unsafe {
                 copy(
-                    &raw const gMysteryGiftClientScript_Init,
+                    &raw const (*(&raw const crate::data::mystery_gift_scripts::gMysteryGiftClientScript_Init).cast::<u8>()),
                     buffer(client, C_SCRIPT),
                     MG_LINK_BUFFER_SIZE,
                 )
@@ -391,12 +430,24 @@ unsafe fn call_func(client: *mut u8) -> u32 {
         FUNC_RUN_BUFFER => {
             // Executes code the server sent. This is how the original works:
             // the received buffer is jumped into as a Thumb function.
-            type BufferScript = unsafe extern "C" fn(*mut u32, *mut u8, *mut u8) -> u32;
-            let entry = (&raw mut gDecompressionBuffer) as usize;
+            type BufferScript = unsafe fn(*mut u32, *mut u8, *mut u8) -> u32;
+            let entry = (&raw mut (*(&raw const crate::decompress::gDecompressionBuffer)
+                .cast::<u8>()
+                .cast_mut())) as usize;
             let func: BufferScript = unsafe { core::mem::transmute::<usize, BufferScript>(entry) };
             let status = unsafe { client.add(C_PARAM).cast::<u32>() };
-            let save1 = unsafe { (&raw const gSaveBlock1Ptr).read() };
-            let save2 = unsafe { (&raw const gSaveBlock2Ptr).read() };
+            let save1 = unsafe {
+                (&raw const (*(&raw const crate::load_save::gSaveBlock1Ptr)
+                    .cast::<*mut u8>()
+                    .cast_mut()))
+                    .read()
+            };
+            let save2 = unsafe {
+                (&raw const (*(&raw const crate::load_save::gSaveBlock2Ptr)
+                    .cast::<*mut u8>()
+                    .cast_mut()))
+                    .read()
+            };
             if unsafe { func(status, save2, save1) } == 1 {
                 unsafe { go_to(client, FUNC_RUN) };
             }

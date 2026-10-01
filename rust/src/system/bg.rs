@@ -147,7 +147,7 @@ const ZEROED_BG_CONFIG2: BgConfig2 = BgConfig2 {
 };
 
 static mut BG_CONFIGS: [BgConfig; NUM_BACKGROUNDS] = [ZEROED_BG_CONFIG; NUM_BACKGROUNDS];
-static mut BG_VISIBILITY_AND_MODE: u16 = 0;
+static BG_VISIBILITY_AND_MODE: crate::global::Global<u16> = crate::global::Global::new(0);
 static mut BG_CONFIGS2: [BgConfig2; NUM_BACKGROUNDS] =
     [const { ZEROED_BG_CONFIG2 }; NUM_BACKGROUNDS];
 /// One bit per outstanding DMA3 request slot.
@@ -157,9 +157,19 @@ static mut DMA_BUSY_BITFIELD: [u32; NUM_BACKGROUNDS] = [0; NUM_BACKGROUNDS];
 #[unsafe(link_section = "common_data")]
 pub static mut gWindowTileAutoAllocEnabled: u32 = 0;
 
-unsafe extern "C" {
-    fn BgAffineSet(src: *const BgAffineSrcData, dest: *mut u8, count: i32);
-    fn LZ77UnCompWram(src: *const u32, dest: *mut c_void);
+/// `BgAffineSet` with this module's view of its types.
+#[inline]
+unsafe fn BgAffineSet(a0: *const BgAffineSrcData, a1: *mut u8, a2: i32) {
+    unsafe {
+        crate::syscall::BgAffineSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `LZ77UnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompWram(a0: *const u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
+    }
 }
 
 #[inline]
@@ -174,26 +184,26 @@ unsafe fn config2(bg: usize) -> *mut BgConfig2 {
 
 #[inline]
 unsafe fn visibility_and_mode() -> u16 {
-    unsafe { (&raw const BG_VISIBILITY_AND_MODE).read_volatile() }
+    unsafe { (BG_VISIBILITY_AND_MODE.as_ptr().cast_const()).read_volatile() }
 }
 
 #[inline]
 unsafe fn set_visibility_and_mode(value: u16) {
-    unsafe { (&raw mut BG_VISIBILITY_AND_MODE).write_volatile(value) };
+    unsafe { (BG_VISIBILITY_AND_MODE.as_ptr()).write_volatile(value) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsInvalidBg(bg: u8) -> u8 {
+pub unsafe fn IsInvalidBg(bg: u8) -> u8 {
     u8::from(bg as usize >= NUM_BACKGROUNDS)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsInvalidBg32(bg: u8) -> u32 {
+pub unsafe fn IsInvalidBg32(bg: u8) -> u32 {
     u32::from(bg as usize >= NUM_BACKGROUNDS)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBgMode() -> u8 {
+pub unsafe fn GetBgMode() -> u8 {
     (unsafe { visibility_and_mode() } & 0x7) as u8
 }
 
@@ -203,32 +213,32 @@ unsafe fn set_bg_mode_internal(bg_mode: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBgMode(bg_mode: u8) {
+pub unsafe fn SetBgMode(bg_mode: u8) {
     unsafe { set_bg_mode_internal(bg_mode) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetBgControlStructs() {
+pub unsafe fn ResetBgControlStructs() {
     for i in 0..NUM_BACKGROUNDS {
         unsafe { config(i).write(ZEROED_BG_CONFIG) };
     }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Unused_ResetBgControlStruct(bg: u8) {
+pub unsafe fn Unused_ResetBgControlStruct(bg: u8) {
     if unsafe { IsInvalidBg(bg) } == 0 {
         unsafe { config(bg as usize).write(ZEROED_BG_CONFIG) };
     }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetTextModeAndHideBgs() {
+pub unsafe fn SetTextModeAndHideBgs() {
     let current = unsafe { GetGpuReg(REG_OFFSET_DISPCNT) };
     unsafe { SetGpuReg(REG_OFFSET_DISPCNT, current & !DISPCNT_ALL_BG_AND_MODE_BITS) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetBgs() {
+pub unsafe fn ResetBgs() {
     unsafe { ResetBgControlStructs() };
     unsafe { set_visibility_and_mode(0) };
     unsafe { SetTextModeAndHideBgs() };
@@ -303,13 +313,7 @@ unsafe fn get_bg_control_attribute(bg: u8, attribute_id: u8) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadBgVram(
-    bg: u8,
-    src: *const c_void,
-    size: u16,
-    dest_offset: u16,
-    mode: u8,
-) -> u8 {
+pub unsafe fn LoadBgVram(bg: u8, src: *const c_void, size: u16, dest_offset: u16, mode: u8) -> u8 {
     if unsafe { IsInvalidBg(bg) } != 0
         || !unsafe { (&raw const (*config(bg as usize)).visible).read() }
     {
@@ -384,25 +388,25 @@ unsafe fn sync_bg_visibility_and_mode() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowBg(bg: u8) {
+pub unsafe fn ShowBg(bg: u8) {
     unsafe { show_bg_internal(bg) };
     unsafe { sync_bg_visibility_and_mode() };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HideBg(bg: u8) {
+pub unsafe fn HideBg(bg: u8) {
     unsafe { hide_bg_internal(bg) };
     unsafe { sync_bg_visibility_and_mode() };
 }
 
 /// From FireRed/LeafGreen. Dummied out here.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BgTileAllocOp(_bg: i32, _offset: i32, _count: i32, _mode: i32) -> i32 {
+pub unsafe fn BgTileAllocOp(_bg: i32, _offset: i32, _count: i32, _mode: i32) -> i32 {
     0
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetBgsAndClearDma3BusyFlags(leftover_frlg_variable: u32) {
+pub unsafe fn ResetBgsAndClearDma3BusyFlags(leftover_frlg_variable: u32) {
     unsafe { ResetBgs() };
     for i in 0..NUM_BACKGROUNDS {
         unsafe {
@@ -448,11 +452,7 @@ unsafe fn apply_template(template: *const u32) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitBgsFromTemplates(
-    bg_mode: u8,
-    templates: *const u32,
-    num_templates: u8,
-) {
+pub unsafe fn InitBgsFromTemplates(bg_mode: u8, templates: *const u32, num_templates: u8) {
     unsafe { set_bg_mode_internal(bg_mode) };
     unsafe { ResetBgControlStructs() };
 
@@ -464,7 +464,7 @@ pub unsafe extern "C" fn InitBgsFromTemplates(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitBgFromTemplate(template: *const u32) {
+pub unsafe fn InitBgFromTemplate(template: *const u32) {
     unsafe { apply_template(template) };
 }
 
@@ -479,12 +479,7 @@ unsafe fn mark_dma_busy(cursor: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadBgTiles(
-    bg: u8,
-    src: *const c_void,
-    size: u16,
-    dest_offset: u16,
-) -> u16 {
+pub unsafe fn LoadBgTiles(bg: u8, src: *const c_void, size: u16, dest_offset: u16) -> u16 {
     let base_tile = unsafe { (&raw const (*config2(bg as usize)).base_tile).read() };
     // 4bpp tiles are 0x20 bytes, 8bpp 0x40.
     let scale = if unsafe { get_bg_control_attribute(bg, BG_CTRL_ATTR_PALETTEMODE) } == 0 {
@@ -515,12 +510,7 @@ pub unsafe extern "C" fn LoadBgTiles(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadBgTilemap(
-    bg: u8,
-    src: *const c_void,
-    size: u16,
-    dest_offset: u16,
-) -> u16 {
+pub unsafe fn LoadBgTilemap(bg: u8, src: *const c_void, size: u16, dest_offset: u16) -> u16 {
     let cursor = unsafe { LoadBgVram(bg, src, size, dest_offset.wrapping_mul(2), DISPCNT_MODE_2) };
     if cursor == 0xff {
         return 0xffff;
@@ -530,12 +520,7 @@ pub unsafe extern "C" fn LoadBgTilemap(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Unused_LoadBgPalette(
-    bg: u8,
-    src: *const c_void,
-    size: u16,
-    dest_offset: u16,
-) -> u16 {
+pub unsafe fn Unused_LoadBgPalette(bg: u8, src: *const c_void, size: u16, dest_offset: u16) -> u16 {
     if unsafe { IsInvalidBg32(bg) } != 0 {
         return 0xffff;
     }
@@ -560,7 +545,7 @@ pub unsafe extern "C" fn Unused_LoadBgPalette(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsDma3ManagerBusyWithBgCopy() -> u8 {
+pub unsafe fn IsDma3ManagerBusyWithBgCopy() -> u8 {
     let mut i = 0usize;
     while i < 0x80 {
         let slot = unsafe { (&raw mut DMA_BUSY_BITFIELD).cast::<u32>().add(i / 0x20) };
@@ -577,7 +562,7 @@ pub unsafe extern "C" fn IsDma3ManagerBusyWithBgCopy() -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBgAttribute(bg: u8, attribute_id: u8, value: u8) {
+pub unsafe fn SetBgAttribute(bg: u8, attribute_id: u8, value: u8) {
     const KEEP: u8 = 0xff;
     let args = match attribute_id {
         BG_ATTR_CHARBASEINDEX => [value, KEEP, KEEP, KEEP, KEEP, KEEP, KEEP],
@@ -597,7 +582,7 @@ pub unsafe extern "C" fn SetBgAttribute(bg: u8, attribute_id: u8, value: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBgAttribute(bg: u8, attribute_id: u8) -> u16 {
+pub unsafe fn GetBgAttribute(bg: u8, attribute_id: u8) -> u16 {
     match attribute_id {
         BG_ATTR_CHARBASEINDEX => unsafe {
             get_bg_control_attribute(bg, BG_CTRL_ATTR_CHARBASEINDEX)
@@ -692,7 +677,7 @@ unsafe fn write_scroll(bg: u8, coord: i32, horizontal: bool, forced_blank: bool)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ChangeBgX(bg: u8, value: i32, op: u8) -> i32 {
+pub unsafe fn ChangeBgX(bg: u8, value: i32, op: u8) -> i32 {
     if unsafe { IsInvalidBg32(bg) } != 0
         || unsafe { get_bg_control_attribute(bg, BG_CTRL_ATTR_VISIBLE) } == 0
     {
@@ -707,7 +692,7 @@ pub unsafe extern "C" fn ChangeBgX(bg: u8, value: i32, op: u8) -> i32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBgX(bg: u8) -> i32 {
+pub unsafe fn GetBgX(bg: u8) -> i32 {
     if unsafe { IsInvalidBg32(bg) } != 0
         || unsafe { get_bg_control_attribute(bg, BG_CTRL_ATTR_VISIBLE) } == 0
     {
@@ -717,7 +702,7 @@ pub unsafe extern "C" fn GetBgX(bg: u8) -> i32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ChangeBgY(bg: u8, value: i32, op: u8) -> i32 {
+pub unsafe fn ChangeBgY(bg: u8, value: i32, op: u8) -> i32 {
     if unsafe { IsInvalidBg32(bg) } != 0
         || unsafe { get_bg_control_attribute(bg, BG_CTRL_ATTR_VISIBLE) } == 0
     {
@@ -732,7 +717,7 @@ pub unsafe extern "C" fn ChangeBgY(bg: u8, value: i32, op: u8) -> i32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ChangeBgY_ScreenOff(bg: u8, value: i32, op: u8) -> i32 {
+pub unsafe fn ChangeBgY_ScreenOff(bg: u8, value: i32, op: u8) -> i32 {
     if unsafe { IsInvalidBg32(bg) } != 0
         || unsafe { get_bg_control_attribute(bg, BG_CTRL_ATTR_VISIBLE) } == 0
     {
@@ -747,7 +732,7 @@ pub unsafe extern "C" fn ChangeBgY_ScreenOff(bg: u8, value: i32, op: u8) -> i32 
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBgY(bg: u8) -> i32 {
+pub unsafe fn GetBgY(bg: u8) -> i32 {
     if unsafe { IsInvalidBg32(bg) } != 0
         || unsafe { get_bg_control_attribute(bg, BG_CTRL_ATTR_VISIBLE) } == 0
     {
@@ -758,7 +743,7 @@ pub unsafe extern "C" fn GetBgY(bg: u8) -> i32 {
 
 #[unsafe(no_mangle)]
 #[allow(clippy::too_many_arguments)]
-pub unsafe extern "C" fn SetBgAffine(
+pub unsafe fn SetBgAffine(
     bg: u8,
     src_center_x: i32,
     src_center_y: i32,
@@ -812,7 +797,7 @@ pub unsafe extern "C" fn SetBgAffine(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Unused_AdjustBgMosaic(val: u8, mode: u8) -> u8 {
+pub unsafe fn Unused_AdjustBgMosaic(val: u8, mode: u8) -> u8 {
     let mosaic = unsafe { GetGpuReg(REG_OFFSET_MOSAIC) };
     let mut bg_h = (mosaic & 0xf) as i16;
     let mut bg_v = ((mosaic >> 4) & 0xf) as i16;
@@ -842,7 +827,7 @@ pub unsafe extern "C" fn Unused_AdjustBgMosaic(val: u8, mode: u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBgTilemapBuffer(bg: u8, tilemap: *mut u8) {
+pub unsafe fn SetBgTilemapBuffer(bg: u8, tilemap: *mut u8) {
     if unsafe { IsInvalidBg32(bg) } == 0
         && unsafe { get_bg_control_attribute(bg, BG_CTRL_ATTR_VISIBLE) } != 0
     {
@@ -851,7 +836,7 @@ pub unsafe extern "C" fn SetBgTilemapBuffer(bg: u8, tilemap: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UnsetBgTilemapBuffer(bg: u8) {
+pub unsafe fn UnsetBgTilemapBuffer(bg: u8) {
     if unsafe { IsInvalidBg32(bg) } == 0
         && unsafe { get_bg_control_attribute(bg, BG_CTRL_ATTR_VISIBLE) } != 0
     {
@@ -860,7 +845,7 @@ pub unsafe extern "C" fn UnsetBgTilemapBuffer(bg: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBgTilemapBuffer(bg: u8) -> *mut u8 {
+pub unsafe fn GetBgTilemapBuffer(bg: u8) -> *mut u8 {
     if unsafe { IsInvalidBg32(bg) } != 0
         || unsafe { get_bg_control_attribute(bg, BG_CTRL_ATTR_VISIBLE) } == 0
     {
@@ -870,7 +855,7 @@ pub unsafe extern "C" fn GetBgTilemapBuffer(bg: u8) -> *mut u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsTileMapOutsideWram(bg: u8) -> u32 {
+pub unsafe fn IsTileMapOutsideWram(bg: u8) -> u32 {
     let tilemap = unsafe { (&raw const (*config2(bg as usize)).tilemap).read() };
     u32::from(tilemap as usize > IWRAM_END || tilemap.is_null())
 }
@@ -885,12 +870,7 @@ unsafe fn usable_tilemap(bg: u8) -> Option<*mut u8> {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyToBgTilemapBuffer(
-    bg: u8,
-    src: *const c_void,
-    mode: u16,
-    dest_offset: u16,
-) {
+pub unsafe fn CopyToBgTilemapBuffer(bg: u8, src: *const c_void, mode: u16, dest_offset: u16) {
     let Some(tilemap) = (unsafe { usable_tilemap(bg) }) else {
         return;
     };
@@ -905,7 +885,7 @@ pub unsafe extern "C" fn CopyToBgTilemapBuffer(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyBgTilemapBufferToVram(bg: u8) {
+pub unsafe fn CopyBgTilemapBufferToVram(bg: u8) {
     let Some(tilemap) = (unsafe { usable_tilemap(bg) }) else {
         return;
     };
@@ -925,7 +905,7 @@ pub unsafe extern "C" fn CopyBgTilemapBufferToVram(bg: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyToBgTilemapBufferRect(
+pub unsafe fn CopyToBgTilemapBufferRect(
     bg: u8,
     src: *const c_void,
     dest_x: u8,
@@ -980,7 +960,7 @@ pub unsafe extern "C" fn CopyToBgTilemapBufferRect(
 
 #[unsafe(no_mangle)]
 #[allow(clippy::too_many_arguments)]
-pub unsafe extern "C" fn CopyToBgTilemapBufferRect_ChangePalette(
+pub unsafe fn CopyToBgTilemapBufferRect_ChangePalette(
     bg: u8,
     src: *const c_void,
     dest_x: u8,
@@ -1010,7 +990,7 @@ pub unsafe extern "C" fn CopyToBgTilemapBufferRect_ChangePalette(
 
 #[unsafe(no_mangle)]
 #[allow(clippy::too_many_arguments)]
-pub unsafe extern "C" fn CopyRectToBgTilemapBufferRect(
+pub unsafe fn CopyRectToBgTilemapBufferRect(
     bg: u8,
     src: *const c_void,
     src_x: u8,
@@ -1092,7 +1072,7 @@ pub unsafe extern "C" fn CopyRectToBgTilemapBufferRect(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FillBgTilemapBufferRect_Palette0(
+pub unsafe fn FillBgTilemapBufferRect_Palette0(
     bg: u8,
     tile_num: u16,
     x: u8,
@@ -1142,7 +1122,7 @@ pub unsafe extern "C" fn FillBgTilemapBufferRect_Palette0(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FillBgTilemapBufferRect(
+pub unsafe fn FillBgTilemapBufferRect(
     bg: u8,
     tile_num: u16,
     x: u8,
@@ -1156,7 +1136,7 @@ pub unsafe extern "C" fn FillBgTilemapBufferRect(
 
 #[unsafe(no_mangle)]
 #[allow(clippy::too_many_arguments)]
-pub unsafe extern "C" fn WriteSequenceToBgTilemapBuffer(
+pub unsafe fn WriteSequenceToBgTilemapBuffer(
     bg: u8,
     first_tile_num: u16,
     x: u8,
@@ -1233,7 +1213,7 @@ pub unsafe extern "C" fn WriteSequenceToBgTilemapBuffer(
 /// Screen-size dependent metrics for a text-mode layer: 0 is the tilemap size
 /// in 2 KiB blocks, 1 the width in screen blocks, 2 the height.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBgMetricTextMode(bg: u8, which_metric: u8) -> u16 {
+pub unsafe fn GetBgMetricTextMode(bg: u8, which_metric: u8) -> u16 {
     let screen_size = unsafe { get_bg_control_attribute(bg, BG_CTRL_ATTR_SCREENSIZE) };
 
     match (which_metric, screen_size) {
@@ -1251,7 +1231,7 @@ pub unsafe extern "C" fn GetBgMetricTextMode(bg: u8, which_metric: u8) -> u16 {
 /// The affine equivalent: 0 is the tilemap size in 256-byte blocks, 1 and 2
 /// the map width and height in tiles.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBgMetricAffineMode(bg: u8, which_metric: u8) -> u32 {
+pub unsafe fn GetBgMetricAffineMode(bg: u8, which_metric: u8) -> u32 {
     let screen_size = unsafe { get_bg_control_attribute(bg, BG_CTRL_ATTR_SCREENSIZE) };
 
     match which_metric {
@@ -1270,7 +1250,7 @@ pub unsafe extern "C" fn GetBgMetricAffineMode(bg: u8, which_metric: u8) -> u32 
 /// Maps tile coordinates onto the flat tilemap, accounting for how wide and
 /// tall screen blocks are stitched together.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetTileMapIndexFromCoords(
+pub unsafe fn GetTileMapIndexFromCoords(
     x: i32,
     y: i32,
     screen_size: i32,
@@ -1308,7 +1288,7 @@ pub unsafe extern "C" fn GetTileMapIndexFromCoords(
 /// Writes one tilemap entry, optionally forcing a palette or keeping the
 /// destination's existing flip and palette bits.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyTileMapEntry(
+pub unsafe fn CopyTileMapEntry(
     src: *const u16,
     dest: *mut u16,
     palette1: i32,

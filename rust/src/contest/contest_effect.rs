@@ -3,29 +3,26 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    unused_assignments
 )]
 
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::contest::gContestantTurnOrder;
+use crate::contest::{
+    Contest_IsMonsTurnDisabled, IsContestantAllowedToCombo, MakeContestantNervous,
+    SetContestantEffectStringID, SetContestantEffectStringID2, SetStartledString,
+    gContestResources, gSpecialVar_ContestCategory,
+};
+use crate::random::Random;
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -43,23 +40,9 @@ static gContestEffects: Table<CArray<ContestEffect, 48>> =
 static gContestMoves: Table<CArray<ContestMove, 355>> =
     Table((&raw const crate::data::contest_effect::gContestMoves).cast());
 
-unsafe extern "C" {
-    static mut gContestResources: *mut ContestResources;
-    static mut gContestantTurnOrder: CArray<u8, 4>;
-    static mut gSpecialVar_ContestCategory: u16;
-    fn Contest_IsMonsTurnDisabled(a0: u8) -> u8;
-    fn IsContestantAllowedToCombo(a0: u8) -> u8;
-    fn MakeContestantNervous(a0: u8);
-    fn Random() -> u16;
-    fn SetContestantEffectStringID(a0: u8, a1: u8);
-    fn SetContestantEffectStringID2(a0: u8, a1: u8);
-    fn SetStartledString(a0: u8, a1: u8);
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AreMovesContestCombo(lastMove: u16, nextMove: u16) -> u8 {
+pub unsafe fn AreMovesContestCombo(lastMove: u16, nextMove: u16) -> u8 {
     let mut nextMoveComboMoves: CArray<u8, 4> = zeroed();
-    let mut lastMoveComboStarterId: u8 = gContestMoves[lastMove].comboStarterId;
+    let lastMoveComboStarterId: u8 = gContestMoves[lastMove].comboStarterId;
     nextMoveComboMoves[0] = gContestMoves[nextMove].comboMoves[0];
     nextMoveComboMoves[1] = gContestMoves[nextMove].comboMoves[1];
     nextMoveComboMoves[2] = gContestMoves[nextMove].comboMoves[2];
@@ -77,11 +60,11 @@ pub unsafe extern "C" fn AreMovesContestCombo(lastMove: u16, nextMove: u16) -> u
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_HighlyAppealing() {}
-pub(crate) unsafe extern "C" fn ContestEffect_UserMoreEasilyStartled() {
+pub(crate) fn ContestEffect_HighlyAppealing() {}
+pub(crate) unsafe fn ContestEffect_UserMoreEasilyStartled() {
     (*(*gContestResources)
         .status
         .at((*(*gContestResources).appealResults).contestant))
@@ -91,7 +74,7 @@ pub(crate) unsafe extern "C" fn ContestEffect_UserMoreEasilyStartled() {
         CONTEST_STRING_MORE_CONSCIOUS,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_GreatAppealButNoMoreMoves() {
+pub(crate) unsafe fn ContestEffect_GreatAppealButNoMoreMoves() {
     (*(*gContestResources)
         .status
         .at((*(*gContestResources).appealResults).contestant))
@@ -101,7 +84,7 @@ pub(crate) unsafe extern "C" fn ContestEffect_GreatAppealButNoMoreMoves() {
         CONTEST_STRING_NO_APPEAL,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_RepetitionNotBoring() {
+pub(crate) unsafe fn ContestEffect_RepetitionNotBoring() {
     (*(*gContestResources)
         .status
         .at((*(*gContestResources).appealResults).contestant))
@@ -115,7 +98,7 @@ pub(crate) unsafe extern "C" fn ContestEffect_RepetitionNotBoring() {
         .at((*(*gContestResources).appealResults).contestant))
     .set_moveRepeatCount(0);
 }
-pub(crate) unsafe extern "C" fn ContestEffect_AvoidStartleOnce() {
+pub(crate) unsafe fn ContestEffect_AvoidStartleOnce() {
     (*(*gContestResources)
         .status
         .at((*(*gContestResources).appealResults).contestant))
@@ -125,7 +108,7 @@ pub(crate) unsafe extern "C" fn ContestEffect_AvoidStartleOnce() {
         CONTEST_STRING_SETTLE_DOWN,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_AvoidStartle() {
+pub(crate) unsafe fn ContestEffect_AvoidStartle() {
     (*(*gContestResources)
         .status
         .at((*(*gContestResources).appealResults).contestant))
@@ -135,7 +118,7 @@ pub(crate) unsafe extern "C" fn ContestEffect_AvoidStartle() {
         CONTEST_STRING_OBLIVIOUS_TO_OTHERS,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_AvoidStartleSlightly() {
+pub(crate) unsafe fn ContestEffect_AvoidStartleSlightly() {
     (*(*gContestResources)
         .status
         .at((*(*gContestResources).appealResults).contestant))
@@ -145,7 +128,7 @@ pub(crate) unsafe extern "C" fn ContestEffect_AvoidStartleSlightly() {
         CONTEST_STRING_LESS_AWARE,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_UserLessEasilyStartled() {
+pub(crate) unsafe fn ContestEffect_UserLessEasilyStartled() {
     (*(*gContestResources)
         .status
         .at((*(*gContestResources).appealResults).contestant))
@@ -155,12 +138,11 @@ pub(crate) unsafe extern "C" fn ContestEffect_UserLessEasilyStartled() {
         CONTEST_STRING_STOPPED_CARING,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_StartleFrontMon() {
+pub(crate) unsafe fn ContestEffect_StartleFrontMon() {
     let mut idx: u8 = 0;
-    let mut a: u8 = (*(*gContestResources).appealResults).contestant;
+    let a: u8 = (*(*gContestResources).appealResults).contestant;
     if (*(*gContestResources).appealResults).turnOrder[a] != 0 {
         let mut i: i32 = 0;
-        i = 0;
         while i < CONTESTANT_COUNT {
             if (*(*gContestResources).appealResults).turnOrder[a] as i32 - 1
                 == (*(*gContestResources).appealResults).turnOrder[i] as i32
@@ -184,15 +166,12 @@ pub(crate) unsafe extern "C" fn ContestEffect_StartleFrontMon() {
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_StartlePrevMons() {
+pub(crate) unsafe fn ContestEffect_StartlePrevMons() {
     let mut idx: u8 = 0;
-    let mut contestant: u8 = (*(*gContestResources).appealResults).contestant;
+    let contestant: u8 = (*(*gContestResources).appealResults).contestant;
     if (*(*gContestResources).appealResults).turnOrder[contestant] != 0 {
-        let mut i: i32 = 0;
         let mut j: i32 = 0;
-        i = 0;
-        j = 0;
-        while i < CONTESTANT_COUNT {
+        for i in 0..CONTESTANT_COUNT {
             if (*(*gContestResources).appealResults).turnOrder[contestant]
                 > (*(*gContestResources).appealResults).turnOrder[i]
             {
@@ -202,7 +181,6 @@ pub(crate) unsafe extern "C" fn ContestEffect_StartlePrevMons() {
                     t1
                 }] = i as u8;
             }
-            i += 1;
         }
         (*(*gContestResources).appealResults).jamQueue[j] = CONTESTANT_NONE;
         idx = WasAtLeastOneOpponentJammed();
@@ -218,8 +196,8 @@ pub(crate) unsafe extern "C" fn ContestEffect_StartlePrevMons() {
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_StartlePrevMon2() {
-    let mut rval: u8 = (Random() as i32 % 10) as u8;
+pub(crate) unsafe fn ContestEffect_StartlePrevMon2() {
+    let rval: u8 = (Random() as i32 % 10) as u8;
     let mut jam: i32 = 0;
     if rval < 2 {
         jam = 20;
@@ -231,22 +209,19 @@ pub(crate) unsafe extern "C" fn ContestEffect_StartlePrevMon2() {
     (*(*gContestResources).appealResults).jam = jam as i16;
     ContestEffect_StartleFrontMon();
 }
-pub(crate) unsafe extern "C" fn ContestEffect_StartlePrevMons2() {
+pub(crate) unsafe fn ContestEffect_StartlePrevMons2() {
     let mut numStartled: u8 = 0;
-    let mut contestant: u8 = (*(*gContestResources).appealResults).contestant;
-    let mut turnOrder: u8 = (*(*gContestResources).appealResults).turnOrder[contestant];
+    let contestant: u8 = (*(*gContestResources).appealResults).contestant;
+    let turnOrder: u8 = (*(*gContestResources).appealResults).turnOrder[contestant];
     if turnOrder != 0 {
-        let mut i: i32 = 0;
-        i = 0;
-        while i < 4 {
+        for i in 0..4i32 {
             if (*(*gContestResources).appealResults).turnOrder[contestant]
                 > (*(*gContestResources).appealResults).turnOrder[i]
             {
-                let mut rval: u8 = 0;
                 let mut jam: u8 = 0;
                 (*(*gContestResources).appealResults).jamQueue[0] = i as u8;
                 (*(*gContestResources).appealResults).jamQueue[1] = CONTESTANT_NONE;
-                rval = (Random() as i32 % 10) as u8;
+                let rval: u8 = (Random() as i32 % 10) as u8;
                 if rval == 0 {
                     jam = 0;
                 } else if rval <= 2 {
@@ -265,7 +240,6 @@ pub(crate) unsafe extern "C" fn ContestEffect_StartlePrevMons2() {
                     numStartled += 1;
                 }
             }
-            i += 1;
         }
     }
     SetContestantEffectStringID(
@@ -279,16 +253,14 @@ pub(crate) unsafe extern "C" fn ContestEffect_StartlePrevMons2() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_ShiftJudgeAttention() {
+pub(crate) unsafe fn ContestEffect_ShiftJudgeAttention() {
     let mut hitAny: u32 = FALSE as u32;
-    let mut contestant: u8 = (*(*gContestResources).appealResults).contestant;
+    let contestant: u8 = (*(*gContestResources).appealResults).contestant;
     if (*(*gContestResources).appealResults).turnOrder
         [(*(*gContestResources).appealResults).contestant]
         != 0
     {
-        let mut i: i32 = 0;
-        i = 0;
-        while i < 4 {
+        for i in 0..4i32 {
             if (*(*gContestResources).appealResults).turnOrder[contestant]
                 > (*(*gContestResources).appealResults).turnOrder[i]
                 && (*(*gContestResources).status.at(i)).hasJudgesAttention() != 0
@@ -299,7 +271,6 @@ pub(crate) unsafe extern "C" fn ContestEffect_ShiftJudgeAttention() {
                 SetContestantEffectStringID(i as u8, CONTEST_STRING_JUDGE_LOOK_AWAY2);
                 hitAny = TRUE as u32;
             }
-            i += 1;
         }
     }
     SetContestantEffectStringID(
@@ -313,16 +284,14 @@ pub(crate) unsafe extern "C" fn ContestEffect_ShiftJudgeAttention() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_StartleMonWithJudgesAttention() {
+pub(crate) unsafe fn ContestEffect_StartleMonWithJudgesAttention() {
     let mut numStartled: u8 = 0;
-    let mut contestant: u8 = (*(*gContestResources).appealResults).contestant;
+    let contestant: u8 = (*(*gContestResources).appealResults).contestant;
     if (*(*gContestResources).appealResults).turnOrder
         [(*(*gContestResources).appealResults).contestant]
         != 0
     {
-        let mut i: i32 = 0;
-        i = 0;
-        while i < 4 {
+        for i in 0..4i32 {
             if (*(*gContestResources).appealResults).turnOrder[contestant]
                 > (*(*gContestResources).appealResults).turnOrder[i]
             {
@@ -337,7 +306,6 @@ pub(crate) unsafe extern "C" fn ContestEffect_StartleMonWithJudgesAttention() {
                     numStartled += 1;
                 }
             }
-            i += 1;
         }
     }
     SetContestantEffectStringID(
@@ -351,7 +319,7 @@ pub(crate) unsafe extern "C" fn ContestEffect_StartleMonWithJudgesAttention() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_JamsOthersButMissOneTurn() {
+pub(crate) unsafe fn ContestEffect_JamsOthersButMissOneTurn() {
     (*(*gContestResources)
         .status
         .at((*(*gContestResources).appealResults).contestant))
@@ -362,8 +330,8 @@ pub(crate) unsafe extern "C" fn ContestEffect_JamsOthersButMissOneTurn() {
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_StartleMonsSameTypeAppeal() {
-    let mut r#move: u16 = (*(*gContestResources)
+pub(crate) unsafe fn ContestEffect_StartleMonsSameTypeAppeal() {
+    let r#move: u16 = (*(*gContestResources)
         .status
         .at((*(*gContestResources).appealResults).contestant))
     .currMove;
@@ -373,50 +341,48 @@ pub(crate) unsafe extern "C" fn ContestEffect_StartleMonsSameTypeAppeal() {
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_StartleMonsCoolAppeal() {
+pub(crate) unsafe fn ContestEffect_StartleMonsCoolAppeal() {
     JamByMoveCategory(CONTEST_CATEGORY_COOL);
     SetContestantEffectStringID(
         (*(*gContestResources).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_StartleMonsBeautyAppeal() {
+pub(crate) unsafe fn ContestEffect_StartleMonsBeautyAppeal() {
     JamByMoveCategory(CONTEST_CATEGORY_BEAUTY);
     SetContestantEffectStringID(
         (*(*gContestResources).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_StartleMonsCuteAppeal() {
+pub(crate) unsafe fn ContestEffect_StartleMonsCuteAppeal() {
     JamByMoveCategory(CONTEST_CATEGORY_CUTE);
     SetContestantEffectStringID(
         (*(*gContestResources).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_StartleMonsSmartAppeal() {
+pub(crate) unsafe fn ContestEffect_StartleMonsSmartAppeal() {
     JamByMoveCategory(CONTEST_CATEGORY_SMART);
     SetContestantEffectStringID(
         (*(*gContestResources).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_StartleMonsToughAppeal() {
+pub(crate) unsafe fn ContestEffect_StartleMonsToughAppeal() {
     JamByMoveCategory(CONTEST_CATEGORY_TOUGH);
     SetContestantEffectStringID(
         (*(*gContestResources).appealResults).contestant,
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_MakeFollowingMonNervous() {
+pub(crate) unsafe fn ContestEffect_MakeFollowingMonNervous() {
     let mut hitAny: u32 = FALSE as u32;
     if (*(*gContestResources).appealResults).turnOrder
         [(*(*gContestResources).appealResults).contestant]
         != 3
     {
-        let mut i: i32 = 0;
-        i = 0;
-        while i < 4 {
+        for i in 0..4i32 {
             if (*(*gContestResources).appealResults).turnOrder
                 [(*(*gContestResources).appealResults).contestant] as i32
                 + 1
@@ -431,7 +397,6 @@ pub(crate) unsafe extern "C" fn ContestEffect_MakeFollowingMonNervous() {
                     hitAny = TRUE as u32;
                 }
             }
-            i += 1;
         }
     }
     SetContestantEffectStringID(
@@ -445,17 +410,15 @@ pub(crate) unsafe extern "C" fn ContestEffect_MakeFollowingMonNervous() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_MakeFollowingMonsNervous() {
+pub(crate) unsafe fn ContestEffect_MakeFollowingMonsNervous() {
     let mut numUnnerved: u8 = 0;
     let mut contestantUnnerved: u32 = FALSE as u32;
     let mut contestantIds: CArray<u8, 5> = zeroed();
-    let mut i: i32 = 0;
-    let mut numAfter: i32 = 0;
     let mut oddsMod: CArray<i16, 4> = zeroed();
     let mut odds: CArray<i16, 4> = zeroed();
     memset(contestantIds.as_mut_ptr(), CONTESTANT_NONE as i32, 5);
-    i = 0;
-    numAfter = 0;
+    let mut i: i32 = 0;
+    let mut numAfter: i32 = 0;
     while i < CONTESTANT_COUNT {
         if (*(*gContestResources).appealResults).turnOrder
             [(*(*gContestResources).appealResults).contestant]
@@ -481,10 +444,8 @@ pub(crate) unsafe extern "C" fn ContestEffect_MakeFollowingMonsNervous() {
         odds[1] = 20;
         odds[2] = 20;
     } else {
-        i = 0;
-        while i < CONTESTANT_COUNT {
+        for i in 0..CONTESTANT_COUNT {
             odds[i] = 0;
-            i += 1;
         }
     }
     i = 0;
@@ -536,11 +497,9 @@ pub(crate) unsafe extern "C" fn ContestEffect_MakeFollowingMonsNervous() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_WorsenConditionOfPrevMons() {
+pub(crate) unsafe fn ContestEffect_WorsenConditionOfPrevMons() {
     let mut numHit: u8 = 0;
-    let mut i: i32 = 0;
-    i = 0;
-    while i < CONTESTANT_COUNT {
+    for i in 0..CONTESTANT_COUNT {
         if (*(*gContestResources).appealResults).turnOrder
             [(*(*gContestResources).appealResults).contestant]
             > (*(*gContestResources).appealResults).turnOrder[i]
@@ -552,7 +511,6 @@ pub(crate) unsafe extern "C" fn ContestEffect_WorsenConditionOfPrevMons() {
             SetContestantEffectStringID(i as u8, CONTEST_STRING_REGAINED_FORM);
             numHit += 1;
         }
-        i += 1;
     }
     SetContestantEffectStringID(
         (*(*gContestResources).appealResults).contestant,
@@ -565,11 +523,9 @@ pub(crate) unsafe extern "C" fn ContestEffect_WorsenConditionOfPrevMons() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_BadlyStartlesMonsInGoodCondition() {
+pub(crate) unsafe fn ContestEffect_BadlyStartlesMonsInGoodCondition() {
     let mut numHit: u8 = 0;
-    let mut i: i32 = 0;
-    i = 0;
-    while i < CONTESTANT_COUNT {
+    for i in 0..CONTESTANT_COUNT {
         if (*(*gContestResources).appealResults).turnOrder
             [(*(*gContestResources).appealResults).contestant]
             > (*(*gContestResources).appealResults).turnOrder[i]
@@ -585,7 +541,6 @@ pub(crate) unsafe extern "C" fn ContestEffect_BadlyStartlesMonsInGoodCondition()
                 numHit += 1;
             }
         }
-        i += 1;
     }
     SetContestantEffectStringID(
         (*(*gContestResources).appealResults).contestant,
@@ -598,9 +553,9 @@ pub(crate) unsafe extern "C" fn ContestEffect_BadlyStartlesMonsInGoodCondition()
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_BetterIfFirst() {
+pub(crate) unsafe fn ContestEffect_BetterIfFirst() {
     if gContestantTurnOrder[(*(*gContestResources).appealResults).contestant] == 0 {
-        let mut r#move: u16 = (*(*gContestResources)
+        let r#move: u16 = (*(*gContestResources)
             .status
             .at((*(*gContestResources).appealResults).contestant))
         .currMove;
@@ -614,9 +569,9 @@ pub(crate) unsafe extern "C" fn ContestEffect_BetterIfFirst() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_BetterIfLast() {
+pub(crate) unsafe fn ContestEffect_BetterIfLast() {
     if gContestantTurnOrder[(*(*gContestResources).appealResults).contestant] == 3 {
-        let mut r#move: u16 = (*(*gContestResources)
+        let r#move: u16 = (*(*gContestResources)
             .status
             .at((*(*gContestResources).appealResults).contestant))
         .currMove;
@@ -630,19 +585,15 @@ pub(crate) unsafe extern "C" fn ContestEffect_BetterIfLast() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_AppealAsGoodAsPrevOnes() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn ContestEffect_AppealAsGoodAsPrevOnes() {
     let mut appealSum: i32 = 0;
-    i = 0;
-    appealSum = 0;
-    while i < CONTESTANT_COUNT {
+    for i in 0..CONTESTANT_COUNT {
         if (*(*gContestResources).appealResults).turnOrder
             [(*(*gContestResources).appealResults).contestant]
             > (*(*gContestResources).appealResults).turnOrder[i]
         {
             appealSum += (*(*gContestResources).status.at(i)).appeal as i32;
         }
-        i += 1;
     }
     if appealSum < 0 {
         appealSum = 0;
@@ -676,15 +627,13 @@ pub(crate) unsafe extern "C" fn ContestEffect_AppealAsGoodAsPrevOnes() {
         .appeal,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_AppealAsGoodAsPrevOne() {
+pub(crate) unsafe fn ContestEffect_AppealAsGoodAsPrevOne() {
     let mut appeal: i16 = 0;
     if (*(*gContestResources).appealResults).turnOrder
         [(*(*gContestResources).appealResults).contestant]
         != 0
     {
-        let mut i: i32 = 0;
-        i = 0;
-        while i < CONTESTANT_COUNT {
+        for i in 0..CONTESTANT_COUNT {
             if (*(*gContestResources).appealResults).turnOrder
                 [(*(*gContestResources).appealResults).contestant] as i32
                 - 1
@@ -692,7 +641,6 @@ pub(crate) unsafe extern "C" fn ContestEffect_AppealAsGoodAsPrevOne() {
             {
                 appeal = (*(*gContestResources).status.at(i)).appeal;
             }
-            i += 1;
         }
     }
     if (*(*gContestResources).appealResults).turnOrder
@@ -715,8 +663,8 @@ pub(crate) unsafe extern "C" fn ContestEffect_AppealAsGoodAsPrevOne() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_BetterWhenLater() {
-    let mut whichTurn: u8 = (*(*gContestResources).appealResults).turnOrder
+pub(crate) unsafe fn ContestEffect_BetterWhenLater() {
+    let whichTurn: u8 = (*(*gContestResources).appealResults).turnOrder
         [(*(*gContestResources).appealResults).contestant];
     if whichTurn == 0 {
         (*(*gContestResources)
@@ -751,8 +699,8 @@ pub(crate) unsafe extern "C" fn ContestEffect_BetterWhenLater() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_QualityDependsOnTiming() {
-    let mut rval: u8 = (Random() as i32 % 10) as u8;
+pub(crate) unsafe fn ContestEffect_QualityDependsOnTiming() {
+    let rval: u8 = (Random() as i32 % 10) as u8;
     let mut appeal: i16 = 0;
     if rval < 3 {
         appeal = 10;
@@ -790,12 +738,11 @@ pub(crate) unsafe extern "C" fn ContestEffect_QualityDependsOnTiming() {
         .at((*(*gContestResources).appealResults).contestant))
     .appeal = appeal;
 }
-pub(crate) unsafe extern "C" fn ContestEffect_BetterIfSameType() {
-    let mut turnOrder: i8 = (*(*gContestResources).appealResults).turnOrder
+pub(crate) unsafe fn ContestEffect_BetterIfSameType() {
+    let turnOrder: i8 = (*(*gContestResources).appealResults).turnOrder
         [(*(*gContestResources).appealResults).contestant] as i8;
     let mut i: i8 = turnOrder - 1;
     let mut j: i8 = 0;
-    let mut r#move: u16 = 0;
     if turnOrder == 0 {
         return;
     }
@@ -822,7 +769,7 @@ pub(crate) unsafe extern "C" fn ContestEffect_BetterIfSameType() {
             break;
         }
     }
-    r#move = (*(*gContestResources)
+    let r#move: u16 = (*(*gContestResources)
         .status
         .at((*(*gContestResources).appealResults).contestant))
     .currMove;
@@ -839,18 +786,16 @@ pub(crate) unsafe extern "C" fn ContestEffect_BetterIfSameType() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_BetterIfDiffType() {
+pub(crate) unsafe fn ContestEffect_BetterIfDiffType() {
     if (*(*gContestResources).appealResults).turnOrder
         [(*(*gContestResources).appealResults).contestant]
         != 0
     {
-        let mut r#move: u16 = (*(*gContestResources)
+        let r#move: u16 = (*(*gContestResources)
             .status
             .at((*(*gContestResources).appealResults).contestant))
         .currMove;
-        let mut i: i32 = 0;
-        i = 0;
-        while i < CONTESTANT_COUNT {
+        for i in 0..CONTESTANT_COUNT {
             if (*(*gContestResources).appealResults).turnOrder
                 [(*(*gContestResources).appealResults).contestant] as i32
                 - 1
@@ -869,18 +814,15 @@ pub(crate) unsafe extern "C" fn ContestEffect_BetterIfDiffType() {
                 );
                 break;
             }
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_AffectedByPrevAppeal() {
+pub(crate) unsafe fn ContestEffect_AffectedByPrevAppeal() {
     if (*(*gContestResources).appealResults).turnOrder
         [(*(*gContestResources).appealResults).contestant]
         != 0
     {
-        let mut i: i32 = 0;
-        i = 0;
-        while i < CONTESTANT_COUNT {
+        for i in 0..CONTESTANT_COUNT {
             if (*(*gContestResources).appealResults).turnOrder
                 [(*(*gContestResources).appealResults).contestant] as i32
                 - 1
@@ -916,11 +858,10 @@ pub(crate) unsafe extern "C" fn ContestEffect_AffectedByPrevAppeal() {
                     );
                 }
             }
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_ImproveConditionPreventNervousness() {
+pub(crate) unsafe fn ContestEffect_ImproveConditionPreventNervousness() {
     if (*(*gContestResources)
         .status
         .at((*(*gContestResources).appealResults).contestant))
@@ -946,7 +887,7 @@ pub(crate) unsafe extern "C" fn ContestEffect_ImproveConditionPreventNervousness
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_BetterWithGoodCondition() {
+pub(crate) unsafe fn ContestEffect_BetterWithGoodCondition() {
     (*(*gContestResources)
         .status
         .at((*(*gContestResources).appealResults).contestant))
@@ -968,15 +909,13 @@ pub(crate) unsafe extern "C" fn ContestEffect_BetterWithGoodCondition() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_NextAppealEarlier() {
+pub(crate) unsafe fn ContestEffect_NextAppealEarlier() {
     let mut i: i8 = 0;
     let mut j: i8 = 0;
     let mut turnOrder: CArray<u8, 4> = zeroed();
     if (*(*gContestResources).contest).appealNumber != CONTEST_LAST_APPEAL {
-        i = 0;
-        while i < CONTESTANT_COUNT as i8 {
+        for i in 0..(CONTESTANT_COUNT as i8) {
             turnOrder[i] = (*(*gContestResources).status.at(i)).nextTurnOrder;
-            i += 1;
         }
         turnOrder[(*(*gContestResources).appealResults).contestant] = CONTESTANT_NONE;
         i = 0;
@@ -1002,10 +941,8 @@ pub(crate) unsafe extern "C" fn ContestEffect_NextAppealEarlier() {
             .status
             .at((*(*gContestResources).appealResults).contestant))
         .set_turnOrderMod(1);
-        i = 0;
-        while i < CONTESTANT_COUNT as i8 {
+        for i in 0..(CONTESTANT_COUNT as i8) {
             (*(*gContestResources).status.at(i)).nextTurnOrder = turnOrder[i];
-            i += 1;
         }
         (*(*gContestResources)
             .status
@@ -1017,15 +954,13 @@ pub(crate) unsafe extern "C" fn ContestEffect_NextAppealEarlier() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_NextAppealLater() {
+pub(crate) unsafe fn ContestEffect_NextAppealLater() {
     let mut i: i8 = 0;
     let mut j: i8 = 0;
     let mut turnOrder: CArray<u8, 4> = zeroed();
     if (*(*gContestResources).contest).appealNumber != CONTEST_LAST_APPEAL {
-        i = 0;
-        while i < CONTESTANT_COUNT as i8 {
+        for i in 0..(CONTESTANT_COUNT as i8) {
             turnOrder[i] = (*(*gContestResources).status.at(i)).nextTurnOrder;
-            i += 1;
         }
         turnOrder[(*(*gContestResources).appealResults).contestant] = CONTESTANT_NONE;
         i = 3;
@@ -1051,10 +986,8 @@ pub(crate) unsafe extern "C" fn ContestEffect_NextAppealLater() {
             .status
             .at((*(*gContestResources).appealResults).contestant))
         .set_turnOrderMod(1);
-        i = 0;
-        while i < CONTESTANT_COUNT as i8 {
+        for i in 0..(CONTESTANT_COUNT as i8) {
             (*(*gContestResources).status.at(i)).nextTurnOrder = turnOrder[i];
-            i += 1;
         }
         (*(*gContestResources)
             .status
@@ -1066,24 +999,20 @@ pub(crate) unsafe extern "C" fn ContestEffect_NextAppealLater() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_MakeScramblingTurnOrderEasier() {}
-pub(crate) unsafe extern "C" fn ContestEffect_ScrambleNextTurnOrder() {
+pub(crate) fn ContestEffect_MakeScramblingTurnOrderEasier() {}
+pub(crate) unsafe fn ContestEffect_ScrambleNextTurnOrder() {
     let mut i: i8 = 0;
-    let mut j: i8 = 0;
     let mut turnOrder: CArray<u8, 4> = zeroed();
     let mut unselectedContestants: CArray<u8, 4> = zeroed();
     if (*(*gContestResources).contest).appealNumber != CONTEST_LAST_APPEAL {
-        i = 0;
-        while i < CONTESTANT_COUNT as i8 {
+        for i in 0..(CONTESTANT_COUNT as i8) {
             turnOrder[i] = (*(*gContestResources).status.at(i)).nextTurnOrder;
             unselectedContestants[i] = i as u8;
-            i += 1;
         }
         i = 0;
         while i < CONTESTANT_COUNT as i8 {
             let mut rval: u8 = rem_i32(Random() as i32, CONTESTANT_COUNT - i as i32) as u8;
-            j = 0;
-            while j < CONTESTANT_COUNT as i8 {
+            for j in 0..(CONTESTANT_COUNT as i8) {
                 if unselectedContestants[j] != CONTESTANT_NONE {
                     if rval == 0 {
                         turnOrder[j] = i as u8;
@@ -1093,15 +1022,12 @@ pub(crate) unsafe extern "C" fn ContestEffect_ScrambleNextTurnOrder() {
                         rval -= 1;
                     }
                 }
-                j += 1;
             }
             i += 1;
         }
-        i = 0;
-        while i < CONTESTANT_COUNT as i8 {
+        for i in 0..(CONTESTANT_COUNT as i8) {
             (*(*gContestResources).status.at(i)).nextTurnOrder = turnOrder[i];
             (*(*gContestResources).status.at(i)).set_turnOrderMod(2);
-            i += 1;
         }
         (*(*gContestResources)
             .status
@@ -1113,7 +1039,7 @@ pub(crate) unsafe extern "C" fn ContestEffect_ScrambleNextTurnOrder() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_ExciteAudienceInAnyContest() {
+pub(crate) unsafe fn ContestEffect_ExciteAudienceInAnyContest() {
     if gContestMoves[(*(*gContestResources)
         .status
         .at((*(*gContestResources).appealResults).contestant))
@@ -1127,11 +1053,9 @@ pub(crate) unsafe extern "C" fn ContestEffect_ExciteAudienceInAnyContest() {
         .set_overrideCategoryExcitementMod(TRUE);
     }
 }
-pub(crate) unsafe extern "C" fn ContestEffect_BadlyStartleMonsWithGoodAppeals() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn ContestEffect_BadlyStartleMonsWithGoodAppeals() {
     let mut numJammed: u8 = 0;
-    i = 0;
-    while i < CONTESTANT_COUNT {
+    for i in 0..CONTESTANT_COUNT {
         if (*(*gContestResources).appealResults).turnOrder
             [(*(*gContestResources).appealResults).contestant]
             > (*(*gContestResources).appealResults).turnOrder[i]
@@ -1150,7 +1074,6 @@ pub(crate) unsafe extern "C" fn ContestEffect_BadlyStartleMonsWithGoodAppeals() 
                 numJammed += 1;
             }
         }
-        i += 1;
     }
     if numJammed == 0 {
         SetContestantEffectStringID2(
@@ -1163,7 +1086,7 @@ pub(crate) unsafe extern "C" fn ContestEffect_BadlyStartleMonsWithGoodAppeals() 
         CONTEST_STRING_ATTEMPT_STARTLE,
     );
 }
-pub(crate) unsafe extern "C" fn ContestEffect_BetterWhenAudienceExcited() {
+pub(crate) unsafe fn ContestEffect_BetterWhenAudienceExcited() {
     let mut appeal: i16 = 0;
     if (*(*gContestResources).contest).applauseLevel == 0 {
         appeal = 10;
@@ -1201,7 +1124,7 @@ pub(crate) unsafe extern "C" fn ContestEffect_BetterWhenAudienceExcited() {
         .at((*(*gContestResources).appealResults).contestant))
     .appeal = appeal;
 }
-pub(crate) unsafe extern "C" fn ContestEffect_DontExciteAudience() {
+pub(crate) unsafe fn ContestEffect_DontExciteAudience() {
     if (*(*gContestResources).excitement).frozen() == 0 {
         (*(*gContestResources).excitement).set_frozen(TRUE);
         (*(*gContestResources).excitement)
@@ -1212,11 +1135,9 @@ pub(crate) unsafe extern "C" fn ContestEffect_DontExciteAudience() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn JamByMoveCategory(category: u8) {
-    let mut i: i32 = 0;
+unsafe fn JamByMoveCategory(category: u8) {
     let mut numJammed: i32 = 0;
-    i = 0;
-    while i < CONTESTANT_COUNT {
+    for i in 0..CONTESTANT_COUNT {
         if (*(*gContestResources).appealResults).turnOrder
             [(*(*gContestResources).appealResults).contestant]
             > (*(*gContestResources).appealResults).turnOrder[i]
@@ -1234,7 +1155,6 @@ pub(crate) unsafe extern "C" fn JamByMoveCategory(category: u8) {
                 numJammed += 1;
             }
         }
-        i += 1;
     }
     if numJammed == 0 {
         SetContestantEffectStringID2(
@@ -1243,7 +1163,7 @@ pub(crate) unsafe extern "C" fn JamByMoveCategory(category: u8) {
         );
     }
 }
-pub(crate) unsafe extern "C" fn CanUnnerveContestant(i: u8) -> u8 {
+unsafe fn CanUnnerveContestant(i: u8) -> u8 {
     (*(*gContestResources).appealResults).unnervedPokes[i] = 1;
     if (*(*gContestResources).status.at(i)).immune() != 0 {
         SetContestantEffectStringID(i, CONTEST_STRING_AVOID_SEEING);
@@ -1261,15 +1181,14 @@ pub(crate) unsafe extern "C" fn CanUnnerveContestant(i: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn WasAtLeastOneOpponentJammed() -> u8 {
+unsafe fn WasAtLeastOneOpponentJammed() -> u8 {
     let mut jamBuffer: CArray<i16, 4> = CArray([0, 0, 0, 0]);
     let mut i: i32 = 0;
-    i = 0;
     while (*(*gContestResources).appealResults).jamQueue[i] != CONTESTANT_NONE {
-        let mut contestant: u8 = (*(*gContestResources).appealResults).jamQueue[i];
+        let contestant: u8 = (*(*gContestResources).appealResults).jamQueue[i];
         if CanUnnerveContestant(contestant) != 0 {
             (*(*gContestResources).appealResults).jam2 = (*(*gContestResources).appealResults).jam;
             if (*(*gContestResources).status.at(contestant)).moreEasilyStartled() != 0 {
@@ -1293,21 +1212,19 @@ pub(crate) unsafe extern "C" fn WasAtLeastOneOpponentJammed() -> u8 {
         }
         i += 1;
     }
-    i = 0;
-    while i < CONTESTANT_COUNT {
+    for i in 0..CONTESTANT_COUNT {
         if jamBuffer[i] != 0 {
             return TRUE;
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn JamContestant(i: u8, jam: u8) {
+unsafe fn JamContestant(i: u8, jam: u8) {
     (*(*gContestResources).status.at(i)).appeal -= jam as i16;
     (*(*gContestResources).status.at(i)).jam += jam;
 }
-pub(crate) unsafe extern "C" fn RoundTowardsZero(mut score: i16) -> i16 {
-    let mut absScore: i16 = ((if score < 0 {
+fn RoundTowardsZero(mut score: i16) -> i16 {
+    let absScore: i16 = ((if score < 0 {
         -(score as i32)
     } else {
         score as i32
@@ -1319,10 +1236,10 @@ pub(crate) unsafe extern "C" fn RoundTowardsZero(mut score: i16) -> i16 {
     } else {
         score -= absScore;
     }
-    return score;
+    score
 }
-pub(crate) unsafe extern "C" fn RoundUp(mut score: i16) -> i16 {
-    let mut absScore: i16 = ((if score < 0 {
+unsafe fn RoundUp(mut score: i16) -> i16 {
+    let absScore: i16 = ((if score < 0 {
         -(score as i32)
     } else {
         score as i32
@@ -1330,5 +1247,5 @@ pub(crate) unsafe extern "C" fn RoundUp(mut score: i16) -> i16 {
     if absScore != 0 {
         score += 10 - absScore;
     }
-    return score;
+    score
 }

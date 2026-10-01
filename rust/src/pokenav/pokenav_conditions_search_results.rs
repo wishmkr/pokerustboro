@@ -3,44 +3,86 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::bg::CopyToBgTilemapBuffer;
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, HideBg, IsDma3ManagerBusyWithBgCopy, ShowBg,
+};
+use crate::box_mon::GetBoxMonData3;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_Reset;
+use crate::dynamic_placeholder_text_util::{
+    DynamicPlaceholderTextUtil_ExpandPlaceholders, DynamicPlaceholderTextUtil_SetPlaceholderPtr,
+};
+use crate::international_string_util::GetStringClearToWidth;
+use crate::menu::{DecompressAndCopyTileDataToVram, FreeTempTileDataBuffersIfPossible};
+use crate::pokemon::{
+    GetBoxMonGender, GetLevelFromBoxMonExp, GetLevelFromMonExp, GetMonData2, GetMonData3,
+    GetMonGender, gPlayerParty,
+};
+use crate::pokemon_storage_system::{CheckBoxMonSanityAt, GetBoxMonDataAt, GetBoxedMonPtr};
+use crate::pokenav::CreateLoopedTask;
+use crate::pokenav::{
+    AllocSubstruct, FreePokenavSubstruct, GetSelectedConditionSearch, GetSubstructPtr,
+    IsLoopedTaskActive,
+};
+use crate::pokenav_list::{
+    CreatePokenavList, DestroyPokenavList, IsCreatePokenavListTaskActive,
+    PokenavList_GetSelectedIndex, PokenavList_IsMoveWindowTaskActive, PokenavList_MoveCursorDown,
+    PokenavList_MoveCursorUp, PokenavList_PageDown, PokenavList_PageUp,
+};
+use crate::pokenav_main_menu::{
+    AreLeftHeaderSpritesMoving, CopyPaletteIntoBufferUnfaded, InitBgTemplates, IsPaletteFadeActive,
+    LoadLeftHeaderGfxForIndex, MainMenuLoopedTaskIsBusy, PokenavFadeScreen, PrintHelpBarText,
+    SetLeftHeaderSpritesInvisibility, ShowLeftHeaderGfx, SlideMenuHeaderDown,
+};
+use crate::sound::PlaySE;
+use crate::string_util::StringGet_Nickname;
+use crate::string_util::{ConvertIntToDecimalStringN, StringCopy};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar3};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{CopyWindowToVram, PutWindowTilemap, RemoveWindow};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
 // Data tables (translate with cdata.py): sSearchMonDataIds sConditionSearchLoopedTaskFuncs sConditionSearchResultFramePal sConditionSearchResultTiles sConditionSearchResultTilemap sListBg_Pal sConditionSearchResultBgTemplates sSearchResultLoopTaskFuncs sSearchResultListMenuWindowTemplate sText_MaleSymbol sText_FemaleSymbol sText_NoGenderSymbol
 
 /// `struct Pokenav_SearchResults`
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Pokenav_SearchResults {
-    pub callback: Option<unsafe extern "C" fn(*mut Pokenav_SearchResults) -> u32>,
+    pub callback: Option<unsafe fn(*mut Pokenav_SearchResults) -> u32>,
     pub loopedTaskId: u32,
     pub fill1: CArray<u8, 4>,
     pub boxId: i32,
@@ -57,7 +99,7 @@ unsafe impl Sync for Pokenav_SearchResults {}
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Pokenav_SearchResultsGfx {
-    pub callback: Option<unsafe extern "C" fn() -> u32>,
+    pub callback: Option<unsafe fn() -> u32>,
     pub loopedTaskId: u32,
     pub winid: u16,
     pub fromGraph: u32,
@@ -96,7 +138,10 @@ const CONDITION_SEARCH_FUNC_PAGE_DOWN: u32 = 4;
 const CONDITION_SEARCH_FUNC_PAGE_UP: u32 = 3;
 const CONDITION_SEARCH_FUNC_SELECT_MON: u32 = 6;
 
-static sConditionSearchLoopedTaskFuncs: Table<CArray<Option<unsafe extern "C" fn(i32) -> u32>, 4>> = Table((&raw const crate::data::pokenav_conditions_search_results::sConditionSearchLoopedTaskFuncs).cast());
+static sConditionSearchLoopedTaskFuncs: Table<CArray<Option<unsafe fn(i32) -> u32>, 4>> = Table(
+    (&raw const crate::data::pokenav_conditions_search_results::sConditionSearchLoopedTaskFuncs)
+        .cast(),
+);
 static sConditionSearchResultBgTemplates: Table<CArray<BgTemplate, 2>> = Table(
     (&raw const crate::data::pokenav_conditions_search_results::sConditionSearchResultBgTemplates)
         .cast(),
@@ -117,11 +162,9 @@ static sListBg_Pal: Table<CArray<u16, 16>> =
 static sSearchMonDataIds: Table<CArray<u32, 5>> =
     Table((&raw const crate::data::pokenav_conditions_search_results::sSearchMonDataIds).cast());
 static sSearchResultListMenuWindowTemplate: Table<WindowTemplate> = Table((&raw const crate::data::pokenav_conditions_search_results::sSearchResultListMenuWindowTemplate).cast());
-static sSearchResultLoopTaskFuncs: Table<CArray<Option<unsafe extern "C" fn(i32) -> u32>, 7>> =
-    Table(
-        (&raw const crate::data::pokenav_conditions_search_results::sSearchResultLoopTaskFuncs)
-            .cast(),
-    );
+static sSearchResultLoopTaskFuncs: Table<CArray<Option<unsafe fn(i32) -> u32>, 7>> = Table(
+    (&raw const crate::data::pokenav_conditions_search_results::sSearchResultLoopTaskFuncs).cast(),
+);
 static sText_FemaleSymbol: Table<CArray<u8, 12>> =
     Table((&raw const crate::data::pokenav_conditions_search_results::sText_FemaleSymbol).cast());
 static sText_MaleSymbol: Table<CArray<u8, 12>> =
@@ -129,91 +172,32 @@ static sText_MaleSymbol: Table<CArray<u8, 12>> =
 static sText_NoGenderSymbol: Table<CArray<u8, 2>> =
     Table((&raw const crate::data::pokenav_conditions_search_results::sText_NoGenderSymbol).cast());
 
-unsafe extern "C" {
-    static mut gMain: Main;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar3: CArray<u8, 256>;
-    static gText_NumberIndex: CArray<u8, 0>;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AllocSubstruct(a0: u32, a1: u32) -> *mut c_void;
-    fn AreLeftHeaderSpritesMoving() -> u32;
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CheckBoxMonSanityAt(a0: u32, a1: u32) -> u32;
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyPaletteIntoBufferUnfaded(a0: *mut u16, a1: u32, a2: u32);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateLoopedTask(a0: Option<unsafe extern "C" fn(i32) -> u32>, a1: u32) -> u32;
-    fn CreatePokenavList(a0: *mut BgTemplate, a1: *mut PokenavListTemplate, a2: u32) -> u32;
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DestroyPokenavList();
-    fn DynamicPlaceholderTextUtil_ExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn DynamicPlaceholderTextUtil_Reset();
-    fn DynamicPlaceholderTextUtil_SetPlaceholderPtr(a0: u8, a1: *mut u8);
-    fn FreePokenavSubstruct(a0: u32);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn GetBoxMonData3(a0: *mut BoxPokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetBoxMonDataAt(a0: u8, a1: u8, a2: i32) -> u32;
-    fn GetBoxMonGender(a0: *mut BoxPokemon) -> u8;
-    fn GetBoxedMonPtr(a0: u8, a1: u8) -> *mut BoxPokemon;
-    fn GetLevelFromBoxMonExp(a0: *mut BoxPokemon) -> u8;
-    fn GetLevelFromMonExp(a0: *mut Pokemon) -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetMonGender(a0: *mut Pokemon) -> u8;
-    fn GetSelectedConditionSearch() -> u32;
-    fn GetStringClearToWidth(a0: *mut u8, a1: i32, a2: *mut u8, a3: i32) -> *mut u8;
-    fn GetSubstructPtr(a0: u32) -> *mut c_void;
-    fn HideBg(a0: u8);
-    fn InitBgTemplates(a0: *mut BgTemplate, a1: i32);
-    fn IsCreatePokenavListTaskActive() -> u32;
-    fn IsDma3ManagerBusyWithBgCopy() -> u8;
-    fn IsLoopedTaskActive(a0: u32) -> u32;
-    fn IsPaletteFadeActive() -> u32;
-    fn LoadLeftHeaderGfxForIndex(a0: u32);
-    fn MainMenuLoopedTaskIsBusy() -> u32;
-    fn PlaySE(a0: u16);
-    fn PokenavFadeScreen(a0: i32);
-    fn PokenavList_GetSelectedIndex() -> u32;
-    fn PokenavList_IsMoveWindowTaskActive() -> u32;
-    fn PokenavList_MoveCursorDown() -> i32;
-    fn PokenavList_MoveCursorUp() -> i32;
-    fn PokenavList_PageDown() -> i32;
-    fn PokenavList_PageUp() -> i32;
-    fn PrintHelpBarText(a0: u32);
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveWindow(a0: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetLeftHeaderSpritesInvisibility();
-    fn ShowBg(a0: u8);
-    fn ShowLeftHeaderGfx(a0: u32, a1: u32, a2: u32);
-    fn SlideMenuHeaderDown();
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringGet_Nickname(a0: *mut u8) -> *mut u8;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavCallback_Init_ConditionSearch() -> u32 {
-    let mut menu: *mut Pokenav_SearchResults =
+pub unsafe fn PokenavCallback_Init_ConditionSearch() -> u32 {
+    let menu: *mut Pokenav_SearchResults =
         AllocSubstruct(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS, 36)
             as *mut Pokenav_SearchResults;
     if menu.is_null() {
@@ -227,11 +211,10 @@ pub unsafe extern "C" fn PokenavCallback_Init_ConditionSearch() -> u32 {
     (*menu).loopedTaskId = CreateLoopedTask(Some(GetConditionSearchLoopedTask), 1);
     (*menu).returnFromGraph = FALSE as u32;
     (*menu).conditionDataId = sSearchMonDataIds[GetSelectedConditionSearch()];
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavCallback_Init_ReturnToMonSearchList() -> u32 {
-    let mut menu: *mut Pokenav_SearchResults =
+pub unsafe fn PokenavCallback_Init_ReturnToMonSearchList() -> u32 {
+    let menu: *mut Pokenav_SearchResults =
         AllocSubstruct(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS, 36)
             as *mut Pokenav_SearchResults;
     if menu.is_null() {
@@ -241,34 +224,28 @@ pub unsafe extern "C" fn PokenavCallback_Init_ReturnToMonSearchList() -> u32 {
     (*menu).callback = Some(HandleConditionSearchInput);
     (*menu).returnFromGraph = TRUE as u32;
     (*menu).conditionDataId = sSearchMonDataIds[GetSelectedConditionSearch()];
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetConditionSearchResultsCallback() -> u32 {
-    let mut menu: *mut Pokenav_SearchResults =
+pub unsafe fn GetConditionSearchResultsCallback() -> u32 {
+    let menu: *mut Pokenav_SearchResults =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS) as *mut Pokenav_SearchResults;
-    return (*menu).callback.unwrap_unchecked()(menu);
+    (*menu).callback.unwrap_unchecked()(menu)
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeSearchResultSubstruct1() {
-    let mut menu: *mut Pokenav_SearchResults =
+pub unsafe fn FreeSearchResultSubstruct1() {
+    let menu: *mut Pokenav_SearchResults =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS) as *mut Pokenav_SearchResults;
     if (*menu).saveResultsList == 0 {
         FreePokenavSubstruct(POKENAV_SUBSTRUCT_MON_LIST);
     }
     FreePokenavSubstruct(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS);
 }
-pub(crate) unsafe extern "C" fn HandleConditionSearchInput_WaitSetup(
-    menu: *mut Pokenav_SearchResults,
-) -> u32 {
+pub(crate) unsafe fn HandleConditionSearchInput_WaitSetup(menu: *mut Pokenav_SearchResults) -> u32 {
     if IsLoopedTaskActive((*menu).loopedTaskId) == 0 {
         (*menu).callback = Some(HandleConditionSearchInput);
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn HandleConditionSearchInput(
-    menu: *mut Pokenav_SearchResults,
-) -> u32 {
+pub(crate) unsafe fn HandleConditionSearchInput(menu: *mut Pokenav_SearchResults) -> u32 {
     if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
         return CONDITION_SEARCH_FUNC_MOVE_UP;
     } else if gMain.newAndRepeatedKeys as i32 & DPAD_DOWN != 0 {
@@ -291,59 +268,53 @@ pub(crate) unsafe extern "C" fn HandleConditionSearchInput(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ReturnToConditionSearchList(
-    menu: *mut Pokenav_SearchResults,
-) -> u32 {
-    return POKENAV_CONDITION_SEARCH_MENU;
+pub(crate) unsafe fn ReturnToConditionSearchList(menu: *mut Pokenav_SearchResults) -> u32 {
+    POKENAV_CONDITION_SEARCH_MENU
 }
-pub(crate) unsafe extern "C" fn OpenConditionGraphFromSearchList(
-    menu: *mut Pokenav_SearchResults,
-) -> u32 {
-    return POKENAV_CONDITION_GRAPH_SEARCH;
+pub(crate) unsafe fn OpenConditionGraphFromSearchList(menu: *mut Pokenav_SearchResults) -> u32 {
+    POKENAV_CONDITION_GRAPH_SEARCH
 }
-pub(crate) unsafe extern "C" fn GetReturningFromGraph() -> u32 {
-    let mut menu: *mut Pokenav_SearchResults =
+unsafe fn GetReturningFromGraph() -> u32 {
+    let menu: *mut Pokenav_SearchResults =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS) as *mut Pokenav_SearchResults;
-    return (*menu).returnFromGraph;
+    (*menu).returnFromGraph
 }
-pub(crate) unsafe extern "C" fn GetSearchResultsMonDataList() -> *mut PokenavMonListItem {
-    let mut menu: *mut Pokenav_SearchResults =
+unsafe fn GetSearchResultsMonDataList() -> *mut PokenavMonListItem {
+    let menu: *mut Pokenav_SearchResults =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS) as *mut Pokenav_SearchResults;
-    return (*(*menu).monList).monData.as_mut_ptr();
+    (*(*menu).monList).monData.as_mut_ptr()
 }
-pub(crate) unsafe extern "C" fn GetSearchResultsMonListCount() -> u16 {
-    let mut menu: *mut Pokenav_SearchResults =
+unsafe fn GetSearchResultsMonListCount() -> u16 {
+    let menu: *mut Pokenav_SearchResults =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS) as *mut Pokenav_SearchResults;
-    return (*(*menu).monList).listCount;
+    (*(*menu).monList).listCount
 }
-pub(crate) unsafe extern "C" fn GetSearchResultsSelectedMonRank() -> i32 {
-    let mut menu: *mut Pokenav_SearchResults =
+unsafe fn GetSearchResultsSelectedMonRank() -> i32 {
+    let menu: *mut Pokenav_SearchResults =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS) as *mut Pokenav_SearchResults;
-    let mut i: i32 = PokenavList_GetSelectedIndex() as i32;
-    return (*(*menu).monList).monData[i].data as i32;
+    let i: i32 = PokenavList_GetSelectedIndex() as i32;
+    (*(*menu).monList).monData[i].data as i32
 }
-pub(crate) unsafe extern "C" fn GetSearchResultsCurrentListIndex() -> u16 {
-    let mut menu: *mut Pokenav_SearchResults =
+unsafe fn GetSearchResultsCurrentListIndex() -> u16 {
+    let menu: *mut Pokenav_SearchResults =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS) as *mut Pokenav_SearchResults;
-    return (*(*menu).monList).currIndex;
+    (*(*menu).monList).currIndex
 }
-pub(crate) unsafe extern "C" fn GetConditionSearchLoopedTask(state: i32) -> u32 {
-    return sConditionSearchLoopedTaskFuncs[state].unwrap_unchecked()(state);
+pub(crate) unsafe fn GetConditionSearchLoopedTask(state: i32) -> u32 {
+    sConditionSearchLoopedTaskFuncs[state].unwrap_unchecked()(state)
 }
-pub(crate) unsafe extern "C" fn BuildPartyMonSearchResults(state: i32) -> u32 {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn BuildPartyMonSearchResults(state: i32) -> u32 {
     let mut item: PokenavMonListItem = zeroed();
-    let mut menu: *mut Pokenav_SearchResults =
+    let menu: *mut Pokenav_SearchResults =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS) as *mut Pokenav_SearchResults;
     (*(*menu).monList).listCount = 0;
     (*(*menu).monList).currIndex = 0;
     item.boxId = TOTAL_BOXES_COUNT;
-    i = 0;
-    while i < PARTY_SIZE {
-        let mut pokemon: *mut Pokemon = &raw mut gPlayerParty[i];
+    for i in 0..PARTY_SIZE {
+        let pokemon: *mut Pokemon = &raw mut gPlayerParty[i];
         if GetMonData2(pokemon, MON_DATA_SANITY_HAS_SPECIES) == 0 {
             return LT_INC_AND_CONTINUE;
         }
@@ -352,19 +323,18 @@ pub(crate) unsafe extern "C" fn BuildPartyMonSearchResults(state: i32) -> u32 {
             item.data = GetMonData2(pokemon, (*menu).conditionDataId as i32) as u16;
             InsertMonListItem(menu, &raw mut item);
         }
-        i += 1;
     }
-    return LT_INC_AND_CONTINUE;
+    LT_INC_AND_CONTINUE
 }
-pub(crate) unsafe extern "C" fn InitBoxMonSearchResults(state: i32) -> u32 {
-    let mut menu: *mut Pokenav_SearchResults =
+pub(crate) unsafe fn InitBoxMonSearchResults(state: i32) -> u32 {
+    let menu: *mut Pokenav_SearchResults =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS) as *mut Pokenav_SearchResults;
     (*menu).monId = 0;
     (*menu).boxId = 0;
-    return LT_INC_AND_CONTINUE;
+    LT_INC_AND_CONTINUE
 }
-pub(crate) unsafe extern "C" fn BuildBoxMonSearchResults(state: i32) -> u32 {
-    let mut menu: *mut Pokenav_SearchResults =
+pub(crate) unsafe fn BuildBoxMonSearchResults(state: i32) -> u32 {
+    let menu: *mut Pokenav_SearchResults =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS) as *mut Pokenav_SearchResults;
     let mut boxId: i32 = (*menu).boxId;
     let mut monId: i32 = (*menu).monId;
@@ -391,29 +361,26 @@ pub(crate) unsafe extern "C" fn BuildBoxMonSearchResults(state: i32) -> u32 {
         monId = 0;
         boxId += 1;
     }
-    return LT_INC_AND_CONTINUE;
+    LT_INC_AND_CONTINUE
 }
-pub(crate) unsafe extern "C" fn ConvertConditionsToListRanks(state: i32) -> u32 {
-    let mut menu: *mut Pokenav_SearchResults =
+pub(crate) unsafe fn ConvertConditionsToListRanks(state: i32) -> u32 {
+    let menu: *mut Pokenav_SearchResults =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS) as *mut Pokenav_SearchResults;
-    let mut listCount: i32 = (*(*menu).monList).listCount as i32;
+    let listCount: i32 = (*(*menu).monList).listCount as i32;
     let mut prevCondition: i32 = (*(*menu).monList).monData[0].data as i32;
-    let mut i: i32 = 0;
     (*(*menu).monList).monData[0].data = 1;
-    i = 1;
-    while i < listCount {
+    for i in 1..listCount {
         if (*(*menu).monList).monData[i].data as i32 == prevCondition {
             (*(*menu).monList).monData[i].data = (*(*menu).monList).monData[i - 1].data;
         } else {
             prevCondition = (*(*menu).monList).monData[i].data as i32;
             (*(*menu).monList).monData[i].data = i as u16 + 1;
         }
-        i += 1;
     }
     (*menu).returnFromGraph = TRUE as u32;
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn InsertMonListItem(
+pub(crate) unsafe fn InsertMonListItem(
     menu: *mut Pokenav_SearchResults,
     item: *mut PokenavMonListItem,
 ) {
@@ -436,9 +403,8 @@ pub(crate) unsafe extern "C" fn InsertMonListItem(
     (*(*menu).monList).monData[insertionIdx] = *item;
     (*(*menu).monList).listCount += 1;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn OpenConditionSearchResults() -> u32 {
-    let mut gfx: *mut Pokenav_SearchResultsGfx =
+pub unsafe fn OpenConditionSearchResults() -> u32 {
+    let gfx: *mut Pokenav_SearchResultsGfx =
         AllocSubstruct(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS_GFX, 2064)
             as *mut Pokenav_SearchResultsGfx;
     if gfx.is_null() {
@@ -447,11 +413,10 @@ pub unsafe extern "C" fn OpenConditionSearchResults() -> u32 {
     (*gfx).loopedTaskId = CreateLoopedTask(Some(LoopedTask_OpenConditionSearchResults), 1);
     (*gfx).callback = Some(GetSearchResultCurrentLoopedTaskActive);
     (*gfx).fromGraph = FALSE as u32;
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn OpenConditionSearchListFromGraph() -> u32 {
-    let mut gfx: *mut Pokenav_SearchResultsGfx =
+pub unsafe fn OpenConditionSearchListFromGraph() -> u32 {
+    let gfx: *mut Pokenav_SearchResultsGfx =
         AllocSubstruct(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS_GFX, 2064)
             as *mut Pokenav_SearchResultsGfx;
     if gfx.is_null() {
@@ -460,41 +425,37 @@ pub unsafe extern "C" fn OpenConditionSearchListFromGraph() -> u32 {
     (*gfx).loopedTaskId = CreateLoopedTask(Some(LoopedTask_OpenConditionSearchResults), 1);
     (*gfx).callback = Some(GetSearchResultCurrentLoopedTaskActive);
     (*gfx).fromGraph = TRUE as u32;
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateSearchResultsLoopedTask(idx: i32) {
-    let mut gfx: *mut Pokenav_SearchResultsGfx =
+pub unsafe fn CreateSearchResultsLoopedTask(idx: i32) {
+    let gfx: *mut Pokenav_SearchResultsGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS_GFX)
             as *mut Pokenav_SearchResultsGfx;
     (*gfx).loopedTaskId = CreateLoopedTask(sSearchResultLoopTaskFuncs[idx], 1);
     (*gfx).callback = Some(GetSearchResultCurrentLoopedTaskActive);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsSearchResultLoopedTaskActive() -> u32 {
-    let mut gfx: *mut Pokenav_SearchResultsGfx =
+pub unsafe fn IsSearchResultLoopedTaskActive() -> u32 {
+    let gfx: *mut Pokenav_SearchResultsGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS_GFX)
             as *mut Pokenav_SearchResultsGfx;
-    return (*gfx).callback.unwrap_unchecked()();
+    (*gfx).callback.unwrap_unchecked()()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSearchResultCurrentLoopedTaskActive() -> u32 {
-    let mut gfx: *mut Pokenav_SearchResultsGfx =
+pub unsafe fn GetSearchResultCurrentLoopedTaskActive() -> u32 {
+    let gfx: *mut Pokenav_SearchResultsGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS_GFX)
             as *mut Pokenav_SearchResultsGfx;
-    return IsLoopedTaskActive((*gfx).loopedTaskId);
+    IsLoopedTaskActive((*gfx).loopedTaskId)
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeSearchResultSubstruct2() {
-    let mut gfx: *mut Pokenav_SearchResultsGfx =
+pub unsafe fn FreeSearchResultSubstruct2() {
+    let gfx: *mut Pokenav_SearchResultsGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS_GFX)
             as *mut Pokenav_SearchResultsGfx;
     DestroyPokenavList();
     RemoveWindow((*gfx).winid as u8);
     FreePokenavSubstruct(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS_GFX);
 }
-pub(crate) unsafe extern "C" fn LoopedTask_OpenConditionSearchResults(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_SearchResultsGfx =
+pub(crate) unsafe fn LoopedTask_OpenConditionSearchResults(state: i32) -> u32 {
+    let gfx: *mut Pokenav_SearchResultsGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS_GFX)
             as *mut Pokenav_SearchResultsGfx;
     match state {
@@ -558,7 +519,7 @@ pub(crate) unsafe extern "C" fn LoopedTask_OpenConditionSearchResults(state: i32
             ShowBg(2);
             HideBg(3);
             if (*gfx).fromGraph == 0 {
-                let mut searchGfxId: u8 =
+                let searchGfxId: u8 =
                     GetSelectedConditionSearch() as u8 + POKENAV_MENUITEM_CONDITION_SEARCH_COOL;
                 LoadLeftHeaderGfxForIndex(searchGfxId as u32);
                 ShowLeftHeaderGfx(searchGfxId as u32, TRUE as u32, FALSE as u32);
@@ -577,17 +538,16 @@ pub(crate) unsafe extern "C" fn LoopedTask_OpenConditionSearchResults(state: i32
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_MoveSearchListCursorUp(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_SearchResultsGfx =
+pub(crate) unsafe fn LoopedTask_MoveSearchListCursorUp(state: i32) -> u32 {
+    let gfx: *mut Pokenav_SearchResultsGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS_GFX)
             as *mut Pokenav_SearchResultsGfx;
     'l1: {
         let sw1: i32 = state;
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             match PokenavList_MoveCursorUp() {
                 0 => {
                     return LT_FINISH;
@@ -610,29 +570,26 @@ pub(crate) unsafe extern "C" fn LoopedTask_MoveSearchListCursorUp(state: i32) ->
             }
         }
         if fall || sw1 == 2 {
-            fall = true;
             PrintSearchResultListMenuItems(gfx);
             return LT_INC_AND_PAUSE;
         }
         if sw1 == 3 {
-            fall = true;
             if IsDma3ManagerBusyWithBgCopy() != 0 {
                 return LT_PAUSE;
             }
             break 'l1;
         }
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_MoveSearchListCursorDown(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_SearchResultsGfx =
+pub(crate) unsafe fn LoopedTask_MoveSearchListCursorDown(state: i32) -> u32 {
+    let gfx: *mut Pokenav_SearchResultsGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS_GFX)
             as *mut Pokenav_SearchResultsGfx;
     'l1: {
         let sw1: i32 = state;
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             match PokenavList_MoveCursorDown() {
                 0 => {
                     return LT_FINISH;
@@ -655,29 +612,26 @@ pub(crate) unsafe extern "C" fn LoopedTask_MoveSearchListCursorDown(state: i32) 
             }
         }
         if fall || sw1 == 2 {
-            fall = true;
             PrintSearchResultListMenuItems(gfx);
             return LT_INC_AND_PAUSE;
         }
         if sw1 == 3 {
-            fall = true;
             if IsDma3ManagerBusyWithBgCopy() != 0 {
                 return LT_PAUSE;
             }
             break 'l1;
         }
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_MoveSearchListPageUp(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_SearchResultsGfx =
+pub(crate) unsafe fn LoopedTask_MoveSearchListPageUp(state: i32) -> u32 {
+    let gfx: *mut Pokenav_SearchResultsGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS_GFX)
             as *mut Pokenav_SearchResultsGfx;
     'l1: {
         let sw1: i32 = state;
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             match PokenavList_PageUp() {
                 0 => {
                     return LT_FINISH;
@@ -700,29 +654,26 @@ pub(crate) unsafe extern "C" fn LoopedTask_MoveSearchListPageUp(state: i32) -> u
             }
         }
         if fall || sw1 == 2 {
-            fall = true;
             PrintSearchResultListMenuItems(gfx);
             return LT_INC_AND_PAUSE;
         }
         if sw1 == 3 {
-            fall = true;
             if IsDma3ManagerBusyWithBgCopy() != 0 {
                 return LT_PAUSE;
             }
             break 'l1;
         }
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_MoveSearchListPageDown(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_SearchResultsGfx =
+pub(crate) unsafe fn LoopedTask_MoveSearchListPageDown(state: i32) -> u32 {
+    let gfx: *mut Pokenav_SearchResultsGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_SEARCH_RESULTS_GFX)
             as *mut Pokenav_SearchResultsGfx;
     'l1: {
         let sw1: i32 = state;
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             match PokenavList_PageDown() {
                 0 => {
                     return LT_FINISH;
@@ -745,21 +696,19 @@ pub(crate) unsafe extern "C" fn LoopedTask_MoveSearchListPageDown(state: i32) ->
             }
         }
         if fall || sw1 == 2 {
-            fall = true;
             PrintSearchResultListMenuItems(gfx);
             return LT_INC_AND_PAUSE;
         }
         if sw1 == 3 {
-            fall = true;
             if IsDma3ManagerBusyWithBgCopy() != 0 {
                 return LT_PAUSE;
             }
             break 'l1;
         }
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_ExitConditionSearchMenu(state: i32) -> u32 {
+pub(crate) unsafe fn LoopedTask_ExitConditionSearchMenu(state: i32) -> u32 {
     match state {
         0 => {
             PlaySE(SE_SELECT);
@@ -778,38 +727,38 @@ pub(crate) unsafe extern "C" fn LoopedTask_ExitConditionSearchMenu(state: i32) -
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_SelectSearchResult(state: i32) -> u32 {
+pub(crate) unsafe fn LoopedTask_SelectSearchResult(state: i32) -> u32 {
     match state {
         0 => {
             PlaySE(SE_SELECT);
             PokenavFadeScreen(POKENAV_FADE_TO_BLACK);
             return LT_INC_AND_PAUSE;
         }
-        1 => {
-            if IsPaletteFadeActive() != 0 {
-                return LT_PAUSE;
-            }
+        1 if IsPaletteFadeActive() != 0 => {
+            return LT_PAUSE;
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn AddSearchResultListMenuWindow(gfx: *mut Pokenav_SearchResultsGfx) {
+unsafe fn AddSearchResultListMenuWindow(gfx: *mut Pokenav_SearchResultsGfx) {
     (*gfx).winid = AddWindow((&raw const *sSearchResultListMenuWindowTemplate).cast_mut());
     PutWindowTilemap((*gfx).winid as u8);
     CopyWindowToVram((*gfx).winid as u8, COPYWIN_MAP);
     PrintSearchResultListMenuItems(gfx);
 }
-pub(crate) unsafe extern "C" fn PrintSearchResultListMenuItems(gfx: *mut Pokenav_SearchResultsGfx) {
-    let mut rank: i32 = GetSearchResultsSelectedMonRank();
+unsafe fn PrintSearchResultListMenuItems(gfx: *mut Pokenav_SearchResultsGfx) {
+    let rank: i32 = GetSearchResultsSelectedMonRank();
     DynamicPlaceholderTextUtil_Reset();
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, gStringVar1.as_mut_ptr());
     *gStringVar1.as_mut_ptr() = EOS;
     DynamicPlaceholderTextUtil_ExpandPlaceholders(
         gStringVar2.as_mut_ptr(),
-        gText_NumberIndex.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_NumberIndex).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     AddTextPrinterParameterized(
         (*gfx).winid as u8,
@@ -832,7 +781,7 @@ pub(crate) unsafe extern "C" fn PrintSearchResultListMenuItems(gfx: *mut Pokenav
     );
     CopyWindowToVram((*gfx).winid as u8, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn CreateSearchResultsList() {
+unsafe fn CreateSearchResultsList() {
     let mut template: PokenavListTemplate = zeroed();
     template.list = GetSearchResultsMonDataList() as *mut PokenavListItem;
     template.count = GetSearchResultsMonListCount();
@@ -845,8 +794,8 @@ pub(crate) unsafe extern "C" fn CreateSearchResultsList() {
     template.fillValue = 2;
     template.fontId = FONT_NORMAL;
     template.bufferItemFunc = core::mem::transmute::<
-        Option<unsafe extern "C" fn(*mut PokenavMonListItem, *mut u8)>,
-        Option<unsafe extern "C" fn(*mut PokenavListItem, *mut u8)>,
+        Option<unsafe fn(*mut PokenavMonListItem, *mut u8)>,
+        Option<unsafe fn(*mut PokenavListItem, *mut u8)>,
     >(Some(BufferSearchMonListItem));
     template.iconDrawFunc = None;
     CreatePokenavList(
@@ -855,21 +804,17 @@ pub(crate) unsafe extern "C" fn CreateSearchResultsList() {
         0,
     );
 }
-pub(crate) unsafe extern "C" fn BufferSearchMonListItem(
-    item: *mut PokenavMonListItem,
-    mut dest: *mut u8,
-) {
+pub(crate) unsafe fn BufferSearchMonListItem(item: *mut PokenavMonListItem, mut dest: *mut u8) {
     let mut gender: u8 = 0;
     let mut level: u8 = 0;
-    let mut s: *mut u8 = null_mut();
     let mut genderStr: *mut u8 = null_mut();
     if (*item).boxId == TOTAL_BOXES_COUNT {
-        let mut mon: *mut Pokemon = &raw mut gPlayerParty[(*item).monId];
+        let mon: *mut Pokemon = &raw mut gPlayerParty[(*item).monId];
         gender = GetMonGender(mon);
         level = GetLevelFromMonExp(mon);
         GetMonData3(mon, MON_DATA_NICKNAME, gStringVar3.as_mut_ptr());
     } else {
-        let mut mon: *mut BoxPokemon = GetBoxedMonPtr((*item).boxId, (*item).monId);
+        let mon: *mut BoxPokemon = GetBoxedMonPtr((*item).boxId, (*item).monId);
         gender = GetBoxMonGender(mon);
         level = GetLevelFromBoxMonExp(mon);
         GetBoxMonData3(mon, MON_DATA_NICKNAME, gStringVar3.as_mut_ptr());
@@ -887,7 +832,7 @@ pub(crate) unsafe extern "C" fn BufferSearchMonListItem(
             genderStr = sText_NoGenderSymbol.as_ptr().cast_mut();
         }
     }
-    s = StringCopy(gStringVar1.as_mut_ptr(), genderStr);
+    let mut s: *mut u8 = StringCopy(gStringVar1.as_mut_ptr(), genderStr);
     *({
         let t1 = s;
         s = s.at(1);

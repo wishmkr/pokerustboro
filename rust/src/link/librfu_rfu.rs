@@ -3,29 +3,34 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::librfu_sio32id::AgbRFU_checkID;
+use crate::librfu_stwi::{
+    AgbRFU_SoftReset, STWI_init_timer, STWI_poll_CommandEnd, STWI_read_status, STWI_send_CP_EndREQ,
+    STWI_send_CP_PollingREQ, STWI_send_CP_StartREQ, STWI_send_CPR_EndREQ, STWI_send_CPR_PollingREQ,
+    STWI_send_CPR_StartREQ, STWI_send_DataRxREQ, STWI_send_DataTxAndChangeREQ, STWI_send_DataTxREQ,
+    STWI_send_DisconnectREQ, STWI_send_GameConfigREQ, STWI_send_LinkStatusREQ,
+    STWI_send_MS_ChangeREQ, STWI_send_ResetREQ, STWI_send_ResumeRetransmitAndChangeREQ,
+    STWI_send_SC_EndREQ, STWI_send_SC_PollingREQ, STWI_send_SC_StartREQ, STWI_send_SP_EndREQ,
+    STWI_send_SP_PollingREQ, STWI_send_SP_StartREQ, STWI_send_SlotStatusREQ, STWI_send_StopModeREQ,
+    STWI_send_SystemConfigREQ, STWI_send_SystemStatusREQ, STWI_send_TestModeREQ,
+    STWI_set_Callback_M, STWI_set_Callback_S, gSTWIStatus,
+};
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,6 +39,17 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `STWI_init_all` with this module's view of its types.
+#[inline]
+unsafe fn STWI_init_all(
+    a0: *mut RfuIntrStruct,
+    a1: *mut Option<crate::agb_main::IntrFunc>,
+    a2: u8,
+) {
+    unsafe {
+        crate::librfu_stwi::STWI_init_all(a0 as _, a1 as _, a2);
+    }
+}
 // Data tables (translate with cdata.py): llsf_struct version_string str_checkMbootLL
 
 /// `struct LLSFStruct`
@@ -107,72 +123,36 @@ static llsf_struct: Table<CArray<LLSFStruct, 2>> =
 static str_checkMbootLL: Table<CArray<u8, 10>> =
     Table((&raw const crate::data::librfu_rfu::str_checkMbootLL).cast());
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gRfuSlotStatusUNI: CArray<*mut RfuSlotStatusUNI, 4> = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gRfuSlotStatusNI: CArray<*mut RfuSlotStatusNI, 4> = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gRfuLinkStatus: *mut RfuLinkStatus = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gRfuStatic: *mut RfuStatic = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gRfuFixed: *mut RfuFixed = null_mut();
 
-unsafe extern "C" {
-    static mut gSTWIStatus: *mut STWIStatus;
-    fn AgbRFU_SoftReset();
-    fn AgbRFU_checkID(a0: u8) -> i32;
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn Div(a0: i32, a1: i32) -> i32;
-    fn STWI_init_all(a0: *mut RfuIntrStruct, a1: *mut Option<unsafe extern "C" fn()>, a2: u8);
-    fn STWI_init_timer(a0: *mut Option<unsafe extern "C" fn()>, a1: i32);
-    fn STWI_poll_CommandEnd() -> u16;
-    fn STWI_read_status(a0: u8) -> u16;
-    fn STWI_send_CPR_EndREQ();
-    fn STWI_send_CPR_PollingREQ();
-    fn STWI_send_CPR_StartREQ(a0: u16, a1: u16, a2: u8);
-    fn STWI_send_CP_EndREQ();
-    fn STWI_send_CP_PollingREQ();
-    fn STWI_send_CP_StartREQ(a0: u16);
-    fn STWI_send_DataRxREQ();
-    fn STWI_send_DataTxAndChangeREQ(a0: *mut c_void, a1: u8);
-    fn STWI_send_DataTxREQ(a0: *mut c_void, a1: u8);
-    fn STWI_send_DisconnectREQ(a0: u8);
-    fn STWI_send_GameConfigREQ(a0: *mut u8, a1: *mut u8);
-    fn STWI_send_LinkStatusREQ();
-    fn STWI_send_MS_ChangeREQ();
-    fn STWI_send_ResetREQ();
-    fn STWI_send_ResumeRetransmitAndChangeREQ();
-    fn STWI_send_SC_EndREQ();
-    fn STWI_send_SC_PollingREQ();
-    fn STWI_send_SC_StartREQ();
-    fn STWI_send_SP_EndREQ();
-    fn STWI_send_SP_PollingREQ();
-    fn STWI_send_SP_StartREQ();
-    fn STWI_send_SlotStatusREQ();
-    fn STWI_send_StopModeREQ();
-    fn STWI_send_SystemConfigREQ(a0: u16, a1: u8, a2: u8);
-    fn STWI_send_SystemStatusREQ();
-    fn STWI_send_TestModeREQ(a0: u8, a1: u8);
-    fn STWI_set_Callback_M(a0: *mut c_void);
-    fn STWI_set_Callback_S(a0: Option<unsafe extern "C" fn(u16)>);
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `Div` with this module's view of its types.
+#[inline]
+unsafe fn Div(a0: i32, a1: i32) -> i32 {
+    unsafe { crate::syscall::Div(a0, a1) }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_initializeAPI(
+pub unsafe fn rfu_initializeAPI(
     APIBuffer: *mut u32,
     buffByteSize: u16,
-    sioIntrTable_p: *mut Option<unsafe extern "C" fn()>,
+    sioIntrTable_p: *mut Option<crate::agb_main::IntrFunc>,
     copyInterruptToRam: u8,
 ) -> u16 {
-    let mut i: u16 = 0;
-    let mut dst: *mut u16 = null_mut();
-    let mut src: *mut u16 = null_mut();
     let mut buffByteSizeMax: u16 = 0;
     if APIBuffer as usize as u32 & 0xF000000 == EWRAM_START && copyInterruptToRam != 0 {
         return ERR_RFU_API_BUFF_ADR;
@@ -199,7 +179,7 @@ pub unsafe extern "C" fn rfu_initializeAPI(
         (APIBuffer as *mut c_void as *mut u8).at(444) as *mut c_void as *mut RfuSlotStatusNI;
     gRfuSlotStatusUNI[0] =
         (APIBuffer as *mut c_void as *mut u8).at(892) as *mut c_void as *mut RfuSlotStatusUNI;
-    i = 1;
+    let mut i: u16 = 1;
     while i < RFU_CHILD_MAX as u16 {
         gRfuSlotStatusNI[i] = gRfuSlotStatusNI[i as i32 - 1].at(1);
         gRfuSlotStatusUNI[i] = gRfuSlotStatusUNI[i as i32 - 1].at(1);
@@ -212,17 +192,15 @@ pub unsafe extern "C" fn rfu_initializeAPI(
         copyInterruptToRam,
     );
     rfu_STC_clearAPIVariables();
-    i = 0;
-    while i < RFU_CHILD_MAX as u16 {
+    for i in 0..(RFU_CHILD_MAX as u16) {
         (*gRfuSlotStatusNI[i]).recvBuffer = null_mut();
         (*gRfuSlotStatusNI[i]).recvBufferSize = 0;
         (*gRfuSlotStatusUNI[i]).recvBuffer = null_mut();
         (*gRfuSlotStatusUNI[i]).recvBufferSize = 0;
-        i += 1;
     }
     {
         let mut _src: *mut u16 = (core::mem::transmute::<_, usize>(Some(
-            rfu_STC_fastCopy as unsafe extern "C" fn(*mut *mut u8, *mut *mut u8, i32),
+            rfu_STC_fastCopy as unsafe fn(*mut *mut u8, *mut *mut u8, i32),
         )) as u32
             & 0xfffffffe) as usize as *mut u16;
         let mut _dst: *mut u16 = (*gRfuFixed).fastCopyBuffer.as_mut_ptr();
@@ -245,17 +223,16 @@ pub unsafe extern "C" fn rfu_initializeAPI(
         }
     }
     (*gRfuFixed).fastCopyPtr =
-        core::mem::transmute::<_, Option<unsafe extern "C" fn(*mut *mut u8, *mut *mut u8, i32)>>(
+        core::mem::transmute::<_, Option<unsafe fn(*mut *mut u8, *mut *mut u8, i32)>>(
             ((*gRfuFixed).fastCopyBuffer.as_mut_ptr() as *mut c_void as *mut u8).at(1)
                 as *mut c_void,
         );
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn rfu_STC_clearAPIVariables() {
-    let mut IMEBackup: u16 = (67109384 as usize as *mut u16).read_volatile();
-    let mut i: u8 = 0;
+unsafe fn rfu_STC_clearAPIVariables() {
+    let IMEBackup: u16 = (67109384_usize as *mut u16).read_volatile();
     let mut flags: u8 = 0;
-    volatile_write(67109384 as usize as *mut u16, 0);
+    volatile_write(67109384_usize as *mut u16, 0);
     flags = (*gRfuStatic).flags;
     {
         {
@@ -285,29 +262,24 @@ pub(crate) unsafe extern "C" fn rfu_STC_clearAPIVariables() {
     (*gRfuLinkStatus).parentChild = MODE_NEUTRAL;
     rfu_clearAllSlot();
     (*gRfuStatic).SCStartFlag = 0;
-    i = 0;
-    while i < RFU_CHILD_MAX {
+    for i in 0..RFU_CHILD_MAX {
         (*gRfuStatic).cidBak[i] = 0;
-        i += 1;
     }
-    volatile_write(67109384 as usize as *mut u16, IMEBackup);
+    volatile_write(67109384_usize as *mut u16, IMEBackup);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_PARENT_resumeRetransmitAndChange() {
+pub unsafe fn rfu_REQ_PARENT_resumeRetransmitAndChange() {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_STC_REQ_callback)));
     STWI_send_ResumeRetransmitAndChangeREQ();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_UNI_PARENT_getDRAC_ACK(ackFlag: *mut u8) -> u16 {
-    let mut buf: *mut u8 = null_mut();
+pub unsafe fn rfu_UNI_PARENT_getDRAC_ACK(ackFlag: *mut u8) -> u16 {
     *ackFlag = 0;
     if (*gRfuLinkStatus).parentChild != MODE_PARENT {
         return ERR_MODE_NOT_PARENT;
     }
-    buf = rfu_getSTWIRecvBuffer();
+    let buf: *mut u8 = rfu_getSTWIRecvBuffer();
     match *buf {
         40 | 54 => {
             if *buf.at(1) == 0 {
@@ -323,39 +295,35 @@ pub unsafe extern "C" fn rfu_UNI_PARENT_getDRAC_ACK(ackFlag: *mut u8) -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_setTimerInterrupt(
+pub unsafe fn rfu_setTimerInterrupt(
     timerNo: u8,
-    timerIntrTable_p: *mut Option<unsafe extern "C" fn()>,
+    timerIntrTable_p: *mut Option<crate::agb_main::IntrFunc>,
 ) {
     STWI_init_timer(timerIntrTable_p, timerNo as i32);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_getSTWIRecvBuffer() -> *mut u8 {
-    return (*gRfuFixed).STWIBuffer as *mut u8;
+pub unsafe fn rfu_getSTWIRecvBuffer() -> *mut u8 {
+    (*gRfuFixed).STWIBuffer as *mut u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_setMSCCallback(callback: Option<unsafe extern "C" fn(u16)>) {
+pub unsafe fn rfu_setMSCCallback(callback: Option<unsafe fn(u16)>) {
     STWI_set_Callback_S(callback);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_setREQCallback(callback: Option<unsafe extern "C" fn(u16, u16)>) {
+pub unsafe fn rfu_setREQCallback(callback: Option<unsafe fn(u16, u16)>) {
     (*gRfuFixed).reqCallback = callback;
     rfu_enableREQCallback(callback.is_some() as u8);
 }
-pub(crate) unsafe extern "C" fn rfu_enableREQCallback(enable: u8) {
+unsafe fn rfu_enableREQCallback(enable: u8) {
     if enable != 0 {
         (*gRfuStatic).flags |= 8;
     } else {
         (*gRfuStatic).flags &= 0xF7;
     }
 }
-pub(crate) unsafe extern "C" fn rfu_STC_REQ_callback(reqCommand: u8, reqResult: u16) {
+pub(crate) unsafe fn rfu_STC_REQ_callback(reqCommand: u8, reqResult: u16) {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_defaultCallback)));
     (*gRfuStatic).reqResult = reqResult;
@@ -363,40 +331,35 @@ pub(crate) unsafe extern "C" fn rfu_STC_REQ_callback(reqCommand: u8, reqResult: 
         (*gRfuFixed).reqCallback.unwrap_unchecked()(reqCommand as u16, reqResult);
     }
 }
-pub(crate) unsafe extern "C" fn rfu_CB_defaultCallback(reqCommand: u8, reqResult: u16) {
+pub(crate) unsafe fn rfu_CB_defaultCallback(reqCommand: u8, reqResult: u16) {
     let mut bmSlotFlags: i32 = 0;
-    let mut i: u8 = 0;
     if reqCommand == ID_CLOCK_SLAVE_MS_CHANGE_ERROR_BY_DMA_REQ {
         if (*gRfuStatic).flags as i32 & 8 != 0 {
             (*gRfuFixed).reqCallback.unwrap_unchecked()(reqCommand as u16, reqResult);
         }
         bmSlotFlags =
             (*gRfuLinkStatus).connSlotFlag as i32 | (*gRfuLinkStatus).linkLossSlotFlag as i32;
-        i = 0;
-        while i < RFU_CHILD_MAX {
+        for i in 0..RFU_CHILD_MAX {
             if shr_i32(bmSlotFlags, i as u32) & 1 != 0 {
                 rfu_STC_removeLinkData(i, 1);
             }
-            i += 1;
         }
         (*gRfuLinkStatus).parentChild = MODE_NEUTRAL;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_waitREQComplete() -> u16 {
+pub unsafe fn rfu_waitREQComplete() -> u16 {
     STWI_poll_CommandEnd();
-    return (*gRfuStatic).reqResult;
+    (*gRfuStatic).reqResult
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_RFUStatus() {
+pub unsafe fn rfu_REQ_RFUStatus() {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_STC_REQ_callback)));
     STWI_send_SystemStatusREQ();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_getRFUStatus(rfuState: *mut u8) -> u16 {
+pub unsafe fn rfu_getRFUStatus(rfuState: *mut u8) -> u16 {
     if (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[0] != 0x93 {
         return ERR_REQ_CMD_ID;
     }
@@ -405,15 +368,11 @@ pub unsafe extern "C" fn rfu_getRFUStatus(rfuState: *mut u8) -> u16 {
     } else {
         *rfuState = 0xFF;
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_MBOOT_CHILD_inheritanceLinkStatus() -> u16 {
+pub unsafe fn rfu_MBOOT_CHILD_inheritanceLinkStatus() -> u16 {
     let mut s1: *mut u8 = str_checkMbootLL.as_ptr().cast_mut();
-    let mut s2: *mut u8 = 50331888 as usize as *mut u8;
-    let mut checksum: u16 = 0;
-    let mut mb_buff_iwram_p: *mut u16 = null_mut();
-    let mut i: u8 = 0;
+    let mut s2: *mut u8 = 50331888_usize as *mut u8;
     while *s1 != 0 {
         if *({
             let t2 = s1;
@@ -427,18 +386,16 @@ pub unsafe extern "C" fn rfu_MBOOT_CHILD_inheritanceLinkStatus() -> u16 {
             return 1;
         }
     }
-    mb_buff_iwram_p = IWRAM_START as usize as *mut u16;
-    checksum = 0;
-    i = 0;
-    while i < 90 {
+    let mut mb_buff_iwram_p: *mut u16 = IWRAM_START as usize as *mut u16;
+    let mut checksum: u16 = 0;
+    for i in 0..90u8 {
         checksum += *({
             let t6 = mb_buff_iwram_p;
             mb_buff_iwram_p = mb_buff_iwram_p.at(1);
             t6
         });
-        i += 1;
     }
-    if checksum != *(50331898 as usize as *mut u16) {
+    if checksum != *(50331898_usize as *mut u16) {
         return 1;
     }
     CpuSet(
@@ -447,12 +404,12 @@ pub unsafe extern "C" fn rfu_MBOOT_CHILD_inheritanceLinkStatus() -> u16 {
         90,
     );
     (*gRfuStatic).flags |= 0x80;
-    return 0;
+    0
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_stopMode() {
+pub unsafe fn rfu_REQ_stopMode() {
     let mut timerReg: *mut u32 = null_mut();
-    if (67109384 as usize as *mut u16).read_volatile() == 0 {
+    if (67109384_usize as *mut u16).read_volatile() == 0 {
         rfu_STC_REQ_callback(ID_STOP_MODE_REQ as u8, 6);
         volatile_write(&raw mut (*gSTWIStatus).error, ERR_REQ_CMD_IME_DISABLE);
     } else {
@@ -465,26 +422,25 @@ pub unsafe extern "C" fn rfu_REQ_stopMode() {
             while (timerReg).read_volatile() << 16 < 0x1060000 {}
             volatile_write(timerReg, 0);
             STWI_set_Callback_M(core::mem::transmute::<
-                Option<unsafe extern "C" fn(u8, u16)>,
+                Option<unsafe fn(u8, u16)>,
                 *mut c_void,
             >(Some(rfu_CB_stopMode)));
             STWI_send_StopModeREQ();
         } else {
-            volatile_write(67109160 as usize as *mut u16, SIO_MULTI_MODE);
+            volatile_write(67109160_usize as *mut u16, SIO_MULTI_MODE);
             rfu_STC_REQ_callback(ID_STOP_MODE_REQ as u8, 0);
         }
     }
 }
-pub(crate) unsafe extern "C" fn rfu_CB_stopMode(reqCommand: u8, reqResult: u16) {
+pub(crate) unsafe fn rfu_CB_stopMode(reqCommand: u8, reqResult: u16) {
     if reqResult == 0 {
-        volatile_write(67109160 as usize as *mut u16, SIO_MULTI_MODE);
+        volatile_write(67109160_usize as *mut u16, SIO_MULTI_MODE);
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQBN_softReset_and_checkID() -> u32 {
+pub unsafe fn rfu_REQBN_softReset_and_checkID() -> u32 {
     let mut id: u32 = 0;
-    if (67109384 as usize as *mut u16).read_volatile() == 0 {
+    if (67109384_usize as *mut u16).read_volatile() == 0 {
         return ERR_ID_CHECK_IME_DISABLE;
     }
     AgbRFU_SoftReset();
@@ -494,70 +450,61 @@ pub unsafe extern "C" fn rfu_REQBN_softReset_and_checkID() -> u32 {
         id
     }) == 0
     {
-        volatile_write(67109160 as usize as *mut u16, SIO_MULTI_MODE);
+        volatile_write(67109160_usize as *mut u16, SIO_MULTI_MODE);
     }
-    return id;
+    id
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_reset() {
+pub unsafe fn rfu_REQ_reset() {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_reset)));
     STWI_send_ResetREQ();
 }
-pub(crate) unsafe extern "C" fn rfu_CB_reset(reqCommand: u8, reqResult: u16) {
+pub(crate) unsafe fn rfu_CB_reset(reqCommand: u8, reqResult: u16) {
     if reqResult == 0 {
         rfu_STC_clearAPIVariables();
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_configSystem(availSlotFlag: u16, maxMFrame: u8, mcTimer: u8) {
+pub unsafe fn rfu_REQ_configSystem(availSlotFlag: u16, maxMFrame: u8, mcTimer: u8) {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_STC_REQ_callback)));
     STWI_send_SystemConfigREQ(availSlotFlag & AVAIL_SLOT1 | 0x3C, maxMFrame, mcTimer);
     if mcTimer == 0 {
         (*gRfuStatic).linkEmergencyLimit = 1;
     } else {
-        let mut IMEBackup: u16 = (67109384 as usize as *mut u16).read_volatile();
-        volatile_write(67109384 as usize as *mut u16, 0);
+        let IMEBackup: u16 = (67109384_usize as *mut u16).read_volatile();
+        volatile_write(67109384_usize as *mut u16, 0);
         (*gRfuStatic).linkEmergencyLimit = Div(600, mcTimer as i32) as u16;
-        volatile_write(67109384 as usize as *mut u16, IMEBackup);
+        volatile_write(67109384_usize as *mut u16, IMEBackup);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_configGameData(
+pub unsafe fn rfu_REQ_configGameData(
     mbootFlag: u8,
     serialNo: u16,
     mut gname: *mut u8,
     uname: *mut u8,
 ) {
     let mut packet: CArray<u8, 16> = zeroed();
-    let mut i: u8 = 0;
-    let mut check_sum: u8 = 0;
     let mut gnameBackup: *mut u8 = gname;
-    let mut unameBackup: *mut u8 = null_mut();
     packet[0] = serialNo as u8;
     packet[1] = (serialNo >> 8) as u8;
     if mbootFlag != 0 {
         packet[1] = (serialNo >> 8) as u8 | 0x80;
     }
-    i = 2;
-    while i < 15 {
+    for i in 2..15u8 {
         packet[i] = *({
             let t2 = gname;
             gname = gname.at(1);
             t2
         });
-        i += 1;
     }
-    check_sum = 0;
-    unameBackup = uname;
-    i = 0;
-    while i < 8 {
+    let mut check_sum: u8 = 0;
+    let mut unameBackup: *mut u8 = uname;
+    for i in 0..8u8 {
         check_sum += *({
             let t4 = unameBackup;
             unameBackup = unameBackup.at(1);
@@ -568,22 +515,20 @@ pub unsafe extern "C" fn rfu_REQ_configGameData(
             gnameBackup = gnameBackup.at(1);
             t6
         });
-        i += 1;
     }
     packet[15] = !check_sum;
     if mbootFlag != 0 {
         packet[14] = 0;
     }
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_configGameData)));
     STWI_send_GameConfigREQ(packet.as_mut_ptr(), uname);
 }
-pub(crate) unsafe extern "C" fn rfu_CB_configGameData(reqCommand: u8, reqResult: u16) {
+pub(crate) unsafe fn rfu_CB_configGameData(reqCommand: u8, reqResult: u16) {
     let mut serialNo: i32 = 0;
     let mut gname_uname_p: *mut u8 = null_mut();
-    let mut i: u8 = 0;
     let mut packet_p: *mut u8 = null_mut();
     if reqResult == 0 {
         packet_p = (*(*gSTWIStatus).txPacket).rfuPacket8.data.as_mut_ptr();
@@ -594,48 +539,39 @@ pub(crate) unsafe extern "C" fn rfu_CB_configGameData(reqCommand: u8, reqResult:
         (*gRfuLinkStatus).my.serialNo = (*packet_p.at(5) as u16) << 8 | serialNo as u16;
         gname_uname_p = packet_p.at(6);
         if (*gRfuLinkStatus).my.serialNo as i32 & 0x8000 != 0 {
-            (*gRfuLinkStatus).my.serialNo = (*gRfuLinkStatus).my.serialNo ^ 0x8000;
+            (*gRfuLinkStatus).my.serialNo ^= 0x8000;
             (*gRfuLinkStatus).my.mbootFlag = 1;
         } else {
             (*gRfuLinkStatus).my.mbootFlag = 0;
         }
-        i = 0;
-        while i < RFU_GAME_NAME_LENGTH as u8 {
+        for i in 0..(RFU_GAME_NAME_LENGTH as u8) {
             (*gRfuLinkStatus).my.gname[i] = *({
                 let t2 = gname_uname_p;
                 gname_uname_p = gname_uname_p.at(1);
                 t2
             });
-            i += 1;
         }
         gname_uname_p = gname_uname_p.at(1);
-        i = 0;
-        while i < 8 {
+        for i in 0..8u8 {
             (*gRfuLinkStatus).my.uname[i] = *({
                 let t4 = gname_uname_p;
                 gname_uname_p = gname_uname_p.at(1);
                 t4
             });
-            i += 1;
         }
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_startSearchChild() {
-    let mut result: u16 = 0;
-    let mut i: u16 = 0;
-    i = 0;
-    while i < RFU_CHILD_MAX as u16 {
+pub unsafe fn rfu_REQ_startSearchChild() {
+    for i in 0..(RFU_CHILD_MAX as u16) {
         (*gRfuStatic).lsFixedCount[i] = 0;
-        i += 1;
     }
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_defaultCallback)));
     STWI_send_SystemStatusREQ();
-    result = STWI_poll_CommandEnd();
+    let result: u16 = STWI_poll_CommandEnd();
     if result == 0 {
         if (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[7] == 0 {
             rfu_STC_clearLinkStatus(MODE_PARENT);
@@ -644,19 +580,18 @@ pub unsafe extern "C" fn rfu_REQ_startSearchChild() {
         rfu_STC_REQ_callback(ID_SC_START_REQ, result);
     }
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_startSearchChild)));
     STWI_send_SC_StartREQ();
 }
-pub(crate) unsafe extern "C" fn rfu_CB_startSearchChild(reqCommand: u8, reqResult: u16) {
+pub(crate) unsafe fn rfu_CB_startSearchChild(reqCommand: u8, reqResult: u16) {
     if reqResult == 0 {
         (*gRfuStatic).SCStartFlag = 1;
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
 }
-pub(crate) unsafe extern "C" fn rfu_STC_clearLinkStatus(parentChild: u8) {
-    let mut i: u8 = 0;
+unsafe fn rfu_STC_clearLinkStatus(parentChild: u8) {
     rfu_clearAllSlot();
     if parentChild != MODE_CHILD {
         {
@@ -672,40 +607,36 @@ pub(crate) unsafe extern "C" fn rfu_STC_clearLinkStatus(parentChild: u8) {
         }
         (*gRfuLinkStatus).findParentCount = 0;
     }
-    i = 0;
-    while i < RFU_CHILD_MAX {
+    for i in 0..RFU_CHILD_MAX {
         (*gRfuLinkStatus).strength[i] = 0;
-        i += 1;
     }
     (*gRfuLinkStatus).connCount = 0;
     (*gRfuLinkStatus).connSlotFlag = 0;
     (*gRfuLinkStatus).linkLossSlotFlag = 0;
     (*gRfuLinkStatus).getNameFlag = 0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_pollSearchChild() {
+pub unsafe fn rfu_REQ_pollSearchChild() {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_pollAndEndSearchChild)));
     STWI_send_SC_PollingREQ();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_endSearchChild() {
+pub unsafe fn rfu_REQ_endSearchChild() {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_pollAndEndSearchChild)));
     STWI_send_SC_EndREQ();
 }
-pub(crate) unsafe extern "C" fn rfu_CB_pollAndEndSearchChild(reqCommand: u8, reqResult: u16) {
+pub(crate) unsafe fn rfu_CB_pollAndEndSearchChild(reqCommand: u8, reqResult: u16) {
     if reqResult == 0 {
         rfu_STC_readChildList();
     }
     if reqCommand == ID_SC_POLL_REQ {
         if (*gRfuLinkStatus).my.id == 0 {
             STWI_set_Callback_M(core::mem::transmute::<
-                Option<unsafe extern "C" fn(u8, u16)>,
+                Option<unsafe fn(u8, u16)>,
                 *mut c_void,
             >(Some(rfu_CB_defaultCallback)));
             STWI_send_SystemStatusREQ();
@@ -723,13 +654,10 @@ pub(crate) unsafe extern "C" fn rfu_CB_pollAndEndSearchChild(reqCommand: u8, req
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
 }
-pub(crate) unsafe extern "C" fn rfu_STC_readChildList() {
-    let mut stwiParam: u32 = 0;
+unsafe fn rfu_STC_readChildList() {
     let mut numSlots: u8 = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[1];
-    let mut data_p: *mut u8 = null_mut();
-    let mut i: u8 = 0;
     let mut bm_slot_id: u8 = 0;
-    data_p = &raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[4];
+    let mut data_p: *mut u8 = &raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[4];
     while numSlots != 0 {
         bm_slot_id = *data_p.at(2);
         if bm_slot_id < RFU_CHILD_MAX
@@ -750,50 +678,44 @@ pub(crate) unsafe extern "C" fn rfu_STC_readChildList() {
         data_p = data_p.at(4);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_startSearchParent() {
+pub unsafe fn rfu_REQ_startSearchParent() {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_startSearchParent)));
     STWI_send_SP_StartREQ();
 }
-pub(crate) unsafe extern "C" fn rfu_CB_startSearchParent(reqCommand: u8, reqResult: u16) {
+pub(crate) unsafe fn rfu_CB_startSearchParent(reqCommand: u8, reqResult: u16) {
     if reqResult == 0 {
         rfu_STC_clearLinkStatus(MODE_CHILD);
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_pollSearchParent() {
+pub unsafe fn rfu_REQ_pollSearchParent() {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_pollSearchParent)));
     STWI_send_SP_PollingREQ();
 }
-pub(crate) unsafe extern "C" fn rfu_CB_pollSearchParent(reqCommand: u8, reqResult: u16) {
+pub(crate) unsafe fn rfu_CB_pollSearchParent(reqCommand: u8, reqResult: u16) {
     if reqResult == 0 {
         rfu_STC_readParentCandidateList();
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_endSearchParent() {
+pub unsafe fn rfu_REQ_endSearchParent() {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_STC_REQ_callback)));
     STWI_send_SP_EndREQ();
 }
-pub(crate) unsafe extern "C" fn rfu_STC_readParentCandidateList() {
-    let mut numSlots: u8 = 0;
-    let mut i: u8 = 0;
+unsafe fn rfu_STC_readParentCandidateList() {
     let mut check_sum: u8 = 0;
     let mut my_check_sum: u8 = 0;
     let mut j: u8 = 0;
     let mut uname_p: *mut u8 = null_mut();
-    let mut packet_p: *mut u8 = null_mut();
     let mut target: *mut RfuTgtData = null_mut();
     {
         {
@@ -806,11 +728,12 @@ pub(crate) unsafe extern "C" fn rfu_STC_readParentCandidateList() {
             );
         }
     }
-    packet_p = &raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[0];
-    numSlots = *packet_p.at(1);
+    let mut packet_p: *mut u8 =
+        &raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[0];
+    let mut numSlots: u8 = *packet_p.at(1);
     packet_p = packet_p.at(4);
     (*gRfuLinkStatus).findParentCount = 0;
-    i = 0;
+    let mut i: u8 = 0;
     while i < RFU_CHILD_MAX && numSlots != 0 {
         numSlots -= 7;
         uname_p = packet_p.at(6);
@@ -846,35 +769,29 @@ pub(crate) unsafe extern "C" fn rfu_STC_readParentCandidateList() {
                 (*target).mbootFlag = 0;
             }
             packet_p = packet_p.at(2);
-            j = 0;
-            while j < RFU_GAME_NAME_LENGTH as u8 {
+            for j in 0..(RFU_GAME_NAME_LENGTH as u8) {
                 (*target).gname[j] = *({
                     let t6 = packet_p;
                     packet_p = packet_p.at(1);
                     t6
                 });
-                j += 1;
             }
             packet_p = packet_p.at(1);
-            j = 0;
-            while j < 8 {
+            for j in 0..8u8 {
                 (*target).uname[j] = *({
                     let t8 = packet_p;
                     packet_p = packet_p.at(1);
                     t8
                 });
-                j += 1;
             }
             (*gRfuLinkStatus).findParentCount += 1;
         }
         i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_startConnectParent(pid: u16) {
+pub unsafe fn rfu_REQ_startConnectParent(pid: u16) {
     let mut result: u16 = 0;
     let mut i: u8 = 0;
-    i = 0;
     while i < RFU_CHILD_MAX && (*gRfuLinkStatus).partner[i].id != pid {
         i += 1;
     }
@@ -884,7 +801,7 @@ pub unsafe extern "C" fn rfu_REQ_startConnectParent(pid: u16) {
     if result == 0 {
         (*gRfuStatic).tryPid = pid;
         STWI_set_Callback_M(core::mem::transmute::<
-            Option<unsafe extern "C" fn(u8, u16)>,
+            Option<unsafe fn(u8, u16)>,
             *mut c_void,
         >(Some(rfu_STC_REQ_callback)));
         STWI_send_CP_StartREQ(pid);
@@ -892,15 +809,14 @@ pub unsafe extern "C" fn rfu_REQ_startConnectParent(pid: u16) {
         rfu_STC_REQ_callback(ID_CP_START_REQ, result);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_pollConnectParent() {
+pub unsafe fn rfu_REQ_pollConnectParent() {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_pollConnectParent)));
     STWI_send_CP_PollingREQ();
 }
-pub(crate) unsafe extern "C" fn rfu_CB_pollConnectParent(reqCommand: u8, reqResult: u16) {
+pub(crate) unsafe fn rfu_CB_pollConnectParent(reqCommand: u8, reqResult: u16) {
     let mut id: u16 = 0;
     let mut slot: u8 = 0;
     let mut bm_slot_flag: u8 = 0;
@@ -961,14 +877,9 @@ pub(crate) unsafe extern "C" fn rfu_CB_pollConnectParent(reqCommand: u8, reqResu
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_getConnectParentStatus(
-    status: *mut u8,
-    connectSlotNo: *mut u8,
-) -> u16 {
-    let mut packet_p: *mut u8 = null_mut();
+pub unsafe fn rfu_getConnectParentStatus(status: *mut u8, connectSlotNo: *mut u8) -> u16 {
     *status = 0xFF;
-    packet_p = (*(*gRfuFixed).STWIBuffer)
+    let mut packet_p: *mut u8 = (*(*gRfuFixed).STWIBuffer)
         .rxPacketAlloc
         .rfuPacket8
         .data
@@ -979,12 +890,11 @@ pub unsafe extern "C" fn rfu_getConnectParentStatus(
         *status = *packet_p.at(1);
         return 0;
     }
-    return ERR_REQ_CMD_ID;
+    ERR_REQ_CMD_ID
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_endConnectParent() {
+pub unsafe fn rfu_REQ_endConnectParent() {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_pollConnectParent)));
     STWI_send_CP_EndREQ();
@@ -993,10 +903,7 @@ pub unsafe extern "C" fn rfu_REQ_endConnectParent() {
             [(*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[6]] = 0;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_syncVBlank() -> u16 {
-    let mut masterSlave: u8 = 0;
-    let mut i: u8 = 0;
+pub unsafe fn rfu_syncVBlank() -> u16 {
     let mut bmSlotFlag: i32 = 0;
     rfu_NI_checkCommFailCounter();
     if (*gRfuLinkStatus).parentChild == MODE_NEUTRAL {
@@ -1005,7 +912,7 @@ pub unsafe extern "C" fn rfu_syncVBlank() -> u16 {
     if (*gRfuStatic).nowWatchInterval != 0 {
         (*gRfuStatic).nowWatchInterval -= 1;
     }
-    masterSlave = rfu_getMasterSlave();
+    let masterSlave: u8 = rfu_getMasterSlave();
     if (*gRfuStatic).flags as i32 & 2 == 0 {
         if masterSlave == AGB_CLK_SLAVE {
             (*gRfuStatic).flags |= 4;
@@ -1026,31 +933,25 @@ pub unsafe extern "C" fn rfu_syncVBlank() -> u16 {
         (*gRfuStatic).flags &= 0xFB;
         bmSlotFlag =
             (*gRfuLinkStatus).connSlotFlag as i32 | (*gRfuLinkStatus).linkLossSlotFlag as i32;
-        i = 0;
-        while i < RFU_CHILD_MAX {
+        for i in 0..RFU_CHILD_MAX {
             if shr_i32(bmSlotFlag, i as u32) & 1 != 0 {
                 rfu_STC_removeLinkData(i, 1);
             }
-            i += 1;
         }
         (*gRfuLinkStatus).parentChild = MODE_NEUTRAL;
         return 1;
     }
     (*gRfuStatic).watchdogTimer -= 1;
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQBN_watchLink(
+pub unsafe fn rfu_REQBN_watchLink(
     reqCommandId: u16,
     bmLinkLossSlot: *mut u8,
     linkLossReason: *mut u8,
     parentBmLinkRecoverySlot: *mut u8,
 ) -> u16 {
     let mut reasonMaybe: u8 = 0;
-    let mut reqResult: u8 = 0;
     let mut i: u8 = 0;
-    let mut stwiCommand: i32 = 0;
-    let mut stwiParam: i32 = 0;
     let mut packet_p: *mut u8 = null_mut();
     let mut to_req_disconnect: u8 = 0;
     let mut newLinkLossFlag: u8 = 0;
@@ -1073,7 +974,7 @@ pub unsafe extern "C" fn rfu_REQBN_watchLink(
         reasonMaybe = 1;
     }
     if reqCommandId as u8 == ID_DISCONNECTED_AND_CHANGE_REQ {
-        let mut packet_p_2: *mut u8 = (*(*gRfuFixed).STWIBuffer)
+        let packet_p_2: *mut u8 = (*(*gRfuFixed).STWIBuffer)
             .rxPacketAlloc
             .rfuPacket8
             .data
@@ -1090,37 +991,33 @@ pub unsafe extern "C" fn rfu_REQBN_watchLink(
             newLinkLossFlag ^= (*gRfuLinkStatus).connSlotFlag;
             *bmLinkLossSlot = newLinkLossFlag & (*gRfuLinkStatus).connSlotFlag;
             *linkLossReason = REASON_LINK_LOSS;
-            i = 0;
-            while i < RFU_CHILD_MAX {
+            for i in 0..RFU_CHILD_MAX {
                 if shr_i32(*bmLinkLossSlot as i32, i as u32) & 1 != 0 {
                     (*gRfuLinkStatus).strength[i] = 0;
                     rfu_STC_removeLinkData(i, 0);
                 }
-                i += 1;
             }
         }
         if reasonMaybe == 0 {
             return 0;
         }
     }
-    stwiCommand = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket32.command as i32;
-    stwiParam = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket32.data[0] as i32;
+    let stwiCommand: i32 = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket32.command as i32;
+    let stwiParam: i32 = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket32.data[0] as i32;
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_defaultCallback)));
     STWI_send_LinkStatusREQ();
-    reqResult = STWI_poll_CommandEnd() as u8;
+    let reqResult: u8 = STWI_poll_CommandEnd() as u8;
     if reqResult == 0 {
         packet_p = &raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[4];
-        i = 0;
-        while i < RFU_CHILD_MAX {
+        for i in 0..RFU_CHILD_MAX {
             (*gRfuLinkStatus).strength[i] = *({
                 let t2 = packet_p;
                 packet_p = packet_p.at(1);
                 t2
             });
-            i += 1;
         }
         to_req_disconnect = 0;
         i = 0;
@@ -1200,7 +1097,7 @@ pub unsafe extern "C" fn rfu_REQBN_watchLink(
                         num_packets = *packet_p.at(1) - 1;
                         packet_p = packet_p.at(8);
                         while num_packets != 0 {
-                            let mut cid: u16 = *(packet_p as *mut u16);
+                            let cid: u16 = *(packet_p as *mut u16);
                             if *packet_p.at(2) == i && cid == (*gRfuStatic).cidBak[i] {
                                 to_req_disconnect |= shl_i32(1, i as u32) as u8;
                                 break;
@@ -1230,10 +1127,10 @@ pub unsafe extern "C" fn rfu_REQBN_watchLink(
         .data
         .as_mut_ptr() as *mut u32) = stwiCommand as u32;
     (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket32.data[0] = stwiParam as u32;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn rfu_STC_removeLinkData(bmConnectedPartnerId: u8, bmDisconnect: u8) {
-    let mut bmLinkLossFlag: u8 = shl_i32(1, bmConnectedPartnerId as u32) as u8;
+unsafe fn rfu_STC_removeLinkData(bmConnectedPartnerId: u8, bmDisconnect: u8) {
+    let bmLinkLossFlag: u8 = shl_i32(1, bmConnectedPartnerId as u32) as u8;
     let mut bmLinkRetainedFlag: i32 = 0;
     (*gRfuStatic).lsFixedCount[bmConnectedPartnerId] = 0;
     if (*gRfuLinkStatus).connSlotFlag as i32 & bmLinkLossFlag as i32 != 0
@@ -1266,8 +1163,7 @@ pub(crate) unsafe extern "C" fn rfu_STC_removeLinkData(bmConnectedPartnerId: u8,
         (*gRfuLinkStatus).strength[bmConnectedPartnerId] = 0;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_disconnect(bmDisconnectSlot: u8) {
+pub unsafe fn rfu_REQ_disconnect(bmDisconnectSlot: u8) {
     let mut result: u16 = 0;
     if ((*gRfuLinkStatus).connSlotFlag as i32 | (*gRfuLinkStatus).linkLossSlotFlag as i32)
         & bmDisconnectSlot as i32
@@ -1280,11 +1176,11 @@ pub unsafe extern "C" fn rfu_REQ_disconnect(bmDisconnectSlot: u8) {
             }
         } else if (*gRfuStatic).SCStartFlag != 0
             && ({
-                let _ = STWI_set_Callback_M(core::mem::transmute::<
-                    Option<unsafe extern "C" fn(u8, u16)>,
+                STWI_set_Callback_M(core::mem::transmute::<
+                    Option<unsafe fn(u8, u16)>,
                     *mut c_void,
                 >(Some(rfu_CB_defaultCallback)));
-                let _ = STWI_send_SC_EndREQ();
+                STWI_send_SC_EndREQ();
                 ({
                     result = STWI_poll_CommandEnd();
                     result
@@ -1294,19 +1190,18 @@ pub unsafe extern "C" fn rfu_REQ_disconnect(bmDisconnectSlot: u8) {
             rfu_STC_REQ_callback(ID_SC_END_REQ, result);
         } else {
             STWI_set_Callback_M(core::mem::transmute::<
-                Option<unsafe extern "C" fn(u8, u16)>,
+                Option<unsafe fn(u8, u16)>,
                 *mut c_void,
             >(Some(rfu_CB_disconnect)));
             STWI_send_DisconnectREQ(bmDisconnectSlot);
         }
     }
 }
-pub(crate) unsafe extern "C" fn rfu_CB_disconnect(reqCommand: u8, mut reqResult: u16) {
-    let mut i: u8 = 0;
+pub(crate) unsafe fn rfu_CB_disconnect(reqCommand: u8, mut reqResult: u16) {
     let mut bm_slot_flag: u8 = 0;
     if reqResult == 3 && (*gRfuLinkStatus).parentChild == MODE_CHILD {
         STWI_set_Callback_M(core::mem::transmute::<
-            Option<unsafe extern "C" fn(u8, u16)>,
+            Option<unsafe fn(u8, u16)>,
             *mut c_void,
         >(Some(rfu_CB_defaultCallback)));
         STWI_send_SystemStatusREQ();
@@ -1320,13 +1215,11 @@ pub(crate) unsafe extern "C" fn rfu_CB_disconnect(reqCommand: u8, mut reqResult:
         (*gRfuLinkStatus).connSlotFlag | (*gRfuLinkStatus).linkLossSlotFlag;
     (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[8] = (*gRfuStatic).recoveryBmSlot;
     if reqResult == 0 {
-        i = 0;
-        while i < RFU_CHILD_MAX {
+        for i in 0..RFU_CHILD_MAX {
             bm_slot_flag = shl_i32(1, i as u32) as u8;
             if bm_slot_flag as i32 & (*gRfuStatic).recoveryBmSlot as i32 != 0 {
                 rfu_STC_removeLinkData(i, 1);
             }
-            i += 1;
         }
     }
     if (*gRfuLinkStatus).connSlotFlag as i32 | (*gRfuLinkStatus).linkLossSlotFlag as i32 == 0 {
@@ -1335,7 +1228,7 @@ pub(crate) unsafe extern "C" fn rfu_CB_disconnect(reqCommand: u8, mut reqResult:
     rfu_STC_REQ_callback(reqCommand, reqResult);
     if (*gRfuStatic).SCStartFlag != 0 {
         STWI_set_Callback_M(core::mem::transmute::<
-            Option<unsafe extern "C" fn(u8, u16)>,
+            Option<unsafe fn(u8, u16)>,
             *mut c_void,
         >(Some(rfu_CB_defaultCallback)));
         STWI_send_SC_StartREQ();
@@ -1345,16 +1238,14 @@ pub(crate) unsafe extern "C" fn rfu_CB_disconnect(reqCommand: u8, mut reqResult:
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_CHILD_startConnectRecovery(bmRecoverySlot: u8) {
-    let mut i: u8 = 0;
+pub unsafe fn rfu_REQ_CHILD_startConnectRecovery(bmRecoverySlot: u8) {
     (*gRfuStatic).recoveryBmSlot = bmRecoverySlot;
-    i = 0;
+    let mut i: u8 = 0;
     while i < RFU_CHILD_MAX && shr_i32(bmRecoverySlot as i32, i as u32) & 1 == 0 {
         i += 1;
     }
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_STC_REQ_callback)));
     STWI_send_CPR_StartREQ(
@@ -1363,25 +1254,22 @@ pub unsafe extern "C" fn rfu_REQ_CHILD_startConnectRecovery(bmRecoverySlot: u8) 
         bmRecoverySlot,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_CHILD_pollConnectRecovery() {
+pub unsafe fn rfu_REQ_CHILD_pollConnectRecovery() {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_CHILD_pollConnectRecovery)));
     STWI_send_CPR_PollingREQ();
 }
-pub(crate) unsafe extern "C" fn rfu_CB_CHILD_pollConnectRecovery(reqCommand: u8, reqResult: u16) {
+pub(crate) unsafe fn rfu_CB_CHILD_pollConnectRecovery(reqCommand: u8, reqResult: u16) {
     let mut bm_slot_flag: u8 = 0;
-    let mut i: u8 = 0;
     let mut rfuLinkStatus: *mut RfuLinkStatus = null_mut();
     if reqResult == 0
         && (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[4] == 0
         && (*gRfuStatic).recoveryBmSlot != 0
     {
         (*gRfuLinkStatus).parentChild = MODE_CHILD;
-        i = 0;
-        while i < RFU_CHILD_MAX {
+        for i in 0..RFU_CHILD_MAX {
             bm_slot_flag = shl_i32(1, i as u32) as u8;
             rfuLinkStatus = gRfuLinkStatus;
             if (*gRfuStatic).recoveryBmSlot as i32
@@ -1394,14 +1282,12 @@ pub(crate) unsafe extern "C" fn rfu_CB_CHILD_pollConnectRecovery(reqCommand: u8,
                 (*gRfuLinkStatus).connCount += 1;
                 (*gRfuStatic).linkEmergencyFlag[i] = 0;
             }
-            i += 1;
         }
         (*gRfuStatic).recoveryBmSlot = 0;
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_CHILD_getConnectRecoveryStatus(status: *mut u8) -> u16 {
+pub unsafe fn rfu_CHILD_getConnectRecoveryStatus(status: *mut u8) -> u16 {
     *status = 0xFF;
     if (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[0] == 0xB3
         || (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[0] == 0xB4
@@ -1409,12 +1295,11 @@ pub unsafe extern "C" fn rfu_CHILD_getConnectRecoveryStatus(status: *mut u8) -> 
         *status = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[4];
         return 0;
     }
-    return ERR_REQ_CMD_ID;
+    ERR_REQ_CMD_ID
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_CHILD_endConnectRecovery() {
+pub unsafe fn rfu_REQ_CHILD_endConnectRecovery() {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_CB_CHILD_pollConnectRecovery)));
     STWI_send_CPR_EndREQ();
@@ -1425,7 +1310,7 @@ pub unsafe extern "C" fn rfu_REQ_CHILD_endConnectRecovery() {
 /// call anything: the volatile reads keep the loop from becoming a memcpy
 /// call. rustcheck.sh checks its size and that it makes no calls.
 #[unsafe(no_mangle)]
-unsafe extern "C" fn rfu_STC_fastCopy(src_p: *mut *mut u8, dst_p: *mut *mut u8, size: i32) {
+unsafe fn rfu_STC_fastCopy(src_p: *mut *mut u8, dst_p: *mut *mut u8, size: i32) {
     unsafe {
         let mut src = src_p.read();
         let mut dst = dst_p.read();
@@ -1441,11 +1326,10 @@ unsafe extern "C" fn rfu_STC_fastCopy(src_p: *mut *mut u8, dst_p: *mut *mut u8, 
     }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_changeMasterSlave() {
+pub unsafe fn rfu_REQ_changeMasterSlave() {
     if STWI_read_status(1) == 1 {
         STWI_set_Callback_M(core::mem::transmute::<
-            Option<unsafe extern "C" fn(u8, u16)>,
+            Option<unsafe fn(u8, u16)>,
             *mut c_void,
         >(Some(rfu_STC_REQ_callback)));
         STWI_send_MS_ChangeREQ();
@@ -1453,28 +1337,22 @@ pub unsafe extern "C" fn rfu_REQ_changeMasterSlave() {
         rfu_STC_REQ_callback(ID_MS_CHANGE_REQ, 0);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_getMasterSlave() -> u8 {
+pub unsafe fn rfu_getMasterSlave() -> u8 {
     let mut masterSlave: u8 = STWI_read_status(1) as u8;
-    if masterSlave == AGB_CLK_MASTER {
-        if (&raw mut (*gSTWIStatus).sending).read_volatile() != 0 {
-            if (*gSTWIStatus).reqActiveCommand == ID_MS_CHANGE_REQ
-                || (*gSTWIStatus).reqActiveCommand == ID_DATA_TX_AND_CHANGE_REQ
-                || (*gSTWIStatus).reqActiveCommand == ID_RESUME_RETRANSMIT_AND_CHANGE_REQ
-            {
-                masterSlave = AGB_CLK_SLAVE;
-            }
-        }
+    if masterSlave == AGB_CLK_MASTER
+        && (&raw mut (*gSTWIStatus).sending).read_volatile() != 0
+        && ((*gSTWIStatus).reqActiveCommand == ID_MS_CHANGE_REQ
+            || (*gSTWIStatus).reqActiveCommand == ID_DATA_TX_AND_CHANGE_REQ
+            || (*gSTWIStatus).reqActiveCommand == ID_RESUME_RETRANSMIT_AND_CHANGE_REQ)
+    {
+        masterSlave = AGB_CLK_SLAVE;
     }
-    return masterSlave;
+    masterSlave
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_clearAllSlot() {
-    let mut i: u16 = 0;
-    let mut IMEBackup: u16 = (67109384 as usize as *mut u16).read_volatile();
-    volatile_write(67109384 as usize as *mut u16, 0);
-    i = 0;
-    while i < RFU_CHILD_MAX as u16 {
+pub unsafe fn rfu_clearAllSlot() {
+    let IMEBackup: u16 = (67109384_usize as *mut u16).read_volatile();
+    volatile_write(67109384_usize as *mut u16, 0);
+    for i in 0..(RFU_CHILD_MAX as u16) {
         {
             {
                 let mut tmp: u16 = 0;
@@ -1498,20 +1376,15 @@ pub unsafe extern "C" fn rfu_clearAllSlot() {
             }
         }
         (*gRfuLinkStatus).remainLLFrameSizeChild[i] = 16;
-        i += 1;
     }
     (*gRfuLinkStatus).remainLLFrameSizeParent = LLF_P_SIZE;
     (*gRfuLinkStatus).sendSlotNIFlag = 0;
     (*gRfuLinkStatus).recvSlotNIFlag = 0;
     (*gRfuLinkStatus).sendSlotUNIFlag = 0;
     (*gRfuStatic).recvRenewalFlag = 0;
-    volatile_write(67109384 as usize as *mut u16, IMEBackup);
+    volatile_write(67109384_usize as *mut u16, IMEBackup);
 }
-pub(crate) unsafe extern "C" fn rfu_STC_releaseFrame(
-    bm_slot_id: u8,
-    send_recv: u8,
-    NI_comm: *mut NIComm,
-) {
+unsafe fn rfu_STC_releaseFrame(bm_slot_id: u8, send_recv: u8, NI_comm: *mut NIComm) {
     if (*gRfuStatic).flags as i32 & 0x80 == 0 {
         if send_recv == 0 {
             (*gRfuLinkStatus).remainLLFrameSizeParent += (*NI_comm).payloadSize as u8;
@@ -1524,11 +1397,7 @@ pub(crate) unsafe extern "C" fn rfu_STC_releaseFrame(
         (*gRfuLinkStatus).remainLLFrameSizeChild[bm_slot_id] += 2;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_clearSlot(connTypeFlag: u8, slotStatusIndex: u8) -> u16 {
-    let mut imeBak: u16 = 0;
-    let mut send_recv: u16 = 0;
-    let mut i: u16 = 0;
+pub unsafe fn rfu_clearSlot(connTypeFlag: u8, slotStatusIndex: u8) -> u16 {
     let mut NI_comm: *mut NIComm = null_mut();
     if slotStatusIndex >= RFU_CHILD_MAX {
         return ERR_SLOT_NO;
@@ -1536,11 +1405,10 @@ pub unsafe extern "C" fn rfu_clearSlot(connTypeFlag: u8, slotStatusIndex: u8) ->
     if connTypeFlag as i32 & 15 == 0 {
         return ERR_COMM_TYPE;
     }
-    imeBak = (67109384 as usize as *mut u16).read_volatile();
-    volatile_write(67109384 as usize as *mut u16, 0);
+    let imeBak: u16 = (67109384_usize as *mut u16).read_volatile();
+    volatile_write(67109384_usize as *mut u16, 0);
     if connTypeFlag as i32 & 12 != 0 {
-        send_recv = 0;
-        while send_recv < 2 {
+        for send_recv in 0..2u16 {
             NI_comm = null_mut();
             if send_recv == 0 {
                 if connTypeFlag as i32 & TYPE_NI_SEND as i32 != 0 {
@@ -1556,12 +1424,10 @@ pub unsafe extern "C" fn rfu_clearSlot(connTypeFlag: u8, slotStatusIndex: u8) ->
             if !NI_comm.is_null() {
                 if (*NI_comm).state as i32 & SLOT_BUSY_FLAG != 0 {
                     rfu_STC_releaseFrame(slotStatusIndex, send_recv as u8, NI_comm);
-                    i = 0;
-                    while i < RFU_CHILD_MAX as u16 {
+                    for i in 0..(RFU_CHILD_MAX as u16) {
                         if shr_i32((*NI_comm).bmSlotOrg as i32, i as u32) & 1 != 0 {
                             (*NI_comm).failCounter = 0;
                         }
-                        i += 1;
                     }
                 }
                 {
@@ -1576,11 +1442,10 @@ pub unsafe extern "C" fn rfu_clearSlot(connTypeFlag: u8, slotStatusIndex: u8) ->
                     }
                 }
             }
-            send_recv += 1;
         }
     }
     if connTypeFlag as i32 & TYPE_UNI_SEND != 0 {
-        let mut slotStatusUNI: *mut RfuSlotStatusUNI = gRfuSlotStatusUNI[slotStatusIndex];
+        let slotStatusUNI: *mut RfuSlotStatusUNI = gRfuSlotStatusUNI[slotStatusIndex];
         if (*slotStatusUNI).send.state as i32 & SLOT_BUSY_FLAG != 0 {
             if (*gRfuStatic).flags as i32 & 0x80 == 0 {
                 (*gRfuLinkStatus).remainLLFrameSizeParent +=
@@ -1616,11 +1481,10 @@ pub unsafe extern "C" fn rfu_clearSlot(connTypeFlag: u8, slotStatusIndex: u8) ->
             }
         }
     }
-    volatile_write(67109384 as usize as *mut u16, imeBak);
-    return 0;
+    volatile_write(67109384_usize as *mut u16, imeBak);
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_setRecvBuffer(
+pub unsafe fn rfu_setRecvBuffer(
     connType: u8,
     slotNo: u8,
     buffer: *mut c_void,
@@ -1638,51 +1502,44 @@ pub unsafe extern "C" fn rfu_setRecvBuffer(
         (*gRfuSlotStatusUNI[slotNo]).recvBuffer = buffer;
         (*gRfuSlotStatusUNI[slotNo]).recvBufferSize = buffSize;
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_NI_setSendData(
+pub unsafe fn rfu_NI_setSendData(
     bmSendSlot: u8,
     subFrameSize: u8,
     src: *mut c_void,
     size: u32,
 ) -> u16 {
-    return rfu_STC_setSendData_org(32, bmSendSlot, subFrameSize, src, size);
+    rfu_STC_setSendData_org(32, bmSendSlot, subFrameSize, src, size)
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_UNI_setSendData(bmSendSlot: u8, src: *mut c_void, size: u8) -> u16 {
+pub unsafe fn rfu_UNI_setSendData(bmSendSlot: u8, src: *mut c_void, size: u8) -> u16 {
     let mut subFrameSize: u8 = 0;
     if (*gRfuLinkStatus).parentChild == MODE_PARENT {
         subFrameSize = size + 3;
     } else {
         subFrameSize = size + 2;
     }
-    return rfu_STC_setSendData_org(16, bmSendSlot, subFrameSize, src, 0);
+    rfu_STC_setSendData_org(16, bmSendSlot, subFrameSize, src, 0)
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_NI_CHILD_setSendGameName(slotNo: u8, subFrameSize: u8) -> u16 {
-    return rfu_STC_setSendData_org(
+pub unsafe fn rfu_NI_CHILD_setSendGameName(slotNo: u8, subFrameSize: u8) -> u16 {
+    rfu_STC_setSendData_org(
         64,
         shl_i32(1, slotNo as u32) as u8,
         subFrameSize,
         &raw mut (*gRfuLinkStatus).my.serialNo as *mut c_void,
         26,
-    );
+    )
 }
-pub(crate) unsafe extern "C" fn rfu_STC_setSendData_org(
+unsafe fn rfu_STC_setSendData_org(
     ni_or_uni: u8,
     bmSendSlot: u8,
     subFrameSize: u8,
     src: *mut c_void,
     dataSize: u32,
 ) -> u16 {
-    let mut bm_slot_id: u8 = 0;
     let mut sendSlotFlag: u8 = 0;
     let mut frameSize: u8 = 0;
     let mut llFrameSize_p: *mut u8 = null_mut();
-    let mut sending: u8 = 0;
-    let mut i: u8 = 0;
-    let mut imeBak: u16 = 0;
     let mut slotStatus_UNI: *mut RfuSlotStatusUNI = null_mut();
     let mut slotStatus_NI: *mut RfuSlotStatusNI = null_mut();
     if (*gRfuLinkStatus).parentChild == MODE_NEUTRAL {
@@ -1705,7 +1562,7 @@ pub(crate) unsafe extern "C" fn rfu_STC_setSendData_org(
     if sendSlotFlag as i32 & bmSendSlot as i32 != 0 {
         return ERR_SLOT_BUSY;
     }
-    bm_slot_id = 0;
+    let mut bm_slot_id: u8 = 0;
     while bm_slot_id < RFU_CHILD_MAX && shr_i32(bmSendSlot as i32, bm_slot_id as u32) & 1 == 0 {
         bm_slot_id += 1;
     }
@@ -1718,12 +1575,11 @@ pub(crate) unsafe extern "C" fn rfu_STC_setSendData_org(
     if !llFrameSize_p.is_null() && subFrameSize > *llFrameSize_p || subFrameSize <= frameSize {
         return ERR_SUBFRAME_SIZE;
     }
-    imeBak = (67109384 as usize as *mut u16).read_volatile();
-    volatile_write(67109384 as usize as *mut u16, 0);
-    sending = ni_or_uni & 0x20;
+    let imeBak: u16 = (67109384_usize as *mut u16).read_volatile();
+    volatile_write(67109384_usize as *mut u16, 0);
+    let sending: u8 = ni_or_uni & 0x20;
     if sending != 0 || ni_or_uni == 0x40 {
         slotStatus_NI = gRfuSlotStatusNI[bm_slot_id];
-        slotStatus_UNI = null_mut();
         (*slotStatus_NI).send.errorCode = 0;
         (*slotStatus_NI).send.now_p[0] = &raw mut (*slotStatus_NI).send.dataType;
         (*slotStatus_NI).send.remainSize = 7;
@@ -1739,18 +1595,14 @@ pub(crate) unsafe extern "C" fn rfu_STC_setSendData_org(
         (*slotStatus_NI).send.src = src;
         (*slotStatus_NI).send.ack = 0;
         (*slotStatus_NI).send.phase = 0;
-        i = 0;
-        while i < WINDOW_COUNT {
+        for i in 0..WINDOW_COUNT {
             (*slotStatus_NI).send.recvAckFlag[i] = 0;
             (*slotStatus_NI).send.n[i] = 1;
-            i += 1;
         }
-        bm_slot_id = 0;
-        while bm_slot_id < RFU_CHILD_MAX {
+        for bm_slot_id in 0..RFU_CHILD_MAX {
             if shr_i32(bmSendSlot as i32, bm_slot_id as u32) & 1 != 0 {
                 (*gRfuSlotStatusNI[bm_slot_id]).send.failCounter = 0;
             }
-            bm_slot_id += 1;
         }
         (*gRfuLinkStatus).sendSlotNIFlag |= bmSendSlot;
         if !llFrameSize_p.is_null() {
@@ -1768,18 +1620,12 @@ pub(crate) unsafe extern "C" fn rfu_STC_setSendData_org(
         (*slotStatus_UNI).send.state = SLOT_STATE_SEND_UNI;
         (*gRfuLinkStatus).sendSlotUNIFlag |= bmSendSlot;
     }
-    volatile_write(67109384 as usize as *mut u16, imeBak);
-    return 0;
+    volatile_write(67109384_usize as *mut u16, imeBak);
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_changeSendTarget(
-    mut connType: u8,
-    slotStatusIndex: u8,
-    bmNewTgtSlot: u8,
-) -> u16 {
+pub unsafe fn rfu_changeSendTarget(mut connType: u8, slotStatusIndex: u8, bmNewTgtSlot: u8) -> u16 {
     let mut slotStatusNI: *mut RfuSlotStatusNI = null_mut();
     let mut imeBak: u16 = 0;
-    let mut i: u8 = 0;
     if slotStatusIndex >= RFU_CHILD_MAX {
         return ERR_SLOT_NO;
     }
@@ -1791,14 +1637,12 @@ pub unsafe extern "C" fn rfu_changeSendTarget(
             connType = bmNewTgtSlot ^ (*slotStatusNI).send.bmSlot;
             if connType as i32 & bmNewTgtSlot as i32 == 0 {
                 if connType != 0 {
-                    imeBak = (67109384 as usize as *mut u16).read_volatile();
-                    volatile_write(67109384 as usize as *mut u16, 0);
-                    i = 0;
-                    while i < RFU_CHILD_MAX {
+                    imeBak = (67109384_usize as *mut u16).read_volatile();
+                    volatile_write(67109384_usize as *mut u16, 0);
+                    for i in 0..RFU_CHILD_MAX {
                         if shr_i32(connType as i32, i as u32) & 1 != 0 {
                             (*gRfuSlotStatusNI[i]).send.failCounter = 0;
                         }
-                        i += 1;
                     }
                     (*gRfuLinkStatus).sendSlotNIFlag &= !connType;
                     (*slotStatusNI).send.bmSlot = bmNewTgtSlot;
@@ -1806,7 +1650,7 @@ pub unsafe extern "C" fn rfu_changeSendTarget(
                         rfu_STC_releaseFrame(slotStatusIndex, 0, &raw mut (*slotStatusNI).send);
                         (*slotStatusNI).send.state = SLOT_STATE_SEND_FAILED;
                     }
-                    volatile_write(67109384 as usize as *mut u16, imeBak);
+                    volatile_write(67109384_usize as *mut u16, imeBak);
                 }
             } else {
                 return ERR_SLOT_TARGET;
@@ -1816,43 +1660,37 @@ pub unsafe extern "C" fn rfu_changeSendTarget(
         }
     } else {
         if connType == 16 {
-            let mut bmSlot: i32 = 0;
             if (*gRfuSlotStatusUNI[slotStatusIndex]).send.state != SLOT_STATE_SEND_UNI {
                 return ERR_SLOT_NOT_SENDING;
             }
-            bmSlot = 0;
-            i = 0;
-            while i < RFU_CHILD_MAX {
+            let mut bmSlot: i32 = 0;
+            for i in 0..RFU_CHILD_MAX {
                 if i != slotStatusIndex {
                     bmSlot |= (*gRfuSlotStatusUNI[i]).send.bmSlot as i32;
                 }
-                i += 1;
             }
             if bmNewTgtSlot as i32 & bmSlot != 0 {
                 return ERR_SLOT_TARGET;
             }
-            imeBak = (67109384 as usize as *mut u16).read_volatile();
-            volatile_write(67109384 as usize as *mut u16, 0);
+            imeBak = (67109384_usize as *mut u16).read_volatile();
+            volatile_write(67109384_usize as *mut u16, 0);
             (*gRfuLinkStatus).sendSlotUNIFlag &= !(*gRfuSlotStatusUNI[slotStatusIndex]).send.bmSlot;
             (*gRfuLinkStatus).sendSlotUNIFlag |= bmNewTgtSlot;
             (*gRfuSlotStatusUNI[slotStatusIndex]).send.bmSlot = bmNewTgtSlot;
-            volatile_write(67109384 as usize as *mut u16, imeBak);
+            volatile_write(67109384_usize as *mut u16, imeBak);
         } else {
             return ERR_COMM_TYPE;
         }
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_NI_stopReceivingData(slotStatusIndex: u8) -> u16 {
-    let mut imeBak: u16 = 0;
-    let mut NI_comm: *mut NIComm = null_mut();
+pub unsafe fn rfu_NI_stopReceivingData(slotStatusIndex: u8) -> u16 {
     if slotStatusIndex >= RFU_CHILD_MAX {
         return ERR_SLOT_NO;
     }
-    NI_comm = &raw mut (*gRfuSlotStatusNI[slotStatusIndex]).recv;
-    imeBak = (67109384 as usize as *mut u16).read_volatile();
-    volatile_write(67109384 as usize as *mut u16, 0);
+    let NI_comm: *mut NIComm = &raw mut (*gRfuSlotStatusNI[slotStatusIndex]).recv;
+    let imeBak: u16 = (67109384_usize as *mut u16).read_volatile();
+    volatile_write(67109384_usize as *mut u16, 0);
     if (*NI_comm).state as i32 & SLOT_BUSY_FLAG != 0 {
         if (*NI_comm).state == SLOT_STATE_RECV_LAST {
             (*NI_comm).state = SLOT_STATE_RECV_SUCCESS_AND_SENDSIDE_UNKNOWN;
@@ -1862,23 +1700,20 @@ pub unsafe extern "C" fn rfu_NI_stopReceivingData(slotStatusIndex: u8) -> u16 {
         (*gRfuLinkStatus).recvSlotNIFlag &= !(shl_i32(1, slotStatusIndex as u32) as u8);
         rfu_STC_releaseFrame(slotStatusIndex, 1, NI_comm);
     }
-    volatile_write(67109384 as usize as *mut u16, imeBak);
-    return 0;
+    volatile_write(67109384_usize as *mut u16, imeBak);
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_UNI_changeAndReadySendData(
+pub unsafe fn rfu_UNI_changeAndReadySendData(
     slotStatusIndex: u8,
     src: *mut c_void,
     size: u8,
 ) -> u16 {
-    let mut UNI_send: *mut UNISend = null_mut();
     let mut frame_p: *mut u8 = null_mut();
-    let mut imeBak: u16 = 0;
     let mut frameEnd: u8 = 0;
     if slotStatusIndex >= RFU_CHILD_MAX {
         return ERR_SLOT_NO;
     }
-    UNI_send = &raw mut (*gRfuSlotStatusUNI[slotStatusIndex]).send;
+    let UNI_send: *mut UNISend = &raw mut (*gRfuSlotStatusUNI[slotStatusIndex]).send;
     if (*UNI_send).state != SLOT_STATE_SEND_UNI {
         return ERR_SLOT_NOT_SENDING;
     }
@@ -1893,31 +1728,28 @@ pub unsafe extern "C" fn rfu_UNI_changeAndReadySendData(
     if frameEnd < size {
         return ERR_SUBFRAME_SIZE;
     }
-    imeBak = (67109384 as usize as *mut u16).read_volatile();
-    volatile_write(67109384 as usize as *mut u16, 0);
+    let imeBak: u16 = (67109384_usize as *mut u16).read_volatile();
+    volatile_write(67109384_usize as *mut u16, 0);
     (*UNI_send).src = src;
     *frame_p = frameEnd - size;
     (*UNI_send).payloadSize = size as u16;
     (*UNI_send).dataReadyFlag = 1;
-    volatile_write(67109384 as usize as *mut u16, imeBak);
-    return 0;
+    volatile_write(67109384_usize as *mut u16, imeBak);
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_UNI_readySendData(slotStatusIndex: u8) {
-    if slotStatusIndex < RFU_CHILD_MAX {
-        if (*gRfuSlotStatusUNI[slotStatusIndex]).send.state == SLOT_STATE_SEND_UNI {
-            (*gRfuSlotStatusUNI[slotStatusIndex]).send.dataReadyFlag = 1;
-        }
+pub unsafe fn rfu_UNI_readySendData(slotStatusIndex: u8) {
+    if slotStatusIndex < RFU_CHILD_MAX
+        && (*gRfuSlotStatusUNI[slotStatusIndex]).send.state == SLOT_STATE_SEND_UNI
+    {
+        (*gRfuSlotStatusUNI[slotStatusIndex]).send.dataReadyFlag = 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_UNI_clearRecvNewDataFlag(slotStatusIndex: u8) {
+pub unsafe fn rfu_UNI_clearRecvNewDataFlag(slotStatusIndex: u8) {
     if slotStatusIndex < RFU_CHILD_MAX {
         (*gRfuSlotStatusUNI[slotStatusIndex]).recv.newDataFlag = 0;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_sendData(clockChangeFlag: u8) {
+pub unsafe fn rfu_REQ_sendData(clockChangeFlag: u8) {
     if (*gRfuLinkStatus).parentChild != MODE_NEUTRAL {
         if (*gRfuLinkStatus).parentChild == MODE_PARENT
             && (*gRfuLinkStatus).sendSlotNIFlag as i32
@@ -1938,7 +1770,7 @@ pub unsafe extern "C" fn rfu_REQ_sendData(clockChangeFlag: u8) {
                 (*gRfuFixed).LLFBuffer[0] = 1;
                 (*gRfuFixed).LLFBuffer[4] = 0xFF;
                 STWI_set_Callback_M(core::mem::transmute::<
-                    Option<unsafe extern "C" fn(u8, u16)>,
+                    Option<unsafe fn(u8, u16)>,
                     *mut c_void,
                 >(Some(rfu_CB_sendData3)));
                 if clockChangeFlag == 0 {
@@ -1957,7 +1789,7 @@ pub unsafe extern "C" fn rfu_REQ_sendData(clockChangeFlag: u8) {
             }
             if (&raw mut (*gRfuLinkStatus).LLFReadyFlag).read_volatile() != 0 {
                 STWI_set_Callback_M(core::mem::transmute::<
-                    Option<unsafe extern "C" fn(u8, u16)>,
+                    Option<unsafe fn(u8, u16)>,
                     *mut c_void,
                 >(Some(rfu_CB_sendData)));
                 if clockChangeFlag != 0 {
@@ -1980,7 +1812,7 @@ pub unsafe extern "C" fn rfu_REQ_sendData(clockChangeFlag: u8) {
                 }
             } else {
                 STWI_set_Callback_M(core::mem::transmute::<
-                    Option<unsafe extern "C" fn(u8, u16)>,
+                    Option<unsafe fn(u8, u16)>,
                     *mut c_void,
                 >(Some(rfu_CB_sendData2)));
                 STWI_send_MS_ChangeREQ();
@@ -1988,12 +1820,10 @@ pub unsafe extern "C" fn rfu_REQ_sendData(clockChangeFlag: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn rfu_CB_sendData(reqCommand: u8, reqResult: u16) {
-    let mut i: u8 = 0;
+pub(crate) unsafe fn rfu_CB_sendData(reqCommand: u8, reqResult: u16) {
     let mut NI_comm: *mut NIComm = null_mut();
     if reqResult == 0 {
-        i = 0;
-        while i < RFU_CHILD_MAX {
+        for i in 0..RFU_CHILD_MAX {
             if (*gRfuSlotStatusUNI[i]).send.dataReadyFlag != 0 {
                 (*gRfuSlotStatusUNI[i]).send.dataReadyFlag = 0;
             }
@@ -2006,26 +1836,24 @@ pub(crate) unsafe extern "C" fn rfu_CB_sendData(reqCommand: u8, reqResult: u16) 
                 }
                 (*NI_comm).state = SLOT_STATE_SEND_SUCCESS;
             }
-            i += 1;
         }
     }
     volatile_write(&raw mut (*gRfuLinkStatus).LLFReadyFlag, 0);
     rfu_STC_REQ_callback(ID_DATA_TX_REQ, reqResult);
 }
-pub(crate) unsafe extern "C" fn rfu_CB_sendData2(reqCommand: u8, reqResult: u16) {
+pub(crate) unsafe fn rfu_CB_sendData2(reqCommand: u8, reqResult: u16) {
     rfu_STC_REQ_callback(ID_DATA_TX_REQ, reqResult);
 }
-pub(crate) unsafe extern "C" fn rfu_CB_sendData3(reqCommand: u8, reqResult: u16) {
+pub(crate) unsafe fn rfu_CB_sendData3(reqCommand: u8, reqResult: u16) {
     if reqResult != 0 {
         rfu_STC_REQ_callback(ID_DATA_TX_REQ, reqResult);
     } else if reqCommand == ID_CLOCK_SLAVE_MS_CHANGE_ERROR_BY_DMA_REQ {
         rfu_STC_REQ_callback(ID_CLOCK_SLAVE_MS_CHANGE_ERROR_BY_DMA_REQ, 0);
     }
 }
-pub(crate) unsafe extern "C" fn rfu_constructSendLLFrame() {
+unsafe fn rfu_constructSendLLFrame() {
     let mut pakcketSize: u32 = 0;
     let mut currSize: u32 = 0;
-    let mut i: u8 = 0;
     let mut llf_p: *mut u8 = null_mut();
     if (*gRfuLinkStatus).parentChild != MODE_NEUTRAL
         && (*gRfuLinkStatus).sendSlotNIFlag as i32
@@ -2036,8 +1864,7 @@ pub(crate) unsafe extern "C" fn rfu_constructSendLLFrame() {
         volatile_write(&raw mut (*gRfuLinkStatus).LLFReadyFlag, 0);
         pakcketSize = 0;
         llf_p = &raw mut (*gRfuFixed).LLFBuffer[1] as *mut u8;
-        i = 0;
-        while i < RFU_CHILD_MAX {
+        for i in 0..RFU_CHILD_MAX {
             currSize = 0;
             if (*gRfuSlotStatusNI[i]).send.state as i32 & SLOT_BUSY_FLAG != 0 {
                 currSize = rfu_STC_NI_constructLLSF(
@@ -2063,7 +1890,6 @@ pub(crate) unsafe extern "C" fn rfu_constructSendLLFrame() {
                     pakcketSize |= shl_u32(currSize, 5 * i as u32 + 8);
                 }
             }
-            i += 1;
         }
         if pakcketSize != 0 {
             while llf_p as usize as u32 & 3 != 0 {
@@ -2075,7 +1901,7 @@ pub(crate) unsafe extern "C" fn rfu_constructSendLLFrame() {
             }
             (*gRfuFixed).LLFBuffer[0] = pakcketSize;
             if (*gRfuLinkStatus).parentChild == MODE_CHILD {
-                let mut maxSize: *mut u8 = llf_p.at(-108);
+                let maxSize: *mut u8 = llf_p.at(-108);
                 pakcketSize = (maxSize as usize)
                     .wrapping_sub((&raw mut gRfuFixed as *mut *mut u8).read_volatile() as usize)
                     as i32 as u32;
@@ -2084,17 +1910,13 @@ pub(crate) unsafe extern "C" fn rfu_constructSendLLFrame() {
         (*gRfuStatic).totalPacketSize = pakcketSize;
     }
 }
-pub(crate) unsafe extern "C" fn rfu_STC_NI_constructLLSF(
+unsafe fn rfu_STC_NI_constructLLSF(
     bm_slot_id: u8,
     dest_pp: *mut *mut u8,
     NI_comm: *mut NIComm,
 ) -> u16 {
     let mut size: u16 = 0;
-    let mut frame: u32 = 0;
-    let mut i: u8 = 0;
-    let mut frame8_p: *mut u8 = null_mut();
-    let mut llsf: *mut LLSFStruct =
-        (&raw const llsf_struct[(*gRfuLinkStatus).parentChild]).cast_mut();
+    let llsf: *mut LLSFStruct = (&raw const llsf_struct[(*gRfuLinkStatus).parentChild]).cast_mut();
     if (*NI_comm).state == SLOT_STATE_SENDING {
         while (*NI_comm).now_p[(*NI_comm).phase]
             >= ((*NI_comm).src as *mut u8).at((*NI_comm).dataSize)
@@ -2124,7 +1946,8 @@ pub(crate) unsafe extern "C" fn rfu_STC_NI_constructLLSF(
             size = (*NI_comm).remainSize as u16;
         }
     }
-    frame = shl_i32((*NI_comm).state as i32 & 0xF, (*llsf).slotStateShift as u32) as u32
+    let mut frame: u32 = shl_i32((*NI_comm).state as i32 & 0xF, (*llsf).slotStateShift as u32)
+        as u32
         | shl_i32((*NI_comm).ack as i32, (*llsf).ackShift as u32) as u32
         | shl_i32((*NI_comm).phase as i32, (*llsf).phaseShift as u32) as u32
         | shl_i32((*NI_comm).n[(*NI_comm).phase] as i32, (*llsf).nShift as u32) as u32
@@ -2132,9 +1955,8 @@ pub(crate) unsafe extern "C" fn rfu_STC_NI_constructLLSF(
     if (*gRfuLinkStatus).parentChild == MODE_PARENT {
         frame |= ((*NI_comm).bmSlot as u32) << 18;
     }
-    frame8_p = &raw mut frame as *mut u8;
-    i = 0;
-    while i < (*llsf).frameSize {
+    let mut frame8_p: *mut u8 = &raw mut frame as *mut u8;
+    for i in 0..(*llsf).frameSize {
         *({
             let t1 = *dest_pp;
             *dest_pp = (*dest_pp).at(1);
@@ -2144,7 +1966,6 @@ pub(crate) unsafe extern "C" fn rfu_STC_NI_constructLLSF(
             frame8_p = frame8_p.at(1);
             t3
         });
-        i += 1;
     }
     if size != 0 {
         let mut src: *mut u8 = (*NI_comm).now_p[(*NI_comm).phase];
@@ -2165,23 +1986,15 @@ pub(crate) unsafe extern "C" fn rfu_STC_NI_constructLLSF(
                 | shl_i32(1, bm_slot_id as u32) as u8,
         );
     }
-    return size + (*llsf).frameSize as u16;
+    size + (*llsf).frameSize as u16
 }
-pub(crate) unsafe extern "C" fn rfu_STC_UNI_constructLLSF(
-    bm_slot_id: u8,
-    dest_p: *mut *mut u8,
-) -> u16 {
-    let mut llsf: *mut LLSFStruct = null_mut();
-    let mut src_p: *mut u8 = null_mut();
-    let mut frame: u32 = 0;
-    let mut frame8_p: *mut u8 = null_mut();
-    let mut i: u8 = 0;
-    let mut UNI_send: *mut UNISend = &raw mut (*gRfuSlotStatusUNI[bm_slot_id]).send;
+unsafe fn rfu_STC_UNI_constructLLSF(bm_slot_id: u8, dest_p: *mut *mut u8) -> u16 {
+    let UNI_send: *mut UNISend = &raw mut (*gRfuSlotStatusUNI[bm_slot_id]).send;
     if (*UNI_send).dataReadyFlag == 0 || (*UNI_send).bmSlot == 0 {
         return 0;
     }
-    llsf = (&raw const llsf_struct[(*gRfuLinkStatus).parentChild]).cast_mut();
-    frame = shl_i32(
+    let llsf: *mut LLSFStruct = (&raw const llsf_struct[(*gRfuLinkStatus).parentChild]).cast_mut();
+    let mut frame: u32 = shl_i32(
         (*UNI_send).state as i32 & 0xF,
         (*llsf).slotStateShift as u32,
     ) as u32
@@ -2189,9 +2002,8 @@ pub(crate) unsafe extern "C" fn rfu_STC_UNI_constructLLSF(
     if (*gRfuLinkStatus).parentChild == MODE_PARENT {
         frame |= ((*UNI_send).bmSlot as u32) << 18;
     }
-    frame8_p = &raw mut frame as *mut u8;
-    i = 0;
-    while i < (*llsf).frameSize {
+    let mut frame8_p: *mut u8 = &raw mut frame as *mut u8;
+    for i in 0..(*llsf).frameSize {
         *({
             let t1 = *dest_p;
             *dest_p = (*dest_p).at(1);
@@ -2201,9 +2013,8 @@ pub(crate) unsafe extern "C" fn rfu_STC_UNI_constructLLSF(
             frame8_p = frame8_p.at(1);
             t3
         });
-        i += 1;
     }
-    src_p = (*UNI_send).src as *mut u8;
+    let mut src_p: *mut u8 = (*UNI_send).src as *mut u8;
     (*gRfuFixed).fastCopyPtr.unwrap_unchecked()(
         &raw mut src_p,
         dest_p,
@@ -2218,24 +2029,22 @@ pub(crate) unsafe extern "C" fn rfu_STC_UNI_constructLLSF(
                 | shl_i32(16, bm_slot_id as u32) as u8,
         );
     }
-    return (*llsf).frameSize as u16 + (*UNI_send).payloadSize;
+    (*llsf).frameSize as u16 + (*UNI_send).payloadSize
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_recvData() {
+pub unsafe fn rfu_REQ_recvData() {
     if (*gRfuLinkStatus).parentChild != MODE_NEUTRAL {
         (*gRfuStatic).commExistFlag = (*gRfuLinkStatus).sendSlotNIFlag
             | (*gRfuLinkStatus).recvSlotNIFlag
             | (*gRfuLinkStatus).sendSlotUNIFlag;
         (*gRfuStatic).recvErrorFlag = 0;
         STWI_set_Callback_M(core::mem::transmute::<
-            Option<unsafe extern "C" fn(u8, u16)>,
+            Option<unsafe fn(u8, u16)>,
             *mut c_void,
         >(Some(rfu_CB_recvData)));
         STWI_send_DataRxREQ();
     }
 }
-pub(crate) unsafe extern "C" fn rfu_CB_recvData(reqCommand: u8, mut reqResult: u16) {
-    let mut i: u8 = 0;
+pub(crate) unsafe fn rfu_CB_recvData(reqCommand: u8, mut reqResult: u16) {
     let mut slotStatusNI: *mut RfuSlotStatusNI = null_mut();
     let mut NI_comm: *mut NIComm = null_mut();
     if reqResult == 0 && (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[1] != 0 {
@@ -2245,8 +2054,7 @@ pub(crate) unsafe extern "C" fn rfu_CB_recvData(reqCommand: u8, mut reqResult: u
         } else {
             rfu_STC_CHILD_analyzeRecvPacket();
         }
-        i = 0;
-        while i < RFU_CHILD_MAX {
+        for i in 0..RFU_CHILD_MAX {
             slotStatusNI = gRfuSlotStatusNI[i];
             if (*slotStatusNI).recv.state == SLOT_STATE_RECV_LAST
                 && shr_i32((*gRfuStatic).NIEndRecvFlag as i32, i as u32) & 1 == 0
@@ -2259,7 +2067,6 @@ pub(crate) unsafe extern "C" fn rfu_CB_recvData(reqCommand: u8, mut reqResult: u
                 (*gRfuLinkStatus).recvSlotNIFlag &= !(*NI_comm).bmSlot;
                 (*slotStatusNI).recv.state = SLOT_STATE_RECV_SUCCESS;
             }
-            i += 1;
         }
         if (*gRfuStatic).recvErrorFlag != 0 {
             reqResult = (*gRfuStatic).recvErrorFlag as u16 | ERR_DATA_RECV;
@@ -2267,13 +2074,10 @@ pub(crate) unsafe extern "C" fn rfu_CB_recvData(reqCommand: u8, mut reqResult: u
     }
     rfu_STC_REQ_callback(reqCommand, reqResult);
 }
-pub(crate) unsafe extern "C" fn rfu_STC_PARENT_analyzeRecvPacket() {
-    let mut frames32: u32 = 0;
-    let mut bm_slot_id: u8 = 0;
+unsafe fn rfu_STC_PARENT_analyzeRecvPacket() {
     let mut frame_counts: CArray<u8, 4> = zeroed();
-    let mut packet_p: *mut u8 = null_mut();
-    frames32 = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket32.data[0] >> 8;
-    bm_slot_id = 0;
+    let mut frames32: u32 = (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket32.data[0] >> 8;
+    let mut bm_slot_id: u8 = 0;
     while bm_slot_id < RFU_CHILD_MAX {
         frame_counts[bm_slot_id] = frames32 as u8 & 0x1F;
         frames32 >>= 5;
@@ -2282,13 +2086,13 @@ pub(crate) unsafe extern "C" fn rfu_STC_PARENT_analyzeRecvPacket() {
         }
         bm_slot_id += 1;
     }
-    packet_p = &raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[8];
-    bm_slot_id = 0;
-    while bm_slot_id < RFU_CHILD_MAX {
+    let mut packet_p: *mut u8 =
+        &raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[8];
+    for bm_slot_id in 0..RFU_CHILD_MAX {
         if frame_counts[bm_slot_id] != 0 {
-            let mut frames_p: *mut u8 = &raw mut frame_counts[bm_slot_id];
+            let frames_p: *mut u8 = &raw mut frame_counts[bm_slot_id];
             loop {
-                let mut analyzed_frames: u8 =
+                let analyzed_frames: u8 =
                     rfu_STC_analyzeLLSF(bm_slot_id, packet_p, *frames_p as u16) as u8;
                 packet_p = packet_p.at(analyzed_frames);
                 *frames_p -= analyzed_frames;
@@ -2297,16 +2101,14 @@ pub(crate) unsafe extern "C" fn rfu_STC_PARENT_analyzeRecvPacket() {
                 }
             }
         }
-        bm_slot_id += 1;
     }
 }
-pub(crate) unsafe extern "C" fn rfu_STC_CHILD_analyzeRecvPacket() {
-    let mut frames_remaining: u16 = 0;
-    let mut packet_p: *mut u8 = null_mut();
+unsafe fn rfu_STC_CHILD_analyzeRecvPacket() {
     let mut analyzed_frames: u16 = 0;
-    frames_remaining =
+    let mut frames_remaining: u16 =
         *(&raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[4] as *mut u16) & 0x7F;
-    packet_p = &raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[8];
+    let mut packet_p: *mut u8 =
+        &raw mut (*(*gRfuFixed).STWIBuffer).rxPacketAlloc.rfuPacket8.data[8];
     if frames_remaining == 0 {
         (*gRfuStatic).NIEndRecvFlag = 15;
     }
@@ -2322,23 +2124,16 @@ pub(crate) unsafe extern "C" fn rfu_STC_CHILD_analyzeRecvPacket() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn rfu_STC_analyzeLLSF(
-    slot_id: u8,
-    mut src: *mut u8,
-    last_frame: u16,
-) -> u16 {
+unsafe fn rfu_STC_analyzeLLSF(slot_id: u8, mut src: *mut u8, last_frame: u16) -> u16 {
     let mut llsf_NI: RfuLocalStruct = zeroed();
-    let mut llsf_p: *mut LLSFStruct = null_mut();
-    let mut frames: u32 = 0;
-    let mut i: u8 = 0;
-    let mut retVal: u16 = 0;
-    llsf_p = (&raw const llsf_struct[!((*gRfuLinkStatus).parentChild as i32) & MODE_PARENT as i32])
+    let llsf_p: *mut LLSFStruct = (&raw const llsf_struct
+        [!((*gRfuLinkStatus).parentChild as i32) & MODE_PARENT as i32])
         .cast_mut();
     if last_frame < (*llsf_p).frameSize as u16 {
         return last_frame;
     }
-    frames = 0;
-    i = 0;
+    let mut frames: u32 = 0;
+    let mut i: u8 = 0;
     while i < (*llsf_p).frameSize {
         frames |= shl_i32(
             *({
@@ -2360,7 +2155,7 @@ pub(crate) unsafe extern "C" fn rfu_STC_analyzeLLSF(
     llsf_NI.phase = shr_u32(frames, (*llsf_p).phaseShift as u32) as u8 & (*llsf_p).phaseMask;
     llsf_NI.n = shr_u32(frames, (*llsf_p).nShift as u32) as u8 & (*llsf_p).nMask;
     llsf_NI.frame = frames as u16 & (*llsf_p).framesMask & frames as u16;
-    retVal = llsf_NI.frame + (*llsf_p).frameSize as u16;
+    let retVal: u16 = llsf_NI.frame + (*llsf_p).frameSize as u16;
     if llsf_NI.recvFirst == 0 {
         if (*gRfuLinkStatus).parentChild == MODE_PARENT {
             if shr_i32((*gRfuLinkStatus).connSlotFlag as i32, slot_id as u32) & 1 != 0 {
@@ -2386,11 +2181,9 @@ pub(crate) unsafe extern "C" fn rfu_STC_analyzeLLSF(
                 }
             }
         } else {
-            let mut conSlots: i32 =
-                (*gRfuLinkStatus).connSlotFlag as i32 & llsf_NI.connSlotFlag as i32;
+            let conSlots: i32 = (*gRfuLinkStatus).connSlotFlag as i32 & llsf_NI.connSlotFlag as i32;
             if conSlots != 0 {
-                i = 0;
-                while i < RFU_CHILD_MAX {
+                for i in 0..RFU_CHILD_MAX {
                     if shr_i32(conSlots, i as u32) & 1 != 0 {
                         if llsf_NI.slotState == LCOM_UNI {
                             rfu_STC_UNI_receive(i, &raw mut llsf_NI, src);
@@ -2402,22 +2195,17 @@ pub(crate) unsafe extern "C" fn rfu_STC_analyzeLLSF(
                             rfu_STC_NI_receive_Sender(i, i, &raw mut llsf_NI, src);
                         }
                     }
-                    i += 1;
                 }
             }
         }
     }
-    return retVal;
+    retVal
 }
-pub(crate) unsafe extern "C" fn rfu_STC_UNI_receive(
-    bm_slot_id: u8,
-    llsf_NI: *mut RfuLocalStruct,
-    mut src: *mut u8,
-) {
+unsafe fn rfu_STC_UNI_receive(bm_slot_id: u8, llsf_NI: *mut RfuLocalStruct, mut src: *mut u8) {
     let mut dest: *mut u8 = null_mut();
     let mut size: u32 = 0;
-    let mut slotStatusUNI: *mut RfuSlotStatusUNI = gRfuSlotStatusUNI[bm_slot_id];
-    let mut UNI_recv: *mut UNIRecv = &raw mut (*slotStatusUNI).recv;
+    let slotStatusUNI: *mut RfuSlotStatusUNI = gRfuSlotStatusUNI[bm_slot_id];
+    let UNI_recv: *mut UNIRecv = &raw mut (*slotStatusUNI).recv;
     (*UNI_recv).errorCode = 0;
     'force_tail_merge: {
         if (*gRfuSlotStatusUNI[bm_slot_id]).recvBufferSize < (*llsf_NI).frame as u32 {
@@ -2449,29 +2237,27 @@ pub(crate) unsafe extern "C" fn rfu_STC_UNI_receive(
         (*gRfuStatic).recvErrorFlag |= shl_i32(16, bm_slot_id as u32) as u8;
     }
 }
-pub(crate) unsafe extern "C" fn rfu_STC_NI_receive_Sender(
+unsafe fn rfu_STC_NI_receive_Sender(
     NI_slot: u8,
     bm_flag: u8,
     llsf_NI: *mut RfuLocalStruct,
     data_p: *mut u8,
 ) {
-    let mut NI_comm: *mut NIComm = &raw mut (*gRfuSlotStatusNI[NI_slot]).send;
-    let mut state: u16 = (*NI_comm).state;
-    let mut n: u8 = (*NI_comm).n[(*llsf_NI).phase];
-    let mut i: u8 = 0;
+    let NI_comm: *mut NIComm = &raw mut (*gRfuSlotStatusNI[NI_slot]).send;
+    let state: u16 = (*NI_comm).state;
+    let n: u8 = (*NI_comm).n[(*llsf_NI).phase];
     let mut imeBak: u16 = 0;
-    if (*llsf_NI).slotState == LCOM_NI && state == SLOT_STATE_SENDING
+    if ((*llsf_NI).slotState == LCOM_NI && state == SLOT_STATE_SENDING
         || (*llsf_NI).slotState == LCOM_NI_START && state == SLOT_STATE_SEND_START
-        || (*llsf_NI).slotState == LCOM_NI_END && state == SLOT_STATE_SEND_LAST
+        || (*llsf_NI).slotState == LCOM_NI_END && state == SLOT_STATE_SEND_LAST)
+        && (*NI_comm).n[(*llsf_NI).phase] == (*llsf_NI).n
     {
-        if (*NI_comm).n[(*llsf_NI).phase] == (*llsf_NI).n {
-            (*NI_comm).recvAckFlag[(*llsf_NI).phase] |= shl_i32(1, bm_flag as u32) as u8;
-        }
+        (*NI_comm).recvAckFlag[(*llsf_NI).phase] |= shl_i32(1, bm_flag as u32) as u8;
     }
     if (*NI_comm).recvAckFlag[(*llsf_NI).phase] as i32 & (*NI_comm).bmSlot as i32
         == (*NI_comm).bmSlot as i32
     {
-        (*NI_comm).n[(*llsf_NI).phase] = (*NI_comm).n[(*llsf_NI).phase] + 1 & 3;
+        (*NI_comm).n[(*llsf_NI).phase] = ((*NI_comm).n[(*llsf_NI).phase] + 1) & 3;
         (*NI_comm).recvAckFlag[(*llsf_NI).phase] = 0;
         if (*NI_comm).state as i32 + 32735 <= 1 {
             if (*NI_comm).state == SLOT_STATE_SEND_START {
@@ -2487,14 +2273,12 @@ pub(crate) unsafe extern "C" fn rfu_STC_NI_receive_Sender(
                 _ => {
                     (*NI_comm).phase = 0;
                     if (*NI_comm).state == SLOT_STATE_SEND_START {
-                        i = 0;
-                        while i < WINDOW_COUNT {
+                        for i in 0..WINDOW_COUNT {
                             (*NI_comm).n[i] = 1;
                             (*NI_comm).now_p[i] = ((*NI_comm).src as *mut u8)
                                 .at((*NI_comm).payloadSize as i32 * i as i32)
                                 as *mut c_void
                                 as *mut u8;
-                            i += 1;
                         }
                         (*NI_comm).remainSize = (*NI_comm).dataSize;
                         (*NI_comm).state = SLOT_STATE_SENDING;
@@ -2517,24 +2301,24 @@ pub(crate) unsafe extern "C" fn rfu_STC_NI_receive_Sender(
         ) & 1
             != 0
     {
-        imeBak = (67109384 as usize as *mut u16).read_volatile();
-        volatile_write(67109384 as usize as *mut u16, 0);
+        imeBak = (67109384_usize as *mut u16).read_volatile();
+        volatile_write(67109384_usize as *mut u16, 0);
         (*gRfuStatic).recvRenewalFlag |= shl_i32(16, bm_flag as u32) as u8;
         (*gRfuSlotStatusNI[bm_flag]).send.failCounter = 0;
-        volatile_write(67109384 as usize as *mut u16, imeBak);
+        volatile_write(67109384_usize as *mut u16, imeBak);
     }
 }
-pub(crate) unsafe extern "C" fn rfu_STC_NI_receive_Receiver(
+unsafe fn rfu_STC_NI_receive_Receiver(
     bm_slot_id: u8,
     llsf_NI: *mut RfuLocalStruct,
     mut data_p: *mut u8,
 ) {
     let mut imeBak: u16 = 0;
     let mut state_check: u32 = 0;
-    let mut slotStatus_NI: *mut RfuSlotStatusNI = gRfuSlotStatusNI[bm_slot_id];
-    let mut recvSlot: *mut NIComm = &raw mut (*slotStatus_NI).recv;
-    let mut state: u16 = (*slotStatus_NI).recv.state;
-    let mut n: u8 = (*slotStatus_NI).recv.n[(*llsf_NI).phase];
+    let slotStatus_NI: *mut RfuSlotStatusNI = gRfuSlotStatusNI[bm_slot_id];
+    let recvSlot: *mut NIComm = &raw mut (*slotStatus_NI).recv;
+    let state: u16 = (*slotStatus_NI).recv.state;
+    let n: u8 = (*slotStatus_NI).recv.n[(*llsf_NI).phase];
     if (*llsf_NI).slotState == LCOM_NI_END {
         (*gRfuStatic).NIEndRecvFlag |= shl_i32(1, bm_slot_id as u32) as u8;
         if (*slotStatus_NI).recv.state == SLOT_STATE_RECEIVING {
@@ -2560,20 +2344,18 @@ pub(crate) unsafe extern "C" fn rfu_STC_NI_receive_Receiver(
             state_check = 1;
         }
     }
-    if state_check != 0 {
-        if (*llsf_NI).n as i32 == (*recvSlot).n[(*llsf_NI).phase] as i32 + 1 & 3 {
-            (*gRfuFixed).fastCopyPtr.unwrap_unchecked()(
-                &raw mut data_p,
-                &raw mut (*recvSlot).now_p[(*llsf_NI).phase],
-                (*llsf_NI).frame as i32,
-            );
-            if (*recvSlot).state == SLOT_STATE_RECEIVING {
-                (*recvSlot).now_p[(*llsf_NI).phase] =
-                    (*recvSlot).now_p[(*llsf_NI).phase].at(3 * (*recvSlot).payloadSize as i32);
-            }
-            (*recvSlot).remainSize -= (*llsf_NI).frame as u32;
-            (*recvSlot).n[(*llsf_NI).phase] = (*llsf_NI).n;
+    if state_check != 0 && (*llsf_NI).n as i32 == ((*recvSlot).n[(*llsf_NI).phase] as i32 + 1) & 3 {
+        (*gRfuFixed).fastCopyPtr.unwrap_unchecked()(
+            &raw mut data_p,
+            &raw mut (*recvSlot).now_p[(*llsf_NI).phase],
+            (*llsf_NI).frame as i32,
+        );
+        if (*recvSlot).state == SLOT_STATE_RECEIVING {
+            (*recvSlot).now_p[(*llsf_NI).phase] =
+                (*recvSlot).now_p[(*llsf_NI).phase].at(3 * (*recvSlot).payloadSize as i32);
         }
+        (*recvSlot).remainSize -= (*llsf_NI).frame as u32;
+        (*recvSlot).n[(*llsf_NI).phase] = (*llsf_NI).n;
     }
     if (*recvSlot).errorCode == 0 {
         (*recvSlot).phase = (*llsf_NI).phase;
@@ -2581,21 +2363,17 @@ pub(crate) unsafe extern "C" fn rfu_STC_NI_receive_Receiver(
             || (*recvSlot).n[(*llsf_NI).phase] != n
             || (*recvSlot).n[(*llsf_NI).phase] == (*llsf_NI).n
         {
-            imeBak = (67109384 as usize as *mut u16).read_volatile();
-            volatile_write(67109384 as usize as *mut u16, 0);
+            imeBak = (67109384_usize as *mut u16).read_volatile();
+            volatile_write(67109384_usize as *mut u16, 0);
             (*gRfuStatic).recvRenewalFlag |= shl_i32(1, bm_slot_id as u32) as u8;
             (*recvSlot).failCounter = 0;
-            volatile_write(67109384 as usize as *mut u16, imeBak);
+            volatile_write(67109384_usize as *mut u16, imeBak);
         }
     }
 }
-pub(crate) unsafe extern "C" fn rfu_STC_NI_initSlot_asRecvControllData(
-    bm_slot_id: u8,
-    NI_comm: *mut NIComm,
-) {
+unsafe fn rfu_STC_NI_initSlot_asRecvControllData(bm_slot_id: u8, NI_comm: *mut NIComm) {
     let mut llFrameSize_p: *mut u8 = null_mut();
     let mut llFrameSize: u32 = 0;
-    let mut bm_slot_flag: u8 = 0;
     if (*gRfuLinkStatus).parentChild == MODE_PARENT {
         llFrameSize = 3;
         llFrameSize_p = &raw mut (*gRfuLinkStatus).remainLLFrameSizeParent;
@@ -2603,7 +2381,7 @@ pub(crate) unsafe extern "C" fn rfu_STC_NI_initSlot_asRecvControllData(
         llFrameSize = 2;
         llFrameSize_p = &raw mut (*gRfuLinkStatus).remainLLFrameSizeChild[bm_slot_id];
     }
-    bm_slot_flag = shl_i32(1, bm_slot_id as u32) as u8;
+    let bm_slot_flag: u8 = shl_i32(1, bm_slot_id as u32) as u8;
     if (*NI_comm).state == 0 {
         if (*llFrameSize_p as u32) < llFrameSize {
             (*NI_comm).state = SLOT_STATE_RECV_IGNORE;
@@ -2622,12 +2400,8 @@ pub(crate) unsafe extern "C" fn rfu_STC_NI_initSlot_asRecvControllData(
         }
     }
 }
-pub(crate) unsafe extern "C" fn rfu_STC_NI_initSlot_asRecvDataEntity(
-    bm_slot_id: u8,
-    NI_comm: *mut NIComm,
-) {
+unsafe fn rfu_STC_NI_initSlot_asRecvDataEntity(bm_slot_id: u8, NI_comm: *mut NIComm) {
     let mut bm_slot_flag: u8 = 0;
-    let mut win_id: u8 = 0;
     if (*NI_comm).dataType == 1 {
         (*NI_comm).now_p[0] =
             &raw mut (*gRfuLinkStatus).partner[bm_slot_id].serialNo as *mut c_void as *mut u8;
@@ -2643,27 +2417,23 @@ pub(crate) unsafe extern "C" fn rfu_STC_NI_initSlot_asRecvDataEntity(
         }
         (*NI_comm).now_p[0] = (*gRfuSlotStatusNI[bm_slot_id]).recvBuffer as *mut u8;
     }
-    win_id = 0;
-    while win_id < WINDOW_COUNT {
+    for win_id in 0..WINDOW_COUNT {
         (*NI_comm).n[win_id] = 0;
         (*NI_comm).now_p[win_id] =
             (*NI_comm).now_p[0].at((*NI_comm).payloadSize as i32 * win_id as i32);
-        win_id += 1;
     }
     (*NI_comm).remainSize = (*NI_comm).dataSize;
     (*NI_comm).state = SLOT_STATE_RECEIVING;
 }
-pub(crate) unsafe extern "C" fn rfu_NI_checkCommFailCounter() {
+unsafe fn rfu_NI_checkCommFailCounter() {
     let mut imeBak: u16 = 0;
     let mut recvRenewalFlag: u32 = 0;
     let mut bm_slot_flag: u8 = 0;
-    let mut bm_slot_id: u8 = 0;
     if (*gRfuLinkStatus).sendSlotNIFlag as i32 | (*gRfuLinkStatus).recvSlotNIFlag as i32 != 0 {
-        imeBak = (67109384 as usize as *mut u16).read_volatile();
-        volatile_write(67109384 as usize as *mut u16, 0);
+        imeBak = (67109384_usize as *mut u16).read_volatile();
+        volatile_write(67109384_usize as *mut u16, 0);
         recvRenewalFlag = ((*gRfuStatic).recvRenewalFlag >> 4) as u32;
-        bm_slot_id = 0;
-        while bm_slot_id < RFU_CHILD_MAX {
+        for bm_slot_id in 0..RFU_CHILD_MAX {
             bm_slot_flag = shl_i32(1, bm_slot_id as u32) as u8;
             if (*gRfuLinkStatus).sendSlotNIFlag as i32 & bm_slot_flag as i32 != 0
                 && (*gRfuStatic).recvRenewalFlag as i32 & bm_slot_flag as i32 == 0
@@ -2675,16 +2445,14 @@ pub(crate) unsafe extern "C" fn rfu_NI_checkCommFailCounter() {
             {
                 (*gRfuSlotStatusNI[bm_slot_id]).recv.failCounter += 1;
             }
-            bm_slot_id += 1;
         }
         (*gRfuStatic).recvRenewalFlag = 0;
-        volatile_write(67109384 as usize as *mut u16, imeBak);
+        volatile_write(67109384_usize as *mut u16, imeBak);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_REQ_noise() {
+pub unsafe fn rfu_REQ_noise() {
     STWI_set_Callback_M(core::mem::transmute::<
-        Option<unsafe extern "C" fn(u8, u16)>,
+        Option<unsafe fn(u8, u16)>,
         *mut c_void,
     >(Some(rfu_STC_REQ_callback)));
     STWI_send_TestModeREQ(1, 0);

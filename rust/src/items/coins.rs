@@ -1,136 +1,179 @@
+//! Game Corner coins (was src/coins.c): the player's coin count and the
+//! window that shows it.
+//!
+//! The count lives in the save (`SaveBlock1::coins`), XORed with the save's
+//! encryption key like the player's money. [`Coins`] is the safe API for it.
+//! The `extern "C"` functions below keep the C names that the rest of the
+//! game still calls; they only hand [`Coins`] the save blocks.
+
 use crate::ffi::{
     AddTextPrinterParameterized, AddWindow, ConvertIntToDecimalStringN,
     DrawStdFrameWithCustomTileAndPalette, FONT_NORMAL, FillWindowPixelBuffer, PutWindowTilemap,
-    RemoveWindow, SAVE2_ENCRYPTION_KEY_OFFSET, SetWindowTemplateFields, StringExpandPlaceholders,
-    WindowTemplate, gStringVar1, gStringVar4,
+    RemoveWindow, SetWindowTemplateFields, StringExpandPlaceholders, WindowTemplate, gStringVar1,
+    gStringVar4,
 };
+use crate::save_blocks::{save_block1, save_block2};
+use crate::types::{SaveBlock1, SaveBlock2};
 use core::ffi::c_int;
-use core::ptr::addr_of;
 
-const MAX_COINS: u16 = 9_999;
-const STR_CONV_MODE_RIGHT_ALIGN: c_int = 1;
+/// The most coins the player can hold.
+pub const MAX_COINS: u16 = 9_999;
 
-/// `offsetof(struct SaveBlock1, coins)`
-const SAVE1_COINS_OFFSET: usize = 0x494;
-
-unsafe extern "C" {
-    static mut gSaveBlock1Ptr: *mut u8;
-    static mut gSaveBlock2Ptr: *mut u8;
-    static gText_Coins: u8;
-
-    fn GetStringRightAlignXOffset(font_id: c_int, text: *const u8, total_width: c_int) -> c_int;
-    fn ClearStdWindowAndFrame(window_id: u8, copy_to_vram: u8);
+/// A save's coin count, decoded with its encryption key.
+pub struct Coins<'a> {
+    stored: &'a mut u16,
+    key: u16,
 }
 
-/// `&gSaveBlock1Ptr->coins`
-#[inline]
-unsafe fn coins_ptr() -> *mut u16 {
-    unsafe { gSaveBlock1Ptr.add(SAVE1_COINS_OFFSET).cast::<u16>() }
-}
+impl<'a> Coins<'a> {
+    /// The coins of this save.
+    pub fn new(save1: &'a mut SaveBlock1, save2: &SaveBlock2) -> Self {
+        Self::from_parts(&mut save1.coins, save2.encryptionKey)
+    }
 
-/// `gSaveBlock2Ptr->encryptionKey`
-#[inline]
-unsafe fn encryption_key() -> u32 {
-    unsafe {
-        gSaveBlock2Ptr
-            .add(SAVE2_ENCRYPTION_KEY_OFFSET)
-            .cast::<u32>()
-            .read()
+    /// Coins stored in `stored`, encrypted with `key` (only its low 16 bits
+    /// matter, as in C).
+    pub fn from_parts(stored: &'a mut u16, key: u32) -> Self {
+        Self {
+            stored,
+            key: key as u16,
+        }
+    }
+
+    /// How many coins the player has.
+    pub fn get(&self) -> u16 {
+        *self.stored ^ self.key
+    }
+
+    /// Sets the player's coins (not capped; the callers stay in range).
+    pub fn set(&mut self, amount: u16) {
+        *self.stored = amount ^ self.key;
+    }
+
+    /// Adds coins, up to [`MAX_COINS`]. Returns false, changing nothing, if
+    /// the player already has the maximum.
+    pub fn add(&mut self, amount: u16) -> bool {
+        let owned = self.get();
+        if owned >= MAX_COINS {
+            return false;
+        }
+        self.set(owned.saturating_add(amount).min(MAX_COINS));
+        true
+    }
+
+    /// Takes coins away. Returns false, changing nothing, if the player has
+    /// fewer than `amount`.
+    pub fn remove(&mut self, amount: u16) -> bool {
+        match self.get().checked_sub(amount) {
+            Some(left) => {
+                self.set(left);
+                true
+            }
+            None => false,
+        }
     }
 }
 
-#[unsafe(link_section = "ewram_data")]
-static mut COINS_WINDOW_ID: u8 = 0;
+// ------------------------------------------------------------------ C names
 
-const fn decode_coins(stored: u16, key: u32) -> u16 {
-    (stored as u32 ^ key) as u16
+/// `GetStringRightAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringRightAlignXOffset(a0: c_int, a1: *const u8, a2: c_int) -> c_int {
+    unsafe { crate::international_string_util::GetStringRightAlignXOffset(a0, a1 as _, a2) }
+}
+/// `ClearStdWindowAndFrame` with this module's view of its types.
+#[inline]
+unsafe fn ClearStdWindowAndFrame(a0: u8, a1: u8) {
+    unsafe {
+        crate::menu::ClearStdWindowAndFrame(a0, a1);
+    }
 }
 
-const fn encode_coins(amount: u16, key: u32) -> u16 {
-    (amount as u32 ^ key) as u16
+/// The save's coins.
+///
+/// # Safety
+/// The save blocks must be set up (they are, from boot on), and nothing else
+/// may be using them while the result lives.
+unsafe fn save_coins() -> Coins<'static> {
+    unsafe { Coins::new(save_block1(), save_block2()) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrintCoinsString(coin_amount: u32) {
+pub unsafe fn GetCoins() -> u16 {
+    unsafe { save_coins() }.get()
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn SetCoins(amount: u16) {
+    unsafe { save_coins() }.set(amount);
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn AddCoins(amount: u16) -> u8 {
+    unsafe { save_coins() }.add(amount).into()
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn RemoveCoins(amount: u16) -> u8 {
+    unsafe { save_coins() }.remove(amount).into()
+}
+
+// ------------------------------------------------------------ coins window
+
+/// The window showing the player's coins, while it is open.
+#[unsafe(link_section = "ewram_data")]
+static COINS_WINDOW_ID: crate::global::Global<u8> = crate::global::Global::new(0);
+
+const STR_CONV_MODE_RIGHT_ALIGN: c_int = 1;
+
+/// Prints "`amount` COINS" right-aligned in the coins window.
+#[unsafe(no_mangle)]
+pub unsafe fn PrintCoinsString(amount: u32) {
     unsafe {
         ConvertIntToDecimalStringN(
-            (&raw mut gStringVar1).cast::<u8>(),
-            coin_amount as i32,
+            (&raw mut gStringVar1).cast(),
+            amount as i32,
             STR_CONV_MODE_RIGHT_ALIGN,
             4,
-        )
-    };
-    unsafe { StringExpandPlaceholders((&raw mut gStringVar4).cast::<u8>(), addr_of!(gText_Coins)) };
-    let x_align = unsafe {
-        GetStringRightAlignXOffset(
-            c_int::from(FONT_NORMAL),
-            (&raw const gStringVar4).cast::<u8>(),
-            0x40,
-        )
-    };
-    let window_id = unsafe { (&raw const COINS_WINDOW_ID).read() };
-    let _ = unsafe {
+        );
+        StringExpandPlaceholders(
+            (&raw mut gStringVar4).cast(),
+            &raw const (*(&raw const crate::data::strings::gText_Coins).cast::<u8>()),
+        );
+        let text = (&raw const gStringVar4).cast::<u8>();
+        let x = GetStringRightAlignXOffset(c_int::from(FONT_NORMAL), text, 0x40);
         AddTextPrinterParameterized(
-            window_id,
+            COINS_WINDOW_ID.get(),
             FONT_NORMAL,
-            (&raw const gStringVar4).cast::<u8>(),
-            x_align as u8,
+            text,
+            x as u8,
             1,
             0,
             None,
-        )
-    };
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowCoinsWindow(coin_amount: u32, x: u8, y: u8) {
-    let mut template = WindowTemplate::default();
-    unsafe { SetWindowTemplateFields(&raw mut template, 0, x, y, 8, 2, 0xf, 0x141) };
-    let window_id = unsafe { AddWindow(&raw const template) } as u8;
-    unsafe { (&raw mut COINS_WINDOW_ID).write(window_id) };
-    unsafe { FillWindowPixelBuffer(window_id, 0) };
-    unsafe { PutWindowTilemap(window_id) };
-    unsafe { DrawStdFrameWithCustomTileAndPalette(window_id, 0, 0x214, 0xe) };
-    unsafe { PrintCoinsString(coin_amount) };
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HideCoinsWindow() {
-    let window_id = unsafe { (&raw const COINS_WINDOW_ID).read() };
-    unsafe { ClearStdWindowAndFrame(window_id, 1) };
-    unsafe { RemoveWindow(window_id) };
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetCoins() -> u16 {
-    decode_coins(unsafe { coins_ptr().read() }, unsafe { encryption_key() })
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCoins(coin_amount: u16) {
-    let stored = encode_coins(coin_amount, unsafe { encryption_key() });
-    unsafe { coins_ptr().write(stored) };
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddCoins(to_add: u16) -> u8 {
-    let owned = unsafe { GetCoins() };
-    if owned >= MAX_COINS {
-        return 0;
+        );
     }
-    let amount = (u32::from(owned) + u32::from(to_add)).min(u32::from(MAX_COINS)) as u16;
-    unsafe { SetCoins(amount) };
-    1
 }
 
+/// Opens the coins window at tile (x, y), showing `amount`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RemoveCoins(to_subtract: u16) -> u8 {
-    let owned = unsafe { GetCoins() };
-    if owned >= to_subtract {
-        unsafe { SetCoins(owned - to_subtract) };
-        1
-    } else {
-        0
+pub unsafe fn ShowCoinsWindow(amount: u32, x: u8, y: u8) {
+    let mut template = WindowTemplate::default();
+    unsafe {
+        SetWindowTemplateFields(&raw mut template, 0, x, y, 8, 2, 0xf, 0x141);
+        COINS_WINDOW_ID.set(AddWindow(&raw const template) as u8);
+        FillWindowPixelBuffer(COINS_WINDOW_ID.get(), 0);
+        PutWindowTilemap(COINS_WINDOW_ID.get());
+        DrawStdFrameWithCustomTileAndPalette(COINS_WINDOW_ID.get(), 0, 0x214, 0xe);
+        PrintCoinsString(amount);
+    }
+}
+
+/// Closes the coins window.
+#[unsafe(no_mangle)]
+pub unsafe fn HideCoinsWindow() {
+    unsafe {
+        ClearStdWindowAndFrame(COINS_WINDOW_ID.get(), 1);
+        RemoveWindow(COINS_WINDOW_ID.get());
     }
 }
 
@@ -139,16 +182,38 @@ mod tests {
     use super::*;
 
     #[test]
-    fn save_offsets_match_the_c_structures() {
-        assert_eq!(SAVE1_COINS_OFFSET, 0x494);
-        assert_eq!(SAVE2_ENCRYPTION_KEY_OFFSET, 0xac);
+    fn coins_are_stored_encrypted() {
+        let mut stored = 0;
+        let mut coins = Coins::from_parts(&mut stored, 0xdead_beef);
+        coins.set(9_999);
+        assert_eq!(coins.get(), 9_999);
+        assert_eq!(stored, 9_999 ^ 0xbeef);
     }
 
     #[test]
-    fn coin_encryption_matches_the_c_xor_conversion() {
-        let key = 0xdead_beef;
-        let stored = encode_coins(9_999, key);
-        assert_eq!(stored, 9_999 ^ 0xbeef);
-        assert_eq!(decode_coins(stored, key), 9_999);
+    fn adding_caps_at_the_maximum() {
+        let mut stored = 0;
+        let mut coins = Coins::from_parts(&mut stored, 0x1234);
+        coins.set(9_990);
+        assert!(coins.add(50));
+        assert_eq!(coins.get(), MAX_COINS);
+        // already full: nothing changes
+        assert!(!coins.add(1));
+        assert_eq!(coins.get(), MAX_COINS);
+        // a huge amount doesn't wrap around
+        coins.set(5);
+        assert!(coins.add(u16::MAX));
+        assert_eq!(coins.get(), MAX_COINS);
+    }
+
+    #[test]
+    fn removing_needs_enough_coins() {
+        let mut stored = 0;
+        let mut coins = Coins::from_parts(&mut stored, 0);
+        coins.set(100);
+        assert!(!coins.remove(101));
+        assert_eq!(coins.get(), 100);
+        assert!(coins.remove(100));
+        assert_eq!(coins.get(), 0);
     }
 }

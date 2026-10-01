@@ -91,60 +91,133 @@ static WINDOW_TEMPLATES: [WindowTemplate; 2] = [
 
 static TEXT_COLOR: [u8; 3] = [0, 2, 3];
 
-unsafe extern "C" {
-    static gText_DexNational: u8;
-    static gText_DexHoenn: u8;
-    static gText_PokedexDiploma: u8;
-    static gStandardMenuPalette: u16;
-
-    fn SetMainCallback2(callback: MainCallback);
-    fn SetVBlankCallback(callback: Option<unsafe extern "C" fn()>);
-    fn BeginNormalPaletteFade(
-        selected_palettes: u32,
-        delay: i8,
-        start_y: u8,
-        target_y: u8,
-        blend_color: u16,
-    ) -> u8;
-    fn BlendPalettes(selected_palettes: u32, coeff: u8, color: u16);
-    fn UpdatePaletteFade() -> u8;
-    fn TransferPlttBuffer();
-    fn ResetPaletteFade();
-    fn LoadPalette(src: *const c_void, offset: u16, size: u16);
-    fn ScanlineEffect_Stop();
-    fn ResetTempTileDataBuffers();
-    fn DecompressAndCopyTileDataToVram(
-        bg: u8,
-        src: *const c_void,
-        size: u32,
-        offset: u16,
-        mode: u8,
-    ) -> *mut c_void;
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn HasAllMons() -> u16;
-    fn DeactivateAllTextPrinters();
-    fn AddTextPrinterParameterized4(
-        window_id: u8,
-        font_id: u8,
-        left: u8,
-        top: u8,
-        letter_spacing: u8,
-        line_spacing: u8,
-        color: *const u8,
-        speed: i8,
-        string: *const u8,
-    );
-    fn CB2_ReturnToFieldFadeFromBlack();
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: MainCallback) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
+}
+/// `SetVBlankCallback` with this module's view of its types.
+#[inline]
+unsafe fn SetVBlankCallback(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetVBlankCallback(a0);
+    }
+}
+/// `BeginNormalPaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8 {
+    unsafe { crate::palette::BeginNormalPaletteFade(a0, a1, a2, a3, a4) }
+}
+/// `BlendPalettes` with this module's view of its types.
+#[inline]
+unsafe fn BlendPalettes(a0: u32, a1: u8, a2: u16) {
+    unsafe {
+        crate::palette::BlendPalettes(a0, a1, a2);
+    }
+}
+/// `UpdatePaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn UpdatePaletteFade() -> u8 {
+    unsafe { crate::palette::UpdatePaletteFade() }
+}
+/// `TransferPlttBuffer` with this module's view of its types.
+#[inline]
+unsafe fn TransferPlttBuffer() {
+    unsafe {
+        crate::palette::TransferPlttBuffer();
+    }
+}
+/// `ResetPaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn ResetPaletteFade() {
+    unsafe {
+        crate::palette::ResetPaletteFade();
+    }
+}
+/// `LoadPalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadPalette(a0: *const c_void, a1: u16, a2: u16) {
+    unsafe {
+        crate::palette::LoadPalette(a0 as _, a1, a2);
+    }
+}
+/// `ScanlineEffect_Stop` with this module's view of its types.
+#[inline]
+unsafe fn ScanlineEffect_Stop() {
+    unsafe {
+        crate::scanline_effect::ScanlineEffect_Stop();
+    }
+}
+/// `ResetTempTileDataBuffers` with this module's view of its types.
+#[inline]
+unsafe fn ResetTempTileDataBuffers() {
+    unsafe {
+        crate::menu::ResetTempTileDataBuffers();
+    }
+}
+/// `DecompressAndCopyTileDataToVram` with this module's view of its types.
+#[inline]
+unsafe fn DecompressAndCopyTileDataToVram(
+    a0: u8,
+    a1: *const c_void,
+    a2: u32,
+    a3: u16,
+    a4: u8,
+) -> *mut c_void {
+    unsafe { crate::menu::DecompressAndCopyTileDataToVram(a0, a1 as _, a2, a3, a4) as *mut c_void }
+}
+/// `FreeTempTileDataBuffersIfPossible` with this module's view of its types.
+#[inline]
+unsafe fn FreeTempTileDataBuffersIfPossible() -> u8 {
+    unsafe { crate::menu::FreeTempTileDataBuffersIfPossible() }
+}
+/// `HasAllMons` with this module's view of its types.
+#[inline]
+unsafe fn HasAllMons() -> u16 {
+    unsafe { crate::pokedex::HasAllMons() }
+}
+/// `DeactivateAllTextPrinters` with this module's view of its types.
+#[inline]
+unsafe fn DeactivateAllTextPrinters() {
+    unsafe {
+        crate::text::DeactivateAllTextPrinters();
+    }
+}
+/// `AddTextPrinterParameterized4` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized4(
+    a0: u8,
+    a1: u8,
+    a2: u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: *const u8,
+    a7: i8,
+    a8: *const u8,
+) {
+    unsafe {
+        crate::menu::AddTextPrinterParameterized4(a0, a1, a2, a3, a4, a5, a6 as _, a7, a8 as _);
+    }
+}
+/// `CB2_ReturnToFieldFadeFromBlack` with this module's view of its types.
+#[inline]
+unsafe fn CB2_ReturnToFieldFadeFromBlack() {
+    unsafe {
+        crate::overworld::CB2_ReturnToFieldFadeFromBlack();
+    }
 }
 
-unsafe extern "C" fn vblank_cb() {
+unsafe fn vblank_cb() {
     unsafe { LoadOam() };
     unsafe { ProcessSpriteCopyRequests() };
     unsafe { TransferPlttBuffer() };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ShowDiploma() {
+pub unsafe fn CB2_ShowDiploma() {
     unsafe { SetVBlankCallback(None) };
     unsafe { SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_0) };
     // BG3CNT..BG0CNT, then BG3..BG0 scroll, in the original's order.
@@ -159,7 +232,7 @@ pub unsafe extern "C" fn CB2_ShowDiploma() {
     unsafe { dma3_fill_large(0, OAM as *mut u8, OAM_SIZE, true) };
     unsafe { dma3_fill_large(0, PLTT as *mut u8, PLTT_SIZE as u32, false) };
     unsafe { ScanlineEffect_Stop() };
-    unsafe { ResetTasks() };
+    ResetTasks();
     unsafe { ResetSpriteData() };
     unsafe { ResetPaletteFade() };
     unsafe { FreeAllSpritePalettes() };
@@ -185,30 +258,30 @@ pub unsafe extern "C" fn CB2_ShowDiploma() {
     unsafe { EnableInterrupts(1) };
     unsafe { SetVBlankCallback(Some(vblank_cb)) };
     unsafe { SetMainCallback2(main_cb2) };
-    unsafe { CreateTask(task_fade_in, 0) };
+    CreateTask(task_fade_in, 0);
 }
 
-unsafe extern "C" fn main_cb2() {
-    unsafe { RunTasks() };
+unsafe fn main_cb2() {
+    RunTasks();
     unsafe { AnimateSprites() };
     unsafe { BuildOamBuffer() };
     unsafe { UpdatePaletteFade() };
 }
 
-unsafe extern "C" fn task_fade_in(task_id: u8) {
+unsafe fn task_fade_in(task_id: u8) {
     if !unsafe { palette_fade_active() } {
         unsafe { set_task_func(task_id, task_wait_for_key_press) };
     }
 }
 
-unsafe extern "C" fn task_wait_for_key_press(task_id: u8) {
+unsafe fn task_wait_for_key_press(task_id: u8) {
     if unsafe { joy_new(A_BUTTON | B_BUTTON) } {
         unsafe { BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK) };
         unsafe { set_task_func(task_id, task_fade_out) };
     }
 }
 
-unsafe extern "C" fn task_fade_out(task_id: u8) {
+unsafe fn task_fade_out(task_id: u8) {
     if !unsafe { palette_fade_active() } {
         unsafe { Free((&raw const TILEMAP).read()) };
         unsafe { FreeAllWindowBuffers() };
@@ -222,12 +295,27 @@ unsafe fn display_text() {
     let var4 = (&raw mut gStringVar4).cast::<u8>();
     if unsafe { HasAllMons() } != 0 {
         unsafe { SetGpuReg(REG_OFFSET_BG1HOFS, DISPLAY_WIDTH + 16) };
-        unsafe { StringCopy(var1, &raw const gText_DexNational) };
+        unsafe {
+            StringCopy(
+                var1,
+                &raw const (*(&raw const crate::data::strings::gText_DexNational).cast::<u8>()),
+            )
+        };
     } else {
         unsafe { SetGpuReg(REG_OFFSET_BG1HOFS, 0) };
-        unsafe { StringCopy(var1, &raw const gText_DexHoenn) };
+        unsafe {
+            StringCopy(
+                var1,
+                &raw const (*(&raw const crate::data::strings::gText_DexHoenn).cast::<u8>()),
+            )
+        };
     }
-    unsafe { StringExpandPlaceholders(var4, &raw const gText_PokedexDiploma) };
+    unsafe {
+        StringExpandPlaceholders(
+            var4,
+            &raw const (*(&raw const crate::data::strings::gText_PokedexDiploma).cast::<u8>()),
+        )
+    };
     unsafe {
         AddTextPrinterParameterized4(
             0,
@@ -262,7 +350,8 @@ unsafe fn init_window() {
     unsafe { DeactivateAllTextPrinters() };
     unsafe {
         LoadPalette(
-            (&raw const gStandardMenuPalette).cast(),
+            (&raw const (*(&raw const crate::data::menu::gStandardMenuPalette).cast::<u16>()))
+                .cast(),
             15 * 16,
             PLTT_SIZE_4BPP,
         )

@@ -3,37 +3,125 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::too_many_arguments,
+    clippy::unnecessary_cast,
+    dead_code,
+    unused_assignments
 )]
 
+use crate::bg::{
+    ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect_Palette0, HideBg, ShowBg,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::gpu_regs::{ClearGpuRegBits, SetGpuReg, SetGpuRegBits};
+use crate::list_menu::{AddScrollIndicatorArrowPair, RemoveScrollIndicatorArrowPair};
+use crate::menu::{
+    AddTextPrinterParameterized3, DecompressAndCopyTileDataToVram,
+    FreeTempTileDataBuffersIfPossible,
+};
+use crate::mystery_gift_menu::{
+    MG_DrawCheckerboardPattern, PrintMysteryGiftOrEReaderHeader, gGiftIsFromEReader,
+};
+use crate::palette::{BeginNormalPaletteFade, LoadPalette, UpdatePaletteFade, gPaletteFade};
+use crate::pokemon_icon::{
+    CreateMonIconNoPersonality, FreeAndDestroyMonIconSprite, FreeMonIconPalettes,
+    GetIconSpeciesNoPersonality, LoadMonIconPalettes,
+};
+use crate::sprite::gSprites;
+use crate::sprite::{FreeSpritePaletteByTag, FreeSpriteTilesByTag};
+use crate::text::GetFontAttribute;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{CopyWindowToVram, FillWindowPixelBuffer, PutWindowTilemap, RemoveWindow};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `CopyRectToBgTilemapBufferRect` with this module's view of its types.
+#[inline]
+unsafe fn CopyRectToBgTilemapBufferRect(
+    a0: u8,
+    a1: *mut c_void,
+    a2: u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: u8,
+    a7: u8,
+    a8: u8,
+    a9: u8,
+    a10: u8,
+    a11: i16,
+    a12: i16,
+) {
+    unsafe {
+        crate::bg::CopyRectToBgTilemapBufferRect(
+            a0, a1 as _, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
+        );
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `GetStringWidth` with this module's view of its types.
+#[inline]
+unsafe fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32 {
+    unsafe { crate::text::GetStringWidth(a0, a1 as _, a2) }
+}
+/// `LoadCompressedSpriteSheetUsingHeap` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheetUsingHeap(a0 as _) }
+}
+/// `LoadSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
+    unsafe { crate::sprite::LoadSpritePalette(a0 as _) }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
 // Data tables (translate with cdata.py): sCard_TextColorTable sCard_FooterTextOffsets sCard_WindowTemplates sWonderCardBgPal1 sWonderCardBgPal2 sWonderCardBgPal3 sWonderCardBgPal4 sWonderCardBgPal5 sWonderCardBgPal6 sWonderCardBgPal7 sWonderCardBgPal8 sWonderCardBgGfx1 sWonderCardBgTilemap1 sWonderCardBgGfx2 sWonderCardBgTilemap2 sWonderCardBgGfx3 sWonderCardBgTilemap3 sWonderCardBgGfx7 sWonderCardBgTilemap7 sWonderCardBgGfx8 sWonderCardBgTilemap8 sStampShadowPal1 sStampShadowPal2 sStampShadowPal3 sStampShadowPal4 sStampShadowPal5 sStampShadowPal6 sStampShadowPal7 sStampShadowPal8 sStampShadowGfx sSpriteSheet_StampShadow sSpritePalettes_StampShadow sSpriteTemplate_StampShadow sCardGraphics sNews_TextColorTable sNews_WindowTemplates sNews_ArrowsTemplate sWonderNewsPal1 sWonderNewsPal7 sWonderNewsPal8 sWonderNewsGfx1 sWonderNewsTilemap1 sWonderNewsGfx2 sWonderNewsTilemap2 sWonderNewsGfx3 sWonderNewsTilemap3 sWonderNewsGfx7 sWonderNewsTilemap7 sWonderNewsGfx8 sWonderNewsTilemap8 sNewsGraphics
 
 /// `struct WonderCardData`
@@ -83,11 +171,11 @@ pub struct WonderNewsData {
 impl WonderNewsData {
     #[inline(always)]
     pub fn arrowsRemoved(&self) -> u8 {
-        ((self.bits_448 as u32 >> 0) & 0x1) as u8
+        ((self.bits_448 as u32) & 0x1) as u8
     }
     #[inline(always)]
     pub fn set_arrowsRemoved(&mut self, v: u8) {
-        self.bits_448 = (self.bits_448 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+        self.bits_448 = (self.bits_448 & !(0x1 << 0)) | (v & 0x1);
     }
     #[inline(always)]
     pub fn enterExitState(&self) -> u8 {
@@ -95,15 +183,15 @@ impl WonderNewsData {
     }
     #[inline(always)]
     pub fn set_enterExitState(&mut self, v: u8) {
-        self.bits_448 = (self.bits_448 & !(0x7f << 1)) | ((v as u8 & 0x7f) << 1);
+        self.bits_448 = (self.bits_448 & !(0x7f << 1)) | ((v & 0x7f) << 1);
     }
     #[inline(always)]
     pub fn scrolling(&self) -> u8 {
-        ((self.bits_450 as u32 >> 0) & 0x1) as u8
+        ((self.bits_450 as u32) & 0x1) as u8
     }
     #[inline(always)]
     pub fn set_scrolling(&mut self, v: u8) {
-        self.bits_450 = (self.bits_450 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+        self.bits_450 = (self.bits_450 & !(0x1 << 0)) | (v & 0x1);
     }
     #[inline(always)]
     pub fn scrollIncrement(&self) -> u8 {
@@ -111,15 +199,15 @@ impl WonderNewsData {
     }
     #[inline(always)]
     pub fn set_scrollIncrement(&mut self, v: u8) {
-        self.bits_450 = (self.bits_450 & !(0x7f << 1)) | ((v as u8 & 0x7f) << 1);
+        self.bits_450 = (self.bits_450 & !(0x7f << 1)) | ((v & 0x7f) << 1);
     }
     #[inline(always)]
     pub fn scrollingDown(&self) -> u8 {
-        ((self.bits_451 as u32 >> 0) & 0x1) as u8
+        ((self.bits_451 as u32) & 0x1) as u8
     }
     #[inline(always)]
     pub fn set_scrollingDown(&mut self, v: u8) {
-        self.bits_451 = (self.bits_451 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+        self.bits_451 = (self.bits_451 & !(0x1 << 0)) | (v & 0x1);
     }
     #[inline(always)]
     pub fn scrollTotal(&self) -> u8 {
@@ -127,7 +215,7 @@ impl WonderNewsData {
     }
     #[inline(always)]
     pub fn set_scrollTotal(&mut self, v: u8) {
-        self.bits_451 = (self.bits_451 & !(0x7f << 1)) | ((v as u8 & 0x7f) << 1);
+        self.bits_451 = (self.bits_451 & !(0x7f << 1)) | ((v & 0x7f) << 1);
     }
 }
 
@@ -147,11 +235,11 @@ pub struct WonderGraphics {
 impl WonderGraphics {
     #[inline(always)]
     pub fn titleTextPal(&self) -> u8 {
-        ((self.bits_0 as u32 >> 0) & 0xf) as u8
+        ((self.bits_0 as u32) & 0xf) as u8
     }
     #[inline(always)]
     pub fn set_titleTextPal(&mut self, v: u8) {
-        self.bits_0 = (self.bits_0 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+        self.bits_0 = (self.bits_0 & !0xf) | (v & 0xf);
     }
     #[inline(always)]
     pub fn bodyTextPal(&self) -> u8 {
@@ -159,15 +247,15 @@ impl WonderGraphics {
     }
     #[inline(always)]
     pub fn set_bodyTextPal(&mut self, v: u8) {
-        self.bits_0 = (self.bits_0 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+        self.bits_0 = (self.bits_0 & !(0xf << 4)) | ((v & 0xf) << 4);
     }
     #[inline(always)]
     pub fn footerTextPal(&self) -> u8 {
-        ((self.bits_1 as u32 >> 0) & 0xf) as u8
+        ((self.bits_1 as u32) & 0xf) as u8
     }
     #[inline(always)]
     pub fn set_footerTextPal(&mut self, v: u8) {
-        self.bits_1 = (self.bits_1 & !(0xf << 0)) | ((v as u8 & 0xf) << 0);
+        self.bits_1 = (self.bits_1 & !0xf) | (v & 0xf);
     }
     #[inline(always)]
     pub fn stampShadowPal(&self) -> u8 {
@@ -175,7 +263,7 @@ impl WonderGraphics {
     }
     #[inline(always)]
     pub fn set_stampShadowPal(&mut self, v: u8) {
-        self.bits_1 = (self.bits_1 & !(0xf << 4)) | ((v as u8 & 0xf) << 4);
+        self.bits_1 = (self.bits_1 & !(0xf << 4)) | ((v & 0xf) << 4);
     }
 }
 
@@ -275,95 +363,25 @@ pub(crate) static mut sWonderCardData: *mut WonderCardData = null_mut();
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sWonderNewsData: *mut WonderNewsData = null_mut();
 
-unsafe extern "C" {
-    static mut gGiftIsFromEReader: u8;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gSprites: CArray<Sprite, 65>;
-    fn AddScrollIndicatorArrowPair(a0: *mut ScrollArrowsTemplate, a1: *mut u16) -> u8;
-    fn AddTextPrinterParameterized3(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: *mut u8,
-        a5: i8,
-        a6: *mut u8,
-    );
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ClearGpuRegBits(a0: u8, a1: u16);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyRectToBgTilemapBufferRect(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-        a7: u8,
-        a8: u8,
-        a9: u8,
-        a10: u8,
-        a11: i16,
-        a12: i16,
-    );
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateMonIconNoPersonality(
-        a0: u16,
-        a1: Option<unsafe extern "C" fn(*mut Sprite)>,
-        a2: i16,
-        a3: i16,
-        a4: u8,
-        a5: u32,
-    ) -> u8;
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DestroySprite(a0: *mut Sprite);
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut c_void);
-    fn FreeAndDestroyMonIconSprite(a0: *mut Sprite);
-    fn FreeMonIconPalettes();
-    fn FreeSpritePaletteByTag(a0: u16);
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn GetFontAttribute(a0: u8, a1: u8) -> u8;
-    fn GetIconSpeciesNoPersonality(a0: u16) -> u16;
-    fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32;
-    fn GetTextWindowPalette(a0: u8) -> *mut u16;
-    fn HideBg(a0: u8);
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadCompressedSpriteSheetUsingHeap(a0: *mut CompressedSpriteSheet) -> u8;
-    fn LoadMonIconPalettes();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
-    fn MG_DrawCheckerboardPattern(a0: u32);
-    fn PrintMysteryGiftOrEReaderHeader(a0: u8, a1: u32);
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveScrollIndicatorArrowPair(a0: u8);
-    fn RemoveWindow(a0: u8);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetGpuRegBits(a0: u8, a1: u16);
-    fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn UpdatePaletteFade() -> u8;
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `GetTextWindowPalette` with this module's view of its types.
+#[inline]
+unsafe fn GetTextWindowPalette(a0: u8) -> *mut u16 {
+    unsafe { crate::text_window::GetTextWindowPalette(a0) as *mut u16 }
+}
+/// `LZ77UnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderCard_Init(
-    card: *mut WonderCard,
-    metadata: *mut WonderCardMetadata,
-) -> u32 {
+pub unsafe fn WonderCard_Init(card: *mut WonderCard, metadata: *mut WonderCardMetadata) -> u32 {
     if card.is_null() || metadata.is_null() {
         return FALSE as u32;
     }
@@ -384,21 +402,19 @@ pub unsafe extern "C" fn WonderCard_Init(
     }
     (*sWonderCardData).gfx =
         (&raw const sCardGraphics[(*sWonderCardData).card.bgType()]).cast_mut();
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderCard_Destroy() {
+pub unsafe fn WonderCard_Destroy() {
     if !sWonderCardData.is_null() {
         *sWonderCardData = {
-            let mut lit1: WonderCardData = zeroed();
+            let lit1: WonderCardData = zeroed();
             lit1
         };
         Free(sWonderCardData as *mut c_void);
         sWonderCardData = null_mut();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderCard_Enter() -> i32 {
+pub unsafe fn WonderCard_Enter() -> i32 {
     if sWonderCardData.is_null() {
         return -1;
     }
@@ -510,10 +526,9 @@ pub unsafe extern "C" fn WonderCard_Enter() -> i32 {
         }
     }
     (*sWonderCardData).enterExitState += 1;
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderCard_Exit(useCancel: u32) -> i32 {
+pub unsafe fn WonderCard_Exit(useCancel: u32) -> i32 {
     if sWonderCardData.is_null() {
         return -1;
     }
@@ -580,10 +595,9 @@ pub unsafe extern "C" fn WonderCard_Exit(useCancel: u32) -> i32 {
         }
     }
     (*sWonderCardData).enterExitState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn BufferCardText() {
-    let mut i: u16 = 0;
+unsafe fn BufferCardText() {
     let mut charsUntilStat: u16 = 0;
     let mut stats: CArray<u16, 3> = CArray([0, 0, 0]);
     memcpy(
@@ -607,7 +621,7 @@ pub(crate) unsafe extern "C" fn BufferCardText() {
         STR_CONV_MODE_LEFT_ALIGN,
         6,
     );
-    i = 0;
+    let mut i: u16 = 0;
     while i < WONDER_CARD_BODY_TEXT_LINES {
         memcpy(
             (*sWonderCardData).bodyText[i].as_mut_ptr(),
@@ -652,8 +666,7 @@ pub(crate) unsafe extern "C" fn BufferCardText() {
             } else {
                 MAX_WONDER_CARD_STAT as i32
             }) as u16;
-            i = 0;
-            while i < 8 {
+            for i in 0..8u16 {
                 memset(
                     (*sWonderCardData).statTextData[i]
                         .statNumberText
@@ -666,7 +679,6 @@ pub(crate) unsafe extern "C" fn BufferCardText() {
                     EOS as i32,
                     41,
                 );
-                i += 1;
             }
             i = 0;
             charsUntilStat = 0;
@@ -676,7 +688,7 @@ pub(crate) unsafe extern "C" fn BufferCardText() {
                         [charsUntilStat] = (*sWonderCardData).card.footerLine2Text[i];
                     charsUntilStat += 1;
                 } else {
-                    let mut id: u8 = (*sWonderCardData).card.footerLine2Text[i as i32 + 1];
+                    let id: u8 = (*sWonderCardData).card.footerLine2Text[i as i32 + 1];
                     if id >= 3 {
                         i += 2;
                     } else {
@@ -704,15 +716,14 @@ pub(crate) unsafe extern "C" fn BufferCardText() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn DrawCardWindow(whichWindow: u8) {
+unsafe fn DrawCardWindow(whichWindow: u8) {
     let mut i: i8 = 0;
-    let mut windowId: i32 = (*sWonderCardData).windowIds[whichWindow] as i32;
+    let windowId: i32 = (*sWonderCardData).windowIds[whichWindow] as i32;
     PutWindowTilemap(windowId as u8);
     FillWindowPixelBuffer(windowId as u8, 0);
     'l1: {
         match whichWindow {
             CARD_WIN_HEADER => {
-                let mut x: i32 = 0;
                 AddTextPrinterParameterized3(
                     windowId as u8,
                     FONT_SHORT_COPY_1,
@@ -724,7 +735,7 @@ pub(crate) unsafe extern "C" fn DrawCardWindow(whichWindow: u8) {
                     0,
                     (*sWonderCardData).titleText.as_mut_ptr(),
                 );
-                x = 160
+                let mut x: i32 = 160
                     - GetStringWidth(
                         FONT_SHORT_COPY_1,
                         (*sWonderCardData).subtitleText.as_mut_ptr(),
@@ -801,9 +812,9 @@ pub(crate) unsafe extern "C" fn DrawCardWindow(whichWindow: u8) {
                     );
                 } else {
                     let mut x: i32 = 0;
-                    let mut y: i32 =
+                    let y: i32 =
                         sCard_FooterTextOffsets[(*sWonderCardData).card.r#type()] as i32 + 16;
-                    let mut spacing: i32 =
+                    let spacing: i32 =
                         GetFontAttribute(FONT_SHORT_COPY_1, FONTATTR_LETTER_SPACING) as i32;
                     while (i as i32) < (*sWonderCardData).statFooterWidth as i32 {
                         AddTextPrinterParameterized3(
@@ -853,7 +864,7 @@ pub(crate) unsafe extern "C" fn DrawCardWindow(whichWindow: u8) {
     }
     CopyWindowToVram(windowId as u8, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn CreateCardSprites() {
+unsafe fn CreateCardSprites() {
     let mut i: u8 = 0;
     (*sWonderCardData).monIconSpriteId = SPRITE_NONE;
     if (*sWonderCardData).cardMetadata.iconSpecies != SPECIES_NONE {
@@ -899,7 +910,7 @@ pub(crate) unsafe extern "C" fn CreateCardSprites() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn DestroyCardSprites() {
+unsafe fn DestroyCardSprites() {
     let mut i: u8 = 0;
     if (*sWonderCardData).monIconSpriteId != SPRITE_NONE {
         FreeAndDestroyMonIconSprite(&raw mut gSprites[(*sWonderCardData).monIconSpriteId]);
@@ -921,8 +932,7 @@ pub(crate) unsafe extern "C" fn DestroyCardSprites() {
         FreeSpritePaletteByTag(TAG_STAMP_SHADOW);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderNews_Init(news: *mut WonderNews) -> u32 {
+pub unsafe fn WonderNews_Init(news: *mut WonderNews) -> u32 {
     if news.is_null() {
         return FALSE as u32;
     }
@@ -936,21 +946,19 @@ pub unsafe extern "C" fn WonderNews_Init(news: *mut WonderNews) -> u32 {
     }
     (*sWonderNewsData).gfx = (&raw const sNewsGraphics[(*sWonderNewsData).news.bgType]).cast_mut();
     (*sWonderNewsData).arrowTaskId = TASK_NONE;
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderNews_Destroy() {
+pub unsafe fn WonderNews_Destroy() {
     if !sWonderNewsData.is_null() {
         *sWonderNewsData = {
-            let mut lit1: WonderNewsData = zeroed();
+            let lit1: WonderNewsData = zeroed();
             lit1
         };
         Free(sWonderNewsData as *mut c_void);
         sWonderNewsData = null_mut();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderNews_Enter() -> i32 {
+pub unsafe fn WonderNews_Enter() -> i32 {
     if sWonderNewsData.is_null() {
         return -1;
     }
@@ -1094,10 +1102,9 @@ pub unsafe extern "C" fn WonderNews_Enter() -> i32 {
         }
     }
     (*sWonderNewsData).set_enterExitState((*sWonderNewsData).enterExitState() + 1);
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderNews_Exit(useCancel: u32) -> i32 {
+pub unsafe fn WonderNews_Exit(useCancel: u32) -> i32 {
     if sWonderNewsData.is_null() {
         return -1;
     }
@@ -1170,18 +1177,16 @@ pub unsafe extern "C" fn WonderNews_Exit(useCancel: u32) -> i32 {
         }
     }
     (*sWonderNewsData).set_enterExitState((*sWonderNewsData).enterExitState() + 1);
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderNews_RemoveScrollIndicatorArrowPair() {
+pub unsafe fn WonderNews_RemoveScrollIndicatorArrowPair() {
     if (*sWonderNewsData).arrowsRemoved() == 0 && (*sWonderNewsData).arrowTaskId != TASK_NONE {
         RemoveScrollIndicatorArrowPair((*sWonderNewsData).arrowTaskId);
         (*sWonderNewsData).arrowTaskId = TASK_NONE;
         (*sWonderNewsData).set_arrowsRemoved(TRUE);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderNews_AddScrollIndicatorArrowPair() {
+pub unsafe fn WonderNews_AddScrollIndicatorArrowPair() {
     if (*sWonderNewsData).arrowsRemoved() != 0 {
         (*sWonderNewsData).arrowTaskId = AddScrollIndicatorArrowPair(
             &raw mut (*sWonderNewsData).arrowsTemplate,
@@ -1190,8 +1195,7 @@ pub unsafe extern "C" fn WonderNews_AddScrollIndicatorArrowPair() {
         (*sWonderNewsData).set_arrowsRemoved(FALSE);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WonderNews_GetInput(input: u16) -> u32 {
+pub unsafe fn WonderNews_GetInput(input: u16) -> u32 {
     if (*sWonderNewsData).scrolling() != 0 {
         UpdateNewsScroll();
         return NEWS_INPUT_NONE;
@@ -1235,18 +1239,17 @@ pub unsafe extern "C" fn WonderNews_GetInput(input: u16) -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn BufferNewsText() {
-    let mut i: u8 = 0;
+unsafe fn BufferNewsText() {
     memcpy(
         (*sWonderNewsData).titleText.as_mut_ptr(),
         (*sWonderNewsData).news.titleText.as_mut_ptr(),
         WONDER_NEWS_TEXT_LENGTH,
     );
     (*sWonderNewsData).titleText[40] = EOS;
-    while i < WONDER_NEWS_BODY_TEXT_LINES {
+    for i in 0..WONDER_NEWS_BODY_TEXT_LINES {
         memcpy(
             (*sWonderNewsData).bodyText[i].as_mut_ptr(),
             (*sWonderNewsData).news.bodyText[i].as_mut_ptr(),
@@ -1256,19 +1259,16 @@ pub(crate) unsafe extern "C" fn BufferNewsText() {
         if i > 7 && (*sWonderNewsData).bodyText[i][0] != EOS {
             (*sWonderNewsData).scrollEnd += 1;
         }
-        i += 1;
     }
     (*sWonderNewsData).arrowsTemplate = *sNews_ArrowsTemplate;
     (*sWonderNewsData).arrowsTemplate.fullyDownThreshold = (*sWonderNewsData).scrollEnd;
 }
-pub(crate) unsafe extern "C" fn DrawNewsWindows() {
-    let mut i: u8 = 0;
-    let mut x: i32 = 0;
+unsafe fn DrawNewsWindows() {
     PutWindowTilemap((*sWonderNewsData).windowIds[0] as u8);
     PutWindowTilemap((*sWonderNewsData).windowIds[1] as u8);
     FillWindowPixelBuffer((*sWonderNewsData).windowIds[0] as u8, 0);
     FillWindowPixelBuffer((*sWonderNewsData).windowIds[1] as u8, 0);
-    x =
+    let mut x: i32 =
         (224 - GetStringWidth(
             FONT_SHORT_COPY_1,
             (*sWonderNewsData).titleText.as_mut_ptr(),
@@ -1288,7 +1288,7 @@ pub(crate) unsafe extern "C" fn DrawNewsWindows() {
         0,
         (*sWonderNewsData).titleText.as_mut_ptr(),
     );
-    while i < WONDER_NEWS_BODY_TEXT_LINES {
+    for i in 0..WONDER_NEWS_BODY_TEXT_LINES {
         AddTextPrinterParameterized3(
             (*sWonderNewsData).windowIds[1] as u8,
             FONT_SHORT_COPY_1,
@@ -1300,12 +1300,11 @@ pub(crate) unsafe extern "C" fn DrawNewsWindows() {
             0,
             (*sWonderNewsData).bodyText[i].as_mut_ptr(),
         );
-        i += 1;
     }
     CopyWindowToVram((*sWonderNewsData).windowIds[0] as u8, COPYWIN_FULL);
     CopyWindowToVram((*sWonderNewsData).windowIds[1] as u8, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn UpdateNewsScroll() {
+unsafe fn UpdateNewsScroll() {
     let mut bgMove: u16 = (*sWonderNewsData).scrollIncrement() as u16;
     bgMove *= 256;
     if (*sWonderNewsData).scrollingDown() != 0 {

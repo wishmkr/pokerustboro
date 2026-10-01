@@ -3,29 +3,45 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    dead_code,
+    unused_assignments
 )]
 
+use crate::agb_main::gMain;
+use crate::bg::{ChangeBgY, HideBg, SetBgAttribute, ShowBg};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::{FlagGet, VarGet};
+use crate::gpu_regs::{SetGpuReg, SetGpuRegBits};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::menu::{DecompressAndCopyTileDataToVram, FreeTempTileDataBuffersIfPossible};
+use crate::overworld::Overworld_GetMapHeaderByGroupAndId;
+use crate::palette::{BeginNormalPaletteFade, gPaletteFade};
+use crate::pokedex_area_region_map::{
+    FreePokedexAreaMapBgNum, PokedexAreaMapChangeBgY, TryShowPokedexAreaMap,
+};
+use crate::region_map::{
+    CorrectSpecialMapSecId, CreateRegionMapPlayerIcon, GetRegionMapSecIdAt,
+    PokedexAreaScreen_UpdateRegionMapVariablesAndVideoRegs, ShowRegionMapForPokedexAreaScreen,
+};
+use crate::roamer::GetRoamerLocation;
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::sprite::{
+    FreeAllSpritePalettes, FreeSpritePaletteByTag, FreeSpriteTilesByTag, ResetSpriteData,
+};
+use crate::string_util::StringFill;
+use crate::task::DestroyTask;
+use crate::task::{task_get, task_set, task_set_func};
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,15 +50,63 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `LoadBgTilemap` with this module's view of its types.
+#[inline]
+unsafe fn LoadBgTilemap(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
+    unsafe { crate::bg::LoadBgTilemap(a0, a1 as _, a2, a3) }
+}
+/// `LoadPokedexAreaMapGfx` with this module's view of its types.
+#[inline]
+unsafe fn LoadPokedexAreaMapGfx(a0: *mut PokedexAreaMapTemplate) {
+    unsafe {
+        crate::pokedex_area_region_map::LoadPokedexAreaMapGfx(a0 as _);
+    }
+}
+/// `LoadSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
+    unsafe { crate::sprite::LoadSpritePalette(a0 as _) }
+}
+/// `LoadSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
+    unsafe { crate::sprite::LoadSpriteSheet(a0 as _) }
+}
+// The C's names for task and sprite data slots.
+const tState: usize = 0;
 // Data tables (translate with cdata.py): sAreaGlow_Pal sAreaGlow_Gfx sSpeciesHiddenFromAreaScreen sMovingRegionMapSections sFeebasData sLandmarkData sAreaGlowTilemapMapping sPokedexAreaMapTemplate sAreaMarkerTiles sAreaMarkerSpriteSheet sAreaMarkerPalette sAreaMarkerSpritePalette sAreaMarkerOamData sAreaMarkerSpriteTemplate sAreaMarkerPalette sAreaMarkerTiles sAreaUnknownSpritePalette sAreaUnknownOamData sAreaUnknownSpriteTemplate
 
 /// `__typeof__(*((__typeof__(sPokedexAreaScreen))0))`
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct typeof___sPokedexAreaScreen_0_t {
-    pub callback: Option<unsafe extern "C" fn()>,
-    pub prev: Option<unsafe extern "C" fn()>,
-    pub next: Option<unsafe extern "C" fn()>,
+    pub callback: Option<unsafe fn()>,
+    pub prev: Option<unsafe fn()>,
+    pub next: Option<unsafe fn()>,
     pub state: u16,
     pub species: u16,
     pub overworldAreasWithMons: CArray<OverworldArea, 64>,
@@ -170,75 +234,37 @@ static sSpeciesHiddenFromAreaScreen: Table<CArray<u16, 1>> =
 
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sPokedexAreaScreen: *mut typeof___sPokedexAreaScreen_0_t = null_mut();
-static mut CreateAreaMarkerSprites_x: i16 = 0;
-static mut CreateAreaMarkerSprites_y: i16 = 0;
-static mut CreateAreaMarkerSprites_i: i16 = 0;
-static mut CreateAreaMarkerSprites_mapSecId: i16 = 0;
-static mut CreateAreaMarkerSprites_numSprites: i16 = 0;
+static CreateAreaMarkerSprites_x: crate::global::Global<i16> = crate::global::Global::new(0);
+static CreateAreaMarkerSprites_y: crate::global::Global<i16> = crate::global::Global::new(0);
+static CreateAreaMarkerSprites_i: crate::global::Global<i16> = crate::global::Global::new(0);
+static CreateAreaMarkerSprites_mapSecId: crate::global::Global<i16> = crate::global::Global::new(0);
+static CreateAreaMarkerSprites_numSprites: crate::global::Global<i16> =
+    crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static mut gMain: Main;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static gPokedexAreaScreenAreaUnknown_Gfx: CArray<u32, 0>;
-    static gRegionMapEntries: CArray<RegionMapLocation, 0>;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static gSineTable: CArray<i16, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTasks: CArray<Task, 0>;
-    static gWildMonHeaders: CArray<WildPokemonHeader, 0>;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CorrectSpecialMapSecId(a0: u16) -> u16;
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateRegionMapPlayerIcon(a0: u16, a1: u16);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreePokedexAreaMapBgNum();
-    fn FreeSpritePaletteByTag(a0: u16);
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn GetRegionMapSecIdAt(a0: u16, a1: u16) -> u16;
-    fn GetRoamerLocation(a0: *mut u8, a1: *mut u8);
-    fn HideBg(a0: u8);
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadBgTilemap(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadPokedexAreaMapGfx(a0: *mut PokedexAreaMapTemplate);
-    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
-    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
-    fn Overworld_GetMapHeaderByGroupAndId(a0: u16, a1: u16) -> *mut MapHeader;
-    fn PlaySE(a0: u16);
-    fn PokedexAreaMapChangeBgY(a0: u32);
-    fn PokedexAreaScreen_UpdateRegionMapVariablesAndVideoRegs(a0: i16, a1: i16);
-    fn ResetSpriteData();
-    fn SetBgAttribute(a0: u8, a1: u8, a2: u8);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetGpuRegBits(a0: u8, a1: u16);
-    fn ShowBg(a0: u8);
-    fn ShowRegionMapForPokedexAreaScreen(a0: *mut RegionMap);
-    fn StringFill(a0: *mut u8, a1: u8, a2: u16) -> *mut u8;
-    fn TryShowPokedexAreaMap() -> u32;
-    fn VarGet(a0: u16) -> u16;
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `LZ77UnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
+    }
 }
 
-pub(crate) unsafe extern "C" fn ResetDrawAreaGlowState() {
+unsafe fn ResetDrawAreaGlowState() {
     (*sPokedexAreaScreen).drawAreaGlowState = 0;
 }
-pub(crate) unsafe extern "C" fn DrawAreaGlow() -> u8 {
+unsafe fn DrawAreaGlow() -> u8 {
     match (*sPokedexAreaScreen).drawAreaGlowState {
         0 => {
             FindMapsWithMon((*sPokedexAreaScreen).species);
@@ -265,7 +291,9 @@ pub(crate) unsafe extern "C" fn DrawAreaGlow() -> u8 {
             if FreeTempTileDataBuffersIfPossible() == 0 {
                 CpuSet(
                     sAreaGlow_Pal.as_ptr().cast_mut() as *mut c_void,
-                    &raw mut gPlttBufferUnfaded[160] as *mut c_void,
+                    &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                        .cast::<CArray<u16, 512>>()
+                        .cast_mut())[160] as *mut c_void,
                     0x4000008,
                 );
                 (*sPokedexAreaScreen).drawAreaGlowState += 1;
@@ -280,9 +308,9 @@ pub(crate) unsafe extern "C" fn DrawAreaGlow() -> u8 {
         }
     }
     (*sPokedexAreaScreen).drawAreaGlowState += 1;
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn FindMapsWithMon(species: u16) {
+unsafe fn FindMapsWithMon(species: u16) {
     let mut i: u16 = 0;
     let mut roamer: *mut Roamer = null_mut();
     (*sPokedexAreaScreen).alteringCaveCounter = 0;
@@ -294,12 +322,10 @@ pub(crate) unsafe extern "C" fn FindMapsWithMon(species: u16) {
     if species != (*roamer).species {
         (*sPokedexAreaScreen).numOverworldAreas = 0;
         (*sPokedexAreaScreen).numSpecialAreas = 0;
-        i = 0;
-        while i < 1 {
+        for i in 0..1u16 {
             if sSpeciesHiddenFromAreaScreen[i] == species {
                 return;
             }
-            i += 1;
         }
         i = 0;
         while sFeebasData[i][0] != NUM_SPECIES {
@@ -317,19 +343,43 @@ pub(crate) unsafe extern "C" fn FindMapsWithMon(species: u16) {
             i += 1;
         }
         i = 0;
-        while gWildMonHeaders[i].mapGroup != 255 {
-            if MapHasSpecies((&raw const gWildMonHeaders[i]).cast_mut(), species) != 0 {
-                match gWildMonHeaders[i].mapGroup {
+        while (*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+            .cast::<CArray<WildPokemonHeader, 0>>())[i]
+            .mapGroup
+            != 255
+        {
+            if MapHasSpecies(
+                (&raw const (*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+                    .cast::<CArray<WildPokemonHeader, 0>>())[i])
+                    .cast_mut(),
+                species,
+            ) != 0
+            {
+                match (*(&raw const crate::data::wild_encounter::gWildMonHeaders).cast::<CArray<
+                    WildPokemonHeader,
+                    0,
+                >>(
+                ))[i]
+                    .mapGroup
+                {
                     0 => {
                         SetAreaHasMon(
-                            gWildMonHeaders[i].mapGroup as u16,
-                            gWildMonHeaders[i].mapNum as u16,
+                            (*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+                                .cast::<CArray<WildPokemonHeader, 0>>())[i]
+                                .mapGroup as u16,
+                            (*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+                                .cast::<CArray<WildPokemonHeader, 0>>())[i]
+                                .mapNum as u16,
                         );
                     }
                     24 | 26 => {
                         SetSpecialMapHasMon(
-                            gWildMonHeaders[i].mapGroup as u16,
-                            gWildMonHeaders[i].mapNum as u16,
+                            (*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+                                .cast::<CArray<WildPokemonHeader, 0>>())[i]
+                                .mapGroup as u16,
+                            (*(&raw const crate::data::wild_encounter::gWildMonHeaders)
+                                .cast::<CArray<WildPokemonHeader, 0>>())[i]
+                                .mapNum as u16,
                         );
                     }
                     _ => {}
@@ -356,7 +406,7 @@ pub(crate) unsafe extern "C" fn FindMapsWithMon(species: u16) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SetAreaHasMon(mapGroup: u16, mapNum: u16) {
+unsafe fn SetAreaHasMon(mapGroup: u16, mapNum: u16) {
     if (*sPokedexAreaScreen).numOverworldAreas < MAX_AREA_HIGHLIGHTS {
         (*sPokedexAreaScreen).overworldAreasWithMons[(*sPokedexAreaScreen).numOverworldAreas]
             .mapGroup = mapGroup as u8;
@@ -369,17 +419,15 @@ pub(crate) unsafe extern "C" fn SetAreaHasMon(mapGroup: u16, mapNum: u16) {
         (*sPokedexAreaScreen).numOverworldAreas += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetSpecialMapHasMon(mapGroup: u16, mapNum: u16) {
+unsafe fn SetSpecialMapHasMon(mapGroup: u16, mapNum: u16) {
     let mut i: i32 = 0;
     if (*sPokedexAreaScreen).numSpecialAreas < MAX_AREA_MARKERS {
-        let mut regionMapSectionId: u16 = GetRegionMapSectionId(mapGroup as u8, mapNum as u8);
+        let regionMapSectionId: u16 = GetRegionMapSectionId(mapGroup as u8, mapNum as u8);
         if regionMapSectionId < MAPSEC_NONE {
-            i = 0;
-            while i < 3 {
+            for i in 0..3i32 {
                 if regionMapSectionId == sMovingRegionMapSections[i] {
                     return;
                 }
-                i += 1;
             }
             i = 0;
             while sLandmarkData[i][0] != MAPSEC_NONE {
@@ -402,11 +450,10 @@ pub(crate) unsafe extern "C" fn SetSpecialMapHasMon(mapGroup: u16, mapNum: u16) 
         }
     }
 }
-pub(crate) unsafe extern "C" fn GetRegionMapSectionId(mapGroup: u8, mapNum: u8) -> u16 {
-    return (*Overworld_GetMapHeaderByGroupAndId(mapGroup as u16, mapNum as u16)).regionMapSectionId
-        as u16;
+unsafe fn GetRegionMapSectionId(mapGroup: u8, mapNum: u8) -> u16 {
+    (*Overworld_GetMapHeaderByGroupAndId(mapGroup as u16, mapNum as u16)).regionMapSectionId as u16
 }
-pub(crate) unsafe extern "C" fn MapHasSpecies(info: *mut WildPokemonHeader, species: u16) -> u8 {
+unsafe fn MapHasSpecies(info: *mut WildPokemonHeader, species: u16) -> u8 {
     if GetRegionMapSectionId((*info).mapGroup, (*info).mapNum) == MAPSEC_ALTERING_CAVE {
         (*sPokedexAreaScreen).alteringCaveCounter += 1;
         if (*sPokedexAreaScreen).alteringCaveCounter as i32
@@ -442,59 +489,41 @@ pub(crate) unsafe extern "C" fn MapHasSpecies(info: *mut WildPokemonHeader, spec
     {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn MonListHasSpecies(
-    info: *mut WildPokemonInfo,
-    species: u16,
-    size: u16,
-) -> u8 {
-    let mut i: u16 = 0;
+unsafe fn MonListHasSpecies(info: *mut WildPokemonInfo, species: u16, size: u16) -> u8 {
     if !info.is_null() {
-        i = 0;
-        while i < size {
+        for i in 0..size {
             if (*(*info).wildPokemon.at(i)).species == species {
                 return TRUE;
             }
-            i += 1;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn BuildAreaGlowTilemap() {
-    let mut i: u16 = 0;
-    let mut y: u16 = 0;
-    let mut x: u16 = 0;
+unsafe fn BuildAreaGlowTilemap() {
     let mut j: u16 = 0;
-    i = 0;
-    while i < 640 {
+    for i in 0..640u16 {
         (*sPokedexAreaScreen).areaGlowTilemap[i] = 0;
-        i += 1;
     }
-    i = 0;
+    let mut i: u16 = 0;
     while i < (*sPokedexAreaScreen).numOverworldAreas {
         j = 0;
-        y = 0;
-        while y < AREA_SCREEN_HEIGHT {
-            x = 0;
-            while x < AREA_SCREEN_WIDTH as u16 {
+        for y in 0..AREA_SCREEN_HEIGHT {
+            for x in 0..(AREA_SCREEN_WIDTH as u16) {
                 if GetRegionMapSecIdAt(x, y)
                     == (*sPokedexAreaScreen).overworldAreasWithMons[i].regionMapSectionId
                 {
                     (*sPokedexAreaScreen).areaGlowTilemap[j] = GLOW_FULL;
                 }
                 j += 1;
-                x += 1;
             }
-            y += 1;
         }
         i += 1;
     }
     j = 0;
-    y = 0;
-    while y < AREA_SCREEN_HEIGHT {
-        x = 0;
-        while x < AREA_SCREEN_WIDTH as u16 {
+    for y in 0..AREA_SCREEN_HEIGHT {
+        for x in 0..(AREA_SCREEN_WIDTH as u16) {
             if (*sPokedexAreaScreen).areaGlowTilemap[j] == GLOW_FULL {
                 if x != 0 && (*sPokedexAreaScreen).areaGlowTilemap[j as i32 - 1] != GLOW_FULL {
                     (*sPokedexAreaScreen).areaGlowTilemap[j as i32 - 1] |= GLOW_EDGE_L;
@@ -549,12 +578,9 @@ pub(crate) unsafe extern "C" fn BuildAreaGlowTilemap() {
                 }
             }
             j += 1;
-            x += 1;
         }
-        y += 1;
     }
-    i = 0;
-    while i < 640 {
+    for i in 0..640u16 {
         if (*sPokedexAreaScreen).areaGlowTilemap[i] == GLOW_FULL {
             (*sPokedexAreaScreen).areaGlowTilemap[i] = GLOW_TILE_FULL;
             (*sPokedexAreaScreen).areaGlowTilemap[i] |= 40960;
@@ -575,10 +601,9 @@ pub(crate) unsafe extern "C" fn BuildAreaGlowTilemap() {
                 sAreaGlowTilemapMapping[(*sPokedexAreaScreen).areaGlowTilemap[i]] as u16;
             (*sPokedexAreaScreen).areaGlowTilemap[i] |= 40960;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn StartAreaGlow() {
+unsafe fn StartAreaGlow() {
     if (*sPokedexAreaScreen).numSpecialAreas != 0 && (*sPokedexAreaScreen).numOverworldAreas == 0 {
         (*sPokedexAreaScreen).showingMarkers = TRUE;
     } else {
@@ -593,7 +618,7 @@ pub(crate) unsafe extern "C" fn StartAreaGlow() {
     SetGpuReg(REG_OFFSET_BLDALPHA, 4096);
     DoAreaGlow();
 }
-pub(crate) unsafe extern "C" fn DoAreaGlow() {
+unsafe fn DoAreaGlow() {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
     let mut i: u16 = 0;
@@ -602,13 +627,17 @@ pub(crate) unsafe extern "C" fn DoAreaGlow() {
             (*sPokedexAreaScreen).glowTimer += 1;
             if (*sPokedexAreaScreen).glowTimer as i32 & 1 != 0 {
                 (*sPokedexAreaScreen).areaShadeBldArgLo =
-                    (*sPokedexAreaScreen).areaShadeBldArgLo + 4 & 0x7f;
+                    ((*sPokedexAreaScreen).areaShadeBldArgLo + 4) & 0x7f;
             } else {
                 (*sPokedexAreaScreen).areaShadeBldArgHi =
-                    (*sPokedexAreaScreen).areaShadeBldArgHi + 4 & 0x7f;
+                    ((*sPokedexAreaScreen).areaShadeBldArgHi + 4) & 0x7f;
             }
-            x = (gSineTable[(*sPokedexAreaScreen).areaShadeBldArgLo] >> 4) as u16;
-            y = (gSineTable[(*sPokedexAreaScreen).areaShadeBldArgHi] >> 4) as u16;
+            x = ((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+                [(*sPokedexAreaScreen).areaShadeBldArgLo]
+                >> 4) as u16;
+            y = ((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+                [(*sPokedexAreaScreen).areaShadeBldArgHi]
+                >> 4) as u16;
             SetGpuReg(REG_OFFSET_BLDALPHA, y << 8 | x);
             (*sPokedexAreaScreen).markerTimer = 0;
             if (*sPokedexAreaScreen).glowTimer == 64 {
@@ -640,18 +669,16 @@ pub(crate) unsafe extern "C" fn DoAreaGlow() {
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowPokedexAreaScreen(species: u16, mut screenSwitchState: *mut u8) {
-    let mut taskId: u8 = 0;
+pub unsafe fn ShowPokedexAreaScreen(species: u16, screenSwitchState: *mut u8) {
     sPokedexAreaScreen = AllocZeroed(5564) as *mut typeof___sPokedexAreaScreen_0_t;
     (*sPokedexAreaScreen).species = species;
     (*sPokedexAreaScreen).screenSwitchState = screenSwitchState;
     *screenSwitchState = 0;
-    taskId = CreateTask(Some(Task_ShowPokedexAreaScreen), 0);
-    gTasks[taskId].data[0] = 0;
+    let taskId: u8 = CreateTask(Some(Task_ShowPokedexAreaScreen), 0);
+    task_set(taskId, tState, 0);
 }
-pub(crate) unsafe extern "C" fn Task_ShowPokedexAreaScreen(taskId: u8) {
-    match gTasks[taskId].data[0] {
+pub(crate) unsafe fn Task_ShowPokedexAreaScreen(taskId: u8) {
+    match task_get(taskId, tState) {
         0 => {
             ResetSpriteData();
             FreeAllSpritePalettes();
@@ -707,41 +734,39 @@ pub(crate) unsafe extern "C" fn Task_ShowPokedexAreaScreen(taskId: u8) {
             SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_OBJ_ON);
         }
         11 => {
-            gTasks[taskId].func = Some(Task_HandlePokedexAreaScreenInput);
-            gTasks[taskId].data[0] = 0;
+            task_set_func(taskId, Some(Task_HandlePokedexAreaScreenInput));
+            task_set(taskId, tState, 0);
             return;
         }
         _ => {}
     }
-    gTasks[taskId].data[0] += 1;
+    task_set(taskId, tState, task_get(taskId, tState) + 1);
 }
-pub(crate) unsafe extern "C" fn Task_HandlePokedexAreaScreenInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandlePokedexAreaScreenInput(taskId: u8) {
     DoAreaGlow();
     'l1: {
-        let sw1: i16 = gTasks[taskId].data[0];
+        let sw1: i16 = task_get(taskId, tState);
         let matched = sw1 == 0 || sw1 == 1 || sw1 == 2 || sw1 == 3;
         let mut fall = false;
         if !matched {
             fall = true;
-            gTasks[taskId].data[0] = 0;
+            task_set(taskId, tState, 0);
         }
         if fall || sw1 == 0 {
-            fall = true;
             if gPaletteFade.active() != 0 {
                 return;
             }
             break 'l1;
         }
         if sw1 == 1 {
-            fall = true;
             if gMain.newKeys as i32 & B_BUTTON != 0 {
-                gTasks[taskId].data[1] = 1;
+                task_set(taskId, 1, 1);
                 PlaySE(SE_PC_OFF);
             } else if gMain.newKeys as i32 & DPAD_RIGHT != 0
                 || gMain.newKeys as i32 & R_BUTTON != 0
                     && (*gSaveBlock2Ptr).optionsButtonMode == OPTIONS_BUTTON_MODE_LR
             {
-                gTasks[taskId].data[1] = 2;
+                task_set(taskId, 1, 2);
                 PlaySE(SE_DEX_PAGE);
             } else {
                 return;
@@ -749,17 +774,15 @@ pub(crate) unsafe extern "C" fn Task_HandlePokedexAreaScreenInput(taskId: u8) {
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             BeginNormalPaletteFade(0xffffffeb, 0, 0, 16, 0);
             break 'l1;
         }
         if sw1 == 3 {
-            fall = true;
             if gPaletteFade.active() != 0 {
                 return;
             }
             DestroyAreaScreenSprites();
-            *(*sPokedexAreaScreen).screenSwitchState = gTasks[taskId].data[1] as u8;
+            *(*sPokedexAreaScreen).screenSwitchState = task_get(taskId, 1) as u8;
             ResetPokedexAreaMapBg();
             DestroyTask(taskId);
             FreePokedexAreaMapBgNum();
@@ -768,90 +791,114 @@ pub(crate) unsafe extern "C" fn Task_HandlePokedexAreaScreenInput(taskId: u8) {
             return;
         }
     }
-    gTasks[taskId].data[0] += 1;
+    task_set(taskId, tState, task_get(taskId, tState) + 1);
 }
-pub(crate) unsafe extern "C" fn ResetPokedexAreaMapBg() {
+unsafe fn ResetPokedexAreaMapBg() {
     SetBgAttribute(3, BG_ATTR_CHARBASEINDEX, 0);
     SetBgAttribute(3, BG_ATTR_PALETTEMODE, 0);
 }
-pub(crate) unsafe extern "C" fn CreateAreaMarkerSprites() {
+unsafe fn CreateAreaMarkerSprites() {
     let mut spriteId: u8 = 0;
     LoadSpriteSheet((&raw const *sAreaMarkerSpriteSheet).cast_mut());
     LoadSpritePalette((&raw const *sAreaMarkerSpritePalette).cast_mut());
-    CreateAreaMarkerSprites_numSprites = 0;
-    CreateAreaMarkerSprites_i = 0;
-    while (CreateAreaMarkerSprites_i as i32) < (*sPokedexAreaScreen).numSpecialAreas as i32 {
-        CreateAreaMarkerSprites_mapSecId =
-            (*sPokedexAreaScreen).specialAreaRegionMapSectionIds[CreateAreaMarkerSprites_i] as i16;
-        CreateAreaMarkerSprites_x =
-            8 * (gRegionMapEntries[CreateAreaMarkerSprites_mapSecId].x as i16 + 1) + 4;
-        CreateAreaMarkerSprites_y =
-            8 * gRegionMapEntries[CreateAreaMarkerSprites_mapSecId].y as i16 + 28;
-        CreateAreaMarkerSprites_x +=
-            4 * (gRegionMapEntries[CreateAreaMarkerSprites_mapSecId].width as i16 - 1);
-        CreateAreaMarkerSprites_y +=
-            4 * (gRegionMapEntries[CreateAreaMarkerSprites_mapSecId].height as i16 - 1);
+    CreateAreaMarkerSprites_numSprites.set(0);
+    CreateAreaMarkerSprites_i.set(0);
+    while (CreateAreaMarkerSprites_i.get() as i32) < (*sPokedexAreaScreen).numSpecialAreas as i32 {
+        CreateAreaMarkerSprites_mapSecId.set(
+            (*sPokedexAreaScreen).specialAreaRegionMapSectionIds[CreateAreaMarkerSprites_i.get()]
+                as i16,
+        );
+        CreateAreaMarkerSprites_x.set(
+            8 * ((*(&raw const crate::data::region_map::gRegionMapEntries)
+                .cast::<CArray<RegionMapLocation, 0>>())[CreateAreaMarkerSprites_mapSecId.get()]
+            .x as i16
+                + 1)
+                + 4,
+        );
+        CreateAreaMarkerSprites_y.set(
+            8 * (*(&raw const crate::data::region_map::gRegionMapEntries)
+                .cast::<CArray<RegionMapLocation, 0>>())[CreateAreaMarkerSprites_mapSecId.get()]
+            .y as i16
+                + 28,
+        );
+        CreateAreaMarkerSprites_x.set(
+            CreateAreaMarkerSprites_x.get()
+                + (4 * ((*(&raw const crate::data::region_map::gRegionMapEntries).cast::<CArray<
+                    RegionMapLocation,
+                    0,
+                >>(
+                ))[CreateAreaMarkerSprites_mapSecId.get()]
+                .width as i16
+                    - 1)),
+        );
+        CreateAreaMarkerSprites_y.set(
+            CreateAreaMarkerSprites_y.get()
+                + (4 * ((*(&raw const crate::data::region_map::gRegionMapEntries).cast::<CArray<
+                    RegionMapLocation,
+                    0,
+                >>(
+                ))[CreateAreaMarkerSprites_mapSecId.get()]
+                .height as i16
+                    - 1)),
+        );
         spriteId = CreateSprite(
             (&raw const *sAreaMarkerSpriteTemplate).cast_mut(),
-            CreateAreaMarkerSprites_x,
-            CreateAreaMarkerSprites_y,
+            CreateAreaMarkerSprites_x.get(),
+            CreateAreaMarkerSprites_y.get(),
             0,
         );
         if spriteId != MAX_SPRITES {
             gSprites[spriteId].set_invisible(TRUE as u16);
             (*sPokedexAreaScreen).areaMarkerSprites[{
-                let t1 = CreateAreaMarkerSprites_numSprites;
-                CreateAreaMarkerSprites_numSprites += 1;
+                let t1 = CreateAreaMarkerSprites_numSprites.get();
+                CreateAreaMarkerSprites_numSprites
+                    .set(CreateAreaMarkerSprites_numSprites.get() + 1);
                 t1
             }] = &raw mut gSprites[spriteId];
         }
-        CreateAreaMarkerSprites_i += 1;
+        CreateAreaMarkerSprites_i.set(CreateAreaMarkerSprites_i.get() + 1);
     }
-    (*sPokedexAreaScreen).numAreaMarkerSprites = CreateAreaMarkerSprites_numSprites as u16;
+    (*sPokedexAreaScreen).numAreaMarkerSprites = CreateAreaMarkerSprites_numSprites.get() as u16;
 }
-pub(crate) unsafe extern "C" fn DestroyAreaScreenSprites() {
-    let mut i: u16 = 0;
+unsafe fn DestroyAreaScreenSprites() {
     FreeSpriteTilesByTag(TAG_AREA_MARKER);
     FreeSpritePaletteByTag(TAG_AREA_MARKER);
-    i = 0;
+    let mut i: u16 = 0;
     while i < (*sPokedexAreaScreen).numAreaMarkerSprites {
         DestroySprite((*sPokedexAreaScreen).areaMarkerSprites[i]);
         i += 1;
     }
     FreeSpriteTilesByTag(TAG_AREA_UNKNOWN);
     FreeSpritePaletteByTag(TAG_AREA_UNKNOWN);
-    i = 0;
-    while i < 3 {
+    for i in 0..3u16 {
         if !(*sPokedexAreaScreen).areaUnknownSprites[i].is_null() {
             DestroySprite((*sPokedexAreaScreen).areaUnknownSprites[i]);
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn LoadAreaUnknownGraphics() {
+unsafe fn LoadAreaUnknownGraphics() {
     let mut spriteSheet: SpriteSheet = zeroed();
     spriteSheet.data = (*sPokedexAreaScreen).areaUnknownGraphicsBuffer.as_mut_ptr() as *mut c_void;
     spriteSheet.size = 1536;
     spriteSheet.tag = TAG_AREA_UNKNOWN;
     LZ77UnCompWram(
-        gPokedexAreaScreenAreaUnknown_Gfx.as_ptr().cast_mut(),
+        (*(&raw const crate::data::graphics::gPokedexAreaScreenAreaUnknown_Gfx)
+            .cast::<CArray<u32, 0>>())
+        .as_ptr()
+        .cast_mut(),
         (*sPokedexAreaScreen).areaUnknownGraphicsBuffer.as_mut_ptr() as *mut c_void,
     );
     LoadSpriteSheet(&raw mut spriteSheet);
     LoadSpritePalette((&raw const *sAreaUnknownSpritePalette).cast_mut());
 }
-pub(crate) unsafe extern "C" fn CreateAreaUnknownSprites() {
-    let mut i: u16 = 0;
+unsafe fn CreateAreaUnknownSprites() {
     if (*sPokedexAreaScreen).numOverworldAreas != 0 || (*sPokedexAreaScreen).numSpecialAreas != 0 {
-        i = 0;
-        while i < 3 {
+        for i in 0..3u16 {
             (*sPokedexAreaScreen).areaUnknownSprites[i] = null_mut();
-            i += 1;
         }
     } else {
-        i = 0;
-        while i < 3 {
-            let mut spriteId: u8 = CreateSprite(
+        for i in 0..3u16 {
+            let spriteId: u8 = CreateSprite(
                 (&raw const *sAreaUnknownSpriteTemplate).cast_mut(),
                 i as i16 * 32 + 160,
                 140,
@@ -865,7 +912,6 @@ pub(crate) unsafe extern "C" fn CreateAreaUnknownSprites() {
             } else {
                 (*sPokedexAreaScreen).areaUnknownSprites[i] = null_mut();
             }
-            i += 1;
         }
     }
 }

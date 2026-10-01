@@ -3,29 +3,33 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    dead_code,
+    unused_assignments
 )]
 
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::librfu_rfu::{
+    gRfuLinkStatus, gRfuSlotStatusNI, gRfuSlotStatusUNI, rfu_CHILD_getConnectRecoveryStatus,
+    rfu_NI_CHILD_setSendGameName, rfu_NI_stopReceivingData, rfu_REQ_CHILD_endConnectRecovery,
+    rfu_REQ_CHILD_pollConnectRecovery, rfu_REQ_CHILD_startConnectRecovery, rfu_REQ_RFUStatus,
+    rfu_REQ_changeMasterSlave, rfu_REQ_configGameData, rfu_REQ_configSystem, rfu_REQ_disconnect,
+    rfu_REQ_endConnectParent, rfu_REQ_endSearchChild, rfu_REQ_endSearchParent,
+    rfu_REQ_pollConnectParent, rfu_REQ_pollSearchChild, rfu_REQ_pollSearchParent, rfu_REQ_reset,
+    rfu_REQ_sendData, rfu_REQ_startConnectParent, rfu_REQ_startSearchChild,
+    rfu_REQ_startSearchParent, rfu_REQ_stopMode, rfu_REQBN_softReset_and_checkID,
+    rfu_REQBN_watchLink, rfu_UNI_PARENT_getDRAC_ACK, rfu_changeSendTarget, rfu_clearSlot,
+    rfu_getConnectParentStatus, rfu_getMasterSlave, rfu_getRFUStatus, rfu_getSTWIRecvBuffer,
+    rfu_setMSCCallback, rfu_setREQCallback, rfu_syncVBlank, rfu_waitREQComplete,
+};
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -44,56 +48,19 @@ const RN_ACCEPT: u8 = 1;
 const RN_DISCONNECT: u8 = 4;
 const RN_NAME_TIMER_CLEAR: u8 = 2;
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut lman: linkManagerTag = unsafe { zeroed() };
 
-unsafe extern "C" {
-    static mut gRfuLinkStatus: *mut RfuLinkStatus;
-    static mut gRfuSlotStatusNI: CArray<*mut RfuSlotStatusNI, 4>;
-    static mut gRfuSlotStatusUNI: CArray<*mut RfuSlotStatusUNI, 4>;
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn rfu_CHILD_getConnectRecoveryStatus(a0: *mut u8) -> u16;
-    fn rfu_NI_CHILD_setSendGameName(a0: u8, a1: u8) -> u16;
-    fn rfu_NI_stopReceivingData(a0: u8) -> u16;
-    fn rfu_REQBN_softReset_and_checkID() -> u32;
-    fn rfu_REQBN_watchLink(a0: u16, a1: *mut u8, a2: *mut u8, a3: *mut u8) -> u16;
-    fn rfu_REQ_CHILD_endConnectRecovery();
-    fn rfu_REQ_CHILD_pollConnectRecovery();
-    fn rfu_REQ_CHILD_startConnectRecovery(a0: u8);
-    fn rfu_REQ_RFUStatus();
-    fn rfu_REQ_changeMasterSlave();
-    fn rfu_REQ_configGameData(a0: u8, a1: u16, a2: *mut u8, a3: *mut u8);
-    fn rfu_REQ_configSystem(a0: u16, a1: u8, a2: u8);
-    fn rfu_REQ_disconnect(a0: u8);
-    fn rfu_REQ_endConnectParent();
-    fn rfu_REQ_endSearchChild();
-    fn rfu_REQ_endSearchParent();
-    fn rfu_REQ_pollConnectParent();
-    fn rfu_REQ_pollSearchChild();
-    fn rfu_REQ_pollSearchParent();
-    fn rfu_REQ_reset();
-    fn rfu_REQ_sendData(a0: u8);
-    fn rfu_REQ_startConnectParent(a0: u16);
-    fn rfu_REQ_startSearchChild();
-    fn rfu_REQ_startSearchParent();
-    fn rfu_REQ_stopMode();
-    fn rfu_UNI_PARENT_getDRAC_ACK(a0: *mut u8) -> u16;
-    fn rfu_changeSendTarget(a0: u8, a1: u8, a2: u8) -> u16;
-    fn rfu_clearSlot(a0: u8, a1: u8) -> u16;
-    fn rfu_getConnectParentStatus(a0: *mut u8, a1: *mut u8) -> u16;
-    fn rfu_getMasterSlave() -> u8;
-    fn rfu_getRFUStatus(a0: *mut u8) -> u16;
-    fn rfu_getSTWIRecvBuffer() -> *mut u8;
-    fn rfu_setMSCCallback(a0: Option<unsafe extern "C" fn(u16)>);
-    fn rfu_setREQCallback(a0: Option<unsafe extern "C" fn(u16, u16)>);
-    fn rfu_syncVBlank() -> u16;
-    fn rfu_waitREQComplete() -> u16;
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_REQBN_softReset_and_checkID() -> u32 {
-    let mut id: u32 = rfu_REQBN_softReset_and_checkID();
+pub unsafe fn rfu_LMAN_REQBN_softReset_and_checkID() -> u32 {
+    let id: u32 = rfu_REQBN_softReset_and_checkID();
     if id == RFU_ID {
         lman.RFU_powerOn_flag = 1;
     }
@@ -111,10 +78,9 @@ pub unsafe extern "C" fn rfu_LMAN_REQBN_softReset_and_checkID() -> u32 {
     lman.acceptSlot_flag = 0;
     lman.parent_child = MODE_NEUTRAL;
     rfu_LMAN_managerChangeAgbClockMaster();
-    return id;
+    id
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_REQ_sendData(mut clockChangeFlag: u8) {
+pub unsafe fn rfu_LMAN_REQ_sendData(mut clockChangeFlag: u8) {
     if (*gRfuLinkStatus).parentChild == MODE_CHILD {
         if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_ON {
             clockChangeFlag = TRUE;
@@ -126,10 +92,9 @@ pub unsafe extern "C" fn rfu_LMAN_REQ_sendData(mut clockChangeFlag: u8) {
     }
     rfu_REQ_sendData(clockChangeFlag);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_initializeManager(
-    LMAN_callback_p: Option<unsafe extern "C" fn(u8, u8)>,
-    MSC_callback_p: Option<unsafe extern "C" fn(u16)>,
+pub unsafe fn rfu_LMAN_initializeManager(
+    LMAN_callback_p: Option<unsafe fn(u8, u8)>,
+    MSC_callback_p: Option<unsafe fn(u16)>,
 ) -> u8 {
     if LMAN_callback_p.is_none() {
         return LMAN_ERROR_ILLEGAL_PARAMETER;
@@ -150,9 +115,9 @@ pub unsafe extern "C" fn rfu_LMAN_initializeManager(
     lman.MSC_callback = MSC_callback_p;
     rfu_setMSCCallback(Some(rfu_LMAN_MSC_callback));
     rfu_setREQCallback(Some(rfu_LMAN_REQ_callback));
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_endManager() {
+unsafe fn rfu_LMAN_endManager() {
     {
         {
             let mut tmp: u16 = 0;
@@ -166,8 +131,7 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_endManager() {
     }
     lman.parent_child = MODE_NEUTRAL;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_initializeRFU(init_parameters: *mut InitializeParametersTag) {
+pub unsafe fn rfu_LMAN_initializeRFU(init_parameters: *mut InitializeParametersTag) {
     rfu_LMAN_clearVariables();
     lman.state = LMAN_STATE_SOFT_RESET_AND_CHECK_ID;
     lman.next_state = LMAN_STATE_RESET;
@@ -179,8 +143,7 @@ pub unsafe extern "C" fn rfu_LMAN_initializeRFU(init_parameters: *mut Initialize
         lman.fastSearchParent_flag = FSP_ON;
     }
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_clearVariables() {
-    let mut i: u8 = 0;
+unsafe fn rfu_LMAN_clearVariables() {
     lman.state = {
         lman.next_state = LMAN_STATE_READY;
         lman.next_state
@@ -191,26 +154,20 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_clearVariables() {
     lman.connectSlot_flag_old = 0;
     lman.nameAcceptTimer.active = 0;
     lman.linkRecoveryTimer.active = 0;
-    i = 0;
-    while i < RFU_CHILD_MAX {
+    for i in 0..RFU_CHILD_MAX {
         lman.nameAcceptTimer.count[i] = 0;
         lman.linkRecoveryTimer.count[i] = 0;
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_powerDownRFU() {
+pub unsafe fn rfu_LMAN_powerDownRFU() {
     lman.state = LMAN_STATE_STOP_MODE;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_establishConnection(
+pub unsafe fn rfu_LMAN_establishConnection(
     mut parent_child: u8,
     mut connect_period: u16,
     name_accept_period: u16,
     acceptable_serialNo_list: *mut u16,
 ) -> u8 {
-    let mut i: u8 = 0;
-    let mut serial_list: *mut u16 = null_mut();
     if lman.state != LMAN_STATE_READY
         && (lman.state != LMAN_STATE_WAIT_RECV_CHILD_NAME || parent_child != MODE_PARENT)
     {
@@ -223,8 +180,8 @@ pub unsafe extern "C" fn rfu_LMAN_establishConnection(
         rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
         return LMAN_ERROR_AGB_CLK_SLAVE;
     }
-    i = 0;
-    serial_list = acceptable_serialNo_list;
+    let mut i: u8 = 0;
+    let mut serial_list: *mut u16 = acceptable_serialNo_list;
     while i < 16 {
         if *({
             let t2 = serial_list;
@@ -260,11 +217,9 @@ pub unsafe extern "C" fn rfu_LMAN_establishConnection(
     lman.connect_period = connect_period;
     lman.nameAcceptTimer.count_max = name_accept_period;
     lman.acceptable_serialNo_list = acceptable_serialNo_list;
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_CHILD_connectParent(parentId: u16, connect_period: u16) -> u8 {
-    let mut i: u8 = 0;
+pub unsafe fn rfu_LMAN_CHILD_connectParent(parentId: u16, connect_period: u16) -> u8 {
     if lman.state != LMAN_STATE_READY && (lman.state < 9 || lman.state > 11) {
         lman.param[0] = 1;
         rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
@@ -275,7 +230,7 @@ pub unsafe extern "C" fn rfu_LMAN_CHILD_connectParent(parentId: u16, connect_per
         rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
         return LMAN_ERROR_AGB_CLK_SLAVE;
     }
-    i = 0;
+    let mut i: u8 = 0;
     while i < (*gRfuLinkStatus).findParentCount {
         if (*gRfuLinkStatus).partner[i].id == parentId {
             break;
@@ -299,32 +254,26 @@ pub unsafe extern "C" fn rfu_LMAN_CHILD_connectParent(parentId: u16, connect_per
     if lman.pcswitch_flag != 0 {
         lman.pcswitch_flag = PCSWITCH_CP;
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_PARENT_stopWaitLinkRecoveryAndDisconnect(
-    bm_targetSlot: u8,
-) {
-    let mut i: u8 = 0;
+unsafe fn rfu_LMAN_PARENT_stopWaitLinkRecoveryAndDisconnect(bm_targetSlot: u8) {
     if bm_targetSlot as i32 & lman.linkRecoveryTimer.active as i32 == 0 {
         return;
     }
     lman.linkRecoveryTimer.active &= !bm_targetSlot;
-    i = 0;
-    while i < RFU_CHILD_MAX {
+    for i in 0..RFU_CHILD_MAX {
         if shr_i32(bm_targetSlot as i32, i as u32) & 1 != 0 {
             lman.linkRecoveryTimer.count[i] = 0;
         }
-        i += 1;
     }
-    i = (*gRfuLinkStatus).linkLossSlotFlag & bm_targetSlot;
+    let i: u8 = (*gRfuLinkStatus).linkLossSlotFlag & bm_targetSlot;
     if i != 0 {
         rfu_LMAN_disconnect(i);
     }
     lman.param[0] = i as u16;
     rfu_LMAN_occureCallback(LMAN_MSG_LINK_RECOVERY_FAILED_AND_DISCONNECTED, i);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_stopManager(forced_stop_and_RFU_reset_flag: u8) {
+pub unsafe fn rfu_LMAN_stopManager(forced_stop_and_RFU_reset_flag: u8) {
     let mut msg: u8 = 0;
     lman.pcswitch_flag = 0;
     if forced_stop_and_RFU_reset_flag != 0 {
@@ -402,8 +351,7 @@ pub unsafe extern "C" fn rfu_LMAN_stopManager(forced_stop_and_RFU_reset_flag: u8
         rfu_LMAN_occureCallback(msg, 0);
     }
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_linkWatcher(REQ_commandID: u16) -> u8 {
-    let mut i: u8 = 0;
+unsafe fn rfu_LMAN_linkWatcher(REQ_commandID: u16) -> u8 {
     let mut bm_linkLossSlot: u8 = 0;
     let mut reason: u8 = 0;
     let mut bm_linkRecoverySlot: u8 = 0;
@@ -424,13 +372,11 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_linkWatcher(REQ_commandID: u16) -> u8 {
                 lman.linkRecovery_start_flag = LINK_RECOVERY_IMPOSSIBLE;
             }
             if lman.linkRecovery_start_flag == LINK_RECOVERY_START {
-                i = 0;
-                while i < RFU_CHILD_MAX {
+                for i in 0..RFU_CHILD_MAX {
                     if shr_i32(bm_linkLossSlot as i32, i as u32) & 1 != 0 {
                         lman.linkRecoveryTimer.active |= shl_i32(1, i as u32) as u8;
                         lman.linkRecoveryTimer.count[i] = lman.linkRecoveryTimer.count_max;
                     }
-                    i += 1;
                 }
                 rfu_LMAN_occureCallback(LMAN_MSG_LINK_LOSS_DETECTED_AND_START_RECOVERY, 1);
             } else {
@@ -448,14 +394,12 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_linkWatcher(REQ_commandID: u16) -> u8 {
     }
     if (*gRfuLinkStatus).parentChild == MODE_PARENT {
         if bm_linkRecoverySlot != 0 {
-            i = 0;
-            while i < RFU_CHILD_MAX {
+            for i in 0..RFU_CHILD_MAX {
                 if shr_i32(lman.linkRecoveryTimer.active as i32, i as u32) & 1 != 0
                     && shr_i32(bm_linkRecoverySlot as i32, i as u32) & 1 != 0
                 {
                     lman.linkRecoveryTimer.count[i] = 0;
                 }
-                i += 1;
             }
             lman.linkRecoveryTimer.active &= !bm_linkRecoverySlot;
             lman.param[0] = bm_linkRecoverySlot as u16;
@@ -463,8 +407,7 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_linkWatcher(REQ_commandID: u16) -> u8 {
         }
         if lman.linkRecoveryTimer.active != 0 {
             bm_disconnectSlot = 0;
-            i = 0;
-            while i < RFU_CHILD_MAX {
+            for i in 0..RFU_CHILD_MAX {
                 if shr_i32(lman.linkRecoveryTimer.active as i32, i as u32) & 1 != 0
                     && lman.linkRecoveryTimer.count[i] != 0
                     && ({
@@ -475,7 +418,6 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_linkWatcher(REQ_commandID: u16) -> u8 {
                     lman.linkRecoveryTimer.active &= !(shl_i32(1, i as u32) as u8);
                     bm_disconnectSlot |= shl_i32(1, i as u32) as u8;
                 }
-                i += 1;
             }
             if bm_disconnectSlot != 0 {
                 rfu_LMAN_disconnect(bm_disconnectSlot);
@@ -488,17 +430,15 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_linkWatcher(REQ_commandID: u16) -> u8 {
             lman.linkRecovery_start_flag = 0;
         }
     }
-    return disconnect_occure_flag;
+    disconnect_occure_flag
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_syncVBlank() {
+pub unsafe fn rfu_LMAN_syncVBlank() {
     if rfu_syncVBlank() != 0 {
         rfu_LMAN_occureCallback(LMAN_MSG_WATCH_DOG_TIMER_ERROR, 0);
         rfu_LMAN_managerChangeAgbClockMaster();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_manager_entity(rand: u32) {
+pub unsafe fn rfu_LMAN_manager_entity(rand: u32) {
     let mut msg: u8 = 0;
     if lman.LMAN_callback.is_none() && lman.state != LMAN_STATE_READY {
         lman.state = LMAN_STATE_READY;
@@ -610,17 +550,15 @@ pub unsafe extern "C" fn rfu_LMAN_manager_entity(rand: u32) {
             break;
         }
     }
-    if (*gRfuLinkStatus).parentChild == MODE_PARENT {
-        if rfu_LMAN_linkWatcher(0) != 0 {
-            return;
-        }
+    if (*gRfuLinkStatus).parentChild == MODE_PARENT && rfu_LMAN_linkWatcher(0) != 0 {
+        return;
     }
     rfu_LMAN_PARENT_checkRecvChildName();
     rfu_LMAN_CHILD_checkSendChildName();
     rfu_LMAN_CHILD_linkRecoveryProcess();
     rfu_LMAN_checkNICommunicateStatus();
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_settingPCSWITCH(rand: u32) {
+unsafe fn rfu_LMAN_settingPCSWITCH(rand: u32) {
     if lman.pcswitch_flag == PCSWITCH_3RD_SC_START {
         lman.parent_child = MODE_PARENT;
         lman.state = LMAN_STATE_START_SEARCH_CHILD;
@@ -649,10 +587,9 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_settingPCSWITCH(rand: u32) {
         lman.state = LMAN_STATE_START_SEARCH_PARENT;
     }
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut reqResult: u16) {
+pub(crate) unsafe fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut reqResult: u16) {
     let mut status: u8 = 0;
     let mut stwiRecvBuffer: *mut u8 = null_mut();
-    let mut i: u8 = 0;
     if lman.active != 0 {
         lman.active = 0;
         match reqCommandId {
@@ -707,10 +644,8 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut req
             }
             ID_SP_START_REQ => {
                 if reqResult == 0 {
-                    if lman.fastSearchParent_flag == FSP_ON {
-                        if lman.connect_period > 1 {
-                            lman.connect_period -= 1;
-                        }
+                    if lman.fastSearchParent_flag == FSP_ON && lman.connect_period > 1 {
+                        lman.connect_period -= 1;
                     }
                     lman.state = {
                         lman.next_state = LMAN_STATE_POLL_SEARCH_PARENT;
@@ -905,14 +840,12 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut req
                     }
                 }
             }
-            ID_STOP_MODE_REQ => {
-                if reqResult == 0 {
-                    lman.state = {
-                        lman.next_state = LMAN_STATE_READY;
-                        lman.next_state
-                    };
-                    rfu_LMAN_occureCallback(LMAN_MSG_RFU_POWER_DOWN, 0);
-                }
+            ID_STOP_MODE_REQ if reqResult == 0 => {
+                lman.state = {
+                    lman.next_state = LMAN_STATE_READY;
+                    lman.next_state
+                };
+                rfu_LMAN_occureCallback(LMAN_MSG_RFU_POWER_DOWN, 0);
             }
             _ => {}
         }
@@ -945,12 +878,10 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut req
                 rfu_LMAN_reflectCommunicationStatus(lman.param[0] as u8);
                 if lman.linkRecoveryTimer.active != 0 {
                     lman.linkRecoveryTimer.active &= !(lman.param[0] as u8);
-                    i = 0;
-                    while i < RFU_CHILD_MAX {
+                    for i in 0..RFU_CHILD_MAX {
                         if shr_i32(lman.param[0] as i32, i as u32) & 1 != 0 {
                             lman.linkRecoveryTimer.count[i] = 0;
                         }
-                        i += 1;
                     }
                     if lman.parent_child == MODE_CHILD {
                         lman.state = {
@@ -960,32 +891,26 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut req
                     }
                 }
                 status = lman.acceptSlot_flag & lman.param[0] as u8;
-                i = 0;
-                while i < RFU_CHILD_MAX {
+                for i in 0..RFU_CHILD_MAX {
                     if shr_i32(status as i32, i as u32) & 1 != 0 && lman.acceptCount != 0 {
                         lman.acceptCount -= 1;
                     }
-                    i += 1;
                 }
                 lman.acceptSlot_flag &= !(lman.param[0] as u8);
-                if lman.pcswitch_flag != 0 {
-                    if (*gRfuLinkStatus).parentChild == MODE_NEUTRAL {
-                        if lman.pcswitch_flag == PCSWITCH_SC_LOCK {
-                            lman.connect_period = lman.pcswitch_period_bak;
-                            lman.pcswitch_flag = PCSWITCH_3RD_SC;
-                            lman.state = LMAN_STATE_POLL_SEARCH_CHILD;
-                        } else if lman.state != LMAN_STATE_POLL_SEARCH_CHILD
-                            && lman.state != LMAN_STATE_END_SEARCH_CHILD
-                        {
-                            lman.pcswitch_flag = PCSWITCH_1ST_SC_START;
-                            lman.state = LMAN_STATE_START_SEARCH_CHILD;
-                        }
+                if lman.pcswitch_flag != 0 && (*gRfuLinkStatus).parentChild == MODE_NEUTRAL {
+                    if lman.pcswitch_flag == PCSWITCH_SC_LOCK {
+                        lman.connect_period = lman.pcswitch_period_bak;
+                        lman.pcswitch_flag = PCSWITCH_3RD_SC;
+                        lman.state = LMAN_STATE_POLL_SEARCH_CHILD;
+                    } else if lman.state != LMAN_STATE_POLL_SEARCH_CHILD
+                        && lman.state != LMAN_STATE_END_SEARCH_CHILD
+                    {
+                        lman.pcswitch_flag = PCSWITCH_1ST_SC_START;
+                        lman.state = LMAN_STATE_START_SEARCH_CHILD;
                     }
                 }
-                if (*gRfuLinkStatus).parentChild == MODE_NEUTRAL {
-                    if lman.state == LMAN_STATE_READY {
-                        lman.parent_child = MODE_NEUTRAL;
-                    }
+                if (*gRfuLinkStatus).parentChild == MODE_NEUTRAL && lman.state == LMAN_STATE_READY {
+                    lman.parent_child = MODE_NEUTRAL;
                 }
                 if lman.active == 0 {
                     rfu_LMAN_occureCallback(LMAN_MSG_LINK_DISCONNECTED_BY_USER, 1);
@@ -998,16 +923,14 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut req
                 rfu_LMAN_occureCallback(LMAN_MSG_RECV_DATA_REQ_COMPLETED, 0);
             }
         }
-        ID_RESET_REQ | ID_STOP_MODE_REQ => {
-            if reqResult == 0 {
-                lman.reserveDisconnectSlot_flag = 0;
-                lman.acceptCount = 0;
-                lman.acceptSlot_flag = 0;
-                lman.parent_child = MODE_NEUTRAL;
-                rfu_LMAN_managerChangeAgbClockMaster();
-                if reqCommandId == ID_STOP_MODE_REQ {
-                    rfu_LMAN_endManager();
-                }
+        ID_RESET_REQ | ID_STOP_MODE_REQ if reqResult == 0 => {
+            lman.reserveDisconnectSlot_flag = 0;
+            lman.acceptCount = 0;
+            lman.acceptSlot_flag = 0;
+            lman.parent_child = MODE_NEUTRAL;
+            rfu_LMAN_managerChangeAgbClockMaster();
+            if reqCommandId == ID_STOP_MODE_REQ {
+                rfu_LMAN_endManager();
             }
         }
         _ => {}
@@ -1040,10 +963,9 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_REQ_callback(reqCommandId: u16, mut req
         rfu_LMAN_managerChangeAgbClockMaster();
     }
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_MSC_callback(reqCommandId: u16) {
-    let mut active_bak: u8 = 0;
+pub(crate) unsafe fn rfu_LMAN_MSC_callback(reqCommandId: u16) {
     let mut thisAck_flag: u8 = 0;
-    active_bak = lman.active;
+    let active_bak: u8 = lman.active;
     lman.active = 0;
     lman.msc_exe_flag = 1;
     if (*gRfuLinkStatus).parentChild == MODE_CHILD {
@@ -1072,10 +994,9 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_MSC_callback(reqCommandId: u16) {
     lman.msc_exe_flag = 0;
     lman.active = active_bak;
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_PARENT_checkRecvChildName() {
+unsafe fn rfu_LMAN_PARENT_checkRecvChildName() {
     let mut newSlot: u8 = 0;
     let mut newAcceptSlot: u8 = 0;
-    let mut i: u8 = 0;
     let mut flags: u8 = 0;
     let mut tgtSlot: u8 = 0;
     let mut ptr: *mut u16 = null_mut();
@@ -1093,8 +1014,7 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_PARENT_checkRecvChildName() {
             rfu_LMAN_occureCallback(LMAN_MSG_NEW_CHILD_CONNECT_DETECTED, 1);
         }
         newAcceptSlot = 0x00;
-        i = 0;
-        while i < RFU_CHILD_MAX {
+        for i in 0..RFU_CHILD_MAX {
             tgtSlot = shl_i32(1, i as u32) as u8;
             flags = 0x00;
             if newSlot as i32 & tgtSlot as i32 != 0 {
@@ -1135,7 +1055,6 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_PARENT_checkRecvChildName() {
                     lman.reserveDisconnectSlot_flag |= tgtSlot;
                 }
             }
-            i += 1;
         }
         if newAcceptSlot != 0 {
             lman.param[0] = newAcceptSlot as u16;
@@ -1143,13 +1062,12 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_PARENT_checkRecvChildName() {
         }
         if lman.reserveDisconnectSlot_flag != 0 {
             flags = 1;
-            if (*gRfuLinkStatus).sendSlotUNIFlag != 0 {
-                if (&raw mut lman.parentAck_flag).read_volatile() as i32
+            if (*gRfuLinkStatus).sendSlotUNIFlag != 0
+                && (&raw mut lman.parentAck_flag).read_volatile() as i32
                     & lman.acceptSlot_flag as i32
                     != lman.acceptSlot_flag as i32
-                {
-                    flags = 0;
-                }
+            {
+                flags = 0;
             }
             if flags != 0 {
                 rfu_LMAN_disconnect(lman.reserveDisconnectSlot_flag);
@@ -1182,24 +1100,23 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_PARENT_checkRecvChildName() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_CHILD_checkSendChildName() {
-    let mut imeBak: u16 = (67109384 as usize as *mut u16).read_volatile();
-    volatile_write(67109384 as usize as *mut u16, 0);
-    if lman.state == LMAN_STATE_SEND_CHILD_NAME {
-        if ({
+unsafe fn rfu_LMAN_CHILD_checkSendChildName() {
+    let imeBak: u16 = (67109384_usize as *mut u16).read_volatile();
+    volatile_write(67109384_usize as *mut u16, 0);
+    if lman.state == LMAN_STATE_SEND_CHILD_NAME
+        && (({
             lman.nameAcceptTimer.count[lman.child_slot] -= 1;
             lman.nameAcceptTimer.count[lman.child_slot]
         }) == 0
-            || (*gRfuSlotStatusNI[lman.child_slot]).send.state == SLOT_STATE_SEND_FAILED
-        {
-            rfu_LMAN_requestChangeAgbClockMaster();
-            lman.state = LMAN_STATE_WAIT_CHANGE_CLOCK_MASTER;
-            rfu_clearSlot(TYPE_NI_SEND, lman.child_slot);
-            lman.nameAcceptTimer.active &= !(shl_i32(1, lman.child_slot as u32) as u8);
-            lman.nameAcceptTimer.count[lman.child_slot] = 0;
-        }
+            || (*gRfuSlotStatusNI[lman.child_slot]).send.state == SLOT_STATE_SEND_FAILED)
+    {
+        rfu_LMAN_requestChangeAgbClockMaster();
+        lman.state = LMAN_STATE_WAIT_CHANGE_CLOCK_MASTER;
+        rfu_clearSlot(TYPE_NI_SEND, lman.child_slot);
+        lman.nameAcceptTimer.active &= !(shl_i32(1, lman.child_slot as u32) as u8);
+        lman.nameAcceptTimer.count[lman.child_slot] = 0;
     }
-    volatile_write(67109384 as usize as *mut u16, imeBak);
+    volatile_write(67109384_usize as *mut u16, imeBak);
     if lman.state == LMAN_STATE_WAIT_CHANGE_CLOCK_MASTER {
         if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_ON {
             rfu_LMAN_requestChangeAgbClockMaster();
@@ -1217,7 +1134,7 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_CHILD_checkSendChildName() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_CHILD_checkSendChildName2() {
+unsafe fn rfu_LMAN_CHILD_checkSendChildName2() {
     if lman.state == LMAN_STATE_SEND_CHILD_NAME
         && (*gRfuSlotStatusNI[lman.child_slot]).send.state == SLOT_STATE_SEND_SUCCESS
     {
@@ -1231,7 +1148,7 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_CHILD_checkSendChildName2() {
         rfu_LMAN_occureCallback(LMAN_MSG_CHILD_NAME_SEND_COMPLETED, 0);
     }
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_CHILD_linkRecoveryProcess() {
+unsafe fn rfu_LMAN_CHILD_linkRecoveryProcess() {
     if lman.parent_child == MODE_CHILD && lman.linkRecovery_start_flag == LINK_RECOVERY_START {
         lman.state_bak[0] = lman.state;
         lman.state_bak[1] = lman.next_state;
@@ -1240,11 +1157,10 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_CHILD_linkRecoveryProcess() {
         lman.linkRecovery_start_flag = LINK_RECOVERY_EXE;
     }
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_CHILD_checkEnableParentCandidate() -> u8 {
-    let mut i: u8 = 0;
+unsafe fn rfu_LMAN_CHILD_checkEnableParentCandidate() -> u8 {
     let mut serialNo: *mut u16 = null_mut();
     let mut flags: u8 = 0x00;
-    i = 0;
+    let mut i: u8 = 0;
     while i < (*gRfuLinkStatus).findParentCount {
         serialNo = lman.acceptable_serialNo_list;
         while *serialNo != 0xFFFF {
@@ -1255,9 +1171,9 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_CHILD_checkEnableParentCandidate() -> u
         }
         i += 1;
     }
-    return flags;
+    flags
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_occureCallback(msg: u8, param_count: u8) {
+unsafe fn rfu_LMAN_occureCallback(msg: u8, param_count: u8) {
     if lman.LMAN_callback.is_some() {
         lman.LMAN_callback.unwrap_unchecked()(msg, param_count);
     }
@@ -1266,18 +1182,16 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_occureCallback(msg: u8, param_count: u8
         lman.param[1]
     };
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_disconnect(bm_disconnectedSlot: u8) {
-    let mut active_bak: u8 = lman.active;
+unsafe fn rfu_LMAN_disconnect(bm_disconnectedSlot: u8) {
+    let active_bak: u8 = lman.active;
     lman.active = 1;
     rfu_REQ_disconnect(bm_disconnectedSlot);
     rfu_waitREQComplete();
     lman.active = active_bak;
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_reflectCommunicationStatus(bm_disconnectedSlot: u8) {
-    let mut i: u8 = 0;
+unsafe fn rfu_LMAN_reflectCommunicationStatus(bm_disconnectedSlot: u8) {
     if (*gRfuLinkStatus).sendSlotNIFlag != 0 {
-        i = 0;
-        while i < RFU_CHILD_MAX {
+        for i in 0..RFU_CHILD_MAX {
             if (*gRfuSlotStatusNI[i]).send.state as i32 & SLOT_BUSY_FLAG != 0
                 && (*gRfuSlotStatusNI[i]).send.bmSlot as i32 & bm_disconnectedSlot as i32 != 0
             {
@@ -1287,45 +1201,36 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_reflectCommunicationStatus(bm_disconnec
                     (*gRfuSlotStatusNI[i]).send.bmSlot & !bm_disconnectedSlot,
                 );
             }
-            i += 1;
         }
     }
     if (*gRfuLinkStatus).recvSlotNIFlag != 0 {
-        i = 0;
-        while i < RFU_CHILD_MAX {
+        for i in 0..RFU_CHILD_MAX {
             if (*gRfuSlotStatusNI[i]).recv.state as i32 & SLOT_BUSY_FLAG != 0
                 && (*gRfuSlotStatusNI[i]).recv.bmSlot as i32 & bm_disconnectedSlot as i32 != 0
             {
                 rfu_NI_stopReceivingData(i);
             }
-            i += 1;
         }
     }
     if (*gRfuLinkStatus).sendSlotUNIFlag != 0 {
         (*gRfuLinkStatus).sendSlotUNIFlag &= !bm_disconnectedSlot;
-        i = 0;
-        while i < RFU_CHILD_MAX {
+        for i in 0..RFU_CHILD_MAX {
             if (*gRfuSlotStatusUNI[i]).send.state == SLOT_STATE_SEND_UNI
                 && bm_disconnectedSlot as i32 & (*gRfuSlotStatusUNI[i]).send.bmSlot as i32 != 0
             {
                 (*gRfuSlotStatusUNI[i]).send.bmSlot &= !bm_disconnectedSlot;
             }
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_checkNICommunicateStatus() {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
+unsafe fn rfu_LMAN_checkNICommunicateStatus() {
     let mut flags: u8 = 0;
     if lman.NI_failCounter_limit != 0 {
         if (*gRfuLinkStatus).sendSlotNIFlag != 0 {
-            i = 0;
-            while i < RFU_CHILD_MAX {
+            for i in 0..RFU_CHILD_MAX {
                 if (*gRfuSlotStatusNI[i]).send.state as i32 & SLOT_BUSY_FLAG != 0 {
                     flags = 0;
-                    j = 0;
-                    while j < RFU_CHILD_MAX {
+                    for j in 0..RFU_CHILD_MAX {
                         if shr_i32((*gRfuSlotStatusNI[i]).send.bmSlot as i32, j as u32) & 1 != 0
                             && (*gRfuSlotStatusNI[j]).send.failCounter > lman.NI_failCounter_limit
                         {
@@ -1338,60 +1243,49 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_checkNICommunicateStatus() {
                                 flags ^ (*gRfuSlotStatusNI[i]).send.bmSlot,
                             );
                         }
-                        j += 1;
                     }
                 }
-                i += 1;
             }
         }
         if (*gRfuLinkStatus).recvSlotNIFlag != 0 {
-            i = 0;
-            while i < RFU_CHILD_MAX {
+            for i in 0..RFU_CHILD_MAX {
                 if (*gRfuSlotStatusNI[i]).recv.state as i32 & SLOT_BUSY_FLAG != 0
                     && (*gRfuSlotStatusNI[i]).recv.failCounter > lman.NI_failCounter_limit
                 {
                     rfu_NI_stopReceivingData(i);
                 }
-                i += 1;
             }
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_setMSCCallback(
-    MSC_callback_p: Option<unsafe extern "C" fn(u16)>,
-) {
+pub unsafe fn rfu_LMAN_setMSCCallback(MSC_callback_p: Option<unsafe fn(u16)>) {
     lman.MSC_callback = MSC_callback_p;
     rfu_setMSCCallback(Some(rfu_LMAN_MSC_callback));
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_setLMANCallback(
-    func: Option<unsafe extern "C" fn(u8, u8)>,
-) {
+unsafe fn rfu_LMAN_setLMANCallback(func: Option<unsafe fn(u8, u8)>) {
     lman.LMAN_callback = func;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_setLinkRecovery(enable_flag: u8, recovery_period: u16) -> u8 {
-    let mut imeBak: u16 = 0;
+pub unsafe fn rfu_LMAN_setLinkRecovery(enable_flag: u8, recovery_period: u16) -> u8 {
     if lman.linkRecovery_enable != 0 && enable_flag == 0 && lman.linkRecoveryTimer.active != 0 {
         return LMAN_ERROR_NOW_LINK_RECOVERY;
     }
-    imeBak = (67109384 as usize as *mut u16).read_volatile();
-    volatile_write(67109384 as usize as *mut u16, 0);
+    let imeBak: u16 = (67109384_usize as *mut u16).read_volatile();
+    volatile_write(67109384_usize as *mut u16, 0);
     lman.linkRecovery_enable = enable_flag;
     lman.linkRecoveryTimer.count_max = recovery_period;
-    volatile_write(67109384 as usize as *mut u16, imeBak);
-    return 0;
+    volatile_write(67109384_usize as *mut u16, imeBak);
+    0
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_setNIFailCounterLimit(NI_failCounter_limit: u16) -> u8 {
+unsafe fn rfu_LMAN_setNIFailCounterLimit(NI_failCounter_limit: u16) -> u8 {
     if (*gRfuLinkStatus).sendSlotNIFlag as i32 | (*gRfuLinkStatus).recvSlotNIFlag as i32 != 0 {
         lman.param[0] = 6;
         rfu_LMAN_occureCallback(LMAN_MSG_LMAN_API_ERROR_RETURN, 1);
         return LMAN_ERROR_NOW_COMMUNICATION;
     }
     lman.NI_failCounter_limit = NI_failCounter_limit;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_setFastSearchParent(enable_flag: u8) -> u8 {
+unsafe fn rfu_LMAN_setFastSearchParent(enable_flag: u8) -> u8 {
     if lman.state == LMAN_STATE_START_SEARCH_PARENT
         || lman.state == LMAN_STATE_POLL_SEARCH_PARENT
         || lman.state == LMAN_STATE_END_SEARCH_PARENT
@@ -1405,9 +1299,9 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_setFastSearchParent(enable_flag: u8) ->
     } else {
         lman.fastSearchParent_flag = 0;
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn rfu_LMAN_managerChangeAgbClockMaster() {
+unsafe fn rfu_LMAN_managerChangeAgbClockMaster() {
     if (&raw mut lman.childClockSlave_flag).read_volatile() != RFU_CHILD_CLOCK_SLAVE_OFF {
         volatile_write(
             &raw mut lman.childClockSlave_flag,
@@ -1416,8 +1310,7 @@ pub(crate) unsafe extern "C" fn rfu_LMAN_managerChangeAgbClockMaster() {
         rfu_LMAN_occureCallback(LMAN_MSG_CHANGE_AGB_CLOCK_MASTER, 0);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_requestChangeAgbClockMaster() {
+pub unsafe fn rfu_LMAN_requestChangeAgbClockMaster() {
     if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_OFF {
         rfu_LMAN_occureCallback(LMAN_MSG_CHANGE_AGB_CLOCK_MASTER, 0);
     } else if (&raw mut lman.childClockSlave_flag).read_volatile() == RFU_CHILD_CLOCK_SLAVE_ON {
@@ -1427,8 +1320,7 @@ pub unsafe extern "C" fn rfu_LMAN_requestChangeAgbClockMaster() {
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rfu_LMAN_forceChangeSP() {
+pub unsafe fn rfu_LMAN_forceChangeSP() {
     if lman.pcswitch_flag != 0 {
         match lman.state {
             LMAN_STATE_START_SEARCH_CHILD => {

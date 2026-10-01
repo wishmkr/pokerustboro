@@ -3,29 +3,48 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    dead_code,
+    unused_assignments
 )]
 
+use crate::battle_anim::gBattleAnimArgs;
+use crate::battle_anim::{
+    DestroyAnimSprite, DestroyAnimVisualTask, IsBattlerSpriteVisible, IsContest,
+    gAnimDisableStructPtr, gAnimVisualTaskCount, gBattleAnimAttacker, gBattleAnimTarget,
+};
+use crate::battle_anim_mons::{
+    AnimFastTranslateLinear, AnimLoadCompressedBgTilemapHandleContest, AnimTranslateLinear,
+    ClearBattleAnimBg, ConvertPosDataToTranslateLinearData, DestroySpriteAndMatrix,
+    GetAnimBattlerSpriteId, GetBattleAnimBg1Data, GetBattlerAtPosition, GetBattlerSide,
+    GetBattlerSpriteBGPriority, GetBattlerSpriteCoord, GetBattlerSpriteCoordAttr,
+    InitAnimArcTranslation, InitAnimFastLinearTranslationWithSpeed,
+    InitAnimFastLinearTranslationWithSpeedAndPos, InitAnimLinearTranslation,
+    InitAnimLinearTranslationWithSpeed, InitSpritePosToAnimAttacker, InitSpritePosToAnimTarget,
+    IsDoubleBattle, RunStoredCallbackWhenAffineAnimEnds, RunStoredCallbackWhenAnimEnds,
+    SetAverageBattlerPositions, StartAnimLinearTranslation, StoreSpriteCallbackInData6,
+    TranslateAnimHorizontalArc, TranslateAnimSpriteToTargetMonLocation,
+    TranslateSpriteInGrowingCircle,
+};
+use crate::battle_anim_utility_funcs::SetAnimBgAttribute;
+use crate::battle_main::gBattlerPositions;
+use crate::battle_main::{gBattle_BG1_X, gBattle_BG1_Y};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::gpu_regs::SetGpuReg;
+use crate::palette::LoadPalette;
+use crate::random::Random2;
+use crate::sprite::FreeOamMatrix;
+use crate::sprite::gSprites;
+use crate::task::{gTasks, task_get, task_set, task_set_func};
+use crate::trig::{Cos, Sin};
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,6 +53,51 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `LoadBgTiles` with this module's view of its types.
+#[inline]
+unsafe fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
+    unsafe { crate::bg::LoadBgTiles(a0, a1 as _, a2, a3) }
+}
+/// `StartSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAffineAnim(a0 as _, a1);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+// The C's names for task and sprite data slots.
+const sSpawnImpactEffect: usize = 0;
+const sTimer: usize = 0;
+const tState: usize = 0;
+const tSpriteCount: usize = 1;
+const tHailAffineAnimNum: usize = 2;
+const sTargetX: usize = 3;
+const tHailStructId: usize = 3;
+const sTargetY: usize = 4;
+const tInitialDelayTimer: usize = 4;
+const sAffineAnimNum: usize = 5;
+const tHailSpawnTimer: usize = 5;
+const sOwnerTaskId: usize = 6;
+const sOwnerTaskSpriteCountField: usize = 7;
 // Data tables (translate with cdata.py): sAnim_Unused sAnims_Unused sUnusedIceCrystalThrowSpriteTemplate sAnim_IceCrystalLargeChunk sAnim_IceCrystalLarge sAnim_IceCrystalSmall sAnim_Snowball sAnim_BlizzardIceCrystal sAnim_SmallBubblePair sAnims_IceCrystalLargeChunk sAnims_IceCrystalLarge sAnims_IceCrystalSmall sAnims_Snowball sAnims_BlizzardIceCrystal gAnims_SmallBubblePair sAffineAnim_IceCrystalSpiralInwardLarge sAffineAnims_IceCrystalSpiralInwardLarge gIceCrystalSpiralInwardLarge gIceCrystalSpiralInwardSmall sAffineAnim_IceBeamInnerCrystal sAffineAnims_IceBeamInnerCrystal gIceBeamInnerCrystalSpriteTemplate gIceBeamOuterCrystalSpriteTemplate sAffineAnim_IceCrystalHit sAffineAnims_IceCrystalHit gIceCrystalHitLargeSpriteTemplate gIceCrystalHitSmallSpriteTemplate gSwirlingSnowballSpriteTemplate gBlizzardIceCrystalSpriteTemplate gPowderSnowSnowballSpriteTemplate sAnim_IceGroundSpike sAnims_IceGroundSpike gIceGroundSpikeSpriteTemplate sAnim_Cloud sAnims_Cloud gMistCloudSpriteTemplate gSmogCloudSpriteTemplate sHazeBlendAmounts gMistBallSpriteTemplate sMistBlendAmounts gPoisonGasCloudSpriteTemplate sHailCoordData sAffineAnim_HailParticle_0 sAffineAnim_HailParticle_1 sAffineAnim_HailParticle_2 sAffineAnim_WeatherBallIceDown sAffineAnims_HailParticle sAffineAnims_WeatherBallIceDown gHailParticleSpriteTemplate gWeatherBallIceDownSpriteTemplate sAnim_IceBallChunk_0 sAnim_IceBallChunk_1 sAnims_IceBallChunk sAffineAnim_IceBallChunk_0 sAffineAnim_IceBallChunk_1 sAffineAnim_IceBallChunk_2 sAffineAnim_IceBallChunk_3 sAffineAnim_IceBallChunk_4 sAffineAnims_IceBallChunk gIceBallChunkSpriteTemplate gIceBallImpactShardSpriteTemplate
 
 /// `struct HailStruct`
@@ -46,15 +110,15 @@ pub struct HailStruct {
 impl HailStruct {
     #[inline(always)]
     pub fn x(&self) -> i32 {
-        ((((self.bits_0 as u32 >> 0) & 0x3ff) << 22) as i32 >> 22) as i32
+        ((self.bits_0 & 0x3ff) << 22) as i32 >> 22
     }
     #[inline(always)]
     pub fn set_x(&mut self, v: i32) {
-        self.bits_0 = (self.bits_0 & !(0x3ff << 0)) | ((v as u32 & 0x3ff) << 0);
+        self.bits_0 = (self.bits_0 & !0x3ff) | (v as u32 & 0x3ff);
     }
     #[inline(always)]
     pub fn y(&self) -> i32 {
-        ((((self.bits_0 as u32 >> 10) & 0x3ff) << 22) as i32 >> 22) as i32
+        (((self.bits_0 >> 10) & 0x3ff) << 22) as i32 >> 22
     }
     #[inline(always)]
     pub fn set_y(&mut self, v: i32) {
@@ -62,7 +126,7 @@ impl HailStruct {
     }
     #[inline(always)]
     pub fn bPosition(&self) -> i32 {
-        ((((self.bits_0 as u32 >> 20) & 0xff) << 24) as i32 >> 24) as i32
+        (((self.bits_0 >> 20) & 0xff) << 24) as i32 >> 24
     }
     #[inline(always)]
     pub fn set_bPosition(&mut self, v: i32) {
@@ -70,7 +134,7 @@ impl HailStruct {
     }
     #[inline(always)]
     pub fn r#type(&self) -> i32 {
-        ((((self.bits_0 as u32 >> 28) & 0xf) << 28) as i32 >> 28) as i32
+        (((self.bits_0 >> 28) & 0xf) << 28) as i32 >> 28
     }
     #[inline(always)]
     pub fn set_type(&mut self, v: i32) {
@@ -105,95 +169,27 @@ static sHazeBlendAmounts: Table<CArray<u8, 20>> =
 static sMistBlendAmounts: Table<CArray<u8, 20>> =
     Table((&raw const crate::data::battle_anim_ice::sMistBlendAmounts).cast());
 
-unsafe extern "C" {
-    static mut gAnimDisableStructPtr: *mut DisableStruct;
-    static mut gAnimVisualTaskCount: u8;
-    static mut gBattleAnimArgs: CArray<i16, 8>;
-    static mut gBattleAnimAttacker: u8;
-    static gBattleAnimFogTilemap: CArray<u32, 0>;
-    static mut gBattleAnimTarget: u8;
-    static mut gBattle_BG1_X: u16;
-    static mut gBattle_BG1_Y: u16;
-    static mut gBattlerPositions: CArray<u8, 4>;
-    static gFogPalette: CArray<u16, 0>;
-    static gSineTable: CArray<i16, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTasks: CArray<Task, 0>;
-    static gWeatherFogHorizontalTiles: CArray<u8, 0>;
-    fn AnimFastTranslateLinear(a0: *mut Sprite) -> u8;
-    fn AnimLoadCompressedBgTilemapHandleContest(
-        a0: *mut BattleAnimBgData,
-        a1: *mut c_void,
-        a2: u32,
-    );
-    fn AnimTranslateLinear(a0: *mut Sprite) -> u8;
-    fn ClearBattleAnimBg(a0: u32);
-    fn ConvertPosDataToTranslateLinearData(a0: *mut Sprite);
-    fn Cos(a0: i16, a1: i16) -> i16;
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DestroyAnimSprite(a0: *mut Sprite);
-    fn DestroyAnimVisualTask(a0: u8);
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroySpriteAndMatrix(a0: *mut Sprite);
-    fn FreeOamMatrix(a0: u8);
-    fn GetAnimBattlerSpriteId(a0: u8) -> u8;
-    fn GetBattleAnimBg1Data(a0: *mut BattleAnimBgData);
-    fn GetBattlerAtPosition(a0: u8) -> u8;
-    fn GetBattlerSide(a0: u8) -> u8;
-    fn GetBattlerSpriteBGPriority(a0: u8) -> u8;
-    fn GetBattlerSpriteCoord(a0: u8, a1: u8) -> u8;
-    fn GetBattlerSpriteCoordAttr(a0: u8, a1: u8) -> i16;
-    fn InitAnimArcTranslation(a0: *mut Sprite);
-    fn InitAnimFastLinearTranslationWithSpeed(a0: *mut Sprite);
-    fn InitAnimFastLinearTranslationWithSpeedAndPos(a0: *mut Sprite);
-    fn InitAnimLinearTranslation(a0: *mut Sprite);
-    fn InitAnimLinearTranslationWithSpeed(a0: *mut Sprite);
-    fn InitSpritePosToAnimAttacker(a0: *mut Sprite, a1: u8);
-    fn InitSpritePosToAnimTarget(a0: *mut Sprite, a1: u8);
-    fn IsBattlerSpriteVisible(a0: u8) -> u8;
-    fn IsContest() -> u8;
-    fn IsDoubleBattle() -> u8;
-    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn Random2() -> u16;
-    fn RunStoredCallbackWhenAffineAnimEnds(a0: *mut Sprite);
-    fn RunStoredCallbackWhenAnimEnds(a0: *mut Sprite);
-    fn SetAnimBgAttribute(a0: u8, a1: u8, a2: u8);
-    fn SetAverageBattlerPositions(a0: u8, a1: u8, a2: *mut i16, a3: *mut i16);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn Sin(a0: i16, a1: i16) -> i16;
-    fn StartAnimLinearTranslation(a0: *mut Sprite);
-    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StoreSpriteCallbackInData6(a0: *mut Sprite, a1: Option<unsafe extern "C" fn(*mut Sprite)>);
-    fn TranslateAnimHorizontalArc(a0: *mut Sprite) -> u8;
-    fn TranslateAnimSpriteToTargetMonLocation(a0: *mut Sprite);
-    fn TranslateSpriteInGrowingCircle(a0: *mut Sprite);
-}
-
-pub(crate) unsafe extern "C" fn AnimUnusedIceCrystalThrow(sprite: *mut Sprite) {
-    let mut targetX: i16 = 0;
-    let mut targetY: i16 = 0;
-    let mut attackerX: i16 = 0;
-    let mut attackerY: i16 = 0;
+pub(crate) unsafe fn AnimUnusedIceCrystalThrow(sprite: *mut Sprite) {
     (*sprite).oam.set_tileNum((*sprite).oam.tileNum() + 7);
-    targetX = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
-    targetY = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16;
-    attackerX = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2) as i16;
-    attackerY = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+    let mut targetX: i16 = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
+    let mut targetY: i16 =
+        GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+    let mut attackerX: i16 = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2) as i16;
+    let mut attackerY: i16 =
+        GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y_PIC_OFFSET) as i16;
     (*sprite).data[0] = gBattleAnimArgs[4];
     (*sprite).data[1] = gBattleAnimArgs[0] + attackerX;
     (*sprite).data[2] = gBattleAnimArgs[2] + targetX;
     (*sprite).data[3] = gBattleAnimArgs[1] + attackerY;
     (*sprite).data[4] = gBattleAnimArgs[3] + targetY;
     ConvertPosDataToTranslateLinearData(sprite);
-    while targetX >= -32 && targetX <= 272 && (targetY >= -32 && targetY <= 192) {
+    while (-32..=272).contains(&targetX) && (-32..=192).contains(&targetY) {
         targetX += (*sprite).data[1];
         targetY += (*sprite).data[2];
     }
     (*sprite).data[1] = -(*sprite).data[1];
     (*sprite).data[2] = -(*sprite).data[2];
-    while attackerX >= -32 && attackerX <= 272 && (attackerY >= -32 && attackerY <= 192) {
+    while (-32..=272).contains(&attackerX) && (-32..=192).contains(&attackerY) {
         attackerX += (*sprite).data[1];
         attackerY += (*sprite).data[2];
     }
@@ -209,7 +205,7 @@ pub(crate) unsafe extern "C" fn AnimUnusedIceCrystalThrow(sprite: *mut Sprite) {
     (*sprite).data[4] = gBattleAnimArgs[6];
     (*sprite).callback = Some(AnimUnusedIceCrystalThrow_Step);
 }
-pub(crate) unsafe extern "C" fn AnimUnusedIceCrystalThrow_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimUnusedIceCrystalThrow_Step(sprite: *mut Sprite) {
     if (*sprite).data[0] != 0 {
         (*sprite).data[5] += (*sprite).data[1];
         (*sprite).data[6] += (*sprite).data[2];
@@ -217,13 +213,13 @@ pub(crate) unsafe extern "C" fn AnimUnusedIceCrystalThrow_Step(sprite: *mut Spri
         (*sprite).y2 = (*sprite).data[6];
         (*sprite).x2 += Sin((*sprite).data[7], (*sprite).data[3]);
         (*sprite).y2 += Sin((*sprite).data[7], (*sprite).data[3]);
-        (*sprite).data[7] = (*sprite).data[7] + (*sprite).data[4] & 0xFF;
+        (*sprite).data[7] = ((*sprite).data[7] + (*sprite).data[4]) & 0xFF;
         (*sprite).data[0] -= 1;
     } else {
         DestroyAnimSprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimIcePunchSwirlingParticle(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimIcePunchSwirlingParticle(sprite: *mut Sprite) {
     (*sprite).data[0] = gBattleAnimArgs[0];
     (*sprite).data[1] = 60;
     (*sprite).data[2] = 9;
@@ -233,7 +229,7 @@ pub(crate) unsafe extern "C" fn AnimIcePunchSwirlingParticle(sprite: *mut Sprite
     (*sprite).callback = Some(TranslateSpriteInGrowingCircle);
     (*sprite).callback.unwrap_unchecked()(sprite);
 }
-pub(crate) unsafe extern "C" fn AnimIceBeamParticle(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimIceBeamParticle(sprite: *mut Sprite) {
     InitSpritePosToAnimAttacker(sprite, TRUE);
     (*sprite).data[2] = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
     if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
@@ -247,7 +243,7 @@ pub(crate) unsafe extern "C" fn AnimIceBeamParticle(sprite: *mut Sprite) {
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
     (*sprite).callback = Some(StartAnimLinearTranslation);
 }
-pub(crate) unsafe extern "C" fn AnimIceEffectParticle(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimIceEffectParticle(sprite: *mut Sprite) {
     if gBattleAnimArgs[2] == 0 {
         InitSpritePosToAnimTarget(sprite, TRUE);
     } else {
@@ -266,15 +262,14 @@ pub(crate) unsafe extern "C" fn AnimIceEffectParticle(sprite: *mut Sprite) {
     StoreSpriteCallbackInData6(sprite, Some(AnimFlickerIceEffectParticle));
     (*sprite).callback = Some(RunStoredCallbackWhenAffineAnimEnds);
 }
-pub(crate) unsafe extern "C" fn AnimFlickerIceEffectParticle(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimFlickerIceEffectParticle(sprite: *mut Sprite) {
     (*sprite).set_invisible((*sprite).invisible() ^ 1);
     (*sprite).data[0] += 1;
     if (*sprite).data[0] == 20 {
         DestroySpriteAndMatrix(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimSwirlingSnowball(sprite: *mut Sprite) {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn AnimSwirlingSnowball(sprite: *mut Sprite) {
     let mut tempDataHolder: CArray<i16, 8> = zeroed();
     InitSpritePosToAnimAttacker(sprite, TRUE);
     (*sprite).data[0] = gBattleAnimArgs[4];
@@ -298,10 +293,8 @@ pub(crate) unsafe extern "C" fn AnimSwirlingSnowball(sprite: *mut Sprite) {
     } else {
         (*sprite).data[2] += gBattleAnimArgs[2];
     }
-    i = 0;
-    while i < 8 {
+    for i in 0..8i32 {
         tempDataHolder[i] = (*sprite).data[i];
-        i += 1;
     }
     InitAnimFastLinearTranslationWithSpeed(sprite);
     (*sprite).data[1] ^= 1;
@@ -321,22 +314,19 @@ pub(crate) unsafe extern "C" fn AnimSwirlingSnowball(sprite: *mut Sprite) {
     (*sprite).y += (*sprite).y2;
     (*sprite).y2 = 0;
     (*sprite).x2 = 0;
-    i = 0;
-    while i < 8 {
+    for i in 0..8i32 {
         (*sprite).data[i] = tempDataHolder[i];
-        i += 1;
     }
     (*sprite).callback = Some(InitAnimFastLinearTranslationWithSpeedAndPos);
     StoreSpriteCallbackInData6(sprite, Some(AnimSwirlingSnowball_Step1));
 }
-pub(crate) unsafe extern "C" fn AnimSwirlingSnowball_Step1(sprite: *mut Sprite) {
-    let mut tempVar: i16 = 0;
+pub(crate) unsafe fn AnimSwirlingSnowball_Step1(sprite: *mut Sprite) {
     (*sprite).x += (*sprite).x2;
     (*sprite).y += (*sprite).y2;
     (*sprite).y2 = 0;
     (*sprite).x2 = 0;
     (*sprite).data[0] = 128;
-    tempVar = (if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+    let tempVar: i16 = (if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
         20
     } else {
         -20
@@ -347,9 +337,8 @@ pub(crate) unsafe extern "C" fn AnimSwirlingSnowball_Step1(sprite: *mut Sprite) 
     (*sprite).callback = Some(AnimSwirlingSnowball_Step2);
     (*sprite).callback.unwrap_unchecked()(sprite);
 }
-pub(crate) unsafe extern "C" fn AnimSwirlingSnowball_Step2(sprite: *mut Sprite) {
-    let mut tempVar: i16 = 0;
-    tempVar = (if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
+pub(crate) unsafe fn AnimSwirlingSnowball_Step2(sprite: *mut Sprite) {
+    let tempVar: i16 = (if GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
         20
     } else {
         -20
@@ -357,7 +346,7 @@ pub(crate) unsafe extern "C" fn AnimSwirlingSnowball_Step2(sprite: *mut Sprite) 
     if (*sprite).data[5] <= 31 {
         (*sprite).x2 = Sin((*sprite).data[0], tempVar) - (*sprite).data[3];
         (*sprite).y2 = Cos((*sprite).data[0], 15) - (*sprite).data[4];
-        (*sprite).data[0] = (*sprite).data[0] + 16 & 0xFF;
+        (*sprite).data[0] = ((*sprite).data[0] + 16) & 0xFF;
         (*sprite).data[5] += 1;
     } else {
         (*sprite).x += (*sprite).x2;
@@ -369,7 +358,7 @@ pub(crate) unsafe extern "C" fn AnimSwirlingSnowball_Step2(sprite: *mut Sprite) 
         (*sprite).callback = Some(AnimSwirlingSnowball_End);
     }
 }
-pub(crate) unsafe extern "C" fn AnimSwirlingSnowball_End(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSwirlingSnowball_End(sprite: *mut Sprite) {
     (*sprite).data[0] = 1;
     AnimFastTranslateLinear(sprite);
     if (*sprite).x as i32 + (*sprite).x2 as i32 > 256
@@ -380,8 +369,7 @@ pub(crate) unsafe extern "C" fn AnimSwirlingSnowball_End(sprite: *mut Sprite) {
         DestroyAnimSprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimMoveParticleBeyondTarget(sprite: *mut Sprite) {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn AnimMoveParticleBeyondTarget(sprite: *mut Sprite) {
     let mut tempDataHolder: CArray<i16, 8> = zeroed();
     InitSpritePosToAnimAttacker(sprite, TRUE);
     (*sprite).data[0] = gBattleAnimArgs[4];
@@ -406,10 +394,8 @@ pub(crate) unsafe extern "C" fn AnimMoveParticleBeyondTarget(sprite: *mut Sprite
     }
     (*sprite).data[4] += gBattleAnimArgs[3];
     InitAnimFastLinearTranslationWithSpeed(sprite);
-    i = 0;
-    while i < 8 {
+    for i in 0..8i32 {
         tempDataHolder[i] = (*sprite).data[i];
-        i += 1;
     }
     (*sprite).data[1] ^= 1;
     (*sprite).data[2] ^= 1;
@@ -428,33 +414,30 @@ pub(crate) unsafe extern "C" fn AnimMoveParticleBeyondTarget(sprite: *mut Sprite
     (*sprite).y += (*sprite).y2;
     (*sprite).y2 = 0;
     (*sprite).x2 = 0;
-    i = 0;
-    while i < 8 {
+    for i in 0..8i32 {
         (*sprite).data[i] = tempDataHolder[i];
-        i += 1;
     }
     (*sprite).data[5] = gBattleAnimArgs[5];
     (*sprite).data[6] = gBattleAnimArgs[6];
     (*sprite).callback = Some(AnimWiggleParticleTowardsTarget);
 }
-pub(crate) unsafe extern "C" fn AnimWiggleParticleTowardsTarget(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimWiggleParticleTowardsTarget(sprite: *mut Sprite) {
     AnimFastTranslateLinear(sprite);
     if (*sprite).data[0] == 0 {
         (*sprite).data[0] = 1;
     }
     (*sprite).y2 += Sin((*sprite).data[7], (*sprite).data[5]);
-    (*sprite).data[7] = (*sprite).data[7] + (*sprite).data[6] & 0xFF;
-    if (*sprite).data[0] == 1 {
-        if (*sprite).x as i32 + (*sprite).x2 as i32 > 256
+    (*sprite).data[7] = ((*sprite).data[7] + (*sprite).data[6]) & 0xFF;
+    if (*sprite).data[0] == 1
+        && ((*sprite).x as i32 + (*sprite).x2 as i32 > 256
             || ((*sprite).x as i32 + (*sprite).x2 as i32) < -16
             || (*sprite).y as i32 + (*sprite).y2 as i32 > DISPLAY_HEIGHT as i32
-            || ((*sprite).y as i32 + (*sprite).y2 as i32) < -16
-        {
-            DestroyAnimSprite(sprite);
-        }
+            || ((*sprite).y as i32 + (*sprite).y2 as i32) < -16)
+    {
+        DestroyAnimSprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimWaveFromCenterOfTarget(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimWaveFromCenterOfTarget(sprite: *mut Sprite) {
     if (*sprite).data[0] == 0 {
         if gBattleAnimArgs[2] == 0 {
             InitSpritePosToAnimTarget(sprite, FALSE);
@@ -478,7 +461,7 @@ pub(crate) unsafe extern "C" fn AnimWaveFromCenterOfTarget(sprite: *mut Sprite) 
         }
     }
 }
-pub(crate) unsafe extern "C" fn InitSwirlingFogAnim(sprite: *mut Sprite) {
+pub(crate) unsafe fn InitSwirlingFogAnim(sprite: *mut Sprite) {
     let mut tempVar: i16 = 0;
     let mut battler: u8 = 0;
     if gBattleAnimArgs[4] == 0 {
@@ -538,7 +521,7 @@ pub(crate) unsafe extern "C" fn InitSwirlingFogAnim(sprite: *mut Sprite) {
     (*sprite).callback = Some(AnimSwirlingFogAnim);
     (*sprite).callback.unwrap_unchecked()(sprite);
 }
-pub(crate) unsafe extern "C" fn AnimSwirlingFogAnim(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSwirlingFogAnim(sprite: *mut Sprite) {
     if AnimTranslateLinear(sprite) == 0 {
         (*sprite).x2 += Sin((*sprite).data[5], (*sprite).data[6]);
         (*sprite).y2 += Cos((*sprite).data[5], -6);
@@ -551,13 +534,13 @@ pub(crate) unsafe extern "C" fn AnimSwirlingFogAnim(sprite: *mut Sprite) {
                 .oam
                 .set_priority(GetBattlerSpriteBGPriority((*sprite).data[7] as u8) as u16 + 1);
         }
-        (*sprite).data[5] = (*sprite).data[5] + 3 & 0xFF;
+        (*sprite).data[5] = ((*sprite).data[5] + 3) & 0xFF;
     } else {
         DestroyAnimSprite(sprite);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AnimTask_HazeScrollingFog(taskId: u8) {
+pub unsafe fn AnimTask_HazeScrollingFog(taskId: u8) {
     let mut animBg: BattleAnimBgData = zeroed();
     SetGpuReg(REG_OFFSET_BLDCNT, 16194);
     SetGpuReg(REG_OFFSET_BLDALPHA, 4096);
@@ -573,78 +556,82 @@ pub unsafe extern "C" fn AnimTask_HazeScrollingFog(taskId: u8) {
     GetBattleAnimBg1Data(&raw mut animBg);
     LoadBgTiles(
         animBg.bgId,
-        gWeatherFogHorizontalTiles.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::field_weather_effect::gWeatherFogHorizontalTiles)
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut() as *mut c_void,
         0x800,
         animBg.tilesOffset,
     );
     AnimLoadCompressedBgTilemapHandleContest(
         &raw mut animBg,
-        gBattleAnimFogTilemap.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gBattleAnimFogTilemap).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         FALSE as u32,
     );
     LoadPalette(
-        (&raw const gFogPalette).cast_mut() as *mut c_void,
-        0x000 + animBg.paletteId as u16 * 16,
+        (&raw const (*(&raw const crate::data::field_weather::gFogPalette)
+            .cast::<CArray<u16, 0>>()))
+            .cast_mut() as *mut c_void,
+        animBg.paletteId as u16 * 16,
         32,
     );
-    gTasks[taskId].func = Some(AnimTask_HazeScrollingFog_Step);
+    task_set_func(taskId, Some(AnimTask_HazeScrollingFog_Step));
 }
-pub(crate) unsafe extern "C" fn AnimTask_HazeScrollingFog_Step(taskId: u8) {
+pub(crate) unsafe fn AnimTask_HazeScrollingFog_Step(taskId: u8) {
     let mut animBg: BattleAnimBgData = zeroed();
     gBattle_BG1_X += 65535;
     gBattle_BG1_Y += 0;
     'l1: {
-        let sw1: i16 = gTasks[taskId].data[12];
+        let sw1: i16 = task_get(taskId, 12);
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             if ({
-                gTasks[taskId].data[10] += 1;
-                gTasks[taskId].data[10]
+                task_set(taskId, 10, task_get(taskId, 10) + 1);
+                task_get(taskId, 10)
             }) == 4
             {
-                gTasks[taskId].data[10] = 0;
-                gTasks[taskId].data[9] += 1;
-                gTasks[taskId].data[11] = sHazeBlendAmounts[gTasks[taskId].data[9]] as i16;
+                task_set(taskId, 10, 0);
+                task_set(taskId, 9, task_get(taskId, 9) + 1);
+                task_set(taskId, 11, sHazeBlendAmounts[task_get(taskId, 9)] as i16);
                 SetGpuReg(
                     REG_OFFSET_BLDALPHA,
-                    (16 - gTasks[taskId].data[11] as u16) << 8 | gTasks[taskId].data[11] as u16,
+                    (16 - task_get(taskId, 11) as u16) << 8 | task_get(taskId, 11) as u16,
                 );
-                if gTasks[taskId].data[11] == 9 {
-                    gTasks[taskId].data[12] += 1;
-                    gTasks[taskId].data[11] = 0;
+                if task_get(taskId, 11) == 9 {
+                    task_set(taskId, 12, task_get(taskId, 12) + 1);
+                    task_set(taskId, 11, 0);
                 }
             }
             break 'l1;
         }
         if sw1 == 1 {
-            fall = true;
             if ({
-                gTasks[taskId].data[11] += 1;
-                gTasks[taskId].data[11]
+                task_set(taskId, 11, task_get(taskId, 11) + 1);
+                task_get(taskId, 11)
             }) == 0x51
             {
-                gTasks[taskId].data[11] = 9;
-                gTasks[taskId].data[12] += 1;
+                task_set(taskId, 11, 9);
+                task_set(taskId, 12, task_get(taskId, 12) + 1);
             }
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             if ({
-                gTasks[taskId].data[10] += 1;
-                gTasks[taskId].data[10]
+                task_set(taskId, 10, task_get(taskId, 10) + 1);
+                task_get(taskId, 10)
             }) == 4
             {
-                gTasks[taskId].data[10] = 0;
-                gTasks[taskId].data[11] -= 1;
+                task_set(taskId, 10, 0);
+                task_set(taskId, 11, task_get(taskId, 11) - 1);
                 SetGpuReg(
                     REG_OFFSET_BLDALPHA,
-                    (16 - gTasks[taskId].data[11] as u16) << 8 | gTasks[taskId].data[11] as u16,
+                    (16 - task_get(taskId, 11) as u16) << 8 | task_get(taskId, 11) as u16,
                 );
-                if gTasks[taskId].data[11] == 0 {
-                    gTasks[taskId].data[12] += 1;
-                    gTasks[taskId].data[11] = 0;
+                if task_get(taskId, 11) == 0 {
+                    task_set(taskId, 12, task_get(taskId, 12) + 1);
+                    task_set(taskId, 11, 0);
                 }
             }
             break 'l1;
@@ -654,10 +641,9 @@ pub(crate) unsafe extern "C" fn AnimTask_HazeScrollingFog_Step(taskId: u8) {
             GetBattleAnimBg1Data(&raw mut animBg);
             ClearBattleAnimBg(1);
             ClearBattleAnimBg(2);
-            gTasks[taskId].data[12] += 1;
+            task_set(taskId, 12, task_get(taskId, 12) + 1);
         }
         if fall || sw1 == 4 {
-            fall = true;
             if IsContest() == 0 {
                 SetAnimBgAttribute(1, BG_ANIM_CHAR_BASE_BLOCK, 0);
             }
@@ -671,13 +657,13 @@ pub(crate) unsafe extern "C" fn AnimTask_HazeScrollingFog_Step(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn AnimThrowMistBall(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimThrowMistBall(sprite: *mut Sprite) {
     (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2) as i16;
     (*sprite).y = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y_PIC_OFFSET) as i16;
     (*sprite).callback = Some(TranslateAnimSpriteToTargetMonLocation);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AnimTask_MistBallFog(taskId: u8) {
+pub unsafe fn AnimTask_MistBallFog(taskId: u8) {
     let mut animBg: BattleAnimBgData = zeroed();
     SetGpuReg(REG_OFFSET_BLDCNT, 16194);
     SetGpuReg(REG_OFFSET_BLDALPHA, 4096);
@@ -693,72 +679,76 @@ pub unsafe extern "C" fn AnimTask_MistBallFog(taskId: u8) {
     GetBattleAnimBg1Data(&raw mut animBg);
     LoadBgTiles(
         animBg.bgId,
-        gWeatherFogHorizontalTiles.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::field_weather_effect::gWeatherFogHorizontalTiles)
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut() as *mut c_void,
         0x800,
         animBg.tilesOffset,
     );
     AnimLoadCompressedBgTilemapHandleContest(
         &raw mut animBg,
-        gBattleAnimFogTilemap.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gBattleAnimFogTilemap).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         FALSE as u32,
     );
     LoadPalette(
-        (&raw const gFogPalette).cast_mut() as *mut c_void,
-        0x000 + animBg.paletteId as u16 * 16,
+        (&raw const (*(&raw const crate::data::field_weather::gFogPalette)
+            .cast::<CArray<u16, 0>>()))
+            .cast_mut() as *mut c_void,
+        animBg.paletteId as u16 * 16,
         32,
     );
-    gTasks[taskId].data[15] = -1;
-    gTasks[taskId].func = Some(AnimTask_MistBallFog_Step);
+    task_set(taskId, 15, -1);
+    task_set_func(taskId, Some(AnimTask_MistBallFog_Step));
 }
-pub(crate) unsafe extern "C" fn AnimTask_MistBallFog_Step(taskId: u8) {
+pub(crate) unsafe fn AnimTask_MistBallFog_Step(taskId: u8) {
     let mut animBg: BattleAnimBgData = zeroed();
-    gBattle_BG1_X += gTasks[taskId].data[15] as u16;
+    gBattle_BG1_X += task_get(taskId, 15) as u16;
     gBattle_BG1_Y += 0;
     'l1: {
-        let sw1: i16 = gTasks[taskId].data[12];
+        let sw1: i16 = task_get(taskId, 12);
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
-            gTasks[taskId].data[9] += 1;
-            gTasks[taskId].data[11] = sMistBlendAmounts[gTasks[taskId].data[9]] as i16;
+            task_set(taskId, 9, task_get(taskId, 9) + 1);
+            task_set(taskId, 11, sMistBlendAmounts[task_get(taskId, 9)] as i16);
             SetGpuReg(
                 REG_OFFSET_BLDALPHA,
-                (17 - gTasks[taskId].data[11] as u16) << 8 | gTasks[taskId].data[11] as u16,
+                (17 - task_get(taskId, 11) as u16) << 8 | task_get(taskId, 11) as u16,
             );
-            if gTasks[taskId].data[11] == 5 {
-                gTasks[taskId].data[12] += 1;
-                gTasks[taskId].data[11] = 0;
+            if task_get(taskId, 11) == 5 {
+                task_set(taskId, 12, task_get(taskId, 12) + 1);
+                task_set(taskId, 11, 0);
             }
             break 'l1;
         }
         if sw1 == 1 {
-            fall = true;
             if ({
-                gTasks[taskId].data[11] += 1;
-                gTasks[taskId].data[11]
+                task_set(taskId, 11, task_get(taskId, 11) + 1);
+                task_get(taskId, 11)
             }) == 0x51
             {
-                gTasks[taskId].data[11] = 5;
-                gTasks[taskId].data[12] += 1;
+                task_set(taskId, 11, 5);
+                task_set(taskId, 12, task_get(taskId, 12) + 1);
             }
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             if ({
-                gTasks[taskId].data[10] += 1;
-                gTasks[taskId].data[10]
+                task_set(taskId, 10, task_get(taskId, 10) + 1);
+                task_get(taskId, 10)
             }) == 4
             {
-                gTasks[taskId].data[10] = 0;
-                gTasks[taskId].data[11] -= 1;
+                task_set(taskId, 10, 0);
+                task_set(taskId, 11, task_get(taskId, 11) - 1);
                 SetGpuReg(
                     REG_OFFSET_BLDALPHA,
-                    (16 - gTasks[taskId].data[11] as u16) << 8 | gTasks[taskId].data[11] as u16,
+                    (16 - task_get(taskId, 11) as u16) << 8 | task_get(taskId, 11) as u16,
                 );
-                if gTasks[taskId].data[11] == 0 {
-                    gTasks[taskId].data[12] += 1;
-                    gTasks[taskId].data[11] = 0;
+                if task_get(taskId, 11) == 0 {
+                    task_set(taskId, 12, task_get(taskId, 12) + 1);
+                    task_set(taskId, 11, 0);
                 }
             }
             break 'l1;
@@ -768,10 +758,9 @@ pub(crate) unsafe extern "C" fn AnimTask_MistBallFog_Step(taskId: u8) {
             GetBattleAnimBg1Data(&raw mut animBg);
             ClearBattleAnimBg(1);
             ClearBattleAnimBg(2);
-            gTasks[taskId].data[12] += 1;
+            task_set(taskId, 12, task_get(taskId, 12) + 1);
         }
         if fall || sw1 == 4 {
-            fall = true;
             if IsContest() == 0 {
                 SetAnimBgAttribute(1, BG_ANIM_CHAR_BASE_BLOCK, 0);
             }
@@ -785,7 +774,7 @@ pub(crate) unsafe extern "C" fn AnimTask_MistBallFog_Step(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn InitPoisonGasCloudAnim(sprite: *mut Sprite) {
+pub(crate) unsafe fn InitPoisonGasCloudAnim(sprite: *mut Sprite) {
     (*sprite).data[0] = gBattleAnimArgs[0];
     if GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2)
         < GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2)
@@ -796,7 +785,11 @@ pub(crate) unsafe extern "C" fn InitPoisonGasCloudAnim(sprite: *mut Sprite) {
         gBattleAnimArgs[1] = -gBattleAnimArgs[1];
         gBattleAnimArgs[3] = -gBattleAnimArgs[3];
         if (*sprite).data[7] as i32 & 0x8000 != 0
-            && gBattlerPositions[gBattleAnimAttacker] as i32 & 1 == B_SIDE_PLAYER as i32
+            && (*(&raw const crate::battle_main::gBattlerPositions)
+                .cast::<CArray<u8, 4>>()
+                .cast_mut())[gBattleAnimAttacker] as i32
+                & 1
+                == B_SIDE_PLAYER as i32
         {
             (*sprite).subpriority = gSprites[GetAnimBattlerSpriteId(1)].subpriority + 1;
         }
@@ -829,17 +822,18 @@ pub(crate) unsafe extern "C" fn InitPoisonGasCloudAnim(sprite: *mut Sprite) {
     InitAnimLinearTranslation(sprite);
     (*sprite).callback = Some(MovePoisonGasCloud);
 }
-pub(crate) unsafe extern "C" fn MovePoisonGasCloud(sprite: *mut Sprite) {
+pub(crate) unsafe fn MovePoisonGasCloud(sprite: *mut Sprite) {
     let mut value: i32 = 0;
     match (*sprite).data[7] as i32 & 0xFF {
         0 => {
             AnimTranslateLinear(sprite);
-            value = gSineTable[(*sprite).data[5]] as i32;
+            value = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+                [(*sprite).data[5]] as i32;
             (*sprite).x2 += (value >> 4) as i16;
             if (*sprite).data[6] != 0 {
-                (*sprite).data[5] = (*sprite).data[5] - 8 & 0xFF;
+                (*sprite).data[5] = ((*sprite).data[5] - 8) & 0xFF;
             } else {
-                (*sprite).data[5] = (*sprite).data[5] + 8 & 0xFF;
+                (*sprite).data[5] = ((*sprite).data[5] + 8) & 0xFF;
             }
             if (*sprite).data[0] <= 0 {
                 (*sprite).data[0] = 80;
@@ -858,19 +852,24 @@ pub(crate) unsafe extern "C" fn MovePoisonGasCloud(sprite: *mut Sprite) {
                     (*sprite).data[5] = 80;
                 }
                 (*sprite).y2 = 0;
-                value = gSineTable[(*sprite).data[5]] as i32;
+                value = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+                    [(*sprite).data[5]] as i32;
                 (*sprite).x2 = (value >> 3) as i16;
-                (*sprite).data[5] = (*sprite).data[5] + 2 & 0xFF;
+                (*sprite).data[5] = ((*sprite).data[5] + 2) & 0xFF;
                 InitAnimLinearTranslation(sprite);
             }
         }
         1 => {
             AnimTranslateLinear(sprite);
-            value = gSineTable[(*sprite).data[5]] as i32;
+            value = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+                [(*sprite).data[5]] as i32;
             (*sprite).x2 += (value >> 3) as i16;
-            (*sprite).y2 += (gSineTable[(*sprite).data[5] as i32 + 0x40] as i32 * -3 >> 8) as i16;
+            (*sprite).y2 += (((*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())
+                [(*sprite).data[5] as i32 + 0x40] as i32
+                * -3)
+                >> 8) as i16;
             if IsContest() == 0 {
-                let mut var0: u16 = (*sprite).data[5] as u16 - 0x40;
+                let var0: u16 = (*sprite).data[5] as u16 - 0x40;
                 if var0 <= 0x7F {
                     (*sprite).oam.set_priority(((*sprite).data[7] >> 8) as u16);
                 } else {
@@ -878,15 +877,15 @@ pub(crate) unsafe extern "C" fn MovePoisonGasCloud(sprite: *mut Sprite) {
                         .oam
                         .set_priority(((*sprite).data[7] >> 8) as u16 + 1);
                 }
-                (*sprite).data[5] = (*sprite).data[5] + 4 & 0xFF;
+                (*sprite).data[5] = ((*sprite).data[5] + 4) & 0xFF;
             } else {
-                let mut var0: u16 = (*sprite).data[5] as u16 - 0x40;
+                let var0: u16 = (*sprite).data[5] as u16 - 0x40;
                 if var0 <= 0x7F {
                     (*sprite).subpriority = 128;
                 } else {
                     (*sprite).subpriority = 140;
                 }
-                (*sprite).data[5] = (*sprite).data[5] - 4 & 0xFF;
+                (*sprite).data[5] = ((*sprite).data[5] - 4) & 0xFF;
             }
             if (*sprite).data[0] <= 0 {
                 (*sprite).data[0] = 0x300;
@@ -914,87 +913,81 @@ pub(crate) unsafe extern "C" fn MovePoisonGasCloud(sprite: *mut Sprite) {
                 InitAnimLinearTranslationWithSpeed(sprite);
             }
         }
-        2 => {
-            if AnimTranslateLinear(sprite) != 0 {
-                if (*sprite).oam.affineMode() & 1 != 0 {
-                    FreeOamMatrix((*sprite).oam.matrixNum() as u8);
-                    (*sprite).oam.set_affineMode(ST_OAM_AFFINE_OFF);
-                }
-                DestroySprite(sprite);
-                gAnimVisualTaskCount -= 1;
+        2 if AnimTranslateLinear(sprite) != 0 => {
+            if (*sprite).oam.affineMode() & 1 != 0 {
+                FreeOamMatrix((*sprite).oam.matrixNum() as u8);
+                (*sprite).oam.set_affineMode(ST_OAM_AFFINE_OFF);
             }
+            DestroySprite(sprite);
+            gAnimVisualTaskCount -= 1;
         }
         _ => {}
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AnimTask_Hail(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
+pub unsafe fn AnimTask_Hail(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
     (*task).func = Some(AnimTask_Hail2);
 }
-pub(crate) unsafe extern "C" fn AnimTask_Hail2(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    match (*task).data[0] {
+pub(crate) unsafe fn AnimTask_Hail2(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    match (*task).data[tState] {
         0 => {
             if ({
-                (*task).data[4] += 1;
-                (*task).data[4]
+                (*task).data[tInitialDelayTimer] += 1;
+                (*task).data[tInitialDelayTimer]
             }) > 2
             {
-                (*task).data[4] = 0;
-                (*task).data[5] = 0;
-                (*task).data[2] = 0;
-                (*task).data[0] += 1;
+                (*task).data[tInitialDelayTimer] = 0;
+                (*task).data[tHailSpawnTimer] = 0;
+                (*task).data[tHailAffineAnimNum] = 0;
+                (*task).data[tState] += 1;
             }
         }
         1 => {
-            if (*task).data[5] == 0 {
-                if GenerateHailParticle((*task).data[3] as u8, (*task).data[2] as u8, taskId, 1)
-                    != 0
+            if (*task).data[tHailSpawnTimer] == 0 {
+                if GenerateHailParticle(
+                    (*task).data[tHailStructId] as u8,
+                    (*task).data[tHailAffineAnimNum] as u8,
+                    taskId,
+                    1,
+                ) != 0
                 {
-                    (*task).data[1] += 1;
+                    (*task).data[tSpriteCount] += 1;
                 }
                 if ({
-                    (*task).data[2] += 1;
-                    (*task).data[2]
+                    (*task).data[tHailAffineAnimNum] += 1;
+                    (*task).data[tHailAffineAnimNum]
                 }) == 3
                 {
                     if ({
-                        (*task).data[3] += 1;
-                        (*task).data[3]
+                        (*task).data[tHailStructId] += 1;
+                        (*task).data[tHailStructId]
                     }) == 10
                     {
-                        (*task).data[0] += 1;
+                        (*task).data[tState] += 1;
                     } else {
-                        (*task).data[0] -= 1;
+                        (*task).data[tState] -= 1;
                     }
                 } else {
-                    (*task).data[5] = 1;
+                    (*task).data[tHailSpawnTimer] = 1;
                 }
             } else {
-                (*task).data[5] -= 1;
+                (*task).data[tHailSpawnTimer] -= 1;
             }
         }
-        2 => {
-            if (*task).data[1] == 0 {
-                DestroyAnimVisualTask(taskId);
-            }
+        2 if (*task).data[tSpriteCount] == 0 => {
+            DestroyAnimVisualTask(taskId);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn GenerateHailParticle(
-    hailStructId: u8,
-    affineAnimNum: u8,
-    taskId: u8,
-    c: u8,
-) -> u8 {
+unsafe fn GenerateHailParticle(hailStructId: u8, affineAnimNum: u8, taskId: u8, c: u8) -> u8 {
     let mut id: u8 = 0;
     let mut battlerX: i16 = 0;
     let mut battlerY: i16 = 0;
-    let mut spriteX: i16 = 0;
     let mut shouldSpawnImpactEffect: u8 = FALSE;
-    let mut r#type: i8 = sHailCoordData[hailStructId].r#type() as i8;
+    let r#type: i8 = sHailCoordData[hailStructId].r#type() as i8;
     if r#type != HAILSTRUCTTYPE_FIXED_POSITION {
         id = GetBattlerAtPosition(sHailCoordData[hailStructId].bPosition() as u8);
         if IsBattlerSpriteVisible(id) != 0 {
@@ -1020,7 +1013,7 @@ pub(crate) unsafe extern "C" fn GenerateHailParticle(
         battlerX = sHailCoordData[hailStructId].x() as i16;
         battlerY = sHailCoordData[hailStructId].y() as i16;
     }
-    spriteX = battlerX - ((battlerY as i32 + 8) / 2) as i16;
+    let spriteX: i16 = battlerX - ((battlerY as i32 + 8) / 2) as i16;
     id = CreateSprite(
         (&raw const *gHailParticleSpriteTemplate).cast_mut(),
         spriteX,
@@ -1031,59 +1024,74 @@ pub(crate) unsafe extern "C" fn GenerateHailParticle(
         return FALSE;
     } else {
         StartSpriteAffineAnim(&raw mut gSprites[id], affineAnimNum);
-        gSprites[id].data[0] = shouldSpawnImpactEffect as i16;
-        gSprites[id].data[3] = battlerX;
-        gSprites[id].data[4] = battlerY;
-        gSprites[id].data[5] = affineAnimNum as i16;
-        gSprites[id].data[6] = taskId as i16;
-        gSprites[id].data[7] = c as i16;
+        gSprites[id].data[sSpawnImpactEffect] = shouldSpawnImpactEffect as i16;
+        gSprites[id].data[sTargetX] = battlerX;
+        gSprites[id].data[sTargetY] = battlerY;
+        gSprites[id].data[sAffineAnimNum] = affineAnimNum as i16;
+        gSprites[id].data[sOwnerTaskId] = taskId as i16;
+        gSprites[id].data[sOwnerTaskSpriteCountField] = c as i16;
         return TRUE;
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn AnimHailBegin(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimHailBegin(sprite: *mut Sprite) {
     let mut spriteId: u8 = 0;
     (*sprite).x += 4;
     (*sprite).y += 8;
-    if (*sprite).x < (*sprite).data[3] && (*sprite).y < (*sprite).data[4] {
+    if (*sprite).x < (*sprite).data[sTargetX] && (*sprite).y < (*sprite).data[sTargetY] {
         return;
     }
-    if (*sprite).data[0] == 1 && (*sprite).data[5] == 0 {
+    if (*sprite).data[0] == 1 && (*sprite).data[sAffineAnimNum] == 0 {
         spriteId = CreateSprite(
             (&raw const *gIceCrystalHitLargeSpriteTemplate).cast_mut(),
-            (*sprite).data[3],
-            (*sprite).data[4],
+            (*sprite).data[sTargetX],
+            (*sprite).data[sTargetY],
             (*sprite).subpriority,
         );
         (*sprite).data[0] = spriteId as i16;
         if spriteId != MAX_SPRITES {
             gSprites[(*sprite).data[0]].callback = Some(AnimHailContinue);
-            gSprites[(*sprite).data[0]].data[6] = (*sprite).data[6];
-            gSprites[(*sprite).data[0]].data[7] = (*sprite).data[7];
+            gSprites[(*sprite).data[0]].data[sOwnerTaskId] = (*sprite).data[sOwnerTaskId];
+            gSprites[(*sprite).data[0]].data[sOwnerTaskSpriteCountField] =
+                (*sprite).data[sOwnerTaskSpriteCountField];
         }
         FreeOamMatrix((*sprite).oam.matrixNum() as u8);
         DestroySprite(sprite);
     } else {
-        gTasks[(*sprite).data[6]].data[(*sprite).data[7]] -= 1;
+        task_set(
+            (*sprite).data[sOwnerTaskId],
+            (*sprite).data[sOwnerTaskSpriteCountField],
+            task_get(
+                (*sprite).data[sOwnerTaskId],
+                (*sprite).data[sOwnerTaskSpriteCountField],
+            ) - 1,
+        );
         FreeOamMatrix((*sprite).oam.matrixNum() as u8);
         DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimHailContinue(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimHailContinue(sprite: *mut Sprite) {
     if ({
-        (*sprite).data[0] += 1;
-        (*sprite).data[0]
+        (*sprite).data[sTimer] += 1;
+        (*sprite).data[sTimer]
     }) == 20
     {
-        gTasks[(*sprite).data[6]].data[(*sprite).data[7]] -= 1;
+        task_set(
+            (*sprite).data[sOwnerTaskId],
+            (*sprite).data[sOwnerTaskSpriteCountField],
+            task_get(
+                (*sprite).data[sOwnerTaskId],
+                (*sprite).data[sOwnerTaskSpriteCountField],
+            ) - 1,
+        );
         FreeOamMatrix((*sprite).oam.matrixNum() as u8);
         DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn InitIceBallAnim(sprite: *mut Sprite) {
+pub(crate) unsafe fn InitIceBallAnim(sprite: *mut Sprite) {
     let mut animNum: u8 = (*gAnimDisableStructPtr).rolloutTimerStartValue()
         - (*gAnimDisableStructPtr).rolloutTimer()
         - 1;
@@ -1104,7 +1112,7 @@ pub(crate) unsafe extern "C" fn InitIceBallAnim(sprite: *mut Sprite) {
     InitAnimArcTranslation(sprite);
     (*sprite).callback = Some(AnimThrowIceBall);
 }
-pub(crate) unsafe extern "C" fn AnimThrowIceBall(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimThrowIceBall(sprite: *mut Sprite) {
     if TranslateAnimHorizontalArc(sprite) == 0 {
         return;
     }
@@ -1112,13 +1120,11 @@ pub(crate) unsafe extern "C" fn AnimThrowIceBall(sprite: *mut Sprite) {
     (*sprite).callback = Some(RunStoredCallbackWhenAnimEnds);
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
-pub(crate) unsafe extern "C" fn InitIceBallParticle(sprite: *mut Sprite) {
-    let mut randA: i16 = 0;
-    let mut randB: i16 = 0;
+pub(crate) unsafe fn InitIceBallParticle(sprite: *mut Sprite) {
     (*sprite).oam.set_tileNum((*sprite).oam.tileNum() + 8);
     InitSpritePosToAnimTarget(sprite, TRUE);
-    randA = (Random2() as i16 & 0xFF) + 256;
-    randB = Random2() as i16 & 0x1FF;
+    let randA: i16 = (Random2() as i16 & 0xFF) + 256;
+    let mut randB: i16 = Random2() as i16 & 0x1FF;
     if randB > 0xFF {
         randB = 256 - randB;
     }
@@ -1126,7 +1132,7 @@ pub(crate) unsafe extern "C" fn InitIceBallParticle(sprite: *mut Sprite) {
     (*sprite).data[2] = randB;
     (*sprite).callback = Some(AnimIceBallParticle);
 }
-pub(crate) unsafe extern "C" fn AnimIceBallParticle(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimIceBallParticle(sprite: *mut Sprite) {
     (*sprite).data[3] += (*sprite).data[1];
     (*sprite).data[4] += (*sprite).data[2];
     if (*sprite).data[1] as i32 & 1 != 0 {
@@ -1144,8 +1150,8 @@ pub(crate) unsafe extern "C" fn AnimIceBallParticle(sprite: *mut Sprite) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AnimTask_GetIceBallCounter(taskId: u8) {
-    let mut arg: u8 = gBattleAnimArgs[0] as u8;
+pub unsafe fn AnimTask_GetIceBallCounter(taskId: u8) {
+    let arg: u8 = gBattleAnimArgs[0] as u8;
     gBattleAnimArgs[arg] = (*gAnimDisableStructPtr).rolloutTimerStartValue() as i16
         - (*gAnimDisableStructPtr).rolloutTimer() as i16
         - 1;

@@ -3,31 +3,108 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::battle_setup::IncrementRematchStepCounter;
+use crate::bike::GetPlayerSpeed;
+use crate::braille_puzzles::ShouldDoBrailleRegicePuzzle;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::coord_event_weather::DoCoordEventWeather;
+use crate::daycare::ShouldEggHatch;
+use crate::event_data::{FlagGet, GetVarPointer, VarGet, VarSet};
+use crate::event_object_movement::{
+    GetObjectEventIdByPosition, GetObjectEventScriptPointerByObjectEventId,
+};
+use crate::faraway_island::UpdateFarawayIslandStepCounter;
+use crate::ffi::{
+    gSpecialVar_0x8004, gSpecialVar_0x8005, gSpecialVar_Facing, gSpecialVar_LastTalked,
+};
+use crate::field_player_avatar::{
+    GetPlayerFacingDirection, GetPlayerMovementDirection, GetXYCoordsOneStepInFrontOfPlayer,
+    IsPlayerFacingSurfableFishableWater, IsPlayerSurfingNorth, PartyHasMonWithSurf,
+    PlayerGetDestCoords, PlayerGetElevation, gObjectEvents, gPlayerAvatar,
+};
+use crate::field_poison::DoPoisonFieldEffect;
+use crate::field_screen_effect::{
+    DoDiveWarp, DoDoorWarp, DoEscalatorWarp, DoLavaridgeGym1FWarp, DoLavaridgeGymB1FWarp,
+    DoMossdeepGymWarp, DoSpinExitWarp, DoTeleportTileWarp, DoWarp,
+};
+use crate::field_specials::{
+    AbnormalWeatherHasExpired, CountSSTidalStep, IncrementBirthIslandRockStepCount,
+    ShouldDoRivalRayquazaCall, ShouldDoRoxanneCall, ShouldDoScottBattleFrontierCall,
+    ShouldDoScottFortreeCall, ShouldDoWallyCall,
+};
+use crate::fieldmap::{
+    MapGridGetElevationAt, MapGridGetMetatileBehaviorAt, MapGridGetMetatileIdAt, gMapHeader,
+};
+use crate::fldeff_misc::{DoSecretBaseGlitterMatSparkle, PlaySecretBaseMusicNoteMatSound};
+use crate::item_menu::UseRegisteredKeyItemOnField;
+use crate::load_save::gSaveBlock1Ptr;
+use crate::match_call::TryStartMatchCall;
+use crate::metatile_behavior::{
+    MetatileBehavior_HoldsLargeDecoration, MetatileBehavior_HoldsSmallDecoration,
+    MetatileBehavior_IsAquaHideoutWarp, MetatileBehavior_IsBattlePyramidWarp,
+    MetatileBehavior_IsBlueprint, MetatileBehavior_IsBookShelf,
+    MetatileBehavior_IsCableBoxResults1, MetatileBehavior_IsCableBoxResults2,
+    MetatileBehavior_IsClosedSootopolisDoor, MetatileBehavior_IsCounter,
+    MetatileBehavior_IsCrackedFloorHole, MetatileBehavior_IsDiveable,
+    MetatileBehavior_IsEastArrowWarp, MetatileBehavior_IsEscalator,
+    MetatileBehavior_IsForcedMovementTile, MetatileBehavior_IsLadder,
+    MetatileBehavior_IsLavaridge1FWarp, MetatileBehavior_IsLavaridgeB1FWarp,
+    MetatileBehavior_IsMossdeepGymWarp, MetatileBehavior_IsMtPyreHole,
+    MetatileBehavior_IsNonAnimDoor, MetatileBehavior_IsNorthArrowWarp,
+    MetatileBehavior_IsOpenSecretBaseDoor, MetatileBehavior_IsPC,
+    MetatileBehavior_IsPictureBookShelf, MetatileBehavior_IsPlayerFacingTVScreen,
+    MetatileBehavior_IsPlayerFacingWirelessBoxResults, MetatileBehavior_IsPokeCenterBookShelf,
+    MetatileBehavior_IsPokeblockFeeder, MetatileBehavior_IsQuestionnaire,
+    MetatileBehavior_IsRecordMixingSecretBasePC, MetatileBehavior_IsRegionMap,
+    MetatileBehavior_IsRunningShoesManual, MetatileBehavior_IsSecretBaseDecorationBase,
+    MetatileBehavior_IsSecretBaseGlitterMat, MetatileBehavior_IsSecretBasePC,
+    MetatileBehavior_IsSecretBasePoster, MetatileBehavior_IsSecretBaseSandOrnament,
+    MetatileBehavior_IsSecretBaseShieldOrToyTV, MetatileBehavior_IsSecretBaseSoundMat,
+    MetatileBehavior_IsShopShelf, MetatileBehavior_IsSkyPillarClosedDoor,
+    MetatileBehavior_IsSouthArrowWarp, MetatileBehavior_IsTrainerHillTimer,
+    MetatileBehavior_IsTrashCan, MetatileBehavior_IsTrickHousePuzzleDoor,
+    MetatileBehavior_IsUnableToEmerge, MetatileBehavior_IsUnionRoomWarp, MetatileBehavior_IsVase,
+    MetatileBehavior_IsWarpDoor, MetatileBehavior_IsWaterfall, MetatileBehavior_IsWestArrowWarp,
+};
+use crate::overworld::{
+    IncrementGameStat, Overworld_GetMapHeaderByGroupAndId, SetDiveWarpDive, SetDiveWarpEmerge,
+    SetDynamicWarp, SetWarpDestinationToDynamicWarp, SetWarpDestinationToMapWarp,
+    StoreInitialPlayerAvatarState, UpdateEscapeWarp, gLinkPlayerObjectEvents,
+};
+use crate::pokemon::{AdjustFriendship, gPlayerParty};
+use crate::safari_zone::SafariZoneTakeStep;
+use crate::script::TryRunOnFrameMapScript;
+use crate::script::{RunScriptImmediately, ScriptContext_SetupScript};
+use crate::secret_base::{
+    CheckInteractedWithFriendsFurnitureBottom, CheckInteractedWithFriendsFurnitureMiddle,
+    CheckInteractedWithFriendsFurnitureTop, CheckInteractedWithFriendsPosterDecor,
+    TrySetCurSecretBase, WarpIntoSecretBase,
+};
+use crate::sound::PlaySE;
+use crate::start_menu::ShowStartMenu;
+use crate::trainer_hill::{
+    GetCurrentTrainerHillMapId, GetNumFloorsInTrainerHillChallenge, GetTrainerHillTrainerScript,
+    InTrainerHill, SetWarpDestinationTrainerHill4F, SetWarpDestinationTrainerHillFinalFloor,
+};
+use crate::trainer_see::CheckForTrainersWantingBattle;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::union_room::InUnionRoom;
+use crate::wild_encounter::{StandardWildEncounter, UpdateRepelCounter};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
@@ -36,207 +113,21 @@ use core::mem::zeroed;
 use core::ptr::null_mut;
 
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sWildEncounterImmunitySteps: u8 = 0;
+pub(crate) static sWildEncounterImmunitySteps: crate::global::Global<u8> =
+    crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPrevMetatileBehavior: u16 = 0;
+pub(crate) static sPrevMetatileBehavior: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gSelectedObjectEvent: u8 = 0;
 
-unsafe extern "C" {
-    static AbnormalWeather_EventScript_EndEventAndCleanup_1: CArray<u8, 0>;
-    static BattlePyramid_WarpToNextFloor: CArray<u8, 0>;
-    static EventScript_Blueprint: CArray<u8, 0>;
-    static EventScript_BookShelf: CArray<u8, 0>;
-    static EventScript_CableBoxResults: CArray<u8, 0>;
-    static EventScript_CannotUseWaterfall: CArray<u8, 0>;
-    static EventScript_ClosedSootopolisDoor: CArray<u8, 0>;
-    static EventScript_EggHatch: CArray<u8, 0>;
-    static EventScript_EmptyTrashCan: CArray<u8, 0>;
-    static EventScript_FallDownHole: CArray<u8, 0>;
-    static EventScript_FallDownHoleMtPyre: CArray<u8, 0>;
-    static EventScript_FieldPoison: CArray<u8, 0>;
-    static EventScript_HiddenItemScript: CArray<u8, 0>;
-    static EventScript_PC: CArray<u8, 0>;
-    static EventScript_PictureBookShelf: CArray<u8, 0>;
-    static EventScript_PokeBlockFeeder: CArray<u8, 0>;
-    static EventScript_PokemonCenterBookShelf: CArray<u8, 0>;
-    static EventScript_Questionnaire: CArray<u8, 0>;
-    static EventScript_RegionMap: CArray<u8, 0>;
-    static EventScript_RunningShoesManual: CArray<u8, 0>;
-    static EventScript_ShopShelf: CArray<u8, 0>;
-    static EventScript_TV: CArray<u8, 0>;
-    static EventScript_TestSignpostMsg: CArray<u8, 0>;
-    static EventScript_TrainerHillTimer: CArray<u8, 0>;
-    static EventScript_UseDive: CArray<u8, 0>;
-    static EventScript_UseDiveUnderwater: CArray<u8, 0>;
-    static EventScript_UseSurf: CArray<u8, 0>;
-    static EventScript_UseWaterfall: CArray<u8, 0>;
-    static EventScript_Vase: CArray<u8, 0>;
-    static EventScript_WirelessBoxResults: CArray<u8, 0>;
-    static IslandCave_EventScript_OpenRegiEntrance: CArray<u8, 0>;
-    static LittlerootTown_BrendansHouse_2F_EventScript_PC: CArray<u8, 0>;
-    static LittlerootTown_MaysHouse_2F_EventScript_PC: CArray<u8, 0>;
-    static LittlerootTown_ProfessorBirchsLab_EventScript_ScottAboardSSTidalCall: CArray<u8, 0>;
-    static MauvilleCity_EventScript_RegisterWallyCall: CArray<u8, 0>;
-    static MossdeepCity_SpaceCenter_2F_EventScript_RivalRayquazaCall: CArray<u8, 0>;
-    static Route110_TrickHousePuzzle_EventScript_Door: CArray<u8, 0>;
-    static Route119_EventScript_ScottWonAtFortreeGymCall: CArray<u8, 0>;
-    static RustboroCity_Gym_EventScript_RegisterRoxanne: CArray<u8, 0>;
-    static SSTidalCorridor_EventScript_ReachedStepCount: CArray<u8, 0>;
-    static SecretBase_EventScript_CheckEntrance: CArray<u8, 0>;
-    static SecretBase_EventScript_CushionInteract: CArray<u8, 0>;
-    static SecretBase_EventScript_DollInteract: CArray<u8, 0>;
-    static SecretBase_EventScript_PC: CArray<u8, 0>;
-    static SecretBase_EventScript_RecordMixingPC: CArray<u8, 0>;
-    static SecretBase_EventScript_SandOrnament: CArray<u8, 0>;
-    static SecretBase_EventScript_ShieldOrToyTV: CArray<u8, 0>;
-    static SkyPillar_Outside_EventScript_ClosedDoor: CArray<u8, 0>;
-    static gDirectionToVectors: CArray<UCoords32, 0>;
-    static mut gLinkPlayerObjectEvents: CArray<LinkPlayerObjectEvent, 4>;
-    static mut gMapHeader: MapHeader;
-    static mut gObjectEvents: CArray<ObjectEvent, 16>;
-    static mut gPlayerAvatar: PlayerAvatar;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_0x8005: u16;
-    static mut gSpecialVar_Facing: u16;
-    static mut gSpecialVar_LastTalked: u16;
-    fn AbnormalWeatherHasExpired() -> u8;
-    fn AdjustFriendship(a0: *mut Pokemon, a1: u8);
-    fn CheckForTrainersWantingBattle() -> u8;
-    fn CheckInteractedWithFriendsFurnitureBottom();
-    fn CheckInteractedWithFriendsFurnitureMiddle();
-    fn CheckInteractedWithFriendsFurnitureTop();
-    fn CheckInteractedWithFriendsPosterDecor();
-    fn CountSSTidalStep(a0: u16) -> u32;
-    fn DoCoordEventWeather(a0: u8);
-    fn DoDiveWarp();
-    fn DoDoorWarp();
-    fn DoEscalatorWarp(a0: u8);
-    fn DoLavaridgeGym1FWarp();
-    fn DoLavaridgeGymB1FWarp();
-    fn DoMossdeepGymWarp();
-    fn DoPoisonFieldEffect() -> i32;
-    fn DoSecretBaseGlitterMatSparkle();
-    fn DoSpinExitWarp();
-    fn DoTeleportTileWarp();
-    fn DoWarp();
-    fn FlagGet(a0: u16) -> u8;
-    fn GetCurrentTrainerHillMapId() -> u8;
-    fn GetNumFloorsInTrainerHillChallenge() -> u8;
-    fn GetObjectEventIdByPosition(a0: u16, a1: u16, a2: u8) -> u8;
-    fn GetObjectEventScriptPointerByObjectEventId(a0: u8) -> *mut u8;
-    fn GetPlayerFacingDirection() -> u8;
-    fn GetPlayerMovementDirection() -> u8;
-    fn GetPlayerSpeed() -> i16;
-    fn GetRamScript(a0: u8, a1: *mut u8) -> *mut u8;
-    fn GetTrainerHillTrainerScript() -> *mut u8;
-    fn GetVarPointer(a0: u16) -> *mut u16;
-    fn GetXYCoordsOneStepInFrontOfPlayer(a0: *mut i16, a1: *mut i16);
-    fn InTrainerHill() -> u32;
-    fn InUnionRoom() -> u32;
-    fn IncrementBirthIslandRockStepCount();
-    fn IncrementGameStat(a0: u8);
-    fn IncrementRematchStepCounter();
-    fn IsPlayerFacingSurfableFishableWater() -> u8;
-    fn IsPlayerSurfingNorth() -> u8;
-    fn MapGridGetElevationAt(a0: i32, a1: i32) -> u8;
-    fn MapGridGetMetatileBehaviorAt(a0: i32, a1: i32) -> i32;
-    fn MapGridGetMetatileIdAt(a0: i32, a1: i32) -> i32;
-    fn MetatileBehavior_HoldsLargeDecoration(a0: u8) -> u8;
-    fn MetatileBehavior_HoldsSmallDecoration(a0: u8) -> u8;
-    fn MetatileBehavior_IsAquaHideoutWarp(a0: u8) -> u8;
-    fn MetatileBehavior_IsBattlePyramidWarp(a0: u8) -> u8;
-    fn MetatileBehavior_IsBlueprint(a0: u8) -> u8;
-    fn MetatileBehavior_IsBookShelf(a0: u8) -> u8;
-    fn MetatileBehavior_IsCableBoxResults1(a0: u8) -> u8;
-    fn MetatileBehavior_IsCableBoxResults2(a0: u8, a1: u8) -> u8;
-    fn MetatileBehavior_IsClosedSootopolisDoor(a0: u8) -> u8;
-    fn MetatileBehavior_IsCounter(a0: u8) -> u8;
-    fn MetatileBehavior_IsCrackedFloorHole(a0: u8) -> u8;
-    fn MetatileBehavior_IsDiveable(a0: u8) -> u8;
-    fn MetatileBehavior_IsEastArrowWarp(a0: u8) -> u8;
-    fn MetatileBehavior_IsEscalator(a0: u8) -> u8;
-    fn MetatileBehavior_IsForcedMovementTile(a0: u8) -> u8;
-    fn MetatileBehavior_IsLadder(a0: u8) -> u8;
-    fn MetatileBehavior_IsLavaridge1FWarp(a0: u8) -> u8;
-    fn MetatileBehavior_IsLavaridgeB1FWarp(a0: u8) -> u8;
-    fn MetatileBehavior_IsMossdeepGymWarp(a0: u8) -> u8;
-    fn MetatileBehavior_IsMtPyreHole(a0: u8) -> u8;
-    fn MetatileBehavior_IsNonAnimDoor(a0: u8) -> u8;
-    fn MetatileBehavior_IsNorthArrowWarp(a0: u8) -> u8;
-    fn MetatileBehavior_IsOpenSecretBaseDoor(a0: u8) -> u8;
-    fn MetatileBehavior_IsPC(a0: u8) -> u8;
-    fn MetatileBehavior_IsPictureBookShelf(a0: u8) -> u8;
-    fn MetatileBehavior_IsPlayerFacingTVScreen(a0: u8, a1: u8) -> u8;
-    fn MetatileBehavior_IsPlayerFacingWirelessBoxResults(a0: u8, a1: u8) -> u8;
-    fn MetatileBehavior_IsPokeCenterBookShelf(a0: u8) -> u8;
-    fn MetatileBehavior_IsPokeblockFeeder(a0: u8) -> u8;
-    fn MetatileBehavior_IsQuestionnaire(a0: u8) -> u8;
-    fn MetatileBehavior_IsRecordMixingSecretBasePC(a0: u8) -> u8;
-    fn MetatileBehavior_IsRegionMap(a0: u8) -> u8;
-    fn MetatileBehavior_IsRunningShoesManual(a0: u8) -> u8;
-    fn MetatileBehavior_IsSecretBaseDecorationBase(a0: u8) -> u8;
-    fn MetatileBehavior_IsSecretBaseGlitterMat(a0: u8) -> u8;
-    fn MetatileBehavior_IsSecretBasePC(a0: u8) -> u8;
-    fn MetatileBehavior_IsSecretBasePoster(a0: u8) -> u8;
-    fn MetatileBehavior_IsSecretBaseSandOrnament(a0: u8) -> u8;
-    fn MetatileBehavior_IsSecretBaseShieldOrToyTV(a0: u8) -> u8;
-    fn MetatileBehavior_IsSecretBaseSoundMat(a0: u8) -> u8;
-    fn MetatileBehavior_IsShopShelf(a0: u8) -> u8;
-    fn MetatileBehavior_IsSkyPillarClosedDoor(a0: u8) -> u8;
-    fn MetatileBehavior_IsSouthArrowWarp(a0: u8) -> u8;
-    fn MetatileBehavior_IsTrainerHillTimer(a0: u8) -> u8;
-    fn MetatileBehavior_IsTrashCan(a0: u8) -> u8;
-    fn MetatileBehavior_IsTrickHousePuzzleDoor(a0: u8) -> u8;
-    fn MetatileBehavior_IsUnableToEmerge(a0: u8) -> u8;
-    fn MetatileBehavior_IsUnionRoomWarp(a0: u8) -> u8;
-    fn MetatileBehavior_IsVase(a0: u8) -> u8;
-    fn MetatileBehavior_IsWarpDoor(a0: u8) -> u8;
-    fn MetatileBehavior_IsWaterfall(a0: u8) -> u8;
-    fn MetatileBehavior_IsWestArrowWarp(a0: u8) -> u8;
-    fn Overworld_GetMapHeaderByGroupAndId(a0: u16, a1: u16) -> *mut MapHeader;
-    fn PartyHasMonWithSurf() -> u8;
-    fn PlaySE(a0: u16);
-    fn PlaySecretBaseMusicNoteMatSound(a0: i16);
-    fn PlayerGetDestCoords(a0: *mut i16, a1: *mut i16);
-    fn PlayerGetElevation() -> u8;
-    fn RunScriptImmediately(a0: *mut u8);
-    fn SafariZoneTakeStep() -> u8;
-    fn ScriptContext_SetupScript(a0: *mut u8);
-    fn SetDiveWarpDive(a0: u16, a1: u16) -> u8;
-    fn SetDiveWarpEmerge(a0: u16, a1: u16) -> u8;
-    fn SetDynamicWarp(a0: i32, a1: i8, a2: i8, a3: i8);
-    fn SetWarpDestinationToDynamicWarp(a0: u8);
-    fn SetWarpDestinationToMapWarp(a0: i8, a1: i8, a2: i8);
-    fn SetWarpDestinationTrainerHill4F() -> *mut WarpEvent;
-    fn SetWarpDestinationTrainerHillFinalFloor(a0: u8) -> *mut WarpEvent;
-    fn ShouldDoBrailleRegicePuzzle() -> u8;
-    fn ShouldDoRivalRayquazaCall() -> u32;
-    fn ShouldDoRoxanneCall() -> u32;
-    fn ShouldDoScottBattleFrontierCall() -> u32;
-    fn ShouldDoScottFortreeCall() -> u32;
-    fn ShouldDoWallyCall() -> u32;
-    fn ShouldEggHatch() -> u8;
-    fn ShowStartMenu();
-    fn StandardWildEncounter(a0: u16, a1: u16) -> u8;
-    fn StoreInitialPlayerAvatarState();
-    fn TryRunOnFrameMapScript() -> u8;
-    fn TrySetCurSecretBase() -> u8;
-    fn TryStartMatchCall() -> u32;
-    fn UpdateEscapeWarp(a0: i16, a1: i16);
-    fn UpdateFarawayIslandStepCounter();
-    fn UpdateRepelCounter() -> u8;
-    fn UseRegisteredKeyItemOnField() -> u8;
-    fn VarGet(a0: u16) -> u16;
-    fn VarSet(a0: u16, a1: u16) -> u8;
-    fn WarpIntoSecretBase(a0: *mut MapPosition, a1: *mut MapEvents);
+/// `GetRamScript` with this module's view of its types.
+#[inline]
+unsafe fn GetRamScript(a0: u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::script::GetRamScript(a0, a1 as _) as *mut u8 }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldClearPlayerInput(input: *mut FieldInput) {
+pub unsafe fn FieldClearPlayerInput(input: *mut FieldInput) {
     (*input).set_pressedAButton(FALSE);
     (*input).set_checkStandardWildEncounter(FALSE);
     (*input).set_pressedStartButton(FALSE);
@@ -251,11 +142,10 @@ pub unsafe extern "C" fn FieldClearPlayerInput(input: *mut FieldInput) {
     (*input).set_input_field_1_3(FALSE);
     (*input).dpadDirection = 0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldGetPlayerInput(input: *mut FieldInput, newKeys: u16, heldKeys: u16) {
-    let mut tileTransitionState: u8 = gPlayerAvatar.tileTransitionState;
-    let mut runningState: u8 = gPlayerAvatar.runningState;
-    let mut forcedMove: u8 = MetatileBehavior_IsForcedMovementTile(GetPlayerCurMetatileBehavior(
+pub unsafe fn FieldGetPlayerInput(input: *mut FieldInput, newKeys: u16, heldKeys: u16) {
+    let tileTransitionState: u8 = gPlayerAvatar.tileTransitionState;
+    let runningState: u8 = gPlayerAvatar.runningState;
+    let forcedMove: u8 = MetatileBehavior_IsForcedMovementTile(GetPlayerCurMetatileBehavior(
         runningState as i32,
     ) as u8);
     if tileTransitionState == T_TILE_CENTER && forcedMove == FALSE
@@ -298,16 +188,14 @@ pub unsafe extern "C" fn FieldGetPlayerInput(input: *mut FieldInput, newKeys: u1
         (*input).dpadDirection = DIR_EAST;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ProcessPlayerFieldInput(input: *mut FieldInput) -> i32 {
+pub unsafe fn ProcessPlayerFieldInput(input: *mut FieldInput) -> i32 {
     let mut position: MapPosition = zeroed();
-    let mut playerDirection: u8 = 0;
-    let mut metatileBehavior: u16 = 0;
     gSpecialVar_LastTalked = LOCALID_NONE as u16;
     gSelectedObjectEvent = 0;
-    playerDirection = GetPlayerFacingDirection();
+    let playerDirection: u8 = GetPlayerFacingDirection();
     GetPlayerPosition(&raw mut position);
-    metatileBehavior = MapGridGetMetatileBehaviorAt(position.x as i32, position.y as i32) as u16;
+    let mut metatileBehavior: u16 =
+        MapGridGetMetatileBehaviorAt(position.x as i32, position.y as i32) as u16;
     if CheckForTrainersWantingBattle() == TRUE {
         return TRUE as i32;
     }
@@ -331,10 +219,11 @@ pub unsafe extern "C" fn ProcessPlayerFieldInput(input: *mut FieldInput) -> i32 
     {
         return TRUE as i32;
     }
-    if (*input).heldDirection() != 0 && (*input).dpadDirection == playerDirection {
-        if TryArrowWarp(&raw mut position, metatileBehavior, playerDirection) == TRUE {
-            return TRUE as i32;
-        }
+    if (*input).heldDirection() != 0
+        && (*input).dpadDirection == playerDirection
+        && TryArrowWarp(&raw mut position, metatileBehavior, playerDirection) == TRUE
+    {
+        return TRUE as i32;
     }
     GetInFrontOfPlayerPosition(&raw mut position);
     metatileBehavior = MapGridGetMetatileBehaviorAt(position.x as i32, position.y as i32) as u16;
@@ -343,10 +232,11 @@ pub unsafe extern "C" fn ProcessPlayerFieldInput(input: *mut FieldInput) -> i32 
     {
         return TRUE as i32;
     }
-    if (*input).heldDirection2() != 0 && (*input).dpadDirection == playerDirection {
-        if TryDoorWarp(&raw mut position, metatileBehavior, playerDirection) == TRUE {
-            return TRUE as i32;
-        }
+    if (*input).heldDirection2() != 0
+        && (*input).dpadDirection == playerDirection
+        && TryDoorWarp(&raw mut position, metatileBehavior, playerDirection) == TRUE
+    {
+        return TRUE as i32;
     }
     if (*input).pressedAButton() != 0 && TrySetupDiveDownScript() == TRUE as u32 {
         return TRUE as i32;
@@ -359,13 +249,13 @@ pub unsafe extern "C" fn ProcessPlayerFieldInput(input: *mut FieldInput) -> i32 
     if (*input).pressedSelectButton() != 0 && UseRegisteredKeyItemOnField() == TRUE {
         return TRUE as i32;
     }
-    return FALSE as i32;
+    FALSE as i32
 }
-pub(crate) unsafe extern "C" fn GetPlayerPosition(position: *mut MapPosition) {
+unsafe fn GetPlayerPosition(position: *mut MapPosition) {
     PlayerGetDestCoords(&raw mut (*position).x, &raw mut (*position).y);
     (*position).elevation = PlayerGetElevation() as i8;
 }
-pub(crate) unsafe extern "C" fn GetInFrontOfPlayerPosition(position: *mut MapPosition) {
+unsafe fn GetInFrontOfPlayerPosition(position: *mut MapPosition) {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
     GetXYCoordsOneStepInFrontOfPlayer(&raw mut (*position).x, &raw mut (*position).y);
@@ -376,41 +266,56 @@ pub(crate) unsafe extern "C" fn GetInFrontOfPlayerPosition(position: *mut MapPos
         (*position).elevation = ELEVATION_TRANSITION as i8;
     }
 }
-pub(crate) unsafe extern "C" fn GetPlayerCurMetatileBehavior(runningState: i32) -> u16 {
+unsafe fn GetPlayerCurMetatileBehavior(runningState: i32) -> u16 {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
     PlayerGetDestCoords(&raw mut x, &raw mut y);
-    return MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u16;
+    MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u16
 }
-pub(crate) unsafe extern "C" fn TryStartInteractionScript(
+unsafe fn TryStartInteractionScript(
     position: *mut MapPosition,
     metatileBehavior: u16,
     direction: u8,
 ) -> u8 {
-    let mut script: *mut u8 = GetInteractionScript(position, metatileBehavior as u8, direction);
+    let script: *mut u8 = GetInteractionScript(position, metatileBehavior as u8, direction);
     if script.is_null() {
         return FALSE;
     }
     if script
-        != LittlerootTown_BrendansHouse_2F_EventScript_PC
+        != (*crate::asmdata::LittlerootTown_BrendansHouse_2F_EventScript_PC.cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut()
         && script
-            != LittlerootTown_MaysHouse_2F_EventScript_PC
+            != (*crate::asmdata::LittlerootTown_MaysHouse_2F_EventScript_PC.cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut()
-        && script != SecretBase_EventScript_PC.as_ptr().cast_mut()
-        && script != SecretBase_EventScript_RecordMixingPC.as_ptr().cast_mut()
-        && script != SecretBase_EventScript_DollInteract.as_ptr().cast_mut()
-        && script != SecretBase_EventScript_CushionInteract.as_ptr().cast_mut()
-        && script != EventScript_PC.as_ptr().cast_mut()
+        && script
+            != (*crate::asmdata::SecretBase_EventScript_PC.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
+        && script
+            != (*crate::asmdata::SecretBase_EventScript_RecordMixingPC.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
+        && script
+            != (*crate::asmdata::SecretBase_EventScript_DollInteract.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
+        && script
+            != (*crate::asmdata::SecretBase_EventScript_CushionInteract.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
+        && script
+            != (*crate::asmdata::EventScript_PC.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut()
     {
         PlaySE(SE_SELECT);
     }
     ScriptContext_SetupScript(script);
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn GetInteractionScript(
+unsafe fn GetInteractionScript(
     position: *mut MapPosition,
     metatileBehavior: u8,
     direction: u8,
@@ -431,16 +336,14 @@ pub(crate) unsafe extern "C" fn GetInteractionScript(
     if !script.is_null() {
         return script;
     }
-    return null_mut();
+    null_mut()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetInteractedLinkPlayerScript(
+pub unsafe fn GetInteractedLinkPlayerScript(
     position: *mut MapPosition,
     metatileBehavior: u8,
     direction: u8,
 ) -> *mut u8 {
     let mut objectEventId: u8 = 0;
-    let mut i: i32 = 0;
     if MetatileBehavior_IsCounter(MapGridGetMetatileBehaviorAt(
         (*position).x as i32,
         (*position).y as i32,
@@ -454,8 +357,14 @@ pub unsafe extern "C" fn GetInteractedLinkPlayerScript(
         );
     } else {
         objectEventId = GetObjectEventIdByPosition(
-            (*position).x as u16 + gDirectionToVectors[direction].x as u16,
-            (*position).y as u16 + gDirectionToVectors[direction].y as u16,
+            (*position).x as u16
+                + (*(&raw const crate::data::overworld::gDirectionToVectors)
+                    .cast::<CArray<UCoords32, 0>>())[direction]
+                    .x as u16,
+            (*position).y as u16
+                + (*(&raw const crate::data::overworld::gDirectionToVectors)
+                    .cast::<CArray<UCoords32, 0>>())[direction]
+                    .y as u16,
             (*position).elevation as u8,
         );
     }
@@ -464,28 +373,25 @@ pub unsafe extern "C" fn GetInteractedLinkPlayerScript(
     {
         return null_mut();
     }
-    i = 0;
-    while i < 4 {
+    for i in 0..4i32 {
         if gLinkPlayerObjectEvents[i].active == TRUE
             && gLinkPlayerObjectEvents[i].objEventId == objectEventId
         {
             return null_mut();
         }
-        i += 1;
     }
     gSelectedObjectEvent = objectEventId;
     gSpecialVar_LastTalked = gObjectEvents[objectEventId].localId as u16;
     gSpecialVar_Facing = direction as u16;
-    return GetObjectEventScriptPointerByObjectEventId(objectEventId);
+    GetObjectEventScriptPointerByObjectEventId(objectEventId)
 }
-pub(crate) unsafe extern "C" fn GetInteractedObjectEventScript(
+unsafe fn GetInteractedObjectEventScript(
     position: *mut MapPosition,
     metatileBehavior: u8,
     direction: u8,
 ) -> *mut u8 {
-    let mut objectEventId: u8 = 0;
     let mut script: *mut u8 = null_mut();
-    objectEventId = GetObjectEventIdByPosition(
+    let mut objectEventId: u8 = GetObjectEventIdByPosition(
         (*position).x as u16,
         (*position).y as u16,
         (*position).elevation as u8,
@@ -497,8 +403,14 @@ pub(crate) unsafe extern "C" fn GetInteractedObjectEventScript(
             return null_mut();
         }
         objectEventId = GetObjectEventIdByPosition(
-            (*position).x as u16 + gDirectionToVectors[direction].x as u16,
-            (*position).y as u16 + gDirectionToVectors[direction].y as u16,
+            (*position).x as u16
+                + (*(&raw const crate::data::overworld::gDirectionToVectors)
+                    .cast::<CArray<UCoords32, 0>>())[direction]
+                    .x as u16,
+            (*position).y as u16
+                + (*(&raw const crate::data::overworld::gDirectionToVectors)
+                    .cast::<CArray<UCoords32, 0>>())[direction]
+                    .y as u16,
             (*position).elevation as u8,
         );
         if objectEventId == OBJECT_EVENTS_COUNT
@@ -516,14 +428,14 @@ pub(crate) unsafe extern "C" fn GetInteractedObjectEventScript(
         script = GetObjectEventScriptPointerByObjectEventId(objectEventId);
     }
     script = GetRamScript(gSpecialVar_LastTalked as u8, script);
-    return script;
+    script
 }
-pub(crate) unsafe extern "C" fn GetInteractedBackgroundEventScript(
+unsafe fn GetInteractedBackgroundEventScript(
     position: *mut MapPosition,
     metatileBehavior: u8,
     direction: u8,
 ) -> *mut u8 {
-    let mut bgEvent: *mut BgEvent = GetBackgroundEventAtPosition(
+    let bgEvent: *mut BgEvent = GetBackgroundEventAtPosition(
         &raw mut gMapHeader,
         (*position).x as u16 - MAP_OFFSET as u16,
         (*position).y as u16 - MAP_OFFSET as u16,
@@ -533,7 +445,9 @@ pub(crate) unsafe extern "C" fn GetInteractedBackgroundEventScript(
         return null_mut();
     }
     if (*bgEvent).bgUnion.script.is_null() {
-        return EventScript_TestSignpostMsg.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_TestSignpostMsg.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     match (*bgEvent).kind {
         BG_EVENT_PLAYER_FACING_NORTH => {
@@ -560,16 +474,26 @@ pub(crate) unsafe extern "C" fn GetInteractedBackgroundEventScript(
             gSpecialVar_0x8004 =
                 ((*bgEvent).bgUnion.script as usize as u32 >> 16) as u16 + FLAG_HIDDEN_ITEMS_START;
             gSpecialVar_0x8005 = (*bgEvent).bgUnion.script as usize as u32 as u16;
-            if FlagGet(gSpecialVar_0x8004) == TRUE {
+            if FlagGet(
+                *(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut(),
+            ) == TRUE
+            {
                 return null_mut();
             }
-            return EventScript_HiddenItemScript.as_ptr().cast_mut();
+            return (*crate::asmdata::EventScript_HiddenItemScript.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         }
         BG_EVENT_SECRET_BASE => {
             if direction == DIR_NORTH {
                 gSpecialVar_0x8004 = (*bgEvent).bgUnion.secretBaseId as u16;
                 if TrySetCurSecretBase() != 0 {
-                    return SecretBase_EventScript_CheckEntrance.as_ptr().cast_mut();
+                    return (*crate::asmdata::SecretBase_EventScript_CheckEntrance
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut();
                 }
             }
             return null_mut();
@@ -578,90 +502,138 @@ pub(crate) unsafe extern "C" fn GetInteractedBackgroundEventScript(
             return (*bgEvent).bgUnion.script;
         }
     }
-    return (*bgEvent).bgUnion.script;
+    (*bgEvent).bgUnion.script
 }
-pub(crate) unsafe extern "C" fn GetInteractedMetatileScript(
+unsafe fn GetInteractedMetatileScript(
     position: *mut MapPosition,
     metatileBehavior: u8,
     direction: u8,
 ) -> *mut u8 {
     let mut elevation: i8 = 0;
     if MetatileBehavior_IsPlayerFacingTVScreen(metatileBehavior, direction) == TRUE {
-        return EventScript_TV.as_ptr().cast_mut();
-    }
-    if MetatileBehavior_IsPC(metatileBehavior) == TRUE {
-        return EventScript_PC.as_ptr().cast_mut();
-    }
-    if MetatileBehavior_IsClosedSootopolisDoor(metatileBehavior) == TRUE {
-        return EventScript_ClosedSootopolisDoor.as_ptr().cast_mut();
-    }
-    if MetatileBehavior_IsSkyPillarClosedDoor(metatileBehavior) == TRUE {
-        return SkyPillar_Outside_EventScript_ClosedDoor.as_ptr().cast_mut();
-    }
-    if MetatileBehavior_IsCableBoxResults1(metatileBehavior) == TRUE {
-        return EventScript_CableBoxResults.as_ptr().cast_mut();
-    }
-    if MetatileBehavior_IsPokeblockFeeder(metatileBehavior) == TRUE {
-        return EventScript_PokeBlockFeeder.as_ptr().cast_mut();
-    }
-    if MetatileBehavior_IsTrickHousePuzzleDoor(metatileBehavior) == TRUE {
-        return Route110_TrickHousePuzzle_EventScript_Door
+        return (*crate::asmdata::EventScript_TV.cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut();
     }
+    if MetatileBehavior_IsPC(metatileBehavior) == TRUE {
+        return (*crate::asmdata::EventScript_PC.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
+    }
+    if MetatileBehavior_IsClosedSootopolisDoor(metatileBehavior) == TRUE {
+        return (*crate::asmdata::EventScript_ClosedSootopolisDoor.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
+    }
+    if MetatileBehavior_IsSkyPillarClosedDoor(metatileBehavior) == TRUE {
+        return (*crate::asmdata::SkyPillar_Outside_EventScript_ClosedDoor.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
+    }
+    if MetatileBehavior_IsCableBoxResults1(metatileBehavior) == TRUE {
+        return (*crate::asmdata::EventScript_CableBoxResults.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
+    }
+    if MetatileBehavior_IsPokeblockFeeder(metatileBehavior) == TRUE {
+        return (*crate::asmdata::EventScript_PokeBlockFeeder.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
+    }
+    if MetatileBehavior_IsTrickHousePuzzleDoor(metatileBehavior) == TRUE {
+        return (*crate::asmdata::Route110_TrickHousePuzzle_EventScript_Door
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
+    }
     if MetatileBehavior_IsRegionMap(metatileBehavior) == TRUE {
-        return EventScript_RegionMap.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_RegionMap.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     if MetatileBehavior_IsRunningShoesManual(metatileBehavior) == TRUE {
-        return EventScript_RunningShoesManual.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_RunningShoesManual.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     if MetatileBehavior_IsPictureBookShelf(metatileBehavior) == TRUE {
-        return EventScript_PictureBookShelf.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_PictureBookShelf.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     if MetatileBehavior_IsBookShelf(metatileBehavior) == TRUE {
-        return EventScript_BookShelf.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_BookShelf.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     if MetatileBehavior_IsPokeCenterBookShelf(metatileBehavior) == TRUE {
-        return EventScript_PokemonCenterBookShelf.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_PokemonCenterBookShelf.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     if MetatileBehavior_IsVase(metatileBehavior) == TRUE {
-        return EventScript_Vase.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_Vase.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     if MetatileBehavior_IsTrashCan(metatileBehavior) == TRUE {
-        return EventScript_EmptyTrashCan.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_EmptyTrashCan.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     if MetatileBehavior_IsShopShelf(metatileBehavior) == TRUE {
-        return EventScript_ShopShelf.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_ShopShelf.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     if MetatileBehavior_IsBlueprint(metatileBehavior) == TRUE {
-        return EventScript_Blueprint.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_Blueprint.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     if MetatileBehavior_IsPlayerFacingWirelessBoxResults(metatileBehavior, direction) == TRUE {
-        return EventScript_WirelessBoxResults.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_WirelessBoxResults.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     if MetatileBehavior_IsCableBoxResults2(metatileBehavior, direction) == TRUE {
-        return EventScript_CableBoxResults.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_CableBoxResults.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     if MetatileBehavior_IsQuestionnaire(metatileBehavior) == TRUE {
-        return EventScript_Questionnaire.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_Questionnaire.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     if MetatileBehavior_IsTrainerHillTimer(metatileBehavior) == TRUE {
-        return EventScript_TrainerHillTimer.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_TrainerHillTimer.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     elevation = (*position).elevation;
     if elevation as i32 == MapGridGetElevationAt((*position).x as i32, (*position).y as i32) as i32
     {
         if MetatileBehavior_IsSecretBasePC(metatileBehavior) == TRUE {
-            return SecretBase_EventScript_PC.as_ptr().cast_mut();
+            return (*crate::asmdata::SecretBase_EventScript_PC.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         }
         if MetatileBehavior_IsRecordMixingSecretBasePC(metatileBehavior) == TRUE {
-            return SecretBase_EventScript_RecordMixingPC.as_ptr().cast_mut();
+            return (*crate::asmdata::SecretBase_EventScript_RecordMixingPC
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
         if MetatileBehavior_IsSecretBaseSandOrnament(metatileBehavior) == TRUE {
-            return SecretBase_EventScript_SandOrnament.as_ptr().cast_mut();
+            return (*crate::asmdata::SecretBase_EventScript_SandOrnament.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         }
         if MetatileBehavior_IsSecretBaseShieldOrToyTV(metatileBehavior) == TRUE {
-            return SecretBase_EventScript_ShieldOrToyTV.as_ptr().cast_mut();
+            return (*crate::asmdata::SecretBase_EventScript_ShieldOrToyTV.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         }
         if MetatileBehavior_IsSecretBaseDecorationBase(metatileBehavior) == TRUE {
             CheckInteractedWithFriendsFurnitureBottom();
@@ -679,9 +651,9 @@ pub(crate) unsafe extern "C" fn GetInteractedMetatileScript(
         CheckInteractedWithFriendsPosterDecor();
         return null_mut();
     }
-    return null_mut();
+    null_mut()
 }
-pub(crate) unsafe extern "C" fn GetInteractedWaterScript(
+unsafe fn GetInteractedWaterScript(
     unused1: *mut MapPosition,
     metatileBehavior: u8,
     direction: u8,
@@ -690,35 +662,49 @@ pub(crate) unsafe extern "C" fn GetInteractedWaterScript(
         && PartyHasMonWithSurf() == TRUE
         && IsPlayerFacingSurfableFishableWater() == TRUE
     {
-        return EventScript_UseSurf.as_ptr().cast_mut();
+        return (*crate::asmdata::EventScript_UseSurf.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
     }
     if MetatileBehavior_IsWaterfall(metatileBehavior) == TRUE {
         if FlagGet(FLAG_BADGE08_GET) == TRUE && IsPlayerSurfingNorth() == TRUE {
-            return EventScript_UseWaterfall.as_ptr().cast_mut();
+            return (*crate::asmdata::EventScript_UseWaterfall.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         } else {
-            return EventScript_CannotUseWaterfall.as_ptr().cast_mut();
+            return (*crate::asmdata::EventScript_CannotUseWaterfall.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
         }
     }
-    return null_mut();
+    null_mut()
 }
-pub(crate) unsafe extern "C" fn TrySetupDiveDownScript() -> u32 {
+unsafe fn TrySetupDiveDownScript() -> u32 {
     if FlagGet(FLAG_BADGE07_GET) != 0 && TrySetDiveWarp() == 2 {
-        ScriptContext_SetupScript(EventScript_UseDive.as_ptr().cast_mut());
+        ScriptContext_SetupScript(
+            (*crate::asmdata::EventScript_UseDive.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn TrySetupDiveEmergeScript() -> u32 {
+unsafe fn TrySetupDiveEmergeScript() -> u32 {
     if FlagGet(FLAG_BADGE07_GET) != 0
         && gMapHeader.mapType == MAP_TYPE_UNDERWATER
         && TrySetDiveWarp() == 1
     {
-        ScriptContext_SetupScript(EventScript_UseDiveUnderwater.as_ptr().cast_mut());
+        ScriptContext_SetupScript(
+            (*crate::asmdata::EventScript_UseDiveUnderwater.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn TryStartStepBasedScript(
+unsafe fn TryStartStepBasedScript(
     position: *mut MapPosition,
     metatileBehavior: u16,
     direction: u16,
@@ -738,10 +724,10 @@ pub(crate) unsafe extern "C" fn TryStartStepBasedScript(
     if UpdateRepelCounter() == TRUE {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn TryStartCoordEventScript(position: *mut MapPosition) -> u8 {
-    let mut script: *mut u8 = GetCoordEventScriptAtPosition(
+unsafe fn TryStartCoordEventScript(position: *mut MapPosition) -> u8 {
+    let script: *mut u8 = GetCoordEventScriptAtPosition(
         &raw mut gMapHeader,
         (*position).x as u16 - MAP_OFFSET as u16,
         (*position).y as u16 - MAP_OFFSET as u16,
@@ -751,16 +737,24 @@ pub(crate) unsafe extern "C" fn TryStartCoordEventScript(position: *mut MapPosit
         return FALSE;
     }
     ScriptContext_SetupScript(script);
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn TryStartMiscWalkingScripts(metatileBehavior: u16) -> u8 {
+unsafe fn TryStartMiscWalkingScripts(metatileBehavior: u16) -> u8 {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
     if MetatileBehavior_IsCrackedFloorHole(metatileBehavior as u8) != 0 {
-        ScriptContext_SetupScript(EventScript_FallDownHole.as_ptr().cast_mut());
+        ScriptContext_SetupScript(
+            (*crate::asmdata::EventScript_FallDownHole.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
         return TRUE;
     } else if MetatileBehavior_IsBattlePyramidWarp(metatileBehavior as u8) != 0 {
-        ScriptContext_SetupScript(BattlePyramid_WarpToNextFloor.as_ptr().cast_mut());
+        ScriptContext_SetupScript(
+            (*crate::asmdata::BattlePyramid_WarpToNextFloor.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
         return TRUE;
     } else if MetatileBehavior_IsSecretBaseGlitterMat(metatileBehavior as u8) == TRUE {
         DoSecretBaseGlitterMatSparkle();
@@ -770,9 +764,9 @@ pub(crate) unsafe extern "C" fn TryStartMiscWalkingScripts(metatileBehavior: u16
         PlaySecretBaseMusicNoteMatSound(MapGridGetMetatileIdAt(x as i32, y as i32) as i16);
         return FALSE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn TryStartStepCountScript(metatileBehavior: u16) -> u8 {
+unsafe fn TryStartStepCountScript(metatileBehavior: u16) -> u8 {
     if InUnionRoom() == TRUE as u32 {
         return FALSE;
     }
@@ -783,45 +777,60 @@ pub(crate) unsafe extern "C" fn TryStartStepCountScript(metatileBehavior: u16) -
         && MetatileBehavior_IsForcedMovementTile(metatileBehavior as u8) == 0
     {
         if UpdatePoisonStepCounter() == TRUE {
-            ScriptContext_SetupScript(EventScript_FieldPoison.as_ptr().cast_mut());
-            return TRUE;
-        }
-        if ShouldEggHatch() != 0 {
-            IncrementGameStat(GAME_STAT_HATCHED_EGGS);
-            ScriptContext_SetupScript(EventScript_EggHatch.as_ptr().cast_mut());
-            return TRUE;
-        }
-        if AbnormalWeatherHasExpired() == TRUE {
             ScriptContext_SetupScript(
-                AbnormalWeather_EventScript_EndEventAndCleanup_1
+                (*crate::asmdata::EventScript_FieldPoison.cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
             );
             return TRUE;
         }
+        if ShouldEggHatch() != 0 {
+            IncrementGameStat(GAME_STAT_HATCHED_EGGS);
+            ScriptContext_SetupScript(
+                (*crate::asmdata::EventScript_EggHatch.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
+            return TRUE;
+        }
+        if AbnormalWeatherHasExpired() == TRUE {
+            ScriptContext_SetupScript(
+                (*crate::asmdata::AbnormalWeather_EventScript_EndEventAndCleanup_1
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            );
+            return TRUE;
+        }
         if ShouldDoBrailleRegicePuzzle() == TRUE {
-            ScriptContext_SetupScript(IslandCave_EventScript_OpenRegiEntrance.as_ptr().cast_mut());
+            ScriptContext_SetupScript(
+                (*crate::asmdata::IslandCave_EventScript_OpenRegiEntrance.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
             return TRUE;
         }
         if ShouldDoWallyCall() == TRUE as u32 {
             ScriptContext_SetupScript(
-                MauvilleCity_EventScript_RegisterWallyCall
-                    .as_ptr()
-                    .cast_mut(),
+                (*crate::asmdata::MauvilleCity_EventScript_RegisterWallyCall
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
             return TRUE;
         }
         if ShouldDoScottFortreeCall() == TRUE as u32 {
             ScriptContext_SetupScript(
-                Route119_EventScript_ScottWonAtFortreeGymCall
-                    .as_ptr()
-                    .cast_mut(),
+                (*crate::asmdata::Route119_EventScript_ScottWonAtFortreeGymCall
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
             return TRUE;
         }
         if ShouldDoScottBattleFrontierCall() == TRUE as u32 {
             ScriptContext_SetupScript(
-                LittlerootTown_ProfessorBirchsLab_EventScript_ScottAboardSSTidalCall
+                (*crate::asmdata::LittlerootTown_ProfessorBirchsLab_EventScript_ScottAboardSSTidalCall.cast::<CArray<u8, 0>>())
                     .as_ptr()
                     .cast_mut(),
             );
@@ -829,17 +838,19 @@ pub(crate) unsafe extern "C" fn TryStartStepCountScript(metatileBehavior: u16) -
         }
         if ShouldDoRoxanneCall() == TRUE as u32 {
             ScriptContext_SetupScript(
-                RustboroCity_Gym_EventScript_RegisterRoxanne
-                    .as_ptr()
-                    .cast_mut(),
+                (*crate::asmdata::RustboroCity_Gym_EventScript_RegisterRoxanne
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
             return TRUE;
         }
         if ShouldDoRivalRayquazaCall() == TRUE as u32 {
             ScriptContext_SetupScript(
-                MossdeepCity_SpaceCenter_2F_EventScript_RivalRayquazaCall
-                    .as_ptr()
-                    .cast_mut(),
+                (*crate::asmdata::MossdeepCity_SpaceCenter_2F_EventScript_RivalRayquazaCall
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
             return TRUE;
         }
@@ -849,7 +860,7 @@ pub(crate) unsafe extern "C" fn TryStartStepCountScript(metatileBehavior: u16) -
     }
     if CountSSTidalStep(1) == 1 {
         ScriptContext_SetupScript(
-            SSTidalCorridor_EventScript_ReachedStepCount
+            (*crate::asmdata::SSTidalCorridor_EventScript_ReachedStepCount.cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut(),
         );
@@ -858,31 +869,27 @@ pub(crate) unsafe extern "C" fn TryStartStepCountScript(metatileBehavior: u16) -
     if TryStartMatchCall() != 0 {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn ClearFriendshipStepCounter() {
+unsafe fn ClearFriendshipStepCounter() {
     VarSet(VAR_FRIENDSHIP_STEP_COUNTER, 0);
 }
-pub(crate) unsafe extern "C" fn UpdateFriendshipStepCounter() {
-    let mut ptr: *mut u16 = GetVarPointer(VAR_FRIENDSHIP_STEP_COUNTER);
-    let mut i: i32 = 0;
+unsafe fn UpdateFriendshipStepCounter() {
+    let ptr: *mut u16 = GetVarPointer(VAR_FRIENDSHIP_STEP_COUNTER);
     *ptr += 1;
     *ptr = (*ptr as i32 % 128) as u16;
     if *ptr == 0 {
         let mut mon: *mut Pokemon = gPlayerParty.as_mut_ptr();
-        i = 0;
-        while i < PARTY_SIZE {
+        for i in 0..PARTY_SIZE {
             AdjustFriendship(mon, FRIENDSHIP_EVENT_WALKING);
             mon = mon.at(1);
-            i += 1;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearPoisonStepCounter() {
+pub unsafe fn ClearPoisonStepCounter() {
     VarSet(VAR_POISON_STEP_COUNTER, 0);
 }
-pub(crate) unsafe extern "C" fn UpdatePoisonStepCounter() -> u8 {
+unsafe fn UpdatePoisonStepCounter() -> u8 {
     let mut ptr: *mut u16 = null_mut();
     if gMapHeader.mapType != MAP_TYPE_SECRET_BASE {
         ptr = GetVarPointer(VAR_POISON_STEP_COUNTER);
@@ -903,32 +910,27 @@ pub(crate) unsafe extern "C" fn UpdatePoisonStepCounter() -> u8 {
             }
         }
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RestartWildEncounterImmunitySteps() {
-    sWildEncounterImmunitySteps = 0;
+pub fn RestartWildEncounterImmunitySteps() {
+    sWildEncounterImmunitySteps.set(0);
 }
-pub(crate) unsafe extern "C" fn CheckStandardWildEncounter(metatileBehavior: u16) -> u8 {
-    if sWildEncounterImmunitySteps < 4 {
-        sWildEncounterImmunitySteps += 1;
-        sPrevMetatileBehavior = metatileBehavior;
+unsafe fn CheckStandardWildEncounter(metatileBehavior: u16) -> u8 {
+    if sWildEncounterImmunitySteps.get() < 4 {
+        sWildEncounterImmunitySteps.set(sWildEncounterImmunitySteps.get() + 1);
+        sPrevMetatileBehavior.set(metatileBehavior);
         return FALSE;
     }
-    if StandardWildEncounter(metatileBehavior, sPrevMetatileBehavior) == TRUE {
-        sWildEncounterImmunitySteps = 0;
-        sPrevMetatileBehavior = metatileBehavior;
+    if StandardWildEncounter(metatileBehavior, sPrevMetatileBehavior.get()) == TRUE {
+        sWildEncounterImmunitySteps.set(0);
+        sPrevMetatileBehavior.set(metatileBehavior);
         return TRUE;
     }
-    sPrevMetatileBehavior = metatileBehavior;
-    return FALSE;
+    sPrevMetatileBehavior.set(metatileBehavior);
+    FALSE
 }
-pub(crate) unsafe extern "C" fn TryArrowWarp(
-    position: *mut MapPosition,
-    metatileBehavior: u16,
-    direction: u8,
-) -> u8 {
-    let mut warpEventId: i8 = GetWarpEventAtMapPosition(&raw mut gMapHeader, position);
+unsafe fn TryArrowWarp(position: *mut MapPosition, metatileBehavior: u16, direction: u8) -> u8 {
+    let warpEventId: i8 = GetWarpEventAtMapPosition(&raw mut gMapHeader, position);
     if IsArrowWarpMetatileBehavior(metatileBehavior, direction) == TRUE
         && warpEventId != WARP_ID_NONE
     {
@@ -937,13 +939,10 @@ pub(crate) unsafe extern "C" fn TryArrowWarp(
         DoWarp();
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn TryStartWarpEventScript(
-    position: *mut MapPosition,
-    metatileBehavior: u16,
-) -> u8 {
-    let mut warpEventId: i8 = GetWarpEventAtMapPosition(&raw mut gMapHeader, position);
+unsafe fn TryStartWarpEventScript(position: *mut MapPosition, metatileBehavior: u16) -> u8 {
+    let warpEventId: i8 = GetWarpEventAtMapPosition(&raw mut gMapHeader, position);
     if warpEventId != WARP_ID_NONE && IsWarpMetatileBehavior(metatileBehavior) == TRUE {
         StoreInitialPlayerAvatarState();
         SetupWarp(&raw mut gMapHeader, warpEventId, position);
@@ -968,7 +967,11 @@ pub(crate) unsafe extern "C" fn TryStartWarpEventScript(
             return TRUE;
         }
         if MetatileBehavior_IsMtPyreHole(metatileBehavior as u8) == TRUE {
-            ScriptContext_SetupScript(EventScript_FallDownHoleMtPyre.as_ptr().cast_mut());
+            ScriptContext_SetupScript(
+                (*crate::asmdata::EventScript_FallDownHoleMtPyre.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
             return TRUE;
         }
         if MetatileBehavior_IsMossdeepGymWarp(metatileBehavior as u8) == TRUE {
@@ -978,9 +981,9 @@ pub(crate) unsafe extern "C" fn TryStartWarpEventScript(
         DoWarp();
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn IsWarpMetatileBehavior(metatileBehavior: u16) -> u8 {
+fn IsWarpMetatileBehavior(metatileBehavior: u16) -> u8 {
     if MetatileBehavior_IsWarpDoor(metatileBehavior as u8) != TRUE
         && MetatileBehavior_IsLadder(metatileBehavior as u8) != TRUE
         && MetatileBehavior_IsEscalator(metatileBehavior as u8) != TRUE
@@ -994,12 +997,9 @@ pub(crate) unsafe extern "C" fn IsWarpMetatileBehavior(metatileBehavior: u16) ->
     {
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn IsArrowWarpMetatileBehavior(
-    metatileBehavior: u16,
-    direction: u8,
-) -> u8 {
+unsafe fn IsArrowWarpMetatileBehavior(metatileBehavior: u16, direction: u8) -> u8 {
     match direction {
         DIR_NORTH => {
             return MetatileBehavior_IsNorthArrowWarp(metatileBehavior as u8);
@@ -1015,26 +1015,19 @@ pub(crate) unsafe extern "C" fn IsArrowWarpMetatileBehavior(
         }
         _ => {}
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn GetWarpEventAtMapPosition(
-    mapHeader: *mut MapHeader,
-    position: *mut MapPosition,
-) -> i8 {
-    return GetWarpEventAtPosition(
+unsafe fn GetWarpEventAtMapPosition(mapHeader: *mut MapHeader, position: *mut MapPosition) -> i8 {
+    GetWarpEventAtPosition(
         mapHeader,
         (*position).x as u16 - MAP_OFFSET as u16,
         (*position).y as u16 - MAP_OFFSET as u16,
         (*position).elevation as u8,
-    );
+    )
 }
-pub(crate) unsafe extern "C" fn SetupWarp(
-    unused: *mut MapHeader,
-    warpEventId: i8,
-    position: *mut MapPosition,
-) {
+unsafe fn SetupWarp(unused: *mut MapHeader, warpEventId: i8, position: *mut MapPosition) {
     let mut warpEvent: *mut WarpEvent = null_mut();
-    let mut trainerHillMapId: u8 = GetCurrentTrainerHillMapId();
+    let trainerHillMapId: u8 = GetCurrentTrainerHillMapId();
     if trainerHillMapId != 0 {
         if trainerHillMapId == GetNumFloorsInTrainerHillChallenge() {
             if warpEventId == 0 {
@@ -1053,14 +1046,13 @@ pub(crate) unsafe extern "C" fn SetupWarp(
     if (*warpEvent).mapNum == 127 {
         SetWarpDestinationToDynamicWarp((*warpEvent).warpId);
     } else {
-        let mut mapHeader: *mut MapHeader = null_mut();
         SetWarpDestinationToMapWarp(
             (*warpEvent).mapGroup as i8,
             (*warpEvent).mapNum as i8,
             (*warpEvent).warpId as i8,
         );
         UpdateEscapeWarp((*position).x, (*position).y);
-        mapHeader = Overworld_GetMapHeaderByGroupAndId(
+        let mapHeader: *mut MapHeader = Overworld_GetMapHeaderByGroupAndId(
             (*warpEvent).mapGroup as u16,
             (*warpEvent).mapNum as u16,
         );
@@ -1074,11 +1066,7 @@ pub(crate) unsafe extern "C" fn SetupWarp(
         }
     }
 }
-pub(crate) unsafe extern "C" fn TryDoorWarp(
-    position: *mut MapPosition,
-    metatileBehavior: u16,
-    direction: u8,
-) -> u8 {
+unsafe fn TryDoorWarp(position: *mut MapPosition, metatileBehavior: u16, direction: u8) -> u8 {
     let mut warpEventId: i8 = 0;
     if direction == DIR_NORTH {
         if MetatileBehavior_IsOpenSecretBaseDoor(metatileBehavior as u8) == TRUE {
@@ -1095,31 +1083,26 @@ pub(crate) unsafe extern "C" fn TryDoorWarp(
             }
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn GetWarpEventAtPosition(
-    mapHeader: *mut MapHeader,
-    x: u16,
-    y: u16,
-    elevation: u8,
-) -> i8 {
-    let mut i: i32 = 0;
+unsafe fn GetWarpEventAtPosition(mapHeader: *mut MapHeader, x: u16, y: u16, elevation: u8) -> i8 {
     let mut warpEvent: *mut WarpEvent = (*(*mapHeader).events).warps;
-    let mut warpCount: u8 = (*(*mapHeader).events).warpCount;
-    i = 0;
+    let warpCount: u8 = (*(*mapHeader).events).warpCount;
+    let mut i: i32 = 0;
     while i < warpCount as i32 {
-        if (*warpEvent).x as u16 == x && (*warpEvent).y as u16 == y {
-            if (*warpEvent).elevation == elevation || (*warpEvent).elevation == ELEVATION_TRANSITION
-            {
-                return i as i8;
-            }
+        if (*warpEvent).x as u16 == x
+            && (*warpEvent).y as u16 == y
+            && ((*warpEvent).elevation == elevation
+                || (*warpEvent).elevation == ELEVATION_TRANSITION)
+        {
+            return i as i8;
         }
         i += 1;
         warpEvent = warpEvent.at(1);
     }
-    return WARP_ID_NONE;
+    WARP_ID_NONE
 }
-pub(crate) unsafe extern "C" fn TryRunCoordEventScript(coordEvent: *mut CoordEvent) -> *mut u8 {
+unsafe fn TryRunCoordEventScript(coordEvent: *mut CoordEvent) -> *mut u8 {
     if !coordEvent.is_null() {
         if (*coordEvent).script.is_null() {
             DoCoordEventWeather((*coordEvent).trigger as u8);
@@ -1133,66 +1116,58 @@ pub(crate) unsafe extern "C" fn TryRunCoordEventScript(coordEvent: *mut CoordEve
             return (*coordEvent).script;
         }
     }
-    return null_mut();
+    null_mut()
 }
-pub(crate) unsafe extern "C" fn GetCoordEventScriptAtPosition(
+unsafe fn GetCoordEventScriptAtPosition(
     mapHeader: *mut MapHeader,
     x: u16,
     y: u16,
     elevation: u8,
 ) -> *mut u8 {
-    let mut i: i32 = 0;
-    let mut coordEvents: *mut CoordEvent = (*(*mapHeader).events).coordEvents;
-    let mut coordEventCount: u8 = (*(*mapHeader).events).coordEventCount;
-    i = 0;
-    while i < coordEventCount as i32 {
-        if (*coordEvents.at(i)).x as u16 == x && (*coordEvents.at(i)).y as u16 == y {
-            if (*coordEvents.at(i)).elevation == elevation
-                || (*coordEvents.at(i)).elevation == ELEVATION_TRANSITION
-            {
-                let mut script: *mut u8 = TryRunCoordEventScript(coordEvents.at(i));
-                if !script.is_null() {
-                    return script;
-                }
+    let coordEvents: *mut CoordEvent = (*(*mapHeader).events).coordEvents;
+    let coordEventCount: u8 = (*(*mapHeader).events).coordEventCount;
+    for i in 0..(coordEventCount as i32) {
+        if (*coordEvents.at(i)).x as u16 == x
+            && (*coordEvents.at(i)).y as u16 == y
+            && ((*coordEvents.at(i)).elevation == elevation
+                || (*coordEvents.at(i)).elevation == ELEVATION_TRANSITION)
+        {
+            let script: *mut u8 = TryRunCoordEventScript(coordEvents.at(i));
+            if !script.is_null() {
+                return script;
             }
         }
-        i += 1;
     }
-    return null_mut();
+    null_mut()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetCoordEventScriptAtMapPosition(position: *mut MapPosition) -> *mut u8 {
-    return GetCoordEventScriptAtPosition(
+pub unsafe fn GetCoordEventScriptAtMapPosition(position: *mut MapPosition) -> *mut u8 {
+    GetCoordEventScriptAtPosition(
         &raw mut gMapHeader,
         (*position).x as u16 - MAP_OFFSET as u16,
         (*position).y as u16 - MAP_OFFSET as u16,
         (*position).elevation as u8,
-    );
+    )
 }
-pub(crate) unsafe extern "C" fn GetBackgroundEventAtPosition(
+unsafe fn GetBackgroundEventAtPosition(
     mapHeader: *mut MapHeader,
     x: u16,
     y: u16,
     elevation: u8,
 ) -> *mut BgEvent {
-    let mut i: u8 = 0;
-    let mut bgEvents: *mut BgEvent = (*(*mapHeader).events).bgEvents;
-    let mut bgEventCount: u8 = (*(*mapHeader).events).bgEventCount;
-    i = 0;
-    while i < bgEventCount {
-        if (*bgEvents.at(i)).x == x && (*bgEvents.at(i)).y == y {
-            if (*bgEvents.at(i)).elevation == elevation
-                || (*bgEvents.at(i)).elevation == ELEVATION_TRANSITION
-            {
-                return bgEvents.at(i);
-            }
+    let bgEvents: *mut BgEvent = (*(*mapHeader).events).bgEvents;
+    let bgEventCount: u8 = (*(*mapHeader).events).bgEventCount;
+    for i in 0..bgEventCount {
+        if (*bgEvents.at(i)).x == x
+            && (*bgEvents.at(i)).y == y
+            && ((*bgEvents.at(i)).elevation == elevation
+                || (*bgEvents.at(i)).elevation == ELEVATION_TRANSITION)
+        {
+            return bgEvents.at(i);
         }
-        i += 1;
     }
-    return null_mut();
+    null_mut()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryDoDiveWarp(position: *mut MapPosition, metatileBehavior: u16) -> u8 {
+pub unsafe fn TryDoDiveWarp(position: *mut MapPosition, metatileBehavior: u16) -> u8 {
     if gMapHeader.mapType == MAP_TYPE_UNDERWATER
         && MetatileBehavior_IsUnableToEmerge(metatileBehavior as u8) == 0
     {
@@ -1206,54 +1181,49 @@ pub unsafe extern "C" fn TryDoDiveWarp(position: *mut MapPosition, metatileBehav
             PlaySE(SE_M_DIVE);
             return TRUE;
         }
-    } else if MetatileBehavior_IsDiveable(metatileBehavior as u8) == TRUE {
-        if SetDiveWarpDive(
+    } else if MetatileBehavior_IsDiveable(metatileBehavior as u8) == TRUE
+        && SetDiveWarpDive(
             (*position).x as u16 - MAP_OFFSET as u16,
             (*position).y as u16 - MAP_OFFSET as u16,
         ) != 0
-        {
-            StoreInitialPlayerAvatarState();
-            DoDiveWarp();
-            PlaySE(SE_M_DIVE);
-            return TRUE;
-        }
+    {
+        StoreInitialPlayerAvatarState();
+        DoDiveWarp();
+        PlaySE(SE_M_DIVE);
+        return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TrySetDiveWarp() -> u8 {
+pub unsafe fn TrySetDiveWarp() -> u8 {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
-    let mut metatileBehavior: u8 = 0;
     PlayerGetDestCoords(&raw mut x, &raw mut y);
-    metatileBehavior = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
+    let metatileBehavior: u8 = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u8;
     if gMapHeader.mapType == MAP_TYPE_UNDERWATER
         && MetatileBehavior_IsUnableToEmerge(metatileBehavior) == 0
     {
         if SetDiveWarpEmerge(x as u16 - MAP_OFFSET as u16, y as u16 - MAP_OFFSET as u16) == TRUE {
             return 1;
         }
-    } else if MetatileBehavior_IsDiveable(metatileBehavior) == TRUE {
-        if SetDiveWarpDive(x as u16 - MAP_OFFSET as u16, y as u16 - MAP_OFFSET as u16) == TRUE {
-            return 2;
-        }
+    } else if MetatileBehavior_IsDiveable(metatileBehavior) == TRUE
+        && SetDiveWarpDive(x as u16 - MAP_OFFSET as u16, y as u16 - MAP_OFFSET as u16) == TRUE
+    {
+        return 2;
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetObjectEventScriptPointerPlayerFacing() -> *mut u8 {
-    let mut direction: u8 = 0;
+pub unsafe fn GetObjectEventScriptPointerPlayerFacing() -> *mut u8 {
     let mut position: MapPosition = zeroed();
-    direction = GetPlayerMovementDirection();
+    let direction: u8 = GetPlayerMovementDirection();
     GetInFrontOfPlayerPosition(&raw mut position);
-    return GetInteractedObjectEventScript(
+    GetInteractedObjectEventScript(
         &raw mut position,
         MapGridGetMetatileBehaviorAt(position.x as i32, position.y as i32) as u8,
         direction,
-    );
+    )
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCableClubWarp() -> i32 {
+pub unsafe fn SetCableClubWarp() -> i32 {
     let mut position: MapPosition = zeroed();
     GetPlayerMovementDirection();
     GetPlayerPosition(&raw mut position);
@@ -1263,5 +1233,5 @@ pub unsafe extern "C" fn SetCableClubWarp() -> i32 {
         GetWarpEventAtMapPosition(&raw mut gMapHeader, &raw mut position),
         &raw mut position,
     );
-    return 0;
+    0
 }

@@ -11,6 +11,7 @@ use crate::lottery_corner::ResetLotteryCorner;
 use crate::mail_data::ClearAllMail;
 use crate::money::SetMoney;
 use crate::play_time::PlayTimeCounter_Reset;
+use crate::pokemon::gPlayerPartyCount;
 use crate::pokemon_size_record::{InitLotadSizeRecord, InitSeedotSizeRecord};
 use crate::roamer::{ClearRoamerData, ClearRoamerLocationData};
 
@@ -61,85 +62,298 @@ pub static mut gDifferentSaveFile: u8 = 0;
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gEnableContestDebugging: u8 = 0;
+pub static gEnableContestDebugging: crate::global::Global<u8> = crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static EventScript_ResetAllMapFlags: u8;
-    static mut gSaveFileStatus: u8;
-    static mut gPlayerPartyCount: u8;
-    static mut gUnusedPokedexU8: u8;
-
-    fn GetGeneratedTrainerIdLower() -> u16;
-    fn ClearContestWinnerPicsInContestHall();
-    fn SetWarpDestination(map_group: i8, map_num: i8, warp_id: i8, x: i8, y: i8);
-    fn WarpIntoMap();
-    fn ResetPokedexScrollPositions();
-    fn ZeroPlayerPartyMons();
-    fn ZeroEnemyPartyMons();
-    fn ResetBagScrollPositions();
-    fn ResetPokeblockScrollPositions();
-    fn RtcReset();
-    fn ResetPokedex();
-    fn ClearTVShowData();
-    fn ResetGabbyAndTy();
-    fn ClearSecretBases();
-    fn ClearBerryTrees();
-    fn ResetLinkContestBoolean();
-    fn ResetGameStats();
-    fn ClearPlayerLinkBattleRecords();
-    fn ResetPokemonStorageSystem();
-    fn ClearBag();
-    fn NewGameInitPCItems();
-    fn ClearPokeblocks();
-    fn InitEasyChatPhrases();
-    fn SetMauvilleOldMan();
-    fn InitDewfordTrend();
-    fn ResetFanClub();
-    fn RunScriptImmediately(script: *const u8);
-    fn InitUnionRoomChatRegisteredTexts();
-    fn InitLilycoveLady();
-    fn ResetAllApprenticeData();
-    fn ClearRankingHallRecords();
-    fn InitMatchCallCounters();
-    fn ClearMysteryGift();
-    fn WipeTrainerNameRecords();
-    fn ResetTrainerHillResults();
-    fn ResetContestLinkResults();
-    fn ResetPokemonJumpRecords();
+/// `GetGeneratedTrainerIdLower` with this module's view of its types.
+#[inline]
+unsafe fn GetGeneratedTrainerIdLower() -> u16 {
+    unsafe { crate::agb_main::GetGeneratedTrainerIdLower() }
+}
+/// `ClearContestWinnerPicsInContestHall` with this module's view of its types.
+#[inline]
+unsafe fn ClearContestWinnerPicsInContestHall() {
+    unsafe {
+        crate::contest::ClearContestWinnerPicsInContestHall();
+    }
+}
+/// `SetWarpDestination` with this module's view of its types.
+#[inline]
+unsafe fn SetWarpDestination(a0: i8, a1: i8, a2: i8, a3: i8, a4: i8) {
+    unsafe {
+        crate::overworld::SetWarpDestination(a0, a1, a2, a3, a4);
+    }
+}
+/// `WarpIntoMap` with this module's view of its types.
+#[inline]
+unsafe fn WarpIntoMap() {
+    unsafe {
+        crate::overworld::WarpIntoMap();
+    }
+}
+/// `ResetPokedexScrollPositions` with this module's view of its types.
+#[inline]
+unsafe fn ResetPokedexScrollPositions() {
+    {
+        crate::pokedex::ResetPokedexScrollPositions();
+    }
+}
+/// `ZeroPlayerPartyMons` with this module's view of its types.
+#[inline]
+unsafe fn ZeroPlayerPartyMons() {
+    unsafe {
+        crate::pokemon::ZeroPlayerPartyMons();
+    }
+}
+/// `ZeroEnemyPartyMons` with this module's view of its types.
+#[inline]
+unsafe fn ZeroEnemyPartyMons() {
+    unsafe {
+        crate::pokemon::ZeroEnemyPartyMons();
+    }
+}
+/// `ResetBagScrollPositions` with this module's view of its types.
+#[inline]
+unsafe fn ResetBagScrollPositions() {
+    unsafe {
+        crate::item_menu::ResetBagScrollPositions();
+    }
+}
+/// `ResetPokeblockScrollPositions` with this module's view of its types.
+#[inline]
+unsafe fn ResetPokeblockScrollPositions() {
+    unsafe {
+        crate::pokeblock::ResetPokeblockScrollPositions();
+    }
+}
+/// `RtcReset` with this module's view of its types.
+#[inline]
+unsafe fn RtcReset() {
+    unsafe {
+        crate::rtc::RtcReset();
+    }
+}
+/// `ResetPokedex` with this module's view of its types.
+#[inline]
+unsafe fn ResetPokedex() {
+    unsafe {
+        crate::pokedex::ResetPokedex();
+    }
+}
+/// `ClearTVShowData` with this module's view of its types.
+#[inline]
+unsafe fn ClearTVShowData() {
+    unsafe {
+        crate::tv::ClearTVShowData();
+    }
+}
+/// `ResetGabbyAndTy` with this module's view of its types.
+#[inline]
+unsafe fn ResetGabbyAndTy() {
+    unsafe {
+        crate::tv::ResetGabbyAndTy();
+    }
+}
+/// `ClearSecretBases` with this module's view of its types.
+#[inline]
+unsafe fn ClearSecretBases() {
+    unsafe {
+        crate::secret_base::ClearSecretBases();
+    }
+}
+/// `ClearBerryTrees` with this module's view of its types.
+#[inline]
+unsafe fn ClearBerryTrees() {
+    unsafe {
+        crate::berry::ClearBerryTrees();
+    }
+}
+/// `ResetLinkContestBoolean` with this module's view of its types.
+#[inline]
+unsafe fn ResetLinkContestBoolean() {
+    unsafe {
+        crate::contest::ResetLinkContestBoolean();
+    }
+}
+/// `ResetGameStats` with this module's view of its types.
+#[inline]
+unsafe fn ResetGameStats() {
+    unsafe {
+        crate::overworld::ResetGameStats();
+    }
+}
+/// `ClearPlayerLinkBattleRecords` with this module's view of its types.
+#[inline]
+unsafe fn ClearPlayerLinkBattleRecords() {
+    unsafe {
+        crate::battle_records::ClearPlayerLinkBattleRecords();
+    }
+}
+/// `ResetPokemonStorageSystem` with this module's view of its types.
+#[inline]
+unsafe fn ResetPokemonStorageSystem() {
+    unsafe {
+        crate::pokemon_storage_system::ResetPokemonStorageSystem();
+    }
+}
+/// `ClearBag` with this module's view of its types.
+#[inline]
+unsafe fn ClearBag() {
+    {
+        crate::item::ClearBag();
+    }
+}
+/// `NewGameInitPCItems` with this module's view of its types.
+#[inline]
+unsafe fn NewGameInitPCItems() {
+    unsafe {
+        crate::player_pc::NewGameInitPCItems();
+    }
+}
+/// `ClearPokeblocks` with this module's view of its types.
+#[inline]
+unsafe fn ClearPokeblocks() {
+    unsafe {
+        crate::pokeblock::ClearPokeblocks();
+    }
+}
+/// `InitEasyChatPhrases` with this module's view of its types.
+#[inline]
+unsafe fn InitEasyChatPhrases() {
+    unsafe {
+        crate::easy_chat::InitEasyChatPhrases();
+    }
+}
+/// `SetMauvilleOldMan` with this module's view of its types.
+#[inline]
+unsafe fn SetMauvilleOldMan() {
+    unsafe {
+        crate::mauville_old_man::SetMauvilleOldMan();
+    }
+}
+/// `InitDewfordTrend` with this module's view of its types.
+#[inline]
+unsafe fn InitDewfordTrend() {
+    unsafe {
+        crate::dewford_trend::InitDewfordTrend();
+    }
+}
+/// `ResetFanClub` with this module's view of its types.
+#[inline]
+unsafe fn ResetFanClub() {
+    unsafe {
+        crate::field_specials::ResetFanClub();
+    }
+}
+/// `RunScriptImmediately` with this module's view of its types.
+#[inline]
+unsafe fn RunScriptImmediately(a0: *const u8) {
+    unsafe {
+        crate::script::RunScriptImmediately(a0 as _);
+    }
+}
+/// `InitUnionRoomChatRegisteredTexts` with this module's view of its types.
+#[inline]
+unsafe fn InitUnionRoomChatRegisteredTexts() {
+    unsafe {
+        crate::union_room_chat::InitUnionRoomChatRegisteredTexts();
+    }
+}
+/// `InitLilycoveLady` with this module's view of its types.
+#[inline]
+unsafe fn InitLilycoveLady() {
+    unsafe {
+        crate::lilycove_lady::InitLilycoveLady();
+    }
+}
+/// `ResetAllApprenticeData` with this module's view of its types.
+#[inline]
+unsafe fn ResetAllApprenticeData() {
+    unsafe {
+        crate::apprentice::ResetAllApprenticeData();
+    }
+}
+/// `ClearRankingHallRecords` with this module's view of its types.
+#[inline]
+unsafe fn ClearRankingHallRecords() {
+    unsafe {
+        crate::frontier_util::ClearRankingHallRecords();
+    }
+}
+/// `InitMatchCallCounters` with this module's view of its types.
+#[inline]
+unsafe fn InitMatchCallCounters() {
+    unsafe {
+        crate::match_call::InitMatchCallCounters();
+    }
+}
+/// `ClearMysteryGift` with this module's view of its types.
+#[inline]
+unsafe fn ClearMysteryGift() {
+    unsafe {
+        crate::mystery_gift::ClearMysteryGift();
+    }
+}
+/// `WipeTrainerNameRecords` with this module's view of its types.
+#[inline]
+unsafe fn WipeTrainerNameRecords() {
+    unsafe {
+        crate::link_rfu_3::WipeTrainerNameRecords();
+    }
+}
+/// `ResetTrainerHillResults` with this module's view of its types.
+#[inline]
+unsafe fn ResetTrainerHillResults() {
+    unsafe {
+        crate::trainer_hill::ResetTrainerHillResults();
+    }
+}
+/// `ResetContestLinkResults` with this module's view of its types.
+#[inline]
+unsafe fn ResetContestLinkResults() {
+    unsafe {
+        crate::contest::ResetContestLinkResults();
+    }
+}
+/// `ResetPokemonJumpRecords` with this module's view of its types.
+#[inline]
+unsafe fn ResetPokemonJumpRecords() {
+    unsafe {
+        crate::pokemon_jump::ResetPokemonJumpRecords();
+    }
 }
 
 #[inline]
 unsafe fn sb1() -> *mut u8 {
-    unsafe { (&raw const gSaveBlock1Ptr).read() }
+    unsafe { (&raw const gSaveBlock1Ptr).read().cast::<u8>() }
 }
 
 #[inline]
 unsafe fn sb2() -> *mut u8 {
-    unsafe { (&raw const gSaveBlock2Ptr).read() }
+    unsafe { (&raw const gSaveBlock2Ptr).read().cast::<u8>() }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetTrainerId(trainer_id: u32, dst: *mut u8) {
+pub unsafe fn SetTrainerId(trainer_id: u32, dst: *mut u8) {
     let bytes = trainer_id.to_le_bytes();
     unsafe { core::ptr::copy_nonoverlapping(bytes.as_ptr(), dst, TRAINER_ID_LENGTH) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetTrainerId(trainer_id: *const u8) -> u32 {
+pub unsafe fn GetTrainerId(trainer_id: *const u8) -> u32 {
     let mut bytes = [0u8; TRAINER_ID_LENGTH];
     unsafe { core::ptr::copy_nonoverlapping(trainer_id, bytes.as_mut_ptr(), TRAINER_ID_LENGTH) };
     u32::from_le_bytes(bytes)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyTrainerId(dst: *mut u8, src: *const u8) {
+pub unsafe fn CopyTrainerId(dst: *mut u8, src: *const u8) {
     for i in 0..TRAINER_ID_LENGTH {
         unsafe { dst.add(i).write(src.add(i).read()) };
     }
 }
 
 unsafe fn init_player_trainer_id() {
-    let high = u32::from(unsafe { Random() }) << 16;
+    let high = u32::from(Random()) << 16;
     let trainer_id = high | u32::from(unsafe { GetGeneratedTrainerIdLower() });
     unsafe { SetTrainerId(trainer_id, sb2().add(SB2_PLAYER_TRAINER_ID)) };
 }
@@ -153,7 +367,7 @@ unsafe fn set_default_options() {
 }
 
 unsafe fn clear_pokedex_flags() {
-    unsafe { (&raw mut gUnusedPokedexU8).write(0) };
+    unsafe { (&raw mut (*crate::pokedex::gUnusedPokedexU8.as_ptr().cast::<u8>())).write(0) };
     unsafe {
         sb2()
             .add(SB2_POKEDEX_OWNED)
@@ -167,7 +381,7 @@ unsafe fn clear_pokedex_flags() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearAllContestWinnerPics() {
+pub unsafe fn ClearAllContestWinnerPics() {
     unsafe { ClearContestWinnerPicsInContestHall() };
 
     // Museum paintings: an empty winner with blank names.
@@ -203,13 +417,13 @@ unsafe fn warp_to_truck() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Sav2_ClearSetDefault() {
+pub unsafe fn Sav2_ClearSetDefault() {
     unsafe { ClearSav2() };
     unsafe { set_default_options() };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetMenuAndMonGlobals() {
+pub unsafe fn ResetMenuAndMonGlobals() {
     unsafe { (&raw mut gDifferentSaveFile).write(0) };
     unsafe { ResetPokedexScrollPositions() };
     unsafe { ZeroPlayerPartyMons() };
@@ -219,8 +433,13 @@ pub unsafe extern "C" fn ResetMenuAndMonGlobals() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn NewGameInitData() {
-    let status = unsafe { (&raw const gSaveFileStatus).read() };
+pub unsafe fn NewGameInitData() {
+    let status = unsafe {
+        (&raw const (*(&raw const crate::save::gSaveFileStatus)
+            .cast::<u8>()
+            .cast_mut()))
+            .read()
+    };
     if status == SAVE_STATUS_EMPTY || status == SAVE_STATUS_CORRUPT {
         unsafe { RtcReset() };
     }
@@ -271,7 +490,9 @@ pub unsafe extern "C" fn NewGameInitData() {
         ResetFanClub();
         ResetLotteryCorner();
         warp_to_truck();
-        RunScriptImmediately(&raw const EventScript_ResetAllMapFlags);
+        RunScriptImmediately(
+            &raw const (*crate::asmdata::EventScript_ResetAllMapFlags.cast::<u8>()),
+        );
         reset_mini_games_records();
         InitUnionRoomChatRegisteredTexts();
         InitLilycoveLady();

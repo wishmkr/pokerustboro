@@ -3,37 +3,233 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::agb_main::{SetHBlankCallback, SetVBlankCallback};
+use crate::battle_pyramid::{
+    InBattlePyramid_, LoadBattlePyramidFloorObjectEventScripts,
+    LoadBattlePyramidObjectEventTemplates,
+};
+use crate::battle_setup::TryUpdateRandomTrainerRematches;
+use crate::bg::{ChangeBgX, ChangeBgY, SetBgAttribute, ShowBg};
 #[allow(unused_imports)]
 use crate::c::*;
+use crate::cable_club::GetLinkTrainerCardColor;
+use crate::clock::DoTimeBasedEvents;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::{ClearTempFieldEventData, FlagClear, FlagGet, VarGet, VarSet};
+use crate::event_object_movement::{
+    CreateObjectGraphicsSprite, ElevationToPriority, GetFaceDirectionAnimNum,
+    GetFirstInactiveObjectEventId, GetMoveDirectionAnimNum, InitObjectEventPalettes, MoveCoords,
+    ObjectEventMoveDestCoords, ObjectEventUpdateElevation, ResetObjectEvents,
+    SetObjectSubpriorityByElevation, SetSpritePosToMapCoords, ShiftObjectEventCoords,
+    ShiftStillObjectEventCoords, SpawnObjectEventsOnReturnToField, TrySpawnObjectEvents,
+    UnfreezeObjectEvents, UpdateObjectEventSpriteInvisibility,
+};
+use crate::field_camera::{
+    CameraUpdate, DrawWholeMapView, FieldUpdateBgTilemapScroll, InitCameraUpdateCallback,
+    InstallCameraPanAheadCallback, ResetCameraUpdateInfo, ResetFieldCamera, UpdateCameraPanning,
+    gTotalCameraPixelOffsetX, gTotalCameraPixelOffsetY,
+};
+use crate::field_control_avatar::{
+    FieldClearPlayerInput, FieldGetPlayerInput, GetCoordEventScriptAtMapPosition,
+    GetInteractedLinkPlayerScript, ProcessPlayerFieldInput, RestartWildEncounterImmunitySteps,
+};
+use crate::field_effect::FieldEffectActiveListClear;
+use crate::field_message_box::InitFieldMessageBox;
+use crate::field_player_avatar::{
+    GetFRLGAvatarGraphicsIdByGender, GetPlayerFacingDirection, GetRSAvatarGraphicsIdByGender,
+    GetRivalAvatarGraphicsIdByStateIdAndGender, InitPlayerAvatar, PlayerGetDestCoords, PlayerStep,
+    SetPlayerAvatarTransitionFlags, TestPlayerAvatarFlags, UpdatePlayerAvatarTransitionState,
+    gObjectEvents, gPlayerAvatar,
+};
+use crate::field_screen_effect::{
+    FieldCB_ContinueScript, FieldCB_ContinueScriptHandleMusic, FieldCB_DefaultWarpExit,
+    FieldCB_ReturnToFieldCableLink, FieldCB_ReturnToFieldOpenStartMenu,
+    FieldCB_ReturnToFieldWirelessLink, FieldCB_WarpExitFadeFromBlack,
+    WriteBattlePyramidViewScanlineEffectBuffer, WriteFlashScanlineEffectBuffer,
+};
+use crate::field_special_scene::ExecuteTruckSequence;
+use crate::field_specials::{ResetCyclingRoadChallengeData, UsedPokemonCenterWarp};
+use crate::field_tasks::{ResetFieldTasksArgs, SetUpFieldTasks};
+use crate::field_weather::{ApplyWeatherColorMapToPal, StartWeather};
+use crate::field_weather_effect::{
+    DoCurrentWeather, GetSavedWeather, ResumePausedWeather, SetSavedWeatherFromCurrMapHeader,
+};
+use crate::fieldmap::{
+    CopyMapTilesetsToVram, CopyPrimaryTilesetToVram, CopySecondaryTilesetToVram,
+    CopySecondaryTilesetToVramUsingHeap, GetCameraFocusCoords, InitBattlePyramidMap, InitMap,
+    InitMapFromSavedGame, InitTrainerHillMap, LoadMapTilesetPalettes, LoadSecondaryTilesetPalette,
+    MapGridGetCollisionAt, MapGridGetMetatileBehaviorAt, SetCameraFocusCoords, gBackupMapLayout,
+    gMapHeader,
+};
+use crate::fldeff_flash::CB2_DoChangeMap;
+use crate::frontier_util::ResetWinStreaks;
+use crate::gpu_regs::{DisableInterrupts, EnableInterrupts, SetGpuReg};
+use crate::link::gLinkPartnersHeldKeys;
+use crate::link::{
+    CloseLink, GetLinkRecvQueueLength, IsSendingKeysToLink, gLink, gLinkPlayers, gWirelessCommType,
+};
+use crate::link_rfu_2::{IsRfuRecvQueueEmpty, LinkRfu_FatalError, gRfu};
+use crate::link_rfu_3::{
+    CreateWirelessStatusIndicatorSprite, LoadWirelessStatusIndicatorSpriteGfx,
+};
+use crate::load_save::{
+    ApplyNewEncryptionKeyToWord, ClearContinueGameWarpStatus, MoveSaveBlocks_ResetHeap,
+    UseContinueGameWarp,
+};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::map_name_popup::{HideMapNamePopUpWindow, ShowMapNamePopup};
+use crate::match_call::InitMatchCallCounters;
+use crate::menu::{
+    ClearScheduledBgCopiesToVram, DoScheduledBgTilemapCopiesToVram, FreeAllOverworldWindowBuffers,
+    FreeTempTileDataBuffersIfPossible, InitStandardTextBoxWindows, InitTextBoxGfxAndPrinters,
+    ResetTempTileDataBuffers, ScheduleBgCopyTilemapToVram,
+};
+use crate::metatile_behavior::{
+    MetatileBehavior_IsDeepSouthWarp, MetatileBehavior_IsDoor, MetatileBehavior_IsEastArrowWarp,
+    MetatileBehavior_IsLadder, MetatileBehavior_IsNonAnimDoor, MetatileBehavior_IsNorthArrowWarp,
+    MetatileBehavior_IsSouthArrowWarp, MetatileBehavior_IsSurfableWaterOrUnderwater,
+    MetatileBehavior_IsWestArrowWarp,
+};
+use crate::mirage_tower::{
+    ClearMirageTowerPulseBlend, ClearMirageTowerPulseBlendEffect,
+    TryStartMirageTowerPulseBlendEffect,
+};
+use crate::money::{GetMoney, SetMoney};
+use crate::new_game::NewGameInitData;
+use crate::palette::{ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade, gPaletteFade};
+use crate::play_time::PlayTimeCounter_Start;
+use crate::pokemon::{CalculatePlayerPartyCount, GetMonAbility, GetMonData2, gPlayerParty};
+use crate::random::Random;
+use crate::roamer::{RoamerMove, RoamerMoveToOtherLocationSet, UpdateLocationHistoryForRoamer};
+use crate::rotating_gate::RotatingGate_InitPuzzleAndGraphics;
+use crate::safari_zone::ResetSafariZoneFlag;
+use crate::save::gSaveFileStatus;
+use crate::save_location::TrySetMapSaveWarpStatus;
+use crate::scanline_effect::{
+    ScanlineEffect_Clear, ScanlineEffect_InitHBlankDmaTransfer, ScanlineEffect_Stop,
+};
+use crate::script::{
+    ArePlayerFieldControlsLocked, LockPlayerFieldControls, RunOnDiveWarpMapScript,
+    RunOnResumeMapScript, RunOnReturnToFieldMapScript, RunOnTransitionMapScript,
+    ScriptContext_Init, ScriptContext_RunScript, TryRunOnWarpIntoMapScript,
+    UnlockPlayerFieldControls,
+};
+use crate::script_pokemon_util::HealPlayerParty;
+use crate::secret_base::{
+    CheckLeftFriendsSecretBase, InitSecretBaseAppearance, SecretBaseMapPopupEnabled,
+};
+use crate::sound::{
+    FadeOutAndFadeInNewMapMusic, FadeOutAndPlayNewMapMusic, FadeOutMapMusic, GetCurrentMapMusic,
+    IsNotWaitingForBGMStop, PlayCry_NormalNoDucking, PlayNewMapMusic, PlaySE, ResetMapMusic,
+    StopMapMusic,
+};
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, LoadOam, ProcessSpriteCopyRequests, ResetOamRange,
+    ResetSpriteData,
+};
+use crate::start_menu::ShowStartMenu;
+use crate::task::{ResetTasks, RunTasks};
+use crate::tileset_anims::{
+    InitSecondaryTilesetAnimation, InitTilesetAnimations, TransferTilesetAnimsBuffer,
+    UpdateTilesetAnimations,
+};
+use crate::time_events::IsMirageIslandPresent;
+use crate::trainer_hill::{
+    GetCurrentTrainerHillMapId, InTrainerHill, LoadTrainerHillFloorObjectEventScripts,
+    LoadTrainerHillObjectEventTemplates, TryLoadTrainerHillEReaderPalette,
+};
+use crate::trainer_pokemon_sprites::ResetAllPicSprites;
+use crate::tv::{TryPutTodaysRivalTrainerOnAir, UpdateTVScreensOnMap};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::wild_encounter::{GetLocalWaterMon, GetLocalWildMon};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `RunScriptImmediately` with this module's view of its types.
+#[inline]
+unsafe fn RunScriptImmediately(a0: *mut u8) {
+    unsafe {
+        crate::script::RunScriptImmediately(a0 as _);
+    }
+}
+/// `ScanlineEffect_SetParams` with this module's view of its types.
+#[inline]
+unsafe fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
+    unsafe {
+        crate::scanline_effect::ScanlineEffect_SetParams(core::mem::transmute(a0));
+    }
+}
+/// `ScriptContext_SetupScript` with this module's view of its types.
+#[inline]
+unsafe fn ScriptContext_SetupScript(a0: *mut u8) {
+    unsafe {
+        crate::script::ScriptContext_SetupScript(a0 as _);
+    }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StartSpriteAnimIfDifferent` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnimIfDifferent(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnimIfDifferent(a0 as _, a1);
+    }
+}
 // Data tables (translate with cdata.py): sDummyWarpData sUnusedData gDirectionToVectors sOverworldBgTemplates sFlashEffectParams sLinkPlayerMovementModes sLinkPlayerFacingHandlers sMovementStatusHandler
 
 /// `struct CableClubPlayer`
@@ -89,52 +285,42 @@ static sDummyWarpData: Table<WarpData> =
 static sFlashEffectParams: Table<ScanlineEffectParams> =
     Table((&raw const crate::data::overworld::sFlashEffectParams).cast());
 static sLinkPlayerFacingHandlers: Table<
-    CArray<
-        Option<unsafe extern "C" fn(*mut LinkPlayerObjectEvent, *mut ObjectEvent, u8) -> u8>,
-        11,
-    >,
+    CArray<Option<unsafe fn(*mut LinkPlayerObjectEvent, *mut ObjectEvent, u8) -> u8>, 11>,
 > = Table((&raw const crate::data::overworld::sLinkPlayerFacingHandlers).cast());
 static sLinkPlayerMovementModes: Table<
-    CArray<Option<unsafe extern "C" fn(*mut LinkPlayerObjectEvent, *mut ObjectEvent, u8) -> u8>, 3>,
+    CArray<Option<unsafe fn(*mut LinkPlayerObjectEvent, *mut ObjectEvent, u8) -> u8>, 3>,
 > = Table((&raw const crate::data::overworld::sLinkPlayerMovementModes).cast());
 static sMovementStatusHandler: Table<
-    CArray<Option<unsafe extern "C" fn(*mut LinkPlayerObjectEvent, *mut ObjectEvent)>, 2>,
+    CArray<Option<unsafe fn(*mut LinkPlayerObjectEvent, *mut ObjectEvent)>, 2>,
 > = Table((&raw const crate::data::overworld::sMovementStatusHandler).cast());
 static sOverworldBgTemplates: Table<CArray<BgTemplate, 4>> =
     Table((&raw const crate::data::overworld::sOverworldBgTemplates).cast());
 
 pub(crate) static mut sUnusedOverworldCallback: *mut c_void = null_mut();
 pub(crate) static mut sPlayerLinkStates: Aligned<CArray<u8, 4>> = Aligned(unsafe { zeroed() });
-pub(crate) static mut sPlayerKeyInterceptCallback: Option<unsafe extern "C" fn(u32) -> u16> = None;
-pub(crate) static mut sReceivingFromLink: u8 = 0;
-pub(crate) static mut sRfuKeepAliveTimer: u8 = 0;
-#[unsafe(no_mangle)]
+pub(crate) static mut sPlayerKeyInterceptCallback: Option<unsafe fn(u32) -> u16> = None;
+pub(crate) static sReceivingFromLink: crate::global::Global<u8> = crate::global::Global::new(0);
+pub(crate) static sRfuKeepAliveTimer: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
 pub static mut gOverworldTilemapBuffer_Bg2: *mut u16 = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gOverworldTilemapBuffer_Bg1: *mut u16 = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gOverworldTilemapBuffer_Bg3: *mut u16 = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gHeldKeyCodeToSend: u16 = 0;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gFieldCallback: Option<unsafe extern "C" fn()> = None;
+pub static mut gFieldCallback: Option<unsafe fn()> = None;
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
-pub static mut gFieldCallback2: Option<unsafe extern "C" fn() -> u8> = None;
-#[unsafe(no_mangle)]
+pub static mut gFieldCallback2: Option<unsafe fn() -> u8> = None;
 #[unsafe(link_section = "common_data")]
 pub static mut gLocalLinkPlayerId: u8 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gFieldLinkPlayerCount: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sObjectEventLoadFlag: u8 = 0;
-#[unsafe(no_mangle)]
+pub(crate) static sObjectEventLoadFlag: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub static mut gLastUsedWarp: WarpData = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
@@ -144,286 +330,47 @@ pub(crate) static mut sFixedDiveWarp: WarpData = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sFixedHoleWarp: WarpData = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sLastMapSectionId: u16 = 0;
+pub(crate) static sLastMapSectionId: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sInitialPlayerAvatarState: InitialPlayerAvatarState = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sAmbientCrySpecies: u16 = 0;
+pub(crate) static sAmbientCrySpecies: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sIsAmbientCryWaterMon: u8 = 0;
-#[unsafe(no_mangle)]
+pub(crate) static sIsAmbientCryWaterMon: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub static mut gLinkPlayerObjectEvents: CArray<LinkPlayerObjectEvent, 4> = unsafe { zeroed() };
 
-unsafe extern "C" {
-    static CableClub_EventScript_ReadTrainerCard: CArray<u8, 0>;
-    static CableClub_EventScript_ReadTrainerCardColored: CArray<u8, 0>;
-    static CableClub_EventScript_TooBusyToNotice: CArray<u8, 0>;
-    static EventScript_BattleColosseum_2P_PlayerSpot0: CArray<u8, 0>;
-    static EventScript_BattleColosseum_2P_PlayerSpot1: CArray<u8, 0>;
-    static EventScript_BattleColosseum_4P_PlayerSpot0: CArray<u8, 0>;
-    static EventScript_BattleColosseum_4P_PlayerSpot1: CArray<u8, 0>;
-    static EventScript_BattleColosseum_4P_PlayerSpot2: CArray<u8, 0>;
-    static EventScript_BattleColosseum_4P_PlayerSpot3: CArray<u8, 0>;
-    static EventScript_ConfirmLeaveCableClubRoom: CArray<u8, 0>;
-    static EventScript_DoLinkRoomExit: CArray<u8, 0>;
-    static EventScript_RecordCenter_Spot0: CArray<u8, 0>;
-    static EventScript_RecordCenter_Spot1: CArray<u8, 0>;
-    static EventScript_RecordCenter_Spot2: CArray<u8, 0>;
-    static EventScript_RecordCenter_Spot3: CArray<u8, 0>;
-    static EventScript_ResetMrBriney: CArray<u8, 0>;
-    static EventScript_TerminateLink: CArray<u8, 0>;
-    static EventScript_TradeCenter_Chair0: CArray<u8, 0>;
-    static EventScript_TradeCenter_Chair1: CArray<u8, 0>;
-    static EventScript_WhiteOut: CArray<u8, 0>;
-    static mut gBackupMapLayout: BackupMapLayout;
-    static mut gLink: Link;
-    static mut gLinkPartnersHeldKeys: CArray<u16, 6>;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gMain: Main;
-    static gMapGroups: CArray<*mut *mut MapHeader, 0>;
-    static mut gMapHeader: MapHeader;
-    static gMapLayouts: CArray<*mut MapLayout, 0>;
-    static gMaxFlashLevel: i32;
-    static mut gObjectEvents: CArray<ObjectEvent, 16>;
-    static gOverworldBackgroundLayerFlags: CArray<u16, 0>;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlayerAvatar: PlayerAvatar;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gRfu: RfuManager;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSaveFileStatus: u16;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTotalCameraPixelOffsetX: u16;
-    static mut gTotalCameraPixelOffsetY: u16;
-    static mut gWirelessCommType: u8;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn ApplyNewEncryptionKeyToWord(a0: *mut u32, a1: u32);
-    fn ApplyWeatherColorMapToPal(a0: u8);
-    fn ArePlayerFieldControlsLocked() -> u8;
-    fn BuildOamBuffer();
-    fn CB2_DoChangeMap();
-    fn CalculatePlayerPartyCount() -> u8;
-    fn CameraUpdate();
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CheckLeftFriendsSecretBase();
-    fn ClearContinueGameWarpStatus();
-    fn ClearMirageTowerPulseBlend();
-    fn ClearMirageTowerPulseBlendEffect();
-    fn ClearScheduledBgCopiesToVram();
-    fn ClearTempFieldEventData();
-    fn CloseLink();
-    fn CopyMapTilesetsToVram(a0: *mut MapLayout);
-    fn CopyPrimaryTilesetToVram(a0: *mut MapLayout);
-    fn CopySecondaryTilesetToVram(a0: *mut MapLayout);
-    fn CopySecondaryTilesetToVramUsingHeap(a0: *mut MapLayout);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateObjectGraphicsSprite(
-        a0: u16,
-        a1: Option<unsafe extern "C" fn(*mut Sprite)>,
-        a2: i16,
-        a3: i16,
-        a4: u8,
-    ) -> u8;
-    fn CreateWirelessStatusIndicatorSprite(a0: u8, a1: u8);
-    fn DestroySprite(a0: *mut Sprite);
-    fn DisableInterrupts(a0: u16);
-    fn DoCurrentWeather();
-    fn DoScheduledBgTilemapCopiesToVram();
-    fn DoTimeBasedEvents();
-    fn DrawWholeMapView();
-    fn ElevationToPriority(a0: u8) -> u8;
-    fn EnableInterrupts(a0: u16);
-    fn ExecuteTruckSequence();
-    fn FadeOutAndFadeInNewMapMusic(a0: u16, a1: u8, a2: u8);
-    fn FadeOutAndPlayNewMapMusic(a0: u16, a1: u8);
-    fn FadeOutMapMusic(a0: u8);
-    fn FieldCB_ContinueScript();
-    fn FieldCB_ContinueScriptHandleMusic();
-    fn FieldCB_DefaultWarpExit();
-    fn FieldCB_ReturnToFieldCableLink();
-    fn FieldCB_ReturnToFieldOpenStartMenu() -> u8;
-    fn FieldCB_ReturnToFieldWirelessLink();
-    fn FieldCB_WarpExitFadeFromBlack();
-    fn FieldClearPlayerInput(a0: *mut FieldInput);
-    fn FieldEffectActiveListClear();
-    fn FieldGetPlayerInput(a0: *mut FieldInput, a1: u16, a2: u16);
-    fn FieldUpdateBgTilemapScroll();
-    fn FlagClear(a0: u16) -> u8;
-    fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeAllOverworldWindowBuffers();
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn GetCameraFocusCoords(a0: *mut u16, a1: *mut u16);
-    fn GetCoordEventScriptAtMapPosition(a0: *mut MapPosition) -> *mut u8;
-    fn GetCurrentMapMusic() -> u16;
-    fn GetCurrentTrainerHillMapId() -> u8;
-    fn GetFRLGAvatarGraphicsIdByGender(a0: u8) -> u8;
-    fn GetFaceDirectionAnimNum(a0: u8) -> u8;
-    fn GetFirstInactiveObjectEventId() -> u8;
-    fn GetHealLocation(a0: u32) -> *mut HealLocation;
-    fn GetInteractedLinkPlayerScript(a0: *mut MapPosition, a1: u8, a2: u8) -> *mut u8;
-    fn GetLinkRecvQueueLength() -> u32;
-    fn GetLinkTrainerCardColor(a0: u8) -> u32;
-    fn GetLocalWaterMon() -> u16;
-    fn GetLocalWildMon(a0: *mut u8) -> u16;
-    fn GetMonAbility(a0: *mut Pokemon) -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMoney(a0: *mut u32) -> u32;
-    fn GetMoveDirectionAnimNum(a0: u8) -> u8;
-    fn GetPlayerFacingDirection() -> u8;
-    fn GetRSAvatarGraphicsIdByGender(a0: u8) -> u8;
-    fn GetRivalAvatarGraphicsIdByStateIdAndGender(a0: u8, a1: u8) -> u8;
-    fn GetSavedWeather() -> u8;
-    fn HealPlayerParty();
-    fn HideMapNamePopUpWindow();
-    fn InBattlePyramid_() -> u8;
-    fn InTrainerHill() -> u32;
-    fn InitBattlePyramidMap(a0: u8);
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitCameraUpdateCallback(a0: u8) -> u32;
-    fn InitFieldMessageBox();
-    fn InitMap();
-    fn InitMapFromSavedGame();
-    fn InitMatchCallCounters();
-    fn InitObjectEventPalettes(a0: u8);
-    fn InitPlayerAvatar(a0: i16, a1: i16, a2: u8, a3: u8);
-    fn InitSecondaryTilesetAnimation();
-    fn InitSecretBaseAppearance(a0: u8);
-    fn InitStandardTextBoxWindows();
-    fn InitTextBoxGfxAndPrinters();
-    fn InitTilesetAnimations();
-    fn InitTrainerHillMap();
-    fn InstallCameraPanAheadCallback();
-    fn IsMirageIslandPresent() -> u8;
-    fn IsNotWaitingForBGMStop() -> u8;
-    fn IsRfuRecvQueueEmpty() -> u32;
-    fn IsSendingKeysToLink() -> u32;
-    fn LinkRfu_FatalError();
-    fn LoadBattlePyramidFloorObjectEventScripts();
-    fn LoadBattlePyramidObjectEventTemplates();
-    fn LoadMapTilesetPalettes(a0: *mut MapLayout);
-    fn LoadOam();
-    fn LoadSecondaryTilesetPalette(a0: *mut MapLayout);
-    fn LoadTrainerHillFloorObjectEventScripts() -> u32;
-    fn LoadTrainerHillObjectEventTemplates();
-    fn LoadWirelessStatusIndicatorSpriteGfx();
-    fn LockPlayerFieldControls();
-    fn MapGridGetCollisionAt(a0: i32, a1: i32) -> u8;
-    fn MapGridGetMetatileBehaviorAt(a0: i32, a1: i32) -> i32;
-    fn MetatileBehavior_IsDeepSouthWarp(a0: u8) -> u8;
-    fn MetatileBehavior_IsDoor(a0: u8) -> u8;
-    fn MetatileBehavior_IsEastArrowWarp(a0: u8) -> u8;
-    fn MetatileBehavior_IsLadder(a0: u8) -> u8;
-    fn MetatileBehavior_IsNonAnimDoor(a0: u8) -> u8;
-    fn MetatileBehavior_IsNorthArrowWarp(a0: u8) -> u8;
-    fn MetatileBehavior_IsSouthArrowWarp(a0: u8) -> u8;
-    fn MetatileBehavior_IsSurfableWaterOrUnderwater(a0: u8) -> u8;
-    fn MetatileBehavior_IsWestArrowWarp(a0: u8) -> u8;
-    fn MoveCoords(a0: u8, a1: *mut i16, a2: *mut i16);
-    fn MoveSaveBlocks_ResetHeap();
-    fn NewGameInitData();
-    fn ObjectEventMoveDestCoords(a0: *mut ObjectEvent, a1: u32, a2: *mut i16, a3: *mut i16);
-    fn ObjectEventUpdateElevation(a0: *mut ObjectEvent);
-    fn PlayCry_NormalNoDucking(a0: u16, a1: i8, a2: i8, a3: u8);
-    fn PlayNewMapMusic(a0: u16);
-    fn PlaySE(a0: u16);
-    fn PlayTimeCounter_Start();
-    fn PlayerGetDestCoords(a0: *mut i16, a1: *mut i16);
-    fn PlayerStep(a0: u8, a1: u16, a2: u16);
-    fn ProcessPlayerFieldInput(a0: *mut FieldInput) -> i32;
-    fn ProcessSpriteCopyRequests();
-    fn Random() -> u16;
-    fn ResetAllPicSprites() -> u16;
-    fn ResetCameraUpdateInfo();
-    fn ResetCyclingRoadChallengeData();
-    fn ResetFieldCamera();
-    fn ResetFieldTasksArgs();
-    fn ResetMapMusic();
-    fn ResetOamRange(a0: u8, a1: u8);
-    fn ResetObjectEvents();
-    fn ResetPaletteFade();
-    fn ResetSafariZoneFlag();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn ResetTempTileDataBuffers();
-    fn ResetWinStreaks();
-    fn RestartWildEncounterImmunitySteps();
-    fn ResumePausedWeather();
-    fn RoamerMove();
-    fn RoamerMoveToOtherLocationSet();
-    fn RotatingGate_InitPuzzleAndGraphics();
-    fn RunOnDiveWarpMapScript();
-    fn RunOnResumeMapScript();
-    fn RunOnReturnToFieldMapScript();
-    fn RunOnTransitionMapScript();
-    fn RunScriptImmediately(a0: *mut u8);
-    fn RunTasks();
-    fn ScanlineEffect_Clear();
-    fn ScanlineEffect_InitHBlankDmaTransfer();
-    fn ScanlineEffect_SetParams(a0: ScanlineEffectParams);
-    fn ScanlineEffect_Stop();
-    fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn ScriptContext_Init();
-    fn ScriptContext_RunScript() -> u8;
-    fn ScriptContext_SetupScript(a0: *mut u8);
-    fn SecretBaseMapPopupEnabled() -> u8;
-    fn SetBgAttribute(a0: u8, a1: u8, a2: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetCameraFocusCoords(a0: u16, a1: u16);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetHBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMoney(a0: *mut u32, a1: u32);
-    fn SetObjectSubpriorityByElevation(a0: u8, a1: *mut Sprite, a2: u8);
-    fn SetPlayerAvatarTransitionFlags(a0: u16);
-    fn SetSavedWeatherFromCurrMapHeader();
-    fn SetSpritePosToMapCoords(a0: i16, a1: i16, a2: *mut i16, a3: *mut i16);
-    fn SetUpFieldTasks();
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShiftObjectEventCoords(a0: *mut ObjectEvent, a1: i16, a2: i16);
-    fn ShiftStillObjectEventCoords(a0: *mut ObjectEvent);
-    fn ShowBg(a0: u8);
-    fn ShowMapNamePopup();
-    fn ShowStartMenu();
-    fn SpawnObjectEventsOnReturnToField(a0: i16, a1: i16);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StartSpriteAnimIfDifferent(a0: *mut Sprite, a1: u8);
-    fn StartWeather();
-    fn StopMapMusic();
-    fn TestPlayerAvatarFlags(a0: u8) -> u8;
-    fn TransferPlttBuffer();
-    fn TransferTilesetAnimsBuffer();
-    fn TryLoadTrainerHillEReaderPalette();
-    fn TryPutTodaysRivalTrainerOnAir();
-    fn TryRunOnWarpIntoMapScript();
-    fn TrySetMapSaveWarpStatus();
-    fn TrySpawnObjectEvents(a0: i16, a1: i16);
-    fn TryStartMirageTowerPulseBlendEffect();
-    fn TryUpdateRandomTrainerRematches(a0: u16, a1: u16);
-    fn UnfreezeObjectEvents();
-    fn UnlockPlayerFieldControls();
-    fn UpdateCameraPanning();
-    fn UpdateLocationHistoryForRoamer();
-    fn UpdateObjectEventSpriteInvisibility(a0: *mut Sprite, a1: u8);
-    fn UpdatePaletteFade() -> u8;
-    fn UpdatePlayerAvatarTransitionState();
-    fn UpdateTVScreensOnMap(a0: i32, a1: i32);
-    fn UpdateTilesetAnimations();
-    fn UseContinueGameWarp() -> u32;
-    fn UsedPokemonCenterWarp() -> u8;
-    fn VarGet(a0: u16) -> u16;
-    fn VarSet(a0: u16, a1: u16) -> u8;
-    fn WriteBattlePyramidViewScanlineEffectBuffer();
-    fn WriteFlashScanlineEffectBuffer(a0: u8);
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `GetHealLocation` with this module's view of its types.
+#[inline]
+unsafe fn GetHealLocation(a0: u32) -> *mut HealLocation {
+    crate::heal_location::GetHealLocation(a0) as *mut HealLocation
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoWhiteOut() {
-    RunScriptImmediately(EventScript_WhiteOut.as_ptr().cast_mut());
+pub unsafe fn DoWhiteOut() {
+    RunScriptImmediately(
+        (*crate::asmdata::EventScript_WhiteOut.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
     SetMoney(
         &raw mut (*gSaveBlock1Ptr).money,
         GetMoney(&raw mut (*gSaveBlock1Ptr).money) / 2,
@@ -433,8 +380,7 @@ pub unsafe extern "C" fn DoWhiteOut() {
     SetWarpDestinationToLastHealLocation();
     WarpIntoMap();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_ResetStateAfterFly() {
+pub unsafe fn Overworld_ResetStateAfterFly() {
     ResetInitialPlayerAvatarState();
     FlagClear(FLAG_SYS_CYCLING_ROAD);
     FlagClear(FLAG_SYS_CRUISE_MODE);
@@ -443,17 +389,21 @@ pub unsafe extern "C" fn Overworld_ResetStateAfterFly() {
     FlagClear(FLAG_SYS_USE_FLASH);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_ResetStateAfterTeleport() {
+pub unsafe fn Overworld_ResetStateAfterTeleport() {
     ResetInitialPlayerAvatarState();
     FlagClear(FLAG_SYS_CYCLING_ROAD);
     FlagClear(FLAG_SYS_CRUISE_MODE);
     FlagClear(FLAG_SYS_SAFARI_MODE);
     FlagClear(FLAG_SYS_USE_STRENGTH);
     FlagClear(FLAG_SYS_USE_FLASH);
-    RunScriptImmediately(EventScript_ResetMrBriney.as_ptr().cast_mut());
+    RunScriptImmediately(
+        (*crate::asmdata::EventScript_ResetMrBriney.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_ResetStateAfterDigEscRope() {
+pub unsafe fn Overworld_ResetStateAfterDigEscRope() {
     ResetInitialPlayerAvatarState();
     FlagClear(FLAG_SYS_CYCLING_ROAD);
     FlagClear(FLAG_SYS_CRUISE_MODE);
@@ -461,7 +411,7 @@ pub unsafe extern "C" fn Overworld_ResetStateAfterDigEscRope() {
     FlagClear(FLAG_SYS_USE_STRENGTH);
     FlagClear(FLAG_SYS_USE_FLASH);
 }
-pub(crate) unsafe extern "C" fn Overworld_ResetStateAfterWhiteOut() {
+unsafe fn Overworld_ResetStateAfterWhiteOut() {
     ResetInitialPlayerAvatarState();
     FlagClear(FLAG_SYS_CYCLING_ROAD);
     FlagClear(FLAG_SYS_CRUISE_MODE);
@@ -473,7 +423,7 @@ pub(crate) unsafe extern "C" fn Overworld_ResetStateAfterWhiteOut() {
         VarSet(VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_NONE);
     }
 }
-pub(crate) unsafe extern "C" fn UpdateMiscOverworldStates() {
+unsafe fn UpdateMiscOverworldStates() {
     FlagClear(FLAG_SYS_SAFARI_MODE);
     ChooseAmbientCrySpecies();
     ResetCyclingRoadChallengeData();
@@ -481,16 +431,13 @@ pub(crate) unsafe extern "C" fn UpdateMiscOverworldStates() {
     RoamerMoveToOtherLocationSet();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetGameStats() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < NUM_GAME_STATS {
+pub unsafe fn ResetGameStats() {
+    for i in 0..NUM_GAME_STATS {
         SetGameStat(i as u8, 0);
-        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IncrementGameStat(index: u8) {
+pub unsafe fn IncrementGameStat(index: u8) {
     if index < NUM_USED_GAME_STATS {
         let mut statVal: u32 = GetGameStat(index);
         if statVal < 0xFFFFFF {
@@ -502,29 +449,25 @@ pub unsafe extern "C" fn IncrementGameStat(index: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetGameStat(index: u8) -> u32 {
+pub unsafe fn GetGameStat(index: u8) -> u32 {
     if index >= NUM_USED_GAME_STATS {
         return 0;
     }
-    return (*gSaveBlock1Ptr).gameStats[index] ^ (*gSaveBlock2Ptr).encryptionKey;
+    (*gSaveBlock1Ptr).gameStats[index] ^ (*gSaveBlock2Ptr).encryptionKey
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetGameStat(index: u8, value: u32) {
+pub unsafe fn SetGameStat(index: u8, value: u32) {
     if index < NUM_USED_GAME_STATS {
         (*gSaveBlock1Ptr).gameStats[index] = value ^ (*gSaveBlock2Ptr).encryptionKey;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ApplyNewEncryptionKeyToGameStats(newKey: u32) {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < NUM_GAME_STATS as u8 {
+pub unsafe fn ApplyNewEncryptionKeyToGameStats(newKey: u32) {
+    for i in 0..(NUM_GAME_STATS as u8) {
         ApplyNewEncryptionKeyToWord(&raw mut (*gSaveBlock1Ptr).gameStats[i], newKey);
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadObjEventTemplatesFromHeader() {
+pub unsafe fn LoadObjEventTemplatesFromHeader() {
     {
         {
             let mut tmp: u32 = 0;
@@ -539,93 +482,73 @@ pub unsafe extern "C" fn LoadObjEventTemplatesFromHeader() {
     CpuSet(
         (*gMapHeader.events).objectEvents as *mut c_void,
         (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr() as *mut c_void,
-        0x04000000 | (*gMapHeader.events).objectEventCount as u32 * 24 / 4 & 0x1FFFFF,
+        0x04000000 | ((*gMapHeader.events).objectEventCount as u32 * 24 / 4) & 0x1FFFFF,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadSaveblockObjEventScripts() {
-    let mut mapHeaderObjTemplates: *mut ObjectEventTemplate = (*gMapHeader.events).objectEvents;
-    let mut savObjTemplates: *mut ObjectEventTemplate =
+pub unsafe fn LoadSaveblockObjEventScripts() {
+    let mapHeaderObjTemplates: *mut ObjectEventTemplate = (*gMapHeader.events).objectEvents;
+    let savObjTemplates: *mut ObjectEventTemplate =
         (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr();
-    let mut i: i32 = 0;
-    i = 0;
-    while i < OBJECT_EVENT_TEMPLATES_COUNT {
+    for i in 0..OBJECT_EVENT_TEMPLATES_COUNT {
         (*savObjTemplates.at(i)).script = (*mapHeaderObjTemplates.at(i)).script;
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetObjEventTemplateCoords(localId: u8, x: i16, y: i16) {
-    let mut i: i32 = 0;
-    let mut savObjTemplates: *mut ObjectEventTemplate =
+pub unsafe fn SetObjEventTemplateCoords(localId: u8, x: i16, y: i16) {
+    let savObjTemplates: *mut ObjectEventTemplate =
         (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr();
-    i = 0;
-    while i < OBJECT_EVENT_TEMPLATES_COUNT {
-        let mut objectEventTemplate: *mut ObjectEventTemplate = savObjTemplates.at(i);
+    for i in 0..OBJECT_EVENT_TEMPLATES_COUNT {
+        let objectEventTemplate: *mut ObjectEventTemplate = savObjTemplates.at(i);
         if (*objectEventTemplate).localId == localId {
             (*objectEventTemplate).x = x;
             (*objectEventTemplate).y = y;
             return;
         }
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetObjEventTemplateMovementType(localId: u8, movementType: u8) {
-    let mut i: i32 = 0;
-    let mut savObjTemplates: *mut ObjectEventTemplate =
+pub unsafe fn SetObjEventTemplateMovementType(localId: u8, movementType: u8) {
+    let savObjTemplates: *mut ObjectEventTemplate =
         (*gSaveBlock1Ptr).objectEventTemplates.as_mut_ptr();
-    i = 0;
-    while i < OBJECT_EVENT_TEMPLATES_COUNT {
-        let mut objectEventTemplate: *mut ObjectEventTemplate = savObjTemplates.at(i);
+    for i in 0..OBJECT_EVENT_TEMPLATES_COUNT {
+        let objectEventTemplate: *mut ObjectEventTemplate = savObjTemplates.at(i);
         if (*objectEventTemplate).localId == localId {
             (*objectEventTemplate).movementType = movementType;
             return;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn InitMapView() {
+unsafe fn InitMapView() {
     ResetFieldCamera();
     CopyMapTilesetsToVram(gMapHeader.mapLayout);
     LoadMapTilesetPalettes(gMapHeader.mapLayout);
     DrawWholeMapView();
     InitTilesetAnimations();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMapLayout() -> *mut MapLayout {
-    let mut mapLayoutId: u16 = (*gSaveBlock1Ptr).mapLayoutId;
+pub unsafe fn GetMapLayout() -> *mut MapLayout {
+    let mapLayoutId: u16 = (*gSaveBlock1Ptr).mapLayoutId;
     if mapLayoutId != 0 {
-        return gMapLayouts[mapLayoutId as i32 - 1];
+        return (*crate::asmdata::gMapLayouts.cast::<CArray<*mut MapLayout, 0>>())
+            [mapLayoutId as i32 - 1];
     }
-    return null_mut();
+    null_mut()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ApplyCurrentWarp() {
+pub unsafe fn ApplyCurrentWarp() {
     gLastUsedWarp = (*gSaveBlock1Ptr).location;
     (*gSaveBlock1Ptr).location = sWarpDestination;
     sFixedDiveWarp = *sDummyWarpData;
     sFixedHoleWarp = *sDummyWarpData;
 }
-pub(crate) unsafe extern "C" fn ClearDiveAndHoleWarps() {
+unsafe fn ClearDiveAndHoleWarps() {
     sFixedDiveWarp = *sDummyWarpData;
     sFixedHoleWarp = *sDummyWarpData;
 }
-pub(crate) unsafe extern "C" fn SetWarpData(
-    warp: *mut WarpData,
-    mapGroup: i8,
-    mapNum: i8,
-    warpId: i8,
-    x: i8,
-    y: i8,
-) {
+unsafe fn SetWarpData(warp: *mut WarpData, mapGroup: i8, mapNum: i8, warpId: i8, x: i8, y: i8) {
     (*warp).mapGroup = mapGroup;
     (*warp).mapNum = mapNum;
     (*warp).warpId = warpId;
     (*warp).x = x as i16;
     (*warp).y = y as i16;
 }
-pub(crate) unsafe extern "C" fn IsDummyWarp(warp: *mut WarpData) -> u32 {
+unsafe fn IsDummyWarp(warp: *mut WarpData) -> u32 {
     if (*warp).mapGroup != -1 {
         return FALSE as u32;
     } else if (*warp).mapNum != -1 {
@@ -641,25 +564,20 @@ pub(crate) unsafe extern "C" fn IsDummyWarp(warp: *mut WarpData) -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_GetMapHeaderByGroupAndId(
-    mapGroup: u16,
-    mapNum: u16,
-) -> *mut MapHeader {
-    return *gMapGroups[mapGroup].at(mapNum);
+pub unsafe fn Overworld_GetMapHeaderByGroupAndId(mapGroup: u16, mapNum: u16) -> *mut MapHeader {
+    *(*crate::asmdata::gMapGroups.cast::<CArray<*mut *mut MapHeader, 0>>())[mapGroup].at(mapNum)
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetDestinationWarpMapHeader() -> *mut MapHeader {
-    return Overworld_GetMapHeaderByGroupAndId(
+pub unsafe fn GetDestinationWarpMapHeader() -> *mut MapHeader {
+    Overworld_GetMapHeaderByGroupAndId(
         sWarpDestination.mapGroup as u16,
         sWarpDestination.mapNum as u16,
-    );
+    )
 }
-pub(crate) unsafe extern "C" fn LoadCurrentMapData() {
-    sLastMapSectionId = gMapHeader.regionMapSectionId as u16;
+unsafe fn LoadCurrentMapData() {
+    sLastMapSectionId.set(gMapHeader.regionMapSectionId as u16);
     gMapHeader = *Overworld_GetMapHeaderByGroupAndId(
         (*gSaveBlock1Ptr).location.mapGroup as u16,
         (*gSaveBlock1Ptr).location.mapNum as u16,
@@ -667,14 +585,14 @@ pub(crate) unsafe extern "C" fn LoadCurrentMapData() {
     (*gSaveBlock1Ptr).mapLayoutId = gMapHeader.mapLayoutId;
     gMapHeader.mapLayout = GetMapLayout();
 }
-pub(crate) unsafe extern "C" fn LoadSaveblockMapHeader() {
+unsafe fn LoadSaveblockMapHeader() {
     gMapHeader = *Overworld_GetMapHeaderByGroupAndId(
         (*gSaveBlock1Ptr).location.mapGroup as u16,
         (*gSaveBlock1Ptr).location.mapNum as u16,
     );
     gMapHeader.mapLayout = GetMapLayout();
 }
-pub(crate) unsafe extern "C" fn SetPlayerCoordsFromWarp() {
+unsafe fn SetPlayerCoordsFromWarp() {
     if (*gSaveBlock1Ptr).location.warpId >= 0
         && ((*gSaveBlock1Ptr).location.warpId as i32) < (*gMapHeader.events).warpCount as i32
     {
@@ -695,21 +613,20 @@ pub(crate) unsafe extern "C" fn SetPlayerCoordsFromWarp() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn WarpIntoMap() {
+pub unsafe fn WarpIntoMap() {
     ApplyCurrentWarp();
     LoadCurrentMapData();
     SetPlayerCoordsFromWarp();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWarpDestination(mapGroup: i8, mapNum: i8, warpId: i8, x: i8, y: i8) {
+pub unsafe fn SetWarpDestination(mapGroup: i8, mapNum: i8, warpId: i8, x: i8, y: i8) {
     SetWarpData(&raw mut sWarpDestination, mapGroup, mapNum, warpId, x, y);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWarpDestinationToMapWarp(mapGroup: i8, mapNum: i8, warpId: i8) {
+pub unsafe fn SetWarpDestinationToMapWarp(mapGroup: i8, mapNum: i8, warpId: i8) {
     SetWarpDestination(mapGroup, mapNum, warpId, -1, -1);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetDynamicWarp(unused: i32, mapGroup: i8, mapNum: i8, warpId: i8) {
+pub unsafe fn SetDynamicWarp(unused: i32, mapGroup: i8, mapNum: i8, warpId: i8) {
     SetWarpData(
         &raw mut (*gSaveBlock1Ptr).dynamicWarp,
         mapGroup,
@@ -719,8 +636,7 @@ pub unsafe extern "C" fn SetDynamicWarp(unused: i32, mapGroup: i8, mapNum: i8, w
         (*gSaveBlock1Ptr).pos.y as i8,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetDynamicWarpWithCoords(
+pub unsafe fn SetDynamicWarpWithCoords(
     unused: i32,
     mapGroup: i8,
     mapNum: i8,
@@ -738,12 +654,11 @@ pub unsafe extern "C" fn SetDynamicWarpWithCoords(
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWarpDestinationToDynamicWarp(unusedWarpId: u8) {
+pub unsafe fn SetWarpDestinationToDynamicWarp(unusedWarpId: u8) {
     sWarpDestination = (*gSaveBlock1Ptr).dynamicWarp;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWarpDestinationToHealLocation(healLocationId: u8) {
-    let mut healLocation: *mut HealLocation = GetHealLocation(healLocationId as u32);
+pub unsafe fn SetWarpDestinationToHealLocation(healLocationId: u8) {
+    let healLocation: *mut HealLocation = GetHealLocation(healLocationId as u32);
     if !healLocation.is_null() {
         SetWarpDestination(
             (*healLocation).mapGroup,
@@ -754,13 +669,11 @@ pub unsafe extern "C" fn SetWarpDestinationToHealLocation(healLocationId: u8) {
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWarpDestinationToLastHealLocation() {
+pub unsafe fn SetWarpDestinationToLastHealLocation() {
     sWarpDestination = (*gSaveBlock1Ptr).lastHealLocation;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetLastHealLocationWarp(healLocationId: u8) {
-    let mut healLocation: *mut HealLocation = GetHealLocation(healLocationId as u32);
+pub unsafe fn SetLastHealLocationWarp(healLocationId: u8) {
+    let healLocation: *mut HealLocation = GetHealLocation(healLocationId as u32);
     if !healLocation.is_null() {
         SetWarpData(
             &raw mut (*gSaveBlock1Ptr).lastHealLocation,
@@ -772,10 +685,9 @@ pub unsafe extern "C" fn SetLastHealLocationWarp(healLocationId: u8) {
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateEscapeWarp(x: i16, y: i16) {
-    let mut currMapType: u8 = GetCurrentMapType();
-    let mut destMapType: u8 =
+pub unsafe fn UpdateEscapeWarp(x: i16, y: i16) {
+    let currMapType: u8 = GetCurrentMapType();
+    let destMapType: u8 =
         GetMapTypeByGroupAndId(sWarpDestination.mapGroup, sWarpDestination.mapNum);
     if IsMapTypeOutdoors(currMapType) != 0 && IsMapTypeOutdoors(destMapType) != TRUE {
         SetEscapeWarp(
@@ -787,8 +699,7 @@ pub unsafe extern "C" fn UpdateEscapeWarp(x: i16, y: i16) {
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetEscapeWarp(mapGroup: i8, mapNum: i8, warpId: i8, x: i8, y: i8) {
+pub unsafe fn SetEscapeWarp(mapGroup: i8, mapNum: i8, warpId: i8, x: i8, y: i8) {
     SetWarpData(
         &raw mut (*gSaveBlock1Ptr).escapeWarp,
         mapGroup,
@@ -798,23 +709,19 @@ pub unsafe extern "C" fn SetEscapeWarp(mapGroup: i8, mapNum: i8, warpId: i8, x: 
         y,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWarpDestinationToEscapeWarp() {
+pub unsafe fn SetWarpDestinationToEscapeWarp() {
     sWarpDestination = (*gSaveBlock1Ptr).escapeWarp;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetFixedDiveWarp(mapGroup: i8, mapNum: i8, warpId: i8, x: i8, y: i8) {
+pub unsafe fn SetFixedDiveWarp(mapGroup: i8, mapNum: i8, warpId: i8, x: i8, y: i8) {
     SetWarpData(&raw mut sFixedDiveWarp, mapGroup, mapNum, warpId, x, y);
 }
-pub(crate) unsafe extern "C" fn SetWarpDestinationToDiveWarp() {
+unsafe fn SetWarpDestinationToDiveWarp() {
     sWarpDestination = sFixedDiveWarp;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetFixedHoleWarp(mapGroup: i8, mapNum: i8, warpId: i8, x: i8, y: i8) {
+pub unsafe fn SetFixedHoleWarp(mapGroup: i8, mapNum: i8, warpId: i8, x: i8, y: i8) {
     SetWarpData(&raw mut sFixedHoleWarp, mapGroup, mapNum, warpId, x, y);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWarpDestinationToFixedHoleWarp(x: i16, y: i16) {
+pub unsafe fn SetWarpDestinationToFixedHoleWarp(x: i16, y: i16) {
     if IsDummyWarp(&raw mut sFixedHoleWarp) == TRUE as u32 {
         sWarpDestination = gLastUsedWarp;
     } else {
@@ -827,11 +734,10 @@ pub unsafe extern "C" fn SetWarpDestinationToFixedHoleWarp(x: i16, y: i16) {
         );
     }
 }
-pub(crate) unsafe extern "C" fn SetWarpDestinationToContinueGameWarp() {
+unsafe fn SetWarpDestinationToContinueGameWarp() {
     sWarpDestination = (*gSaveBlock1Ptr).continueGameWarp;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetContinueGameWarp(mapGroup: i8, mapNum: i8, warpId: i8, x: i8, y: i8) {
+pub unsafe fn SetContinueGameWarp(mapGroup: i8, mapNum: i8, warpId: i8, x: i8, y: i8) {
     SetWarpData(
         &raw mut (*gSaveBlock1Ptr).continueGameWarp,
         mapGroup,
@@ -842,8 +748,8 @@ pub unsafe extern "C" fn SetContinueGameWarp(mapGroup: i8, mapNum: i8, warpId: i
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetContinueGameWarpToHealLocation(healLocationId: u8) {
-    let mut healLocation: *mut HealLocation = GetHealLocation(healLocationId as u32);
+pub unsafe fn SetContinueGameWarpToHealLocation(healLocationId: u8) {
+    let healLocation: *mut HealLocation = GetHealLocation(healLocationId as u32);
     if !healLocation.is_null() {
         SetWarpData(
             &raw mut (*gSaveBlock1Ptr).continueGameWarp,
@@ -856,18 +762,16 @@ pub unsafe extern "C" fn SetContinueGameWarpToHealLocation(healLocationId: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetContinueGameWarpToDynamicWarp(unused: i32) {
+pub unsafe fn SetContinueGameWarpToDynamicWarp(unused: i32) {
     (*gSaveBlock1Ptr).continueGameWarp = (*gSaveBlock1Ptr).dynamicWarp;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMapConnection(dir: u8) -> *mut MapConnection {
-    let mut i: i32 = 0;
-    let mut count: i32 = (*gMapHeader.connections).count;
+pub unsafe fn GetMapConnection(dir: u8) -> *mut MapConnection {
+    let count: i32 = (*gMapHeader.connections).count;
     let mut connection: *mut MapConnection = (*gMapHeader.connections).connections;
     if connection.is_null() {
         return null_mut();
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i < count {
         if (*connection).direction == dir {
             return connection;
@@ -875,10 +779,10 @@ pub unsafe extern "C" fn GetMapConnection(dir: u8) -> *mut MapConnection {
         i += 1;
         connection = connection.at(1);
     }
-    return null_mut();
+    null_mut()
 }
-pub(crate) unsafe extern "C" fn SetDiveWarp(dir: u8, x: u16, y: u16) -> u8 {
-    let mut connection: *mut MapConnection = GetMapConnection(dir);
+unsafe fn SetDiveWarp(dir: u8, x: u16, y: u16) -> u8 {
+    let connection: *mut MapConnection = GetMapConnection(dir);
     if !connection.is_null() {
         SetWarpDestination(
             (*connection).mapGroup as i8,
@@ -894,19 +798,15 @@ pub(crate) unsafe extern "C" fn SetDiveWarp(dir: u8, x: u16, y: u16) -> u8 {
         }
         SetWarpDestinationToDiveWarp();
     }
-    return TRUE;
+    TRUE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetDiveWarpEmerge(x: u16, y: u16) -> u8 {
-    return SetDiveWarp(CONNECTION_EMERGE, x, y);
+pub unsafe fn SetDiveWarpEmerge(x: u16, y: u16) -> u8 {
+    SetDiveWarp(CONNECTION_EMERGE, x, y)
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetDiveWarpDive(x: u16, y: u16) -> u8 {
-    return SetDiveWarp(CONNECTION_DIVE, x, y);
+pub unsafe fn SetDiveWarpDive(x: u16, y: u16) -> u8 {
+    SetDiveWarp(CONNECTION_DIVE, x, y)
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadMapFromCameraTransition(mapGroup: u8, mapNum: u8) {
-    let mut paletteIndex: i32 = 0;
+pub unsafe fn LoadMapFromCameraTransition(mapGroup: u8, mapNum: u8) {
     SetWarpDestination(
         mapGroup as i8,
         mapNum as i8,
@@ -934,10 +834,8 @@ pub unsafe extern "C" fn LoadMapFromCameraTransition(mapGroup: u8, mapNum: u8) {
     InitMap();
     CopySecondaryTilesetToVramUsingHeap(gMapHeader.mapLayout);
     LoadSecondaryTilesetPalette(gMapHeader.mapLayout);
-    paletteIndex = NUM_PALS_IN_PRIMARY;
-    while paletteIndex < NUM_PALS_TOTAL {
+    for paletteIndex in NUM_PALS_IN_PRIMARY..NUM_PALS_TOTAL {
         ApplyWeatherColorMapToPal(paletteIndex as u8);
-        paletteIndex += 1;
     }
     InitSecondaryTilesetAnimation();
     UpdateLocationHistoryForRoamer();
@@ -946,16 +844,14 @@ pub unsafe extern "C" fn LoadMapFromCameraTransition(mapGroup: u8, mapNum: u8) {
     ResetFieldTasksArgs();
     RunOnResumeMapScript();
     if gMapHeader.regionMapSectionId != MAPSEC_BATTLE_FRONTIER
-        || gMapHeader.regionMapSectionId as u16 != sLastMapSectionId
+        || gMapHeader.regionMapSectionId as u16 != sLastMapSectionId.get()
     {
         ShowMapNamePopup();
     }
 }
-pub(crate) unsafe extern "C" fn LoadMapFromWarp(a1: u32) {
-    let mut isOutdoors: u8 = 0;
-    let mut isIndoors: u8 = 0;
+unsafe fn LoadMapFromWarp(a1: u32) {
     LoadCurrentMapData();
-    if sObjectEventLoadFlag as i32 & SKIP_OBJECT_EVENT_LOAD as i32 == 0 {
+    if sObjectEventLoadFlag.get() as i32 & SKIP_OBJECT_EVENT_LOAD as i32 == 0 {
         if gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR {
             LoadBattlePyramidObjectEventTemplates();
         } else if InTrainerHill() != 0 {
@@ -964,8 +860,8 @@ pub(crate) unsafe extern "C" fn LoadMapFromWarp(a1: u32) {
             LoadObjEventTemplatesFromHeader();
         }
     }
-    isOutdoors = IsMapTypeOutdoors(gMapHeader.mapType);
-    isIndoors = IsMapTypeIndoors(gMapHeader.mapType);
+    let isOutdoors: u8 = IsMapTypeOutdoors(gMapHeader.mapType);
+    let isIndoors: u8 = IsMapTypeIndoors(gMapHeader.mapType);
     CheckLeftFriendsSecretBase();
     TrySetMapSaveWarpStatus();
     ClearTempFieldEventData();
@@ -1000,13 +896,11 @@ pub(crate) unsafe extern "C" fn LoadMapFromWarp(a1: u32) {
         InitSecretBaseAppearance(TRUE);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetInitialPlayerAvatarState() {
+pub unsafe fn ResetInitialPlayerAvatarState() {
     sInitialPlayerAvatarState.direction = DIR_SOUTH;
     sInitialPlayerAvatarState.transitionFlags = PLAYER_AVATAR_FLAG_ON_FOOT;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn StoreInitialPlayerAvatarState() {
+pub unsafe fn StoreInitialPlayerAvatarState() {
     sInitialPlayerAvatarState.direction = GetPlayerFacingDirection();
     if TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_MACH_BIKE) != 0 {
         sInitialPlayerAvatarState.transitionFlags = PLAYER_AVATAR_FLAG_MACH_BIKE;
@@ -1020,11 +914,11 @@ pub unsafe extern "C" fn StoreInitialPlayerAvatarState() {
         sInitialPlayerAvatarState.transitionFlags = PLAYER_AVATAR_FLAG_ON_FOOT;
     }
 }
-pub(crate) unsafe extern "C" fn GetInitialPlayerAvatarState() -> *mut InitialPlayerAvatarState {
+unsafe fn GetInitialPlayerAvatarState() -> *mut InitialPlayerAvatarState {
     let mut playerStruct: InitialPlayerAvatarState = zeroed();
-    let mut mapType: u8 = GetCurrentMapType();
-    let mut metatileBehavior: u16 = GetCenterScreenMetatileBehavior();
-    let mut transitionFlags: u8 = GetAdjustedInitialTransitionFlags(
+    let mapType: u8 = GetCurrentMapType();
+    let metatileBehavior: u16 = GetCenterScreenMetatileBehavior();
+    let transitionFlags: u8 = GetAdjustedInitialTransitionFlags(
         &raw mut sInitialPlayerAvatarState,
         metatileBehavior,
         mapType,
@@ -1037,9 +931,9 @@ pub(crate) unsafe extern "C" fn GetInitialPlayerAvatarState() -> *mut InitialPla
         mapType,
     );
     sInitialPlayerAvatarState = playerStruct;
-    return &raw mut sInitialPlayerAvatarState;
+    &raw mut sInitialPlayerAvatarState
 }
-pub(crate) unsafe extern "C" fn GetAdjustedInitialTransitionFlags(
+unsafe fn GetAdjustedInitialTransitionFlags(
     playerStruct: *mut InitialPlayerAvatarState,
     metatileBehavior: u16,
     mapType: u8,
@@ -1061,10 +955,10 @@ pub(crate) unsafe extern "C" fn GetAdjustedInitialTransitionFlags(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn GetAdjustedInitialDirection(
+unsafe fn GetAdjustedInitialDirection(
     playerStruct: *mut InitialPlayerAvatarState,
     transitionFlags: u8,
     metatileBehavior: u16,
@@ -1099,17 +993,16 @@ pub(crate) unsafe extern "C" fn GetAdjustedInitialDirection(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn GetCenterScreenMetatileBehavior() -> u16 {
-    return MapGridGetMetatileBehaviorAt(
+unsafe fn GetCenterScreenMetatileBehavior() -> u16 {
+    MapGridGetMetatileBehaviorAt(
         (*gSaveBlock1Ptr).pos.x as i32 + MAP_OFFSET,
         (*gSaveBlock1Ptr).pos.y as i32 + MAP_OFFSET,
-    ) as u16;
+    ) as u16
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_IsBikingAllowed() -> u32 {
+pub unsafe fn Overworld_IsBikingAllowed() -> u32 {
     if gMapHeader.allowCycling() == 0 {
         return FALSE as u32;
     } else {
@@ -1117,43 +1010,43 @@ pub unsafe extern "C" fn Overworld_IsBikingAllowed() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetDefaultFlashLevel() {
+pub unsafe fn SetDefaultFlashLevel() {
     if gMapHeader.cave == 0 {
         (*gSaveBlock1Ptr).flashLevel = 0;
     } else if FlagGet(FLAG_SYS_USE_FLASH) != 0 {
         (*gSaveBlock1Ptr).flashLevel = 1;
     } else {
-        (*gSaveBlock1Ptr).flashLevel = gMaxFlashLevel as u8 - 1;
+        (*gSaveBlock1Ptr).flashLevel =
+            (*(&raw const crate::data::field_screen_effect::gMaxFlashLevel).cast::<i32>()) as u8
+                - 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetFlashLevel(mut flashLevel: i32) {
-    if flashLevel < 0 || flashLevel > gMaxFlashLevel {
+pub unsafe fn SetFlashLevel(mut flashLevel: i32) {
+    if flashLevel < 0
+        || flashLevel
+            > (*(&raw const crate::data::field_screen_effect::gMaxFlashLevel).cast::<i32>())
+    {
         flashLevel = 0;
     }
     (*gSaveBlock1Ptr).flashLevel = flashLevel as u8;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFlashLevel() -> u8 {
-    return (*gSaveBlock1Ptr).flashLevel;
+pub unsafe fn GetFlashLevel() -> u8 {
+    (*gSaveBlock1Ptr).flashLevel
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCurrentMapLayout(mapLayoutId: u16) {
+pub unsafe fn SetCurrentMapLayout(mapLayoutId: u16) {
     (*gSaveBlock1Ptr).mapLayoutId = mapLayoutId;
     gMapHeader.mapLayout = GetMapLayout();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetObjectEventLoadFlag(flag: u8) {
-    sObjectEventLoadFlag = flag;
+pub fn SetObjectEventLoadFlag(flag: u8) {
+    sObjectEventLoadFlag.set(flag);
 }
-pub(crate) unsafe extern "C" fn GetObjectEventLoadFlag() -> u8 {
-    return sObjectEventLoadFlag;
+fn GetObjectEventLoadFlag() -> u8 {
+    sObjectEventLoadFlag.get()
 }
-pub(crate) unsafe extern "C" fn ShouldLegendaryMusicPlayAtLocation(warp: *mut WarpData) -> u16 {
+unsafe fn ShouldLegendaryMusicPlayAtLocation(warp: *mut WarpData) -> u16 {
     if FlagGet(FLAG_SYS_WEATHER_CTRL) == 0 {
         return FALSE as u16;
     }
@@ -1166,18 +1059,15 @@ pub(crate) unsafe extern "C" fn ShouldLegendaryMusicPlayAtLocation(warp: *mut Wa
                 if VarGet(VAR_SOOTOPOLIS_CITY_STATE) < 4 {
                     return FALSE as u16;
                 }
-                match (*warp).mapNum {
-                    44 | 45 | 46 => {
-                        return TRUE as u16;
-                    }
-                    _ => {}
+                if let 44..=46 = (*warp).mapNum {
+                    return TRUE as u16;
                 }
             }
         }
     }
-    return FALSE as u16;
+    FALSE as u16
 }
-pub(crate) unsafe extern "C" fn NoMusicInSootopolisWithLegendaries(warp: *mut WarpData) -> u16 {
+unsafe fn NoMusicInSootopolisWithLegendaries(warp: *mut WarpData) -> u16 {
     if VarGet(VAR_SKY_PILLAR_STATE) != 1 {
         return FALSE as u16;
     } else if (*warp).mapGroup != 0 {
@@ -1189,10 +1079,10 @@ pub(crate) unsafe extern "C" fn NoMusicInSootopolisWithLegendaries(warp: *mut Wa
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn IsInfiltratedWeatherInstitute(warp: *mut WarpData) -> u16 {
+unsafe fn IsInfiltratedWeatherInstitute(warp: *mut WarpData) -> u16 {
     if VarGet(VAR_WEATHER_INSTITUTE_STATE) != 0 {
         return FALSE as u16;
     } else if (*warp).mapGroup != 32 {
@@ -1204,10 +1094,10 @@ pub(crate) unsafe extern "C" fn IsInfiltratedWeatherInstitute(warp: *mut WarpDat
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn IsInfiltratedSpaceCenter(warp: *mut WarpData) -> u16 {
+unsafe fn IsInfiltratedSpaceCenter(warp: *mut WarpData) -> u16 {
     if VarGet(VAR_MOSSDEEP_CITY_STATE) == 0 {
         return FALSE as u16;
     } else if VarGet(VAR_MOSSDEEP_CITY_STATE) > 2 {
@@ -1217,10 +1107,9 @@ pub(crate) unsafe extern "C" fn IsInfiltratedSpaceCenter(warp: *mut WarpData) ->
     } else if (*warp).mapNum == 9 || (*warp).mapNum == 10 {
         return TRUE as u16;
     }
-    return FALSE as u16;
+    FALSE as u16
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLocationMusic(warp: *mut WarpData) -> u16 {
+pub unsafe fn GetLocationMusic(warp: *mut WarpData) -> u16 {
     if NoMusicInSootopolisWithLegendaries(warp) == TRUE as u16 {
         return MUS_NONE;
     } else if ShouldLegendaryMusicPlayAtLocation(warp) == TRUE as u16 {
@@ -1238,19 +1127,17 @@ pub unsafe extern "C" fn GetLocationMusic(warp: *mut WarpData) -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetCurrLocationDefaultMusic() -> u16 {
-    let mut music: u16 = 0;
+pub unsafe fn GetCurrLocationDefaultMusic() -> u16 {
     if (*gSaveBlock1Ptr).location.mapGroup == 0
         && (*gSaveBlock1Ptr).location.mapNum == 26
         && GetSavedWeather() == WEATHER_SANDSTORM
     {
         return MUS_DESERT;
     }
-    music = GetLocationMusic(&raw mut (*gSaveBlock1Ptr).location);
+    let music: u16 = GetLocationMusic(&raw mut (*gSaveBlock1Ptr).location);
     if music != MUS_ROUTE118 {
         return music;
     } else {
@@ -1262,12 +1149,11 @@ pub unsafe extern "C" fn GetCurrLocationDefaultMusic() -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetWarpDestinationMusic() -> u16 {
-    let mut music: u16 = GetLocationMusic(&raw mut sWarpDestination);
+pub unsafe fn GetWarpDestinationMusic() -> u16 {
+    let music: u16 = GetLocationMusic(&raw mut sWarpDestination);
     if music != MUS_ROUTE118 {
         return music;
     } else {
@@ -1279,15 +1165,14 @@ pub unsafe extern "C" fn GetWarpDestinationMusic() -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_ResetMapMusic() {
+pub fn Overworld_ResetMapMusic() {
     ResetMapMusic();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_PlaySpecialMapMusic() {
+pub unsafe fn Overworld_PlaySpecialMapMusic() {
     let mut music: u16 = GetCurrLocationDefaultMusic();
     if music != MUS_ABNORMAL_WEATHER && music != MUS_NONE {
         if (*gSaveBlock1Ptr).savedMusic != 0 {
@@ -1302,18 +1187,16 @@ pub unsafe extern "C" fn Overworld_PlaySpecialMapMusic() {
         PlayNewMapMusic(music);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_SetSavedMusic(songNum: u16) {
+pub unsafe fn Overworld_SetSavedMusic(songNum: u16) {
     (*gSaveBlock1Ptr).savedMusic = songNum;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_ClearSavedMusic() {
+pub unsafe fn Overworld_ClearSavedMusic() {
     (*gSaveBlock1Ptr).savedMusic = MUS_DUMMY;
 }
-pub(crate) unsafe extern "C" fn TransitionMapMusic() {
+unsafe fn TransitionMapMusic() {
     if FlagGet(FLAG_DONT_TRANSITION_MUSIC) != TRUE {
         let mut newMusic: u16 = GetWarpDestinationMusic();
-        let mut currentMusic: u16 = GetCurrentMapMusic();
+        let currentMusic: u16 = GetCurrentMapMusic();
         if newMusic != MUS_ABNORMAL_WEATHER && newMusic != MUS_NONE {
             if currentMusic == MUS_UNDERWATER || currentMusic == MUS_SURF {
                 return;
@@ -1331,23 +1214,20 @@ pub(crate) unsafe extern "C" fn TransitionMapMusic() {
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_ChangeMusicToDefault() {
-    let mut currentMusic: u16 = GetCurrentMapMusic();
+pub unsafe fn Overworld_ChangeMusicToDefault() {
+    let currentMusic: u16 = GetCurrentMapMusic();
     if currentMusic != GetCurrLocationDefaultMusic() {
         FadeOutAndPlayNewMapMusic(GetCurrLocationDefaultMusic(), 8);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_ChangeMusicTo(newMusic: u16) {
-    let mut currentMusic: u16 = GetCurrentMapMusic();
+pub unsafe fn Overworld_ChangeMusicTo(newMusic: u16) {
+    let currentMusic: u16 = GetCurrentMapMusic();
     if currentMusic != newMusic && currentMusic != MUS_ABNORMAL_WEATHER {
         FadeOutAndPlayNewMapMusic(newMusic, 8);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMapMusicFadeoutSpeed() -> u8 {
-    let mut mapHeader: *mut MapHeader = GetDestinationWarpMapHeader();
+pub unsafe fn GetMapMusicFadeoutSpeed() -> u8 {
+    let mapHeader: *mut MapHeader = GetDestinationWarpMapHeader();
     if IsMapTypeIndoors((*mapHeader).mapType) == TRUE {
         return 2;
     } else {
@@ -1355,13 +1235,12 @@ pub unsafe extern "C" fn GetMapMusicFadeoutSpeed() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryFadeOutOldMapMusic() {
-    let mut currentMusic: u16 = GetCurrentMapMusic();
-    let mut warpMusic: u16 = GetWarpDestinationMusic();
+pub unsafe fn TryFadeOutOldMapMusic() {
+    let currentMusic: u16 = GetCurrentMapMusic();
+    let warpMusic: u16 = GetWarpDestinationMusic();
     if FlagGet(FLAG_DONT_TRANSITION_MUSIC) != TRUE && warpMusic != GetCurrentMapMusic() {
         if currentMusic == MUS_SURF
             && VarGet(VAR_SKY_PILLAR_STATE) == 2
@@ -1377,21 +1256,17 @@ pub unsafe extern "C" fn TryFadeOutOldMapMusic() {
         FadeOutMapMusic(GetMapMusicFadeoutSpeed());
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BGMusicStopped() -> u8 {
-    return IsNotWaitingForBGMStop();
+pub unsafe fn BGMusicStopped() -> u8 {
+    IsNotWaitingForBGMStop()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_FadeOutMapMusic() {
+pub unsafe fn Overworld_FadeOutMapMusic() {
     FadeOutMapMusic(4);
 }
-pub(crate) unsafe extern "C" fn PlayAmbientCry() {
+unsafe fn PlayAmbientCry() {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
-    let mut pan: i8 = 0;
-    let mut volume: i8 = 0;
     PlayerGetDestCoords(&raw mut x, &raw mut y);
-    if sIsAmbientCryWaterMon == TRUE
+    if sIsAmbientCryWaterMon.get() == TRUE
         && MetatileBehavior_IsSurfableWaterOrUnderwater(MapGridGetMetatileBehaviorAt(
             x as i32, y as i32,
         ) as u8)
@@ -1399,18 +1274,16 @@ pub(crate) unsafe extern "C" fn PlayAmbientCry() {
     {
         return;
     }
-    pan = (Random() as i32 % 88) as i8 + -44;
-    volume = (Random() as i32 % 30) as i8 + 50;
-    PlayCry_NormalNoDucking(sAmbientCrySpecies, pan, volume, CRY_PRIORITY_AMBIENT);
+    let pan: i8 = (Random() as i32 % 88) as i8 + -44;
+    let volume: i8 = (Random() as i32 % 30) as i8 + 50;
+    PlayCry_NormalNoDucking(sAmbientCrySpecies.get(), pan, volume, CRY_PRIORITY_AMBIENT);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateAmbientCry(state: *mut i16, delayCounter: *mut u16) {
-    let mut i: u8 = 0;
+pub unsafe fn UpdateAmbientCry(state: *mut i16, delayCounter: *mut u16) {
     let mut monsCount: u8 = 0;
     let mut divBy: u8 = 0;
     match *state {
         AMB_CRY_INIT => {
-            if sAmbientCrySpecies == SPECIES_NONE {
+            if sAmbientCrySpecies.get() == SPECIES_NONE {
                 *state = AMB_CRY_IDLE;
             } else {
                 *state = AMB_CRY_FIRST;
@@ -1423,15 +1296,13 @@ pub unsafe extern "C" fn UpdateAmbientCry(state: *mut i16, delayCounter: *mut u1
         AMB_CRY_RESET => {
             divBy = 1;
             monsCount = CalculatePlayerPartyCount();
-            i = 0;
-            while i < monsCount {
+            for i in 0..monsCount {
                 if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SANITY_IS_EGG) == 0
                     && GetMonAbility(&raw mut gPlayerParty[0]) == ABILITY_SWARM
                 {
                     divBy = 2;
                     break;
                 }
-                i += 1;
             }
             *delayCounter = div_i32(Random() as i32 % 1200 + 1200, divBy as i32) as u16;
             *state = AMB_CRY_WAIT;
@@ -1450,35 +1321,32 @@ pub unsafe extern "C" fn UpdateAmbientCry(state: *mut i16, delayCounter: *mut u1
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn ChooseAmbientCrySpecies() {
+unsafe fn ChooseAmbientCrySpecies() {
     if (*gSaveBlock1Ptr).location.mapGroup == 0
         && (*gSaveBlock1Ptr).location.mapNum == 45
         && IsMirageIslandPresent() == 0
     {
-        sIsAmbientCryWaterMon = TRUE;
-        sAmbientCrySpecies = GetLocalWaterMon();
+        sIsAmbientCryWaterMon.set(TRUE);
+        sAmbientCrySpecies.set(GetLocalWaterMon());
     } else {
-        sAmbientCrySpecies = GetLocalWildMon(&raw mut sIsAmbientCryWaterMon);
+        sAmbientCrySpecies.set(GetLocalWildMon(sIsAmbientCryWaterMon.as_ptr()));
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMapTypeByGroupAndId(mapGroup: i8, mapNum: i8) -> u8 {
-    return (*Overworld_GetMapHeaderByGroupAndId(mapGroup as u16, mapNum as u16)).mapType;
+pub unsafe fn GetMapTypeByGroupAndId(mapGroup: i8, mapNum: i8) -> u8 {
+    (*Overworld_GetMapHeaderByGroupAndId(mapGroup as u16, mapNum as u16)).mapType
+}
+pub unsafe fn GetMapTypeByWarpData(warp: *mut WarpData) -> u8 {
+    GetMapTypeByGroupAndId((*warp).mapGroup, (*warp).mapNum)
+}
+pub unsafe fn GetCurrentMapType() -> u8 {
+    GetMapTypeByWarpData(&raw mut (*gSaveBlock1Ptr).location)
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMapTypeByWarpData(warp: *mut WarpData) -> u8 {
-    return GetMapTypeByGroupAndId((*warp).mapGroup, (*warp).mapNum);
+pub unsafe fn GetLastUsedWarpMapType() -> u8 {
+    GetMapTypeByWarpData(&raw mut gLastUsedWarp)
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetCurrentMapType() -> u8 {
-    return GetMapTypeByWarpData(&raw mut (*gSaveBlock1Ptr).location);
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLastUsedWarpMapType() -> u8 {
-    return GetMapTypeByWarpData(&raw mut gLastUsedWarp);
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsMapTypeOutdoors(mapType: u8) -> u8 {
+pub unsafe fn IsMapTypeOutdoors(mapType: u8) -> u8 {
     if mapType == MAP_TYPE_ROUTE
         || mapType == MAP_TYPE_TOWN
         || mapType == MAP_TYPE_UNDERWATER
@@ -1491,11 +1359,11 @@ pub unsafe extern "C" fn IsMapTypeOutdoors(mapType: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_MapTypeAllowsTeleportAndFly(mapType: u8) -> u8 {
+pub unsafe fn Overworld_MapTypeAllowsTeleportAndFly(mapType: u8) -> u8 {
     if mapType == MAP_TYPE_ROUTE
         || mapType == MAP_TYPE_TOWN
         || mapType == MAP_TYPE_OCEAN_ROUTE
@@ -1507,11 +1375,10 @@ pub unsafe extern "C" fn Overworld_MapTypeAllowsTeleportAndFly(mapType: u8) -> u
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsMapTypeIndoors(mapType: u8) -> u8 {
+pub unsafe fn IsMapTypeIndoors(mapType: u8) -> u8 {
     if mapType == MAP_TYPE_INDOOR || mapType == MAP_TYPE_SECRET_BASE {
         return TRUE;
     } else {
@@ -1519,34 +1386,31 @@ pub unsafe extern "C" fn IsMapTypeIndoors(mapType: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSavedWarpRegionMapSectionId() -> u8 {
-    return (*Overworld_GetMapHeaderByGroupAndId(
+pub unsafe fn GetSavedWarpRegionMapSectionId() -> u8 {
+    (*Overworld_GetMapHeaderByGroupAndId(
         (*gSaveBlock1Ptr).dynamicWarp.mapGroup as u16,
         (*gSaveBlock1Ptr).dynamicWarp.mapNum as u16,
     ))
-    .regionMapSectionId;
+    .regionMapSectionId
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetCurrentRegionMapSectionId() -> u8 {
-    return (*Overworld_GetMapHeaderByGroupAndId(
+pub unsafe fn GetCurrentRegionMapSectionId() -> u8 {
+    (*Overworld_GetMapHeaderByGroupAndId(
         (*gSaveBlock1Ptr).location.mapGroup as u16,
         (*gSaveBlock1Ptr).location.mapNum as u16,
     ))
-    .regionMapSectionId;
+    .regionMapSectionId
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetCurrentMapBattleScene() -> u8 {
-    return (*Overworld_GetMapHeaderByGroupAndId(
+pub unsafe fn GetCurrentMapBattleScene() -> u8 {
+    (*Overworld_GetMapHeaderByGroupAndId(
         (*gSaveBlock1Ptr).location.mapGroup as u16,
         (*gSaveBlock1Ptr).location.mapNum as u16,
     ))
-    .battleType;
+    .battleType
 }
-pub(crate) unsafe extern "C" fn InitOverworldBgs() {
+unsafe fn InitOverworldBgs() {
     InitBgsFromTemplates(0, sOverworldBgTemplates.as_ptr().cast_mut(), 4);
     SetBgAttribute(1, BG_ATTR_MOSAIC, 1);
     SetBgAttribute(2, BG_ATTR_MOSAIC, 1);
@@ -1559,8 +1423,7 @@ pub(crate) unsafe extern "C" fn InitOverworldBgs() {
     SetBgTilemapBuffer(3, gOverworldTilemapBuffer_Bg3 as *mut c_void);
     InitStandardTextBoxWindows();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CleanupOverworldWindowsAndTilemaps() {
+pub unsafe fn CleanupOverworldWindowsAndTilemaps() {
     ClearMirageTowerPulseBlendEffect();
     FreeAllOverworldWindowBuffers();
     if !gOverworldTilemapBuffer_Bg3.is_null() {
@@ -1576,22 +1439,21 @@ pub unsafe extern "C" fn CleanupOverworldWindowsAndTilemaps() {
         gOverworldTilemapBuffer_Bg1 = null_mut();
     }
 }
-pub(crate) unsafe extern "C" fn ResetSafariZoneFlag_() {
+unsafe fn ResetSafariZoneFlag_() {
     ResetSafariZoneFlag();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsOverworldLinkActive() -> u32 {
-    if gMain.callback1 == Some(CB1_OverworldLink as unsafe extern "C" fn()) {
+pub unsafe fn IsOverworldLinkActive() -> u32 {
+    if gMain.callback1 == Some(CB1_OverworldLink as unsafe fn()) {
         return TRUE as u32;
     } else {
         return FALSE as u32;
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn DoCB1_Overworld(newKeys: u16, heldKeys: u16) {
+unsafe fn DoCB1_Overworld(newKeys: u16, heldKeys: u16) {
     let mut inputStruct: FieldInput = zeroed();
     UpdatePlayerAvatarTransitionState();
     FieldClearPlayerInput(&raw mut inputStruct);
@@ -1605,13 +1467,12 @@ pub(crate) unsafe extern "C" fn DoCB1_Overworld(newKeys: u16, heldKeys: u16) {
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB1_Overworld() {
-    if gMain.callback2 == Some(CB2_Overworld as unsafe extern "C" fn()) {
+pub unsafe fn CB1_Overworld() {
+    if gMain.callback2 == Some(CB2_Overworld as unsafe fn()) {
         DoCB1_Overworld(gMain.newKeys, gMain.heldKeys);
     }
 }
-pub(crate) unsafe extern "C" fn OverworldBasic() {
+unsafe fn OverworldBasic() {
     ScriptContext_RunScript();
     RunTasks();
     AnimateSprites();
@@ -1622,13 +1483,11 @@ pub(crate) unsafe extern "C" fn OverworldBasic() {
     UpdateTilesetAnimations();
     DoScheduledBgTilemapCopiesToVram();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_OverworldBasic() {
+pub unsafe fn CB2_OverworldBasic() {
     OverworldBasic();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_Overworld() {
-    let mut fading: u32 = (gPaletteFade.active() != 0) as u32;
+pub unsafe fn CB2_Overworld() {
+    let fading: u32 = (gPaletteFade.active() != 0) as u32;
     if fading != 0 {
         SetVBlankCallback(None);
     }
@@ -1637,15 +1496,13 @@ pub unsafe extern "C" fn CB2_Overworld() {
         SetFieldVBlankCallback();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetMainCallback1(cb: Option<unsafe extern "C" fn()>) {
+pub unsafe fn SetMainCallback1(cb: Option<unsafe fn()>) {
     gMain.callback1 = cb;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetUnusedCallback(func: *mut c_void) {
+pub unsafe fn SetUnusedCallback(func: *mut c_void) {
     sUnusedOverworldCallback = func;
 }
-pub(crate) unsafe extern "C" fn RunFieldCallback() -> u8 {
+unsafe fn RunFieldCallback() -> u8 {
     if gFieldCallback2.is_some() {
         if gFieldCallback2.unwrap_unchecked()() == 0 {
             return FALSE;
@@ -1661,10 +1518,9 @@ pub(crate) unsafe extern "C" fn RunFieldCallback() -> u8 {
         }
         gFieldCallback = None;
     }
-    return TRUE;
+    TRUE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_NewGame() {
+pub unsafe fn CB2_NewGame() {
     FieldClearVBlankHBlankCallbacks();
     StopMapMusic();
     ResetSafariZoneFlag_();
@@ -1681,7 +1537,7 @@ pub unsafe extern "C" fn CB2_NewGame() {
     SetMainCallback2(Some(CB2_Overworld));
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_WhiteOut() {
+pub unsafe fn CB2_WhiteOut() {
     let mut state: u8 = 0;
     if ({
         gMain.state += 1;
@@ -1704,7 +1560,7 @@ pub unsafe extern "C" fn CB2_WhiteOut() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_LoadMap() {
+pub unsafe fn CB2_LoadMap() {
     FieldClearVBlankHBlankCallbacks();
     ScriptContext_Init();
     UnlockPlayerFieldControls();
@@ -1712,14 +1568,13 @@ pub unsafe extern "C" fn CB2_LoadMap() {
     SetMainCallback2(Some(CB2_DoChangeMap));
     gMain.savedCallback = Some(CB2_LoadMap2);
 }
-pub(crate) unsafe extern "C" fn CB2_LoadMap2() {
+pub(crate) unsafe fn CB2_LoadMap2() {
     DoMapLoadLoop(&raw mut gMain.state);
     SetFieldVBlankCallback();
     SetMainCallback1(Some(CB1_Overworld));
     SetMainCallback2(Some(CB2_Overworld));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ReturnToFieldContestHall() {
+pub unsafe fn CB2_ReturnToFieldContestHall() {
     if gMain.state == 0 {
         FieldClearVBlankHBlankCallbacks();
         ScriptContext_Init();
@@ -1732,13 +1587,12 @@ pub unsafe extern "C" fn CB2_ReturnToFieldContestHall() {
         SetMainCallback2(Some(CB2_Overworld));
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ReturnToFieldCableClub() {
+pub unsafe fn CB2_ReturnToFieldCableClub() {
     FieldClearVBlankHBlankCallbacks();
     gFieldCallback = Some(FieldCB_ReturnToFieldWirelessLink);
     SetMainCallback2(Some(CB2_LoadMapOnReturnToFieldCableClub));
 }
-pub(crate) unsafe extern "C" fn CB2_LoadMapOnReturnToFieldCableClub() {
+pub(crate) unsafe fn CB2_LoadMapOnReturnToFieldCableClub() {
     if LoadMapInStepsLink(&raw mut gMain.state) != 0 {
         SetFieldVBlankCallback();
         SetMainCallback1(Some(CB1_OverworldLink));
@@ -1747,7 +1601,7 @@ pub(crate) unsafe extern "C" fn CB2_LoadMapOnReturnToFieldCableClub() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ReturnToField() {
+pub unsafe fn CB2_ReturnToField() {
     if IsOverworldLinkActive() == TRUE as u32 {
         SetMainCallback2(Some(CB2_ReturnToFieldLink));
     } else {
@@ -1755,19 +1609,18 @@ pub unsafe extern "C" fn CB2_ReturnToField() {
         SetMainCallback2(Some(CB2_ReturnToFieldLocal));
     }
 }
-pub(crate) unsafe extern "C" fn CB2_ReturnToFieldLocal() {
+pub(crate) unsafe fn CB2_ReturnToFieldLocal() {
     if ReturnToFieldLocal(&raw mut gMain.state) != 0 {
         SetFieldVBlankCallback();
         SetMainCallback2(Some(CB2_Overworld));
     }
 }
-pub(crate) unsafe extern "C" fn CB2_ReturnToFieldLink() {
+pub(crate) unsafe fn CB2_ReturnToFieldLink() {
     if Overworld_IsRecvQueueAtMax() == 0 && ReturnToFieldLink(&raw mut gMain.state) != 0 {
         SetMainCallback2(Some(CB2_Overworld));
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ReturnToFieldFromMultiplayer() {
+pub unsafe fn CB2_ReturnToFieldFromMultiplayer() {
     FieldClearVBlankHBlankCallbacks();
     StopMapMusic();
     SetMainCallback1(Some(CB1_OverworldLink));
@@ -1781,39 +1634,36 @@ pub unsafe extern "C" fn CB2_ReturnToFieldFromMultiplayer() {
     UnlockPlayerFieldControls();
     CB2_ReturnToField();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ReturnToFieldWithOpenMenu() {
+pub unsafe fn CB2_ReturnToFieldWithOpenMenu() {
     FieldClearVBlankHBlankCallbacks();
     gFieldCallback2 = Some(FieldCB_ReturnToFieldOpenStartMenu);
     CB2_ReturnToField();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ReturnToFieldContinueScript() {
+pub unsafe fn CB2_ReturnToFieldContinueScript() {
     FieldClearVBlankHBlankCallbacks();
     gFieldCallback = Some(FieldCB_ContinueScript);
     CB2_ReturnToField();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ReturnToFieldContinueScriptPlayMapMusic() {
+pub unsafe fn CB2_ReturnToFieldContinueScriptPlayMapMusic() {
     FieldClearVBlankHBlankCallbacks();
     gFieldCallback = Some(FieldCB_ContinueScriptHandleMusic);
     CB2_ReturnToField();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ReturnToFieldFadeFromBlack() {
+pub unsafe fn CB2_ReturnToFieldFadeFromBlack() {
     FieldClearVBlankHBlankCallbacks();
     gFieldCallback = Some(FieldCB_WarpExitFadeFromBlack);
     CB2_ReturnToField();
 }
-pub(crate) unsafe extern "C" fn FieldCB_FadeTryShowMapPopup() {
+pub(crate) unsafe fn FieldCB_FadeTryShowMapPopup() {
     if gMapHeader.showMapName() == TRUE && SecretBaseMapPopupEnabled() == TRUE {
         ShowMapNamePopup();
     }
     FieldCB_WarpExitFadeFromBlack();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ContinueSavedGame() {
-    let mut trainerHillMapId: u8 = 0;
+pub unsafe fn CB2_ContinueSavedGame() {
     FieldClearVBlankHBlankCallbacks();
     StopMapMusic();
     ResetSafariZoneFlag_();
@@ -1822,7 +1672,7 @@ pub unsafe extern "C" fn CB2_ContinueSavedGame() {
     }
     LoadSaveblockMapHeader();
     ClearDiveAndHoleWarps();
-    trainerHillMapId = GetCurrentTrainerHillMapId();
+    let trainerHillMapId: u8 = GetCurrentTrainerHillMapId();
     if gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR {
         LoadBattlePyramidFloorObjectEventScripts();
     } else if trainerHillMapId != 0 && trainerHillMapId != TRAINER_HILL_ENTRANCE {
@@ -1857,7 +1707,7 @@ pub unsafe extern "C" fn CB2_ContinueSavedGame() {
         CB2_ReturnToField();
     }
 }
-pub(crate) unsafe extern "C" fn FieldClearVBlankHBlankCallbacks() {
+unsafe fn FieldClearVBlankHBlankCallbacks() {
     if UsedPokemonCenterWarp() == TRUE {
         CloseLink();
     }
@@ -1865,25 +1715,25 @@ pub(crate) unsafe extern "C" fn FieldClearVBlankHBlankCallbacks() {
         EnableInterrupts(197);
         DisableInterrupts(INTR_FLAG_HBLANK);
     } else {
-        let mut savedIme: u16 = (67109384 as usize as *mut u16).read_volatile();
-        volatile_write(67109384 as usize as *mut u16, 0);
+        let savedIme: u16 = (67109384_usize as *mut u16).read_volatile();
+        volatile_write(67109384_usize as *mut u16, 0);
         volatile_write(
-            0x4000200 as usize as *mut u16,
-            (0x4000200 as usize as *mut u16).read_volatile() & 65533,
+            0x4000200_usize as *mut u16,
+            (0x4000200_usize as *mut u16).read_volatile() & 65533,
         );
         volatile_write(
-            0x4000200 as usize as *mut u16,
-            (0x4000200 as usize as *mut u16).read_volatile() | INTR_FLAG_VBLANK,
+            0x4000200_usize as *mut u16,
+            (0x4000200_usize as *mut u16).read_volatile() | INTR_FLAG_VBLANK,
         );
-        volatile_write(67109384 as usize as *mut u16, savedIme);
+        volatile_write(67109384_usize as *mut u16, savedIme);
     }
     SetVBlankCallback(None);
     SetHBlankCallback(None);
 }
-pub(crate) unsafe extern "C" fn SetFieldVBlankCallback() {
+unsafe fn SetFieldVBlankCallback() {
     SetVBlankCallback(Some(VBlankCB_Field));
 }
-pub(crate) unsafe extern "C" fn VBlankCB_Field() {
+pub(crate) unsafe fn VBlankCB_Field() {
     LoadOam();
     ProcessSpriteCopyRequests();
     ScanlineEffect_InitHBlankDmaTransfer();
@@ -1891,7 +1741,7 @@ pub(crate) unsafe extern "C" fn VBlankCB_Field() {
     TransferPlttBuffer();
     TransferTilesetAnimsBuffer();
 }
-pub(crate) unsafe extern "C" fn InitCurrentFlashLevelScanlineEffect() {
+unsafe fn InitCurrentFlashLevelScanlineEffect() {
     let mut flashLevel: u8 = 0;
     if InBattlePyramid_() != 0 {
         WriteBattlePyramidViewScanlineEffectBuffer();
@@ -1905,7 +1755,7 @@ pub(crate) unsafe extern "C" fn InitCurrentFlashLevelScanlineEffect() {
         ScanlineEffect_SetParams(*sFlashEffectParams);
     }
 }
-pub(crate) unsafe extern "C" fn LoadMapInStepsLink(state: *mut u8) -> u32 {
+unsafe fn LoadMapInStepsLink(state: *mut u8) -> u32 {
     match *state {
         0 => {
             InitOverworldBgs();
@@ -1979,9 +1829,9 @@ pub(crate) unsafe extern "C" fn LoadMapInStepsLink(state: *mut u8) -> u32 {
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn LoadMapInStepsLocal(state: *mut u8, a2: u32) -> u32 {
+unsafe fn LoadMapInStepsLocal(state: *mut u8, a2: u32) -> u32 {
     match *state {
         0 => {
             FieldClearVBlankHBlankCallbacks();
@@ -2050,9 +1900,9 @@ pub(crate) unsafe extern "C" fn LoadMapInStepsLocal(state: *mut u8, a2: u32) -> 
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn ReturnToFieldLocal(state: *mut u8) -> u32 {
+unsafe fn ReturnToFieldLocal(state: *mut u8) -> u32 {
     match *state {
         0 => {
             ResetMirageTowerAndSaveBlockPtrs();
@@ -2077,9 +1927,9 @@ pub(crate) unsafe extern "C" fn ReturnToFieldLocal(state: *mut u8) -> u32 {
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn ReturnToFieldLink(state: *mut u8) -> u32 {
+unsafe fn ReturnToFieldLink(state: *mut u8) -> u32 {
     match *state {
         0 => {
             FieldClearVBlankHBlankCallbacks();
@@ -2151,21 +2001,21 @@ pub(crate) unsafe extern "C" fn ReturnToFieldLink(state: *mut u8) -> u32 {
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn DoMapLoadLoop(state: *mut u8) {
+unsafe fn DoMapLoadLoop(state: *mut u8) {
     while LoadMapInStepsLocal(state, FALSE as u32) == 0 {}
 }
-pub(crate) unsafe extern "C" fn ResetMirageTowerAndSaveBlockPtrs() {
+unsafe fn ResetMirageTowerAndSaveBlockPtrs() {
     ClearMirageTowerPulseBlend();
     MoveSaveBlocks_ResetHeap();
 }
-pub(crate) unsafe extern "C" fn ResetScreenForMapLoad() {
+unsafe fn ResetScreenForMapLoad() {
     SetGpuReg(0x0, 0);
     ScanlineEffect_Stop();
     {
         {
-            let mut _dest: *mut u16 = 83886082 as usize as *mut u16;
+            let mut _dest: *mut u16 = 83886082_usize as *mut u16;
             let mut _size: u32 = 1022;
             {
                 {
@@ -2173,10 +2023,10 @@ pub(crate) unsafe extern "C" fn ResetScreenForMapLoad() {
                     volatile_write(&raw mut tmp, 0);
                     {
                         {
-                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                             volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                             volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                            volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                            volatile_write(dmaRegs.at(2), 0x81000000 | (_size / 2));
                             let _ = (dmaRegs.at(2)).read_volatile();
                         }
                     }
@@ -2194,7 +2044,7 @@ pub(crate) unsafe extern "C" fn ResetScreenForMapLoad() {
                     volatile_write(&raw mut tmp, 0);
                     {
                         {
-                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                             volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                             volatile_write(dmaRegs.at(1), _dest as usize as u32);
                             volatile_write(dmaRegs.at(2), 0x81000800);
@@ -2212,10 +2062,10 @@ pub(crate) unsafe extern "C" fn ResetScreenForMapLoad() {
                         volatile_write(&raw mut tmp, 0);
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                volatile_write(dmaRegs.at(2), 0x81000000 | (_size / 2));
                                 let _ = (dmaRegs.at(2)).read_volatile();
                             }
                         }
@@ -2228,13 +2078,13 @@ pub(crate) unsafe extern "C" fn ResetScreenForMapLoad() {
     ResetOamRange(0, 128);
     LoadOam();
 }
-pub(crate) unsafe extern "C" fn InitViewGraphics() {
+unsafe fn InitViewGraphics() {
     InitCurrentFlashLevelScanlineEffect();
     InitOverworldGraphicsRegisters();
     InitTextBoxGfxAndPrinters();
     InitMapView();
 }
-pub(crate) unsafe extern "C" fn InitOverworldGraphicsRegisters() {
+unsafe fn InitOverworldGraphicsRegisters() {
     ClearScheduledBgCopiesToVram();
     ResetTempTileDataBuffers();
     SetGpuReg(REG_OFFSET_MOSAIC, 0);
@@ -2246,9 +2096,11 @@ pub(crate) unsafe extern "C" fn InitOverworldGraphicsRegisters() {
     SetGpuReg(REG_OFFSET_WIN1V, 0xFFFF);
     SetGpuReg(
         REG_OFFSET_BLDCNT,
-        gOverworldBackgroundLayerFlags[1]
-            | gOverworldBackgroundLayerFlags[2]
-            | gOverworldBackgroundLayerFlags[3]
+        (*(&raw const crate::io_reg::gOverworldBackgroundLayerFlags).cast::<CArray<u16, 0>>())[1]
+            | (*(&raw const crate::io_reg::gOverworldBackgroundLayerFlags)
+                .cast::<CArray<u16, 0>>())[2]
+            | (*(&raw const crate::io_reg::gOverworldBackgroundLayerFlags)
+                .cast::<CArray<u16, 0>>())[3]
             | BLDCNT_TGT2_OBJ
             | BLDCNT_EFFECT_BLEND,
     );
@@ -2272,7 +2124,7 @@ pub(crate) unsafe extern "C" fn InitOverworldGraphicsRegisters() {
     ShowBg(3);
     InitFieldMessageBox();
 }
-pub(crate) unsafe extern "C" fn ResumeMap(a1: u32) {
+unsafe fn ResumeMap(a1: u32) {
     ResetTasks();
     ResetSpriteData();
     ResetPaletteFade();
@@ -2294,22 +2146,21 @@ pub(crate) unsafe extern "C" fn ResumeMap(a1: u32) {
     RunOnResumeMapScript();
     TryStartMirageTowerPulseBlendEffect();
 }
-pub(crate) unsafe extern "C" fn InitObjectEventsLink() {
+unsafe fn InitObjectEventsLink() {
     gTotalCameraPixelOffsetX = 0;
     gTotalCameraPixelOffsetY = 0;
     ResetObjectEvents();
     TrySpawnObjectEvents(0, 0);
     TryRunOnWarpIntoMapScript();
 }
-pub(crate) unsafe extern "C" fn InitObjectEventsLocal() {
+unsafe fn InitObjectEventsLocal() {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
-    let mut player: *mut InitialPlayerAvatarState = null_mut();
     gTotalCameraPixelOffsetX = 0;
     gTotalCameraPixelOffsetY = 0;
     ResetObjectEvents();
     GetCameraFocusCoords(&raw mut x, &raw mut y);
-    player = GetInitialPlayerAvatarState();
+    let player: *mut InitialPlayerAvatarState = GetInitialPlayerAvatarState();
     InitPlayerAvatar(
         x as i16,
         y as i16,
@@ -2321,34 +2172,33 @@ pub(crate) unsafe extern "C" fn InitObjectEventsLocal() {
     TrySpawnObjectEvents(0, 0);
     TryRunOnWarpIntoMapScript();
 }
-pub(crate) unsafe extern "C" fn InitObjectEventsReturnToField() {
+unsafe fn InitObjectEventsReturnToField() {
     SpawnObjectEventsOnReturnToField(0, 0);
     RotatingGate_InitPuzzleAndGraphics();
     RunOnReturnToFieldMapScript();
 }
-pub(crate) unsafe extern "C" fn SetCameraToTrackPlayer() {
+unsafe fn SetCameraToTrackPlayer() {
     gObjectEvents[gPlayerAvatar.objectEventId].set_trackedByCamera(TRUE as u32);
     InitCameraUpdateCallback(gPlayerAvatar.spriteId);
 }
-pub(crate) unsafe extern "C" fn SetCameraToTrackGuestPlayer() {
+unsafe fn SetCameraToTrackGuestPlayer() {
     InitCameraUpdateCallback(GetSpriteForLinkedPlayer(gLocalLinkPlayerId));
 }
-pub(crate) unsafe extern "C" fn SetCameraToTrackGuestPlayer_2() {
+unsafe fn SetCameraToTrackGuestPlayer_2() {
     InitCameraUpdateCallback(GetSpriteForLinkedPlayer(gLocalLinkPlayerId));
 }
-pub(crate) unsafe extern "C" fn OffsetCameraFocusByLinkPlayerId() {
+unsafe fn OffsetCameraFocusByLinkPlayerId() {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
     GetCameraFocusCoords(&raw mut x, &raw mut y);
     SetCameraFocusCoords(x + gLocalLinkPlayerId as u16, y);
 }
-pub(crate) unsafe extern "C" fn SpawnLinkPlayers() {
-    let mut i: u16 = 0;
+unsafe fn SpawnLinkPlayers() {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
     GetCameraFocusCoords(&raw mut x, &raw mut y);
     x -= gLocalLinkPlayerId as u16;
-    i = 0;
+    let mut i: u16 = 0;
     while i < gFieldLinkPlayerCount as u16 {
         SpawnLinkPlayerObjectEvent(
             i as u8,
@@ -2361,17 +2211,16 @@ pub(crate) unsafe extern "C" fn SpawnLinkPlayers() {
     }
     ClearAllPlayerKeys();
 }
-pub(crate) unsafe extern "C" fn CreateLinkPlayerSprites() {
+unsafe fn CreateLinkPlayerSprites() {
     let mut i: u16 = 0;
-    i = 0;
     while i < gFieldLinkPlayerCount as u16 {
         CreateLinkPlayerSprite(i as u8, gLinkPlayers[i].version as u8);
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CB1_OverworldLink() {
+pub(crate) unsafe fn CB1_OverworldLink() {
     if gWirelessCommType == 0 || IsRfuRecvQueueEmpty() == 0 || IsSendingKeysToLink() == 0 {
-        let mut selfId: u8 = gLocalLinkPlayerId;
+        let selfId: u8 = gLocalLinkPlayerId;
         UpdateAllLinkPlayers(gLinkPartnersHeldKeys.as_mut_ptr(), selfId as i32);
         UpdateHeldKeyCode(sPlayerKeyInterceptCallback.unwrap_unchecked()(
             selfId as u32,
@@ -2379,63 +2228,51 @@ pub(crate) unsafe extern "C" fn CB1_OverworldLink() {
         ClearAllPlayerKeys();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetAllMultiplayerState() {
+pub unsafe fn ResetAllMultiplayerState() {
     ResetAllPlayerLinkStates();
     SetKeyInterceptCallback(Some(KeyInterCB_SelfIdle));
 }
-pub(crate) unsafe extern "C" fn ClearAllPlayerKeys() {
+unsafe fn ClearAllPlayerKeys() {
     ResetPlayerHeldKeys(gLinkPartnersHeldKeys.as_mut_ptr());
 }
-pub(crate) unsafe extern "C" fn SetKeyInterceptCallback(
-    func: Option<unsafe extern "C" fn(u32) -> u16>,
-) {
-    sRfuKeepAliveTimer = 0;
+unsafe fn SetKeyInterceptCallback(func: Option<unsafe fn(u32) -> u16>) {
+    sRfuKeepAliveTimer.set(0);
     sPlayerKeyInterceptCallback = func;
 }
-pub(crate) unsafe extern "C" fn CheckRfuKeepAliveTimer() {
+unsafe fn CheckRfuKeepAliveTimer() {
     if gWirelessCommType != 0
         && ({
-            sRfuKeepAliveTimer += 1;
-            sRfuKeepAliveTimer
+            sRfuKeepAliveTimer.set(sRfuKeepAliveTimer.get() + 1);
+            sRfuKeepAliveTimer.get()
         }) > 60
     {
         LinkRfu_FatalError();
     }
 }
-pub(crate) unsafe extern "C" fn ResetAllPlayerLinkStates() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < MAX_LINK_PLAYERS {
+unsafe fn ResetAllPlayerLinkStates() {
+    for i in 0..MAX_LINK_PLAYERS {
         sPlayerLinkStates[i] = PLAYER_LINK_STATE_IDLE;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn AreAllPlayersInLinkState(state: u16) -> u32 {
-    let mut i: i32 = 0;
-    let mut count: i32 = gFieldLinkPlayerCount as i32;
-    i = 0;
-    while i < count {
+unsafe fn AreAllPlayersInLinkState(state: u16) -> u32 {
+    let count: i32 = gFieldLinkPlayerCount as i32;
+    for i in 0..count {
         if sPlayerLinkStates[i] as u16 != state {
             return FALSE as u32;
         }
-        i += 1;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn IsAnyPlayerInLinkState(state: u16) -> u32 {
-    let mut i: i32 = 0;
-    let mut count: i32 = gFieldLinkPlayerCount as i32;
-    i = 0;
-    while i < count {
+unsafe fn IsAnyPlayerInLinkState(state: u16) -> u32 {
+    let count: i32 = gFieldLinkPlayerCount as i32;
+    for i in 0..count {
         if sPlayerLinkStates[i] as u16 == state {
             return TRUE as u32;
         }
-        i += 1;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn HandleLinkPlayerKeyInput(
+unsafe fn HandleLinkPlayerKeyInput(
     playerId: u32,
     key: u16,
     trainer: *mut CableClubPlayer,
@@ -2499,13 +2336,11 @@ pub(crate) unsafe extern "C" fn HandleLinkPlayerKeyInput(
                     }
                 }
             }
-            LINK_KEY_CODE_HANDLE_SEND_QUEUE => {
-                if IsCableClubPlayerUnfrozen(trainer) != 0 {
-                    sPlayerLinkStates[playerId] = PLAYER_LINK_STATE_BUSY;
-                    if (*trainer).isLocalPlayer != 0 {
-                        SetKeyInterceptCallback(Some(KeyInterCB_DeferToSendQueue));
-                        InitLinkPlayerQueueScript();
-                    }
+            LINK_KEY_CODE_HANDLE_SEND_QUEUE if IsCableClubPlayerUnfrozen(trainer) != 0 => {
+                sPlayerLinkStates[playerId] = PLAYER_LINK_STATE_BUSY;
+                if (*trainer).isLocalPlayer != 0 {
+                    SetKeyInterceptCallback(Some(KeyInterCB_DeferToSendQueue));
+                    InitLinkPlayerQueueScript();
                 }
             }
             _ => {}
@@ -2524,20 +2359,16 @@ pub(crate) unsafe extern "C" fn HandleLinkPlayerKeyInput(
                 SetKeyInterceptCallback(Some(KeyInterCB_SelfIdle));
             }
         }
-        LINK_KEY_CODE_EXIT_SEAT => {
-            if sPlayerLinkStates[playerId] == PLAYER_LINK_STATE_READY {
-                sPlayerLinkStates[playerId] = PLAYER_LINK_STATE_BUSY;
-            }
+        LINK_KEY_CODE_EXIT_SEAT if sPlayerLinkStates[playerId] == PLAYER_LINK_STATE_READY => {
+            sPlayerLinkStates[playerId] = PLAYER_LINK_STATE_BUSY;
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn UpdateAllLinkPlayers(keys: *mut u16, selfId: i32) {
+unsafe fn UpdateAllLinkPlayers(keys: *mut u16, selfId: i32) {
     let mut trainer: CableClubPlayer = zeroed();
-    let mut i: i32 = 0;
-    i = 0;
-    while i < MAX_LINK_PLAYERS {
-        let mut key: u8 = *keys.at(i) as u8;
+    for i in 0..MAX_LINK_PLAYERS {
+        let key: u8 = *keys.at(i) as u8;
         let mut setFacing: u16 = FACING_NONE;
         LoadCableClubPlayer(i, selfId, &raw mut trainer);
         HandleLinkPlayerKeyInput(i as u32, key as u16, &raw mut trainer, &raw mut setFacing);
@@ -2545,11 +2376,10 @@ pub(crate) unsafe extern "C" fn UpdateAllLinkPlayers(keys: *mut u16, selfId: i32
             setFacing = GetDirectionForDpadKey(key as u16);
         }
         SetPlayerFacingDirection(i as u8, setFacing as u8);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateHeldKeyCode(key: u16) {
-    if key >= LINK_KEY_CODE_EMPTY && key < LINK_KEY_CODE_UNK_8 {
+unsafe fn UpdateHeldKeyCode(key: u16) {
+    if (LINK_KEY_CODE_EMPTY..LINK_KEY_CODE_UNK_8).contains(&key) {
         gHeldKeyCodeToSend = key;
     } else {
         gHeldKeyCodeToSend = LINK_KEY_CODE_EMPTY;
@@ -2573,7 +2403,7 @@ pub(crate) unsafe extern "C" fn UpdateHeldKeyCode(key: u16) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn KeyInterCB_ReadButtons(key: u32) -> u16 {
+unsafe fn KeyInterCB_ReadButtons(key: u32) -> u16 {
     if gMain.heldKeys as i32 & DPAD_UP != 0 {
         return LINK_KEY_CODE_DPAD_UP;
     }
@@ -2592,9 +2422,9 @@ pub(crate) unsafe extern "C" fn KeyInterCB_ReadButtons(key: u32) -> u16 {
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         return LINK_KEY_CODE_A_BUTTON;
     }
-    return LINK_KEY_CODE_EMPTY;
+    LINK_KEY_CODE_EMPTY
 }
-pub(crate) unsafe extern "C" fn GetDirectionForDpadKey(key: u16) -> u16 {
+fn GetDirectionForDpadKey(key: u16) -> u16 {
     match key {
         LINK_KEY_CODE_DPAD_RIGHT => {
             return FACING_RIGHT;
@@ -2614,18 +2444,15 @@ pub(crate) unsafe extern "C" fn GetDirectionForDpadKey(key: u16) -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ResetPlayerHeldKeys(mut keys: *mut u16) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 4 {
+unsafe fn ResetPlayerHeldKeys(keys: *mut u16) {
+    for i in 0..4i32 {
         *keys.at(i) = LINK_KEY_CODE_EMPTY;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn KeyInterCB_SelfIdle(key: u32) -> u16 {
+pub(crate) unsafe fn KeyInterCB_SelfIdle(key: u32) -> u16 {
     if ArePlayerFieldControlsLocked() == TRUE {
         return LINK_KEY_CODE_EMPTY;
     }
@@ -2635,13 +2462,13 @@ pub(crate) unsafe extern "C" fn KeyInterCB_SelfIdle(key: u32) -> u16 {
     if GetLinkSendQueueLength() <= 4 {
         return KeyInterCB_ReadButtons(key);
     }
-    return LINK_KEY_CODE_HANDLE_SEND_QUEUE;
+    LINK_KEY_CODE_HANDLE_SEND_QUEUE
 }
-pub(crate) unsafe extern "C" fn KeyInterCB_Idle(key: u32) -> u16 {
+pub(crate) unsafe fn KeyInterCB_Idle(key: u32) -> u16 {
     CheckRfuKeepAliveTimer();
-    return LINK_KEY_CODE_EMPTY;
+    LINK_KEY_CODE_EMPTY
 }
-pub(crate) unsafe extern "C" fn KeyInterCB_DeferToEventScript(key: u32) -> u16 {
+pub(crate) unsafe fn KeyInterCB_DeferToEventScript(key: u32) -> u16 {
     let mut retVal: u16 = 0;
     if ArePlayerFieldControlsLocked() == TRUE {
         retVal = LINK_KEY_CODE_EMPTY;
@@ -2649,9 +2476,9 @@ pub(crate) unsafe extern "C" fn KeyInterCB_DeferToEventScript(key: u32) -> u16 {
         retVal = LINK_KEY_CODE_IDLE;
         SetKeyInterceptCallback(Some(KeyInterCB_Idle));
     }
-    return retVal;
+    retVal
 }
-pub(crate) unsafe extern "C" fn KeyInterCB_DeferToRecvQueue(key: u32) -> u16 {
+pub(crate) unsafe fn KeyInterCB_DeferToRecvQueue(key: u32) -> u16 {
     let mut retVal: u16 = 0;
     if GetLinkRecvQueueLength() >= OVERWORLD_RECV_QUEUE_MAX {
         retVal = LINK_KEY_CODE_EMPTY;
@@ -2660,9 +2487,9 @@ pub(crate) unsafe extern "C" fn KeyInterCB_DeferToRecvQueue(key: u32) -> u16 {
         UnlockPlayerFieldControls();
         SetKeyInterceptCallback(Some(KeyInterCB_Idle));
     }
-    return retVal;
+    retVal
 }
-pub(crate) unsafe extern "C" fn KeyInterCB_DeferToSendQueue(key: u32) -> u16 {
+pub(crate) unsafe fn KeyInterCB_DeferToSendQueue(key: u32) -> u16 {
     let mut retVal: u16 = 0;
     if GetLinkSendQueueLength() > 2 {
         retVal = LINK_KEY_CODE_EMPTY;
@@ -2671,13 +2498,13 @@ pub(crate) unsafe extern "C" fn KeyInterCB_DeferToSendQueue(key: u32) -> u16 {
         UnlockPlayerFieldControls();
         SetKeyInterceptCallback(Some(KeyInterCB_Idle));
     }
-    return retVal;
+    retVal
 }
-pub(crate) unsafe extern "C" fn KeyInterCB_ExitingSeat(key: u32) -> u16 {
+pub(crate) unsafe fn KeyInterCB_ExitingSeat(key: u32) -> u16 {
     CheckRfuKeepAliveTimer();
-    return LINK_KEY_CODE_EMPTY;
+    LINK_KEY_CODE_EMPTY
 }
-pub(crate) unsafe extern "C" fn KeyInterCB_Ready(keyOrPlayerId: u32) -> u16 {
+pub(crate) unsafe fn KeyInterCB_Ready(keyOrPlayerId: u32) -> u16 {
     if sPlayerLinkStates[keyOrPlayerId] == PLAYER_LINK_STATE_READY {
         if gMain.newKeys as i32 & B_BUTTON != 0 {
             SetKeyInterceptCallback(Some(KeyInterCB_ExitingSeat));
@@ -2691,45 +2518,47 @@ pub(crate) unsafe extern "C" fn KeyInterCB_Ready(keyOrPlayerId: u32) -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn KeyInterCB_SetReady(key: u32) -> u16 {
+pub(crate) unsafe fn KeyInterCB_SetReady(key: u32) -> u16 {
     SetKeyInterceptCallback(Some(KeyInterCB_Ready));
-    return LINK_KEY_CODE_READY;
+    LINK_KEY_CODE_READY
 }
-pub(crate) unsafe extern "C" fn KeyInterCB_SendNothing(key: u32) -> u16 {
-    return LINK_KEY_CODE_EMPTY;
+pub(crate) fn KeyInterCB_SendNothing(key: u32) -> u16 {
+    LINK_KEY_CODE_EMPTY
 }
-pub(crate) unsafe extern "C" fn KeyInterCB_WaitForPlayersToExit(keyOrPlayerId: u32) -> u16 {
+pub(crate) unsafe fn KeyInterCB_WaitForPlayersToExit(keyOrPlayerId: u32) -> u16 {
     if sPlayerLinkStates[keyOrPlayerId] != PLAYER_LINK_STATE_EXITING_ROOM as u8 {
         CheckRfuKeepAliveTimer();
     }
     if AreAllPlayersInLinkState(PLAYER_LINK_STATE_EXITING_ROOM) == TRUE as u32 {
-        ScriptContext_SetupScript(EventScript_DoLinkRoomExit.as_ptr().cast_mut());
+        ScriptContext_SetupScript(
+            (*crate::asmdata::EventScript_DoLinkRoomExit.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
         SetKeyInterceptCallback(Some(KeyInterCB_SendNothing));
     }
-    return LINK_KEY_CODE_EMPTY;
+    LINK_KEY_CODE_EMPTY
 }
-pub(crate) unsafe extern "C" fn KeyInterCB_SendExitRoomKey(key: u32) -> u16 {
+pub(crate) unsafe fn KeyInterCB_SendExitRoomKey(key: u32) -> u16 {
     SetKeyInterceptCallback(Some(KeyInterCB_WaitForPlayersToExit));
-    return LINK_KEY_CODE_EXIT_ROOM;
+    LINK_KEY_CODE_EXIT_ROOM
 }
-pub(crate) unsafe extern "C" fn KeyInterCB_InLinkActivity(key: u32) -> u16 {
-    return LINK_KEY_CODE_EMPTY;
+pub(crate) unsafe fn KeyInterCB_InLinkActivity(key: u32) -> u16 {
+    LINK_KEY_CODE_EMPTY
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetCableClubPartnersReady() -> u32 {
+pub unsafe fn GetCableClubPartnersReady() -> u32 {
     if IsAnyPlayerInLinkState(PLAYER_LINK_STATE_EXITING_ROOM) == TRUE as u32 {
         return CABLE_SEAT_FAILED;
     }
-    if sPlayerKeyInterceptCallback == Some(KeyInterCB_Ready as unsafe extern "C" fn(u32) -> u16)
+    if sPlayerKeyInterceptCallback == Some(KeyInterCB_Ready as unsafe fn(u32) -> u16)
         && sPlayerLinkStates[gLocalLinkPlayerId] != PLAYER_LINK_STATE_READY
     {
         return CABLE_SEAT_WAITING;
     }
-    if sPlayerKeyInterceptCallback
-        == Some(KeyInterCB_ExitingSeat as unsafe extern "C" fn(u32) -> u16)
+    if sPlayerKeyInterceptCallback == Some(KeyInterCB_ExitingSeat as unsafe fn(u32) -> u16)
         && sPlayerLinkStates[gLocalLinkPlayerId] == PLAYER_LINK_STATE_BUSY
     {
         return CABLE_SEAT_FAILED;
@@ -2737,36 +2566,28 @@ pub unsafe extern "C" fn GetCableClubPartnersReady() -> u32 {
     if AreAllPlayersInLinkState(PLAYER_LINK_STATE_READY as u16) != 0 {
         return CABLE_SEAT_SUCCESS;
     }
-    return CABLE_SEAT_WAITING;
+    CABLE_SEAT_WAITING
 }
-pub(crate) unsafe extern "C" fn IsAnyPlayerExitingCableClub() -> u32 {
-    return IsAnyPlayerInLinkState(PLAYER_LINK_STATE_EXITING_ROOM);
+unsafe fn IsAnyPlayerExitingCableClub() -> u32 {
+    IsAnyPlayerInLinkState(PLAYER_LINK_STATE_EXITING_ROOM)
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetInCableClubSeat() -> u16 {
+pub unsafe fn SetInCableClubSeat() -> u16 {
     SetKeyInterceptCallback(Some(KeyInterCB_SetReady));
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetLinkWaitingForScript() -> u16 {
+pub unsafe fn SetLinkWaitingForScript() -> u16 {
     SetKeyInterceptCallback(Some(KeyInterCB_DeferToEventScript));
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn QueueExitLinkRoomKey() -> u16 {
+pub unsafe fn QueueExitLinkRoomKey() -> u16 {
     SetKeyInterceptCallback(Some(KeyInterCB_SendExitRoomKey));
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetStartedCableClubActivity() -> u16 {
+pub unsafe fn SetStartedCableClubActivity() -> u16 {
     SetKeyInterceptCallback(Some(KeyInterCB_InLinkActivity));
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn LoadCableClubPlayer(
-    linkPlayerId: i32,
-    myPlayerId: i32,
-    trainer: *mut CableClubPlayer,
-) {
+unsafe fn LoadCableClubPlayer(linkPlayerId: i32, myPlayerId: i32, trainer: *mut CableClubPlayer) {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
     (*trainer).playerId = linkPlayerId as u8;
@@ -2779,8 +2600,8 @@ pub(crate) unsafe extern "C" fn LoadCableClubPlayer(
     (*trainer).pos.elevation = GetLinkPlayerElevation(linkPlayerId as u8) as i8;
     (*trainer).metatileBehavior = MapGridGetMetatileBehaviorAt(x as i32, y as i32) as u16;
 }
-pub(crate) unsafe extern "C" fn IsCableClubPlayerUnfrozen(player: *mut CableClubPlayer) -> u32 {
-    let mut mode: u8 = (*player).movementMode;
+unsafe fn IsCableClubPlayerUnfrozen(player: *mut CableClubPlayer) -> u32 {
+    let mode: u8 = (*player).movementMode;
     if mode == MOVEMENT_MODE_SCRIPTED || mode == MOVEMENT_MODE_FREE {
         return TRUE as u32;
     } else {
@@ -2788,11 +2609,11 @@ pub(crate) unsafe extern "C" fn IsCableClubPlayerUnfrozen(player: *mut CableClub
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn CanCableClubPlayerPressStart(player: *mut CableClubPlayer) -> u32 {
-    let mut mode: u8 = (*player).movementMode;
+unsafe fn CanCableClubPlayerPressStart(player: *mut CableClubPlayer) -> u32 {
+    let mode: u8 = (*player).movementMode;
     if mode == MOVEMENT_MODE_SCRIPTED || mode == MOVEMENT_MODE_FREE {
         return TRUE as u32;
     } else {
@@ -2800,16 +2621,16 @@ pub(crate) unsafe extern "C" fn CanCableClubPlayerPressStart(player: *mut CableC
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn TryGetTileEventScript(player: *mut CableClubPlayer) -> *mut u8 {
+unsafe fn TryGetTileEventScript(player: *mut CableClubPlayer) -> *mut u8 {
     if (*player).movementMode != MOVEMENT_MODE_SCRIPTED {
         return null_mut();
     }
-    return GetCoordEventScriptAtMapPosition(&raw mut (*player).pos);
+    GetCoordEventScriptAtMapPosition(&raw mut (*player).pos)
 }
-pub(crate) unsafe extern "C" fn PlayerIsAtSouthExit(player: *mut CableClubPlayer) -> u32 {
+unsafe fn PlayerIsAtSouthExit(player: *mut CableClubPlayer) -> u32 {
     if (*player).movementMode != MOVEMENT_MODE_SCRIPTED
         && (*player).movementMode != MOVEMENT_MODE_FREE
     {
@@ -2823,140 +2644,178 @@ pub(crate) unsafe extern "C" fn PlayerIsAtSouthExit(player: *mut CableClubPlayer
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn TryInteractWithPlayer(player: *mut CableClubPlayer) -> *mut u8 {
-    let mut otherPlayerPos: MapPosition = zeroed();
-    let mut linkPlayerId: u8 = 0;
+unsafe fn TryInteractWithPlayer(player: *mut CableClubPlayer) -> *mut u8 {
     if (*player).movementMode != MOVEMENT_MODE_FREE
         && (*player).movementMode != MOVEMENT_MODE_SCRIPTED
     {
         return null_mut();
     }
-    otherPlayerPos = (*player).pos;
+    let mut otherPlayerPos: MapPosition = (*player).pos;
     otherPlayerPos.x += gDirectionToVectors[(*player).facing].x as i16;
     otherPlayerPos.y += gDirectionToVectors[(*player).facing].y as i16;
     otherPlayerPos.elevation = ELEVATION_TRANSITION as i8;
-    linkPlayerId = GetLinkPlayerIdAt(otherPlayerPos.x, otherPlayerPos.y);
+    let linkPlayerId: u8 = GetLinkPlayerIdAt(otherPlayerPos.x, otherPlayerPos.y);
     if linkPlayerId != MAX_LINK_PLAYERS as u8 {
         if (*player).isLocalPlayer == 0 {
-            return CableClub_EventScript_TooBusyToNotice.as_ptr().cast_mut();
+            return (*crate::asmdata::CableClub_EventScript_TooBusyToNotice
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         } else if sPlayerLinkStates[linkPlayerId] != PLAYER_LINK_STATE_IDLE {
-            return CableClub_EventScript_TooBusyToNotice.as_ptr().cast_mut();
+            return (*crate::asmdata::CableClub_EventScript_TooBusyToNotice
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         } else if GetLinkTrainerCardColor(linkPlayerId) == 0 {
-            return CableClub_EventScript_ReadTrainerCard.as_ptr().cast_mut();
+            return (*crate::asmdata::CableClub_EventScript_ReadTrainerCard
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         } else {
-            return CableClub_EventScript_ReadTrainerCardColored
-                .as_ptr()
-                .cast_mut();
+            return (*crate::asmdata::CableClub_EventScript_ReadTrainerCardColored
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
     }
-    return GetInteractedLinkPlayerScript(
+    GetInteractedLinkPlayerScript(
         &raw mut otherPlayerPos,
         (*player).metatileBehavior as u8,
         (*player).facing,
-    );
+    )
 }
-pub(crate) unsafe extern "C" fn GetDirectionForEventScript(script: *mut u8) -> u16 {
+unsafe fn GetDirectionForEventScript(script: *mut u8) -> u16 {
     if script
-        == EventScript_BattleColosseum_4P_PlayerSpot0
+        == (*crate::asmdata::EventScript_BattleColosseum_4P_PlayerSpot0.cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut()
     {
         return FACING_FORCED_RIGHT;
     } else if script
-        == EventScript_BattleColosseum_4P_PlayerSpot1
+        == (*crate::asmdata::EventScript_BattleColosseum_4P_PlayerSpot1.cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut()
     {
         return FACING_FORCED_LEFT;
     } else if script
-        == EventScript_BattleColosseum_4P_PlayerSpot2
+        == (*crate::asmdata::EventScript_BattleColosseum_4P_PlayerSpot2.cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut()
     {
         return FACING_FORCED_RIGHT;
     } else if script
-        == EventScript_BattleColosseum_4P_PlayerSpot3
+        == (*crate::asmdata::EventScript_BattleColosseum_4P_PlayerSpot3.cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut()
     {
         return FACING_FORCED_LEFT;
-    } else if script == EventScript_RecordCenter_Spot0.as_ptr().cast_mut() {
-        return FACING_FORCED_RIGHT;
-    } else if script == EventScript_RecordCenter_Spot1.as_ptr().cast_mut() {
-        return FACING_FORCED_LEFT;
-    } else if script == EventScript_RecordCenter_Spot2.as_ptr().cast_mut() {
-        return FACING_FORCED_RIGHT;
-    } else if script == EventScript_RecordCenter_Spot3.as_ptr().cast_mut() {
-        return FACING_FORCED_LEFT;
     } else if script
-        == EventScript_BattleColosseum_2P_PlayerSpot0
+        == (*crate::asmdata::EventScript_RecordCenter_Spot0.cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut()
     {
         return FACING_FORCED_RIGHT;
     } else if script
-        == EventScript_BattleColosseum_2P_PlayerSpot1
+        == (*crate::asmdata::EventScript_RecordCenter_Spot1.cast::<CArray<u8, 0>>())
             .as_ptr()
             .cast_mut()
     {
         return FACING_FORCED_LEFT;
-    } else if script == EventScript_TradeCenter_Chair0.as_ptr().cast_mut() {
+    } else if script
+        == (*crate::asmdata::EventScript_RecordCenter_Spot2.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut()
+    {
         return FACING_FORCED_RIGHT;
-    } else if script == EventScript_TradeCenter_Chair1.as_ptr().cast_mut() {
+    } else if script
+        == (*crate::asmdata::EventScript_RecordCenter_Spot3.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut()
+    {
+        return FACING_FORCED_LEFT;
+    } else if script
+        == (*crate::asmdata::EventScript_BattleColosseum_2P_PlayerSpot0.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut()
+    {
+        return FACING_FORCED_RIGHT;
+    } else if script
+        == (*crate::asmdata::EventScript_BattleColosseum_2P_PlayerSpot1.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut()
+    {
+        return FACING_FORCED_LEFT;
+    } else if script
+        == (*crate::asmdata::EventScript_TradeCenter_Chair0.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut()
+    {
+        return FACING_FORCED_RIGHT;
+    } else if script
+        == (*crate::asmdata::EventScript_TradeCenter_Chair1.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut()
+    {
         return FACING_FORCED_LEFT;
     } else {
         return FACING_NONE;
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn InitLinkPlayerQueueScript() {
+unsafe fn InitLinkPlayerQueueScript() {
     LockPlayerFieldControls();
 }
-pub(crate) unsafe extern "C" fn InitLinkRoomStartMenuScript() {
+unsafe fn InitLinkRoomStartMenuScript() {
     PlaySE(SE_WIN_OPEN);
     ShowStartMenu();
     LockPlayerFieldControls();
 }
-pub(crate) unsafe extern "C" fn RunInteractLocalPlayerScript(script: *mut u8) {
+unsafe fn RunInteractLocalPlayerScript(script: *mut u8) {
     PlaySE(SE_SELECT);
     ScriptContext_SetupScript(script);
     LockPlayerFieldControls();
 }
-pub(crate) unsafe extern "C" fn RunConfirmLeaveCableClubScript() {
+unsafe fn RunConfirmLeaveCableClubScript() {
     PlaySE(SE_WIN_OPEN);
-    ScriptContext_SetupScript(EventScript_ConfirmLeaveCableClubRoom.as_ptr().cast_mut());
+    ScriptContext_SetupScript(
+        (*crate::asmdata::EventScript_ConfirmLeaveCableClubRoom.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
     LockPlayerFieldControls();
 }
-pub(crate) unsafe extern "C" fn InitMenuBasedScript(script: *mut u8) {
+unsafe fn InitMenuBasedScript(script: *mut u8) {
     PlaySE(SE_SELECT);
     ScriptContext_SetupScript(script);
     LockPlayerFieldControls();
 }
-pub(crate) unsafe extern "C" fn RunTerminateLinkScript() {
-    ScriptContext_SetupScript(EventScript_TerminateLink.as_ptr().cast_mut());
+unsafe fn RunTerminateLinkScript() {
+    ScriptContext_SetupScript(
+        (*crate::asmdata::EventScript_TerminateLink.cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
     LockPlayerFieldControls();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_IsRecvQueueAtMax() -> u32 {
+pub unsafe fn Overworld_IsRecvQueueAtMax() -> u32 {
     if IsOverworldLinkActive() == 0 {
         return FALSE as u32;
     }
     if GetLinkRecvQueueLength() >= OVERWORLD_RECV_QUEUE_MAX {
-        sReceivingFromLink = TRUE;
+        sReceivingFromLink.set(TRUE);
     } else {
-        sReceivingFromLink = FALSE;
+        sReceivingFromLink.set(FALSE);
     }
-    return sReceivingFromLink as u32;
+    sReceivingFromLink.get() as u32
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_RecvKeysFromLinkIsRunning() -> u32 {
-    let mut temp: u8 = 0;
+pub unsafe fn Overworld_RecvKeysFromLinkIsRunning() -> u32 {
     if GetLinkRecvQueueLength() < 2 {
         return FALSE as u32;
     } else if IsOverworldLinkActive() != TRUE as u32 {
@@ -2964,16 +2823,16 @@ pub unsafe extern "C" fn Overworld_RecvKeysFromLinkIsRunning() -> u32 {
     } else if IsSendingKeysToLink() != TRUE as u32 {
         return FALSE as u32;
     } else if sPlayerKeyInterceptCallback
-        == Some(KeyInterCB_DeferToRecvQueue as unsafe extern "C" fn(u32) -> u16)
+        == Some(KeyInterCB_DeferToRecvQueue as unsafe fn(u32) -> u16)
     {
         return TRUE as u32;
     } else if sPlayerKeyInterceptCallback
-        != Some(KeyInterCB_DeferToEventScript as unsafe extern "C" fn(u32) -> u16)
+        != Some(KeyInterCB_DeferToEventScript as unsafe fn(u32) -> u16)
     {
         return FALSE as u32;
     }
-    temp = sReceivingFromLink;
-    sReceivingFromLink = FALSE;
+    let temp: u8 = sReceivingFromLink.get();
+    sReceivingFromLink.set(FALSE);
     if temp == TRUE {
         return TRUE as u32;
     } else if gPaletteFade.active() != 0 && gPaletteFade.softwareFadeFinishing() != 0 {
@@ -2983,11 +2842,11 @@ pub unsafe extern "C" fn Overworld_RecvKeysFromLinkIsRunning() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Overworld_SendKeysToLinkIsRunning() -> u32 {
+pub unsafe fn Overworld_SendKeysToLinkIsRunning() -> u32 {
     if GetLinkSendQueueLength() < 2 {
         return FALSE as u32;
     } else if IsOverworldLinkActive() != TRUE as u32 {
@@ -2995,7 +2854,7 @@ pub unsafe extern "C" fn Overworld_SendKeysToLinkIsRunning() -> u32 {
     } else if IsSendingKeysToLink() != TRUE as u32 {
         return FALSE as u32;
     } else if sPlayerKeyInterceptCallback
-        == Some(KeyInterCB_DeferToSendQueue as unsafe extern "C" fn(u32) -> u16)
+        == Some(KeyInterCB_DeferToSendQueue as unsafe fn(u32) -> u16)
     {
         return TRUE as u32;
     } else {
@@ -3003,11 +2862,10 @@ pub unsafe extern "C" fn Overworld_SendKeysToLinkIsRunning() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsSendingKeysOverCable() -> u32 {
+pub unsafe fn IsSendingKeysOverCable() -> u32 {
     if gWirelessCommType != 0 {
         return FALSE as u32;
     } else if IsSendingKeysToLink() == 0 {
@@ -3017,10 +2875,10 @@ pub unsafe extern "C" fn IsSendingKeysOverCable() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn GetLinkSendQueueLength() -> u32 {
+unsafe fn GetLinkSendQueueLength() -> u32 {
     if gWirelessCommType != 0 {
         return (&raw mut gRfu.sendQueue.count).read_volatile() as u32;
     } else {
@@ -3028,31 +2886,23 @@ pub(crate) unsafe extern "C" fn GetLinkSendQueueLength() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ZeroLinkPlayerObjectEvent(
-    linkPlayerObjEvent: *mut LinkPlayerObjectEvent,
-) {
+unsafe fn ZeroLinkPlayerObjectEvent(linkPlayerObjEvent: *mut LinkPlayerObjectEvent) {
     memset(linkPlayerObjEvent as *mut u8, 0, 4);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearLinkPlayerObjectEvents() {
+pub unsafe fn ClearLinkPlayerObjectEvents() {
     memset(gLinkPlayerObjectEvents.as_mut_ptr() as *mut u8, 0, 16);
 }
-pub(crate) unsafe extern "C" fn ZeroObjectEvent(objEvent: *mut ObjectEvent) {
+unsafe fn ZeroObjectEvent(objEvent: *mut ObjectEvent) {
     memset(objEvent as *mut u8, 0, 36);
 }
-pub(crate) unsafe extern "C" fn SpawnLinkPlayerObjectEvent(
-    linkPlayerId: u8,
-    x: i16,
-    y: i16,
-    gender: u8,
-) {
-    let mut objEventId: u8 = GetFirstInactiveObjectEventId();
-    let mut linkPlayerObjEvent: *mut LinkPlayerObjectEvent =
+unsafe fn SpawnLinkPlayerObjectEvent(linkPlayerId: u8, x: i16, y: i16, gender: u8) {
+    let objEventId: u8 = GetFirstInactiveObjectEventId();
+    let linkPlayerObjEvent: *mut LinkPlayerObjectEvent =
         &raw mut gLinkPlayerObjectEvents[linkPlayerId];
-    let mut objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
+    let objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
     ZeroLinkPlayerObjectEvent(linkPlayerObjEvent);
     ZeroObjectEvent(objEvent);
     (*linkPlayerObjEvent).active = TRUE;
@@ -3065,11 +2915,7 @@ pub(crate) unsafe extern "C" fn SpawnLinkPlayerObjectEvent(
     (*objEvent).spriteId = MAX_SPRITES;
     InitLinkPlayerObjectEventPos(objEvent, x, y);
 }
-pub(crate) unsafe extern "C" fn InitLinkPlayerObjectEventPos(
-    objEvent: *mut ObjectEvent,
-    x: i16,
-    y: i16,
-) {
+unsafe fn InitLinkPlayerObjectEventPos(objEvent: *mut ObjectEvent, x: i16, y: i16) {
     (*objEvent).currentCoords.x = x;
     (*objEvent).currentCoords.y = y;
     (*objEvent).previousCoords.x = x;
@@ -3083,73 +2929,70 @@ pub(crate) unsafe extern "C" fn InitLinkPlayerObjectEventPos(
     (*objEvent).initialCoords.x += 8;
     ObjectEventUpdateElevation(objEvent);
 }
-pub(crate) unsafe extern "C" fn SetLinkPlayerObjectRange(linkPlayerId: u8, dir: u8) {
+unsafe fn SetLinkPlayerObjectRange(linkPlayerId: u8, dir: u8) {
     if gLinkPlayerObjectEvents[linkPlayerId].active != 0 {
-        let mut objEventId: u8 = gLinkPlayerObjectEvents[linkPlayerId].objEventId;
-        let mut objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
+        let objEventId: u8 = gLinkPlayerObjectEvents[linkPlayerId].objEventId;
+        let objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
         *(objEvent as *mut u8).at(25) = dir;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyLinkPlayerObject(linkPlayerId: u8) {
-    let mut linkPlayerObjEvent: *mut LinkPlayerObjectEvent =
+unsafe fn DestroyLinkPlayerObject(linkPlayerId: u8) {
+    let linkPlayerObjEvent: *mut LinkPlayerObjectEvent =
         &raw mut gLinkPlayerObjectEvents[linkPlayerId];
-    let mut objEventId: u8 = (*linkPlayerObjEvent).objEventId;
-    let mut objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
+    let objEventId: u8 = (*linkPlayerObjEvent).objEventId;
+    let objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
     if (*objEvent).spriteId != MAX_SPRITES {
         DestroySprite(&raw mut gSprites[(*objEvent).spriteId]);
     }
     (*linkPlayerObjEvent).active = 0;
     (*objEvent).set_active(0);
 }
-pub(crate) unsafe extern "C" fn GetSpriteForLinkedPlayer(linkPlayerId: u8) -> u8 {
-    let mut objEventId: u8 = gLinkPlayerObjectEvents[linkPlayerId].objEventId;
-    let mut objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
-    return (*objEvent).spriteId;
+unsafe fn GetSpriteForLinkedPlayer(linkPlayerId: u8) -> u8 {
+    let objEventId: u8 = gLinkPlayerObjectEvents[linkPlayerId].objEventId;
+    let objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
+    (*objEvent).spriteId
 }
-pub(crate) unsafe extern "C" fn GetLinkPlayerCoords(linkPlayerId: u8, x: *mut i16, y: *mut i16) {
-    let mut objEventId: u8 = gLinkPlayerObjectEvents[linkPlayerId].objEventId;
-    let mut objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
+unsafe fn GetLinkPlayerCoords(linkPlayerId: u8, x: *mut i16, y: *mut i16) {
+    let objEventId: u8 = gLinkPlayerObjectEvents[linkPlayerId].objEventId;
+    let objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
     *x = (*objEvent).currentCoords.x;
     *y = (*objEvent).currentCoords.y;
 }
-pub(crate) unsafe extern "C" fn GetLinkPlayerFacingDirection(linkPlayerId: u8) -> u8 {
-    let mut objEventId: u8 = gLinkPlayerObjectEvents[linkPlayerId].objEventId;
-    let mut objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
-    return *(objEvent as *mut u8).at(25);
+unsafe fn GetLinkPlayerFacingDirection(linkPlayerId: u8) -> u8 {
+    let objEventId: u8 = gLinkPlayerObjectEvents[linkPlayerId].objEventId;
+    let objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
+    *(objEvent as *mut u8).at(25)
 }
-pub(crate) unsafe extern "C" fn GetLinkPlayerElevation(linkPlayerId: u8) -> u8 {
-    let mut objEventId: u8 = gLinkPlayerObjectEvents[linkPlayerId].objEventId;
-    let mut objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
-    return (*objEvent).currentElevation();
+unsafe fn GetLinkPlayerElevation(linkPlayerId: u8) -> u8 {
+    let objEventId: u8 = gLinkPlayerObjectEvents[linkPlayerId].objEventId;
+    let objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
+    (*objEvent).currentElevation()
 }
-pub(crate) unsafe extern "C" fn GetLinkPlayerObjectStepTimer(linkPlayerId: u8) -> i16 {
-    let mut objEventId: u8 = gLinkPlayerObjectEvents[linkPlayerId].objEventId;
-    let mut objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
-    return 16 - (*objEvent).directionSequenceIndex as i8 as i16;
+unsafe fn GetLinkPlayerObjectStepTimer(linkPlayerId: u8) -> i16 {
+    let objEventId: u8 = gLinkPlayerObjectEvents[linkPlayerId].objEventId;
+    let objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
+    16 - (*objEvent).directionSequenceIndex as i8 as i16
 }
-pub(crate) unsafe extern "C" fn GetLinkPlayerIdAt(x: i16, y: i16) -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < MAX_LINK_PLAYERS as u8 {
+unsafe fn GetLinkPlayerIdAt(x: i16, y: i16) -> u8 {
+    for i in 0..(MAX_LINK_PLAYERS as u8) {
         if gLinkPlayerObjectEvents[i].active != 0
             && (gLinkPlayerObjectEvents[i].movementMode == 0
                 || gLinkPlayerObjectEvents[i].movementMode == 2)
         {
-            let mut objEvent: *mut ObjectEvent =
+            let objEvent: *mut ObjectEvent =
                 &raw mut gObjectEvents[gLinkPlayerObjectEvents[i].objEventId];
             if (*objEvent).currentCoords.x == x && (*objEvent).currentCoords.y == y {
                 return i;
             }
         }
-        i += 1;
     }
-    return 4;
+    4
 }
-pub(crate) unsafe extern "C" fn SetPlayerFacingDirection(linkPlayerId: u8, facing: u8) {
-    let mut linkPlayerObjEvent: *mut LinkPlayerObjectEvent =
+unsafe fn SetPlayerFacingDirection(linkPlayerId: u8, facing: u8) {
+    let linkPlayerObjEvent: *mut LinkPlayerObjectEvent =
         &raw mut gLinkPlayerObjectEvents[linkPlayerId];
-    let mut objEventId: u8 = (*linkPlayerObjEvent).objEventId;
-    let mut objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
+    let objEventId: u8 = (*linkPlayerObjEvent).objEventId;
+    let objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
     if (*linkPlayerObjEvent).active == 0 {
         return;
     }
@@ -3161,35 +3004,35 @@ pub(crate) unsafe extern "C" fn SetPlayerFacingDirection(linkPlayerId: u8, facin
         .unwrap_unchecked()(linkPlayerObjEvent, objEvent, facing)]
     .unwrap_unchecked()(linkPlayerObjEvent, objEvent);
 }
-pub(crate) unsafe extern "C" fn MovementEventModeCB_Normal(
+pub(crate) unsafe fn MovementEventModeCB_Normal(
     linkPlayerObjEvent: *mut LinkPlayerObjectEvent,
     objEvent: *mut ObjectEvent,
     dir: u8,
 ) -> u8 {
-    return sLinkPlayerFacingHandlers[dir].unwrap_unchecked()(linkPlayerObjEvent, objEvent, dir);
+    sLinkPlayerFacingHandlers[dir].unwrap_unchecked()(linkPlayerObjEvent, objEvent, dir)
 }
-pub(crate) unsafe extern "C" fn MovementEventModeCB_Ignored(
+pub(crate) fn MovementEventModeCB_Ignored(
     linkPlayerObjEvent: *mut LinkPlayerObjectEvent,
     objEvent: *mut ObjectEvent,
     dir: u8,
 ) -> u8 {
-    return FACING_UP;
+    FACING_UP
 }
-pub(crate) unsafe extern "C" fn MovementEventModeCB_Scripted(
+pub(crate) unsafe fn MovementEventModeCB_Scripted(
     linkPlayerObjEvent: *mut LinkPlayerObjectEvent,
     objEvent: *mut ObjectEvent,
     dir: u8,
 ) -> u8 {
-    return sLinkPlayerFacingHandlers[dir].unwrap_unchecked()(linkPlayerObjEvent, objEvent, dir);
+    sLinkPlayerFacingHandlers[dir].unwrap_unchecked()(linkPlayerObjEvent, objEvent, dir)
 }
-pub(crate) unsafe extern "C" fn FacingHandler_DoNothing(
+pub(crate) fn FacingHandler_DoNothing(
     linkPlayerObjEvent: *mut LinkPlayerObjectEvent,
     objEvent: *mut ObjectEvent,
     dir: u8,
 ) -> u8 {
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn FacingHandler_DpadMovement(
+pub(crate) unsafe fn FacingHandler_DpadMovement(
     linkPlayerObjEvent: *mut LinkPlayerObjectEvent,
     objEvent: *mut ObjectEvent,
     dir: u8,
@@ -3219,24 +3062,24 @@ pub(crate) unsafe extern "C" fn FacingHandler_DpadMovement(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn FacingHandler_ForcedFacingChange(
+pub(crate) unsafe fn FacingHandler_ForcedFacingChange(
     linkPlayerObjEvent: *mut LinkPlayerObjectEvent,
     objEvent: *mut ObjectEvent,
     dir: u8,
 ) -> u8 {
     *(objEvent as *mut u8).at(25) = FlipVerticalAndClearForced(dir, *(objEvent as *mut u8).at(25));
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn MovementStatusHandler_EnterFreeMode(
+pub(crate) unsafe fn MovementStatusHandler_EnterFreeMode(
     linkPlayerObjEvent: *mut LinkPlayerObjectEvent,
     objEvent: *mut ObjectEvent,
 ) {
     (*linkPlayerObjEvent).movementMode = MOVEMENT_MODE_FREE;
 }
-pub(crate) unsafe extern "C" fn MovementStatusHandler_TryAdvanceScript(
+pub(crate) unsafe fn MovementStatusHandler_TryAdvanceScript(
     linkPlayerObjEvent: *mut LinkPlayerObjectEvent,
     objEvent: *mut ObjectEvent,
 ) {
@@ -3252,7 +3095,7 @@ pub(crate) unsafe extern "C" fn MovementStatusHandler_TryAdvanceScript(
         (*linkPlayerObjEvent).movementMode = MOVEMENT_MODE_SCRIPTED;
     }
 }
-pub(crate) unsafe extern "C" fn FlipVerticalAndClearForced(newFacing: u8, oldFacing: u8) -> u8 {
+unsafe fn FlipVerticalAndClearForced(newFacing: u8, oldFacing: u8) -> u8 {
     match newFacing {
         FACING_UP | FACING_FORCED_UP => {
             return DIR_NORTH;
@@ -3268,33 +3111,24 @@ pub(crate) unsafe extern "C" fn FlipVerticalAndClearForced(newFacing: u8, oldFac
         }
         _ => {}
     }
-    return oldFacing;
+    oldFacing
 }
-pub(crate) unsafe extern "C" fn LinkPlayerGetCollision(
-    selfObjEventId: u8,
-    direction: u8,
-    x: i16,
-    y: i16,
-) -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < OBJECT_EVENTS_COUNT {
-        if i != selfObjEventId {
-            if gObjectEvents[i].currentCoords.x == x && gObjectEvents[i].currentCoords.y == y
-                || gObjectEvents[i].previousCoords.x == x && gObjectEvents[i].previousCoords.y == y
-            {
-                return 1;
-            }
+unsafe fn LinkPlayerGetCollision(selfObjEventId: u8, direction: u8, x: i16, y: i16) -> u8 {
+    for i in 0..OBJECT_EVENTS_COUNT {
+        if i != selfObjEventId
+            && (gObjectEvents[i].currentCoords.x == x && gObjectEvents[i].currentCoords.y == y
+                || gObjectEvents[i].previousCoords.x == x && gObjectEvents[i].previousCoords.y == y)
+        {
+            return 1;
         }
-        i += 1;
     }
-    return MapGridGetCollisionAt(x as i32, y as i32);
+    MapGridGetCollisionAt(x as i32, y as i32)
 }
-pub(crate) unsafe extern "C" fn CreateLinkPlayerSprite(linkPlayerId: u8, gameVersion: u8) {
-    let mut linkPlayerObjEvent: *mut LinkPlayerObjectEvent =
+unsafe fn CreateLinkPlayerSprite(linkPlayerId: u8, gameVersion: u8) {
+    let linkPlayerObjEvent: *mut LinkPlayerObjectEvent =
         &raw mut gLinkPlayerObjectEvents[linkPlayerId];
-    let mut objEventId: u8 = (*linkPlayerObjEvent).objEventId;
-    let mut objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
+    let objEventId: u8 = (*linkPlayerObjEvent).objEventId;
+    let objEvent: *mut ObjectEvent = &raw mut gObjectEvents[objEventId];
     let mut sprite: *mut Sprite = null_mut();
     if (*linkPlayerObjEvent).active != 0 {
         match gameVersion {
@@ -3337,10 +3171,10 @@ pub(crate) unsafe extern "C" fn CreateLinkPlayerSprite(linkPlayerId: u8, gameVer
         (*objEvent).set_triggerGroundEffectsOnMove(FALSE as u32);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_LinkPlayer(sprite: *mut Sprite) {
-    let mut linkPlayerObjEvent: *mut LinkPlayerObjectEvent =
+pub(crate) unsafe fn SpriteCB_LinkPlayer(sprite: *mut Sprite) {
+    let linkPlayerObjEvent: *mut LinkPlayerObjectEvent =
         &raw mut gLinkPlayerObjectEvents[(*sprite).data[0]];
-    let mut objEvent: *mut ObjectEvent = &raw mut gObjectEvents[(*linkPlayerObjEvent).objEventId];
+    let objEvent: *mut ObjectEvent = &raw mut gObjectEvents[(*linkPlayerObjEvent).objEventId];
     (*sprite).x = (*objEvent).initialCoords.x;
     (*sprite).y = (*objEvent).initialCoords.y;
     SetObjectSubpriorityByElevation((*objEvent).previousElevation(), sprite, 1);

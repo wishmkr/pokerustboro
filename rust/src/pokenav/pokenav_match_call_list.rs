@@ -3,29 +3,40 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::FlagGet;
+use crate::fieldmap::gMapHeader;
+use crate::international_string_util::GetStringClearToWidth;
+use crate::load_save::gSaveBlock1Ptr;
+use crate::match_call::SelectMatchCallMessage;
+use crate::overworld::{Overworld_GetMapHeaderByGroupAndId, Overworld_MapTypeAllowsTeleportAndFly};
+use crate::pokenav::CreateLoopedTask;
+use crate::pokenav::{
+    AllocSubstruct, FreePokenavSubstruct, GetPokenavMode, GetSubstructPtr, SetPokenavMode,
+};
+use crate::pokenav_list::PokenavList_GetSelectedIndex;
+use crate::pokenav_match_call_data::{
+    GetTrainerIdxByRematchIdx, MatchCall_GetEnabled, MatchCall_GetMapSec, MatchCall_GetMessage,
+    MatchCall_GetNameAndDesc, MatchCall_GetOverrideFacilityClass, MatchCall_GetOverrideFlavorText,
+    MatchCall_GetRematchTableIdx, MatchCall_HasCheckPage, MatchCall_HasRematchId,
+};
+use crate::sound::PlaySE;
+use crate::string_util::gStringVar4;
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -48,7 +59,7 @@ pub struct Pokenav_MatchCallMenu {
     pub numSpecialTrainers: u16,
     pub initFinished: u32,
     pub loopedTaskId: u32,
-    pub callback: Option<unsafe extern "C" fn(*mut Pokenav_MatchCallMenu) -> u32>,
+    pub callback: Option<unsafe fn(*mut Pokenav_MatchCallMenu) -> u32>,
     pub matchCallEntries: CArray<PokenavMatchCallEntry, 99>,
 }
 
@@ -78,44 +89,8 @@ static sMatchCallOptionsHasCheckPage: Table<CArray<u8, 3>> =
 static sMatchCallOptionsNoCheckPage: Table<CArray<u8, 2>> =
     Table((&raw const crate::data::pokenav_match_call_list::sMatchCallOptionsNoCheckPage).cast());
 
-unsafe extern "C" {
-    static gFacilityClassToPicIndex: CArray<u8, 0>;
-    static mut gMain: Main;
-    static mut gMapHeader: MapHeader;
-    static gRematchTable: CArray<RematchTrainer, 78>;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static gText_CallCantBeMadeHere: CArray<u8, 0>;
-    static gTrainerClassNames: CArray<CArray<u8, 13>, 0>;
-    static gTrainers: CArray<Trainer, 0>;
-    fn AllocSubstruct(a0: u32, a1: u32) -> *mut c_void;
-    fn CreateLoopedTask(a0: Option<unsafe extern "C" fn(i32) -> u32>, a1: u32) -> u32;
-    fn FlagGet(a0: u16) -> u8;
-    fn FreePokenavSubstruct(a0: u32);
-    fn GetPokenavMode() -> u32;
-    fn GetStringClearToWidth(a0: *mut u8, a1: i32, a2: *mut u8, a3: i32) -> *mut u8;
-    fn GetSubstructPtr(a0: u32) -> *mut c_void;
-    fn GetTrainerIdxByRematchIdx(a0: u32) -> u32;
-    fn MatchCall_GetEnabled(a0: u32) -> u32;
-    fn MatchCall_GetMapSec(a0: u32) -> u8;
-    fn MatchCall_GetMessage(a0: u32, a1: *mut u8);
-    fn MatchCall_GetNameAndDesc(a0: u32, a1: *mut *mut u8, a2: *mut *mut u8);
-    fn MatchCall_GetOverrideFacilityClass(a0: u32) -> i32;
-    fn MatchCall_GetOverrideFlavorText(a0: u32, a1: u32) -> *mut u8;
-    fn MatchCall_GetRematchTableIdx(a0: u32) -> u32;
-    fn MatchCall_HasCheckPage(a0: u32) -> u32;
-    fn MatchCall_HasRematchId(a0: u32) -> u32;
-    fn Overworld_GetMapHeaderByGroupAndId(a0: u16, a1: u16) -> *mut MapHeader;
-    fn Overworld_MapTypeAllowsTeleportAndFly(a0: u8) -> u8;
-    fn PlaySE(a0: u16);
-    fn PokenavList_GetSelectedIndex() -> u32;
-    fn SelectMatchCallMessage(a0: i32, a1: *mut u8) -> u32;
-    fn SetPokenavMode(a0: u16);
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavCallback_Init_MatchCall() -> u32 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+pub unsafe fn PokenavCallback_Init_MatchCall() -> u32 {
+    let state: *mut Pokenav_MatchCallMenu =
         AllocSubstruct(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN, 424) as *mut Pokenav_MatchCallMenu;
     if state.is_null() {
         return FALSE as u32;
@@ -124,19 +99,17 @@ pub unsafe extern "C" fn PokenavCallback_Init_MatchCall() -> u32 {
     (*state).headerId = 0;
     (*state).initFinished = FALSE as u32;
     (*state).loopedTaskId = CreateLoopedTask(Some(LoopedTask_BuildMatchCallList), 1);
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMatchCallCallback() -> u32 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+pub unsafe fn GetMatchCallCallback() -> u32 {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
-    return (*state).callback.unwrap_unchecked()(state);
+    (*state).callback.unwrap_unchecked()(state)
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeMatchCallSubstruct1() {
+pub unsafe fn FreeMatchCallSubstruct1() {
     FreePokenavSubstruct(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN);
 }
-pub(crate) unsafe extern "C" fn CB2_HandleMatchCallInput(state: *mut Pokenav_MatchCallMenu) -> u32 {
+pub(crate) unsafe fn CB2_HandleMatchCallInput(state: *mut Pokenav_MatchCallMenu) -> u32 {
     let mut selection: i32 = 0;
     if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
         return POKENAV_MC_FUNC_UP;
@@ -173,14 +146,12 @@ pub(crate) unsafe extern "C" fn CB2_HandleMatchCallInput(state: *mut Pokenav_Mat
             PlaySE(SE_FAILURE);
         }
     }
-    return POKENAV_MC_FUNC_NONE;
+    POKENAV_MC_FUNC_NONE
 }
-pub(crate) unsafe extern "C" fn GetExitMatchCallMenuId(state: *mut Pokenav_MatchCallMenu) -> u32 {
-    return POKENAV_MAIN_MENU_CURSOR_ON_MATCH_CALL;
+pub(crate) unsafe fn GetExitMatchCallMenuId(state: *mut Pokenav_MatchCallMenu) -> u32 {
+    POKENAV_MAIN_MENU_CURSOR_ON_MATCH_CALL
 }
-pub(crate) unsafe extern "C" fn CB2_HandleMatchCallOptionsInput(
-    state: *mut Pokenav_MatchCallMenu,
-) -> u32 {
+pub(crate) unsafe fn CB2_HandleMatchCallOptionsInput(state: *mut Pokenav_MatchCallMenu) -> u32 {
     if gMain.newKeys as i32 & DPAD_UP != 0 && (*state).optionCursorPos != 0 {
         (*state).optionCursorPos -= 1;
         return POKENAV_MC_FUNC_MOVE_OPTIONS_CURSOR;
@@ -216,9 +187,9 @@ pub(crate) unsafe extern "C" fn CB2_HandleMatchCallOptionsInput(
         (*state).callback = Some(CB2_HandleMatchCallInput);
         return POKENAV_MC_FUNC_CANCEL;
     }
-    return POKENAV_MC_FUNC_NONE;
+    POKENAV_MC_FUNC_NONE
 }
-pub(crate) unsafe extern "C" fn CB2_HandleCheckPageInput(state: *mut Pokenav_MatchCallMenu) -> u32 {
+pub(crate) unsafe fn CB2_HandleCheckPageInput(state: *mut Pokenav_MatchCallMenu) -> u32 {
     if gMain.newAndRepeatedKeys as i32 & DPAD_UP != 0 {
         return POKENAV_MC_FUNC_CHECK_PAGE_UP;
     }
@@ -229,19 +200,19 @@ pub(crate) unsafe extern "C" fn CB2_HandleCheckPageInput(state: *mut Pokenav_Mat
         (*state).callback = Some(CB2_HandleMatchCallInput);
         return POKENAV_MC_FUNC_EXIT_CHECK_PAGE;
     }
-    return POKENAV_MC_FUNC_NONE;
+    POKENAV_MC_FUNC_NONE
 }
-pub(crate) unsafe extern "C" fn CB2_HandleCallExitInput(state: *mut Pokenav_MatchCallMenu) -> u32 {
+pub(crate) unsafe fn CB2_HandleCallExitInput(state: *mut Pokenav_MatchCallMenu) -> u32 {
     if gMain.newKeys as i32 & 3 != 0 {
         (*state).callback = Some(CB2_HandleMatchCallInput);
         return POKENAV_MC_FUNC_EXIT_CALL;
     }
-    return POKENAV_MC_FUNC_NONE;
+    POKENAV_MC_FUNC_NONE
 }
-pub(crate) unsafe extern "C" fn LoopedTask_BuildMatchCallList(taskState: i32) -> u32 {
+pub(crate) unsafe fn LoopedTask_BuildMatchCallList(taskState: i32) -> u32 {
     let mut i: i32 = 0;
     let mut j: i32 = 0;
-    let mut state: *mut Pokenav_MatchCallMenu =
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
     match taskState {
         0 => {
@@ -304,61 +275,55 @@ pub(crate) unsafe extern "C" fn LoopedTask_BuildMatchCallList(taskState: i32) ->
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsRematchEntryRegistered(rematchIndex: i32) -> u32 {
+pub unsafe fn IsRematchEntryRegistered(rematchIndex: i32) -> u32 {
     if rematchIndex < REMATCH_TABLE_ENTRIES {
         return FlagGet(TRAINER_REGISTERED_FLAGS_START + rematchIndex as u16) as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsMatchCallListInitFinished() -> i32 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+pub unsafe fn IsMatchCallListInitFinished() -> i32 {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
-    return (*state).initFinished as i32;
+    (*state).initFinished as i32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetNumberRegistered() -> i32 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+pub unsafe fn GetNumberRegistered() -> i32 {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
-    return (*state).numRegistered as i32;
+    (*state).numRegistered as i32
 }
-pub(crate) unsafe extern "C" fn GetNumSpecialTrainers() -> i32 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+unsafe fn GetNumSpecialTrainers() -> i32 {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
-    return (*state).numSpecialTrainers as i32;
+    (*state).numSpecialTrainers as i32
 }
-pub(crate) unsafe extern "C" fn GetNumNormalTrainers() -> i32 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+unsafe fn GetNumNormalTrainers() -> i32 {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
-    return (*state).numRegistered as i32 - (*state).numSpecialTrainers as i32;
+    (*state).numRegistered as i32 - (*state).numSpecialTrainers as i32
 }
-pub(crate) unsafe extern "C" fn GetNormalTrainerHeaderId(mut index: i32) -> i32 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+unsafe fn GetNormalTrainerHeaderId(mut index: i32) -> i32 {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
     index += (*state).numSpecialTrainers as i32;
     if index >= (*state).numRegistered as i32 {
         return REMATCH_TABLE_ENTRIES;
     }
-    return (*state).matchCallEntries[index].headerId as i32;
+    (*state).matchCallEntries[index].headerId as i32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMatchCallList() -> *mut PokenavMatchCallEntry {
-    let mut state: *mut Pokenav_MatchCallMenu =
+pub unsafe fn GetMatchCallList() -> *mut PokenavMatchCallEntry {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
-    return (*state).matchCallEntries.as_mut_ptr();
+    (*state).matchCallEntries.as_mut_ptr()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMatchCallMapSec(index: i32) -> u16 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+pub unsafe fn GetMatchCallMapSec(index: i32) -> u16 {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
-    return (*state).matchCallEntries[index].mapSec as u16;
+    (*state).matchCallEntries[index].mapSec as u16
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShouldDrawRematchPokeballIcon(mut index: i32) -> u32 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+pub unsafe fn ShouldDrawRematchPokeballIcon(mut index: i32) -> u32 {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
     if (*state).matchCallEntries[index].isSpecialTrainer == 0 {
         index = (*state).matchCallEntries[index].headerId as i32;
@@ -369,36 +334,39 @@ pub unsafe extern "C" fn ShouldDrawRematchPokeballIcon(mut index: i32) -> u32 {
     if index == REMATCH_TABLE_ENTRIES {
         return FALSE as u32;
     }
-    return ((*gSaveBlock1Ptr).trainerRematches[index] != 0) as u32;
+    ((*gSaveBlock1Ptr).trainerRematches[index] != 0) as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMatchCallTrainerPic(mut index: i32) -> i32 {
+pub unsafe fn GetMatchCallTrainerPic(mut index: i32) -> i32 {
     let mut headerId: i32 = 0;
-    let mut state: *mut Pokenav_MatchCallMenu =
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
     if (*state).matchCallEntries[index].isSpecialTrainer == 0 {
         index = GetTrainerIdxByRematchIdx((*state).matchCallEntries[index].headerId as u32) as i32;
-        return gTrainers[index].trainerPic as i32;
+        return (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
+            [index]
+            .trainerPic as i32;
     }
     headerId = (*state).matchCallEntries[index].headerId as i32;
     index = MatchCall_GetRematchTableIdx(headerId as u32) as i32;
     if index != REMATCH_TABLE_ENTRIES {
         index = GetTrainerIdxByRematchIdx(index as u32) as i32;
-        return gTrainers[index].trainerPic as i32;
+        return (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
+            [index]
+            .trainerPic as i32;
     }
     index = MatchCall_GetOverrideFacilityClass(headerId as u32);
-    return gFacilityClassToPicIndex[index] as i32;
+    (*(&raw const crate::data::pokemon::gFacilityClassToPicIndex).cast::<CArray<u8, 0>>())[index]
+        as i32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMatchCallMessageText(
-    index: i32,
-    newRematchRequest: *mut u8,
-) -> *mut u8 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+pub unsafe fn GetMatchCallMessageText(index: i32, newRematchRequest: *mut u8) -> *mut u8 {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
     *newRematchRequest = FALSE;
     if Overworld_MapTypeAllowsTeleportAndFly(gMapHeader.mapType) == 0 {
-        return gText_CallCantBeMadeHere.as_ptr().cast_mut();
+        return (*(&raw const crate::data::strings::gText_CallCantBeMadeHere)
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     }
     if (*state).matchCallEntries[index].isSpecialTrainer == 0 {
         *newRematchRequest = SelectMatchCallMessage(
@@ -411,12 +379,11 @@ pub unsafe extern "C" fn GetMatchCallMessageText(
             gStringVar4.as_mut_ptr(),
         );
     }
-    return gStringVar4.as_mut_ptr();
+    gStringVar4.as_mut_ptr()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMatchCallFlavorText(index: i32, checkPageEntry: i32) -> *mut u8 {
+pub unsafe fn GetMatchCallFlavorText(index: i32, checkPageEntry: i32) -> *mut u8 {
     let mut rematchId: i32 = 0;
-    let mut state: *mut Pokenav_MatchCallMenu =
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
     if (*state).matchCallEntries[index].isSpecialTrainer != 0 {
         rematchId =
@@ -430,35 +397,35 @@ pub unsafe extern "C" fn GetMatchCallFlavorText(index: i32, checkPageEntry: i32)
     } else {
         rematchId = (*state).matchCallEntries[index].headerId as i32;
     }
-    return gMatchCallFlavorTexts[rematchId][checkPageEntry];
+    gMatchCallFlavorTexts[rematchId][checkPageEntry]
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMatchCallOptionCursorPos() -> u16 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+pub unsafe fn GetMatchCallOptionCursorPos() -> u16 {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
-    return (*state).optionCursorPos;
+    (*state).optionCursorPos
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMatchCallOptionId(optionId: i32) -> u16 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+pub unsafe fn GetMatchCallOptionId(optionId: i32) -> u16 {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
     if ((*state).maxOptionId as i32) < optionId {
         return MATCH_CALL_OPTION_COUNT as u16;
     }
-    return *(*state).matchCallOptions.at(optionId) as u16;
+    *(*state).matchCallOptions.at(optionId) as u16
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferMatchCallNameAndDesc(
-    matchCallEntry: *mut PokenavMatchCallEntry,
-    str: *mut u8,
-) {
+pub unsafe fn BufferMatchCallNameAndDesc(matchCallEntry: *mut PokenavMatchCallEntry, str: *mut u8) {
     let mut trainerName: *mut u8 = null_mut();
     let mut className: *mut u8 = null_mut();
     if (*matchCallEntry).isSpecialTrainer == 0 {
-        let mut index: i32 = GetTrainerIdxByRematchIdx((*matchCallEntry).headerId as u32) as i32;
-        let mut trainer: *mut Trainer = (&raw const gTrainers[index]).cast_mut();
-        let mut class: i32 = (*trainer).trainerClass as i32;
-        className = gTrainerClassNames[class].as_ptr().cast_mut();
+        let index: i32 = GetTrainerIdxByRematchIdx((*matchCallEntry).headerId as u32) as i32;
+        let trainer: *mut Trainer =
+            (&raw const (*(&raw const crate::data::data_tables::gTrainers)
+                .cast::<CArray<Trainer, 0>>())[index])
+                .cast_mut();
+        let class: i32 = (*trainer).trainerClass as i32;
+        className = (*(&raw const crate::data::data_tables::gTrainerClassNames)
+            .cast::<CArray<CArray<u8, 13>, 0>>())[class]
+            .as_ptr()
+            .cast_mut();
         trainerName = (*trainer).trainerName.as_mut_ptr();
     } else {
         MatchCall_GetNameAndDesc(
@@ -468,22 +435,23 @@ pub unsafe extern "C" fn BufferMatchCallNameAndDesc(
         );
     }
     if !className.is_null() && !trainerName.is_null() {
-        let mut str2: *mut u8 = GetStringClearToWidth(str, FONT_NARROW as i32, className, 69);
+        let str2: *mut u8 = GetStringClearToWidth(str, FONT_NARROW as i32, className, 69);
         GetStringClearToWidth(str2, FONT_NARROW as i32, trainerName, 51);
     } else {
         GetStringClearToWidth(str, FONT_NARROW as i32, null_mut(), 120);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMatchTableMapSectionId(rematchIndex: i32) -> u8 {
-    let mut mapGroup: i32 = gRematchTable[rematchIndex].mapGroup as i32;
-    let mut mapNum: i32 = gRematchTable[rematchIndex].mapNum as i32;
-    return (*Overworld_GetMapHeaderByGroupAndId(mapGroup as u16, mapNum as u16))
-        .regionMapSectionId;
+pub unsafe fn GetMatchTableMapSectionId(rematchIndex: i32) -> u8 {
+    let mapGroup: i32 = (*(&raw const crate::data::battle_setup::gRematchTable)
+        .cast::<CArray<RematchTrainer, 78>>())[rematchIndex]
+        .mapGroup as i32;
+    let mapNum: i32 = (*(&raw const crate::data::battle_setup::gRematchTable)
+        .cast::<CArray<RematchTrainer, 78>>())[rematchIndex]
+        .mapNum as i32;
+    (*Overworld_GetMapHeaderByGroupAndId(mapGroup as u16, mapNum as u16)).regionMapSectionId
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetIndexDeltaOfNextCheckPageDown(mut index: i32) -> i32 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+pub unsafe fn GetIndexDeltaOfNextCheckPageDown(mut index: i32) -> i32 {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
     let mut count: i32 = 1;
     while ({
@@ -499,11 +467,10 @@ pub unsafe extern "C" fn GetIndexDeltaOfNextCheckPageDown(mut index: i32) -> i32
         }
         count += 1;
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetIndexDeltaOfNextCheckPageUp(mut index: i32) -> i32 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+pub unsafe fn GetIndexDeltaOfNextCheckPageUp(mut index: i32) -> i32 {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
     let mut count: i32 = -1;
     while ({
@@ -519,51 +486,45 @@ pub unsafe extern "C" fn GetIndexDeltaOfNextCheckPageUp(mut index: i32) -> i32 {
         }
         count -= 1;
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn HasRematchEntry() -> u32 {
+unsafe fn HasRematchEntry() -> u32 {
     let mut i: i32 = 0;
-    i = 0;
     while i < REMATCH_TABLE_ENTRIES {
         if IsRematchEntryRegistered(i) != 0 && (*gSaveBlock1Ptr).trainerRematches[i] != 0 {
             return TRUE as u32;
         }
         i += 1;
     }
-    i = 0;
-    while i < MC_HEADER_COUNT as i32 {
+    for i in 0..(MC_HEADER_COUNT as i32) {
         if MatchCall_GetEnabled(i as u32) != 0 {
-            let mut index: i32 = MatchCall_GetRematchTableIdx(i as u32) as i32;
+            let index: i32 = MatchCall_GetRematchTableIdx(i as u32) as i32;
             if (*gSaveBlock1Ptr).trainerRematches[index] != 0 {
                 return TRUE as u32;
             }
         }
-        i += 1;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn ShouldDoNearbyMessage() -> u32 {
-    let mut state: *mut Pokenav_MatchCallMenu =
+unsafe fn ShouldDoNearbyMessage() -> u32 {
+    let state: *mut Pokenav_MatchCallMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_MAIN) as *mut Pokenav_MatchCallMenu;
-    let mut selection: i32 = PokenavList_GetSelectedIndex() as i32;
+    let selection: i32 = PokenavList_GetSelectedIndex() as i32;
     if (*state).matchCallEntries[selection].isSpecialTrainer == 0 {
-        if GetMatchCallMapSec(selection) == gMapHeader.regionMapSectionId as u16 {
-            if (*gSaveBlock1Ptr).trainerRematches[(*state).matchCallEntries[selection].headerId]
+        if GetMatchCallMapSec(selection) == gMapHeader.regionMapSectionId as u16
+            && (*gSaveBlock1Ptr).trainerRematches[(*state).matchCallEntries[selection].headerId]
                 == 0
-            {
-                return TRUE as u32;
-            }
+        {
+            return TRUE as u32;
         }
     } else {
-        if (*state).matchCallEntries[selection].headerId == MC_HEADER_WATTSON {
-            if GetMatchCallMapSec(selection) == gMapHeader.regionMapSectionId as u16
-                && FlagGet(FLAG_BADGE05_GET) == TRUE
-            {
-                if FlagGet(FLAG_WATTSON_REMATCH_AVAILABLE) == 0 {
-                    return TRUE as u32;
-                }
-            }
+        if (*state).matchCallEntries[selection].headerId == MC_HEADER_WATTSON
+            && GetMatchCallMapSec(selection) == gMapHeader.regionMapSectionId as u16
+            && FlagGet(FLAG_BADGE05_GET) == TRUE
+            && FlagGet(FLAG_WATTSON_REMATCH_AVAILABLE) == 0
+        {
+            return TRUE as u32;
         }
     }
-    return FALSE as u32;
+    FALSE as u32
 }

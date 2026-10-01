@@ -3,37 +3,133 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    clippy::unnecessary_cast,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect,
+    FillBgTilemapBufferRect_Palette0, GetBgY, HideBg, IsDma3ManagerBusyWithBgCopy, SetBgMode,
+    ShowBg,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::fieldmap::gMapHeader;
+use crate::load_save::gSaveBlock2Ptr;
+use crate::menu::{BgDmaFill, DecompressAndCopyTileDataToVram, FreeTempTileDataBuffersIfPossible};
+use crate::palette::TransferPlttBuffer;
+use crate::pokenav::{
+    AllocSubstruct, FreePokenavSubstruct, GetSubstructPtr, IsLoopedTaskActive,
+    SetPokenavVBlankCallback, SetVBlankCallback_,
+};
+use crate::pokenav_main_menu::{
+    AreLeftHeaderSpritesMoving, CopyPaletteIntoBufferUnfaded, FadeToBlackExceptPrimary,
+    InitBgTemplates, IsPaletteFadeActive, LoadLeftHeaderGfxForIndex, MainMenuLoopedTaskIsBusy,
+    Pokenav_AllocAndLoadPalettes, PokenavFadeScreen, PrintHelpBarText,
+    SetLeftHeaderSpritesInvisibility, ShowLeftHeaderGfx, SlideMenuHeaderDown,
+    UpdateRegionMapRightHeaderTiles, WaitForHelpBar,
+};
+use crate::region_map::{
+    BlendRegionMap, CreateRegionMapCursor, CreateRegionMapPlayerIcon, DoRegionMapInputCallback,
+    FreeRegionMapIconResources, InitRegionMapData, IsEventIslandMapSecId, IsRegionMapZoomed,
+    LoadRegionMapGfx, SetRegionMapDataForZoom, TrySetPlayerIconBlink, UpdateRegionMapVideoRegs,
+    UpdateRegionMapZoom,
+};
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::sprite::{
+    FreeSpritePaletteByTag, FreeSpriteTilesByTag, LoadOam, ProcessSpriteCopyRequests,
+};
+use crate::string_util::gStringVar1;
+use crate::task::DestroyTask;
+use crate::task::{task_get, task_set};
+use crate::text_window::{DrawTextBorderOuter, LoadUserWindowBorderGfx_};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    CopyWindowToVram, FillWindowPixelBuffer, PutWindowRectTilemap, PutWindowTilemap, RemoveWindow,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `CopyToBgTilemapBufferRect` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut c_void, a2: u8, a3: u8, a4: u8, a5: u8) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBufferRect(a0, a1 as _, a2, a3, a4, a5);
+    }
+}
+/// `CreateLoopedTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateLoopedTask(a0: Option<unsafe fn(i32) -> u32>, a1: u32) -> u32 {
+    unsafe { crate::pokenav::CreateLoopedTask(a0, a1) }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `FuncIsActiveLoopedTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveLoopedTask(a0: Option<unsafe fn(i32) -> u32>) -> u32 {
+    unsafe { crate::pokenav::FuncIsActiveLoopedTask(a0) }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `StringCopyPadded` with this module's view of its types.
+#[inline]
+unsafe fn StringCopyPadded(a0: *mut u8, a1: *mut u8, a2: u8, a3: u16) -> *mut u8 {
+    unsafe { crate::string_util::StringCopyPadded(a0 as _, a1 as _, a2, a3) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const tZoomIn: usize = 0;
 // Data tables (translate with cdata.py): sMapSecInfoWindow_Pal sRegionMapCityZoomTiles_Gfx gPokenavCityMap_Lavaridge_0 gPokenavCityMap_Fallarbor_0 gPokenavCityMap_Fortree_0 gPokenavCityMap_Slateport_0 gPokenavCityMap_Slateport_1 gPokenavCityMap_Rustboro_0 gPokenavCityMap_Rustboro_1 gPokenavCityMap_Pacifidlog_0 gPokenavCityMap_Mauville_1 gPokenavCityMap_Mauville_0 gPokenavCityMap_Oldale_0 gPokenavCityMap_Lilycove_1 gPokenavCityMap_Lilycove_0 gPokenavCityMap_Littleroot_0 gPokenavCityMap_Dewford_0 gPokenavCityMap_Sootopolis_0 gPokenavCityMap_EverGrande_0 gPokenavCityMap_EverGrande_1 gPokenavCityMap_Verdanturf_0 gPokenavCityMap_Mossdeep_1 gPokenavCityMap_Mossdeep_0 gPokenavCityMap_Petalburg_0 sRegionMapBgTemplates sRegionMapLoopTaskFuncs sCityZoomTextSpriteSheet sCityZoomTilesSpritePalette sMapSecInfoWindowTemplate sPokenavCityMaps sCityZoomTextSprite_OamData sCityZoomTextSpriteTemplate
 
 /// `struct Pokenav_RegionMapMenu`
@@ -42,7 +138,7 @@ use core::ptr::null_mut;
 pub struct Pokenav_RegionMapMenu {
     pub unused: CArray<u8, 12>,
     pub zoomDisabled: u32,
-    pub callback: Option<unsafe extern "C" fn(*mut Pokenav_RegionMapMenu) -> u32>,
+    pub callback: Option<unsafe fn(*mut Pokenav_RegionMapMenu) -> u32>,
 }
 
 unsafe impl Sync for Pokenav_RegionMapMenu {}
@@ -51,7 +147,7 @@ unsafe impl Sync for Pokenav_RegionMapMenu {}
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Pokenav_RegionMapGfx {
-    pub isTaskActiveCB: Option<unsafe extern "C" fn() -> u32>,
+    pub isTaskActiveCB: Option<unsafe fn() -> u32>,
     pub loopTaskId: u32,
     pub infoWindowId: u16,
     pub cityZoomTextSprites: CArray<*mut Sprite, 3>,
@@ -113,112 +209,54 @@ static sRegionMapBgTemplates: Table<CArray<BgTemplate, 3>> =
     Table((&raw const crate::data::pokenav_region_map::sRegionMapBgTemplates).cast());
 static sRegionMapCityZoomTiles_Gfx: Table<CArray<u32, 125>> =
     Table((&raw const crate::data::pokenav_region_map::sRegionMapCityZoomTiles_Gfx).cast());
-static sRegionMapLoopTaskFuncs: Table<CArray<Option<unsafe extern "C" fn(i32) -> u32>, 5>> =
+static sRegionMapLoopTaskFuncs: Table<CArray<Option<unsafe fn(i32) -> u32>, 5>> =
     Table((&raw const crate::data::pokenav_region_map::sRegionMapLoopTaskFuncs).cast());
 
-unsafe extern "C" {
-    static mut gMain: Main;
-    static mut gMapHeader: MapHeader;
-    static gRegionMapCityZoomTiles_Pal: CArray<u16, 0>;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gTasks: CArray<Task, 0>;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AllocSubstruct(a0: u32, a1: u32) -> *mut c_void;
-    fn AreLeftHeaderSpritesMoving() -> u32;
-    fn BgDmaFill(a0: u32, a1: u8, a2: i32, a3: i32);
-    fn BlendRegionMap(a0: u16, a1: u32);
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyPaletteIntoBufferUnfaded(a0: *mut u16, a1: u32, a2: u32);
-    fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut c_void, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateLoopedTask(a0: Option<unsafe extern "C" fn(i32) -> u32>, a1: u32) -> u32;
-    fn CreateRegionMapCursor(a0: u16, a1: u16);
-    fn CreateRegionMapPlayerIcon(a0: u16, a1: u16);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DoRegionMapInputCallback() -> u8;
-    fn DrawTextBorderOuter(a0: u8, a1: u16, a2: u8);
-    fn FadeToBlackExceptPrimary();
-    fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FreePokenavSubstruct(a0: u32);
-    fn FreeRegionMapIconResources();
-    fn FreeSpritePaletteByTag(a0: u16);
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn FuncIsActiveLoopedTask(a0: Option<unsafe extern "C" fn(i32) -> u32>) -> u32;
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetBgY(a0: u8) -> i32;
-    fn GetLandmarkName(a0: u8, a1: u8, a2: u8) -> *mut u8;
-    fn GetSubstructPtr(a0: u32) -> *mut c_void;
-    fn HideBg(a0: u8);
-    fn InitBgTemplates(a0: *mut BgTemplate, a1: i32);
-    fn InitRegionMapData(a0: *mut RegionMap, a1: *mut BgTemplate, a2: u8);
-    fn IsDma3ManagerBusyWithBgCopy() -> u8;
-    fn IsEventIslandMapSecId(a0: u8) -> u32;
-    fn IsLoopedTaskActive(a0: u32) -> u32;
-    fn IsPaletteFadeActive() -> u32;
-    fn IsRegionMapZoomed() -> u8;
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadLeftHeaderGfxForIndex(a0: u32);
-    fn LoadOam();
-    fn LoadRegionMapGfx() -> u8;
-    fn LoadUserWindowBorderGfx_(a0: u8, a1: u16, a2: u8);
-    fn MainMenuLoopedTaskIsBusy() -> u32;
-    fn PlaySE(a0: u16);
-    fn PokenavFadeScreen(a0: i32);
-    fn Pokenav_AllocAndLoadPalettes(a0: *mut SpritePalette);
-    fn PrintHelpBarText(a0: u32);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowRectTilemap(a0: u8, a1: u8, a2: u8, a3: u8, a4: u8);
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveWindow(a0: u8);
-    fn SetBgMode(a0: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetLeftHeaderSpritesInvisibility();
-    fn SetPokenavVBlankCallback();
-    fn SetRegionMapDataForZoom();
-    fn SetVBlankCallback_(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn ShowLeftHeaderGfx(a0: u32, a1: u32, a2: u32);
-    fn SlideMenuHeaderDown();
-    fn StringCopyPadded(a0: *mut u8, a1: *mut u8, a2: u8, a3: u16) -> *mut u8;
-    fn TransferPlttBuffer();
-    fn TrySetPlayerIconBlink();
-    fn UpdateRegionMapRightHeaderTiles(a0: u32);
-    fn UpdateRegionMapVideoRegs();
-    fn UpdateRegionMapZoom() -> u8;
-    fn WaitForHelpBar() -> u32;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `GetLandmarkName` with this module's view of its types.
+#[inline]
+unsafe fn GetLandmarkName(a0: u8, a1: u8, a2: u8) -> *mut u8 {
+    unsafe { crate::landmark::GetLandmarkName(a0, a1, a2) as *mut u8 }
+}
+/// `LZ77UnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavCallback_Init_RegionMap() -> u32 {
-    let mut state: *mut Pokenav_RegionMapMenu =
+pub unsafe fn PokenavCallback_Init_RegionMap() -> u32 {
+    let state: *mut Pokenav_RegionMapMenu =
         AllocSubstruct(POKENAV_SUBSTRUCT_REGION_MAP_STATE, 20) as *mut Pokenav_RegionMapMenu;
     if state.is_null() {
         return FALSE as u32;
@@ -232,21 +270,19 @@ pub unsafe extern "C" fn PokenavCallback_Init_RegionMap() -> u32 {
     } else {
         (*state).callback = Some(HandleRegionMapInputZoomDisabled);
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeRegionMapSubstruct1() {
+pub unsafe fn FreeRegionMapSubstruct1() {
     (*gSaveBlock2Ptr).set_regionMapZoom(IsRegionMapZoomed() as u16);
     FreePokenavSubstruct(POKENAV_SUBSTRUCT_REGION_MAP);
     FreePokenavSubstruct(POKENAV_SUBSTRUCT_REGION_MAP_STATE);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRegionMapCallback() -> u32 {
-    let mut state: *mut Pokenav_RegionMapMenu =
+pub unsafe fn GetRegionMapCallback() -> u32 {
+    let state: *mut Pokenav_RegionMapMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP_STATE) as *mut Pokenav_RegionMapMenu;
-    return (*state).callback.unwrap_unchecked()(state);
+    (*state).callback.unwrap_unchecked()(state)
 }
-pub(crate) unsafe extern "C" fn HandleRegionMapInput(state: *mut Pokenav_RegionMapMenu) -> u32 {
+pub(crate) unsafe fn HandleRegionMapInput(state: *mut Pokenav_RegionMapMenu) -> u32 {
     match DoRegionMapInputCallback() {
         MAP_INPUT_MOVE_END => {
             return POKENAV_MAP_FUNC_CURSOR_MOVED;
@@ -263,53 +299,46 @@ pub(crate) unsafe extern "C" fn HandleRegionMapInput(state: *mut Pokenav_RegionM
         }
         _ => {}
     }
-    return POKENAV_MAP_FUNC_NONE;
+    POKENAV_MAP_FUNC_NONE
 }
-pub(crate) unsafe extern "C" fn HandleRegionMapInputZoomDisabled(
-    state: *mut Pokenav_RegionMapMenu,
-) -> u32 {
+pub(crate) unsafe fn HandleRegionMapInputZoomDisabled(state: *mut Pokenav_RegionMapMenu) -> u32 {
     if gMain.newKeys as i32 & B_BUTTON != 0 {
         (*state).callback = Some(GetExitRegionMapMenuId);
         return POKENAV_MAP_FUNC_EXIT;
     }
-    return POKENAV_MAP_FUNC_NONE;
+    POKENAV_MAP_FUNC_NONE
 }
-pub(crate) unsafe extern "C" fn GetExitRegionMapMenuId(state: *mut Pokenav_RegionMapMenu) -> u32 {
-    return POKENAV_MAIN_MENU_CURSOR_ON_MAP;
+pub(crate) unsafe fn GetExitRegionMapMenuId(state: *mut Pokenav_RegionMapMenu) -> u32 {
+    POKENAV_MAIN_MENU_CURSOR_ON_MAP
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetZoomDisabled() -> u32 {
-    let mut state: *mut Pokenav_RegionMapMenu =
+pub unsafe fn GetZoomDisabled() -> u32 {
+    let state: *mut Pokenav_RegionMapMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP_STATE) as *mut Pokenav_RegionMapMenu;
-    return (*state).zoomDisabled;
+    (*state).zoomDisabled
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn OpenPokenavRegionMap() -> u32 {
-    let mut state: *mut Pokenav_RegionMapGfx =
+pub unsafe fn OpenPokenavRegionMap() -> u32 {
+    let state: *mut Pokenav_RegionMapGfx =
         AllocSubstruct(POKENAV_SUBSTRUCT_REGION_MAP_ZOOM, 6472) as *mut Pokenav_RegionMapGfx;
     if state.is_null() {
         return FALSE as u32;
     }
     (*state).loopTaskId = CreateLoopedTask(Some(LoopedTask_OpenRegionMap), 1);
     (*state).isTaskActiveCB = Some(GetCurrentLoopedTaskActive);
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateRegionMapLoopedTask(index: i32) {
-    let mut state: *mut Pokenav_RegionMapGfx =
+pub unsafe fn CreateRegionMapLoopedTask(index: i32) {
+    let state: *mut Pokenav_RegionMapGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP_ZOOM) as *mut Pokenav_RegionMapGfx;
     (*state).loopTaskId = CreateLoopedTask(sRegionMapLoopTaskFuncs[index], 1);
     (*state).isTaskActiveCB = Some(GetCurrentLoopedTaskActive);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsRegionMapLoopedTaskActive() -> u32 {
-    let mut state: *mut Pokenav_RegionMapGfx =
+pub unsafe fn IsRegionMapLoopedTaskActive() -> u32 {
+    let state: *mut Pokenav_RegionMapGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP_ZOOM) as *mut Pokenav_RegionMapGfx;
-    return (*state).isTaskActiveCB.unwrap_unchecked()();
+    (*state).isTaskActiveCB.unwrap_unchecked()()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeRegionMapSubstruct2() {
-    let mut state: *mut Pokenav_RegionMapGfx =
+pub unsafe fn FreeRegionMapSubstruct2() {
+    let state: *mut Pokenav_RegionMapGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP_ZOOM) as *mut Pokenav_RegionMapGfx;
     FreeRegionMapIconResources();
     FreeCityZoomViewGfx();
@@ -319,27 +348,27 @@ pub unsafe extern "C" fn FreeRegionMapSubstruct2() {
     SetPokenavVBlankCallback();
     SetBgMode(0);
 }
-pub(crate) unsafe extern "C" fn VBlankCB_RegionMap() {
+pub(crate) unsafe fn VBlankCB_RegionMap() {
     TransferPlttBuffer();
     LoadOam();
     ProcessSpriteCopyRequests();
     UpdateRegionMapVideoRegs();
 }
-pub(crate) unsafe extern "C" fn GetCurrentLoopedTaskActive() -> u32 {
-    let mut state: *mut Pokenav_RegionMapGfx =
+pub(crate) unsafe fn GetCurrentLoopedTaskActive() -> u32 {
+    let state: *mut Pokenav_RegionMapGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP_ZOOM) as *mut Pokenav_RegionMapGfx;
-    return IsLoopedTaskActive((*state).loopTaskId);
+    IsLoopedTaskActive((*state).loopTaskId)
 }
-pub(crate) unsafe extern "C" fn ShouldOpenRegionMapZoomed() -> u8 {
+unsafe fn ShouldOpenRegionMapZoomed() -> u8 {
     if GetZoomDisabled() != 0 {
         return FALSE;
     }
-    return ((*gSaveBlock2Ptr).regionMapZoom() == TRUE as u16) as u8;
+    ((*gSaveBlock2Ptr).regionMapZoom() == TRUE as u16) as u8
 }
-pub(crate) unsafe extern "C" fn LoopedTask_OpenRegionMap(taskState: i32) -> u32 {
+pub(crate) unsafe fn LoopedTask_OpenRegionMap(taskState: i32) -> u32 {
     let mut menuGfxId: i32 = 0;
     let mut regionMap: *mut RegionMap = null_mut();
-    let mut state: *mut Pokenav_RegionMapGfx =
+    let state: *mut Pokenav_RegionMapGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP_ZOOM) as *mut Pokenav_RegionMapGfx;
     match taskState {
         0 => {
@@ -422,27 +451,25 @@ pub(crate) unsafe extern "C" fn LoopedTask_OpenRegionMap(taskState: i32) -> u32 
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn LoopedTask_UpdateInfoAfterCursorMove(taskState: i32) -> u32 {
-    let mut state: *mut Pokenav_RegionMapGfx =
+pub(crate) unsafe fn LoopedTask_UpdateInfoAfterCursorMove(taskState: i32) -> u32 {
+    let state: *mut Pokenav_RegionMapGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP_ZOOM) as *mut Pokenav_RegionMapGfx;
     match taskState {
         0 => {
             UpdateMapSecInfoWindow(state);
             return LT_INC_AND_PAUSE;
         }
-        1 => {
-            if IsDma3ManagerBusyWithBgCopy_(state) != 0 {
-                return LT_PAUSE;
-            }
+        1 if IsDma3ManagerBusyWithBgCopy_(state) != 0 => {
+            return LT_PAUSE;
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_RegionMapZoomOut(taskState: i32) -> u32 {
+pub(crate) unsafe fn LoopedTask_RegionMapZoomOut(taskState: i32) -> u32 {
     match taskState {
         0 => {
             PlaySE(SE_SELECT);
@@ -465,10 +492,10 @@ pub(crate) unsafe extern "C" fn LoopedTask_RegionMapZoomOut(taskState: i32) -> u
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_RegionMapZoomIn(taskState: i32) -> u32 {
-    let mut state: *mut Pokenav_RegionMapGfx =
+pub(crate) unsafe fn LoopedTask_RegionMapZoomIn(taskState: i32) -> u32 {
+    let state: *mut Pokenav_RegionMapGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP_ZOOM) as *mut Pokenav_RegionMapGfx;
     match taskState {
         0 => {
@@ -499,9 +526,9 @@ pub(crate) unsafe extern "C" fn LoopedTask_RegionMapZoomIn(taskState: i32) -> u3
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_ExitRegionMap(taskState: i32) -> u32 {
+pub(crate) unsafe fn LoopedTask_ExitRegionMap(taskState: i32) -> u32 {
     match taskState {
         0 => {
             PlaySE(SE_SELECT);
@@ -527,31 +554,25 @@ pub(crate) unsafe extern "C" fn LoopedTask_ExitRegionMap(taskState: i32) -> u32 
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoadCityZoomViewGfx() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 1 {
+unsafe fn LoadCityZoomViewGfx() {
+    for i in 0..1i32 {
         LoadCompressedSpriteSheet((&raw const sCityZoomTextSpriteSheet[i]).cast_mut());
-        i += 1;
     }
     Pokenav_AllocAndLoadPalettes(sCityZoomTilesSpritePalette.as_ptr().cast_mut());
     CreateCityZoomTextSprites();
 }
-pub(crate) unsafe extern "C" fn FreeCityZoomViewGfx() {
-    let mut i: i32 = 0;
-    let mut state: *mut Pokenav_RegionMapGfx =
+unsafe fn FreeCityZoomViewGfx() {
+    let state: *mut Pokenav_RegionMapGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP_ZOOM) as *mut Pokenav_RegionMapGfx;
     FreeSpriteTilesByTag(GFXTAG_CITY_ZOOM);
     FreeSpritePaletteByTag(PALTAG_CITY_ZOOM);
-    i = 0;
-    while i < 3 {
+    for i in 0..3i32 {
         DestroySprite((*state).cityZoomTextSprites[i]);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn LoadPokenavRegionMapGfx(state: *mut Pokenav_RegionMapGfx) {
+unsafe fn LoadPokenavRegionMapGfx(state: *mut Pokenav_RegionMapGfx) {
     BgDmaFill(1, 0, 0x40, 1);
     BgDmaFill(1, 17, 0x41, 1);
     {
@@ -580,7 +601,13 @@ pub(crate) unsafe extern "C" fn LoadPokenavRegionMapGfx(state: *mut Pokenav_Regi
     PutWindowTilemap((*state).infoWindowId as u8);
     CopyWindowToVram((*state).infoWindowId as u8, COPYWIN_FULL);
     CopyPaletteIntoBufferUnfaded(sMapSecInfoWindow_Pal.as_ptr().cast_mut(), 16, 32);
-    CopyPaletteIntoBufferUnfaded(gRegionMapCityZoomTiles_Pal.as_ptr().cast_mut(), 48, 32);
+    CopyPaletteIntoBufferUnfaded(
+        (*(&raw const crate::data::graphics::gRegionMapCityZoomTiles_Pal).cast::<CArray<u16, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        48,
+        32,
+    );
     if IsRegionMapZoomed() == 0 {
         ChangeBgY(1, -24576, BG_COORD_SET);
     } else {
@@ -588,12 +615,11 @@ pub(crate) unsafe extern "C" fn LoadPokenavRegionMapGfx(state: *mut Pokenav_Regi
     }
     ChangeBgX(1, 0, BG_COORD_SET);
 }
-pub(crate) unsafe extern "C" fn TryFreeTempTileDataBuffers() -> u32 {
-    return FreeTempTileDataBuffersIfPossible() as u32;
+unsafe fn TryFreeTempTileDataBuffers() -> u32 {
+    FreeTempTileDataBuffersIfPossible() as u32
 }
-pub(crate) unsafe extern "C" fn UpdateMapSecInfoWindow(state: *mut Pokenav_RegionMapGfx) {
-    let mut regionMap: *mut RegionMap =
-        GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP) as *mut RegionMap;
+unsafe fn UpdateMapSecInfoWindow(state: *mut Pokenav_RegionMapGfx) {
+    let regionMap: *mut RegionMap = GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP) as *mut RegionMap;
     match (*regionMap).mapSecType {
         2 => {
             FillWindowPixelBuffer((*state).infoWindowId as u8, 17);
@@ -659,20 +685,18 @@ pub(crate) unsafe extern "C" fn UpdateMapSecInfoWindow(state: *mut Pokenav_Regio
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn IsDma3ManagerBusyWithBgCopy_(
-    state: *mut Pokenav_RegionMapGfx,
-) -> u32 {
-    return IsDma3ManagerBusyWithBgCopy() as u32;
+pub(crate) unsafe fn IsDma3ManagerBusyWithBgCopy_(state: *mut Pokenav_RegionMapGfx) -> u32 {
+    IsDma3ManagerBusyWithBgCopy() as u32
 }
-pub(crate) unsafe extern "C" fn ChangeBgYForZoom(zoomIn: u32) {
-    let mut taskId: u8 = CreateTask(Some(Task_ChangeBgYForZoom), 3);
-    gTasks[taskId].data[0] = zoomIn as i16;
+unsafe fn ChangeBgYForZoom(zoomIn: u32) {
+    let taskId: u8 = CreateTask(Some(Task_ChangeBgYForZoom), 3);
+    task_set(taskId, tZoomIn, zoomIn as i16);
 }
-pub(crate) unsafe extern "C" fn IsChangeBgYForZoomActive() -> u32 {
-    return FuncIsActiveTask(Some(Task_ChangeBgYForZoom)) as u32;
+unsafe fn IsChangeBgYForZoomActive() -> u32 {
+    FuncIsActiveTask(Some(Task_ChangeBgYForZoom)) as u32
 }
-pub(crate) unsafe extern "C" fn Task_ChangeBgYForZoom(taskId: u8) {
-    if gTasks[taskId].data[0] != 0 {
+pub(crate) unsafe fn Task_ChangeBgYForZoom(taskId: u8) {
+    if task_get(taskId, tZoomIn) != 0 {
         if ChangeBgY(1, 0x480, BG_COORD_ADD) >= 0 {
             ChangeBgY(1, 0, BG_COORD_SET);
             DestroyTask(taskId);
@@ -686,14 +710,14 @@ pub(crate) unsafe extern "C" fn Task_ChangeBgYForZoom(taskId: u8) {
         UpdateCityZoomTextPosition();
     }
 }
-pub(crate) unsafe extern "C" fn DecompressCityMaps() {
+unsafe fn DecompressCityMaps() {
     CreateLoopedTask(Some(LoopedTask_DecompressCityMaps), 1);
 }
-pub(crate) unsafe extern "C" fn IsDecompressCityMapsActive() -> u32 {
-    return FuncIsActiveLoopedTask(Some(LoopedTask_DecompressCityMaps));
+unsafe fn IsDecompressCityMapsActive() -> u32 {
+    FuncIsActiveLoopedTask(Some(LoopedTask_DecompressCityMaps))
 }
-pub(crate) unsafe extern "C" fn LoopedTask_DecompressCityMaps(taskState: i32) -> u32 {
-    let mut state: *mut Pokenav_RegionMapGfx =
+pub(crate) unsafe fn LoopedTask_DecompressCityMaps(taskState: i32) -> u32 {
+    let state: *mut Pokenav_RegionMapGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP_ZOOM) as *mut Pokenav_RegionMapGfx;
     if taskState < NUM_CITY_MAPS {
         LZ77UnCompWram(
@@ -702,15 +726,10 @@ pub(crate) unsafe extern "C" fn LoopedTask_DecompressCityMaps(taskState: i32) ->
         );
         return LT_INC_AND_CONTINUE;
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn DrawCityMap(
-    state: *mut Pokenav_RegionMapGfx,
-    mapSecId: i32,
-    pos: i32,
-) {
+unsafe fn DrawCityMap(state: *mut Pokenav_RegionMapGfx, mapSecId: i32, pos: i32) {
     let mut i: i32 = 0;
-    i = 0;
     while i < NUM_CITY_MAPS
         && (sPokenavCityMaps[i].mapSecId as i32 != mapSecId
             || sPokenavCityMaps[i].index as i32 != pos)
@@ -730,14 +749,10 @@ pub(crate) unsafe extern "C" fn DrawCityMap(
         10,
     );
 }
-pub(crate) unsafe extern "C" fn PrintLandmarkNames(
-    state: *mut Pokenav_RegionMapGfx,
-    mapSecId: i32,
-    pos: i32,
-) {
+unsafe fn PrintLandmarkNames(state: *mut Pokenav_RegionMapGfx, mapSecId: i32, pos: i32) {
     let mut i: i32 = 0;
     loop {
-        let mut landmarkName: *mut u8 = GetLandmarkName(mapSecId as u8, pos as u8, i as u8);
+        let landmarkName: *mut u8 = GetLandmarkName(mapSecId as u8, pos as u8, i as u8);
         if landmarkName.is_null() {
             break;
         }
@@ -754,20 +769,18 @@ pub(crate) unsafe extern "C" fn PrintLandmarkNames(
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateCityZoomTextSprites() {
-    let mut i: i32 = 0;
+unsafe fn CreateCityZoomTextSprites() {
     let mut y: i32 = 0;
     let mut sprite: *mut Sprite = null_mut();
-    let mut state: *mut Pokenav_RegionMapGfx =
+    let state: *mut Pokenav_RegionMapGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP_ZOOM) as *mut Pokenav_RegionMapGfx;
     if IsRegionMapZoomed() == 0 {
         y = 228;
     } else {
         y = 132;
     }
-    i = 0;
-    while i < 3 {
-        let mut spriteId: u8 = CreateSprite(
+    for i in 0..3i32 {
+        let spriteId: u8 = CreateSprite(
             (&raw const *sCityZoomTextSpriteTemplate).cast_mut(),
             152 + i as i16 * 32,
             y as i16,
@@ -783,10 +796,9 @@ pub(crate) unsafe extern "C" fn CreateCityZoomTextSprites() {
             .oam
             .set_tileNum((*sprite).oam.tileNum() + i as u16 * 4);
         (*state).cityZoomTextSprites[i] = sprite;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_CityZoomText(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_CityZoomText(sprite: *mut Sprite) {
     if (*sprite).data[3] != 0 {
         (*sprite).data[3] -= 1;
         return;
@@ -821,24 +833,18 @@ pub(crate) unsafe extern "C" fn SpriteCB_CityZoomText(sprite: *mut Sprite) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn UpdateCityZoomTextPosition() {
-    let mut i: i32 = 0;
-    let mut state: *mut Pokenav_RegionMapGfx =
+unsafe fn UpdateCityZoomTextPosition() {
+    let state: *mut Pokenav_RegionMapGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP_ZOOM) as *mut Pokenav_RegionMapGfx;
-    let mut y: i32 = 132 - (GetBgY(1) >> 8);
-    i = 0;
-    while i < 3 {
+    let y: i32 = 132 - (GetBgY(1) >> 8);
+    for i in 0..3i32 {
         (*(*state).cityZoomTextSprites[i]).y = y as i16;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetCityZoomTextInvisibility(invisible: u32) {
-    let mut i: i32 = 0;
-    let mut state: *mut Pokenav_RegionMapGfx =
+unsafe fn SetCityZoomTextInvisibility(invisible: u32) {
+    let state: *mut Pokenav_RegionMapGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_REGION_MAP_ZOOM) as *mut Pokenav_RegionMapGfx;
-    i = 0;
-    while i < 3 {
+    for i in 0..3i32 {
         (*(*state).cityZoomTextSprites[i]).set_invisible(invisible as u16);
-        i += 1;
     }
 }

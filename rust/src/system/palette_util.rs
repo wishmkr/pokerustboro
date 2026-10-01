@@ -3,31 +3,26 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::palette::gPaletteFade;
+use crate::palette::{gPlttBufferFaded, gPlttBufferUnfaded};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::util::BlendPalette;
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
@@ -35,21 +30,12 @@ use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
 
-unsafe extern "C" {
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlttBufferFaded: CArray<u16, 512>;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    fn BlendPalette(a0: u16, a1: u16, a2: u8, a3: u16);
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RouletteFlash_Reset(flash: *mut RouletteFlashUtil) {
+pub unsafe fn RouletteFlash_Reset(flash: *mut RouletteFlashUtil) {
     (*flash).enabled = 0;
     (*flash).flags = 0;
     memset(&raw mut (*flash).palettes as *mut u8, 0, 192);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RouletteFlash_Add(
+pub unsafe fn RouletteFlash_Add(
     flash: *mut RouletteFlashUtil,
     id: u8,
     settings: *mut RouletteFlashSettings,
@@ -80,9 +66,9 @@ pub unsafe extern "C" fn RouletteFlash_Add(
     } else {
         (*flash).palettes[id].colorDelta = 1;
     }
-    return id;
+    id
 }
-pub(crate) unsafe extern "C" fn RouletteFlash_Remove(flash: *mut RouletteFlashUtil, id: u8) -> u8 {
+unsafe fn RouletteFlash_Remove(flash: *mut RouletteFlashUtil, id: u8) -> u8 {
     if id >= 16 {
         return 0xFF;
     }
@@ -90,17 +76,16 @@ pub(crate) unsafe extern "C" fn RouletteFlash_Remove(flash: *mut RouletteFlashUt
         return 0xFF;
     }
     memset(&raw mut (*flash).palettes[id] as *mut u8, 0, 12);
-    return id;
+    id
 }
-pub(crate) unsafe extern "C" fn RouletteFlash_FadePalette(pal: *mut RouletteFlashPalette) -> u8 {
-    let mut i: u8 = 0;
+unsafe fn RouletteFlash_FadePalette(pal: *mut RouletteFlashPalette) -> u8 {
     let mut returnval: u8 = 0;
-    i = 0;
+    let mut i: u8 = 0;
     while i < (*pal).settings.numColors {
-        let mut faded: *mut PlttData = &raw mut gPlttBufferFaded
+        let faded: *mut PlttData = &raw mut gPlttBufferFaded
             [(*pal).settings.paletteOffset as i32 + i as i32]
             as *mut PlttData;
-        let mut unfaded: *mut PlttData = &raw mut gPlttBufferUnfaded
+        let unfaded: *mut PlttData = &raw mut gPlttBufferUnfaded
             [(*pal).settings.paletteOffset as i32 + i as i32]
             as *mut PlttData;
         match (*pal).state() {
@@ -166,9 +151,9 @@ pub(crate) unsafe extern "C" fn RouletteFlash_FadePalette(pal: *mut RouletteFlas
         }
         returnval = 1;
     }
-    return returnval;
+    returnval
 }
-pub(crate) unsafe extern "C" fn RouletteFlash_FlashPalette(pal: *mut RouletteFlashPalette) -> u8 {
+unsafe fn RouletteFlash_FlashPalette(pal: *mut RouletteFlashPalette) -> u8 {
     let mut i: u8 = 0;
     match (*pal).state() {
         1 => {
@@ -189,77 +174,59 @@ pub(crate) unsafe extern "C" fn RouletteFlash_FlashPalette(pal: *mut RouletteFla
         }
         _ => {}
     }
-    return 1;
+    1
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RouletteFlash_Run(flash: *mut RouletteFlashUtil) {
-    let mut i: u8 = 0;
+pub unsafe fn RouletteFlash_Run(flash: *mut RouletteFlashUtil) {
     if (*flash).enabled != 0 {
-        i = 0;
-        while i < 16 {
-            if shr_i32((*flash).flags as i32, i as u32) & 1 != 0 {
-                if ({
+        for i in 0..16u8 {
+            if shr_i32((*flash).flags as i32, i as u32) & 1 != 0
+                && ({
                     (*flash).palettes[i].delayCounter -= 1;
                     (*flash).palettes[i].delayCounter
                 }) == 255
-                {
-                    if (*flash).palettes[i].settings.color as i32 & FLASHUTIL_USE_EXISTING_COLOR
-                        != 0
-                    {
-                        RouletteFlash_FadePalette(&raw mut (*flash).palettes[i]);
-                    } else {
-                        RouletteFlash_FlashPalette(&raw mut (*flash).palettes[i]);
-                    }
-                    (*flash).palettes[i].delayCounter = (*flash).palettes[i].settings.delay;
+            {
+                if (*flash).palettes[i].settings.color as i32 & FLASHUTIL_USE_EXISTING_COLOR != 0 {
+                    RouletteFlash_FadePalette(&raw mut (*flash).palettes[i]);
+                } else {
+                    RouletteFlash_FlashPalette(&raw mut (*flash).palettes[i]);
                 }
+                (*flash).palettes[i].delayCounter = (*flash).palettes[i].settings.delay;
             }
-            i += 1;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RouletteFlash_Enable(flash: *mut RouletteFlashUtil, flags: u16) {
-    let mut i: u8 = 0;
+pub unsafe fn RouletteFlash_Enable(flash: *mut RouletteFlashUtil, flags: u16) {
     (*flash).enabled += 1;
-    i = 0;
-    while i < 16 {
-        if shr_i32(flags as i32, i as u32) & 1 != 0 {
-            if (*flash).palettes[i].available() != 0 {
-                (*flash).flags |= shl_i32(1, i as u32) as u16;
-                (*flash).palettes[i].set_state(1);
-            }
+    for i in 0..16u8 {
+        if shr_i32(flags as i32, i as u32) & 1 != 0 && (*flash).palettes[i].available() != 0 {
+            (*flash).flags |= shl_i32(1, i as u32) as u16;
+            (*flash).palettes[i].set_state(1);
         }
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RouletteFlash_Stop(flash: *mut RouletteFlashUtil, flags: u16) {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 16 {
-        if shr_i32((*flash).flags as i32, i as u32) & 1 != 0 {
-            if (*flash).palettes[i].available() != 0 {
-                if shr_i32(flags as i32, i as u32) & 1 != 0 {
-                    let mut offset: u32 = (*flash).palettes[i].settings.paletteOffset as u32;
-                    let mut faded: *mut u16 = &raw mut gPlttBufferFaded[offset];
-                    let mut unfaded: *mut u16 = &raw mut gPlttBufferUnfaded[offset];
-                    memcpy(
-                        faded as *mut u8,
-                        unfaded as *mut u8,
-                        (*flash).palettes[i].settings.numColors as u32 * 2,
-                    );
-                    (*flash).palettes[i].set_state(0);
-                    (*flash).palettes[i].fadeCycleCounter = 0;
-                    (*flash).palettes[i].delayCounter = 0;
-                    if (*flash).palettes[i].settings.colorDeltaDir() < 0 {
-                        (*flash).palettes[i].colorDelta = -1;
-                    } else {
-                        (*flash).palettes[i].colorDelta = 1;
-                    }
-                }
+pub unsafe fn RouletteFlash_Stop(flash: *mut RouletteFlashUtil, flags: u16) {
+    for i in 0..16u8 {
+        if shr_i32((*flash).flags as i32, i as u32) & 1 != 0
+            && (*flash).palettes[i].available() != 0
+            && shr_i32(flags as i32, i as u32) & 1 != 0
+        {
+            let offset: u32 = (*flash).palettes[i].settings.paletteOffset as u32;
+            let faded: *mut u16 = &raw mut gPlttBufferFaded[offset];
+            let unfaded: *mut u16 = &raw mut gPlttBufferUnfaded[offset];
+            memcpy(
+                faded as *mut u8,
+                unfaded as *mut u8,
+                (*flash).palettes[i].settings.numColors as u32 * 2,
+            );
+            (*flash).palettes[i].set_state(0);
+            (*flash).palettes[i].fadeCycleCounter = 0;
+            (*flash).palettes[i].delayCounter = 0;
+            if (*flash).palettes[i].settings.colorDeltaDir() < 0 {
+                (*flash).palettes[i].colorDelta = -1;
+            } else {
+                (*flash).palettes[i].colorDelta = 1;
             }
         }
-        i += 1;
     }
     if flags == 0xFFFF {
         (*flash).enabled = 0;
@@ -268,18 +235,14 @@ pub unsafe extern "C" fn RouletteFlash_Stop(flash: *mut RouletteFlashUtil, flags
         (*flash).flags &= !flags;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitPulseBlend(pulseBlend: *mut PulseBlend) {
-    let mut i: u8 = 0;
+pub unsafe fn InitPulseBlend(pulseBlend: *mut PulseBlend) {
     (*pulseBlend).usedPulseBlendPalettes = 0;
     memset(&raw mut (*pulseBlend).pulseBlendPalettes as *mut u8, 0, 192);
-    while i < 16 {
+    for i in 0..16u8 {
         (*pulseBlend).pulseBlendPalettes[i].paletteSelector = i;
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitPulseBlendPaletteSettings(
+pub unsafe fn InitPulseBlendPaletteSettings(
     pulseBlend: *mut PulseBlend,
     settings: *mut PulseBlendSettings,
 ) -> i32 {
@@ -313,11 +276,9 @@ pub unsafe extern "C" fn InitPulseBlendPaletteSettings(
         settings as *mut u8,
         8,
     );
-    return i as i32;
+    i as i32
 }
-pub(crate) unsafe extern "C" fn ClearPulseBlendPalettesSettings(
-    pulseBlendPalette: *mut PulseBlendPalette,
-) {
+unsafe fn ClearPulseBlendPalettesSettings(pulseBlendPalette: *mut PulseBlendPalette) {
     let mut i: u16 = 0;
     if (*pulseBlendPalette).available() == 0
         && (*pulseBlendPalette)
@@ -347,32 +308,27 @@ pub(crate) unsafe extern "C" fn ClearPulseBlendPalettesSettings(
     (*pulseBlendPalette).fadeCycleCounter = 0;
     (*pulseBlendPalette).delayCounter = 0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UnloadUsedPulseBlendPalettes(
+pub unsafe fn UnloadUsedPulseBlendPalettes(
     pulseBlend: *mut PulseBlend,
     mut pulseBlendPaletteSelector: u16,
     multiSelection: u8,
 ) {
-    let mut i: u16 = 0;
     if multiSelection == 0 {
         ClearPulseBlendPalettesSettings(
             &raw mut (*pulseBlend).pulseBlendPalettes[pulseBlendPaletteSelector as i32 & 0xF],
         );
     } else {
-        i = 0;
-        while i < 16 {
+        for i in 0..16u16 {
             if pulseBlendPaletteSelector as i32 & 1 != 0
                 && (*pulseBlend).pulseBlendPalettes[i].inUse() != 0
             {
                 ClearPulseBlendPalettesSettings(&raw mut (*pulseBlend).pulseBlendPalettes[i]);
             }
             pulseBlendPaletteSelector >>= 1;
-            i += 1;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MarkUsedPulseBlendPalettes(
+pub unsafe fn MarkUsedPulseBlendPalettes(
     pulseBlend: *mut PulseBlend,
     mut pulseBlendPaletteSelector: u16,
     multiSelection: u8,
@@ -383,8 +339,7 @@ pub unsafe extern "C" fn MarkUsedPulseBlendPalettes(
         (*pulseBlend).pulseBlendPalettes[i].set_available(0);
         (*pulseBlend).usedPulseBlendPalettes |= shl_i32(1, i as u32) as u16;
     } else {
-        i = 0;
-        while i < 16 {
+        for i in 0..16u8 {
             if pulseBlendPaletteSelector as i32 & 1 == 0
                 || (*pulseBlend).pulseBlendPalettes[i].inUse() == 0
                 || (*pulseBlend).pulseBlendPalettes[i].available() == 0
@@ -394,19 +349,17 @@ pub unsafe extern "C" fn MarkUsedPulseBlendPalettes(
                 (*pulseBlend).pulseBlendPalettes[i].set_available(0);
                 (*pulseBlend).usedPulseBlendPalettes |= shl_i32(1, i as u32) as u16;
             }
-            i += 1;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UnmarkUsedPulseBlendPalettes(
+pub unsafe fn UnmarkUsedPulseBlendPalettes(
     pulseBlend: *mut PulseBlend,
     mut pulseBlendPaletteSelector: u16,
     multiSelection: u8,
 ) {
     let mut i: u16 = 0;
     let mut pulseBlendPalette: *mut PulseBlendPalette = null_mut();
-    let mut j: u8 = 0;
+    let j: u8 = 0;
     if multiSelection == 0 {
         pulseBlendPalette =
             &raw mut (*pulseBlend).pulseBlendPalettes[pulseBlendPaletteSelector as i32 & 0xF];
@@ -429,8 +382,7 @@ pub unsafe extern "C" fn UnmarkUsedPulseBlendPalettes(
             (*pulseBlend).usedPulseBlendPalettes &= !(shl_i32(1, j as u32) as u16);
         }
     } else {
-        j = 0;
-        while j < 16 {
+        for j in 0..16u8 {
             pulseBlendPalette = &raw mut (*pulseBlend).pulseBlendPalettes[j];
             if pulseBlendPaletteSelector as i32 & 1 == 0
                 || (*pulseBlendPalette).available() != 0
@@ -455,115 +407,102 @@ pub unsafe extern "C" fn UnmarkUsedPulseBlendPalettes(
                 (*pulseBlendPalette).set_available(1);
                 (*pulseBlend).usedPulseBlendPalettes &= !(shl_i32(1, j as u32) as u16);
             }
-            j += 1;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdatePulseBlend(pulseBlend: *mut PulseBlend) {
+pub unsafe fn UpdatePulseBlend(pulseBlend: *mut PulseBlend) {
     let mut pulseBlendPalette: *mut PulseBlendPalette = null_mut();
-    let mut i: u8 = 0;
     if (*pulseBlend).usedPulseBlendPalettes != 0 {
-        i = 0;
-        while i < 16 {
+        for i in 0..16u8 {
             pulseBlendPalette = &raw mut (*pulseBlend).pulseBlendPalettes[i];
             if (*pulseBlendPalette).available() == 0
                 && (*pulseBlendPalette).inUse() != 0
                 && (gPaletteFade.active() == 0
                     || (*pulseBlendPalette).pulseBlendSettings.unk7_7() == 0)
-            {
-                if ({
+                && ({
                     (*pulseBlendPalette).delayCounter -= 1;
                     (*pulseBlendPalette).delayCounter
                 }) == 0xFF
-                {
-                    (*pulseBlendPalette).delayCounter =
-                        (*pulseBlendPalette).pulseBlendSettings.delay;
-                    BlendPalette(
-                        (*pulseBlendPalette).pulseBlendSettings.paletteOffset,
-                        (*pulseBlendPalette).pulseBlendSettings.numColors as u16,
-                        (*pulseBlendPalette).blendCoeff(),
-                        (*pulseBlendPalette).pulseBlendSettings.blendColor,
-                    );
-                    match (*pulseBlendPalette).pulseBlendSettings.fadeType() {
-                        0 => {
+            {
+                (*pulseBlendPalette).delayCounter = (*pulseBlendPalette).pulseBlendSettings.delay;
+                BlendPalette(
+                    (*pulseBlendPalette).pulseBlendSettings.paletteOffset,
+                    (*pulseBlendPalette).pulseBlendSettings.numColors as u16,
+                    (*pulseBlendPalette).blendCoeff(),
+                    (*pulseBlendPalette).pulseBlendSettings.blendColor,
+                );
+                match (*pulseBlendPalette).pulseBlendSettings.fadeType() {
+                    0 => {
+                        if ({
+                            let t2 = (*pulseBlendPalette).blendCoeff();
+                            (*pulseBlendPalette)
+                                .set_blendCoeff((*pulseBlendPalette).blendCoeff() + 1);
+                            t2
+                        }) as i32
+                            == (*pulseBlendPalette).pulseBlendSettings.maxBlendCoeff() as i32
+                        {
+                            (*pulseBlendPalette).fadeCycleCounter += 1;
+                            (*pulseBlendPalette).set_blendCoeff(0);
+                        }
+                    }
+                    1 => {
+                        if (*pulseBlendPalette).fadeDirection() != 0 {
                             if ({
-                                let t2 = (*pulseBlendPalette).blendCoeff();
                                 (*pulseBlendPalette)
-                                    .set_blendCoeff((*pulseBlendPalette).blendCoeff() + 1);
-                                t2
-                            }) as i32
-                                == (*pulseBlendPalette).pulseBlendSettings.maxBlendCoeff() as i32
+                                    .set_blendCoeff((*pulseBlendPalette).blendCoeff() - 1);
+                                (*pulseBlendPalette).blendCoeff()
+                            }) == 0
                             {
                                 (*pulseBlendPalette).fadeCycleCounter += 1;
-                                (*pulseBlendPalette).set_blendCoeff(0);
+                                (*pulseBlendPalette)
+                                    .set_fadeDirection((*pulseBlendPalette).fadeDirection() ^ 1);
+                            }
+                        } else {
+                            let max: u8 =
+                                ((*pulseBlendPalette).pulseBlendSettings.maxBlendCoeff() as u8 - 1)
+                                    & 0xF;
+                            if ({
+                                let t4 = (*pulseBlendPalette).blendCoeff();
+                                (*pulseBlendPalette)
+                                    .set_blendCoeff((*pulseBlendPalette).blendCoeff() + 1);
+                                t4
+                            }) == max
+                            {
+                                (*pulseBlendPalette).fadeCycleCounter += 1;
+                                (*pulseBlendPalette)
+                                    .set_fadeDirection((*pulseBlendPalette).fadeDirection() ^ 1);
                             }
                         }
-                        1 => {
-                            if (*pulseBlendPalette).fadeDirection() != 0 {
-                                if ({
-                                    (*pulseBlendPalette)
-                                        .set_blendCoeff((*pulseBlendPalette).blendCoeff() - 1);
-                                    (*pulseBlendPalette).blendCoeff()
-                                }) == 0
-                                {
-                                    (*pulseBlendPalette).fadeCycleCounter += 1;
-                                    (*pulseBlendPalette).set_fadeDirection(
-                                        (*pulseBlendPalette).fadeDirection() ^ 1,
-                                    );
-                                }
-                            } else {
-                                let mut max: u8 =
-                                    (*pulseBlendPalette).pulseBlendSettings.maxBlendCoeff() as u8
-                                        - 1
-                                        & 0xF;
-                                if ({
-                                    let t4 = (*pulseBlendPalette).blendCoeff();
-                                    (*pulseBlendPalette)
-                                        .set_blendCoeff((*pulseBlendPalette).blendCoeff() + 1);
-                                    t4
-                                }) == max
-                                {
-                                    (*pulseBlendPalette).fadeCycleCounter += 1;
-                                    (*pulseBlendPalette).set_fadeDirection(
-                                        (*pulseBlendPalette).fadeDirection() ^ 1,
-                                    );
-                                }
-                            }
-                        }
-                        -2 => {
-                            if (*pulseBlendPalette).fadeDirection() != 0 {
-                                (*pulseBlendPalette).set_blendCoeff(0);
-                            } else {
-                                (*pulseBlendPalette).set_blendCoeff(
-                                    (*pulseBlendPalette).pulseBlendSettings.maxBlendCoeff() as u8
-                                        & 0xF,
-                                );
-                            }
-                            (*pulseBlendPalette)
-                                .set_fadeDirection((*pulseBlendPalette).fadeDirection() ^ 1);
-                            (*pulseBlendPalette).fadeCycleCounter += 1;
-                        }
-                        _ => {}
                     }
-                    if (*pulseBlendPalette).pulseBlendSettings.numFadeCycles != 0xFF
-                        && (*pulseBlendPalette).fadeCycleCounter
-                            == (*pulseBlendPalette).pulseBlendSettings.numFadeCycles
-                    {
-                        UnmarkUsedPulseBlendPalettes(
-                            pulseBlend,
-                            (*pulseBlendPalette).paletteSelector as u16,
-                            FALSE,
-                        );
+                    -2 => {
+                        if (*pulseBlendPalette).fadeDirection() != 0 {
+                            (*pulseBlendPalette).set_blendCoeff(0);
+                        } else {
+                            (*pulseBlendPalette).set_blendCoeff(
+                                (*pulseBlendPalette).pulseBlendSettings.maxBlendCoeff() as u8 & 0xF,
+                            );
+                        }
+                        (*pulseBlendPalette)
+                            .set_fadeDirection((*pulseBlendPalette).fadeDirection() ^ 1);
+                        (*pulseBlendPalette).fadeCycleCounter += 1;
                     }
+                    _ => {}
+                }
+                if (*pulseBlendPalette).pulseBlendSettings.numFadeCycles != 0xFF
+                    && (*pulseBlendPalette).fadeCycleCounter
+                        == (*pulseBlendPalette).pulseBlendSettings.numFadeCycles
+                {
+                    UnmarkUsedPulseBlendPalettes(
+                        pulseBlend,
+                        (*pulseBlendPalette).paletteSelector as u16,
+                        FALSE,
+                    );
                 }
             }
-            i += 1;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FillTilemapRect(
+pub unsafe fn FillTilemapRect(
     mut dest: *mut u16,
     value: u16,
     left: u8,
@@ -572,26 +511,19 @@ pub unsafe extern "C" fn FillTilemapRect(
     height: u8,
 ) {
     let mut _dest: *mut u16 = null_mut();
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
-    i = 0;
     dest = dest.at(top as i32 * 32 + left as i32);
-    while i < height {
+    for i in 0..height {
         _dest = dest.at(i as i32 * 32);
-        j = 0;
-        while j < width {
+        for j in 0..width {
             *({
                 let t1 = _dest;
                 _dest = _dest.at(1);
                 t1
             }) = value;
-            j += 1;
         }
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetTilemapRect(
+pub unsafe fn SetTilemapRect(
     mut dest: *mut u16,
     src: *mut u16,
     left: u8,
@@ -601,14 +533,10 @@ pub unsafe extern "C" fn SetTilemapRect(
 ) {
     let mut _dest: *mut u16 = null_mut();
     let mut _src: *mut u16 = src;
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
-    i = 0;
     dest = dest.at(top as i32 * 32 + left as i32);
-    while i < height {
+    for i in 0..height {
         _dest = dest.at(i as i32 * 32);
-        j = 0;
-        while j < width {
+        for j in 0..width {
             *({
                 let t1 = _dest;
                 _dest = _dest.at(1);
@@ -618,12 +546,10 @@ pub unsafe extern "C" fn SetTilemapRect(
                 _src = _src.at(1);
                 t3
             });
-            j += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn FillTilemapRect_Unused(
+unsafe fn FillTilemapRect_Unused(
     dest: *mut c_void,
     value: u16,
     left: u8,
@@ -631,26 +557,19 @@ pub(crate) unsafe extern "C" fn FillTilemapRect_Unused(
     width: u8,
     height: u8,
 ) {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
     let mut x: u8 = 0;
-    let mut y: u8 = 0;
-    i = 0;
-    y = top;
-    while i < height {
+    let mut y: u8 = top;
+    for i in 0..height {
         x = left;
-        j = 0;
-        while j < width {
+        for j in 0..width {
             *((dest as *mut u8).at(y as i32 * 64 + x as i32 * 2) as *mut c_void as *mut u16) =
                 value;
             x = ((x as i32 + 1) % 32) as u8;
-            j += 1;
         }
         y = ((y as i32 + 1) % 32) as u8;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetTilemapRect_Unused(
+unsafe fn SetTilemapRect_Unused(
     dest: *mut c_void,
     src: *mut u16,
     left: u8,
@@ -658,27 +577,19 @@ pub(crate) unsafe extern "C" fn SetTilemapRect_Unused(
     width: u8,
     height: u8,
 ) {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
     let mut x: u8 = 0;
-    let mut y: u8 = 0;
-    let mut _src: *mut u16 = null_mut();
-    i = 0;
-    _src = src;
-    y = top;
-    while i < height {
+    let mut _src: *mut u16 = src;
+    let mut y: u8 = top;
+    for i in 0..height {
         x = left;
-        j = 0;
-        while j < width {
+        for j in 0..width {
             *((dest as *mut u8).at(y as i32 * 64 + x as i32 * 2) as *mut c_void as *mut u16) = *({
                 let t2 = _src;
                 _src = _src.at(1);
                 t2
             });
             x = ((x as i32 + 1) % 32) as u8;
-            j += 1;
         }
         y = ((y as i32 + 1) % 32) as u8;
-        i += 1;
     }
 }

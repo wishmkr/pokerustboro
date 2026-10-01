@@ -126,7 +126,7 @@ unsafe impl Sync for TextPrinterTemplate {}
 #[derive(Clone, Copy)]
 pub struct TextPrinter {
     pub printerTemplate: TextPrinterTemplate,
-    pub callback: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
+    pub callback: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
     pub subStructFields: CArray<u8, 7>,
     pub active: u8,
     pub state: u8,
@@ -143,7 +143,7 @@ unsafe impl Sync for TextPrinter {}
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct FontInfo {
-    pub fontFunction: Option<unsafe extern "C" fn(*mut TextPrinter) -> u16>,
+    pub fontFunction: Option<unsafe fn(*mut TextPrinter) -> u16>,
     pub maxLetterWidth: u8,
     pub maxLetterHeight: u8,
     pub letterSpacing: u8,
@@ -194,7 +194,7 @@ unsafe impl Sync for FontInfo {}
 #[derive(Clone, Copy)]
 pub struct GlyphWidthFunc {
     pub fontId: u32,
-    pub func: Option<unsafe extern "C" fn(u16, u32) -> u32>,
+    pub func: Option<unsafe fn(u16, u32) -> u32>,
 }
 
 unsafe impl Sync for GlyphWidthFunc {}

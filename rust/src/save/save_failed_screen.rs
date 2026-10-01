@@ -2,6 +2,7 @@
 //! save again, and report whether the game can carry on. A little clock
 //! spins while it works. Graphics are in `data/save_failed_screen.rs`.
 
+use crate::agb_flash::ProgramFlashByte;
 use crate::bg::{
     InitBgsFromTemplates, LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg,
 };
@@ -10,7 +11,7 @@ use crate::decompress::gDecompressionBuffer;
 use crate::ffi::{
     A_BUTTON, BgTemplate, COPYWIN_GFX, COPYWIN_MAP, DUMMY_WIN_TEMPLATE,
     DrawStdFrameWithCustomTileAndPalette, FONT_NORMAL, MainCallback, OamData, PLTT_SIZE,
-    ST_OAM_SQUARE, WindowTemplate, dma3_fill_large, gMain, joy_new, main_state,
+    ST_OAM_SQUARE, WindowTemplate, dma3_fill_large, joy_new, main_state,
 };
 use crate::gpu_regs::{EnableInterrupts, SetGpuReg};
 use crate::sprite::{LoadOam, ProcessSpriteCopyRequests, ResetSpriteData};
@@ -47,7 +48,7 @@ const DISPCNT_OBJ_ON_1D: u16 = 0x1040;
 const WINDOW_TILE_DATA: u8 = 7;
 
 #[unsafe(link_section = "ewram_data")]
-static mut SAVE_FAILED_TYPE: u16 = 0;
+static SAVE_FAILED_TYPE: crate::global::Global<u16> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 static mut CLOCK_INFO: [u16; 2] = [0; 2];
 #[unsafe(link_section = "ewram_data")]
@@ -88,52 +89,100 @@ static CLOCK_WINDOW: WindowTemplate = WindowTemplate {
 /// Transparent background, dynamic colour 6, light grey shadow.
 static TEXT_COLOR: [u8; 3] = [0, 15, 3];
 
-unsafe extern "C" {
-    static gText_SaveFailedCheckingBackup: u8;
-    static gText_BackupMemoryDamaged: u8;
-    static gText_CheckCompleted: u8;
-    static gText_SaveCompleteGameCannotContinue: u8;
-    static gText_SaveCompletePressA: u8;
-    static gText_GamePlayCannotBeContinued: u8;
-    static gBirchBagGrass_Gfx: u32;
-    static gBirchBagTilemap: u32;
-    static gBirchGrassTilemap: u32;
-    static gBirchBagGrass_Pal: u16;
-    static gStandardMenuPalette: u16;
-    static gDamagedSaveSectors: u32;
-    static mut gGameContinueCallback: Option<MainCallback>;
-    static mut gSaveDataBuffer: u8;
-    static ProgramFlashByte: Option<unsafe extern "C" fn(u16, u32, u8) -> u16>;
-
-    fn SetMainCallback2(callback: MainCallback);
-    fn SetVBlankCallback(callback: Option<unsafe extern "C" fn()>);
-    fn TransferPlttBuffer();
-    fn ResetPaletteFade();
-    fn UpdatePaletteFade() -> u8;
-    fn BeginNormalPaletteFade(
-        selected: u32,
-        delay: i8,
-        start_y: u8,
-        target_y: u8,
-        color: u16,
-    ) -> u8;
-    fn LoadPalette(src: *const core::ffi::c_void, offset: u16, size: u16);
-    fn LZ77UnCompVram(src: *const u32, dest: *mut core::ffi::c_void);
-    fn AddTextPrinterParameterized4(
-        window_id: u8,
-        font_id: u8,
-        left: u8,
-        top: u8,
-        letter_spacing: u8,
-        line_spacing: u8,
-        color: *const u8,
-        speed: i8,
-        string: *const u8,
-    );
-    fn HandleSavingData(save_type: u8) -> u8;
-    fn ReadFlash(sector: u16, offset: u32, dest: *mut u8, size: u32);
-    fn DoSoftReset();
-    fn CpuFastSet(src: *const core::ffi::c_void, dest: *mut core::ffi::c_void, control: u32);
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: MainCallback) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
+}
+/// `SetVBlankCallback` with this module's view of its types.
+#[inline]
+unsafe fn SetVBlankCallback(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetVBlankCallback(a0);
+    }
+}
+/// `TransferPlttBuffer` with this module's view of its types.
+#[inline]
+unsafe fn TransferPlttBuffer() {
+    unsafe {
+        crate::palette::TransferPlttBuffer();
+    }
+}
+/// `ResetPaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn ResetPaletteFade() {
+    unsafe {
+        crate::palette::ResetPaletteFade();
+    }
+}
+/// `UpdatePaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn UpdatePaletteFade() -> u8 {
+    unsafe { crate::palette::UpdatePaletteFade() }
+}
+/// `BeginNormalPaletteFade` with this module's view of its types.
+#[inline]
+unsafe fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8 {
+    unsafe { crate::palette::BeginNormalPaletteFade(a0, a1, a2, a3, a4) }
+}
+/// `LoadPalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadPalette(a0: *const core::ffi::c_void, a1: u16, a2: u16) {
+    unsafe {
+        crate::palette::LoadPalette(a0 as _, a1, a2);
+    }
+}
+/// `LZ77UnCompVram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompVram(a0: *const u32, a1: *mut core::ffi::c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
+    }
+}
+/// `AddTextPrinterParameterized4` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized4(
+    a0: u8,
+    a1: u8,
+    a2: u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: *const u8,
+    a7: i8,
+    a8: *const u8,
+) {
+    unsafe {
+        crate::menu::AddTextPrinterParameterized4(a0, a1, a2, a3, a4, a5, a6 as _, a7, a8 as _);
+    }
+}
+/// `HandleSavingData` with this module's view of its types.
+#[inline]
+unsafe fn HandleSavingData(a0: u8) -> u8 {
+    unsafe { crate::save::HandleSavingData(a0) }
+}
+/// `ReadFlash` with this module's view of its types.
+#[inline]
+unsafe fn ReadFlash(a0: u16, a1: u32, a2: *mut u8, a3: u32) {
+    unsafe {
+        crate::agb_flash::ReadFlash(a0, a1, a2 as _, a3);
+    }
+}
+/// `DoSoftReset` with this module's view of its types.
+#[inline]
+unsafe fn DoSoftReset() {
+    unsafe {
+        crate::agb_main::DoSoftReset();
+    }
+}
+/// `CpuFastSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuFastSet(a0: *const core::ffi::c_void, a1: *mut core::ffi::c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuFastSet(a0 as _, a1 as _, a2);
+    }
 }
 
 #[inline]
@@ -168,21 +217,21 @@ unsafe fn clear_and_print(text: *const u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoSaveFailedScreen(save_type: u8) {
+pub unsafe fn DoSaveFailedScreen(save_type: u8) {
     unsafe { SetMainCallback2(cb2_save_failed_screen) };
-    unsafe { (&raw mut SAVE_FAILED_TYPE).write(u16::from(save_type)) };
+    unsafe { (SAVE_FAILED_TYPE.as_ptr()).write(u16::from(save_type)) };
     unsafe { set_clock_info(CLOCK_RUNNING, 0) };
     unsafe { set_clock_info(DEBUG_TIMER, 0) };
     unsafe { (&raw mut WINDOW_IDS).write([0, 0]) };
 }
 
-unsafe extern "C" fn vblank_cb() {
+unsafe fn vblank_cb() {
     unsafe { LoadOam() };
     unsafe { ProcessSpriteCopyRequests() };
     unsafe { TransferPlttBuffer() };
 }
 
-unsafe extern "C" fn cb2_save_failed_screen() {
+unsafe fn cb2_save_failed_screen() {
     let state = unsafe { main_state() };
     if unsafe { state.read() } == 1 {
         if unsafe { UpdatePaletteFade() } == 0 {
@@ -203,9 +252,26 @@ unsafe extern "C" fn cb2_save_failed_screen() {
     unsafe { dma3_fill_large(0, VRAM as *mut u8, VRAM_SIZE, false) };
     unsafe { dma3_fill_large(0, OAM as *mut u8, OAM_SIZE, true) };
     unsafe { dma3_fill_large(0, PLTT as *mut u8, PLTT_SIZE as u32, false) };
-    unsafe { LZ77UnCompVram(&raw const gBirchBagGrass_Gfx, VRAM as *mut _) };
-    unsafe { LZ77UnCompVram(&raw const gBirchBagTilemap, (VRAM + 14 * 0x800) as *mut _) };
-    unsafe { LZ77UnCompVram(&raw const gBirchGrassTilemap, (VRAM + 15 * 0x800) as *mut _) };
+    unsafe {
+        LZ77UnCompVram(
+            &raw const (*(&raw const crate::data::starter_choose::gBirchBagGrass_Gfx)
+                .cast::<u32>()),
+            VRAM as *mut _,
+        )
+    };
+    unsafe {
+        LZ77UnCompVram(
+            &raw const (*(&raw const crate::data::starter_choose::gBirchBagTilemap).cast::<u32>()),
+            (VRAM + 14 * 0x800) as *mut _,
+        )
+    };
+    unsafe {
+        LZ77UnCompVram(
+            &raw const (*(&raw const crate::data::starter_choose::gBirchGrassTilemap)
+                .cast::<u32>()),
+            (VRAM + 15 * 0x800) as *mut _,
+        )
+    };
     unsafe {
         LZ77UnCompVram(
             sSaveFailedClockGfx.as_ptr().cast(),
@@ -238,11 +304,13 @@ unsafe extern "C" fn cb2_save_failed_screen() {
     unsafe { (&raw mut WINDOW_IDS).write([text_window, clock_window]) };
     unsafe { DeactivateAllTextPrinters() };
     unsafe { ResetSpriteData() };
-    unsafe { ResetTasks() };
+    ResetTasks();
     unsafe { ResetPaletteFade() };
     unsafe {
         LoadPalette(
-            (&raw const gBirchBagGrass_Pal).cast(),
+            (&raw const (*(&raw const crate::data::starter_choose::gBirchBagGrass_Pal)
+                .cast::<u16>()))
+                .cast(),
             0,
             2 * PLTT_SIZE_4BPP,
         )
@@ -257,7 +325,8 @@ unsafe extern "C" fn cb2_save_failed_screen() {
     };
     unsafe {
         LoadPalette(
-            (&raw const gStandardMenuPalette).cast(),
+            (&raw const (*(&raw const crate::data::menu::gStandardMenuPalette).cast::<u16>()))
+                .cast(),
             15 * 16,
             PLTT_SIZE_4BPP,
         )
@@ -268,7 +337,14 @@ unsafe extern "C" fn cb2_save_failed_screen() {
     unsafe { FillWindowPixelBuffer(text_window, 0x11) };
     unsafe { CopyWindowToVram(clock_window, COPYWIN_GFX) };
     unsafe { CopyWindowToVram(text_window, COPYWIN_MAP) };
-    unsafe { print_text(&raw const gText_SaveFailedCheckingBackup, 1, 0) };
+    unsafe {
+        print_text(
+            &raw const (*(&raw const crate::data::strings::gText_SaveFailedCheckingBackup)
+                .cast::<u8>()),
+            1,
+            0,
+        )
+    };
     unsafe { BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK) };
     unsafe { EnableInterrupts(1) };
     unsafe { SetVBlankCallback(Some(vblank_cb)) };
@@ -279,44 +355,84 @@ unsafe extern "C" fn cb2_save_failed_screen() {
     unsafe { state.write(state.read().wrapping_add(1)) };
 }
 
-unsafe extern "C" fn cb2_wipe_save() {
+unsafe fn cb2_wipe_save() {
     let mut wipe_tries = 0u8;
     unsafe { set_clock_info(CLOCK_RUNNING, 1) };
-    let damaged = || unsafe { (&raw const gDamagedSaveSectors).read_volatile() };
+    let damaged = || unsafe {
+        (&raw const (*crate::save::gDamagedSaveSectors.as_ptr().cast::<u32>())).read_volatile()
+    };
     while damaged() != 0 && wipe_tries < 3 {
         if unsafe { wipe_sectors(damaged()) } {
-            unsafe { clear_and_print(&raw const gText_BackupMemoryDamaged) };
+            unsafe {
+                clear_and_print(
+                    &raw const (*(&raw const crate::data::strings::gText_BackupMemoryDamaged)
+                        .cast::<u8>()),
+                )
+            };
             unsafe { SetMainCallback2(cb2_gameplay_cannot_be_continued) };
             return;
         }
-        unsafe { clear_and_print(&raw const gText_CheckCompleted) };
-        unsafe { HandleSavingData((&raw const SAVE_FAILED_TYPE).read() as u8) };
+        unsafe {
+            clear_and_print(
+                &raw const (*(&raw const crate::data::strings::gText_CheckCompleted).cast::<u8>()),
+            )
+        };
+        unsafe { HandleSavingData((SAVE_FAILED_TYPE.as_ptr().cast_const()).read() as u8) };
         if damaged() != 0 {
-            unsafe { clear_and_print(&raw const gText_SaveFailedCheckingBackup) };
+            unsafe {
+                clear_and_print(
+                    &raw const (*(&raw const crate::data::strings::gText_SaveFailedCheckingBackup)
+                        .cast::<u8>()),
+                )
+            };
         }
         wipe_tries += 1;
     }
 
     if wipe_tries == 3 {
-        unsafe { clear_and_print(&raw const gText_BackupMemoryDamaged) };
-    } else if unsafe { (&raw const gGameContinueCallback).read() }.is_none() {
-        unsafe { clear_and_print(&raw const gText_SaveCompleteGameCannotContinue) };
+        unsafe {
+            clear_and_print(
+                &raw const (*(&raw const crate::data::strings::gText_BackupMemoryDamaged)
+                    .cast::<u8>()),
+            )
+        };
+    } else if unsafe {
+        (&raw const (*(&raw const crate::save::gGameContinueCallback)
+            .cast::<Option<MainCallback>>()
+            .cast_mut()))
+            .read()
+    }
+    .is_none()
+    {
+        unsafe {
+            clear_and_print(&raw const (*(&raw const crate::data::strings::gText_SaveCompleteGameCannotContinue).cast::<u8>()))
+        };
     } else {
-        unsafe { clear_and_print(&raw const gText_SaveCompletePressA) };
+        unsafe {
+            clear_and_print(
+                &raw const (*(&raw const crate::data::strings::gText_SaveCompletePressA)
+                    .cast::<u8>()),
+            )
+        };
     }
     unsafe { SetMainCallback2(cb2_fade_and_return_to_title_screen) };
 }
 
-unsafe extern "C" fn cb2_gameplay_cannot_be_continued() {
+unsafe fn cb2_gameplay_cannot_be_continued() {
     unsafe { set_clock_info(CLOCK_RUNNING, 0) };
     if unsafe { joy_new(A_BUTTON) } {
-        unsafe { clear_and_print(&raw const gText_GamePlayCannotBeContinued) };
+        unsafe {
+            clear_and_print(
+                &raw const (*(&raw const crate::data::strings::gText_GamePlayCannotBeContinued)
+                    .cast::<u8>()),
+            )
+        };
         unsafe { SetVBlankCallback(Some(vblank_cb)) };
         unsafe { SetMainCallback2(cb2_fade_and_return_to_title_screen) };
     }
 }
 
-unsafe extern "C" fn cb2_fade_and_return_to_title_screen() {
+unsafe fn cb2_fade_and_return_to_title_screen() {
     unsafe { set_clock_info(CLOCK_RUNNING, 0) };
     if unsafe { joy_new(A_BUTTON) } {
         unsafe { BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK) };
@@ -325,21 +441,31 @@ unsafe extern "C" fn cb2_fade_and_return_to_title_screen() {
     }
 }
 
-unsafe extern "C" fn cb2_return_to_title_screen() {
+unsafe fn cb2_return_to_title_screen() {
     if unsafe { UpdatePaletteFade() } != 0 {
         return;
     }
-    match unsafe { (&raw const gGameContinueCallback).read() } {
+    match unsafe {
+        (&raw const (*(&raw const crate::save::gGameContinueCallback)
+            .cast::<Option<MainCallback>>()
+            .cast_mut()))
+            .read()
+    } {
         None => unsafe { DoSoftReset() },
         Some(callback) => {
             unsafe { SetMainCallback2(callback) };
-            unsafe { (&raw mut gGameContinueCallback).write(None) };
+            unsafe {
+                (&raw mut (*(&raw const crate::save::gGameContinueCallback)
+                    .cast::<Option<MainCallback>>()
+                    .cast_mut()))
+                    .write(None)
+            };
         }
     }
 }
 
-unsafe extern "C" fn vblank_cb_update_clock_graphics() {
-    let main = &raw mut gMain;
+unsafe fn vblank_cb_update_clock_graphics() {
+    let main = &raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut());
     let counter = unsafe { main.add(MAIN_VBLANK_COUNTER2).cast::<u32>().read() };
     let n = ((counter >> 3) & 7) as usize;
     let oam = unsafe { main.add(MAIN_OAM_BUFFER) };
@@ -373,7 +499,9 @@ unsafe extern "C" fn vblank_cb_update_clock_graphics() {
 }
 
 unsafe fn verify_sector_wipe(sector: u16) -> bool {
-    let buffer = &raw mut gSaveDataBuffer;
+    let buffer = &raw mut (*(&raw const crate::save::gSaveDataBuffer)
+        .cast::<u8>()
+        .cast_mut());
     unsafe { ReadFlash(sector, 0, buffer, SECTOR_SIZE) };
     let words = buffer.cast::<u32>();
     (0..(SECTOR_SIZE / 4) as usize).any(|i| unsafe { words.add(i).read() } != 0)

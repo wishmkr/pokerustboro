@@ -22,8 +22,8 @@ pub struct MysteryGiftLink {
     pub sendSize: u16,
     pub recvBuffer: *mut core::ffi::c_void,
     pub sendBuffer: *mut core::ffi::c_void,
-    pub recvFunc: Option<unsafe extern "C" fn(*mut MysteryGiftLink) -> u32>,
-    pub sendFunc: Option<unsafe extern "C" fn(*mut MysteryGiftLink) -> u32>,
+    pub recvFunc: Option<unsafe fn(*mut MysteryGiftLink) -> u32>,
+    pub sendFunc: Option<unsafe fn(*mut MysteryGiftLink) -> u32>,
 }
 
 unsafe impl Sync for MysteryGiftLink {}

@@ -3,29 +3,38 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::int_plus_one,
+    dead_code,
+    unused_assignments
 )]
 
+use crate::agb_main::gKeyRepeatStartDelay;
+use crate::agb_main::gMain;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::menu_specialized::{
+    ConditionGraph_CalcPositions, ConditionGraph_Init, ConditionGraph_SetNewPositions,
+    GetBoxOrPartyMonData,
+};
+use crate::mon_markings::HandleMonMarkingsMenuInput;
+use crate::pokemon::{
+    CalculatePlayerPartyCount, GetBoxMonGender, GetLevelFromBoxMonExp, GetMonData2, GetMonGender,
+    GetMonSpritePalFromSpeciesAndPersonality, SetMonData, gPlayerParty,
+};
+use crate::pokemon_storage_system::{GetBoxNamePtr, GetBoxedMonPtr, SetBoxMonDataAt};
+use crate::pokenav::{AllocSubstruct, FreePokenavSubstruct, GetSubstructPtr};
+use crate::pokenav_conditions_gfx::GetMonMarkingsData;
+use crate::sound::PlaySE;
+use crate::string_util::StringGet_Nickname;
+use crate::string_util::{ConvertIntToDecimalStringN, StringCompare, StringCopyPadded};
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,6 +43,19 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `LoadSpecialPokePic` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpecialPokePic(
+    a0: *mut CompressedSpriteSheet,
+    a1: *mut c_void,
+    a2: i32,
+    a3: u32,
+    a4: u8,
+) {
+    unsafe {
+        crate::decompress::LoadSpecialPokePic(a0 as _, a1 as _, a2, a3, a4);
+    }
+}
 
 /// `struct Pokenav_ConditionMenu`
 #[repr(C)]
@@ -44,7 +66,7 @@ pub struct Pokenav_ConditionMenu {
     pub monPicGfx: CArray<CArray<u32, 2048>, 3>,
     pub inSearchMode: u8,
     pub toLoadListIndex: i16,
-    pub callback: Option<unsafe extern "C" fn(*mut Pokenav_ConditionMenu) -> u32>,
+    pub callback: Option<unsafe fn(*mut Pokenav_ConditionMenu) -> u32>,
     pub fill2: CArray<u8, 24>,
     pub locationText: CArray<CArray<u8, 24>, 3>,
     pub nameText: CArray<CArray<u8, 64>, 3>,
@@ -84,55 +106,16 @@ const _: () = {
     assert!(offset_of!(Pokenav_ConditionMenu, state) == 26506);
 };
 
-unsafe extern "C" {
-    static mut gKeyRepeatStartDelay: u16;
-    static mut gMain: Main;
-    static gMonFrontPicTable: CArray<CompressedSpriteSheet, 0>;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static gText_EggNickname: CArray<u8, 0>;
-    static gText_InParty: CArray<u8, 0>;
-    fn AllocSubstruct(a0: u32, a1: u32) -> *mut c_void;
-    fn CalculatePlayerPartyCount() -> u8;
-    fn ConditionGraph_CalcPositions(a0: *mut u8, a1: *mut UCoords16);
-    fn ConditionGraph_Init(a0: *mut ConditionGraph);
-    fn ConditionGraph_SetNewPositions(
-        a0: *mut ConditionGraph,
-        a1: *mut UCoords16,
-        a2: *mut UCoords16,
-    );
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn FreePokenavSubstruct(a0: u32);
-    fn GetBoxMonGender(a0: *mut BoxPokemon) -> u8;
-    fn GetBoxNamePtr(a0: u8) -> *mut u8;
-    fn GetBoxOrPartyMonData(a0: u16, a1: u16, a2: i32, a3: *mut u8) -> i32;
-    fn GetBoxedMonPtr(a0: u8, a1: u8) -> *mut BoxPokemon;
-    fn GetLevelFromBoxMonExp(a0: *mut BoxPokemon) -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonGender(a0: *mut Pokemon) -> u8;
-    fn GetMonMarkingsData() -> u8;
-    fn GetMonSpritePalFromSpeciesAndPersonality(a0: u16, a1: u32, a2: u32) -> *mut u32;
-    fn GetSubstructPtr(a0: u32) -> *mut c_void;
-    fn HandleMonMarkingsMenuInput() -> u8;
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadSpecialPokePic(
-        a0: *mut CompressedSpriteSheet,
-        a1: *mut c_void,
-        a2: i32,
-        a3: u32,
-        a4: u8,
-    );
-    fn PlaySE(a0: u16);
-    fn SetBoxMonDataAt(a0: u8, a1: u8, a2: i32, a3: *mut c_void);
-    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
-    fn StringCompare(a0: *mut u8, a1: *mut u8) -> i32;
-    fn StringCopyPadded(a0: *mut u8, a1: *mut u8, a2: u8, a3: u16) -> *mut u8;
-    fn StringGet_Nickname(a0: *mut u8) -> *mut u8;
+/// `LZ77UnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavCallback_Init_ConditionGraph_Party() -> u32 {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn PokenavCallback_Init_ConditionGraph_Party() -> u32 {
+    let menu: *mut Pokenav_ConditionMenu =
         AllocSubstruct(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU, 26508) as *mut Pokenav_ConditionMenu;
     if menu.is_null() {
         return FALSE as u32;
@@ -141,11 +124,10 @@ pub unsafe extern "C" fn PokenavCallback_Init_ConditionGraph_Party() -> u32 {
     InitPartyConditionListParameters();
     gKeyRepeatStartDelay = 20;
     (*menu).callback = Some(HandleConditionMenuInput);
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PokenavCallback_Init_ConditionGraph_Search() -> u32 {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn PokenavCallback_Init_ConditionGraph_Search() -> u32 {
+    let menu: *mut Pokenav_ConditionMenu =
         AllocSubstruct(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU, 26508) as *mut Pokenav_ConditionMenu;
     if menu.is_null() {
         return FALSE as u32;
@@ -154,16 +136,15 @@ pub unsafe extern "C" fn PokenavCallback_Init_ConditionGraph_Search() -> u32 {
     InitSearchResultsConditionList();
     gKeyRepeatStartDelay = 20;
     (*menu).callback = Some(HandleConditionMenuInput);
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetConditionGraphMenuCallback() -> u32 {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn GetConditionGraphMenuCallback() -> u32 {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    return (*menu).callback.unwrap_unchecked()(menu);
+    (*menu).callback.unwrap_unchecked()(menu)
 }
-pub(crate) unsafe extern "C" fn HandleConditionMenuInput(menu: *mut Pokenav_ConditionMenu) -> u32 {
-    let mut monListPtr: *mut PokenavMonList =
+pub(crate) unsafe fn HandleConditionMenuInput(menu: *mut Pokenav_ConditionMenu) -> u32 {
+    let monListPtr: *mut PokenavMonList =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MON_LIST) as *mut PokenavMonList;
     let mut ret: u32 = ConditionGraphHandleDpadInput(menu) as u32;
     if ret == CONDITION_FUNC_NONE {
@@ -185,9 +166,9 @@ pub(crate) unsafe extern "C" fn HandleConditionMenuInput(menu: *mut Pokenav_Cond
             }
         }
     }
-    return ret;
+    ret
 }
-pub(crate) unsafe extern "C" fn OpenMarkingsMenu(menu: *mut Pokenav_ConditionMenu) -> u32 {
+pub(crate) unsafe fn OpenMarkingsMenu(menu: *mut Pokenav_ConditionMenu) -> u32 {
     let mut monListPtr: *mut PokenavMonList = null_mut();
     let mut markings: u8 = 0;
     let mut ret: u32 = CONDITION_FUNC_NONE;
@@ -216,11 +197,9 @@ pub(crate) unsafe extern "C" fn OpenMarkingsMenu(menu: *mut Pokenav_ConditionMen
         (*menu).callback = Some(HandleConditionMenuInput);
         ret = CONDITION_FUNC_CLOSE_MARKINGS;
     }
-    return ret;
+    ret
 }
-pub(crate) unsafe extern "C" fn GetConditionReturnCallback(
-    menu: *mut Pokenav_ConditionMenu,
-) -> u32 {
+pub(crate) unsafe fn GetConditionReturnCallback(menu: *mut Pokenav_ConditionMenu) -> u32 {
     if (*menu).inSearchMode == 0 {
         return POKENAV_CONDITION_MENU;
     } else {
@@ -228,22 +207,19 @@ pub(crate) unsafe extern "C" fn GetConditionReturnCallback(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeConditionGraphMenuSubstruct1() {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn FreeConditionGraphMenuSubstruct1() {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
     if (*menu).inSearchMode == 0 {
         FreePokenavSubstruct(POKENAV_SUBSTRUCT_MON_LIST);
     }
     FreePokenavSubstruct(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU);
 }
-pub(crate) unsafe extern "C" fn ConditionGraphHandleDpadInput(
-    menu: *mut Pokenav_ConditionMenu,
-) -> u8 {
-    let mut monListPtr: *mut PokenavMonList =
+unsafe fn ConditionGraphHandleDpadInput(menu: *mut Pokenav_ConditionMenu) -> u8 {
+    let monListPtr: *mut PokenavMonList =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MON_LIST) as *mut PokenavMonList;
     let mut ret: u8 = CONDITION_FUNC_NONE as u8;
     if gMain.heldKeys as i32 & DPAD_UP != 0 {
@@ -251,25 +227,21 @@ pub(crate) unsafe extern "C" fn ConditionGraphHandleDpadInput(
             PlaySE(SE_SELECT);
             ret = SwitchConditionSummaryIndex(TRUE);
         }
-    } else if gMain.heldKeys as i32 & DPAD_DOWN != 0 {
-        if (*menu).inSearchMode == 0
-            || ((*monListPtr).currIndex as i32) < (*monListPtr).listCount as i32 - 1
-        {
-            PlaySE(SE_SELECT);
-            ret = SwitchConditionSummaryIndex(FALSE);
-        }
+    } else if gMain.heldKeys as i32 & DPAD_DOWN != 0
+        && ((*menu).inSearchMode == 0
+            || ((*monListPtr).currIndex as i32) < (*monListPtr).listCount as i32 - 1)
+    {
+        PlaySE(SE_SELECT);
+        ret = SwitchConditionSummaryIndex(FALSE);
     }
-    return ret;
+    ret
 }
-pub(crate) unsafe extern "C" fn SwitchConditionSummaryIndex(moveUp: u8) -> u8 {
-    let mut newLoadId: u16 = 0;
-    let mut wasNotLastMon: u8 = 0;
-    let mut isNotLastMon: u8 = 0;
-    let mut menu: *mut Pokenav_ConditionMenu =
+unsafe fn SwitchConditionSummaryIndex(moveUp: u8) -> u8 {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    let mut monListPtr: *mut PokenavMonList =
+    let monListPtr: *mut PokenavMonList =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MON_LIST) as *mut PokenavMonList;
-    newLoadId = (if moveUp != 0 {
+    let newLoadId: u16 = (if moveUp != 0 {
         (*menu).nextLoadIdUp
     } else {
         (*menu).nextLoadIdDown
@@ -279,7 +251,7 @@ pub(crate) unsafe extern "C" fn SwitchConditionSummaryIndex(moveUp: u8) -> u8 {
         (*menu).graph.savedPositions[(*menu).loadId].as_mut_ptr(),
         (*menu).graph.savedPositions[newLoadId].as_mut_ptr(),
     );
-    wasNotLastMon = ((*monListPtr).currIndex as i32
+    let wasNotLastMon: u8 = ((*monListPtr).currIndex as i32
         != (if IsConditionMenuSearchMode() != 0 {
             (*monListPtr).listCount as i32
         } else {
@@ -318,7 +290,7 @@ pub(crate) unsafe extern "C" fn SwitchConditionSummaryIndex(moveUp: u8) -> u8 {
                 0
             }) as i16;
     }
-    isNotLastMon = ((*monListPtr).currIndex as i32
+    let isNotLastMon: u8 = ((*monListPtr).currIndex as i32
         != (if IsConditionMenuSearchMode() != 0 {
             (*monListPtr).listCount as i32
         } else {
@@ -333,15 +305,14 @@ pub(crate) unsafe extern "C" fn SwitchConditionSummaryIndex(moveUp: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadConditionGraphMenuGfx() -> u32 {
+pub unsafe fn LoadConditionGraphMenuGfx() -> u32 {
     let mut var: i32 = 0;
-    let mut menu: *mut Pokenav_ConditionMenu =
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    let mut monListPtr: *mut PokenavMonList =
+    let monListPtr: *mut PokenavMonList =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MON_LIST) as *mut PokenavMonList;
     match (*menu).state {
         0 => {
@@ -422,11 +393,10 @@ pub unsafe extern "C" fn LoadConditionGraphMenuGfx() -> u32 {
         _ => {}
     }
     (*menu).state += 1;
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadNextConditionMenuMonData(mode: u8) -> u32 {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn LoadNextConditionMenuMonData(mode: u8) -> u32 {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
     match mode {
         CONDITION_LOAD_MON_INFO => {
@@ -441,10 +411,9 @@ pub unsafe extern "C" fn LoadNextConditionMenuMonData(mode: u8) -> u32 {
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyStringLeftAlignedToConditionData(
+pub unsafe fn CopyStringLeftAlignedToConditionData(
     mut dst: *mut u8,
     mut src: *mut u8,
     mut n: i16,
@@ -474,23 +443,15 @@ pub unsafe extern "C" fn CopyStringLeftAlignedToConditionData(
         }) = CHAR_SPACE;
     }
     *dst = EOS;
-    return dst;
+    dst
 }
-pub(crate) unsafe extern "C" fn CopyConditionMonNameGender(
-    mut str: *mut u8,
-    listId: u16,
-    skipPadding: u8,
-) -> *mut u8 {
+unsafe fn CopyConditionMonNameGender(mut str: *mut u8, listId: u16, skipPadding: u8) -> *mut u8 {
     let mut boxId: u16 = 0;
     let mut monId: u16 = 0;
     let mut gender: u16 = 0;
-    let mut species: u16 = 0;
     let mut level: u16 = 0;
-    let mut lvlDigits: u16 = 0;
     let mut boxMon: *mut BoxPokemon = null_mut();
-    let mut txtPtr: *mut u8 = null_mut();
-    let mut str_: *mut u8 = null_mut();
-    let mut monListPtr: *mut PokenavMonList =
+    let monListPtr: *mut PokenavMonList =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MON_LIST) as *mut PokenavMonList;
     boxId = (*monListPtr).monData[listId].boxId as u16;
     monId = (*monListPtr).monData[listId].monId as u16;
@@ -520,11 +481,18 @@ pub(crate) unsafe extern "C" fn CopyConditionMonNameGender(
         t5
     }) = TEXT_COLOR_LIGHT_BLUE;
     if GetBoxOrPartyMonData(boxId, monId, MON_DATA_IS_EGG, null_mut()) != 0 {
-        return StringCopyPadded(str, gText_EggNickname.as_ptr().cast_mut(), CHAR_SPACE, 12);
+        return StringCopyPadded(
+            str,
+            (*(&raw const crate::data::strings::gText_EggNickname).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            CHAR_SPACE,
+            12,
+        );
     }
     GetBoxOrPartyMonData(boxId, monId, MON_DATA_NICKNAME, str);
     StringGet_Nickname(str);
-    species = GetBoxOrPartyMonData(boxId, monId, MON_DATA_SPECIES, null_mut()) as u16;
+    let species: u16 = GetBoxOrPartyMonData(boxId, monId, MON_DATA_SPECIES, null_mut()) as u16;
     if boxId == TOTAL_BOXES_COUNT as u16 {
         level = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_LEVEL) as u16;
         gender = GetMonGender(&raw mut gPlayerParty[monId]) as u16;
@@ -534,11 +502,17 @@ pub(crate) unsafe extern "C" fn CopyConditionMonNameGender(
         level = GetLevelFromBoxMonExp(boxMon) as u16;
     }
     if (species == SPECIES_NIDORAN_F || species == SPECIES_NIDORAN_M)
-        && StringCompare(str, gSpeciesNames[species].as_ptr().cast_mut()) == 0
+        && StringCompare(
+            str,
+            (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())[species]
+                .as_ptr()
+                .cast_mut(),
+        ) == 0
     {
         gender = MON_GENDERLESS as u16;
     }
-    str_ = str;
+    let mut str_: *mut u8 = str;
     while *str_ != EOS {
         str_ = str_.at(1);
     }
@@ -680,9 +654,9 @@ pub(crate) unsafe extern "C" fn CopyConditionMonNameGender(
         str_ = str_.at(1);
         t31
     }) = CHAR_LV_2;
-    txtPtr = str_;
+    let txtPtr: *mut u8 = str_;
     str_ = ConvertIntToDecimalStringN(str_, level as i32, STR_CONV_MODE_LEFT_ALIGN, 3);
-    lvlDigits = (str_ as usize).wrapping_sub(txtPtr as usize) as i32 as u16;
+    let mut lvlDigits: u16 = (str_ as usize).wrapping_sub(txtPtr as usize) as i32 as u16;
     *({
         let t32 = str_;
         str_ = str_.at(1);
@@ -704,14 +678,14 @@ pub(crate) unsafe extern "C" fn CopyConditionMonNameGender(
         }
     }
     *str_ = EOS;
-    return str_;
+    str_
 }
-pub(crate) unsafe extern "C" fn CopyMonNameGenderLocation(listId: i16, loadId: u8) {
+unsafe fn CopyMonNameGenderLocation(listId: i16, loadId: u8) {
     let mut boxId: u16 = 0;
     let mut i: u16 = 0;
-    let mut menu: *mut Pokenav_ConditionMenu =
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    let mut monListPtr: *mut PokenavMonList =
+    let monListPtr: *mut PokenavMonList =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MON_LIST) as *mut PokenavMonList;
     if listId as i32
         != (if IsConditionMenuSearchMode() != 0 {
@@ -730,7 +704,9 @@ pub(crate) unsafe extern "C" fn CopyMonNameGenderLocation(listId: i16, loadId: u
         if boxId == TOTAL_BOXES_COUNT as u16 {
             CopyStringLeftAlignedToConditionData(
                 &raw mut (*menu).locationText[loadId][5],
-                gText_InParty.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_InParty).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 BOX_NAME_LENGTH,
             );
         } else {
@@ -755,16 +731,14 @@ pub(crate) unsafe extern "C" fn CopyMonNameGenderLocation(listId: i16, loadId: u
         (*menu).locationText[loadId][i] = EOS;
     }
 }
-pub(crate) unsafe extern "C" fn InitPartyConditionListParameters() {
-    let mut i: u16 = 0;
-    let mut count: u16 = 0;
-    let mut menu: *mut Pokenav_ConditionMenu =
+unsafe fn InitPartyConditionListParameters() {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    let mut monListPtr: *mut PokenavMonList =
+    let monListPtr: *mut PokenavMonList =
         AllocSubstruct(POKENAV_SUBSTRUCT_MON_LIST, 1708) as *mut PokenavMonList;
     (*menu).inSearchMode = FALSE;
-    i = 0;
-    count = 0;
+    let mut i: u16 = 0;
+    let mut count: u16 = 0;
     while i < CalculatePlayerPartyCount() as u16 {
         if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_IS_EGG) == 0 {
             (*monListPtr).monData[count].boxId = TOTAL_BOXES_COUNT;
@@ -781,19 +755,18 @@ pub(crate) unsafe extern "C" fn InitPartyConditionListParameters() {
     (*monListPtr).listCount = count + 1;
     (*menu).state = 0;
 }
-pub(crate) unsafe extern "C" fn InitSearchResultsConditionList() {
-    let mut menu: *mut Pokenav_ConditionMenu =
+unsafe fn InitSearchResultsConditionList() {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
     (*menu).inSearchMode = TRUE;
     (*menu).state = 0;
 }
-pub(crate) unsafe extern "C" fn GetMonConditionGraphData(listId: i16, loadId: u8) {
+unsafe fn GetMonConditionGraphData(listId: i16, loadId: u8) {
     let mut boxId: u16 = 0;
     let mut monId: u16 = 0;
-    let mut i: u16 = 0;
-    let mut menu: *mut Pokenav_ConditionMenu =
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    let mut monListPtr: *mut PokenavMonList =
+    let monListPtr: *mut PokenavMonList =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MON_LIST) as *mut PokenavMonList;
     if listId as i32
         != (if IsConditionMenuSearchMode() != 0 {
@@ -827,24 +800,19 @@ pub(crate) unsafe extern "C" fn GetMonConditionGraphData(listId: i16, loadId: u8
             (*menu).graph.savedPositions[loadId].as_mut_ptr(),
         );
     } else {
-        i = 0;
-        while i < CONDITION_COUNT {
+        for i in 0..CONDITION_COUNT {
             (*menu).graph.conditions[loadId][i] = 0;
             (*menu).graph.savedPositions[loadId][i].x = CONDITION_GRAPH_CENTER_X;
             (*menu).graph.savedPositions[loadId][i].y = CONDITION_GRAPH_CENTER_Y;
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn ConditionGraphDrawMonPic(listId: i16, loadId: u8) {
+unsafe fn ConditionGraphDrawMonPic(listId: i16, loadId: u8) {
     let mut boxId: u16 = 0;
     let mut monId: u16 = 0;
-    let mut species: u16 = 0;
-    let mut personality: u32 = 0;
-    let mut tid: u32 = 0;
-    let mut menu: *mut Pokenav_ConditionMenu =
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    let mut monListPtr: *mut PokenavMonList =
+    let monListPtr: *mut PokenavMonList =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MON_LIST) as *mut PokenavMonList;
     if listId as i32
         == (if IsConditionMenuSearchMode() != 0 {
@@ -857,11 +825,15 @@ pub(crate) unsafe extern "C" fn ConditionGraphDrawMonPic(listId: i16, loadId: u8
     }
     boxId = (*monListPtr).monData[listId].boxId as u16;
     monId = (*monListPtr).monData[listId].monId as u16;
-    species = GetBoxOrPartyMonData(boxId, monId, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16;
-    tid = GetBoxOrPartyMonData(boxId, monId, MON_DATA_OT_ID, null_mut()) as u32;
-    personality = GetBoxOrPartyMonData(boxId, monId, MON_DATA_PERSONALITY, null_mut()) as u32;
+    let species: u16 =
+        GetBoxOrPartyMonData(boxId, monId, MON_DATA_SPECIES_OR_EGG, null_mut()) as u16;
+    let tid: u32 = GetBoxOrPartyMonData(boxId, monId, MON_DATA_OT_ID, null_mut()) as u32;
+    let personality: u32 =
+        GetBoxOrPartyMonData(boxId, monId, MON_DATA_PERSONALITY, null_mut()) as u32;
     LoadSpecialPokePic(
-        (&raw const gMonFrontPicTable[species]).cast_mut(),
+        (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+            .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
+            .cast_mut(),
         (*menu).monPicGfx[loadId].as_mut_ptr() as *mut c_void,
         species as i32,
         personality,
@@ -872,75 +844,64 @@ pub(crate) unsafe extern "C" fn ConditionGraphDrawMonPic(listId: i16, loadId: u8
         (*menu).monPal[loadId].as_mut_ptr() as *mut c_void,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMonListCount() -> u16 {
-    let mut monListPtr: *mut PokenavMonList =
+pub unsafe fn GetMonListCount() -> u16 {
+    let monListPtr: *mut PokenavMonList =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MON_LIST) as *mut PokenavMonList;
-    return (*monListPtr).listCount;
+    (*monListPtr).listCount
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetConditionGraphCurrentListIndex() -> u16 {
-    let mut monListPtr: *mut PokenavMonList =
+pub unsafe fn GetConditionGraphCurrentListIndex() -> u16 {
+    let monListPtr: *mut PokenavMonList =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MON_LIST) as *mut PokenavMonList;
-    return (*monListPtr).currIndex;
+    (*monListPtr).currIndex
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetConditionGraphPtr() -> *mut ConditionGraph {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn GetConditionGraphPtr() -> *mut ConditionGraph {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    return &raw mut (*menu).graph;
+    &raw mut (*menu).graph
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetConditionGraphMenuCurrentLoadIndex() -> u8 {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn GetConditionGraphMenuCurrentLoadIndex() -> u8 {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    return (*menu).loadId as u8;
+    (*menu).loadId as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetConditionGraphMenuToLoadListIndex() -> u8 {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn GetConditionGraphMenuToLoadListIndex() -> u8 {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    return (*menu).toLoadListIndex as u8;
+    (*menu).toLoadListIndex as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetConditionMonPicGfx(loadId: u8) -> *mut c_void {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn GetConditionMonPicGfx(loadId: u8) -> *mut c_void {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    return (*menu).monPicGfx[loadId].as_mut_ptr() as *mut c_void;
+    (*menu).monPicGfx[loadId].as_mut_ptr() as *mut c_void
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetConditionMonPal(loadId: u8) -> *mut c_void {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn GetConditionMonPal(loadId: u8) -> *mut c_void {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    return (*menu).monPal[loadId].as_mut_ptr() as *mut c_void;
+    (*menu).monPal[loadId].as_mut_ptr() as *mut c_void
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetConditionGraphMenuToLoadId() -> u8 {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn GetConditionGraphMenuToLoadId() -> u8 {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    return (*menu).toLoadId as u8;
+    (*menu).toLoadId as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetConditionMonNameText(loadId: u8) -> *mut u8 {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn GetConditionMonNameText(loadId: u8) -> *mut u8 {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    return (*menu).nameText[loadId].as_mut_ptr();
+    (*menu).nameText[loadId].as_mut_ptr()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetConditionMonLocationText(loadId: u8) -> *mut u8 {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn GetConditionMonLocationText(loadId: u8) -> *mut u8 {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    return (*menu).locationText[loadId].as_mut_ptr();
+    (*menu).locationText[loadId].as_mut_ptr()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetConditionMonDataBuffer() -> u16 {
-    let mut monListPtr: *mut PokenavMonList =
+pub unsafe fn GetConditionMonDataBuffer() -> u16 {
+    let monListPtr: *mut PokenavMonList =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MON_LIST) as *mut PokenavMonList;
-    return (*monListPtr).monData[(*monListPtr).currIndex].data;
+    (*monListPtr).monData[(*monListPtr).currIndex].data
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsConditionMenuSearchMode() -> u32 {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn IsConditionMenuSearchMode() -> u32 {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
     if (*menu).inSearchMode == TRUE {
         return TRUE as u32;
@@ -949,12 +910,11 @@ pub unsafe extern "C" fn IsConditionMenuSearchMode() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryGetMonMarkId() -> u8 {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn TryGetMonMarkId() -> u8 {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
     if (*menu).inSearchMode == TRUE {
         return (*menu).monMarks[(*menu).loadId];
@@ -963,12 +923,11 @@ pub unsafe extern "C" fn TryGetMonMarkId() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetNumConditionMonSparkles() -> u8 {
-    let mut menu: *mut Pokenav_ConditionMenu =
+pub unsafe fn GetNumConditionMonSparkles() -> u8 {
+    let menu: *mut Pokenav_ConditionMenu =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU) as *mut Pokenav_ConditionMenu;
-    return (*menu).numSparkles[(*menu).loadId];
+    (*menu).numSparkles[(*menu).loadId]
 }

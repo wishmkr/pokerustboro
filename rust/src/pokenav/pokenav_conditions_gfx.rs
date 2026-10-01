@@ -3,37 +3,129 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    dead_code,
+    unused_assignments,
+    unused_labels
 )]
 
+use crate::bg::CopyToBgTilemapBufferRect;
+use crate::bg::{ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, HideBg, ShowBg};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::gpu_regs::SetGpuReg;
+use crate::menu::{BgDmaFill, DecompressAndCopyTileDataToVram, FreeTempTileDataBuffersIfPossible};
+use crate::menu_specialized::{
+    ConditionGraph_Draw, ConditionGraph_InitResetScanline, ConditionGraph_InitWindow,
+    ConditionGraph_ResetScanline, ConditionGraph_SetNewPositions, ConditionGraph_TryUpdate,
+    ConditionMenu_UpdateMonEnter, ConditionMenu_UpdateMonExit, CreateConditionSparkleSprites,
+    DestroyConditionSparkleSprites, FreeConditionSparkles, LoadConditionMonPicTemplate,
+    LoadConditionSelectionIcons, LoadConditionSparkle, MoveConditionMonOffscreen,
+    ResetConditionSparkleSprites,
+};
+use crate::mon_markings::{
+    BufferMonMarkingsMenuTiles, CreateMonMarkingAllCombosSprite, FreeMonMarkingsMenu,
+    InitMonMarkingsMenu, OpenMonMarkingsMenu,
+};
+use crate::palette::{LoadPalette, TransferPlttBuffer};
+use crate::pokenav::CreateLoopedTask;
+use crate::pokenav::{
+    AllocSubstruct, FreePokenavSubstruct, GetSubstructPtr, IsLoopedTaskActive,
+    SetPokenavVBlankCallback, SetVBlankCallback_,
+};
+use crate::pokenav_conditions::{
+    GetConditionGraphCurrentListIndex, GetConditionGraphPtr, GetConditionMonDataBuffer,
+    GetConditionMonLocationText, GetConditionMonNameText, GetConditionMonPal,
+    GetConditionMonPicGfx, GetMonListCount, GetNumConditionMonSparkles, IsConditionMenuSearchMode,
+    LoadConditionGraphMenuGfx, LoadNextConditionMenuMonData, TryGetMonMarkId,
+};
+use crate::pokenav_main_menu::{
+    AreLeftHeaderSpritesMoving, CopyPaletteIntoBufferUnfaded, InitBgTemplates, IsPaletteFadeActive,
+    LoadLeftHeaderGfxForIndex, MainMenuLoopedTaskIsBusy, Pokenav_AllocAndLoadPalettes,
+    PokenavFadeScreen, PokenavFillPalette, PrintHelpBarText, SetLeftHeaderSpritesInvisibility,
+    ShowLeftHeaderGfx, SlideMenuHeaderDown, WaitForHelpBar,
+};
+use crate::scanline_effect::ScanlineEffect_InitHBlankDmaTransfer;
+use crate::sprite::gSprites;
+use crate::sprite::{
+    FreeSpritePaletteByTag, FreeSpriteTilesByTag, IndexOfSpritePaletteTag, LoadOam,
+    ProcessSpriteCopyRequests,
+};
+use crate::string_util::{ConvertIntToDecimalStringN, StringCopy};
+use crate::text::DeactivateAllTextPrinters;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{CopyWindowToVram, FillWindowPixelBuffer, PutWindowTilemap, RemoveWindow};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `LoadSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
+    unsafe { crate::sprite::LoadSpritePalette(a0 as _) }
+}
+/// `LoadSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
+    unsafe { crate::sprite::LoadSpriteSheet(a0 as _) }
+}
+/// `LoadSpriteSheets` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheets(a0: *mut SpriteSheet) {
+    unsafe {
+        crate::sprite::LoadSpriteSheets(a0 as _);
+    }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
 // Data tables (translate with cdata.py): gConditionGraphData_Pal gConditionText_Pal sConditionGraphData_Gfx sConditionGraphData_Tilemap sMonMarkings_Pal sMenuBgTemplates sMonNameGenderWindowTemplate sListIndexWindowTemplate sUnusedWindowTemplate1 sUnusedWindowTemplate2 sLoopedTaskFuncs
 
 /// `struct Pokenav_ConditionMenuGfx`
@@ -44,7 +136,7 @@ pub struct Pokenav_ConditionMenuGfx {
     pub tilemapBuffers: CArray<CArray<u8, 2048>, 3>,
     pub filler: CArray<u8, 2>,
     pub partyPokeballSpriteIds: CArray<u8, 7>,
-    pub callback: Option<unsafe extern "C" fn() -> u32>,
+    pub callback: Option<unsafe fn() -> u32>,
     pub monTransitionX: i16,
     pub monPicSpriteId: u8,
     pub monPalIndex: u16,
@@ -99,7 +191,7 @@ static sConditionGraphData_Tilemap: Table<CArray<u32, 63>> =
     Table((&raw const crate::data::pokenav_conditions_gfx::sConditionGraphData_Tilemap).cast());
 static sListIndexWindowTemplate: Table<WindowTemplate> =
     Table((&raw const crate::data::pokenav_conditions_gfx::sListIndexWindowTemplate).cast());
-static sLoopedTaskFuncs: Table<CArray<Option<unsafe extern "C" fn(i32) -> u32>, 7>> =
+static sLoopedTaskFuncs: Table<CArray<Option<unsafe fn(i32) -> u32>, 7>> =
     Table((&raw const crate::data::pokenav_conditions_gfx::sLoopedTaskFuncs).cast());
 static sMenuBgTemplates: Table<CArray<BgTemplate, 3>> =
     Table((&raw const crate::data::pokenav_conditions_gfx::sMenuBgTemplates).cast());
@@ -112,139 +204,53 @@ static sUnusedWindowTemplate1: Table<WindowTemplate> =
 static sUnusedWindowTemplate2: Table<WindowTemplate> =
     Table((&raw const crate::data::pokenav_conditions_gfx::sUnusedWindowTemplate2).cast());
 
-pub(crate) static mut sInitialLoadId: u8 = 0;
+pub(crate) static sInitialLoadId: crate::global::Global<u8> = crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static gPokenavCondition_Gfx: CArray<u32, 0>;
-    static gPokenavCondition_Pal: CArray<u16, 0>;
-    static gPokenavCondition_Tilemap: CArray<u32, 0>;
-    static gPokenavOptions_Tilemap: CArray<u16, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static gText_Number2: CArray<u8, 0>;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AllocSubstruct(a0: u32, a1: u32) -> *mut c_void;
-    fn AreLeftHeaderSpritesMoving() -> u32;
-    fn BgDmaFill(a0: u32, a1: u8, a2: i32, a3: i32);
-    fn BufferMonMarkingsMenuTiles();
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ConditionGraph_Draw(a0: *mut ConditionGraph);
-    fn ConditionGraph_InitResetScanline(a0: *mut ConditionGraph);
-    fn ConditionGraph_InitWindow(a0: u8);
-    fn ConditionGraph_ResetScanline(a0: *mut ConditionGraph) -> u8;
-    fn ConditionGraph_SetNewPositions(
-        a0: *mut ConditionGraph,
-        a1: *mut UCoords16,
-        a2: *mut UCoords16,
-    );
-    fn ConditionGraph_TryUpdate(a0: *mut ConditionGraph) -> u8;
-    fn ConditionMenu_UpdateMonEnter(a0: *mut ConditionGraph, a1: *mut i16) -> u8;
-    fn ConditionMenu_UpdateMonExit(a0: *mut ConditionGraph, a1: *mut i16) -> u8;
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyPaletteIntoBufferUnfaded(a0: *mut u16, a1: u32, a2: u32);
-    fn CopyToBgTilemapBufferRect(a0: u8, a1: *mut c_void, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateConditionSparkleSprites(a0: *mut *mut Sprite, a1: u8, a2: u8);
-    fn CreateLoopedTask(a0: Option<unsafe extern "C" fn(i32) -> u32>, a1: u32) -> u32;
-    fn CreateMonMarkingAllCombosSprite(a0: u16, a1: u16, a2: *mut u16) -> *mut Sprite;
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DestroyConditionSparkleSprites(a0: *mut *mut Sprite);
-    fn DestroySprite(a0: *mut Sprite);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FreeConditionSparkles(a0: *mut *mut Sprite);
-    fn FreeMonMarkingsMenu();
-    fn FreePokenavSubstruct(a0: u32);
-    fn FreeSpritePaletteByTag(a0: u16);
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn GetConditionGraphCurrentListIndex() -> u16;
-    fn GetConditionGraphMenuCurrentLoadIndex() -> i8;
-    fn GetConditionGraphPtr() -> *mut ConditionGraph;
-    fn GetConditionMonDataBuffer() -> u16;
-    fn GetConditionMonLocationText(a0: u8) -> *mut u8;
-    fn GetConditionMonNameText(a0: u8) -> *mut u8;
-    fn GetConditionMonPal(a0: u8) -> *mut c_void;
-    fn GetConditionMonPicGfx(a0: u8) -> *mut c_void;
-    fn GetMonListCount() -> u16;
-    fn GetNumConditionMonSparkles() -> u8;
-    fn GetSubstructPtr(a0: u32) -> *mut c_void;
-    fn HideBg(a0: u8);
-    fn IndexOfSpritePaletteTag(a0: u16) -> u8;
-    fn InitBgTemplates(a0: *mut BgTemplate, a1: i32);
-    fn InitMonMarkingsMenu(a0: *mut MonMarkingsMenu);
-    fn IsConditionMenuSearchMode() -> u32;
-    fn IsLoopedTaskActive(a0: u32) -> u32;
-    fn IsPaletteFadeActive() -> u32;
-    fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void);
-    fn LoadConditionGraphMenuGfx() -> u32;
-    fn LoadConditionMonPicTemplate(
-        a0: *mut SpriteSheet,
-        a1: *mut SpriteTemplate,
-        a2: *mut SpritePalette,
-    );
-    fn LoadConditionSelectionIcons(
-        a0: *mut SpriteSheet,
-        a1: *mut SpriteTemplate,
-        a2: *mut SpritePalette,
-    );
-    fn LoadConditionSparkle(a0: *mut SpriteSheet, a1: *mut SpritePalette);
-    fn LoadLeftHeaderGfxForIndex(a0: u32);
-    fn LoadNextConditionMenuMonData(a0: u8) -> u32;
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
-    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
-    fn LoadSpriteSheets(a0: *mut SpriteSheet);
-    fn MainMenuLoopedTaskIsBusy() -> u32;
-    fn MoveConditionMonOffscreen(a0: *mut i16) -> u8;
-    fn OpenMonMarkingsMenu(a0: u8, a1: i16, a2: i16);
-    fn PokenavFadeScreen(a0: i32);
-    fn PokenavFillPalette(a0: u32, a1: u16);
-    fn Pokenav_AllocAndLoadPalettes(a0: *mut SpritePalette);
-    fn PrintHelpBarText(a0: u32);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveWindow(a0: u8);
-    fn ResetConditionSparkleSprites(a0: *mut *mut Sprite);
-    fn ScanlineEffect_InitHBlankDmaTransfer();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetLeftHeaderSpritesInvisibility();
-    fn SetPokenavVBlankCallback();
-    fn SetVBlankCallback_(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn ShowLeftHeaderGfx(a0: u32, a1: u32, a2: u32);
-    fn SlideMenuHeaderDown();
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TransferPlttBuffer();
-    fn TryGetMonMarkId() -> u8;
-    fn WaitForHelpBar() -> u32;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `GetConditionGraphMenuCurrentLoadIndex` with this module's view of its types.
+#[inline]
+unsafe fn GetConditionGraphMenuCurrentLoadIndex() -> i8 {
+    unsafe { crate::pokenav_conditions::GetConditionGraphMenuCurrentLoadIndex() as i8 }
+}
+/// `LZ77UnCompVram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompVram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn OpenConditionGraphMenu() -> u32 {
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+pub unsafe fn OpenConditionGraphMenu() -> u32 {
+    let menu: *mut Pokenav_ConditionMenuGfx =
         AllocSubstruct(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX, 14508)
             as *mut Pokenav_ConditionMenuGfx;
     if menu.is_null() {
@@ -254,31 +260,29 @@ pub unsafe extern "C" fn OpenConditionGraphMenu() -> u32 {
     (*menu).loopedTaskId = CreateLoopedTask(Some(LoopedTask_OpenConditionGraphMenu), 1);
     (*menu).callback = Some(GetConditionGraphMenuLoopedTaskActive);
     (*menu).windowModeState = 0;
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateConditionGraphMenuLoopedTask(id: i32) {
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+pub unsafe fn CreateConditionGraphMenuLoopedTask(id: i32) {
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
     (*menu).loopedTaskId = CreateLoopedTask(sLoopedTaskFuncs[id], 1);
     (*menu).callback = Some(GetConditionGraphMenuLoopedTaskActive);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsConditionGraphMenuLoopedTaskActive() -> u32 {
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+pub unsafe fn IsConditionGraphMenuLoopedTaskActive() -> u32 {
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
-    return (*menu).callback.unwrap_unchecked()();
+    (*menu).callback.unwrap_unchecked()()
 }
-pub(crate) unsafe extern "C" fn GetConditionGraphMenuLoopedTaskActive() -> u32 {
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+pub(crate) unsafe fn GetConditionGraphMenuLoopedTaskActive() -> u32 {
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
-    return IsLoopedTaskActive((*menu).loopedTaskId);
+    IsLoopedTaskActive((*menu).loopedTaskId)
 }
-pub(crate) unsafe extern "C" fn LoopedTask_OpenConditionGraphMenu(state: i32) -> u32 {
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+pub(crate) unsafe fn LoopedTask_OpenConditionGraphMenu(state: i32) -> u32 {
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
     match state {
@@ -301,7 +305,10 @@ pub(crate) unsafe extern "C" fn LoopedTask_OpenConditionGraphMenu(state: i32) ->
             SetGpuReg(REG_OFFSET_BLDALPHA, 1035);
             DecompressAndCopyTileDataToVram(
                 3,
-                gPokenavCondition_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gPokenavCondition_Gfx)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0,
                 0,
                 0,
@@ -326,14 +333,20 @@ pub(crate) unsafe extern "C" fn LoopedTask_OpenConditionGraphMenu(state: i32) ->
                 return LT_PAUSE;
             }
             LZ77UnCompVram(
-                gPokenavCondition_Tilemap.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gPokenavCondition_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 (*menu).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
             );
             SetBgTilemapBuffer(3, (*menu).tilemapBuffers[0].as_mut_ptr() as *mut c_void);
             if IsConditionMenuSearchMode() == TRUE as u32 {
                 CopyToBgTilemapBufferRect(
                     3,
-                    gPokenavOptions_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                    (*(&raw const crate::data::graphics::gPokenavOptions_Tilemap)
+                        .cast::<CArray<u16, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                     0,
                     5,
                     9,
@@ -341,7 +354,14 @@ pub(crate) unsafe extern "C" fn LoopedTask_OpenConditionGraphMenu(state: i32) ->
                 );
             }
             CopyBgTilemapBufferToVram(3);
-            CopyPaletteIntoBufferUnfaded(gPokenavCondition_Pal.as_ptr().cast_mut(), 16, 32);
+            CopyPaletteIntoBufferUnfaded(
+                (*(&raw const crate::data::graphics::gPokenavCondition_Pal)
+                    .cast::<CArray<u16, 0>>())
+                .as_ptr()
+                .cast_mut(),
+                16,
+                32,
+            );
             CopyPaletteIntoBufferUnfaded(gConditionText_Pal.as_ptr().cast_mut(), 240, 32);
             (*menu).monTransitionX = -80;
             return LT_INC_AND_PAUSE;
@@ -508,10 +528,10 @@ pub(crate) unsafe extern "C" fn LoopedTask_OpenConditionGraphMenu(state: i32) ->
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_ExitConditionGraphMenu(state: i32) -> u32 {
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+pub(crate) unsafe fn LoopedTask_ExitConditionGraphMenu(state: i32) -> u32 {
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
     match state {
@@ -548,10 +568,10 @@ pub(crate) unsafe extern "C" fn LoopedTask_ExitConditionGraphMenu(state: i32) ->
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_TransitionMons(state: i32) -> u32 {
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+pub(crate) unsafe fn LoopedTask_TransitionMons(state: i32) -> u32 {
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
     let mut graph: *mut ConditionGraph = GetConditionGraphPtr();
@@ -631,10 +651,10 @@ pub(crate) unsafe extern "C" fn LoopedTask_TransitionMons(state: i32) -> u32 {
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_MoveCursorNoTransition(state: i32) -> u32 {
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+pub(crate) unsafe fn LoopedTask_MoveCursorNoTransition(state: i32) -> u32 {
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
     match state {
@@ -701,10 +721,10 @@ pub(crate) unsafe extern "C" fn LoopedTask_MoveCursorNoTransition(state: i32) ->
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_SlideMonOut(state: i32) -> u32 {
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+pub(crate) unsafe fn LoopedTask_SlideMonOut(state: i32) -> u32 {
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
     match state {
@@ -762,9 +782,9 @@ pub(crate) unsafe extern "C" fn LoopedTask_SlideMonOut(state: i32) -> u32 {
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_OpenMonMarkingsWindow(state: i32) -> u32 {
+pub(crate) unsafe fn LoopedTask_OpenMonMarkingsWindow(state: i32) -> u32 {
     match state {
         0 => {
             OpenMonMarkingsMenu(TryGetMonMarkId(), 176, 32);
@@ -782,9 +802,9 @@ pub(crate) unsafe extern "C" fn LoopedTask_OpenMonMarkingsWindow(state: i32) -> 
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn LoopedTask_CloseMonMarkingsWindow(state: i32) -> u32 {
+pub(crate) unsafe fn LoopedTask_CloseMonMarkingsWindow(state: i32) -> u32 {
     match state {
         0 => {
             FreeMonMarkingsMenu();
@@ -802,22 +822,23 @@ pub(crate) unsafe extern "C" fn LoopedTask_CloseMonMarkingsWindow(state: i32) ->
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn UnusedPrintNumberString(dst: *mut u8, num: u16) -> *mut u8 {
+unsafe fn UnusedPrintNumberString(dst: *mut u8, num: u16) -> *mut u8 {
     let mut txtPtr: *mut u8 =
         ConvertIntToDecimalStringN(dst, num as i32, STR_CONV_MODE_RIGHT_ALIGN, 4);
-    txtPtr = StringCopy(txtPtr, gText_Number2.as_ptr().cast_mut());
-    return txtPtr;
+    txtPtr = StringCopy(
+        txtPtr,
+        (*(&raw const crate::data::strings::gText_Number2).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
+    txtPtr
 }
-pub(crate) unsafe extern "C" fn UpdateConditionGraphMenuWindows(
-    mode: u8,
-    bufferIndex: u16,
-    winMode: u8,
-) -> u32 {
+unsafe fn UpdateConditionGraphMenuWindows(mode: u8, bufferIndex: u16, winMode: u8) -> u32 {
     let mut text: CArray<u8, 32> = zeroed();
     let mut str: *mut u8 = null_mut();
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
     match mode {
@@ -860,7 +881,12 @@ pub(crate) unsafe extern "C" fn UpdateConditionGraphMenuWindows(
                 text[2] = TEXT_COLOR_BLUE;
                 text[3] = TEXT_COLOR_TRANSPARENT;
                 text[4] = TEXT_COLOR_LIGHT_BLUE;
-                StringCopy(&raw mut text[5], gText_Number2.as_ptr().cast_mut());
+                StringCopy(
+                    &raw mut text[5],
+                    (*(&raw const crate::data::strings::gText_Number2).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                );
                 AddTextPrinterParameterized(
                     (*menu).listIndexWindowId,
                     FONT_NORMAL,
@@ -889,9 +915,8 @@ pub(crate) unsafe extern "C" fn UpdateConditionGraphMenuWindows(
         }
         3 => 'l2: {
             let sw1: u8 = (*menu).windowModeState;
-            let mut fall = false;
+            let fall = false;
             if sw1 == 0 {
-                fall = true;
                 if winMode != 0 {
                     CopyWindowToVram((*menu).nameGenderWindowId, COPYWIN_FULL);
                 } else {
@@ -906,7 +931,6 @@ pub(crate) unsafe extern "C" fn UpdateConditionGraphMenuWindows(
                 }
             }
             if fall || sw1 == 1 {
-                fall = true;
                 if winMode != 0 {
                     CopyWindowToVram((*menu).listIndexWindowId, COPYWIN_FULL);
                 } else {
@@ -918,24 +942,23 @@ pub(crate) unsafe extern "C" fn UpdateConditionGraphMenuWindows(
         }
         _ => {}
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn CopyUnusedConditionWindowsToVram() {
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+unsafe fn CopyUnusedConditionWindowsToVram() {
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
     CopyWindowToVram((*menu).unusedWindowId1, COPYWIN_FULL);
     CopyWindowToVram((*menu).unusedWindowId2, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_PartyPokeball(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_PartyPokeball(sprite: *mut Sprite) {
     if (*sprite).data[0] as i32 == GetConditionGraphCurrentListIndex() as i32 {
         StartSpriteAnim(sprite, CONDITION_ICON_SELECTED);
     } else {
         StartSpriteAnim(sprite, CONDITION_ICON_UNSELECTED);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HighlightCurrentPartyIndexPokeball(sprite: *mut Sprite) {
+pub unsafe fn HighlightCurrentPartyIndexPokeball(sprite: *mut Sprite) {
     if GetConditionGraphCurrentListIndex() as i32 == GetMonListCount() as i32 - 1 {
         (*sprite)
             .oam
@@ -946,11 +969,10 @@ pub unsafe extern "C" fn HighlightCurrentPartyIndexPokeball(sprite: *mut Sprite)
             .set_paletteNum(IndexOfSpritePaletteTag(TAG_CONDITION_CANCEL) as u16);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MonMarkingsCallback(sprite: *mut Sprite) {
+pub unsafe fn MonMarkingsCallback(sprite: *mut Sprite) {
     StartSpriteAnim(sprite, TryGetMonMarkId());
 }
-pub(crate) unsafe extern "C" fn CreateMonMarkingsOrPokeballIndicators() {
+unsafe fn CreateMonMarkingsOrPokeballIndicators() {
     let mut sprSheets: CArray<SpriteSheet, 4> = zeroed();
     let mut sprTemplate: SpriteTemplate = zeroed();
     let mut sprPals: CArray<SpritePalette, 3> = zeroed();
@@ -958,7 +980,7 @@ pub(crate) unsafe extern "C" fn CreateMonMarkingsOrPokeballIndicators() {
     let mut sprite: *mut Sprite = null_mut();
     let mut i: u16 = 0;
     let mut spriteId: u16 = 0;
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
     LoadConditionSelectionIcons(
@@ -1028,8 +1050,7 @@ pub(crate) unsafe extern "C" fn CreateMonMarkingsOrPokeballIndicators() {
     sprPals[1].data = null_mut();
     Pokenav_AllocAndLoadPalettes(sprPals.as_mut_ptr());
 }
-pub(crate) unsafe extern "C" fn FreeConditionMenuGfx(menu: *mut Pokenav_ConditionMenuGfx) {
-    let mut i: u8 = 0;
+unsafe fn FreeConditionMenuGfx(menu: *mut Pokenav_ConditionMenuGfx) {
     if IsConditionMenuSearchMode() == TRUE as u32 {
         DestroySprite((*menu).monMarksSprite);
         FreeSpriteTilesByTag(TAG_CONDITION_MARKINGS_MENU);
@@ -1037,10 +1058,8 @@ pub(crate) unsafe extern "C" fn FreeConditionMenuGfx(menu: *mut Pokenav_Conditio
         FreeSpritePaletteByTag(TAG_CONDITION_MARKINGS_MENU);
         FreeSpritePaletteByTag(TAG_CONDITION_MON_MARKINGS);
     } else {
-        i = 0;
-        while i < 7 {
+        for i in 0..7u8 {
             DestroySprite(&raw mut gSprites[(*menu).partyPokeballSpriteIds[i]]);
-            i += 1;
         }
         FreeSpriteTilesByTag(TAG_CONDITION_BALL);
         FreeSpriteTilesByTag(TAG_CONDITION_CANCEL);
@@ -1054,9 +1073,8 @@ pub(crate) unsafe extern "C" fn FreeConditionMenuGfx(menu: *mut Pokenav_Conditio
         FreeSpritePaletteByTag(TAG_CONDITION_MON);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeConditionGraphMenuSubstruct2() {
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+pub unsafe fn FreeConditionGraphMenuSubstruct2() {
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
     RemoveWindow((*menu).nameGenderWindowId);
@@ -1072,19 +1090,18 @@ pub unsafe extern "C" fn FreeConditionGraphMenuSubstruct2() {
     SetExitVBlank();
     FreePokenavSubstruct(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MonPicGfxSpriteCallback(sprite: *mut Sprite) {
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+pub unsafe fn MonPicGfxSpriteCallback(sprite: *mut Sprite) {
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
     (*sprite).x = (*menu).monTransitionX + 38;
 }
-pub(crate) unsafe extern "C" fn CreateConditionMonPic(id: u8) {
+unsafe fn CreateConditionMonPic(id: u8) {
     let mut sprTemplate: SpriteTemplate = zeroed();
     let mut sprSheet: SpriteSheet = zeroed();
     let mut sprPal: SpritePalette = zeroed();
     let mut spriteId: u8 = 0;
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
     if (*menu).monPicSpriteId == SPRITE_NONE {
@@ -1115,10 +1132,10 @@ pub(crate) unsafe extern "C" fn CreateConditionMonPic(id: u8) {
             {
                 {
                     {
-                        let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                        let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                         volatile_write(dmaRegs, _src as usize as u32);
                         volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                        volatile_write(dmaRegs.at(2), 0x80000000 | _size / 2);
+                        volatile_write(dmaRegs.at(2), 0x80000000 | (_size / 2));
                         let _ = (dmaRegs.at(2)).read_volatile();
                     }
                 }
@@ -1127,28 +1144,28 @@ pub(crate) unsafe extern "C" fn CreateConditionMonPic(id: u8) {
         LoadPalette(GetConditionMonPal(id), (*menu).monPalIndex, 32);
     }
 }
-pub(crate) unsafe extern "C" fn VBlankCB_PokenavConditionGraph() {
-    let mut graph: *mut ConditionGraph = GetConditionGraphPtr();
+pub(crate) unsafe fn VBlankCB_PokenavConditionGraph() {
+    let graph: *mut ConditionGraph = GetConditionGraphPtr();
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
     ConditionGraph_Draw(graph);
     ScanlineEffect_InitHBlankDmaTransfer();
 }
-pub(crate) unsafe extern "C" fn SetExitVBlank() {
+unsafe fn SetExitVBlank() {
     SetPokenavVBlankCallback();
 }
-pub(crate) unsafe extern "C" fn ToggleGraphData(showBg: u8) {
+unsafe fn ToggleGraphData(showBg: u8) {
     if showBg != 0 {
         ShowBg(2);
     } else {
         HideBg(2);
     }
 }
-pub(crate) unsafe extern "C" fn DoConditionGraphEnterTransition() {
-    let mut graph: *mut ConditionGraph = GetConditionGraphPtr();
-    let mut id: u8 = GetConditionGraphMenuCurrentLoadIndex() as u8;
-    sInitialLoadId = id;
+unsafe fn DoConditionGraphEnterTransition() {
+    let graph: *mut ConditionGraph = GetConditionGraphPtr();
+    let id: u8 = GetConditionGraphMenuCurrentLoadIndex() as u8;
+    sInitialLoadId.set(id);
     ConditionGraph_SetNewPositions(
         graph,
         (*graph).savedPositions[3].as_mut_ptr(),
@@ -1156,8 +1173,8 @@ pub(crate) unsafe extern "C" fn DoConditionGraphEnterTransition() {
     );
     ConditionGraph_TryUpdate(graph);
 }
-pub(crate) unsafe extern "C" fn DoConditionGraphExitTransition() {
-    let mut graph: *mut ConditionGraph = GetConditionGraphPtr();
+unsafe fn DoConditionGraphExitTransition() {
+    let graph: *mut ConditionGraph = GetConditionGraphPtr();
     if IsConditionMenuSearchMode() != 0
         || GetConditionGraphCurrentListIndex() as i32 != GetMonListCount() as i32 - 1
     {
@@ -1168,9 +1185,8 @@ pub(crate) unsafe extern "C" fn DoConditionGraphExitTransition() {
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMonMarkingsData() -> u8 {
-    let mut menu: *mut Pokenav_ConditionMenuGfx =
+pub unsafe fn GetMonMarkingsData() -> u8 {
+    let menu: *mut Pokenav_ConditionMenuGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_CONDITION_GRAPH_MENU_GFX)
             as *mut Pokenav_ConditionMenuGfx;
     if IsConditionMenuSearchMode() == 1 {
@@ -1180,6 +1196,6 @@ pub unsafe extern "C" fn GetMonMarkingsData() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }

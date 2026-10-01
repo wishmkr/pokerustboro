@@ -1,215 +1,178 @@
-use crate::ffi::{FlagGet, FlagSet};
-use core::ffi::{c_int, c_void};
-use core::ptr::{addr_of, addr_of_mut};
+//! After the Champion is beaten (was src/post_battle_event_funcs.c): the
+//! Hall of Fame bookkeeping, the Champion Ribbon, and where Continue starts.
+
+use crate::box_mon::{get_box_mon_data, set_box_mon_data};
+use crate::consts::*;
+use crate::credits::gHasHallOfFameRecords;
+use crate::event_data::{flag_get, flag_set};
+use crate::party::player_party;
+use crate::save_blocks::save_block2;
+use crate::types::Pokemon;
 
 const FLAG_SYS_GAME_CLEAR: u16 = 0x864;
 const FLAG_SYS_RIBBON_GET: u16 = 0x89b;
-const GAME_STAT_FIRST_HOF_PLAY_TIME: u8 = 1;
-const GAME_STAT_RECEIVED_RIBBONS: u8 = 42;
 const HEAL_LOCATION_BRENDANS_HOUSE_2F: u8 = 1;
 const HEAL_LOCATION_MAYS_HOUSE_2F: u8 = 2;
-const MON_DATA_SANITY_HAS_SPECIES: c_int = 5;
-const MON_DATA_SANITY_IS_EGG: c_int = 6;
-const MON_DATA_CHAMPION_RIBBON: c_int = 67;
+const MON_DATA_CHAMPION_RIBBON: i32 = 67;
+/// Spot the Cuties covers a Pokémon with more ribbons than this.
 const NUM_CUTIES_RIBBONS: u8 = 4;
 
-type MainCallback = unsafe extern "C" fn();
-
-#[repr(C, align(4))]
-struct Pokemon {
-    bytes: [u8; 100],
-}
-
-#[repr(C)]
-struct SaveBlock2HallOfFameView {
-    player_name: [u8; 8],
-    player_gender: u8,
-    special_save_warp_flags: u8,
-    trainer_id: [u8; 4],
-    play_time_hours: u16,
-    play_time_minutes: u8,
-    play_time_seconds: u8,
-}
-
-#[repr(C)]
-#[derive(Clone, Copy)]
-struct RibbonCounter {
-    party_index: u8,
-    count: u8,
-}
-
-unsafe extern "C" {
-    static mut gPlayerParty: [Pokemon; 6];
-    static mut gSaveBlock2Ptr: *mut SaveBlock2HallOfFameView;
-    static mut gHasHallOfFameRecords: u8;
-
-    fn HealPlayerParty();
-    fn GetGameStat(index: u8) -> u32;
-    fn SetGameStat(index: u8, value: u32);
-    fn IncrementGameStat(index: u8);
-    fn SetContinueGameWarpStatus();
-    fn SetContinueGameWarpToHealLocation(location: u8);
-    fn GetMonData2(mon: *mut u8, field: c_int) -> u32;
-    fn SetMonData(mon: *mut u8, field: c_int, value: *const c_void);
-    fn GetRibbonCount(mon: *mut Pokemon) -> u8;
-    fn TryPutSpotTheCutiesOnAir(mon: *mut Pokemon, ribbon_field: u8);
-    fn SetMainCallback2(callback: MainCallback);
-    fn CB2_DoHallOfFameScreen();
-    fn CB2_WhiteOut();
-}
-
-unsafe fn first_hall_of_fame_time() -> u32 {
-    let save = unsafe { gSaveBlock2Ptr };
-    (u32::from(unsafe { addr_of!((*save).play_time_hours).read() }) << 16)
-        | (u32::from(unsafe { addr_of!((*save).play_time_minutes).read() }) << 8)
-        | u32::from(unsafe { addr_of!((*save).play_time_seconds).read() })
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GameClear() -> c_int {
-    unsafe { HealPlayerParty() };
-
-    if unsafe { FlagGet(FLAG_SYS_GAME_CLEAR) } != 0 {
-        unsafe { addr_of_mut!(gHasHallOfFameRecords).write(1) };
-    } else {
-        unsafe { addr_of_mut!(gHasHallOfFameRecords).write(0) };
-        let _ = unsafe { FlagSet(FLAG_SYS_GAME_CLEAR) };
-    }
-
-    if unsafe { GetGameStat(GAME_STAT_FIRST_HOF_PLAY_TIME) } == 0 {
-        unsafe { SetGameStat(GAME_STAT_FIRST_HOF_PLAY_TIME, first_hall_of_fame_time()) };
-    }
-
-    unsafe { SetContinueGameWarpStatus() };
-    let gender = unsafe { addr_of!((*gSaveBlock2Ptr).player_gender).read() };
+/// `HealPlayerParty` with this module's view of its types.
+#[inline]
+unsafe fn HealPlayerParty() {
     unsafe {
-        SetContinueGameWarpToHealLocation(if gender == 0 {
+        crate::script_pokemon_util::HealPlayerParty();
+    }
+}
+/// `GetGameStat` with this module's view of its types.
+#[inline]
+unsafe fn GetGameStat(a0: u8) -> u32 {
+    unsafe { crate::overworld::GetGameStat(a0) }
+}
+/// `SetGameStat` with this module's view of its types.
+#[inline]
+unsafe fn SetGameStat(a0: u8, a1: u32) {
+    unsafe {
+        crate::overworld::SetGameStat(a0, a1);
+    }
+}
+/// `IncrementGameStat` with this module's view of its types.
+#[inline]
+unsafe fn IncrementGameStat(a0: u8) {
+    unsafe {
+        crate::overworld::IncrementGameStat(a0);
+    }
+}
+/// `SetContinueGameWarpStatus` with this module's view of its types.
+#[inline]
+unsafe fn SetContinueGameWarpStatus() {
+    unsafe {
+        crate::load_save::SetContinueGameWarpStatus();
+    }
+}
+/// `SetContinueGameWarpToHealLocation` with this module's view of its types.
+#[inline]
+unsafe fn SetContinueGameWarpToHealLocation(a0: u8) {
+    unsafe {
+        crate::overworld::SetContinueGameWarpToHealLocation(a0);
+    }
+}
+/// `GetRibbonCount` with this module's view of its types.
+#[inline]
+unsafe fn GetRibbonCount(a0: *mut Pokemon) -> u8 {
+    unsafe { crate::tv::GetRibbonCount(a0 as _) }
+}
+/// `TryPutSpotTheCutiesOnAir` with this module's view of its types.
+#[inline]
+unsafe fn TryPutSpotTheCutiesOnAir(a0: *mut Pokemon, a1: u8) {
+    unsafe {
+        crate::tv::TryPutSpotTheCutiesOnAir(a0 as _, a1);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: unsafe fn()) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
+}
+/// `CB2_DoHallOfFameScreen` with this module's view of its types.
+#[inline]
+unsafe fn CB2_DoHallOfFameScreen() {
+    unsafe {
+        crate::hall_of_fame::CB2_DoHallOfFameScreen();
+    }
+}
+/// `CB2_WhiteOut` with this module's view of its types.
+#[inline]
+unsafe fn CB2_WhiteOut() {
+    unsafe {
+        crate::overworld::CB2_WhiteOut();
+    }
+}
+
+/// The play time packed as GAME_STAT_FIRST_HOF_PLAY_TIME keeps it.
+fn packed_play_time() -> u32 {
+    // SAFETY: the save blocks are set up at boot; the borrow ends here.
+    let save = unsafe { save_block2() };
+    u32::from(save.playTimeHours) << 16
+        | u32::from(save.playTimeMinutes) << 8
+        | u32::from(save.playTimeSeconds)
+}
+
+/// Gives the Champion Ribbon to every party Pokémon that lacks it. Returns
+/// the index and ribbon count of the first one with the most ribbons among
+/// those, if any got it.
+fn give_champion_ribbons() -> Option<(usize, u8)> {
+    let mut best: Option<(usize, u8)> = None;
+    // SAFETY: the party isn't borrowed elsewhere; GetRibbonCount only reads
+    // the Pokémon it's given.
+    for (i, mon) in unsafe { player_party() }.0.iter_mut().enumerate() {
+        let b = &mut mon.r#box;
+        // SAFETY: the ribbon field is one byte and needs no out pointer.
+        let has_ribbon =
+            unsafe { get_box_mon_data(b, MON_DATA_CHAMPION_RIBBON, core::ptr::null_mut()) } != 0;
+        if b.hasSpecies() == 0 || b.isEgg() != 0 || has_ribbon {
+            continue;
+        }
+        // SAFETY: as above.
+        unsafe { set_box_mon_data(b, MON_DATA_CHAMPION_RIBBON, &1u8) };
+        let count = unsafe { GetRibbonCount(mon) };
+        if best.is_none_or(|(_, most)| count > most) {
+            best = Some((i, count));
+        }
+    }
+    best
+}
+
+/// Called when the player enters the Hall of Fame.
+pub fn game_clear() {
+    // SAFETY: C's own steps, in C's order, with nothing borrowed.
+    unsafe {
+        HealPlayerParty();
+        let cleared_before = flag_get(FLAG_SYS_GAME_CLEAR);
+        *(&raw mut gHasHallOfFameRecords) = cleared_before.into();
+        if !cleared_before {
+            flag_set(FLAG_SYS_GAME_CLEAR);
+        }
+        if GetGameStat(GAME_STAT_FIRST_HOF_PLAY_TIME) == 0 {
+            SetGameStat(GAME_STAT_FIRST_HOF_PLAY_TIME, packed_play_time());
+        }
+        SetContinueGameWarpStatus();
+        SetContinueGameWarpToHealLocation(if save_block2().playerGender == MALE {
             HEAL_LOCATION_BRENDANS_HOUSE_2F
         } else {
             HEAL_LOCATION_MAYS_HOUSE_2F
-        })
-    };
-
-    let mut ribbon_get = false;
-    let mut ribbon_counts = [RibbonCounter {
-        party_index: 0,
-        count: 0,
-    }; 6];
-    let party = (&raw mut gPlayerParty).cast::<Pokemon>();
-
-    let mut index = 0usize;
-    while index < 6 {
-        let mon = unsafe { party.add(index) };
-        ribbon_counts[index].party_index = index as u8;
-
-        if unsafe { GetMonData2(mon.cast(), MON_DATA_SANITY_HAS_SPECIES) } != 0
-            && unsafe { GetMonData2(mon.cast(), MON_DATA_SANITY_IS_EGG) } == 0
-            && unsafe { GetMonData2(mon.cast(), MON_DATA_CHAMPION_RIBBON) } == 0
-        {
-            let value = 1u8;
-            unsafe {
-                SetMonData(
-                    mon.cast(),
-                    MON_DATA_CHAMPION_RIBBON,
-                    (&raw const value).cast(),
-                )
-            };
-            ribbon_counts[index].count = unsafe { GetRibbonCount(mon) };
-            ribbon_get = true;
-        }
-        index += 1;
+        });
     }
 
-    if ribbon_get {
+    if let Some((index, ribbons)) = give_champion_ribbons() {
+        // SAFETY: as above.
         unsafe { IncrementGameStat(GAME_STAT_RECEIVED_RIBBONS) };
-        let _ = unsafe { FlagSet(FLAG_SYS_RIBBON_GET) };
-
-        let mut index = 1usize;
-        while index < 6 {
-            if ribbon_counts[index].count > ribbon_counts[0].count {
-                ribbon_counts.swap(0, index);
+        flag_set(FLAG_SYS_RIBBON_GET);
+        if ribbons > NUM_CUTIES_RIBBONS {
+            // SAFETY: as above.
+            if let Some(mon) = unsafe { player_party() }.0.get_mut(index) {
+                unsafe { TryPutSpotTheCutiesOnAir(mon, MON_DATA_CHAMPION_RIBBON as u8) };
             }
-            index += 1;
-        }
-
-        if ribbon_counts[0].count > NUM_CUTIES_RIBBONS {
-            let mon = unsafe { party.add(ribbon_counts[0].party_index as usize) };
-            unsafe { TryPutSpotTheCutiesOnAir(mon, MON_DATA_CHAMPION_RIBBON as u8) };
         }
     }
 
+    // SAFETY: a main callback.
     unsafe { SetMainCallback2(CB2_DoHallOfFameScreen) };
+}
+
+// ------------------------------------------------------------------ C names
+
+#[unsafe(no_mangle)]
+pub fn GameClear() -> i32 {
+    game_clear();
     0
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCB2WhiteOut() -> u8 {
+pub fn SetCB2WhiteOut() -> u8 {
+    // SAFETY: a main callback.
     unsafe { SetMainCallback2(CB2_WhiteOut) };
     0
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn arm_layouts_match_the_c_structures() {
-        assert_eq!(core::mem::size_of::<Pokemon>(), 100);
-        assert_eq!(
-            core::mem::offset_of!(SaveBlock2HallOfFameView, player_gender),
-            0x08
-        );
-        assert_eq!(
-            core::mem::offset_of!(SaveBlock2HallOfFameView, play_time_hours),
-            0x0e
-        );
-        assert_eq!(
-            core::mem::offset_of!(SaveBlock2HallOfFameView, play_time_minutes),
-            0x10
-        );
-        assert_eq!(
-            core::mem::offset_of!(SaveBlock2HallOfFameView, play_time_seconds),
-            0x11
-        );
-        assert_eq!(core::mem::size_of::<RibbonCounter>(), 2);
-    }
-
-    #[test]
-    fn ribbon_selection_keeps_the_highest_count_first() {
-        let mut counts = [
-            RibbonCounter {
-                party_index: 0,
-                count: 2,
-            },
-            RibbonCounter {
-                party_index: 1,
-                count: 7,
-            },
-            RibbonCounter {
-                party_index: 2,
-                count: 5,
-            },
-            RibbonCounter {
-                party_index: 3,
-                count: 9,
-            },
-            RibbonCounter {
-                party_index: 4,
-                count: 1,
-            },
-            RibbonCounter {
-                party_index: 5,
-                count: 8,
-            },
-        ];
-        let mut index = 1;
-        while index < counts.len() {
-            if counts[index].count > counts[0].count {
-                counts.swap(0, index);
-            }
-            index += 1;
-        }
-        assert_eq!(counts[0].party_index, 3);
-        assert_eq!(counts[0].count, 9);
-    }
 }

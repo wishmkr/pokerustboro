@@ -3,37 +3,49 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::field_weather_effect::SetWeather;
+use crate::gpu_regs::SetGpuReg;
+use crate::palette::{BeginNormalPaletteFade, LoadPalette, gPaletteFade};
+use crate::palette::{gPlttBufferFaded, gPlttBufferUnfaded};
+use crate::sound::{IsSpecialSEPlaying, PlaySE};
+use crate::sprite::AllocSpritePalette;
+use crate::task::task_set_func;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::util::BlendPalette;
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
 // Data tables (translate with cdata.py): sDroughtWeatherColors gWeatherPtr sWeatherFuncs gWeatherPalStateFuncs sBasePaletteColorMapTypes gFogPalette
 
 /// `struct RGBColor`
@@ -46,11 +58,11 @@ pub struct RGBColor {
 impl RGBColor {
     #[inline(always)]
     pub fn r(&self) -> u16 {
-        ((self.bits_0 as u32 >> 0) & 0x1f) as u16
+        ((self.bits_0 as u32) & 0x1f) as u16
     }
     #[inline(always)]
     pub fn set_r(&mut self, v: u16) {
-        self.bits_0 = (self.bits_0 & !(0x1f << 0)) | ((v as u16 & 0x1f) << 0);
+        self.bits_0 = (self.bits_0 & !0x1f) | (v & 0x1f);
     }
     #[inline(always)]
     pub fn g(&self) -> u16 {
@@ -58,7 +70,7 @@ impl RGBColor {
     }
     #[inline(always)]
     pub fn set_g(&mut self, v: u16) {
-        self.bits_0 = (self.bits_0 & !(0x1f << 5)) | ((v as u16 & 0x1f) << 5);
+        self.bits_0 = (self.bits_0 & !(0x1f << 5)) | ((v & 0x1f) << 5);
     }
     #[inline(always)]
     pub fn b(&self) -> u16 {
@@ -66,7 +78,7 @@ impl RGBColor {
     }
     #[inline(always)]
     pub fn set_b(&mut self, v: u16) {
-        self.bits_0 = (self.bits_0 & !(0x1f << 10)) | ((v as u16 & 0x1f) << 10);
+        self.bits_0 = (self.bits_0 & !(0x1f << 10)) | ((v & 0x1f) << 10);
     }
 }
 
@@ -76,10 +88,10 @@ unsafe impl Sync for RGBColor {}
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct WeatherCallbacks {
-    pub initVars: Option<unsafe extern "C" fn()>,
-    pub main: Option<unsafe extern "C" fn()>,
-    pub initAll: Option<unsafe extern "C" fn()>,
-    pub finish: Option<unsafe extern "C" fn() -> u8>,
+    pub initVars: Option<unsafe fn()>,
+    pub main: Option<unsafe fn()>,
+    pub initAll: Option<unsafe fn()>,
+    pub finish: Option<unsafe fn() -> u8>,
 }
 
 unsafe impl Sync for WeatherCallbacks {}
@@ -103,7 +115,7 @@ const COLOR_MAP_NONE: u8 = 0;
 
 static gFogPalette: Table<CArray<u16, 16>> =
     Table((&raw const crate::data::field_weather::gFogPalette).cast());
-static gWeatherPalStateFuncs: Table<CArray<Option<unsafe extern "C" fn()>, 4>> =
+static gWeatherPalStateFuncs: Table<CArray<Option<unsafe fn()>, 4>> =
     Table((&raw const crate::data::field_weather::gWeatherPalStateFuncs).cast());
 static gWeatherPtr: Table<*mut Weather> =
     Table((&raw const crate::data::field_weather::gWeatherPtr).cast());
@@ -114,7 +126,6 @@ static sDroughtWeatherColors: Table<CArray<CArray<u16, 4096>, 6>> =
 static sWeatherFuncs: Table<CArray<WeatherCallbacks, 15>> =
     Table((&raw const crate::data::field_weather::sWeatherFuncs).cast());
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gWeather: Weather = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
@@ -122,30 +133,24 @@ pub(crate) static mut sFieldEffectPaletteColorMapTypes: Aligned<CArray<u8, 32>> 
     Aligned(unsafe { zeroed() });
 pub(crate) static mut sPaletteColorMapTypes: *mut u8 = null_mut();
 
-unsafe extern "C" {
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlttBufferFaded: CArray<u16, 512>;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static gSineTable: CArray<i16, 0>;
-    static mut gTasks: CArray<Task, 0>;
-    fn AllocSpritePalette(a0: u16) -> u8;
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BlendPalette(a0: u16, a1: u16, a2: u8, a3: u16);
-    fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn IsSpecialSEPlaying() -> u8;
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn PlaySE(a0: u16);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetWeather(a0: u32);
+/// `CpuFastSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuFastSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartWeather() {
+pub unsafe fn StartWeather() {
     if FuncIsActiveTask(Some(Task_WeatherMain)) == 0 {
-        let mut index: u8 = AllocSpritePalette(PALTAG_WEATHER);
+        let index: u8 = AllocSpritePalette(PALTAG_WEATHER);
         CpuSet(
             gFogPalette.as_ptr().cast_mut() as *mut c_void,
             &raw mut gPlttBufferUnfaded[0x100 + index as i32 * 16] as *mut c_void,
@@ -173,8 +178,7 @@ pub unsafe extern "C" fn StartWeather() {
         (*(*gWeatherPtr)).taskId = CreateTask(Some(Task_WeatherInit), 80);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetNextWeather(weather: u8) {
+pub unsafe fn SetNextWeather(weather: u8) {
     if weather != WEATHER_RAIN
         && weather != WEATHER_RAIN_THUNDERSTORM
         && weather != WEATHER_DOWNPOUR
@@ -188,28 +192,26 @@ pub unsafe extern "C" fn SetNextWeather(weather: u8) {
     (*(*gWeatherPtr)).nextWeather = weather;
     (*(*gWeatherPtr)).finishStep = 0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCurrentAndNextWeather(weather: u8) {
+pub unsafe fn SetCurrentAndNextWeather(weather: u8) {
     PlayRainStoppingSoundEffect();
     (*(*gWeatherPtr)).currWeather = weather;
     (*(*gWeatherPtr)).nextWeather = weather;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCurrentAndNextWeatherNoDelay(weather: u8) {
+pub unsafe fn SetCurrentAndNextWeatherNoDelay(weather: u8) {
     PlayRainStoppingSoundEffect();
     (*(*gWeatherPtr)).currWeather = weather;
     (*(*gWeatherPtr)).nextWeather = weather;
     (*(*gWeatherPtr)).readyForInit = TRUE;
 }
-pub(crate) unsafe extern "C" fn Task_WeatherInit(taskId: u8) {
+pub(crate) unsafe fn Task_WeatherInit(taskId: u8) {
     if (*(*gWeatherPtr)).readyForInit != 0 {
         sWeatherFuncs[(*(*gWeatherPtr)).currWeather]
             .initAll
             .unwrap_unchecked()();
-        gTasks[taskId].func = Some(Task_WeatherMain);
+        task_set_func(taskId, Some(Task_WeatherMain));
     }
 }
-pub(crate) unsafe extern "C" fn Task_WeatherMain(taskId: u8) {
+pub(crate) unsafe fn Task_WeatherMain(taskId: u8) {
     if (*(*gWeatherPtr)).currWeather != (*(*gWeatherPtr)).nextWeather {
         if sWeatherFuncs[(*(*gWeatherPtr)).currWeather]
             .finish
@@ -232,33 +234,29 @@ pub(crate) unsafe extern "C" fn Task_WeatherMain(taskId: u8) {
     }
     gWeatherPalStateFuncs[(*(*gWeatherPtr)).palProcessingState].unwrap_unchecked()();
 }
-pub(crate) unsafe extern "C" fn None_Init() {
+pub(crate) unsafe fn None_Init() {
     (*(*gWeatherPtr)).targetColorMapIndex = 0;
     (*(*gWeatherPtr)).colorMapStepDelay = 0;
 }
-pub(crate) unsafe extern "C" fn None_Main() {}
-pub(crate) unsafe extern "C" fn None_Finish() -> u8 {
-    return 0;
+pub(crate) fn None_Main() {}
+pub(crate) fn None_Finish() -> u8 {
+    0
 }
-pub(crate) unsafe extern "C" fn BuildColorMaps() {
-    let mut i: u16 = 0;
+unsafe fn BuildColorMaps() {
     let mut colorMaps: *mut CArray<u8, 32> = null_mut();
-    let mut colorVal: u16 = 0;
     let mut curBrightness: u16 = 0;
     let mut brightnessDelta: u16 = 0;
     let mut colorMapIndex: u16 = 0;
     let mut baseBrightness: u16 = 0;
     let mut diff: i16 = 0;
     sPaletteColorMapTypes = sBasePaletteColorMapTypes.as_ptr().cast_mut();
-    i = 0;
-    while i < 2 {
+    for i in 0..2u16 {
         if i == 0 {
             colorMaps = (*(*gWeatherPtr)).darkenedContrastColorMaps.as_mut_ptr();
         } else {
             colorMaps = (*(*gWeatherPtr)).contrastColorMaps.as_mut_ptr();
         }
-        colorVal = 0;
-        while colorVal < 32 {
+        for colorVal in 0..32u16 {
             curBrightness = colorVal << 8;
             if i == 0 {
                 brightnessDelta = (((colorVal as i32) << 8) / 16) as u16;
@@ -296,12 +294,10 @@ pub(crate) unsafe extern "C" fn BuildColorMaps() {
                     colorMapIndex += 1;
                 }
             }
-            colorVal += 1;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateWeatherColorMap() {
+pub(crate) unsafe fn UpdateWeatherColorMap() {
     if (*(*gWeatherPtr)).palProcessingState != WEATHER_PAL_STATE_SCREEN_FADING_OUT {
         if (*(*gWeatherPtr)).colorMapIndex == (*(*gWeatherPtr)).targetColorMapIndex {
             (*(*gWeatherPtr)).palProcessingState = WEATHER_PAL_STATE_IDLE;
@@ -322,7 +318,7 @@ pub(crate) unsafe extern "C" fn UpdateWeatherColorMap() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn FadeInScreenWithWeather() {
+pub(crate) unsafe fn FadeInScreenWithWeather() {
     if ({
         (*(*gWeatherPtr)).fadeInTimer += 1;
         (*(*gWeatherPtr)).fadeInTimer
@@ -361,7 +357,7 @@ pub(crate) unsafe extern "C" fn FadeInScreenWithWeather() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn FadeInScreen_RainShowShade() -> u8 {
+unsafe fn FadeInScreen_RainShowShade() -> u8 {
     if (*(*gWeatherPtr)).fadeScreenCounter == 16 {
         return FALSE;
     }
@@ -381,9 +377,9 @@ pub(crate) unsafe extern "C" fn FadeInScreen_RainShowShade() -> u8 {
         16 - (*(*gWeatherPtr)).fadeScreenCounter,
         (*(*gWeatherPtr)).fadeDestColor,
     );
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn FadeInScreen_Drought() -> u8 {
+unsafe fn FadeInScreen_Drought() -> u8 {
     if (*(*gWeatherPtr)).fadeScreenCounter == 16 {
         return FALSE;
     }
@@ -401,9 +397,9 @@ pub(crate) unsafe extern "C" fn FadeInScreen_Drought() -> u8 {
         16 - (*(*gWeatherPtr)).fadeScreenCounter,
         (*(*gWeatherPtr)).fadeDestColor,
     );
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn FadeInScreen_FogHorizontal() -> u8 {
+unsafe fn FadeInScreen_FogHorizontal() -> u8 {
     if (*(*gWeatherPtr)).fadeScreenCounter == 16 {
         return FALSE;
     }
@@ -412,24 +408,17 @@ pub(crate) unsafe extern "C" fn FadeInScreen_FogHorizontal() -> u8 {
         16 - (*(*gWeatherPtr)).fadeScreenCounter,
         (*(*gWeatherPtr)).fadeDestColor,
     );
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn DoNothing() {}
-pub(crate) unsafe extern "C" fn ApplyColorMap(
-    startPalIndex: u8,
-    mut numPalettes: u8,
-    mut colorMapIndex: i8,
-) {
-    let mut curPalIndex: u16 = 0;
+pub(crate) fn DoNothing() {}
+unsafe fn ApplyColorMap(startPalIndex: u8, mut numPalettes: u8, mut colorMapIndex: i8) {
     let mut palOffset: u16 = 0;
     let mut colorMap: *mut u8 = null_mut();
-    let mut i: u16 = 0;
     if colorMapIndex > 0 {
         colorMapIndex -= 1;
         palOffset = startPalIndex as u16 * 16;
         numPalettes += startPalIndex;
-        curPalIndex = startPalIndex as u16;
-        while curPalIndex < numPalettes as u16 {
+        for curPalIndex in (startPalIndex as u16)..(numPalettes as u16) {
             if *sPaletteColorMapTypes.at(curPalIndex) == COLOR_MAP_NONE {
                 CpuFastSet(
                     &raw mut gPlttBufferUnfaded[palOffset] as *mut c_void,
@@ -450,10 +439,9 @@ pub(crate) unsafe extern "C" fn ApplyColorMap(
                     colorMap =
                         (*(*gWeatherPtr)).darkenedContrastColorMaps[colorMapIndex].as_mut_ptr();
                 }
-                i = 0;
-                while i < 16 {
-                    let mut baseColor: RGBColor = zeroed();
-                    baseColor = *(&raw mut gPlttBufferUnfaded[palOffset] as *mut RGBColor);
+                for i in 0..16u16 {
+                    let baseColor: RGBColor =
+                        *(&raw mut gPlttBufferUnfaded[palOffset] as *mut RGBColor);
                     r = *colorMap.at(baseColor.r());
                     g = *colorMap.at(baseColor.g());
                     b = *colorMap.at(baseColor.b());
@@ -462,17 +450,14 @@ pub(crate) unsafe extern "C" fn ApplyColorMap(
                         palOffset += 1;
                         t1
                     }] = (b as u16) << 10 | (g as u16) << 5 | r as u16;
-                    i += 1;
                 }
             }
-            curPalIndex += 1;
         }
     } else if colorMapIndex < 0 {
         colorMapIndex = -colorMapIndex - 1;
         palOffset = startPalIndex as u16 * 16;
         numPalettes += startPalIndex;
-        curPalIndex = startPalIndex as u16;
-        while curPalIndex < numPalettes as u16 {
+        for curPalIndex in (startPalIndex as u16)..(numPalettes as u16) {
             if *sPaletteColorMapTypes.at(curPalIndex) == COLOR_MAP_NONE {
                 CpuFastSet(
                     &raw mut gPlttBufferUnfaded[palOffset] as *mut c_void,
@@ -481,46 +466,38 @@ pub(crate) unsafe extern "C" fn ApplyColorMap(
                 );
                 palOffset += 16;
             } else {
-                i = 0;
-                while i < 16 {
+                for i in 0..16u16 {
                     gPlttBufferFaded[palOffset] = sDroughtWeatherColors[colorMapIndex]
                         [(gPlttBufferUnfaded[palOffset] >> 1) as i32 & 0xF
                             | (gPlttBufferUnfaded[palOffset] >> 2) as i32 & 0xF0
                             | (gPlttBufferUnfaded[palOffset] >> 3) as i32 & 0xF00];
                     palOffset += 1;
-                    i += 1;
                 }
             }
-            curPalIndex += 1;
         }
     } else {
         CpuFastSet(
             &raw mut gPlttBufferUnfaded[startPalIndex as i32 * 16] as *mut c_void,
             &raw mut gPlttBufferFaded[startPalIndex as i32 * 16] as *mut c_void,
-            numPalettes as u32 * 32 / 4 & 0x1FFFFF,
+            (numPalettes as u32 * 32 / 4) & 0x1FFFFF,
         );
     }
 }
-pub(crate) unsafe extern "C" fn ApplyColorMapWithBlend(
+unsafe fn ApplyColorMapWithBlend(
     startPalIndex: u8,
     mut numPalettes: u8,
     mut colorMapIndex: i8,
     blendCoeff: u8,
     mut blendColor: u16,
 ) {
-    let mut palOffset: u16 = 0;
-    let mut curPalIndex: u16 = 0;
-    let mut i: u16 = 0;
-    let mut color: RGBColor = zeroed();
-    color = *(&raw mut blendColor as *mut RGBColor);
-    let mut rBlend: u8 = color.r() as u8;
-    let mut gBlend: u8 = color.g() as u8;
-    let mut bBlend: u8 = color.b() as u8;
-    palOffset = startPalIndex as u16 * 16;
+    let color: RGBColor = *(&raw mut blendColor as *mut RGBColor);
+    let rBlend: u8 = color.r() as u8;
+    let gBlend: u8 = color.g() as u8;
+    let bBlend: u8 = color.b() as u8;
+    let mut palOffset: u16 = startPalIndex as u16 * 16;
     numPalettes += startPalIndex;
     colorMapIndex -= 1;
-    curPalIndex = startPalIndex as u16;
-    while curPalIndex < numPalettes as u16 {
+    for curPalIndex in (startPalIndex as u16)..(numPalettes as u16) {
         if *sPaletteColorMapTypes.at(curPalIndex) == COLOR_MAP_NONE {
             BlendPalette(palOffset, 16, blendCoeff, blendColor);
             palOffset += 16;
@@ -531,152 +508,114 @@ pub(crate) unsafe extern "C" fn ApplyColorMapWithBlend(
             } else {
                 colorMap = (*(*gWeatherPtr)).contrastColorMaps[colorMapIndex].as_mut_ptr();
             }
-            i = 0;
-            while i < 16 {
-                let mut baseColor: RGBColor = zeroed();
-                baseColor = *(&raw mut gPlttBufferUnfaded[palOffset] as *mut RGBColor);
+            for i in 0..16u16 {
+                let baseColor: RGBColor =
+                    *(&raw mut gPlttBufferUnfaded[palOffset] as *mut RGBColor);
                 let mut r: u8 = *colorMap.at(baseColor.r());
                 let mut g: u8 = *colorMap.at(baseColor.g());
                 let mut b: u8 = *colorMap.at(baseColor.b());
-                r += ((rBlend as i32 - r as i32) * blendCoeff as i32 >> 4) as u8;
-                g += ((gBlend as i32 - g as i32) * blendCoeff as i32 >> 4) as u8;
-                b += ((bBlend as i32 - b as i32) * blendCoeff as i32 >> 4) as u8;
+                r += (((rBlend as i32 - r as i32) * blendCoeff as i32) >> 4) as u8;
+                g += (((gBlend as i32 - g as i32) * blendCoeff as i32) >> 4) as u8;
+                b += (((bBlend as i32 - b as i32) * blendCoeff as i32) >> 4) as u8;
                 gPlttBufferFaded[{
                     let t1 = palOffset;
                     palOffset += 1;
                     t1
                 }] = (b as u16) << 10 | (g as u16) << 5 | r as u16;
-                i += 1;
             }
         }
-        curPalIndex += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ApplyDroughtColorMapWithBlend(
+unsafe fn ApplyDroughtColorMapWithBlend(
     mut colorMapIndex: i8,
     blendCoeff: u8,
     mut blendColor: u16,
 ) {
-    let mut color: RGBColor = zeroed();
-    let mut rBlend: u8 = 0;
-    let mut gBlend: u8 = 0;
-    let mut bBlend: u8 = 0;
-    let mut curPalIndex: u16 = 0;
-    let mut palOffset: u16 = 0;
-    let mut i: u16 = 0;
     colorMapIndex = -colorMapIndex - 1;
-    color = *(&raw mut blendColor as *mut RGBColor);
-    rBlend = color.r() as u8;
-    gBlend = color.g() as u8;
-    bBlend = color.b() as u8;
-    palOffset = 0;
-    curPalIndex = 0;
-    while curPalIndex < 32 {
+    let color: RGBColor = *(&raw mut blendColor as *mut RGBColor);
+    let rBlend: u8 = color.r() as u8;
+    let gBlend: u8 = color.g() as u8;
+    let bBlend: u8 = color.b() as u8;
+    let mut palOffset: u16 = 0;
+    for curPalIndex in 0..32u16 {
         if *sPaletteColorMapTypes.at(curPalIndex) == COLOR_MAP_NONE {
             BlendPalette(palOffset, 16, blendCoeff, blendColor);
             palOffset += 16;
         } else {
-            i = 0;
-            while i < 16 {
-                let mut offset: u32 = 0;
-                let mut color1: RGBColor = zeroed();
-                let mut color2: RGBColor = zeroed();
-                let mut r1: u8 = 0;
-                let mut g1: u8 = 0;
-                let mut b1: u8 = 0;
-                let mut r2: u8 = 0;
-                let mut g2: u8 = 0;
-                let mut b2: u8 = 0;
-                color1 = *(&raw mut gPlttBufferUnfaded[palOffset] as *mut RGBColor);
-                r1 = color1.r() as u8;
-                g1 = color1.g() as u8;
-                b1 = color1.b() as u8;
-                offset = (b1 as u32 & 0x1E) << 7
+            for i in 0..16u16 {
+                let color1: RGBColor = *(&raw mut gPlttBufferUnfaded[palOffset] as *mut RGBColor);
+                let r1: u8 = color1.r() as u8;
+                let g1: u8 = color1.g() as u8;
+                let b1: u8 = color1.b() as u8;
+                let offset: u32 = (b1 as u32 & 0x1E) << 7
                     | (g1 as u32 & 0x1E) << 3
                     | ((r1 as i32 & 0x1E) >> 1) as u32;
-                color2 = *((&raw const sDroughtWeatherColors[colorMapIndex][offset]).cast_mut()
-                    as *mut RGBColor);
-                r2 = color2.r() as u8;
-                g2 = color2.g() as u8;
-                b2 = color2.b() as u8;
-                r2 += ((rBlend as i32 - r2 as i32) * blendCoeff as i32 >> 4) as u8;
-                g2 += ((gBlend as i32 - g2 as i32) * blendCoeff as i32 >> 4) as u8;
-                b2 += ((bBlend as i32 - b2 as i32) * blendCoeff as i32 >> 4) as u8;
+                let color2: RGBColor = *((&raw const sDroughtWeatherColors[colorMapIndex][offset])
+                    .cast_mut() as *mut RGBColor);
+                let mut r2: u8 = color2.r() as u8;
+                let mut g2: u8 = color2.g() as u8;
+                let mut b2: u8 = color2.b() as u8;
+                r2 += (((rBlend as i32 - r2 as i32) * blendCoeff as i32) >> 4) as u8;
+                g2 += (((gBlend as i32 - g2 as i32) * blendCoeff as i32) >> 4) as u8;
+                b2 += (((bBlend as i32 - b2 as i32) * blendCoeff as i32) >> 4) as u8;
                 gPlttBufferFaded[{
                     let t1 = palOffset;
                     palOffset += 1;
                     t1
                 }] = (b2 as u16) << 10 | (g2 as u16) << 5 | r2 as u16;
-                i += 1;
             }
         }
-        curPalIndex += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ApplyFogBlend(blendCoeff: u8, mut blendColor: u16) {
-    let mut color: RGBColor = zeroed();
-    let mut rBlend: u8 = 0;
-    let mut gBlend: u8 = 0;
-    let mut bBlend: u8 = 0;
-    let mut curPalIndex: u16 = 0;
+unsafe fn ApplyFogBlend(blendCoeff: u8, mut blendColor: u16) {
     BlendPalette(0, 256, blendCoeff, blendColor);
-    color = *(&raw mut blendColor as *mut RGBColor);
-    rBlend = color.r() as u8;
-    gBlend = color.g() as u8;
-    bBlend = color.b() as u8;
-    curPalIndex = 16;
-    while curPalIndex < 32 {
+    let color: RGBColor = *(&raw mut blendColor as *mut RGBColor);
+    let rBlend: u8 = color.r() as u8;
+    let gBlend: u8 = color.g() as u8;
+    let bBlend: u8 = color.b() as u8;
+    for curPalIndex in 16..32u16 {
         if LightenSpritePaletteInFog(curPalIndex as u8) != 0 {
-            let mut palEnd: u16 = (curPalIndex + 1) * 16;
-            let mut palOffset: u16 = curPalIndex * 16;
-            while palOffset < palEnd {
-                let mut color: RGBColor = zeroed();
-                color = *(&raw mut gPlttBufferUnfaded[palOffset] as *mut RGBColor);
+            let palEnd: u16 = (curPalIndex + 1) * 16;
+            for palOffset in (curPalIndex * 16)..palEnd {
+                let color: RGBColor = *(&raw mut gPlttBufferUnfaded[palOffset] as *mut RGBColor);
                 let mut r: u8 = color.r() as u8;
                 let mut g: u8 = color.g() as u8;
                 let mut b: u8 = color.b() as u8;
-                r += ((28 - r as i32) * 3 >> 2) as u8;
-                g += ((31 - g as i32) * 3 >> 2) as u8;
-                b += ((28 - b as i32) * 3 >> 2) as u8;
-                r += ((rBlend as i32 - r as i32) * blendCoeff as i32 >> 4) as u8;
-                g += ((gBlend as i32 - g as i32) * blendCoeff as i32 >> 4) as u8;
-                b += ((bBlend as i32 - b as i32) * blendCoeff as i32 >> 4) as u8;
+                r += (((28 - r as i32) * 3) >> 2) as u8;
+                g += (((31 - g as i32) * 3) >> 2) as u8;
+                b += (((28 - b as i32) * 3) >> 2) as u8;
+                r += (((rBlend as i32 - r as i32) * blendCoeff as i32) >> 4) as u8;
+                g += (((gBlend as i32 - g as i32) * blendCoeff as i32) >> 4) as u8;
+                b += (((bBlend as i32 - b as i32) * blendCoeff as i32) >> 4) as u8;
                 gPlttBufferFaded[palOffset] = (b as u16) << 10 | (g as u16) << 5 | r as u16;
-                palOffset += 1;
             }
         } else {
             BlendPalette(curPalIndex * 16, 16, blendCoeff, blendColor);
         }
-        curPalIndex += 1;
     }
 }
-pub(crate) unsafe extern "C" fn MarkFogSpritePalToLighten(paletteIndex: u8) {
+unsafe fn MarkFogSpritePalToLighten(paletteIndex: u8) {
     if (*(*gWeatherPtr)).lightenedFogSpritePalsCount < 6 {
         (*(*gWeatherPtr)).lightenedFogSpritePals[(*(*gWeatherPtr)).lightenedFogSpritePalsCount] =
             paletteIndex;
         (*(*gWeatherPtr)).lightenedFogSpritePalsCount += 1;
     }
 }
-pub(crate) unsafe extern "C" fn LightenSpritePaletteInFog(paletteIndex: u8) -> u8 {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < (*(*gWeatherPtr)).lightenedFogSpritePalsCount as u16 {
+unsafe fn LightenSpritePaletteInFog(paletteIndex: u8) -> u8 {
+    for i in 0..((*(*gWeatherPtr)).lightenedFogSpritePalsCount as u16) {
         if (*(*gWeatherPtr)).lightenedFogSpritePals[i] == paletteIndex {
             return TRUE;
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ApplyWeatherColorMapIfIdle(colorMapIndex: i8) {
+pub unsafe fn ApplyWeatherColorMapIfIdle(colorMapIndex: i8) {
     if (*(*gWeatherPtr)).palProcessingState == WEATHER_PAL_STATE_IDLE {
         ApplyColorMap(0, 32, colorMapIndex);
         (*(*gWeatherPtr)).colorMapIndex = colorMapIndex;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ApplyWeatherColorMapIfIdle_Gradual(
+pub unsafe fn ApplyWeatherColorMapIfIdle_Gradual(
     colorMapIndex: u8,
     targetColorMapIndex: u8,
     colorMapStepDelay: u8,
@@ -690,8 +629,7 @@ pub unsafe extern "C" fn ApplyWeatherColorMapIfIdle_Gradual(
         ApplyWeatherColorMapIfIdle(colorMapIndex as i8);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FadeScreen(mode: u8, delay: i8) {
+pub unsafe fn FadeScreen(mode: u8, delay: i8) {
     let mut fadeColor: u32 = 0;
     let mut fadeOut: u8 = 0;
     let mut useWeatherPal: u8 = 0;
@@ -757,31 +695,26 @@ pub unsafe extern "C" fn FadeScreen(mode: u8, delay: i8) {
         (*(*gWeatherPtr)).readyForInit = TRUE;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsWeatherNotFadingIn() -> u8 {
-    return ((*(*gWeatherPtr)).palProcessingState != WEATHER_PAL_STATE_SCREEN_FADING_IN) as u8;
+pub unsafe fn IsWeatherNotFadingIn() -> u8 {
+    ((*(*gWeatherPtr)).palProcessingState != WEATHER_PAL_STATE_SCREEN_FADING_IN) as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateSpritePaletteWithWeather(spritePaletteIndex: u8) {
+pub unsafe fn UpdateSpritePaletteWithWeather(spritePaletteIndex: u8) {
     let mut paletteIndex: u16 = 16 + spritePaletteIndex as u16;
-    let mut i: u16 = 0;
     match (*(*gWeatherPtr)).palProcessingState {
         WEATHER_PAL_STATE_SCREEN_FADING_IN => {
             if (*(*gWeatherPtr)).fadeInFirstFrame != 0 {
                 if (*(*gWeatherPtr)).currWeather == WEATHER_FOG_HORIZONTAL {
                     MarkFogSpritePalToLighten(paletteIndex as u8);
                 }
-                paletteIndex = paletteIndex * 16;
-                i = 0;
-                while i < 16 {
+                paletteIndex *= 16;
+                for i in 0..16u16 {
                     gPlttBufferFaded[paletteIndex as i32 + i as i32] =
                         (*(*gWeatherPtr)).fadeDestColor;
-                    i += 1;
                 }
             }
         }
         WEATHER_PAL_STATE_SCREEN_FADING_OUT => {
-            paletteIndex = paletteIndex * 16;
+            paletteIndex *= 16;
             CpuFastSet(
                 &raw mut gPlttBufferFaded[paletteIndex] as *mut c_void,
                 &raw mut gPlttBufferUnfaded[paletteIndex] as *mut c_void,
@@ -798,17 +731,16 @@ pub unsafe extern "C" fn UpdateSpritePaletteWithWeather(spritePaletteIndex: u8) 
             if (*(*gWeatherPtr)).currWeather != WEATHER_FOG_HORIZONTAL {
                 ApplyColorMap(paletteIndex as u8, 1, (*(*gWeatherPtr)).colorMapIndex);
             } else {
-                paletteIndex = paletteIndex * 16;
+                paletteIndex *= 16;
                 BlendPalette(paletteIndex, 16, 12, 29692);
             }
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ApplyWeatherColorMapToPal(paletteIndex: u8) {
+pub unsafe fn ApplyWeatherColorMapToPal(paletteIndex: u8) {
     ApplyColorMap(paletteIndex, 1, (*(*gWeatherPtr)).colorMapIndex);
 }
-pub(crate) unsafe extern "C" fn IsFirstFrameOfWeatherFadeIn() -> u8 {
+unsafe fn IsFirstFrameOfWeatherFadeIn() -> u8 {
     if (*(*gWeatherPtr)).palProcessingState == WEATHER_PAL_STATE_SCREEN_FADING_IN {
         return (*(*gWeatherPtr)).fadeInFirstFrame;
     } else {
@@ -816,11 +748,10 @@ pub(crate) unsafe extern "C" fn IsFirstFrameOfWeatherFadeIn() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadCustomWeatherSpritePalette(palette: *mut u16) {
+pub unsafe fn LoadCustomWeatherSpritePalette(palette: *mut u16) {
     LoadPalette(
         palette as *mut c_void,
         0x100 + (*(*gWeatherPtr)).weatherPicSpritePalIndex as u16 * 16,
@@ -828,17 +759,15 @@ pub unsafe extern "C" fn LoadCustomWeatherSpritePalette(palette: *mut u16) {
     );
     UpdateSpritePaletteWithWeather((*(*gWeatherPtr)).weatherPicSpritePalIndex);
 }
-pub(crate) unsafe extern "C" fn LoadDroughtWeatherPalette(palsIndex: *mut u8, palsOffset: *mut u8) {
+unsafe fn LoadDroughtWeatherPalette(palsIndex: *mut u8, palsOffset: *mut u8) {
     *palsIndex = 0x20;
     *palsOffset = 0x20;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetDroughtWeatherPaletteLoading() {
+pub unsafe fn ResetDroughtWeatherPaletteLoading() {
     (*(*gWeatherPtr)).loadDroughtPalsIndex = 1;
     (*(*gWeatherPtr)).loadDroughtPalsOffset = 1;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadDroughtWeatherPalettes() -> u8 {
+pub unsafe fn LoadDroughtWeatherPalettes() -> u8 {
     if (*(*gWeatherPtr)).loadDroughtPalsIndex < 32 {
         LoadDroughtWeatherPalette(
             &raw mut (*(*gWeatherPtr)).loadDroughtPalsIndex as *mut u8,
@@ -848,20 +777,18 @@ pub unsafe extern "C" fn LoadDroughtWeatherPalettes() -> u8 {
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SetDroughtColorMap(colorMapIndex: i8) {
+unsafe fn SetDroughtColorMap(colorMapIndex: i8) {
     ApplyWeatherColorMapIfIdle(-colorMapIndex - 1);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DroughtStateInit() {
+pub unsafe fn DroughtStateInit() {
     (*(*gWeatherPtr)).droughtBrightnessStage = 0;
     (*(*gWeatherPtr)).droughtTimer = 0;
     (*(*gWeatherPtr)).droughtState = 0;
     (*(*gWeatherPtr)).droughtLastBrightnessStage = 0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DroughtStateRun() {
+pub unsafe fn DroughtStateRun() {
     match (*(*gWeatherPtr)).droughtState {
         0 => {
             if ({
@@ -886,9 +813,13 @@ pub unsafe extern "C" fn DroughtStateRun() {
             }
         }
         1 => {
-            (*(*gWeatherPtr)).droughtTimer = (*(*gWeatherPtr)).droughtTimer + 3 & 0x7F;
-            (*(*gWeatherPtr)).droughtBrightnessStage =
-                (gSineTable[(*(*gWeatherPtr)).droughtTimer] as i32 - 1 >> 6) as i16 + 2;
+            (*(*gWeatherPtr)).droughtTimer = ((*(*gWeatherPtr)).droughtTimer + 3) & 0x7F;
+            (*(*gWeatherPtr)).droughtBrightnessStage = (((*(&raw const crate::trig::gSineTable)
+                .cast::<CArray<i16, 0>>())[(*(*gWeatherPtr)).droughtTimer]
+                as i32
+                - 1)
+                >> 6) as i16
+                + 2;
             if (*(*gWeatherPtr)).droughtBrightnessStage
                 != (*(*gWeatherPtr)).droughtLastBrightnessStage
             {
@@ -896,45 +827,40 @@ pub unsafe extern "C" fn DroughtStateRun() {
             }
             (*(*gWeatherPtr)).droughtLastBrightnessStage = (*(*gWeatherPtr)).droughtBrightnessStage;
         }
-        2 => {
-            if ({
-                (*(*gWeatherPtr)).droughtTimer += 1;
-                (*(*gWeatherPtr)).droughtTimer
-            }) > 5
-            {
-                (*(*gWeatherPtr)).droughtTimer = 0;
-                SetDroughtColorMap(
-                    ({
-                        (*(*gWeatherPtr)).droughtBrightnessStage -= 1;
-                        (*(*gWeatherPtr)).droughtBrightnessStage
-                    }) as i8,
-                );
-                if (*(*gWeatherPtr)).droughtBrightnessStage == 3 {
-                    (*(*gWeatherPtr)).droughtState = 0;
-                }
+        2 if ({
+            (*(*gWeatherPtr)).droughtTimer += 1;
+            (*(*gWeatherPtr)).droughtTimer
+        }) > 5 =>
+        {
+            (*(*gWeatherPtr)).droughtTimer = 0;
+            SetDroughtColorMap(
+                ({
+                    (*(*gWeatherPtr)).droughtBrightnessStage -= 1;
+                    (*(*gWeatherPtr)).droughtBrightnessStage
+                }) as i8,
+            );
+            if (*(*gWeatherPtr)).droughtBrightnessStage == 3 {
+                (*(*gWeatherPtr)).droughtState = 0;
             }
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Weather_SetBlendCoeffs(eva: u8, evb: u8) {
+pub unsafe fn Weather_SetBlendCoeffs(eva: u8, evb: u8) {
     (*(*gWeatherPtr)).currBlendEVA = eva as u16;
     (*(*gWeatherPtr)).currBlendEVB = evb as u16;
     (*(*gWeatherPtr)).targetBlendEVA = eva as u16;
     (*(*gWeatherPtr)).targetBlendEVB = evb as u16;
     SetGpuReg(REG_OFFSET_BLDALPHA, (evb as u16) << 8 | eva as u16);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Weather_SetTargetBlendCoeffs(eva: u8, evb: u8, delay: i32) {
+pub unsafe fn Weather_SetTargetBlendCoeffs(eva: u8, evb: u8, delay: i32) {
     (*(*gWeatherPtr)).targetBlendEVA = eva as u16;
     (*(*gWeatherPtr)).targetBlendEVB = evb as u16;
     (*(*gWeatherPtr)).blendDelay = delay as u8;
     (*(*gWeatherPtr)).blendFrameCounter = 0;
     (*(*gWeatherPtr)).blendUpdateCounter = 0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Weather_UpdateBlend() -> u8 {
+pub unsafe fn Weather_UpdateBlend() -> u8 {
     if (*(*gWeatherPtr)).currBlendEVA == (*(*gWeatherPtr)).targetBlendEVA
         && (*(*gWeatherPtr)).currBlendEVB == (*(*gWeatherPtr)).targetBlendEVB
     {
@@ -970,9 +896,9 @@ pub unsafe extern "C" fn Weather_UpdateBlend() -> u8 {
     {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SetFieldWeather(weather: u8) {
+unsafe fn SetFieldWeather(weather: u8) {
     match weather {
         COORD_EVENT_WEATHER_SUNNY_CLOUDS => {
             SetWeather(WEATHER_SUNNY_CLOUDS as u32);
@@ -1007,12 +933,10 @@ pub(crate) unsafe extern "C" fn SetFieldWeather(weather: u8) {
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetCurrentWeather() -> u8 {
-    return (*(*gWeatherPtr)).currWeather;
+pub unsafe fn GetCurrentWeather() -> u8 {
+    (*(*gWeatherPtr)).currWeather
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetRainStrengthFromSoundEffect(soundEffect: u16) {
+pub unsafe fn SetRainStrengthFromSoundEffect(soundEffect: u16) {
     if (*(*gWeatherPtr)).palProcessingState != WEATHER_PAL_STATE_SCREEN_FADING_OUT {
         match soundEffect {
             SE_RAIN => {
@@ -1031,8 +955,7 @@ pub unsafe extern "C" fn SetRainStrengthFromSoundEffect(soundEffect: u16) {
         PlaySE(soundEffect);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayRainStoppingSoundEffect() {
+pub unsafe fn PlayRainStoppingSoundEffect() {
     if IsSpecialSEPlaying() != 0 {
         match (*(*gWeatherPtr)).rainStrength {
             0 => {
@@ -1048,19 +971,18 @@ pub unsafe extern "C" fn PlayRainStoppingSoundEffect() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsWeatherChangeComplete() -> u8 {
-    return (*(*gWeatherPtr)).weatherChangeComplete;
+pub unsafe fn IsWeatherChangeComplete() -> u8 {
+    (*(*gWeatherPtr)).weatherChangeComplete
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWeatherScreenFadeOut() {
+pub unsafe fn SetWeatherScreenFadeOut() {
     (*(*gWeatherPtr)).palProcessingState = WEATHER_PAL_STATE_SCREEN_FADING_OUT;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetWeatherPalStateIdle() {
+pub unsafe fn SetWeatherPalStateIdle() {
     (*(*gWeatherPtr)).palProcessingState = WEATHER_PAL_STATE_IDLE;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PreservePaletteInWeather(preservedPalIndex: u8) {
+pub unsafe fn PreservePaletteInWeather(preservedPalIndex: u8) {
     CpuSet(
         sBasePaletteColorMapTypes.as_ptr().cast_mut() as *mut c_void,
         sFieldEffectPaletteColorMapTypes.as_mut_ptr() as *mut c_void,
@@ -1069,7 +991,6 @@ pub unsafe extern "C" fn PreservePaletteInWeather(preservedPalIndex: u8) {
     sFieldEffectPaletteColorMapTypes[preservedPalIndex] = COLOR_MAP_NONE;
     sPaletteColorMapTypes = sFieldEffectPaletteColorMapTypes.as_mut_ptr();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetPreservedPalettesInWeather() {
+pub unsafe fn ResetPreservedPalettesInWeather() {
     sPaletteColorMapTypes = sBasePaletteColorMapTypes.as_ptr().cast_mut();
 }

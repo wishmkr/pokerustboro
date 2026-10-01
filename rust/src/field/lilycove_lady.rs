@@ -3,29 +3,35 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gGameLanguage;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::easy_chat::{CopyEasyChatWord, IsEasyChatAnswerUnlocked, ShowEasyChatScreen};
+use crate::event_data::VarSet;
+use crate::ffi::{gSpecialVar_0x8004, gSpecialVar_0x8005, gSpecialVar_Result};
+use crate::item::RemoveBagItem;
+use crate::item_menu::{FavorLadyOpenBagMenu, QuizLadyOpenBagMenu, gSpecialVar_ItemId};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::overworld::CB2_ReturnToField;
+use crate::pokeblock::OpenPokeblockCase;
+use crate::random::Random;
+use crate::script::ScriptContext_Enable;
+use crate::string_util::ConvertInternationalString;
+use crate::string_util::{StringCompare, StringCopy, StringCopy_Nickname, StringCopy_PlayerName};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar3};
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -68,43 +74,17 @@ pub(crate) static mut sQuizLadyPtr: *mut LilycoveLadyQuiz = null_mut();
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sContestLadyPtr: *mut LilycoveLadyContest = null_mut();
 
-unsafe extern "C" {
-    static gGameLanguage: u8;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_0x8005: u16;
-    static mut gSpecialVar_ItemId: u16;
-    static mut gSpecialVar_Result: u16;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar3: CArray<u8, 256>;
-    static gText_QuizLady_Lady: CArray<u8, 0>;
-    fn CB2_ReturnToField();
-    fn ConvertInternationalString(a0: *mut u8, a1: u8);
-    fn CopyEasyChatWord(a0: *mut u8, a1: u16) -> *mut u8;
-    fn FavorLadyOpenBagMenu();
-    fn GetItemName(a0: u16) -> *mut u8;
-    fn IsEasyChatAnswerUnlocked(a0: i32) -> u32;
-    fn OpenPokeblockCase(a0: u8, a1: Option<unsafe extern "C" fn()>);
-    fn QuizLadyOpenBagMenu();
-    fn Random() -> u16;
-    fn RemoveBagItem(a0: u16, a1: u16) -> u8;
-    fn ScriptContext_Enable();
-    fn ShowEasyChatScreen();
-    fn StringCompare(a0: *mut u8, a1: *mut u8) -> i32;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy_Nickname(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy_PlayerName(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn VarSet(a0: u16, a1: u16) -> u8;
+/// `GetItemName` with this module's view of its types.
+#[inline]
+unsafe fn GetItemName(a0: u16) -> *mut u8 {
+    crate::item::GetItemName(a0) as *mut u8
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLilycoveLadyId() -> u8 {
-    return (*gSaveBlock1Ptr).lilycoveLady.id;
+pub unsafe fn GetLilycoveLadyId() -> u8 {
+    (*gSaveBlock1Ptr).lilycoveLady.id
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetLilycoveLadyGfx() {
+pub unsafe fn SetLilycoveLadyGfx() {
     let mut lilycoveLady: *mut LilycoveLady = null_mut();
     VarSet(VAR_OBJ_GFX_ID_0, sLilycoveLadyGfxId[GetLilycoveLadyId()]);
     if GetLilycoveLadyId() == LILYCOVE_LADY_CONTEST {
@@ -119,7 +99,7 @@ pub unsafe extern "C" fn SetLilycoveLadyGfx() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitLilycoveLady() {
+pub unsafe fn InitLilycoveLady() {
     let mut id: u16 = ((*gSaveBlock2Ptr).playerTrainerId[1] as u16) << 8
         | (*gSaveBlock2Ptr).playerTrainerId[0] as u16;
     id = (id as i32 % 6) as u16;
@@ -137,8 +117,7 @@ pub unsafe extern "C" fn InitLilycoveLady() {
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetLilycoveLadyForRecordMix() {
+pub unsafe fn ResetLilycoveLadyForRecordMix() {
     match GetLilycoveLadyId() {
         LILYCOVE_LADY_QUIZ => {
             ResetQuizLadyForRecordMix();
@@ -152,9 +131,8 @@ pub unsafe extern "C" fn ResetLilycoveLadyForRecordMix() {
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitLilycoveLadyRandomly() {
-    let mut lady: u8 = (Random() as i32 % 3) as u8;
+pub unsafe fn InitLilycoveLadyRandomly() {
+    let lady: u8 = (Random() as i32 % 3) as u8;
     match lady {
         LILYCOVE_LADY_QUIZ => {
             InitLilycoveQuizLady();
@@ -169,27 +147,24 @@ pub unsafe extern "C" fn InitLilycoveLadyRandomly() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Script_GetLilycoveLadyId() {
+pub unsafe fn Script_GetLilycoveLadyId() {
     gSpecialVar_Result = GetLilycoveLadyId() as u16;
 }
-pub(crate) unsafe extern "C" fn GetNumAcceptedItems(mut itemsArray: *mut u16) -> u8 {
+unsafe fn GetNumAcceptedItems(mut itemsArray: *mut u16) -> u8 {
     let mut numItems: u8 = 0;
-    numItems = 0;
     while *itemsArray != ITEM_NONE {
         numItems += 1;
         itemsArray = itemsArray.at(1);
     }
-    return numItems;
+    numItems
 }
-pub(crate) unsafe extern "C" fn FavorLadyPickFavorAndBestItem() {
-    let mut numItems: u8 = 0;
-    let mut bestItem: u8 = 0;
+unsafe fn FavorLadyPickFavorAndBestItem() {
     (*sFavorLadyPtr).favorId = (Random() % 6) as u8;
-    numItems = GetNumAcceptedItems(sFavorLadyAcceptedItemLists[(*sFavorLadyPtr).favorId]);
-    bestItem = rem_i32(Random() as i32, numItems as i32) as u8;
+    let numItems: u8 = GetNumAcceptedItems(sFavorLadyAcceptedItemLists[(*sFavorLadyPtr).favorId]);
+    let bestItem: u8 = rem_i32(Random() as i32, numItems as i32) as u8;
     (*sFavorLadyPtr).bestItem = *sFavorLadyAcceptedItemLists[(*sFavorLadyPtr).favorId].at(bestItem);
 }
-pub(crate) unsafe extern "C" fn InitLilycoveFavorLady() {
+unsafe fn InitLilycoveFavorLady() {
     sFavorLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.favor;
     (*sFavorLadyPtr).id = LILYCOVE_LADY_FAVOR;
     (*sFavorLadyPtr).state = LILYCOVE_LADY_STATE_READY;
@@ -200,13 +175,13 @@ pub(crate) unsafe extern "C" fn InitLilycoveFavorLady() {
     (*sFavorLadyPtr).language = gGameLanguage;
     FavorLadyPickFavorAndBestItem();
 }
-pub(crate) unsafe extern "C" fn ResetFavorLadyForRecordMix() {
+unsafe fn ResetFavorLadyForRecordMix() {
     sFavorLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.favor;
     (*sFavorLadyPtr).id = LILYCOVE_LADY_FAVOR;
     (*sFavorLadyPtr).state = LILYCOVE_LADY_STATE_READY;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFavorLadyState() -> u8 {
+pub unsafe fn GetFavorLadyState() -> u8 {
     sFavorLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.favor;
     if (*sFavorLadyPtr).state == LILYCOVE_LADY_STATE_PRIZE {
         return LILYCOVE_LADY_STATE_PRIZE;
@@ -217,14 +192,14 @@ pub unsafe extern "C" fn GetFavorLadyState() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn GetFavorLadyRequest(idx: u8) -> *mut u8 {
-    return sFavorLadyRequests[idx];
+unsafe fn GetFavorLadyRequest(idx: u8) -> *mut u8 {
+    sFavorLadyRequests[idx]
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferFavorLadyRequest() {
+pub unsafe fn BufferFavorLadyRequest() {
     sFavorLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.favor;
     StringCopy(
         gStringVar1.as_mut_ptr(),
@@ -232,7 +207,7 @@ pub unsafe extern "C" fn BufferFavorLadyRequest() {
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HasAnotherPlayerGivenFavorLadyItem() -> u8 {
+pub unsafe fn HasAnotherPlayerGivenFavorLadyItem() -> u8 {
     sFavorLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.favor;
     if (*sFavorLadyPtr).playerName[0] != EOS {
         StringCopy_PlayerName(
@@ -242,22 +217,22 @@ pub unsafe extern "C" fn HasAnotherPlayerGivenFavorLadyItem() -> u8 {
         ConvertInternationalString(gStringVar3.as_mut_ptr(), (*sFavorLadyPtr).language);
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn BufferItemName(dest: *mut u8, itemId: u16) {
+unsafe fn BufferItemName(dest: *mut u8, itemId: u16) {
     StringCopy(dest, GetItemName(itemId));
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferFavorLadyItemName() {
+pub unsafe fn BufferFavorLadyItemName() {
     sFavorLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.favor;
     BufferItemName(gStringVar2.as_mut_ptr(), (*sFavorLadyPtr).itemId);
 }
-pub(crate) unsafe extern "C" fn SetFavorLadyPlayerName(src: *mut u8, dest: *mut u8) {
+unsafe fn SetFavorLadyPlayerName(src: *mut u8, dest: *mut u8) {
     memset(dest, EOS as i32, 8);
     StringCopy_PlayerName(dest, src);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferFavorLadyPlayerName() {
+pub unsafe fn BufferFavorLadyPlayerName() {
     sFavorLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.favor;
     SetFavorLadyPlayerName(
         (*sFavorLadyPtr).playerName.as_mut_ptr(),
@@ -266,24 +241,21 @@ pub unsafe extern "C" fn BufferFavorLadyPlayerName() {
     ConvertInternationalString(gStringVar3.as_mut_ptr(), (*sFavorLadyPtr).language);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DidFavorLadyLikeItem() -> u8 {
+pub unsafe fn DidFavorLadyLikeItem() -> u8 {
     sFavorLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.favor;
-    return (if (*sFavorLadyPtr).likedItem != 0 {
+    (if (*sFavorLadyPtr).likedItem != 0 {
         TRUE as i32
     } else {
         FALSE as i32
-    }) as u8;
+    }) as u8
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Script_FavorLadyOpenBagMenu() {
+pub unsafe fn Script_FavorLadyOpenBagMenu() {
     FavorLadyOpenBagMenu();
 }
-pub(crate) unsafe extern "C" fn DoesFavorLadyLikeItem(itemId: u16) -> u8 {
-    let mut numItems: u8 = 0;
-    let mut i: u8 = 0;
-    let mut likedItem: u8 = 0;
+unsafe fn DoesFavorLadyLikeItem(itemId: u16) -> u8 {
     sFavorLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.favor;
-    numItems = GetNumAcceptedItems(sFavorLadyAcceptedItemLists[(*sFavorLadyPtr).favorId]);
+    let numItems: u8 = GetNumAcceptedItems(sFavorLadyAcceptedItemLists[(*sFavorLadyPtr).favorId]);
     (*sFavorLadyPtr).state = LILYCOVE_LADY_STATE_COMPLETED;
     BufferItemName(gStringVar2.as_mut_ptr(), itemId);
     (*sFavorLadyPtr).itemId = itemId;
@@ -292,9 +264,8 @@ pub(crate) unsafe extern "C" fn DoesFavorLadyLikeItem(itemId: u16) -> u8 {
         (*sFavorLadyPtr).playerName.as_mut_ptr(),
     );
     (*sFavorLadyPtr).language = gGameLanguage;
-    likedItem = FALSE;
-    i = 0;
-    while i < numItems {
+    let mut likedItem: u8 = FALSE;
+    for i in 0..numItems {
         if *sFavorLadyAcceptedItemLists[(*sFavorLadyPtr).favorId].at(i) == itemId {
             likedItem = TRUE;
             (*sFavorLadyPtr).numItemsGiven += 1;
@@ -305,76 +276,66 @@ pub(crate) unsafe extern "C" fn DoesFavorLadyLikeItem(itemId: u16) -> u8 {
             break;
         }
         (*sFavorLadyPtr).likedItem = FALSE;
-        i += 1;
     }
-    return likedItem;
+    likedItem
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Script_DoesFavorLadyLikeItem() -> u8 {
-    return DoesFavorLadyLikeItem(gSpecialVar_ItemId);
+pub unsafe fn Script_DoesFavorLadyLikeItem() -> u8 {
+    DoesFavorLadyLikeItem(gSpecialVar_ItemId)
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsFavorLadyThresholdMet() -> u8 {
+pub unsafe fn IsFavorLadyThresholdMet() -> u8 {
     let mut numItemsGiven: u8 = 0;
     sFavorLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.favor;
     numItemsGiven = (*sFavorLadyPtr).numItemsGiven;
-    return (if numItemsGiven < LILYCOVE_LADY_GIFT_THRESHOLD {
+    (if numItemsGiven < LILYCOVE_LADY_GIFT_THRESHOLD {
         FALSE as i32
     } else {
         TRUE as i32
-    }) as u8;
+    }) as u8
 }
-pub(crate) unsafe extern "C" fn FavorLadyBufferPrizeName(prize: u16) {
+unsafe fn FavorLadyBufferPrizeName(prize: u16) {
     BufferItemName(gStringVar2.as_mut_ptr(), prize);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FavorLadyGetPrize() -> u16 {
-    let mut prize: u16 = 0;
+pub unsafe fn FavorLadyGetPrize() -> u16 {
     sFavorLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.favor;
-    prize = sFavorLadyPrizes[(*sFavorLadyPtr).favorId];
+    let prize: u16 = sFavorLadyPrizes[(*sFavorLadyPtr).favorId];
     FavorLadyBufferPrizeName(prize);
     (*sFavorLadyPtr).state = LILYCOVE_LADY_STATE_PRIZE;
-    return prize;
+    prize
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetFavorLadyState_Complete() {
+pub unsafe fn SetFavorLadyState_Complete() {
     InitLilycoveFavorLady();
     (*sFavorLadyPtr).state = LILYCOVE_LADY_STATE_COMPLETED;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldCallback_FavorLadyEnableScriptContexts() {
+pub unsafe fn FieldCallback_FavorLadyEnableScriptContexts() {
     ScriptContext_Enable();
 }
-pub(crate) unsafe extern "C" fn QuizLadyPickQuestion() {
-    let mut questionId: u8 = 0;
-    let mut i: u8 = 0;
-    questionId = (Random() % 16) as u8;
-    i = 0;
-    while i < QUIZ_QUESTION_LEN {
+unsafe fn QuizLadyPickQuestion() {
+    let questionId: u8 = (Random() % 16) as u8;
+    for i in 0..QUIZ_QUESTION_LEN {
         (*sQuizLadyPtr).question[i] = *sQuizLadyQuizQuestions[questionId].at(i);
-        i += 1;
     }
     (*sQuizLadyPtr).correctAnswer = sQuizLadyQuizAnswers[questionId];
     (*sQuizLadyPtr).prize = sQuizLadyPrizes[questionId];
     (*sQuizLadyPtr).questionId = questionId;
     (*sQuizLadyPtr).playerName[0] = EOS;
 }
-pub(crate) unsafe extern "C" fn InitLilycoveQuizLady() {
-    let mut i: u8 = 0;
+unsafe fn InitLilycoveQuizLady() {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     (*sQuizLadyPtr).id = LILYCOVE_LADY_QUIZ;
     (*sQuizLadyPtr).state = LILYCOVE_LADY_STATE_READY;
-    i = 0;
+    let mut i: u8 = 0;
     while i < QUIZ_QUESTION_LEN {
         (*sQuizLadyPtr).question[i] = EC_EMPTY_WORD;
         i += 1;
     }
     (*sQuizLadyPtr).correctAnswer = EC_EMPTY_WORD;
     (*sQuizLadyPtr).playerAnswer = EC_EMPTY_WORD;
-    i = 0;
-    while i < TRAINER_ID_LENGTH {
+    for i in 0..TRAINER_ID_LENGTH {
         (*sQuizLadyPtr).playerTrainerId[i] = 0;
-        i += 1;
     }
     (*sQuizLadyPtr).prize = ITEM_NONE;
     (*sQuizLadyPtr).waitingForChallenger = FALSE;
@@ -382,7 +343,7 @@ pub(crate) unsafe extern "C" fn InitLilycoveQuizLady() {
     (*sQuizLadyPtr).language = gGameLanguage;
     QuizLadyPickQuestion();
 }
-pub(crate) unsafe extern "C" fn ResetQuizLadyForRecordMix() {
+unsafe fn ResetQuizLadyForRecordMix() {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     (*sQuizLadyPtr).id = LILYCOVE_LADY_QUIZ;
     (*sQuizLadyPtr).state = LILYCOVE_LADY_STATE_READY;
@@ -390,7 +351,7 @@ pub(crate) unsafe extern "C" fn ResetQuizLadyForRecordMix() {
     (*sQuizLadyPtr).playerAnswer = EC_EMPTY_WORD;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetQuizLadyState() -> u8 {
+pub unsafe fn GetQuizLadyState() -> u8 {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     if (*sQuizLadyPtr).state == LILYCOVE_LADY_STATE_PRIZE {
         return LILYCOVE_LADY_STATE_PRIZE;
@@ -401,15 +362,13 @@ pub unsafe extern "C" fn GetQuizLadyState() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetQuizAuthor() -> u8 {
+pub unsafe fn GetQuizAuthor() -> u8 {
     let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    let mut authorNameId: u8 = 0;
-    let mut quiz: *mut LilycoveLadyQuiz = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
+    let quiz: *mut LilycoveLadyQuiz = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     if IsEasyChatAnswerUnlocked((*quiz).correctAnswer as i32) == FALSE as u32 {
         i = (*quiz).questionId as i32;
         loop {
@@ -424,17 +383,15 @@ pub unsafe extern "C" fn GetQuizAuthor() -> u8 {
                 break;
             }
         }
-        j = 0;
-        while j < QUIZ_QUESTION_LEN as i32 {
+        for j in 0..(QUIZ_QUESTION_LEN as i32) {
             (*quiz).question[j] = *sQuizLadyQuizQuestions[i].at(j);
-            j += 1;
         }
         (*quiz).correctAnswer = sQuizLadyQuizAnswers[i];
         (*quiz).prize = sQuizLadyPrizes[i];
         (*quiz).questionId = i as u8;
         (*quiz).playerName[0] = EOS;
     }
-    authorNameId = BufferQuizAuthorName();
+    let authorNameId: u8 = BufferQuizAuthorName();
     if authorNameId == QUIZ_AUTHOR_NAME_LADY {
         return QUIZ_AUTHOR_LADY;
     } else if authorNameId == QUIZ_AUTHOR_NAME_OTHER_PLAYER || IsQuizTrainerIdNotPlayer() != 0 {
@@ -444,19 +401,19 @@ pub unsafe extern "C" fn GetQuizAuthor() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn BufferQuizAuthorName() -> u8 {
-    let mut authorNameId: u8 = 0;
+unsafe fn BufferQuizAuthorName() -> u8 {
     let mut nameLen: u8 = 0;
-    let mut i: u8 = 0;
-    authorNameId = QUIZ_AUTHOR_NAME_PLAYER;
+    let mut authorNameId: u8 = QUIZ_AUTHOR_NAME_PLAYER;
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     if (*sQuizLadyPtr).playerName[0] == EOS {
         StringCopy_PlayerName(
             gStringVar1.as_mut_ptr(),
-            gText_QuizLady_Lady.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_QuizLady_Lady).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         authorNameId = QUIZ_AUTHOR_NAME_LADY;
     } else {
@@ -468,104 +425,96 @@ pub(crate) unsafe extern "C" fn BufferQuizAuthorName() -> u8 {
         nameLen = GetPlayerNameLength((*sQuizLadyPtr).playerName.as_mut_ptr());
         if nameLen == GetPlayerNameLength((*gSaveBlock2Ptr).playerName.as_mut_ptr()) {
             let mut name: *mut u8 = (*sQuizLadyPtr).playerName.as_mut_ptr();
-            i = 0;
-            while i < nameLen {
+            for i in 0..nameLen {
                 name = (*sQuizLadyPtr).playerName.as_mut_ptr();
                 if *name.at(i) != (*gSaveBlock2Ptr).playerName[i] {
                     authorNameId = QUIZ_AUTHOR_NAME_OTHER_PLAYER;
                     break;
                 }
-                i += 1;
             }
         }
     }
-    return authorNameId;
+    authorNameId
 }
-pub(crate) unsafe extern "C" fn IsQuizTrainerIdNotPlayer() -> u8 {
-    let mut notPlayer: u8 = 0;
-    let mut i: u8 = 0;
+unsafe fn IsQuizTrainerIdNotPlayer() -> u8 {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
-    notPlayer = FALSE;
-    i = 0;
-    while i < TRAINER_ID_LENGTH {
+    let mut notPlayer: u8 = FALSE;
+    for i in 0..TRAINER_ID_LENGTH {
         if (*sQuizLadyPtr).playerTrainerId[i] != (*gSaveBlock2Ptr).playerTrainerId[i] as u16 {
             notPlayer = TRUE;
             break;
         }
-        i += 1;
     }
-    return notPlayer;
+    notPlayer
 }
-pub(crate) unsafe extern "C" fn GetPlayerNameLength(playerName: *mut u8) -> u8 {
+unsafe fn GetPlayerNameLength(playerName: *mut u8) -> u8 {
     let mut len: u8 = 0;
-    let mut ptr: *mut u8 = null_mut();
-    len = 0;
-    ptr = playerName;
+    let mut ptr: *mut u8 = playerName;
     while *ptr != EOS {
         len += 1;
         ptr = ptr.at(1);
     }
-    return len;
+    len
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferQuizPrizeName() {
+pub unsafe fn BufferQuizPrizeName() {
     StringCopy(gStringVar1.as_mut_ptr(), GetItemName((*sQuizLadyPtr).prize));
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferQuizAuthorNameAndCheckIfLady() -> u8 {
+pub unsafe fn BufferQuizAuthorNameAndCheckIfLady() -> u8 {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     if BufferQuizAuthorName() == QUIZ_AUTHOR_NAME_LADY {
         (*sQuizLadyPtr).language = gGameLanguage;
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsQuizLadyWaitingForChallenger() -> u8 {
+pub unsafe fn IsQuizLadyWaitingForChallenger() -> u8 {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
-    return (*sQuizLadyPtr).waitingForChallenger;
+    (*sQuizLadyPtr).waitingForChallenger
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn QuizLadyGetPlayerAnswer() {
+pub unsafe fn QuizLadyGetPlayerAnswer() {
     ShowEasyChatScreen();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsQuizAnswerCorrect() -> u8 {
+pub unsafe fn IsQuizAnswerCorrect() -> u8 {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     CopyEasyChatWord(gStringVar1.as_mut_ptr(), (*sQuizLadyPtr).correctAnswer);
     CopyEasyChatWord(gStringVar2.as_mut_ptr(), (*sQuizLadyPtr).playerAnswer);
-    return (if StringCompare(gStringVar1.as_mut_ptr(), gStringVar2.as_mut_ptr()) != 0 {
+    (if StringCompare(gStringVar1.as_mut_ptr(), gStringVar2.as_mut_ptr()) != 0 {
         FALSE as i32
     } else {
         TRUE as i32
-    }) as u8;
+    }) as u8
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferQuizPrizeItem() {
+pub unsafe fn BufferQuizPrizeItem() {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     gSpecialVar_0x8005 = (*sQuizLadyPtr).prize;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetQuizLadyState_Complete() {
+pub unsafe fn SetQuizLadyState_Complete() {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     (*sQuizLadyPtr).state = LILYCOVE_LADY_STATE_COMPLETED;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetQuizLadyState_GivePrize() {
+pub unsafe fn SetQuizLadyState_GivePrize() {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     (*sQuizLadyPtr).state = LILYCOVE_LADY_STATE_PRIZE;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearQuizLadyPlayerAnswer() {
+pub unsafe fn ClearQuizLadyPlayerAnswer() {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     (*sQuizLadyPtr).playerAnswer = EC_EMPTY_WORD;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Script_QuizLadyOpenBagMenu() {
+pub unsafe fn Script_QuizLadyOpenBagMenu() {
     QuizLadyOpenBagMenu();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn QuizLadyPickNewQuestion() {
+pub unsafe fn QuizLadyPickNewQuestion() {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     if BufferQuizAuthorNameAndCheckIfLady() != 0 {
         (*sQuizLadyPtr).prevQuestionId = (*sQuizLadyPtr).questionId;
@@ -575,34 +524,28 @@ pub unsafe extern "C" fn QuizLadyPickNewQuestion() {
     QuizLadyPickQuestion();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearQuizLadyQuestionAndAnswer() {
-    let mut i: u8 = 0;
+pub unsafe fn ClearQuizLadyQuestionAndAnswer() {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
-    i = 0;
-    while i < QUIZ_QUESTION_LEN {
+    for i in 0..QUIZ_QUESTION_LEN {
         (*sQuizLadyPtr).question[i] = EC_EMPTY_WORD;
-        i += 1;
     }
     (*sQuizLadyPtr).correctAnswer = EC_EMPTY_WORD;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn QuizLadySetCustomQuestion() {
+pub unsafe fn QuizLadySetCustomQuestion() {
     gSpecialVar_0x8004 = EASY_CHAT_TYPE_QUIZ_SET_QUESTION as u16;
     ShowEasyChatScreen();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn QuizLadyTakePrizeForCustomQuiz() {
+pub unsafe fn QuizLadyTakePrizeForCustomQuiz() {
     RemoveBagItem(gSpecialVar_ItemId, 1);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn QuizLadyRecordCustomQuizData() {
-    let mut i: u8 = 0;
+pub unsafe fn QuizLadyRecordCustomQuizData() {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     (*sQuizLadyPtr).prize = gSpecialVar_ItemId;
-    i = 0;
-    while i < TRAINER_ID_LENGTH {
+    for i in 0..TRAINER_ID_LENGTH {
         (*sQuizLadyPtr).playerTrainerId[i] = (*gSaveBlock2Ptr).playerTrainerId[i] as u16;
-        i += 1;
     }
     StringCopy_PlayerName(
         (*sQuizLadyPtr).playerName.as_mut_ptr(),
@@ -611,31 +554,26 @@ pub unsafe extern "C" fn QuizLadyRecordCustomQuizData() {
     (*sQuizLadyPtr).language = gGameLanguage;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn QuizLadySetWaitingForChallenger() {
+pub unsafe fn QuizLadySetWaitingForChallenger() {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     (*sQuizLadyPtr).waitingForChallenger = TRUE;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferQuizCorrectAnswer() {
+pub unsafe fn BufferQuizCorrectAnswer() {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     CopyEasyChatWord(gStringVar3.as_mut_ptr(), (*sQuizLadyPtr).correctAnswer);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldCallback_QuizLadyEnableScriptContexts() {
+pub unsafe fn FieldCallback_QuizLadyEnableScriptContexts() {
     ScriptContext_Enable();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn QuizLadyClearQuestionForRecordMix(lilycoveLady: *mut LilycoveLady) {
-    let mut i: u8 = 0;
+pub unsafe fn QuizLadyClearQuestionForRecordMix(lilycoveLady: *mut LilycoveLady) {
     sQuizLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.quiz;
     if (*lilycoveLady).quiz.prevQuestionId < 16 && (*sQuizLadyPtr).id == LILYCOVE_LADY_QUIZ {
-        i = 0;
-        while i < 4 {
+        for i in 0..4u8 {
             if (*lilycoveLady).quiz.prevQuestionId != (*sQuizLadyPtr).questionId {
                 break;
             }
             (*sQuizLadyPtr).questionId = (Random() % 16) as u8;
-            i += 1;
         }
         if (*lilycoveLady).quiz.prevQuestionId == (*sQuizLadyPtr).questionId {
             (*sQuizLadyPtr).questionId = (((*sQuizLadyPtr).questionId as i32 + 1) % 16) as u8;
@@ -643,21 +581,21 @@ pub unsafe extern "C" fn QuizLadyClearQuestionForRecordMix(lilycoveLady: *mut Li
         (*sQuizLadyPtr).prevQuestionId = (*lilycoveLady).quiz.prevQuestionId;
     }
 }
-pub(crate) unsafe extern "C" fn ResetContestLadyContestData() {
+unsafe fn ResetContestLadyContestData() {
     (*sContestLadyPtr).playerName[0] = EOS;
     (*sContestLadyPtr).numGoodPokeblocksGiven = 0;
     (*sContestLadyPtr).numOtherPokeblocksGiven = 0;
     (*sContestLadyPtr).maxSheen = 0;
     (*sContestLadyPtr).category = (Random() as i32 % 5) as u8;
 }
-pub(crate) unsafe extern "C" fn InitLilycoveContestLady() {
+unsafe fn InitLilycoveContestLady() {
     sContestLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.contest;
     (*sContestLadyPtr).id = LILYCOVE_LADY_CONTEST;
     (*sContestLadyPtr).givenPokeblock = FALSE;
     ResetContestLadyContestData();
     (*sContestLadyPtr).language = gGameLanguage;
 }
-pub(crate) unsafe extern "C" fn ResetContestLadyForRecordMix() {
+unsafe fn ResetContestLadyForRecordMix() {
     sContestLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.contest;
     (*sContestLadyPtr).id = LILYCOVE_LADY_CONTEST;
     (*sContestLadyPtr).givenPokeblock = FALSE;
@@ -667,7 +605,7 @@ pub(crate) unsafe extern "C" fn ResetContestLadyForRecordMix() {
         ResetContestLadyContestData();
     }
 }
-pub(crate) unsafe extern "C" fn ContestLadySavePlayerNameIfHighSheen(sheen: u8) {
+unsafe fn ContestLadySavePlayerNameIfHighSheen(sheen: u8) {
     sContestLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.contest;
     if (*sContestLadyPtr).maxSheen <= sheen {
         (*sContestLadyPtr).maxSheen = sheen;
@@ -680,8 +618,7 @@ pub(crate) unsafe extern "C" fn ContestLadySavePlayerNameIfHighSheen(sheen: u8) 
         (*sContestLadyPtr).language = gGameLanguage;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GivePokeblockToContestLady(pokeblock: *mut Pokeblock) -> u8 {
+pub unsafe fn GivePokeblockToContestLady(pokeblock: *mut Pokeblock) -> u8 {
     let mut sheen: u8 = 0;
     let mut correctFlavor: u8 = FALSE;
     sContestLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.contest;
@@ -710,11 +647,9 @@ pub unsafe extern "C" fn GivePokeblockToContestLady(pokeblock: *mut Pokeblock) -
                 correctFlavor = TRUE;
             }
         }
-        CONTEST_CATEGORY_TOUGH => {
-            if (*pokeblock).sour != 0 {
-                sheen = (*pokeblock).sour;
-                correctFlavor = TRUE;
-            }
+        CONTEST_CATEGORY_TOUGH if (*pokeblock).sour != 0 => {
+            sheen = (*pokeblock).sour;
+            correctFlavor = TRUE;
         }
         _ => {}
     }
@@ -724,12 +659,9 @@ pub unsafe extern "C" fn GivePokeblockToContestLady(pokeblock: *mut Pokeblock) -
     } else {
         (*sContestLadyPtr).numOtherPokeblocksGiven += 1;
     }
-    return correctFlavor;
+    correctFlavor
 }
-pub(crate) unsafe extern "C" fn BufferContestLadyCategoryAndMonName(
-    category: *mut u8,
-    nickname: *mut u8,
-) {
+unsafe fn BufferContestLadyCategoryAndMonName(category: *mut u8, nickname: *mut u8) {
     sContestLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.contest;
     StringCopy(
         category,
@@ -737,28 +669,23 @@ pub(crate) unsafe extern "C" fn BufferContestLadyCategoryAndMonName(
     );
     StringCopy_Nickname(nickname, sContestLadyMonNames[(*sContestLadyPtr).category]);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferContestLadyMonName(category: *mut u8, nickname: *mut u8) {
+pub unsafe fn BufferContestLadyMonName(category: *mut u8, nickname: *mut u8) {
     sContestLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.contest;
     *category = (*sContestLadyPtr).category;
     StringCopy(nickname, sContestLadyMonNames[(*sContestLadyPtr).category]);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferContestLadyPlayerName(dest: *mut u8) {
+pub unsafe fn BufferContestLadyPlayerName(dest: *mut u8) {
     sContestLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.contest;
     StringCopy(dest, (*sContestLadyPtr).playerName.as_mut_ptr());
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferContestLadyLanguage(dest: *mut u8) {
+pub unsafe fn BufferContestLadyLanguage(dest: *mut u8) {
     sContestLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.contest;
     *dest = (*sContestLadyPtr).language;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferContestName(dest: *mut u8, category: u8) {
+pub unsafe fn BufferContestName(dest: *mut u8, category: u8) {
     StringCopy(dest, sContestNames[category]);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetContestLadyPokeblockState() -> u8 {
+pub unsafe fn GetContestLadyPokeblockState() -> u8 {
     sContestLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.contest;
     if (*sContestLadyPtr).numGoodPokeblocksGiven >= LILYCOVE_LADY_GIFT_THRESHOLD {
         return CONTEST_LADY_GOOD;
@@ -769,19 +696,19 @@ pub unsafe extern "C" fn GetContestLadyPokeblockState() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HasPlayerGivenContestLadyPokeblock() -> u8 {
+pub unsafe fn HasPlayerGivenContestLadyPokeblock() -> u8 {
     sContestLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.contest;
     if (*sContestLadyPtr).givenPokeblock == TRUE {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShouldContestLadyShowGoOnAir() -> u8 {
+pub unsafe fn ShouldContestLadyShowGoOnAir() -> u8 {
     let mut putOnAir: u8 = FALSE;
     sContestLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.contest;
     if (*sContestLadyPtr).numGoodPokeblocksGiven >= LILYCOVE_LADY_GIFT_THRESHOLD
@@ -789,28 +716,28 @@ pub unsafe extern "C" fn ShouldContestLadyShowGoOnAir() -> u8 {
     {
         putOnAir = TRUE;
     }
-    return putOnAir;
+    putOnAir
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Script_BufferContestLadyCategoryAndMonName() {
+pub unsafe fn Script_BufferContestLadyCategoryAndMonName() {
     BufferContestLadyCategoryAndMonName(gStringVar2.as_mut_ptr(), gStringVar1.as_mut_ptr());
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn OpenPokeblockCaseForContestLady() {
+pub unsafe fn OpenPokeblockCaseForContestLady() {
     OpenPokeblockCase(PBLOCK_CASE_GIVE, Some(CB2_ReturnToField));
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetContestLadyGivenPokeblock() {
+pub unsafe fn SetContestLadyGivenPokeblock() {
     sContestLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.contest;
     (*sContestLadyPtr).givenPokeblock = TRUE;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetContestLadyMonSpecies() {
+pub unsafe fn GetContestLadyMonSpecies() {
     sContestLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.contest;
     gSpecialVar_0x8005 = sContestLadyMonSpecies[(*sContestLadyPtr).category];
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetContestLadyCategory() -> u8 {
+pub unsafe fn GetContestLadyCategory() -> u8 {
     sContestLadyPtr = &raw mut (*gSaveBlock1Ptr).lilycoveLady.contest;
-    return (*sContestLadyPtr).category;
+    (*sContestLadyPtr).category
 }

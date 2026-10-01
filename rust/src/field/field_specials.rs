@@ -3,37 +3,229 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    clippy::missing_transmute_annotations,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::battle_main::{gBattleOutcome, gBattleTypeFlags};
+use crate::battle_tower::GetEreaderTrainerName;
+use crate::box_mon::GetBoxMonData3;
 #[allow(unused_imports)]
 use crate::c::*;
+use crate::cable_club::Task_ReconnectWithLinkPlayers;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::decoration::AddDecorationIconObject;
+use crate::diploma::CB2_ShowDiploma;
+use crate::event_data::{FlagClear, FlagGet, FlagSet, GetVarPointer, VarGet, VarSet};
+use crate::event_object_movement::{
+    CameraObjectSetFollowedSpriteId, GetObjectEventIdByLocalIdAndMap,
+    RemoveObjectEventByLocalIdAndMap, SpawnSpecialObjectEventParameterized,
+    TryGetObjectEventIdByLocalIdAndMap,
+};
+use crate::ffi::{
+    gSpecialVar_0x8004, gSpecialVar_0x8005, gSpecialVar_0x8006, gSpecialVar_0x8007,
+    gSpecialVar_Result,
+};
+use crate::field_camera::{
+    DrawWholeMapView, InstallCameraPanAheadCallback, SetCameraPanning, SetCameraPanningCallback,
+};
+use crate::field_effect::{FieldEffectActiveListContains, FieldEffectStart, gFieldEffectArguments};
+use crate::field_player_avatar::{
+    GetPlayerAvatarSpriteId, GetPlayerFacingDirection, TestPlayerAvatarFlags, gObjectEvents,
+};
+use crate::field_weather::SetCurrentAndNextWeather;
+use crate::field_weather_effect::SetSavedWeather;
+use crate::fieldmap::{MapGridGetMetatileIdAt, MapGridSetMetatileIdAt, gMapHeader};
+use crate::item_icon::AddItemIconSprite;
+use crate::link::gBlockRecvBuffer;
+use crate::link::{
+    BitmaskAllOtherLinkPlayers, GetBlockReceivedStatus, GetLinkPlayerCount, GetMultiplayerId,
+    IsLinkTaskFinished, ResetBlockReceivedFlag, SendBlock, SetCloseLinkCallback,
+    SetLinkStandbyCallback, gLinkPlayers, gReceivedRemoteLinkPlayers, gWirelessCommType,
+};
+use crate::list_menu::{
+    AddScrollIndicatorArrowPair, DestroyListMenuTask, ListMenu_ProcessInput,
+    ListMenuGetCurrentItemArrayId, ListMenuGetScrollAndRow, ListMenuInit,
+    RemoveScrollIndicatorArrowPair,
+};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::menu::{
+    AddTextPrinterParameterized2, AddTextPrinterParameterized5,
+    ClearStdWindowAndFrameToTransparent, CreateWindowTemplate, ScheduleBgCopyTilemapToVram,
+    SetStandardWindowBorderStyle,
+};
+use crate::mystery_gift::MysteryGift_GetCardStat;
+use crate::overworld::{
+    CB2_ReturnToField, CB2_ReturnToFieldContinueScriptPlayMapMusic, GetGameStat,
+    GetLastUsedWarpMapType, IncrementGameStat, IsMapTypeOutdoors, Overworld_SetSavedMusic,
+    SetLastHealLocationWarp, SetObjEventTemplateCoords, SetWarpDestination, gLastUsedWarp,
+};
+use crate::palette::{BlendPalettes, LoadPalette};
+use crate::party_menu::ItemIdToBattleMoveId;
+use crate::pokeblock::CopyMonFavoritePokeblockName;
+use crate::pokemon::{
+    CalculatePlayerPartyCount, CheckPartyPokerus, CreateMon, GetMonData2, GetMonData3,
+    GetMonEVCount, GetNature, SetMonData, gPlayerParty,
+};
+use crate::pokemon_storage_system::{
+    CheckFreePokemonStorageSpace, GetBoxedMonPtr, StorageGetCurrentBox,
+};
+use crate::pokenav_match_call_data::GetRematchIdxByTrainerIdx;
+use crate::random::Random;
+use crate::rayquaza_scene::DoRayquazaScene;
+use crate::region_map::GetMapName;
+use crate::rtc::gLocalTime;
+use crate::script::{LockPlayerFieldControls, ScriptContext_Enable};
+use crate::script_menu::{ConvertPixelWidthToTileWidth, DisplayTextAndGetWidth};
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::sprite::{FreeSpritePaletteByTag, FreeSpriteTilesByTag};
+use crate::starter_choose::GetStarterPokemon;
+use crate::string_util::ConvertInternationalString;
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar4};
+use crate::task::DestroyTask;
+use crate::task::{gTasks, task_get, task_set, task_set_func};
+use crate::text::IsTextPrinterActive;
+use crate::tv::{
+    ConvertIntToDecimalString, CountDigits, GetRibbonCount, IsPokeNewsActive,
+    TryPutSpotTheCutiesOnAir,
+};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::wallclock::CB2_ViewWallClock;
+use crate::window::{
+    ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect,
+    PutWindowTilemap, RemoveWindow,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySpriteAndFreeResources` with this module's view of its types.
+#[inline]
+unsafe fn DestroySpriteAndFreeResources(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySpriteAndFreeResources(a0 as _);
+    }
+}
+/// `FieldInitRegionMap` with this module's view of its types.
+#[inline]
+unsafe fn FieldInitRegionMap(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::field_region_map::FieldInitRegionMap(core::mem::transmute(a0));
+    }
+}
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+unsafe fn FindTaskIdByFunc(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+/// `GetStringCenterAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringCenterAlignXOffset(a0, a1 as _, a2) }
+}
+/// `GetStringRightAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringRightAlignXOffset(a0, a1 as _, a2) }
+}
+/// `ShowFieldAutoScrollMessage` with this module's view of its types.
+#[inline]
+unsafe fn ShowFieldAutoScrollMessage(a0: *mut u8) -> u8 {
+    unsafe { crate::field_message_box::ShowFieldAutoScrollMessage(a0 as _) }
+}
+/// `ShowFieldMessage` with this module's view of its types.
+#[inline]
+unsafe fn ShowFieldMessage(a0: *mut u8) -> u8 {
+    unsafe { crate::field_message_box::ShowFieldMessage(a0 as _) }
+}
+/// `StringAppend` with this module's view of its types.
+#[inline]
+unsafe fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringAppend(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringCompare` with this module's view of its types.
+#[inline]
+unsafe fn StringCompare(a0: *mut u8, a1: *mut u8) -> i32 {
+    unsafe { crate::string_util::StringCompare(a0 as _, a1 as _) }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringCopyN` with this module's view of its types.
+#[inline]
+unsafe fn StringCopyN(a0: *mut u8, a1: *mut u8, a2: u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopyN(a0 as _, a1 as _, a2) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const tHorizontalPan: usize = 0;
+const tMaxItemsOnScreen: usize = 0;
+const tPaused: usize = 0;
+const tState: usize = 0;
+const tDelayCounter: usize = 1;
+const tNumItems: usize = 1;
+const tFlickerCount: usize = 2;
+const tLeft: usize = 2;
+const tNumShakes: usize = 2;
+const tCurrentFrame: usize = 3;
+const tDelay: usize = 3;
+const tTop: usize = 3;
+const tIsScreenOn: usize = 4;
+const tVerticalPan: usize = 4;
+const tWidth: usize = 4;
+const tHeight: usize = 5;
+const tKeepOpenAfterSelect: usize = 6;
+const tScrollOffset: usize = 7;
+const tSelectedRow: usize = 8;
+const tScrollMultiId: usize = 11;
+const tScrollArrowId: usize = 12;
+const tWindowId: usize = 13;
+const tListTaskId: usize = 14;
 // Data tables (translate with cdata.py): sMauvilleGymSwitchCoords sSlidingDoorNextFrameDelay sPetalburgGymSlidingDoorMetatiles sWindowTemplate_ElevatorFloor sDeptStoreFloorNames sElevatorWindowTiles_Ascending sElevatorWindowTiles_Descending sScrollableMultichoiceOptions sBattleFrontier_TutorMoves1 sBattleFrontier_TutorMoves2 sDeoxysRockPalettes sDeoxysRockCoords sAbnormalWeatherMapNumbers.5 sAbnormalWeatherMapNumbers.6 sBattleFrontierTutor_WindowTemplate.10 sBattleFrontier_TutorMoveDescriptions1.8 sBattleFrontier_TutorMoveDescriptions2.9 sBattlePoints_WindowTemplate.20 sBattleTowerStreakThresholds.26 sCounterIncrements.2 sElevatorLightCycles.30 sElevatorTripLength.31 sFanClubMemberIds.0 sFanClubMemberIds.1 sFrontierChallenges.21 sFrontierExchangeCorner_Decor1.17 sFrontierExchangeCorner_Decor1Descriptions.18 sFrontierExchangeCorner_Decor2.15 sFrontierExchangeCorner_Decor2Descriptions.16 sFrontierExchangeCorner_HoldItems.11 sFrontierExchangeCorner_HoldItemsDescriptions.12 sFrontierExchangeCorner_ItemIconWindowTemplate.19 sFrontierExchangeCorner_Vitamins.13 sFrontierExchangeCorner_VitaminsDescriptions.14 sFrontierGamblerGoMessages.22 sFrontierGamblerLookingMessages.23 sFrontierManiacMessages.27 sFrontierManiacStreakThresholds.28 sNatureGirlMessages.24 sPokeMarts.4 sPokemonCenters.29 sPokemonCenters.3 sScrollableMultichoice_ScrollArrowsTemplate.25 sSlotMachineIds.32 sSlotMachineRandomSeeds.34 sSlotMachineServiceDayIds.33 sStoneMaxStepCounts.7
 
 const CURTAIN_HEIGHT: u8 = 4;
@@ -152,293 +344,119 @@ static sStoneMaxStepCounts_7: Table<CArray<u8, 10>> =
 static sWindowTemplate_ElevatorFloor: Table<WindowTemplate> =
     Table((&raw const crate::data::field_specials::sWindowTemplate_ElevatorFloor).cast());
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBikeCyclingChallenge: u8 = 0;
-#[unsafe(no_mangle)]
+pub static gBikeCyclingChallenge: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBikeCollisions: u8 = 0;
+pub static gBikeCollisions: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBikeCyclingTimer: u32 = 0;
+pub(crate) static sBikeCyclingTimer: crate::global::Global<u32> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSlidingDoorNextFrameCounter: u8 = 0;
+pub(crate) static sSlidingDoorNextFrameCounter: crate::global::Global<u8> =
+    crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sSlidingDoorFrame: u8 = 0;
+pub(crate) static sSlidingDoorFrame: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTutorMoveAndElevatorWindowId: u8 = 0;
+pub(crate) static sTutorMoveAndElevatorWindowId: crate::global::Global<u8> =
+    crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sLilycoveDeptStore_NeverRead: u16 = 0;
+pub(crate) static sLilycoveDeptStore_NeverRead: crate::global::Global<u16> =
+    crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sLilycoveDeptStore_DefaultFloorChoice: u16 = 0;
+pub(crate) static sLilycoveDeptStore_DefaultFloorChoice: crate::global::Global<u16> =
+    crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sScrollableMultichoice_ListMenuItem: *mut ListMenuItem = null_mut();
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sScrollableMultichoice_ScrollOffset: u16 = 0;
+pub(crate) static sScrollableMultichoice_ScrollOffset: crate::global::Global<u16> =
+    crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sFrontierExchangeCorner_NeverRead: u16 = 0;
+pub(crate) static sFrontierExchangeCorner_NeverRead: crate::global::Global<u16> =
+    crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sScrollableMultichoice_ItemSpriteId: u8 = 0;
+pub(crate) static sScrollableMultichoice_ItemSpriteId: crate::global::Global<u8> =
+    crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattlePointsWindowId: u8 = 0;
+pub(crate) static sBattlePointsWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sFrontierExchangeCorner_ItemIconWindowId: u8 = 0;
+pub(crate) static sFrontierExchangeCorner_ItemIconWindowId: crate::global::Global<u8> =
+    crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPCBoxToSendMon: u8 = 0;
+pub(crate) static sPCBoxToSendMon: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattleTowerMultiBattleTypeFlags: u32 = 0;
-#[unsafe(no_mangle)]
+pub(crate) static sBattleTowerMultiBattleTypeFlags: crate::global::Global<u32> =
+    crate::global::Global::new(0);
 #[unsafe(link_section = "common_data")]
 pub static mut gScrollableMultichoice_ListMenuTemplate: ListMenuTemplate = unsafe { zeroed() };
 
-unsafe extern "C" {
-    static mut gBattleOutcome: u8;
-    static mut gBattleTypeFlags: u32;
-    static mut gBlockRecvBuffer: CArray<CArray<u16, 128>, 5>;
-    static mut gFieldEffectArguments: CArray<i32, 8>;
-    static mut gLastUsedWarp: WarpData;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gLocalTime: Time;
-    static mut gMain: Main;
-    static mut gMapHeader: MapHeader;
-    static gMoveNames: CArray<CArray<u8, 13>, 355>;
-    static gObjectEventPal_Brendan: CArray<u16, 0>;
-    static gObjectEventPal_May: CArray<u16, 0>;
-    static gObjectEventPal_RubySapphireBrendan: CArray<u16, 0>;
-    static gObjectEventPal_RubySapphireMay: CArray<u16, 0>;
-    static mut gObjectEvents: CArray<ObjectEvent, 16>;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_0x8005: u16;
-    static mut gSpecialVar_0x8006: u16;
-    static mut gSpecialVar_0x8007: u16;
-    static mut gSpecialVar_Result: u16;
-    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static gTVStringVarPtrs: CArray<*mut u8, 3>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_1MinutePlus: CArray<u8, 0>;
-    static gText_99TimesPlus: CArray<u8, 0>;
-    static gText_BP: CArray<u8, 0>;
-    static gText_BigGirl: CArray<u8, 0>;
-    static gText_BigGuy: CArray<u8, 0>;
-    static gText_Brawly: CArray<u8, 0>;
-    static gText_Daughter: CArray<u8, 0>;
-    static gText_ElevatorNowOn: CArray<u8, 0>;
-    static gText_Glacia: CArray<u8, 0>;
-    static gText_Phoebe: CArray<u8, 0>;
-    static gText_SelectorArrow: CArray<u8, 0>;
-    static gText_Son: CArray<u8, 0>;
-    static gText_SpaceSeconds: CArray<u8, 0>;
-    static gText_SpaceTimes: CArray<u8, 0>;
-    static gText_Steven: CArray<u8, 0>;
-    static gText_Wallace: CArray<u8, 0>;
-    static gText_Winona: CArray<u8, 0>;
-    static gText_YourPartnerHasRetired: CArray<u8, 0>;
-    static gTutorMoves: CArray<u16, 0>;
-    static mut gWirelessCommType: u8;
-    fn AddDecorationIconObject(a0: u8, a1: i16, a2: i16, a3: u8, a4: u16, a5: u16) -> u8;
-    fn AddItemIconSprite(a0: u16, a1: u16, a2: u16) -> u8;
-    fn AddScrollIndicatorArrowPair(a0: *mut ScrollArrowsTemplate, a1: *mut u16) -> u8;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddTextPrinterParameterized2(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-        a5: u8,
-        a6: u8,
-        a7: u8,
-    ) -> u16;
-    fn AddTextPrinterParameterized5(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-        a7: u8,
-        a8: u8,
-    );
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn BitmaskAllOtherLinkPlayers() -> u8;
-    fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn CB2_ReturnToField();
-    fn CB2_ReturnToFieldContinueScriptPlayMapMusic();
-    fn CB2_ShowDiploma();
-    fn CB2_ViewWallClock();
-    fn CalculatePlayerPartyCount() -> u8;
-    fn CameraObjectSetFollowedSpriteId(a0: u8);
-    fn CheckFreePokemonStorageSpace() -> u8;
-    fn CheckPartyPokerus(a0: *mut Pokemon, a1: u8) -> u8;
-    fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8);
-    fn ClearWindowTilemap(a0: u8);
-    fn ConvertIntToDecimalString(a0: u8, a1: i32);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn ConvertInternationalString(a0: *mut u8, a1: u8);
-    fn ConvertPixelWidthToTileWidth(a0: i32) -> i32;
-    fn CopyMonFavoritePokeblockName(a0: u8, a1: *mut u8) -> u8;
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CountDigits(a0: i32) -> u32;
-    fn CreateMon(a0: *mut Pokemon, a1: u16, a2: u8, a3: u8, a4: u8, a5: u32, a6: u8, a7: u32);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateWindowTemplate(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u16,
-    ) -> WindowTemplate;
-    fn DestroyListMenuTask(a0: u8, a1: *mut u16, a2: *mut u16);
-    fn DestroySpriteAndFreeResources(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DisplayTextAndGetWidth(a0: *mut u8, a1: i32) -> i32;
-    fn DoRayquazaScene(a0: u8, a1: u8, a2: Option<unsafe extern "C" fn()>);
-    fn DrawWholeMapView();
-    fn FieldEffectActiveListContains(a0: u8) -> u8;
-    fn FieldEffectStart(a0: u8) -> u32;
-    fn FieldInitRegionMap(a0: Option<unsafe extern "C" fn()>);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn FlagClear(a0: u16) -> u8;
-    fn FlagGet(a0: u16) -> u8;
-    fn FlagSet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeSpritePaletteByTag(a0: u16);
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetBlockReceivedStatus() -> u8;
-    fn GetBoxMonData3(a0: *mut BoxPokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetBoxedMonPtr(a0: u8, a1: u8) -> *mut BoxPokemon;
-    fn GetEreaderTrainerName(a0: *mut u8);
-    fn GetGameStat(a0: u8) -> u32;
-    fn GetLastUsedWarpMapType() -> u8;
-    fn GetLinkPlayerCount() -> u8;
-    fn GetMapName(a0: *mut u8, a1: u16, a2: u16) -> *mut u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetMonEVCount(a0: *mut Pokemon) -> u16;
-    fn GetMultiplayerId() -> u8;
-    fn GetNature(a0: *mut Pokemon) -> u8;
-    fn GetObjectEventIdByLocalIdAndMap(a0: u8, a1: u8, a2: u8) -> u8;
-    fn GetPlayerAvatarSpriteId() -> u8;
-    fn GetPlayerFacingDirection() -> u8;
-    fn GetRematchIdxByTrainerIdx(a0: i32) -> i32;
-    fn GetRibbonCount(a0: *mut Pokemon) -> u8;
-    fn GetStarterPokemon(a0: u16) -> u16;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetVarPointer(a0: u16) -> *mut u16;
-    fn IncrementGameStat(a0: u8);
-    fn InstallCameraPanAheadCallback();
-    fn IsLinkTaskFinished() -> u8;
-    fn IsMapTypeOutdoors(a0: u8) -> u8;
-    fn IsPokeNewsActive(a0: u8) -> u8;
-    fn IsTextPrinterActive(a0: u8) -> u16;
-    fn ItemIdToBattleMoveId(a0: u16) -> u16;
-    fn ListMenuGetCurrentItemArrayId(a0: u8, a1: *mut u16);
-    fn ListMenuGetScrollAndRow(a0: u8, a1: *mut u16, a2: *mut u16);
-    fn ListMenuInit(a0: *mut ListMenuTemplate, a1: u16, a2: u16) -> u8;
-    fn ListMenu_ProcessInput(a0: u8) -> i32;
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LockPlayerFieldControls();
-    fn MapGridGetMetatileIdAt(a0: i32, a1: i32) -> i32;
-    fn MapGridSetMetatileIdAt(a0: i32, a1: i32, a2: u16);
-    fn MysteryGift_GetCardStat(a0: u32) -> u16;
-    fn Overworld_SetSavedMusic(a0: u16);
-    fn PlaySE(a0: u16);
-    fn PutWindowTilemap(a0: u8);
-    fn Random() -> u16;
-    fn RemoveObjectEventByLocalIdAndMap(a0: u8, a1: u8, a2: u8);
-    fn RemoveScrollIndicatorArrowPair(a0: u8);
-    fn RemoveWindow(a0: u8);
-    fn ResetBlockReceivedFlag(a0: u8);
-    fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn ScriptContext_Enable();
-    fn SendBlock(a0: u8, a1: *mut c_void, a2: u16) -> u8;
-    fn SetCameraPanning(a0: i16, a1: i16);
-    fn SetCameraPanningCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetCloseLinkCallback();
-    fn SetCurrentAndNextWeather(a0: u8);
-    fn SetLastHealLocationWarp(a0: u8);
-    fn SetLinkStandbyCallback();
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
-    fn SetObjEventTemplateCoords(a0: u8, a1: i16, a2: i16);
-    fn SetSavedWeather(a0: u32);
-    fn SetStandardWindowBorderStyle(a0: u8, a1: u8);
-    fn SetWarpDestination(a0: i8, a1: i8, a2: i8, a3: i8, a4: i8);
-    fn ShowFieldAutoScrollMessage(a0: *mut u8) -> u8;
-    fn ShowFieldMessage(a0: *mut u8) -> u8;
-    fn SpawnSpecialObjectEventParameterized(a0: u8, a1: u8, a2: u8, a3: i16, a4: i16, a5: u8)
-    -> u8;
-    fn StorageGetCurrentBox() -> u8;
-    fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCompare(a0: *mut u8, a1: *mut u8) -> i32;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopyN(a0: *mut u8, a1: *mut u8, a2: u8) -> *mut u8;
-    fn Task_ReconnectWithLinkPlayers(a0: u8);
-    fn TestPlayerAvatarFlags(a0: u8) -> u8;
-    fn TryGetObjectEventIdByLocalIdAndMap(a0: u8, a1: u8, a2: u8, a3: *mut u8) -> u8;
-    fn TryPutSpotTheCutiesOnAir(a0: *mut Pokemon, a1: u8);
-    fn VarGet(a0: u16) -> u16;
-    fn VarSet(a0: u16, a1: u16) -> u8;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Special_ShowDiploma() {
+pub unsafe fn Special_ShowDiploma() {
     SetMainCallback2(Some(CB2_ShowDiploma));
     LockPlayerFieldControls();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Special_ViewWallClock() {
+pub unsafe fn Special_ViewWallClock() {
     gMain.savedCallback = Some(CB2_ReturnToField);
     SetMainCallback2(Some(CB2_ViewWallClock));
     LockPlayerFieldControls();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetCyclingRoadChallengeData() {
-    gBikeCyclingChallenge = FALSE;
-    gBikeCollisions = 0;
-    sBikeCyclingTimer = 0;
+pub fn ResetCyclingRoadChallengeData() {
+    gBikeCyclingChallenge.set(FALSE);
+    gBikeCollisions.set(0);
+    sBikeCyclingTimer.set(0);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Special_BeginCyclingRoadChallenge() {
-    gBikeCyclingChallenge = TRUE;
-    gBikeCollisions = 0;
-    sBikeCyclingTimer = gMain.vblankCounter1;
+pub unsafe fn Special_BeginCyclingRoadChallenge() {
+    gBikeCyclingChallenge.set(TRUE);
+    gBikeCollisions.set(0);
+    sBikeCyclingTimer.set(gMain.vblankCounter1);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerAvatarBike() -> u16 {
+pub unsafe fn GetPlayerAvatarBike() -> u16 {
     if TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_ACRO_BIKE) != 0 {
         return 1;
     }
     if TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_MACH_BIKE) != 0 {
         return 2;
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn DetermineCyclingRoadResults(numFrames: u32, numBikeCollisions: u8) {
-    let mut result: u8 = 0;
+unsafe fn DetermineCyclingRoadResults(numFrames: u32, numBikeCollisions: u8) {
     if numBikeCollisions < 100 {
         ConvertIntToDecimalStringN(
             gStringVar1.as_mut_ptr(),
@@ -448,12 +466,16 @@ pub(crate) unsafe extern "C" fn DetermineCyclingRoadResults(numFrames: u32, numB
         );
         StringAppend(
             gStringVar1.as_mut_ptr(),
-            gText_SpaceTimes.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_SpaceTimes).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
     } else {
         StringCopy(
             gStringVar1.as_mut_ptr(),
-            gText_99TimesPlus.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_99TimesPlus).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
     }
     if numFrames < 3600 {
@@ -465,22 +487,28 @@ pub(crate) unsafe extern "C" fn DetermineCyclingRoadResults(numFrames: u32, numB
         );
         gStringVar2[2] = CHAR_DEC_SEPARATOR;
         ConvertIntToDecimalStringN(
-            &raw mut gStringVar2[3],
+            &raw mut (*(&raw const crate::string_util::gStringVar2)
+                .cast::<CArray<u8, 256>>()
+                .cast_mut())[3],
             (numFrames % 60 * 100 / 60) as i32,
             STR_CONV_MODE_LEADING_ZEROS,
             2,
         );
         StringAppend(
             gStringVar2.as_mut_ptr(),
-            gText_SpaceSeconds.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_SpaceSeconds).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
     } else {
         StringCopy(
             gStringVar2.as_mut_ptr(),
-            gText_1MinutePlus.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_1MinutePlus).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
     }
-    result = 0;
+    let mut result: u8 = 0;
     if numBikeCollisions == 0 {
         result = 5;
     } else if numBikeCollisions < 4 {
@@ -506,15 +534,15 @@ pub(crate) unsafe extern "C" fn DetermineCyclingRoadResults(numFrames: u32, numB
     gSpecialVar_Result = result as u16;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FinishCyclingRoadChallenge() {
-    let mut numFrames: u32 = gMain.vblankCounter1 - sBikeCyclingTimer;
-    DetermineCyclingRoadResults(numFrames, gBikeCollisions);
-    RecordCyclingRoadResults(numFrames, gBikeCollisions);
+pub unsafe fn FinishCyclingRoadChallenge() {
+    let numFrames: u32 = gMain.vblankCounter1 - sBikeCyclingTimer.get();
+    DetermineCyclingRoadResults(numFrames, gBikeCollisions.get());
+    RecordCyclingRoadResults(numFrames, gBikeCollisions.get());
 }
-pub(crate) unsafe extern "C" fn RecordCyclingRoadResults(numFrames: u32, numBikeCollisions: u8) {
-    let mut low: u16 = VarGet(VAR_CYCLING_ROAD_RECORD_TIME_L);
-    let mut high: u16 = VarGet(VAR_CYCLING_ROAD_RECORD_TIME_H);
-    let mut framesRecord: u32 = low as u32 + ((high as u32) << 16);
+unsafe fn RecordCyclingRoadResults(numFrames: u32, numBikeCollisions: u8) {
+    let low: u16 = VarGet(VAR_CYCLING_ROAD_RECORD_TIME_L);
+    let high: u16 = VarGet(VAR_CYCLING_ROAD_RECORD_TIME_H);
+    let framesRecord: u32 = low as u32 + ((high as u32) << 16);
     if framesRecord > numFrames || framesRecord == 0 {
         VarSet(VAR_CYCLING_ROAD_RECORD_TIME_L, numFrames as u16);
         VarSet(VAR_CYCLING_ROAD_RECORD_TIME_H, (numFrames >> 16) as u16);
@@ -522,10 +550,10 @@ pub(crate) unsafe extern "C" fn RecordCyclingRoadResults(numFrames: u32, numBike
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRecordedCyclingRoadResults() -> u16 {
-    let mut low: u16 = VarGet(VAR_CYCLING_ROAD_RECORD_TIME_L);
-    let mut high: u16 = VarGet(VAR_CYCLING_ROAD_RECORD_TIME_H);
-    let mut framesRecord: u32 = low as u32 + ((high as u32) << 16);
+pub unsafe fn GetRecordedCyclingRoadResults() -> u16 {
+    let low: u16 = VarGet(VAR_CYCLING_ROAD_RECORD_TIME_L);
+    let high: u16 = VarGet(VAR_CYCLING_ROAD_RECORD_TIME_H);
+    let framesRecord: u32 = low as u32 + ((high as u32) << 16);
     if framesRecord == 0 {
         return FALSE as u16;
     }
@@ -533,10 +561,10 @@ pub unsafe extern "C" fn GetRecordedCyclingRoadResults() -> u16 {
         framesRecord,
         VarGet(VAR_CYCLING_ROAD_RECORD_COLLISIONS) as u8,
     );
-    return TRUE as u16;
+    TRUE as u16
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateCyclingRoadState() {
+pub unsafe fn UpdateCyclingRoadState() {
     if gLastUsedWarp.mapNum == 12 && gLastUsedWarp.mapGroup == 29 {
         return;
     }
@@ -546,16 +574,16 @@ pub unsafe extern "C" fn UpdateCyclingRoadState() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetSSTidalFlag() {
+pub unsafe fn SetSSTidalFlag() {
     FlagSet(FLAG_SYS_CRUISE_MODE);
     *GetVarPointer(VAR_CRUISE_STEP_COUNT) = 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetSSTidalFlag() {
+pub unsafe fn ResetSSTidalFlag() {
     FlagClear(FLAG_SYS_CRUISE_MODE);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CountSSTidalStep(delta: u16) -> u32 {
+pub unsafe fn CountSSTidalStep(delta: u16) -> u32 {
     if FlagGet(FLAG_SYS_CRUISE_MODE) == 0
         || ({
             *GetVarPointer(VAR_CRUISE_STEP_COUNT) += delta;
@@ -564,16 +592,16 @@ pub unsafe extern "C" fn CountSSTidalStep(delta: u16) -> u32 {
     {
         return FALSE as u32;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSSTidalLocation(
+pub unsafe fn GetSSTidalLocation(
     mapGroup: *mut i8,
     mapNum: *mut i8,
     x: *mut i16,
     y: *mut i16,
 ) -> u8 {
-    let mut varCruiseStepCount: *mut u16 = GetVarPointer(VAR_CRUISE_STEP_COUNT);
+    let varCruiseStepCount: *mut u16 = GetVarPointer(VAR_CRUISE_STEP_COUNT);
     match *GetVarPointer(VAR_SS_TIDAL_STATE) {
         SS_TIDAL_BOARD_SLATEPORT | SS_TIDAL_LAND_SLATEPORT => {
             return SS_TIDAL_LOCATION_SLATEPORT;
@@ -615,10 +643,9 @@ pub unsafe extern "C" fn GetSSTidalLocation(
     }
     *mapGroup = 0;
     *y = 20;
-    return SS_TIDAL_LOCATION_CURRENTS;
+    SS_TIDAL_LOCATION_CURRENTS
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShouldDoWallyCall() -> u32 {
+pub unsafe fn ShouldDoWallyCall() -> u32 {
     if FlagGet(FLAG_ENABLE_FIRST_WALLY_POKENAV_CALL) != 0 {
         match gMapHeader.mapType {
             MAP_TYPE_TOWN | MAP_TYPE_CITY | MAP_TYPE_ROUTE | MAP_TYPE_OCEAN_ROUTE => {
@@ -638,10 +665,9 @@ pub unsafe extern "C" fn ShouldDoWallyCall() -> u32 {
     } else {
         return FALSE as u32;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShouldDoScottFortreeCall() -> u32 {
+pub unsafe fn ShouldDoScottFortreeCall() -> u32 {
     if FlagGet(FLAG_SCOTT_CALL_FORTREE_GYM) != 0 {
         match gMapHeader.mapType {
             MAP_TYPE_TOWN | MAP_TYPE_CITY | MAP_TYPE_ROUTE | MAP_TYPE_OCEAN_ROUTE => {
@@ -661,10 +687,9 @@ pub unsafe extern "C" fn ShouldDoScottFortreeCall() -> u32 {
     } else {
         return FALSE as u32;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShouldDoScottBattleFrontierCall() -> u32 {
+pub unsafe fn ShouldDoScottBattleFrontierCall() -> u32 {
     if FlagGet(FLAG_SCOTT_CALL_BATTLE_FRONTIER) != 0 {
         match gMapHeader.mapType {
             MAP_TYPE_TOWN | MAP_TYPE_CITY | MAP_TYPE_ROUTE | MAP_TYPE_OCEAN_ROUTE => {
@@ -684,10 +709,9 @@ pub unsafe extern "C" fn ShouldDoScottBattleFrontierCall() -> u32 {
     } else {
         return FALSE as u32;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShouldDoRoxanneCall() -> u32 {
+pub unsafe fn ShouldDoRoxanneCall() -> u32 {
     if FlagGet(FLAG_ENABLE_ROXANNE_FIRST_CALL) != 0 {
         match gMapHeader.mapType {
             MAP_TYPE_TOWN | MAP_TYPE_CITY | MAP_TYPE_ROUTE | MAP_TYPE_OCEAN_ROUTE => {
@@ -707,10 +731,9 @@ pub unsafe extern "C" fn ShouldDoRoxanneCall() -> u32 {
     } else {
         return FALSE as u32;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShouldDoRivalRayquazaCall() -> u32 {
+pub unsafe fn ShouldDoRivalRayquazaCall() -> u32 {
     if FlagGet(FLAG_DEFEATED_MAGMA_SPACE_CENTER) != 0 {
         match gMapHeader.mapType {
             MAP_TYPE_TOWN | MAP_TYPE_CITY | MAP_TYPE_ROUTE | MAP_TYPE_OCEAN_ROUTE => {
@@ -730,30 +753,30 @@ pub unsafe extern "C" fn ShouldDoRivalRayquazaCall() -> u32 {
     } else {
         return FALSE as u32;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLinkPartnerNames() -> u8 {
-    let mut i: u8 = 0;
+pub unsafe fn GetLinkPartnerNames() -> u8 {
     let mut j: u8 = 0;
-    let mut myLinkPlayerNumber: u8 = GetMultiplayerId();
-    let mut nLinkPlayers: u8 = GetLinkPlayerCount();
-    i = 0;
-    while i < nLinkPlayers {
+    let myLinkPlayerNumber: u8 = GetMultiplayerId();
+    let nLinkPlayers: u8 = GetLinkPlayerCount();
+    for i in 0..nLinkPlayers {
         if myLinkPlayerNumber != i {
-            StringCopy(gTVStringVarPtrs[j], gLinkPlayers[i].name.as_mut_ptr());
+            StringCopy(
+                (*(&raw const crate::data::tv::gTVStringVarPtrs).cast::<CArray<*mut u8, 3>>())[j],
+                gLinkPlayers[i].name.as_mut_ptr(),
+            );
             j += 1;
         }
-        i += 1;
     }
-    return nLinkPlayers;
+    nLinkPlayers
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpawnLinkPartnerObjectEvent() {
+pub unsafe fn SpawnLinkPartnerObjectEvent() {
     let mut j: u8 = 0;
     let mut x: i16 = 0;
     let mut y: i16 = 0;
-    let mut movementTypes: CArray<u8, 4> = CArray([7, 9, 8, 10]);
+    let movementTypes: CArray<u8, 4> = CArray([7, 9, 8, 10]);
     let mut coordOffsets: CArray<CArray<i8, 2>, 4> = zeroed();
     coordOffsets[0][0] = 0;
     coordOffsets[0][1] = 1;
@@ -763,12 +786,9 @@ pub unsafe extern "C" fn SpawnLinkPartnerObjectEvent() {
     coordOffsets[2][1] = -1;
     coordOffsets[3][0] = -1;
     coordOffsets[3][1] = 0;
-    let mut myLinkPlayerNumber: u8 = 0;
-    let mut playerFacingDirection: u8 = 0;
     let mut linkSpriteId: u8 = 0;
-    let mut i: u8 = 0;
-    myLinkPlayerNumber = GetMultiplayerId();
-    playerFacingDirection = GetPlayerFacingDirection();
+    let myLinkPlayerNumber: u8 = GetMultiplayerId();
+    let playerFacingDirection: u8 = GetPlayerFacingDirection();
     match playerFacingDirection {
         DIR_WEST => {
             j = 2;
@@ -791,7 +811,7 @@ pub unsafe extern "C" fn SpawnLinkPartnerObjectEvent() {
         }
         _ => {}
     }
-    i = 0;
+    let mut i: u8 = 0;
     while (i as u16) < gSpecialVar_0x8004 {
         if myLinkPlayerNumber != i {
             match gLinkPlayers[i].version as u8 {
@@ -838,52 +858,57 @@ pub unsafe extern "C" fn SpawnLinkPartnerObjectEvent() {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn LoadLinkPartnerObjectEventSpritePalette(
+unsafe fn LoadLinkPartnerObjectEventSpritePalette(
     graphicsId: u8,
     localEventId: u8,
     paletteNum: u8,
 ) {
-    let mut adjustedPaletteNum: u8 = 0;
-    adjustedPaletteNum = paletteNum + 6;
+    let adjustedPaletteNum: u8 = paletteNum + 6;
     if graphicsId == OBJ_EVENT_GFX_LINK_RS_BRENDAN
         || graphicsId == OBJ_EVENT_GFX_LINK_RS_MAY
         || graphicsId == OBJ_EVENT_GFX_RIVAL_BRENDAN_NORMAL
         || graphicsId == OBJ_EVENT_GFX_RIVAL_MAY_NORMAL
     {
-        let mut obj: u8 = GetObjectEventIdByLocalIdAndMap(
+        let obj: u8 = GetObjectEventIdByLocalIdAndMap(
             localEventId,
             (*gSaveBlock1Ptr).location.mapNum as u8,
             (*gSaveBlock1Ptr).location.mapGroup as u8,
         );
         if obj != OBJECT_EVENTS_COUNT {
-            let mut spriteId: u8 = gObjectEvents[obj].spriteId;
-            let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+            let spriteId: u8 = gObjectEvents[obj].spriteId;
+            let sprite: *mut Sprite = &raw mut gSprites[spriteId];
             (*sprite).oam.set_paletteNum(adjustedPaletteNum as u16);
             match graphicsId {
                 OBJ_EVENT_GFX_LINK_RS_BRENDAN => {
                     LoadPalette(
-                        gObjectEventPal_RubySapphireBrendan.as_ptr().cast_mut() as *mut c_void,
+                        (*(&raw const crate::data::event_object_movement::gObjectEventPal_RubySapphireBrendan).cast::<CArray<u16, 0>>()).as_ptr().cast_mut() as *mut c_void,
                         0x100 + adjustedPaletteNum as u16 * 16,
                         32,
                     );
                 }
                 OBJ_EVENT_GFX_LINK_RS_MAY => {
                     LoadPalette(
-                        gObjectEventPal_RubySapphireMay.as_ptr().cast_mut() as *mut c_void,
+                        (*(&raw const crate::data::event_object_movement::gObjectEventPal_RubySapphireMay).cast::<CArray<u16, 0>>()).as_ptr().cast_mut() as *mut c_void,
                         0x100 + adjustedPaletteNum as u16 * 16,
                         32,
                     );
                 }
                 OBJ_EVENT_GFX_RIVAL_BRENDAN_NORMAL => {
                     LoadPalette(
-                        gObjectEventPal_Brendan.as_ptr().cast_mut() as *mut c_void,
+                        (*(&raw const crate::data::event_object_movement::gObjectEventPal_Brendan)
+                            .cast::<CArray<u16, 0>>())
+                        .as_ptr()
+                        .cast_mut() as *mut c_void,
                         0x100 + adjustedPaletteNum as u16 * 16,
                         32,
                     );
                 }
                 OBJ_EVENT_GFX_RIVAL_MAY_NORMAL => {
                     LoadPalette(
-                        gObjectEventPal_May.as_ptr().cast_mut() as *mut c_void,
+                        (*(&raw const crate::data::event_object_movement::gObjectEventPal_May)
+                            .cast::<CArray<u16, 0>>())
+                        .as_ptr()
+                        .cast_mut() as *mut c_void,
                         0x100 + adjustedPaletteNum as u16 * 16,
                         32,
                     );
@@ -894,10 +919,8 @@ pub(crate) unsafe extern "C" fn LoadLinkPartnerObjectEventSpritePalette(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MauvilleGymPressSwitch() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 4 {
+pub unsafe fn MauvilleGymPressSwitch() {
+    for i in 0..4u8 {
         if i as u16 == gSpecialVar_0x8004 {
             MapGridSetMetatileIdAt(
                 sMauvilleGymSwitchCoords[i].x as i32,
@@ -911,17 +934,12 @@ pub unsafe extern "C" fn MauvilleGymPressSwitch() {
                 METATILE_MauvilleGym_RaisedSwitch,
             );
         }
-        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MauvilleGymSetDefaultBarriers() {
-    let mut x: i32 = 0;
-    let mut y: i32 = 0;
-    y = 12;
-    while y < 24 {
-        x = MAP_OFFSET;
-        while x < 16 {
+pub unsafe fn MauvilleGymSetDefaultBarriers() {
+    for y in 12..24i32 {
+        for x in MAP_OFFSET..16 {
             match MapGridGetMetatileIdAt(x, y) {
                 METATILE_MauvilleGym_GreenBeamH1_On => {
                     MapGridSetMetatileIdAt(x, y, METATILE_MauvilleGym_GreenBeamH1_Off);
@@ -1004,18 +1022,13 @@ pub unsafe extern "C" fn MauvilleGymSetDefaultBarriers() {
                 }
                 _ => {}
             }
-            x += 1;
         }
-        y += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MauvilleGymDeactivatePuzzle() {
-    let mut i: i32 = 0;
-    let mut x: i32 = 0;
-    let mut y: i32 = 0;
+pub unsafe fn MauvilleGymDeactivatePuzzle() {
     let mut switchCoords: *mut UCoords8 = sMauvilleGymSwitchCoords.as_ptr().cast_mut();
-    i = 3;
+    let mut i: i32 = 3;
     while i >= 0 {
         MapGridSetMetatileIdAt(
             (*switchCoords).x as i32,
@@ -1025,10 +1038,8 @@ pub unsafe extern "C" fn MauvilleGymDeactivatePuzzle() {
         switchCoords = switchCoords.at(1);
         i -= 1;
     }
-    y = 12;
-    while y < 24 {
-        x = MAP_OFFSET;
-        while x < 16 {
+    for y in 12..24i32 {
+        for x in MAP_OFFSET..16 {
             match MapGridGetMetatileIdAt(x, y) {
                 METATILE_MauvilleGym_GreenBeamH1_On => {
                     MapGridSetMetatileIdAt(x, y, METATILE_MauvilleGym_GreenBeamH1_Off);
@@ -1068,41 +1079,38 @@ pub unsafe extern "C" fn MauvilleGymDeactivatePuzzle() {
                 }
                 _ => {}
             }
-            x += 1;
         }
-        y += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PetalburgGymSlideOpenRoomDoors() {
-    sSlidingDoorNextFrameCounter = 0;
-    sSlidingDoorFrame = 0;
+pub unsafe fn PetalburgGymSlideOpenRoomDoors() {
+    sSlidingDoorNextFrameCounter.set(0);
+    sSlidingDoorFrame.set(0);
     PlaySE(SE_UNLOCK);
     CreateTask(Some(Task_PetalburgGymSlideOpenRoomDoors), 8);
 }
-pub(crate) unsafe extern "C" fn Task_PetalburgGymSlideOpenRoomDoors(taskId: u8) {
-    if sSlidingDoorNextFrameDelay[sSlidingDoorFrame] == sSlidingDoorNextFrameCounter {
+pub(crate) unsafe fn Task_PetalburgGymSlideOpenRoomDoors(taskId: u8) {
+    if sSlidingDoorNextFrameDelay[sSlidingDoorFrame.get()] == sSlidingDoorNextFrameCounter.get() {
         PetalburgGymSetDoorMetatiles(
             gSpecialVar_0x8004 as u8,
-            sPetalburgGymSlidingDoorMetatiles[sSlidingDoorFrame],
+            sPetalburgGymSlidingDoorMetatiles[sSlidingDoorFrame.get()],
         );
-        sSlidingDoorNextFrameCounter = 0;
+        sSlidingDoorNextFrameCounter.set(0);
         if ({
-            sSlidingDoorFrame += 1;
-            sSlidingDoorFrame
+            sSlidingDoorFrame.set(sSlidingDoorFrame.get() + 1);
+            sSlidingDoorFrame.get()
         }) == 5
         {
             DestroyTask(taskId);
             ScriptContext_Enable();
         }
     } else {
-        sSlidingDoorNextFrameCounter += 1;
+        sSlidingDoorNextFrameCounter.set(sSlidingDoorNextFrameCounter.get() + 1);
     }
 }
-pub(crate) unsafe extern "C" fn PetalburgGymSetDoorMetatiles(roomNumber: u8, metatileId: u16) {
+unsafe fn PetalburgGymSetDoorMetatiles(roomNumber: u8, metatileId: u16) {
     let mut doorCoordsX: CArray<u16, 4> = zeroed();
     let mut doorCoordsY: CArray<u16, 4> = zeroed();
-    let mut i: u8 = 0;
     let mut nDoors: u8 = 0;
     match roomNumber {
         1 => {
@@ -1155,8 +1163,7 @@ pub(crate) unsafe extern "C" fn PetalburgGymSetDoorMetatiles(roomNumber: u8, met
         }
         _ => {}
     }
-    i = 0;
-    while i < nDoors {
+    for i in 0..nDoors {
         MapGridSetMetatileIdAt(
             doorCoordsX[i] as i32 + MAP_OFFSET,
             doorCoordsY[i] as i32 + MAP_OFFSET,
@@ -1165,56 +1172,75 @@ pub(crate) unsafe extern "C" fn PetalburgGymSetDoorMetatiles(roomNumber: u8, met
         MapGridSetMetatileIdAt(
             doorCoordsX[i] as i32 + MAP_OFFSET,
             doorCoordsY[i] as i32 + MAP_OFFSET + 1,
-            metatileId + METATILE_ROW_WIDTH | MAPGRID_IMPASSABLE,
+            (metatileId + METATILE_ROW_WIDTH) | MAPGRID_IMPASSABLE,
         );
-        i += 1;
     }
     DrawWholeMapView();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PetalburgGymUnlockRoomDoors() {
+pub unsafe fn PetalburgGymUnlockRoomDoors() {
     PetalburgGymSetDoorMetatiles(
         gSpecialVar_0x8004 as u8,
         sPetalburgGymSlidingDoorMetatiles[4],
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowFieldMessageStringVar4() {
+pub unsafe fn ShowFieldMessageStringVar4() {
     ShowFieldMessage(gStringVar4.as_mut_ptr());
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StorePlayerCoordsInVars() {
+pub unsafe fn StorePlayerCoordsInVars() {
     gSpecialVar_0x8004 = (*gSaveBlock1Ptr).pos.x as u16;
     gSpecialVar_0x8005 = (*gSaveBlock1Ptr).pos.y as u16;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerTrainerIdOnesDigit() -> u8 {
-    return ((((*gSaveBlock2Ptr).playerTrainerId[1] as u16 as i32) << 8
+pub unsafe fn GetPlayerTrainerIdOnesDigit() -> u8 {
+    ((((*gSaveBlock2Ptr).playerTrainerId[1] as u16 as i32) << 8
         | (*gSaveBlock2Ptr).playerTrainerId[0] as u16 as i32)
-        % 10) as u8;
+        % 10) as u8
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerBigGuyGirlString() {
+pub unsafe fn GetPlayerBigGuyGirlString() {
     if (*gSaveBlock2Ptr).playerGender == MALE {
-        StringCopy(gStringVar1.as_mut_ptr(), gText_BigGuy.as_ptr().cast_mut());
+        StringCopy(
+            gStringVar1.as_mut_ptr(),
+            (*(&raw const crate::data::strings::gText_BigGuy).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
     } else {
-        StringCopy(gStringVar1.as_mut_ptr(), gText_BigGirl.as_ptr().cast_mut());
+        StringCopy(
+            gStringVar1.as_mut_ptr(),
+            (*(&raw const crate::data::strings::gText_BigGirl).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRivalSonDaughterString() {
+pub unsafe fn GetRivalSonDaughterString() {
     if (*gSaveBlock2Ptr).playerGender == MALE {
-        StringCopy(gStringVar1.as_mut_ptr(), gText_Daughter.as_ptr().cast_mut());
+        StringCopy(
+            gStringVar1.as_mut_ptr(),
+            (*(&raw const crate::data::strings::gText_Daughter).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
     } else {
-        StringCopy(gStringVar1.as_mut_ptr(), gText_Son.as_ptr().cast_mut());
+        StringCopy(
+            gStringVar1.as_mut_ptr(),
+            (*(&raw const crate::data::strings::gText_Son).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBattleOutcome() -> u8 {
-    return gBattleOutcome;
+pub unsafe fn GetBattleOutcome() -> u8 {
+    gBattleOutcome
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CableCarWarp() {
+pub unsafe fn CableCarWarp() {
     if gSpecialVar_0x8004 != 0 {
         SetWarpDestination(19, 0, WARP_ID_NONE, 6, 4);
     } else {
@@ -1222,20 +1248,24 @@ pub unsafe extern "C" fn CableCarWarp() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetHiddenItemFlag() {
-    FlagSet(gSpecialVar_0x8004);
+pub unsafe fn SetHiddenItemFlag() {
+    FlagSet(
+        *(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut(),
+    );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetWeekCount() -> u16 {
+pub unsafe fn GetWeekCount() -> u16 {
     let mut weekCount: u16 = (gLocalTime.days / 7) as u16;
     if weekCount > 9999 {
         weekCount = 9999;
     }
-    return weekCount;
+    weekCount
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLeadMonFriendshipScore() -> u8 {
-    let mut pokemon: *mut Pokemon = &raw mut gPlayerParty[GetLeadMonIndex()];
+pub unsafe fn GetLeadMonFriendshipScore() -> u8 {
+    let pokemon: *mut Pokemon = &raw mut gPlayerParty[GetLeadMonIndex()];
     if GetMonData2(pokemon, MON_DATA_FRIENDSHIP) == MAX_FRIENDSHIP as u32 {
         return FRIENDSHIP_MAX;
     }
@@ -1254,33 +1284,33 @@ pub unsafe extern "C" fn GetLeadMonFriendshipScore() -> u8 {
     if GetMonData2(pokemon, MON_DATA_FRIENDSHIP) >= 1 {
         return FRIENDSHIP_1_TO_49;
     }
-    return FRIENDSHIP_NONE;
+    FRIENDSHIP_NONE
 }
-pub(crate) unsafe extern "C" fn CB2_FieldShowRegionMap() {
+pub(crate) unsafe fn CB2_FieldShowRegionMap() {
     FieldInitRegionMap(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldShowRegionMap() {
+pub unsafe fn FieldShowRegionMap() {
     SetMainCallback2(Some(CB2_FieldShowRegionMap));
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoPCTurnOnEffect() {
+pub unsafe fn DoPCTurnOnEffect() {
     if FuncIsActiveTask(Some(Task_PCTurnOnEffect)) != TRUE {
-        let mut taskId: u8 = CreateTask(Some(Task_PCTurnOnEffect), 8);
-        gTasks[taskId].data[0] = FALSE as i16;
-        gTasks[taskId].data[1] = taskId as i16;
-        gTasks[taskId].data[2] = 0;
-        gTasks[taskId].data[3] = 0;
-        gTasks[taskId].data[4] = FALSE as i16;
+        let taskId: u8 = CreateTask(Some(Task_PCTurnOnEffect), 8);
+        task_set(taskId, tPaused, FALSE as i16);
+        task_set(taskId, 1, taskId as i16);
+        task_set(taskId, tFlickerCount, 0);
+        task_set(taskId, 3, 0);
+        task_set(taskId, tIsScreenOn, FALSE as i16);
     }
 }
-pub(crate) unsafe extern "C" fn Task_PCTurnOnEffect(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    if (*task).data[0] == 0 {
+pub(crate) unsafe fn Task_PCTurnOnEffect(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    if (*task).data[tPaused] == 0 {
         PCTurnOnEffect(task);
     }
 }
-pub(crate) unsafe extern "C" fn PCTurnOnEffect(task: *mut Task) {
+unsafe fn PCTurnOnEffect(task: *mut Task) {
     let mut playerDirection: u8 = 0;
     let mut dx: i8 = 0;
     let mut dy: i8 = 0;
@@ -1302,12 +1332,12 @@ pub(crate) unsafe extern "C" fn PCTurnOnEffect(task: *mut Task) {
             }
             _ => {}
         }
-        PCTurnOnEffect_SetMetatile((*task).data[4], dx, dy);
+        PCTurnOnEffect_SetMetatile((*task).data[tIsScreenOn], dx, dy);
         DrawWholeMapView();
-        (*task).data[4] ^= 1;
+        (*task).data[tIsScreenOn] ^= 1;
         if ({
-            (*task).data[2] += 1;
-            (*task).data[2]
+            (*task).data[tFlickerCount] += 1;
+            (*task).data[tFlickerCount]
         }) == 5
         {
             DestroyTask((*task).data[1] as u8);
@@ -1315,7 +1345,7 @@ pub(crate) unsafe extern "C" fn PCTurnOnEffect(task: *mut Task) {
     }
     (*task).data[3] += 1;
 }
-pub(crate) unsafe extern "C" fn PCTurnOnEffect_SetMetatile(isScreenOn: i16, dx: i8, dy: i8) {
+unsafe fn PCTurnOnEffect_SetMetatile(isScreenOn: i16, dx: i8, dy: i8) {
     let mut metatileId: u16 = 0;
     if isScreenOn != 0 {
         if gSpecialVar_0x8004 == PC_LOCATION_OTHER {
@@ -1341,14 +1371,14 @@ pub(crate) unsafe extern "C" fn PCTurnOnEffect_SetMetatile(isScreenOn: i16, dx: 
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoPCTurnOffEffect() {
+pub unsafe fn DoPCTurnOffEffect() {
     PCTurnOffEffect();
 }
-pub(crate) unsafe extern "C" fn PCTurnOffEffect() {
+unsafe fn PCTurnOffEffect() {
     let mut dx: i8 = 0;
     let mut dy: i8 = 0;
     let mut metatileId: u16 = 0;
-    let mut playerDirection: u8 = GetPlayerFacingDirection();
+    let playerDirection: u8 = GetPlayerFacingDirection();
     match playerDirection {
         DIR_NORTH => {
             dx = 0;
@@ -1379,26 +1409,26 @@ pub(crate) unsafe extern "C" fn PCTurnOffEffect() {
     DrawWholeMapView();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoLotteryCornerComputerEffect() {
+pub unsafe fn DoLotteryCornerComputerEffect() {
     if FuncIsActiveTask(Some(Task_LotteryCornerComputerEffect)) != TRUE {
-        let mut taskId: u8 = CreateTask(Some(Task_LotteryCornerComputerEffect), 8);
-        gTasks[taskId].data[0] = FALSE as i16;
-        gTasks[taskId].data[1] = taskId as i16;
-        gTasks[taskId].data[2] = 0;
-        gTasks[taskId].data[3] = 0;
-        gTasks[taskId].data[4] = FALSE as i16;
+        let taskId: u8 = CreateTask(Some(Task_LotteryCornerComputerEffect), 8);
+        task_set(taskId, tPaused, FALSE as i16);
+        task_set(taskId, 1, taskId as i16);
+        task_set(taskId, tFlickerCount, 0);
+        task_set(taskId, 3, 0);
+        task_set(taskId, tIsScreenOn, FALSE as i16);
     }
 }
-pub(crate) unsafe extern "C" fn Task_LotteryCornerComputerEffect(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    if (*task).data[0] == 0 {
+pub(crate) unsafe fn Task_LotteryCornerComputerEffect(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    if (*task).data[tPaused] == 0 {
         LotteryCornerComputerEffect(task);
     }
 }
-pub(crate) unsafe extern "C" fn LotteryCornerComputerEffect(task: *mut Task) {
+unsafe fn LotteryCornerComputerEffect(task: *mut Task) {
     if (*task).data[3] == 6 {
         (*task).data[3] = 0;
-        if (*task).data[4] != 0 {
+        if (*task).data[tIsScreenOn] != 0 {
             MapGridSetMetatileIdAt(18, 8, 3741);
             MapGridSetMetatileIdAt(18, 9, 3749);
         } else {
@@ -1406,10 +1436,10 @@ pub(crate) unsafe extern "C" fn LotteryCornerComputerEffect(task: *mut Task) {
             MapGridSetMetatileIdAt(18, 9, 3680);
         }
         DrawWholeMapView();
-        (*task).data[4] ^= 1;
+        (*task).data[tIsScreenOn] ^= 1;
         if ({
-            (*task).data[2] += 1;
-            (*task).data[2]
+            (*task).data[tFlickerCount] += 1;
+            (*task).data[tFlickerCount]
         }) == 5
         {
             DestroyTask((*task).data[1] as u8);
@@ -1418,86 +1448,89 @@ pub(crate) unsafe extern "C" fn LotteryCornerComputerEffect(task: *mut Task) {
     (*task).data[3] += 1;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn EndLotteryCornerComputerEffect() {
+pub unsafe fn EndLotteryCornerComputerEffect() {
     MapGridSetMetatileIdAt(18, 8, 3741);
     MapGridSetMetatileIdAt(18, 9, 3749);
     DrawWholeMapView();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetTrickHouseNuggetFlag() {
-    let mut specVar: *mut u16 = &raw mut gSpecialVar_0x8004;
-    let mut flag: u16 = FLAG_HIDDEN_ITEM_TRICK_HOUSE_NUGGET;
+pub unsafe fn SetTrickHouseNuggetFlag() {
+    let specVar: *mut u16 = &raw mut gSpecialVar_0x8004;
+    let flag: u16 = FLAG_HIDDEN_ITEM_TRICK_HOUSE_NUGGET;
     *specVar = flag;
     FlagSet(flag);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetTrickHouseNuggetFlag() {
-    let mut specVar: *mut u16 = &raw mut gSpecialVar_0x8004;
-    let mut flag: u16 = FLAG_HIDDEN_ITEM_TRICK_HOUSE_NUGGET;
+pub unsafe fn ResetTrickHouseNuggetFlag() {
+    let specVar: *mut u16 = &raw mut gSpecialVar_0x8004;
+    let flag: u16 = FLAG_HIDDEN_ITEM_TRICK_HOUSE_NUGGET;
     *specVar = flag;
     FlagClear(flag);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckLeadMonCool() -> u8 {
+pub unsafe fn CheckLeadMonCool() -> u8 {
     if GetMonData2(&raw mut gPlayerParty[GetLeadMonIndex()], MON_DATA_COOL) < 200 {
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckLeadMonBeauty() -> u8 {
+pub unsafe fn CheckLeadMonBeauty() -> u8 {
     if GetMonData2(&raw mut gPlayerParty[GetLeadMonIndex()], MON_DATA_BEAUTY) < 200 {
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckLeadMonCute() -> u8 {
+pub unsafe fn CheckLeadMonCute() -> u8 {
     if GetMonData2(&raw mut gPlayerParty[GetLeadMonIndex()], MON_DATA_CUTE) < 200 {
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckLeadMonSmart() -> u8 {
+pub unsafe fn CheckLeadMonSmart() -> u8 {
     if GetMonData2(&raw mut gPlayerParty[GetLeadMonIndex()], MON_DATA_SMART) < 200 {
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckLeadMonTough() -> u8 {
+pub unsafe fn CheckLeadMonTough() -> u8 {
     if GetMonData2(&raw mut gPlayerParty[GetLeadMonIndex()], MON_DATA_TOUGH) < 200 {
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsGrassTypeInParty() {
-    let mut i: u8 = 0;
+pub unsafe fn IsGrassTypeInParty() {
     let mut species: u16 = 0;
     let mut pokemon: *mut Pokemon = null_mut();
-    i = 0;
-    while i < PARTY_SIZE as u8 {
+    for i in 0..(PARTY_SIZE as u8) {
         pokemon = &raw mut gPlayerParty[i];
         if GetMonData2(pokemon, MON_DATA_SANITY_HAS_SPECIES) != 0
             && GetMonData2(pokemon, MON_DATA_IS_EGG) == 0
         {
             species = GetMonData2(pokemon, MON_DATA_SPECIES) as u16;
-            if gSpeciesInfo[species].types[0] == TYPE_GRASS
-                || gSpeciesInfo[species].types[1] == TYPE_GRASS
+            if (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+                [species]
+                .types[0]
+                == TYPE_GRASS
+                || (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                    .cast::<CArray<SpeciesInfo, 0>>())[species]
+                    .types[1]
+                    == TYPE_GRASS
             {
                 gSpecialVar_Result = TRUE as u16;
                 return;
             }
         }
-        i += 1;
     }
     gSpecialVar_Result = FALSE as u16;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SpawnCameraObject() {
-    let mut obj: u8 = SpawnSpecialObjectEventParameterized(
+pub unsafe fn SpawnCameraObject() {
+    let obj: u8 = SpawnSpecialObjectEventParameterized(
         OBJ_EVENT_GFX_BOY_1 as u8,
         MOVEMENT_TYPE_FACE_DOWN,
         LOCALID_CAMERA,
@@ -1509,7 +1542,7 @@ pub unsafe extern "C" fn SpawnCameraObject() {
     CameraObjectSetFollowedSpriteId(gObjectEvents[obj].spriteId);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RemoveCameraObject() {
+pub unsafe fn RemoveCameraObject() {
     CameraObjectSetFollowedSpriteId(GetPlayerAvatarSpriteId());
     RemoveObjectEventByLocalIdAndMap(
         LOCALID_CAMERA,
@@ -1518,90 +1551,90 @@ pub unsafe extern "C" fn RemoveCameraObject() {
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPokeblockNameByMonNature() -> u8 {
-    return CopyMonFavoritePokeblockName(
+pub unsafe fn GetPokeblockNameByMonNature() -> u8 {
+    CopyMonFavoritePokeblockName(
         GetNature(&raw mut gPlayerParty[GetLeadMonIndex()]),
         gStringVar1.as_mut_ptr(),
-    );
+    )
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSecretBaseNearbyMapName() {
+pub unsafe fn GetSecretBaseNearbyMapName() {
     GetMapName(gStringVar1.as_mut_ptr(), VarGet(VAR_SECRET_BASE_MAP), 0);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBattleTowerSinglesStreak() -> u16 {
-    return GetGameStat(GAME_STAT_BATTLE_TOWER_SINGLES_STREAK) as u16;
+pub unsafe fn GetBattleTowerSinglesStreak() -> u16 {
+    GetGameStat(GAME_STAT_BATTLE_TOWER_SINGLES_STREAK) as u16
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferEReaderTrainerName() {
+pub unsafe fn BufferEReaderTrainerName() {
     GetEreaderTrainerName(gStringVar1.as_mut_ptr());
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSlotMachineId() -> u16 {
-    let mut rnd: u32 = (*gSaveBlock1Ptr).dewfordTrends[0].trendiness() as u32
+pub unsafe fn GetSlotMachineId() -> u16 {
+    let rnd: u32 = (*gSaveBlock1Ptr).dewfordTrends[0].trendiness() as u32
         + (*gSaveBlock1Ptr).dewfordTrends[0].rand as u32
-        + sSlotMachineRandomSeeds_34[gSpecialVar_0x8004] as u32;
+        + sSlotMachineRandomSeeds_34[*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()] as u32;
     if IsPokeNewsActive(POKENEWS_GAME_CORNER) != 0 {
         return sSlotMachineServiceDayIds_33[rnd % 12] as u16;
     }
-    return sSlotMachineIds_32[rnd % 12] as u16;
+    sSlotMachineIds_32[rnd % 12] as u16
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FoundAbandonedShipRoom1Key() -> u8 {
-    let mut specVar: *mut u16 = &raw mut gSpecialVar_0x8004;
-    let mut flag: u16 = FLAG_HIDDEN_ITEM_ABANDONED_SHIP_RM_1_KEY;
+pub unsafe fn FoundAbandonedShipRoom1Key() -> u8 {
+    let specVar: *mut u16 = &raw mut gSpecialVar_0x8004;
+    let flag: u16 = FLAG_HIDDEN_ITEM_ABANDONED_SHIP_RM_1_KEY;
     *specVar = flag;
     if FlagGet(flag) == 0 {
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FoundAbandonedShipRoom2Key() -> u8 {
-    let mut specVar: *mut u16 = &raw mut gSpecialVar_0x8004;
-    let mut flag: u16 = FLAG_HIDDEN_ITEM_ABANDONED_SHIP_RM_2_KEY;
+pub unsafe fn FoundAbandonedShipRoom2Key() -> u8 {
+    let specVar: *mut u16 = &raw mut gSpecialVar_0x8004;
+    let flag: u16 = FLAG_HIDDEN_ITEM_ABANDONED_SHIP_RM_2_KEY;
     *specVar = flag;
     if FlagGet(flag) == 0 {
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FoundAbandonedShipRoom4Key() -> u8 {
-    let mut specVar: *mut u16 = &raw mut gSpecialVar_0x8004;
-    let mut flag: u16 = FLAG_HIDDEN_ITEM_ABANDONED_SHIP_RM_4_KEY;
+pub unsafe fn FoundAbandonedShipRoom4Key() -> u8 {
+    let specVar: *mut u16 = &raw mut gSpecialVar_0x8004;
+    let flag: u16 = FLAG_HIDDEN_ITEM_ABANDONED_SHIP_RM_4_KEY;
     *specVar = flag;
     if FlagGet(flag) == 0 {
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FoundAbandonedShipRoom6Key() -> u8 {
-    let mut specVar: *mut u16 = &raw mut gSpecialVar_0x8004;
-    let mut flag: u16 = FLAG_HIDDEN_ITEM_ABANDONED_SHIP_RM_6_KEY;
+pub unsafe fn FoundAbandonedShipRoom6Key() -> u8 {
+    let specVar: *mut u16 = &raw mut gSpecialVar_0x8004;
+    let flag: u16 = FLAG_HIDDEN_ITEM_ABANDONED_SHIP_RM_6_KEY;
     *specVar = flag;
     if FlagGet(flag) == 0 {
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LeadMonHasEffortRibbon() -> u8 {
-    return GetMonData3(
+pub unsafe fn LeadMonHasEffortRibbon() -> u8 {
+    GetMonData3(
         &raw mut gPlayerParty[GetLeadMonIndex()],
         MON_DATA_EFFORT_RIBBON,
         null_mut(),
-    ) as u8;
+    ) as u8
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GiveLeadMonEffortRibbon() {
-    let mut ribbonSet: u8 = 0;
-    let mut leadMon: *mut Pokemon = null_mut();
+pub unsafe fn GiveLeadMonEffortRibbon() {
     IncrementGameStat(GAME_STAT_RECEIVED_RIBBONS);
     FlagSet(FLAG_SYS_RIBBON_GET);
-    ribbonSet = TRUE;
-    leadMon = &raw mut gPlayerParty[GetLeadMonIndex()];
+    let mut ribbonSet: u8 = TRUE;
+    let leadMon: *mut Pokemon = &raw mut gPlayerParty[GetLeadMonIndex()];
     SetMonData(
         leadMon,
         MON_DATA_EFFORT_RIBBON,
@@ -1612,14 +1645,14 @@ pub unsafe extern "C" fn GiveLeadMonEffortRibbon() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Special_AreLeadMonEVsMaxedOut() -> u8 {
+pub unsafe fn Special_AreLeadMonEVsMaxedOut() -> u8 {
     if GetMonEVCount(&raw mut gPlayerParty[GetLeadMonIndex()]) >= MAX_TOTAL_EVS as u16 {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryUpdateRusturfTunnelState() -> u8 {
+pub unsafe fn TryUpdateRusturfTunnelState() -> u8 {
     if FlagGet(FLAG_RUSTURF_TUNNEL_OPENED) == 0
         && (*gSaveBlock1Ptr).location.mapGroup == 24
         && (*gSaveBlock1Ptr).location.mapNum == 4
@@ -1632,15 +1665,14 @@ pub unsafe extern "C" fn TryUpdateRusturfTunnelState() -> u8 {
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetShoalItemFlag(unused: u16) {
+pub unsafe fn SetShoalItemFlag(unused: u16) {
     FlagSet(FLAG_SYS_SHOAL_ITEM);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadWallyZigzagoon() {
-    let mut monData: u16 = 0;
+pub unsafe fn LoadWallyZigzagoon() {
     CreateMon(
         &raw mut gPlayerParty[0],
         SPECIES_ZIGZAGOON,
@@ -1651,7 +1683,7 @@ pub unsafe extern "C" fn LoadWallyZigzagoon() {
         0,
         0,
     );
-    monData = TRUE as u16;
+    let mut monData: u16 = TRUE as u16;
     SetMonData(
         &raw mut gPlayerParty[0],
         MON_DATA_ABILITY_NUM,
@@ -1681,12 +1713,10 @@ pub unsafe extern "C" fn LoadWallyZigzagoon() {
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsStarterInParty() -> u8 {
-    let mut i: u8 = 0;
-    let mut starter: u16 = GetStarterPokemon(VarGet(VAR_STARTER_MON));
-    let mut partyCount: u8 = CalculatePlayerPartyCount();
-    i = 0;
-    while i < partyCount {
+pub unsafe fn IsStarterInParty() -> u8 {
+    let starter: u16 = GetStarterPokemon(VarGet(VAR_STARTER_MON));
+    let partyCount: u8 = CalculatePlayerPartyCount();
+    for i in 0..partyCount {
         if GetMonData3(
             &raw mut gPlayerParty[i],
             MON_DATA_SPECIES_OR_EGG,
@@ -1695,34 +1725,33 @@ pub unsafe extern "C" fn IsStarterInParty() -> u8 {
         {
             return TRUE;
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptCheckFreePokemonStorageSpace() -> u8 {
-    return CheckFreePokemonStorageSpace();
+pub unsafe fn ScriptCheckFreePokemonStorageSpace() -> u8 {
+    CheckFreePokemonStorageSpace()
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsPokerusInParty() -> u8 {
+pub unsafe fn IsPokerusInParty() -> u8 {
     if CheckPartyPokerus(gPlayerParty.as_mut_ptr(), 63) == 0 {
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShakeCamera() {
-    let mut taskId: u8 = CreateTask(Some(Task_ShakeCamera), 9);
-    gTasks[taskId].data[0] = gSpecialVar_0x8005 as i16;
-    gTasks[taskId].data[1] = 0;
-    gTasks[taskId].data[2] = gSpecialVar_0x8006 as i16;
-    gTasks[taskId].data[3] = gSpecialVar_0x8007 as i16;
-    gTasks[taskId].data[4] = gSpecialVar_0x8004 as i16;
+pub unsafe fn ShakeCamera() {
+    let taskId: u8 = CreateTask(Some(Task_ShakeCamera), 9);
+    task_set(taskId, tHorizontalPan, gSpecialVar_0x8005 as i16);
+    task_set(taskId, tDelayCounter, 0);
+    task_set(taskId, tNumShakes, gSpecialVar_0x8006 as i16);
+    task_set(taskId, tDelay, gSpecialVar_0x8007 as i16);
+    task_set(taskId, tVerticalPan, gSpecialVar_0x8004 as i16);
     SetCameraPanningCallback(None);
     PlaySE(SE_M_STRENGTH);
 }
-pub(crate) unsafe extern "C" fn Task_ShakeCamera(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_ShakeCamera(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(1) += 1;
     if rem_i32(*data.at(1) as i32, *data.at(3) as i32) == 0 {
         *data.at(1) = 0;
@@ -1736,32 +1765,29 @@ pub(crate) unsafe extern "C" fn Task_ShakeCamera(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn StopCameraShake(taskId: u8) {
+unsafe fn StopCameraShake(taskId: u8) {
     DestroyTask(taskId);
     ScriptContext_Enable();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FoundBlackGlasses() -> u8 {
-    return FlagGet(FLAG_HIDDEN_ITEM_ROUTE_116_BLACK_GLASSES);
+pub unsafe fn FoundBlackGlasses() -> u8 {
+    FlagGet(FLAG_HIDDEN_ITEM_ROUTE_116_BLACK_GLASSES)
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetRoute119Weather() {
+pub unsafe fn SetRoute119Weather() {
     if IsMapTypeOutdoors(GetLastUsedWarpMapType()) != TRUE {
         SetSavedWeather(WEATHER_ROUTE119_CYCLE);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetRoute123Weather() {
+pub unsafe fn SetRoute123Weather() {
     if IsMapTypeOutdoors(GetLastUsedWarpMapType()) != TRUE {
         SetSavedWeather(WEATHER_ROUTE123_CYCLE);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLeadMonIndex() -> u8 {
-    let mut i: u8 = 0;
-    let mut partyCount: u8 = CalculatePlayerPartyCount();
-    i = 0;
-    while i < partyCount {
+pub unsafe fn GetLeadMonIndex() -> u8 {
+    let partyCount: u8 = CalculatePlayerPartyCount();
+    for i in 0..partyCount {
         if GetMonData3(
             &raw mut gPlayerParty[i],
             MON_DATA_SPECIES_OR_EGG,
@@ -1775,44 +1801,51 @@ pub unsafe extern "C" fn GetLeadMonIndex() -> u8 {
         {
             return i;
         }
-        i += 1;
     }
-    return 0;
+    0
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptGetPartyMonSpecies() -> u16 {
-    return GetMonData3(
-        &raw mut gPlayerParty[gSpecialVar_0x8004],
+pub unsafe fn ScriptGetPartyMonSpecies() -> u16 {
+    GetMonData3(
+        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()],
         MON_DATA_SPECIES_OR_EGG,
         null_mut(),
-    ) as u16;
+    ) as u16
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryInitBattleTowerAwardManObjectEvent() {}
+pub fn TryInitBattleTowerAwardManObjectEvent() {}
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetDaysUntilPacifidlogTMAvailable() -> u16 {
-    let mut tmReceivedDay: u16 = VarGet(VAR_PACIFIDLOG_TM_RECEIVED_DAY);
+pub unsafe fn GetDaysUntilPacifidlogTMAvailable() -> u16 {
+    let tmReceivedDay: u16 = VarGet(VAR_PACIFIDLOG_TM_RECEIVED_DAY);
     if gLocalTime.days as i32 - tmReceivedDay as i32 >= 7 {
         return 0;
     } else if gLocalTime.days < 0 {
         return 8;
     }
-    return 7 - (gLocalTime.days as u16 - tmReceivedDay);
+    7 - (gLocalTime.days as u16 - tmReceivedDay)
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetPacifidlogTMReceivedDay() -> u16 {
+pub unsafe fn SetPacifidlogTMReceivedDay() -> u16 {
     VarSet(VAR_PACIFIDLOG_TM_RECEIVED_DAY, gLocalTime.days as u16);
-    return gLocalTime.days as u16;
+    gLocalTime.days as u16
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MonOTNameNotPlayer() -> u8 {
-    if GetMonData2(&raw mut gPlayerParty[gSpecialVar_0x8004], MON_DATA_LANGUAGE)
-        != GAME_LANGUAGE as u32
+pub unsafe fn MonOTNameNotPlayer() -> u8 {
+    if GetMonData2(
+        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()],
+        MON_DATA_LANGUAGE,
+    ) != GAME_LANGUAGE as u32
     {
         return TRUE;
     }
     GetMonData3(
-        &raw mut gPlayerParty[gSpecialVar_0x8004],
+        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()],
         MON_DATA_OT_NAME,
         gStringVar1.as_mut_ptr(),
     );
@@ -1823,10 +1856,10 @@ pub unsafe extern "C" fn MonOTNameNotPlayer() -> u8 {
     {
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferLottoTicketNumber() {
+pub unsafe fn BufferLottoTicketNumber() {
     if gSpecialVar_Result >= 10000 {
         ConvertIntToDecimalString(0, gSpecialVar_Result as i32);
     } else if gSpecialVar_Result >= 1000 {
@@ -1870,8 +1903,11 @@ pub unsafe extern "C" fn BufferLottoTicketNumber() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMysteryGiftCardStat() -> u16 {
-    match gSpecialVar_Result {
+pub unsafe fn GetMysteryGiftCardStat() -> u16 {
+    match *(&raw const crate::ffi::gSpecialVar_Result)
+        .cast::<u16>()
+        .cast_mut()
+    {
         GET_NUM_STAMPS => {
             return MysteryGift_GetCardStat(CARD_STAT_NUM_STAMPS);
         }
@@ -1893,52 +1929,53 @@ pub unsafe extern "C" fn GetMysteryGiftCardStat() -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferTMHMMoveName() -> u8 {
+pub unsafe fn BufferTMHMMoveName() -> u8 {
     if gSpecialVar_0x8004 >= ITEM_TM01 && gSpecialVar_0x8004 <= ITEM_HM08 {
         StringCopy(
             gStringVar2.as_mut_ptr(),
-            gMoveNames[ItemIdToBattleMoveId(gSpecialVar_0x8004)]
-                .as_ptr()
-                .cast_mut(),
+            (*(&raw const crate::data::data_tables::gMoveNames)
+                .cast::<CArray<CArray<u8, 13>, 355>>())[ItemIdToBattleMoveId(
+                *(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut(),
+            )]
+            .as_ptr()
+            .cast_mut(),
         );
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsBadEggInParty() -> u8 {
-    let mut partyCount: u8 = CalculatePlayerPartyCount();
-    let mut i: u8 = 0;
-    i = 0;
-    while i < partyCount {
+pub unsafe fn IsBadEggInParty() -> u8 {
+    let partyCount: u8 = CalculatePlayerPartyCount();
+    for i in 0..partyCount {
         if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SANITY_IS_BAD_EGG) == TRUE as u32 {
             return TRUE;
         }
-        i += 1;
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InMultiPartnerRoom() -> u8 {
+pub unsafe fn InMultiPartnerRoom() -> u8 {
     if (*gSaveBlock1Ptr).location.mapGroup == 26
         && (*gSaveBlock1Ptr).location.mapNum == 15
         && VarGet(VAR_FRONTIER_BATTLE_MODE) == FRONTIER_MODE_MULTIS
     {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn OffsetCameraForBattle() {
+pub unsafe fn OffsetCameraForBattle() {
     SetCameraPanningCallback(None);
     SetCameraPanning(8, 0);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetDeptStoreFloor() {
+pub unsafe fn SetDeptStoreFloor() {
     let mut deptStoreFloor: u8 = 0;
     match (*gSaveBlock1Ptr).dynamicWarp.mapNum {
         16 => {
@@ -1966,39 +2003,39 @@ pub unsafe extern "C" fn SetDeptStoreFloor() {
     VarSet(VAR_DEPT_STORE_FLOOR, deptStoreFloor as u16);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetDeptStoreDefaultFloorChoice() -> u16 {
-    sLilycoveDeptStore_NeverRead = 0;
-    sLilycoveDeptStore_DefaultFloorChoice = 0;
+pub unsafe fn GetDeptStoreDefaultFloorChoice() -> u16 {
+    sLilycoveDeptStore_NeverRead.set(0);
+    sLilycoveDeptStore_DefaultFloorChoice.set(0);
     if (*gSaveBlock1Ptr).dynamicWarp.mapGroup == 13 {
         match (*gSaveBlock1Ptr).dynamicWarp.mapNum {
             20 => {
-                sLilycoveDeptStore_NeverRead = 0;
-                sLilycoveDeptStore_DefaultFloorChoice = 0;
+                sLilycoveDeptStore_NeverRead.set(0);
+                sLilycoveDeptStore_DefaultFloorChoice.set(0);
             }
             19 => {
-                sLilycoveDeptStore_NeverRead = 0;
-                sLilycoveDeptStore_DefaultFloorChoice = 1;
+                sLilycoveDeptStore_NeverRead.set(0);
+                sLilycoveDeptStore_DefaultFloorChoice.set(1);
             }
             18 => {
-                sLilycoveDeptStore_NeverRead = 0;
-                sLilycoveDeptStore_DefaultFloorChoice = 2;
+                sLilycoveDeptStore_NeverRead.set(0);
+                sLilycoveDeptStore_DefaultFloorChoice.set(2);
             }
             17 => {
-                sLilycoveDeptStore_NeverRead = 0;
-                sLilycoveDeptStore_DefaultFloorChoice = 3;
+                sLilycoveDeptStore_NeverRead.set(0);
+                sLilycoveDeptStore_DefaultFloorChoice.set(3);
             }
             16 => {
-                sLilycoveDeptStore_NeverRead = 0;
-                sLilycoveDeptStore_DefaultFloorChoice = 4;
+                sLilycoveDeptStore_NeverRead.set(0);
+                sLilycoveDeptStore_DefaultFloorChoice.set(4);
             }
             _ => {}
         }
     }
-    return sLilycoveDeptStore_DefaultFloorChoice;
+    sLilycoveDeptStore_DefaultFloorChoice.get()
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MoveElevator() {
-    let mut data: *mut i16 = gTasks[CreateTask(Some(Task_MoveElevator), 9)]
+pub unsafe fn MoveElevator() {
+    let data: *mut i16 = (*gTasks.as_ptr())[CreateTask(Some(Task_MoveElevator), 9)]
         .data
         .as_mut_ptr();
     let mut floorDelta: u16 = 0;
@@ -2020,8 +2057,8 @@ pub unsafe extern "C" fn MoveElevator() {
     MoveElevatorWindowLights(floorDelta, *data.at(6) as u8);
     PlaySE(SE_ELEVATOR);
 }
-pub(crate) unsafe extern "C" fn Task_MoveElevator(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_MoveElevator(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(1) += 1;
     if *data.at(1) % 3 == 0 {
         *data.at(1) = 0;
@@ -2037,20 +2074,23 @@ pub(crate) unsafe extern "C" fn Task_MoveElevator(taskId: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowDeptStoreElevatorFloorSelect() {
-    let mut xPos: i32 = 0;
-    sTutorMoveAndElevatorWindowId =
-        AddWindow((&raw const *sWindowTemplate_ElevatorFloor).cast_mut()) as u8;
-    SetStandardWindowBorderStyle(sTutorMoveAndElevatorWindowId, FALSE);
-    xPos = GetStringCenterAlignXOffset(
+pub unsafe fn ShowDeptStoreElevatorFloorSelect() {
+    sTutorMoveAndElevatorWindowId
+        .set(AddWindow((&raw const *sWindowTemplate_ElevatorFloor).cast_mut()) as u8);
+    SetStandardWindowBorderStyle(sTutorMoveAndElevatorWindowId.get(), FALSE);
+    let mut xPos: i32 = GetStringCenterAlignXOffset(
         FONT_NORMAL as i32,
-        gText_ElevatorNowOn.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_ElevatorNowOn).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         64,
     );
     AddTextPrinterParameterized(
-        sTutorMoveAndElevatorWindowId,
+        sTutorMoveAndElevatorWindowId.get(),
         FONT_NORMAL,
-        gText_ElevatorNowOn.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_ElevatorNowOn).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         xPos as u8,
         1,
         TEXT_SKIP_DRAW,
@@ -2058,68 +2098,62 @@ pub unsafe extern "C" fn ShowDeptStoreElevatorFloorSelect() {
     );
     xPos = GetStringCenterAlignXOffset(
         FONT_NORMAL as i32,
-        sDeptStoreFloorNames[gSpecialVar_0x8005],
+        sDeptStoreFloorNames[*(&raw const crate::ffi::gSpecialVar_0x8005)
+            .cast::<u16>()
+            .cast_mut()],
         64,
     );
     AddTextPrinterParameterized(
-        sTutorMoveAndElevatorWindowId,
+        sTutorMoveAndElevatorWindowId.get(),
         FONT_NORMAL,
-        sDeptStoreFloorNames[gSpecialVar_0x8005],
+        sDeptStoreFloorNames[*(&raw const crate::ffi::gSpecialVar_0x8005)
+            .cast::<u16>()
+            .cast_mut()],
         xPos as u8,
         17,
         TEXT_SKIP_DRAW,
         None,
     );
-    PutWindowTilemap(sTutorMoveAndElevatorWindowId);
-    CopyWindowToVram(sTutorMoveAndElevatorWindowId, COPYWIN_FULL);
+    PutWindowTilemap(sTutorMoveAndElevatorWindowId.get());
+    CopyWindowToVram(sTutorMoveAndElevatorWindowId.get(), COPYWIN_FULL);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CloseDeptStoreElevatorWindow() {
-    ClearStdWindowAndFrameToTransparent(sTutorMoveAndElevatorWindowId, TRUE);
-    RemoveWindow(sTutorMoveAndElevatorWindowId);
+pub unsafe fn CloseDeptStoreElevatorWindow() {
+    ClearStdWindowAndFrameToTransparent(sTutorMoveAndElevatorWindowId.get(), TRUE);
+    RemoveWindow(sTutorMoveAndElevatorWindowId.get());
 }
-pub(crate) unsafe extern "C" fn MoveElevatorWindowLights(floorDelta: u16, descending: u8) {
+unsafe fn MoveElevatorWindowLights(floorDelta: u16, descending: u8) {
     if FuncIsActiveTask(Some(Task_MoveElevatorWindowLights)) != TRUE {
-        let mut taskId: u8 = CreateTask(Some(Task_MoveElevatorWindowLights), 8);
-        gTasks[taskId].data[0] = 0;
-        gTasks[taskId].data[1] = 0;
-        gTasks[taskId].data[2] = descending as i16;
-        gTasks[taskId].data[3] = sElevatorLightCycles_30[floorDelta] as i16;
+        let taskId: u8 = CreateTask(Some(Task_MoveElevatorWindowLights), 8);
+        task_set(taskId, 0, 0);
+        task_set(taskId, 1, 0);
+        task_set(taskId, 2, descending as i16);
+        task_set(taskId, 3, sElevatorLightCycles_30[floorDelta] as i16);
     }
 }
-pub(crate) unsafe extern "C" fn Task_MoveElevatorWindowLights(taskId: u8) {
-    let mut x: u8 = 0;
-    let mut y: u8 = 0;
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_MoveElevatorWindowLights(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data.at(1) == 6 {
         *data += 1;
         if *data.at(2) == 0 {
-            y = 0;
-            while y < ELEVATOR_WINDOW_HEIGHT {
-                x = 0;
-                while x < ELEVATOR_WINDOW_WIDTH {
+            for y in 0..ELEVATOR_WINDOW_HEIGHT {
+                for x in 0..ELEVATOR_WINDOW_WIDTH {
                     MapGridSetMetatileIdAt(
                         x as i32 + MAP_OFFSET + 1,
                         y as i32 + MAP_OFFSET,
                         sElevatorWindowTiles_Ascending[y][*data % 3] | MAPGRID_IMPASSABLE,
                     );
-                    x += 1;
                 }
-                y += 1;
             }
         } else {
-            y = 0;
-            while y < ELEVATOR_WINDOW_HEIGHT {
-                x = 0;
-                while x < ELEVATOR_WINDOW_WIDTH {
+            for y in 0..ELEVATOR_WINDOW_HEIGHT {
+                for x in 0..ELEVATOR_WINDOW_WIDTH {
                     MapGridSetMetatileIdAt(
                         x as i32 + MAP_OFFSET + 1,
                         y as i32 + MAP_OFFSET,
                         sElevatorWindowTiles_Descending[y][*data % 3] | MAPGRID_IMPASSABLE,
                     );
-                    x += 1;
                 }
-                y += 1;
             }
         }
         DrawWholeMapView();
@@ -2131,69 +2165,101 @@ pub(crate) unsafe extern "C" fn Task_MoveElevatorWindowLights(taskId: u8) {
     *data.at(1) += 1;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferVarsForIVRater() {
-    let mut i: u8 = 0;
+pub unsafe fn BufferVarsForIVRater() {
     let mut ivStorage: CArray<u32, 6> = zeroed();
-    ivStorage[0] = GetMonData2(&raw mut gPlayerParty[gSpecialVar_0x8004], MON_DATA_HP_IV);
-    ivStorage[1] = GetMonData2(&raw mut gPlayerParty[gSpecialVar_0x8004], MON_DATA_ATK_IV);
-    ivStorage[2] = GetMonData2(&raw mut gPlayerParty[gSpecialVar_0x8004], MON_DATA_DEF_IV);
-    ivStorage[3] = GetMonData2(&raw mut gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPEED_IV);
-    ivStorage[4] = GetMonData2(&raw mut gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPATK_IV);
-    ivStorage[5] = GetMonData2(&raw mut gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPDEF_IV);
+    ivStorage[0] = GetMonData2(
+        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()],
+        MON_DATA_HP_IV,
+    );
+    ivStorage[1] = GetMonData2(
+        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()],
+        MON_DATA_ATK_IV,
+    );
+    ivStorage[2] = GetMonData2(
+        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()],
+        MON_DATA_DEF_IV,
+    );
+    ivStorage[3] = GetMonData2(
+        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()],
+        MON_DATA_SPEED_IV,
+    );
+    ivStorage[4] = GetMonData2(
+        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()],
+        MON_DATA_SPATK_IV,
+    );
+    ivStorage[5] = GetMonData2(
+        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()],
+        MON_DATA_SPDEF_IV,
+    );
     gSpecialVar_0x8005 = 0;
-    i = 0;
+    let mut i: u8 = 0;
     while i < NUM_STATS as u8 {
         gSpecialVar_0x8005 += ivStorage[i] as u16;
         i += 1;
     }
     gSpecialVar_0x8006 = 0;
     gSpecialVar_0x8007 = ivStorage[0] as u16;
-    i = 1;
-    while i < NUM_STATS as u8 {
-        if ivStorage[gSpecialVar_0x8006] < ivStorage[i] {
+    for i in 1..(NUM_STATS as u8) {
+        if ivStorage[*(&raw const crate::ffi::gSpecialVar_0x8006)
+            .cast::<u16>()
+            .cast_mut()]
+            < ivStorage[i]
+        {
             gSpecialVar_0x8006 = i as u16;
             gSpecialVar_0x8007 = ivStorage[i] as u16;
-        } else if ivStorage[gSpecialVar_0x8006] == ivStorage[i] {
-            let mut randomNumber: u16 = Random();
+        } else if ivStorage[*(&raw const crate::ffi::gSpecialVar_0x8006)
+            .cast::<u16>()
+            .cast_mut()]
+            == ivStorage[i]
+        {
+            let randomNumber: u16 = Random();
             if randomNumber as i32 & 1 != 0 {
                 gSpecialVar_0x8006 = i as u16;
                 gSpecialVar_0x8007 = ivStorage[i] as u16;
             }
         }
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UsedPokemonCenterWarp() -> u8 {
+pub unsafe fn UsedPokemonCenterWarp() -> u8 {
+    let map: u16 = ((gLastUsedWarp.mapGroup as u16) << 8) + gLastUsedWarp.mapNum as u16;
     let mut i: i32 = 0;
-    let mut map: u16 = ((gLastUsedWarp.mapGroup as u16) << 8) + gLastUsedWarp.mapNum as u16;
-    i = 0;
     while sPokemonCenters_29[i] != MAP_UNDEFINED {
         if sPokemonCenters_29[i] == map {
             return TRUE;
         }
         i += 1;
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerNotAtTrainerHillEntrance() -> u32 {
+pub unsafe fn PlayerNotAtTrainerHillEntrance() -> u32 {
     if (*gSaveBlock1Ptr).location.mapGroup == 26 && (*gSaveBlock1Ptr).location.mapNum == 60 {
         return FALSE as u32;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateFrontierManiac(daysSince: u16) {
-    let mut var: *mut u16 = GetVarPointer(VAR_FRONTIER_MANIAC_FACILITY);
+pub unsafe fn UpdateFrontierManiac(daysSince: u16) {
+    let var: *mut u16 = GetVarPointer(VAR_FRONTIER_MANIAC_FACILITY);
     *var += daysSince;
     *var = (*var as i32 % 10) as u16;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowFrontierManiacMessage() {
-    let mut i: u8 = 0;
+pub unsafe fn ShowFrontierManiacMessage() {
     let mut winStreak: u16 = 0;
-    let mut facility: u16 = VarGet(VAR_FRONTIER_MANIAC_FACILITY);
+    let facility: u16 = VarGet(VAR_FRONTIER_MANIAC_FACILITY);
     match facility {
         FRONTIER_MANIAC_TOWER_SINGLES
         | FRONTIER_MANIAC_TOWER_DOUBLES
@@ -2263,24 +2329,22 @@ pub unsafe extern "C" fn ShowFrontierManiacMessage() {
         }
         _ => {}
     }
-    i = 0;
+    let mut i: u8 = 0;
     while i < 2 && (sFrontierManiacStreakThresholds_28[facility][i] as u16) < winStreak {
         i += 1;
     }
     ShowFieldMessage(sFrontierManiacMessages_27[facility][i]);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferBattleTowerElevatorFloors() {
-    let mut i: u8 = 0;
-    let mut battleMode: u16 = VarGet(VAR_FRONTIER_BATTLE_MODE);
-    let mut lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
+pub unsafe fn BufferBattleTowerElevatorFloors() {
+    let battleMode: u16 = VarGet(VAR_FRONTIER_BATTLE_MODE);
+    let lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
     if battleMode == FRONTIER_MODE_MULTIS && FlagGet(FLAG_CHOSEN_MULTI_BATTLE_NPC_PARTNER) == 0 {
         gSpecialVar_0x8005 = 5;
         gSpecialVar_0x8006 = 4;
         return;
     }
-    i = 0;
-    while i < 9 {
+    for i in 0..9u8 {
         if sBattleTowerStreakThresholds_26[i]
             > (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode]
         {
@@ -2288,135 +2352,137 @@ pub unsafe extern "C" fn BufferBattleTowerElevatorFloors() {
             gSpecialVar_0x8006 = i as u16 + 5;
             return;
         }
-        i += 1;
     }
     gSpecialVar_0x8005 = 4;
     gSpecialVar_0x8006 = 12;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowScrollableMultichoice() {
-    let mut taskId: u8 = CreateTask(Some(Task_ShowScrollableMultichoice), 8);
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    (*task).data[11] = gSpecialVar_0x8004 as i16;
-    match gSpecialVar_0x8004 {
+pub unsafe fn ShowScrollableMultichoice() {
+    let taskId: u8 = CreateTask(Some(Task_ShowScrollableMultichoice), 8);
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    (*task).data[tScrollMultiId] = gSpecialVar_0x8004 as i16;
+    match *(&raw const crate::ffi::gSpecialVar_0x8004)
+        .cast::<u16>()
+        .cast_mut()
+    {
         SCROLL_MULTI_NONE => {
-            (*task).data[0] = 1;
-            (*task).data[1] = 1;
-            (*task).data[2] = 1;
-            (*task).data[3] = 1;
-            (*task).data[4] = 1;
-            (*task).data[5] = 1;
-            (*task).data[6] = FALSE as i16;
+            (*task).data[tMaxItemsOnScreen] = 1;
+            (*task).data[tNumItems] = 1;
+            (*task).data[tLeft] = 1;
+            (*task).data[tTop] = 1;
+            (*task).data[tWidth] = 1;
+            (*task).data[tHeight] = 1;
+            (*task).data[tKeepOpenAfterSelect] = FALSE as i16;
             (*task).data[15] = taskId as i16;
         }
         SCROLL_MULTI_GLASS_WORKSHOP_VENDOR => {
-            (*task).data[0] = 5;
-            (*task).data[1] = 8;
-            (*task).data[2] = 1;
-            (*task).data[3] = 1;
-            (*task).data[4] = 9;
-            (*task).data[5] = 10;
-            (*task).data[6] = FALSE as i16;
+            (*task).data[tMaxItemsOnScreen] = 5;
+            (*task).data[tNumItems] = 8;
+            (*task).data[tLeft] = 1;
+            (*task).data[tTop] = 1;
+            (*task).data[tWidth] = 9;
+            (*task).data[tHeight] = 10;
+            (*task).data[tKeepOpenAfterSelect] = FALSE as i16;
             (*task).data[15] = taskId as i16;
         }
         SCROLL_MULTI_POKEMON_FAN_CLUB_RATER => {
-            (*task).data[0] = MAX_SCROLL_MULTI_ON_SCREEN;
-            (*task).data[1] = 12;
-            (*task).data[2] = 1;
-            (*task).data[3] = 1;
-            (*task).data[4] = 7;
-            (*task).data[5] = 12;
-            (*task).data[6] = FALSE as i16;
+            (*task).data[tMaxItemsOnScreen] = MAX_SCROLL_MULTI_ON_SCREEN;
+            (*task).data[tNumItems] = 12;
+            (*task).data[tLeft] = 1;
+            (*task).data[tTop] = 1;
+            (*task).data[tWidth] = 7;
+            (*task).data[tHeight] = 12;
+            (*task).data[tKeepOpenAfterSelect] = FALSE as i16;
             (*task).data[15] = taskId as i16;
         }
         SCROLL_MULTI_BF_EXCHANGE_CORNER_DECOR_VENDOR_1 => {
-            (*task).data[0] = MAX_SCROLL_MULTI_ON_SCREEN;
-            (*task).data[1] = 11;
-            (*task).data[2] = 14;
-            (*task).data[3] = 1;
-            (*task).data[4] = 15;
-            (*task).data[5] = 12;
-            (*task).data[6] = FALSE as i16;
+            (*task).data[tMaxItemsOnScreen] = MAX_SCROLL_MULTI_ON_SCREEN;
+            (*task).data[tNumItems] = 11;
+            (*task).data[tLeft] = 14;
+            (*task).data[tTop] = 1;
+            (*task).data[tWidth] = 15;
+            (*task).data[tHeight] = 12;
+            (*task).data[tKeepOpenAfterSelect] = FALSE as i16;
             (*task).data[15] = taskId as i16;
         }
         SCROLL_MULTI_BF_EXCHANGE_CORNER_DECOR_VENDOR_2 => {
-            (*task).data[0] = MAX_SCROLL_MULTI_ON_SCREEN;
-            (*task).data[1] = 6;
-            (*task).data[2] = 14;
-            (*task).data[3] = 1;
-            (*task).data[4] = 15;
-            (*task).data[5] = 12;
-            (*task).data[6] = FALSE as i16;
+            (*task).data[tMaxItemsOnScreen] = MAX_SCROLL_MULTI_ON_SCREEN;
+            (*task).data[tNumItems] = 6;
+            (*task).data[tLeft] = 14;
+            (*task).data[tTop] = 1;
+            (*task).data[tWidth] = 15;
+            (*task).data[tHeight] = 12;
+            (*task).data[tKeepOpenAfterSelect] = FALSE as i16;
             (*task).data[15] = taskId as i16;
         }
         SCROLL_MULTI_BF_EXCHANGE_CORNER_VITAMIN_VENDOR => {
-            (*task).data[0] = MAX_SCROLL_MULTI_ON_SCREEN;
-            (*task).data[1] = 7;
-            (*task).data[2] = 14;
-            (*task).data[3] = 1;
-            (*task).data[4] = 15;
-            (*task).data[5] = 12;
-            (*task).data[6] = FALSE as i16;
+            (*task).data[tMaxItemsOnScreen] = MAX_SCROLL_MULTI_ON_SCREEN;
+            (*task).data[tNumItems] = 7;
+            (*task).data[tLeft] = 14;
+            (*task).data[tTop] = 1;
+            (*task).data[tWidth] = 15;
+            (*task).data[tHeight] = 12;
+            (*task).data[tKeepOpenAfterSelect] = FALSE as i16;
             (*task).data[15] = taskId as i16;
         }
         SCROLL_MULTI_BF_EXCHANGE_CORNER_HOLD_ITEM_VENDOR => {
-            (*task).data[0] = MAX_SCROLL_MULTI_ON_SCREEN;
-            (*task).data[1] = 10;
-            (*task).data[2] = 14;
-            (*task).data[3] = 1;
-            (*task).data[4] = 15;
-            (*task).data[5] = 12;
-            (*task).data[6] = FALSE as i16;
+            (*task).data[tMaxItemsOnScreen] = MAX_SCROLL_MULTI_ON_SCREEN;
+            (*task).data[tNumItems] = 10;
+            (*task).data[tLeft] = 14;
+            (*task).data[tTop] = 1;
+            (*task).data[tWidth] = 15;
+            (*task).data[tHeight] = 12;
+            (*task).data[tKeepOpenAfterSelect] = FALSE as i16;
             (*task).data[15] = taskId as i16;
         }
         SCROLL_MULTI_BERRY_POWDER_VENDOR => {
-            (*task).data[0] = MAX_SCROLL_MULTI_ON_SCREEN;
-            (*task).data[1] = 12;
-            (*task).data[2] = 15;
-            (*task).data[3] = 1;
-            (*task).data[4] = 14;
-            (*task).data[5] = 12;
-            (*task).data[6] = FALSE as i16;
+            (*task).data[tMaxItemsOnScreen] = MAX_SCROLL_MULTI_ON_SCREEN;
+            (*task).data[tNumItems] = 12;
+            (*task).data[tLeft] = 15;
+            (*task).data[tTop] = 1;
+            (*task).data[tWidth] = 14;
+            (*task).data[tHeight] = 12;
+            (*task).data[tKeepOpenAfterSelect] = FALSE as i16;
             (*task).data[15] = taskId as i16;
         }
         SCROLL_MULTI_BF_RECEPTIONIST => {
-            (*task).data[0] = MAX_SCROLL_MULTI_ON_SCREEN;
-            (*task).data[1] = 10;
-            (*task).data[2] = 17;
-            (*task).data[3] = 1;
-            (*task).data[4] = 11;
-            (*task).data[5] = 12;
-            (*task).data[6] = FALSE as i16;
+            (*task).data[tMaxItemsOnScreen] = MAX_SCROLL_MULTI_ON_SCREEN;
+            (*task).data[tNumItems] = 10;
+            (*task).data[tLeft] = 17;
+            (*task).data[tTop] = 1;
+            (*task).data[tWidth] = 11;
+            (*task).data[tHeight] = 12;
+            (*task).data[tKeepOpenAfterSelect] = FALSE as i16;
             (*task).data[15] = taskId as i16;
         }
         9 | 10 => {
-            (*task).data[0] = MAX_SCROLL_MULTI_ON_SCREEN;
-            (*task).data[1] = 11;
-            (*task).data[2] = 15;
-            (*task).data[3] = 1;
-            (*task).data[4] = 14;
-            (*task).data[5] = 12;
-            (*task).data[6] = FALSE as i16;
+            (*task).data[tMaxItemsOnScreen] = MAX_SCROLL_MULTI_ON_SCREEN;
+            (*task).data[tNumItems] = 11;
+            (*task).data[tLeft] = 15;
+            (*task).data[tTop] = 1;
+            (*task).data[tWidth] = 14;
+            (*task).data[tHeight] = 12;
+            (*task).data[tKeepOpenAfterSelect] = FALSE as i16;
             (*task).data[15] = taskId as i16;
         }
         SCROLL_MULTI_SS_TIDAL_DESTINATION => {
-            (*task).data[0] = MAX_SCROLL_MULTI_ON_SCREEN;
-            (*task).data[1] = 7;
-            (*task).data[2] = 19;
-            (*task).data[3] = 1;
-            (*task).data[4] = 10;
-            (*task).data[5] = 12;
-            (*task).data[6] = FALSE as i16;
+            (*task).data[tMaxItemsOnScreen] = MAX_SCROLL_MULTI_ON_SCREEN;
+            (*task).data[tNumItems] = 7;
+            (*task).data[tLeft] = 19;
+            (*task).data[tTop] = 1;
+            (*task).data[tWidth] = 10;
+            (*task).data[tHeight] = 12;
+            (*task).data[tKeepOpenAfterSelect] = FALSE as i16;
             (*task).data[15] = taskId as i16;
         }
         SCROLL_MULTI_BATTLE_TENT_RULES => {
-            (*task).data[0] = MAX_SCROLL_MULTI_ON_SCREEN;
-            (*task).data[1] = 7;
-            (*task).data[2] = 17;
-            (*task).data[3] = 1;
-            (*task).data[4] = 12;
-            (*task).data[5] = 12;
-            (*task).data[6] = FALSE as i16;
+            (*task).data[tMaxItemsOnScreen] = MAX_SCROLL_MULTI_ON_SCREEN;
+            (*task).data[tNumItems] = 7;
+            (*task).data[tLeft] = 17;
+            (*task).data[tTop] = 1;
+            (*task).data[tWidth] = 12;
+            (*task).data[tHeight] = 12;
+            (*task).data[tKeepOpenAfterSelect] = FALSE as i16;
             (*task).data[15] = taskId as i16;
         }
         _ => {
@@ -2425,64 +2491,63 @@ pub unsafe extern "C" fn ShowScrollableMultichoice() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_ShowScrollableMultichoice(taskId: u8) {
+pub(crate) unsafe fn Task_ShowScrollableMultichoice(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    LockPlayerFieldControls();
+    sScrollableMultichoice_ScrollOffset.set(0);
+    sScrollableMultichoice_ItemSpriteId.set(MAX_SPRITES);
+    FillFrontierExchangeCornerWindowAndItemIcon((*task).data[tScrollMultiId] as u16, 0);
+    ShowBattleFrontierTutorWindow((*task).data[tScrollMultiId] as u8, 0);
+    sScrollableMultichoice_ListMenuItem =
+        AllocZeroed((*task).data[tNumItems] as u32 * 8) as *mut ListMenuItem;
+    sFrontierExchangeCorner_NeverRead.set(0);
+    InitScrollableMultichoice();
     let mut width: u32 = 0;
     let mut i: u8 = 0;
-    let mut windowId: u8 = 0;
-    let mut template: WindowTemplate = zeroed();
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    LockPlayerFieldControls();
-    sScrollableMultichoice_ScrollOffset = 0;
-    sScrollableMultichoice_ItemSpriteId = MAX_SPRITES;
-    FillFrontierExchangeCornerWindowAndItemIcon((*task).data[11] as u16, 0);
-    ShowBattleFrontierTutorWindow((*task).data[11] as u8, 0);
-    sScrollableMultichoice_ListMenuItem =
-        AllocZeroed((*task).data[1] as u32 * 8) as *mut ListMenuItem;
-    sFrontierExchangeCorner_NeverRead = 0;
-    InitScrollableMultichoice();
-    width = 0;
-    i = 0;
-    while (i as i16) < (*task).data[1] {
-        let mut text: *mut u8 = sScrollableMultichoiceOptions[gSpecialVar_0x8004][i];
+    while (i as i16) < (*task).data[tNumItems] {
+        let text: *mut u8 = sScrollableMultichoiceOptions
+            [*(&raw const crate::ffi::gSpecialVar_0x8004)
+                .cast::<u16>()
+                .cast_mut()][i];
         (*sScrollableMultichoice_ListMenuItem.at(i)).name = text;
         (*sScrollableMultichoice_ListMenuItem.at(i)).id = i as i32;
         width = DisplayTextAndGetWidth(text, width as i32) as u32;
         i += 1;
     }
-    (*task).data[4] = ConvertPixelWidthToTileWidth(width as i32) as i16;
-    if (*task).data[2] as i32 + (*task).data[4] as i32 > 29 {
-        let mut adjustedLeft: i32 = 29 - (*task).data[4] as i32;
+    (*task).data[tWidth] = ConvertPixelWidthToTileWidth(width as i32) as i16;
+    if (*task).data[tLeft] as i32 + (*task).data[tWidth] as i32 > 29 {
+        let adjustedLeft: i32 = 29 - (*task).data[tWidth] as i32;
         if adjustedLeft < 0 {
-            (*task).data[2] = 0;
+            (*task).data[tLeft] = 0;
         } else {
-            (*task).data[2] = adjustedLeft as i16;
+            (*task).data[tLeft] = adjustedLeft as i16;
         }
     }
-    template = CreateWindowTemplate(
+    let mut template: WindowTemplate = CreateWindowTemplate(
         0,
-        (*task).data[2] as u8,
-        (*task).data[3] as u8,
-        (*task).data[4] as u8,
-        (*task).data[5] as u8,
+        (*task).data[tLeft] as u8,
+        (*task).data[tTop] as u8,
+        (*task).data[tWidth] as u8,
+        (*task).data[tHeight] as u8,
         0xF,
         0x64,
     );
-    windowId = AddWindow(&raw mut template) as u8;
-    (*task).data[13] = windowId as i16;
+    let windowId: u8 = AddWindow(&raw mut template) as u8;
+    (*task).data[tWindowId] = windowId as i16;
     SetStandardWindowBorderStyle(windowId, FALSE);
-    gScrollableMultichoice_ListMenuTemplate.totalItems = (*task).data[1] as u16;
-    gScrollableMultichoice_ListMenuTemplate.maxShowed = (*task).data[0] as u16;
-    gScrollableMultichoice_ListMenuTemplate.windowId = (*task).data[13] as u8;
+    gScrollableMultichoice_ListMenuTemplate.totalItems = (*task).data[tNumItems] as u16;
+    gScrollableMultichoice_ListMenuTemplate.maxShowed = (*task).data[tMaxItemsOnScreen] as u16;
+    gScrollableMultichoice_ListMenuTemplate.windowId = (*task).data[tWindowId] as u8;
     ScrollableMultichoice_UpdateScrollArrows(taskId);
-    (*task).data[14] = ListMenuInit(
+    (*task).data[tListTaskId] = ListMenuInit(
         &raw mut gScrollableMultichoice_ListMenuTemplate,
-        (*task).data[7] as u16,
-        (*task).data[8] as u16,
+        (*task).data[tScrollOffset] as u16,
+        (*task).data[tSelectedRow] as u16,
     ) as i16;
     ScheduleBgCopyTilemapToVram(0);
-    gTasks[taskId].func = Some(ScrollableMultichoice_ProcessInput);
+    task_set_func(taskId, Some(ScrollableMultichoice_ProcessInput));
 }
-pub(crate) unsafe extern "C" fn InitScrollableMultichoice() {
+unsafe fn InitScrollableMultichoice() {
     gScrollableMultichoice_ListMenuTemplate.items = sScrollableMultichoice_ListMenuItem;
     gScrollableMultichoice_ListMenuTemplate.moveCursorFunc = Some(ScrollableMultichoice_MoveCursor);
     gScrollableMultichoice_ListMenuTemplate.itemPrintFunc = None;
@@ -2502,32 +2567,35 @@ pub(crate) unsafe extern "C" fn InitScrollableMultichoice() {
     gScrollableMultichoice_ListMenuTemplate.set_fontId(FONT_NORMAL);
     gScrollableMultichoice_ListMenuTemplate.set_cursorKind(CURSOR_BLACK_ARROW);
 }
-pub(crate) unsafe extern "C" fn ScrollableMultichoice_MoveCursor(
+pub(crate) unsafe fn ScrollableMultichoice_MoveCursor(
     itemIndex: i32,
     onInit: u8,
     list: *mut ListMenu,
 ) {
-    let mut taskId: u8 = 0;
     PlaySE(SE_SELECT);
-    taskId = FindTaskIdByFunc(Some(ScrollableMultichoice_ProcessInput));
+    let taskId: u8 = FindTaskIdByFunc(Some(ScrollableMultichoice_ProcessInput));
     if taskId != TASK_NONE {
         let mut selection: u16 = 0;
-        let mut task: *mut Task = &raw mut gTasks[taskId];
-        ListMenuGetScrollAndRow((*task).data[14] as u8, &raw mut selection, null_mut());
-        sScrollableMultichoice_ScrollOffset = selection;
-        ListMenuGetCurrentItemArrayId((*task).data[14] as u8, &raw mut selection);
-        HideFrontierExchangeCornerItemIcon(
-            (*task).data[11] as u16,
-            sFrontierExchangeCorner_NeverRead,
+        let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+        ListMenuGetScrollAndRow(
+            (*task).data[tListTaskId] as u8,
+            &raw mut selection,
+            null_mut(),
         );
-        FillFrontierExchangeCornerWindowAndItemIcon((*task).data[11] as u16, selection);
-        ShowBattleFrontierTutorMoveDescription((*task).data[11] as u8, selection);
-        sFrontierExchangeCorner_NeverRead = selection;
+        sScrollableMultichoice_ScrollOffset.set(selection);
+        ListMenuGetCurrentItemArrayId((*task).data[tListTaskId] as u8, &raw mut selection);
+        HideFrontierExchangeCornerItemIcon(
+            (*task).data[tScrollMultiId] as u16,
+            sFrontierExchangeCorner_NeverRead.get(),
+        );
+        FillFrontierExchangeCornerWindowAndItemIcon((*task).data[tScrollMultiId] as u16, selection);
+        ShowBattleFrontierTutorMoveDescription((*task).data[tScrollMultiId] as u8, selection);
+        sFrontierExchangeCorner_NeverRead.set(selection);
     }
 }
-pub(crate) unsafe extern "C" fn ScrollableMultichoice_ProcessInput(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    let mut input: i32 = ListMenu_ProcessInput((*task).data[14] as u8);
+pub(crate) unsafe fn ScrollableMultichoice_ProcessInput(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    let input: i32 = ListMenu_ProcessInput((*task).data[tListTaskId] as u8);
     match input {
         LIST_NOTHING_CHOSEN => {}
         LIST_CANCEL => {
@@ -2538,9 +2606,9 @@ pub(crate) unsafe extern "C" fn ScrollableMultichoice_ProcessInput(taskId: u8) {
         _ => {
             gSpecialVar_Result = input as u16;
             PlaySE(SE_SELECT);
-            if (*task).data[6] == 0 {
+            if (*task).data[tKeepOpenAfterSelect] == 0 {
                 CloseScrollableMultichoice(taskId);
-            } else if input == (*task).data[1] as i32 - 1 {
+            } else if input == (*task).data[tNumItems] as i32 - 1 {
                 CloseScrollableMultichoice(taskId);
             } else {
                 ScrollableMultichoice_RemoveScrollArrows(taskId);
@@ -2550,74 +2618,75 @@ pub(crate) unsafe extern "C" fn ScrollableMultichoice_ProcessInput(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn CloseScrollableMultichoice(taskId: u8) {
+unsafe fn CloseScrollableMultichoice(taskId: u8) {
     let mut selection: u16 = 0;
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    ListMenuGetCurrentItemArrayId((*task).data[14] as u8, &raw mut selection);
-    HideFrontierExchangeCornerItemIcon((*task).data[11] as u16, selection);
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    ListMenuGetCurrentItemArrayId((*task).data[tListTaskId] as u8, &raw mut selection);
+    HideFrontierExchangeCornerItemIcon((*task).data[tScrollMultiId] as u16, selection);
     ScrollableMultichoice_RemoveScrollArrows(taskId);
-    DestroyListMenuTask((*task).data[14] as u8, null_mut(), null_mut());
+    DestroyListMenuTask((*task).data[tListTaskId] as u8, null_mut(), null_mut());
     Free(sScrollableMultichoice_ListMenuItem as *mut c_void);
-    ClearStdWindowAndFrameToTransparent((*task).data[13] as u8, TRUE);
-    FillWindowPixelBuffer((*task).data[13] as u8, 0);
-    CopyWindowToVram((*task).data[13] as u8, COPYWIN_GFX);
-    RemoveWindow((*task).data[13] as u8);
+    ClearStdWindowAndFrameToTransparent((*task).data[tWindowId] as u8, TRUE);
+    FillWindowPixelBuffer((*task).data[tWindowId] as u8, 0);
+    CopyWindowToVram((*task).data[tWindowId] as u8, COPYWIN_GFX);
+    RemoveWindow((*task).data[tWindowId] as u8);
     DestroyTask(taskId);
     ScriptContext_Enable();
 }
-pub(crate) unsafe extern "C" fn Task_ScrollableMultichoice_WaitReturnToList(taskId: u8) {
-    match gTasks[taskId].data[6] {
-        2 => {
-            gTasks[taskId].data[6] = 1;
-            gTasks[taskId].func = Some(Task_ScrollableMultichoice_ReturnToList);
-        }
-        _ => {}
+pub(crate) unsafe fn Task_ScrollableMultichoice_WaitReturnToList(taskId: u8) {
+    if task_get(taskId, tKeepOpenAfterSelect) == 2 {
+        task_set(taskId, tKeepOpenAfterSelect, 1);
+        task_set_func(taskId, Some(Task_ScrollableMultichoice_ReturnToList));
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScrollableMultichoice_TryReturnToList() {
-    let mut taskId: u8 = FindTaskIdByFunc(Some(Task_ScrollableMultichoice_WaitReturnToList));
+pub unsafe fn ScrollableMultichoice_TryReturnToList() {
+    let taskId: u8 = FindTaskIdByFunc(Some(Task_ScrollableMultichoice_WaitReturnToList));
     if taskId == TASK_NONE {
         ScriptContext_Enable();
     } else {
-        gTasks[taskId].data[6] += 1;
+        task_set(
+            taskId,
+            tKeepOpenAfterSelect,
+            task_get(taskId, tKeepOpenAfterSelect) + 1,
+        );
     }
 }
-pub(crate) unsafe extern "C" fn Task_ScrollableMultichoice_ReturnToList(taskId: u8) {
+pub(crate) unsafe fn Task_ScrollableMultichoice_ReturnToList(taskId: u8) {
     LockPlayerFieldControls();
     ScrollableMultichoice_UpdateScrollArrows(taskId);
-    gTasks[taskId].func = Some(ScrollableMultichoice_ProcessInput);
+    task_set_func(taskId, Some(ScrollableMultichoice_ProcessInput));
 }
-pub(crate) unsafe extern "C" fn ScrollableMultichoice_UpdateScrollArrows(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    let mut template: ScrollArrowsTemplate = zeroed();
-    template = *sScrollableMultichoice_ScrollArrowsTemplate_25;
-    if (*task).data[0] != (*task).data[1] {
-        template.firstX = ((*task).data[4] / 2) as u8 * 8 + 12 + ((*task).data[2] as u8 - 1) * 8;
+unsafe fn ScrollableMultichoice_UpdateScrollArrows(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    let mut template: ScrollArrowsTemplate = *sScrollableMultichoice_ScrollArrowsTemplate_25;
+    if (*task).data[tMaxItemsOnScreen] != (*task).data[tNumItems] {
+        template.firstX =
+            ((*task).data[tWidth] / 2) as u8 * 8 + 12 + ((*task).data[tLeft] as u8 - 1) * 8;
         template.firstY = 8;
-        template.secondX = ((*task).data[4] / 2) as u8 * 8 + 12 + ((*task).data[2] as u8 - 1) * 8;
-        template.secondY = (*task).data[5] as u8 * 8 + 10;
+        template.secondX =
+            ((*task).data[tWidth] / 2) as u8 * 8 + 12 + ((*task).data[tLeft] as u8 - 1) * 8;
+        template.secondY = (*task).data[tHeight] as u8 * 8 + 10;
         template.fullyUpThreshold = 0;
-        template.fullyDownThreshold = (*task).data[1] as u16 - (*task).data[0] as u16;
-        (*task).data[12] = AddScrollIndicatorArrowPair(
+        template.fullyDownThreshold =
+            (*task).data[tNumItems] as u16 - (*task).data[tMaxItemsOnScreen] as u16;
+        (*task).data[tScrollArrowId] = AddScrollIndicatorArrowPair(
             &raw mut template,
-            &raw mut sScrollableMultichoice_ScrollOffset,
+            sScrollableMultichoice_ScrollOffset.as_ptr(),
         ) as i16;
     }
 }
-pub(crate) unsafe extern "C" fn ScrollableMultichoice_RemoveScrollArrows(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
-    if (*task).data[0] != (*task).data[1] {
-        RemoveScrollIndicatorArrowPair((*task).data[12] as u8);
+unsafe fn ScrollableMultichoice_RemoveScrollArrows(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+    if (*task).data[tMaxItemsOnScreen] != (*task).data[tNumItems] {
+        RemoveScrollIndicatorArrowPair((*task).data[tScrollArrowId] as u8);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowGlassWorkshopMenu() {}
+pub fn ShowGlassWorkshopMenu() {}
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBattleTowerLinkPlayerGfx() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 2 {
+pub unsafe fn SetBattleTowerLinkPlayerGfx() {
+    for i in 0..2u8 {
         if gLinkPlayers[i].gender == MALE {
             VarSet(VAR_OBJ_GFX_ID_F - i as u16, OBJ_EVENT_GFX_BRENDAN_NORMAL);
         } else {
@@ -2626,55 +2695,54 @@ pub unsafe extern "C" fn SetBattleTowerLinkPlayerGfx() {
                 OBJ_EVENT_GFX_RIVAL_MAY_NORMAL as u16,
             );
         }
-        i += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowNatureGirlMessage() {
-    let mut nature: u8 = 0;
+pub unsafe fn ShowNatureGirlMessage() {
     if gSpecialVar_0x8004 >= PARTY_SIZE as u16 {
         gSpecialVar_0x8004 = 0;
     }
-    nature = GetNature(&raw mut gPlayerParty[gSpecialVar_0x8004]);
+    let nature: u8 = GetNature(
+        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()],
+    );
     ShowFieldMessage(sNatureGirlMessages_24[nature]);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateFrontierGambler(daysSince: u16) {
-    let mut var: *mut u16 = GetVarPointer(VAR_FRONTIER_GAMBLER_CHALLENGE);
+pub unsafe fn UpdateFrontierGambler(daysSince: u16) {
+    let var: *mut u16 = GetVarPointer(VAR_FRONTIER_GAMBLER_CHALLENGE);
     *var += daysSince;
     *var = (*var as i32 % 12) as u16;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowFrontierGamblerLookingMessage() {
-    let mut challenge: u16 = VarGet(VAR_FRONTIER_GAMBLER_CHALLENGE);
+pub unsafe fn ShowFrontierGamblerLookingMessage() {
+    let challenge: u16 = VarGet(VAR_FRONTIER_GAMBLER_CHALLENGE);
     ShowFieldMessage(sFrontierGamblerLookingMessages_23[challenge]);
     VarSet(VAR_FRONTIER_GAMBLER_SET_CHALLENGE, challenge);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowFrontierGamblerGoMessage() {
+pub unsafe fn ShowFrontierGamblerGoMessage() {
     ShowFieldMessage(sFrontierGamblerGoMessages_22[VarGet(VAR_FRONTIER_GAMBLER_SET_CHALLENGE)]);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FrontierGamblerSetWonOrLost(won: u8) {
-    let mut battleMode: u16 = VarGet(VAR_FRONTIER_BATTLE_MODE);
-    let mut challenge: u16 = VarGet(VAR_FRONTIER_GAMBLER_SET_CHALLENGE);
-    let mut frontierFacilityId: u16 = VarGet(VAR_FRONTIER_FACILITY);
-    if VarGet(VAR_FRONTIER_GAMBLER_STATE) == FRONTIER_GAMBLER_PLACED_BET {
-        if sFrontierChallenges_21[challenge] as i32
+pub unsafe fn FrontierGamblerSetWonOrLost(won: u8) {
+    let battleMode: u16 = VarGet(VAR_FRONTIER_BATTLE_MODE);
+    let challenge: u16 = VarGet(VAR_FRONTIER_GAMBLER_SET_CHALLENGE);
+    let frontierFacilityId: u16 = VarGet(VAR_FRONTIER_FACILITY);
+    if VarGet(VAR_FRONTIER_GAMBLER_STATE) == FRONTIER_GAMBLER_PLACED_BET
+        && sFrontierChallenges_21[challenge] as i32
             == ((frontierFacilityId as i32) << 8) + battleMode as i32
-        {
-            if won != 0 {
-                VarSet(VAR_FRONTIER_GAMBLER_STATE, FRONTIER_GAMBLER_WON);
-            } else {
-                VarSet(VAR_FRONTIER_GAMBLER_STATE, FRONTIER_GAMBLER_LOST);
-            }
+    {
+        if won != 0 {
+            VarSet(VAR_FRONTIER_GAMBLER_STATE, FRONTIER_GAMBLER_WON);
+        } else {
+            VarSet(VAR_FRONTIER_GAMBLER_STATE, FRONTIER_GAMBLER_LOST);
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateBattlePointsWindow() {
+pub unsafe fn UpdateBattlePointsWindow() {
     let mut string: CArray<u8, 32> = zeroed();
-    let mut x: u32 = 0;
     StringCopy(
         ConvertIntToDecimalStringN(
             string.as_mut_ptr(),
@@ -2682,11 +2750,13 @@ pub unsafe extern "C" fn UpdateBattlePointsWindow() {
             STR_CONV_MODE_RIGHT_ALIGN,
             4,
         ),
-        gText_BP.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_BP).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
-    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, string.as_mut_ptr(), 48) as u32;
+    let x: u32 = GetStringRightAlignXOffset(FONT_NORMAL as i32, string.as_mut_ptr(), 48) as u32;
     AddTextPrinterParameterized(
-        sBattlePointsWindowId,
+        sBattlePointsWindowId.get(),
         FONT_NORMAL,
         string.as_mut_ptr(),
         x as u8,
@@ -2696,59 +2766,61 @@ pub unsafe extern "C" fn UpdateBattlePointsWindow() {
     );
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowBattlePointsWindow() {
-    sBattlePointsWindowId =
-        AddWindow((&raw const *sBattlePoints_WindowTemplate_20).cast_mut()) as u8;
-    SetStandardWindowBorderStyle(sBattlePointsWindowId, FALSE);
+pub unsafe fn ShowBattlePointsWindow() {
+    sBattlePointsWindowId
+        .set(AddWindow((&raw const *sBattlePoints_WindowTemplate_20).cast_mut()) as u8);
+    SetStandardWindowBorderStyle(sBattlePointsWindowId.get(), FALSE);
     UpdateBattlePointsWindow();
-    CopyWindowToVram(sBattlePointsWindowId, COPYWIN_GFX);
+    CopyWindowToVram(sBattlePointsWindowId.get(), COPYWIN_GFX);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CloseBattlePointsWindow() {
-    ClearStdWindowAndFrameToTransparent(sBattlePointsWindowId, TRUE);
-    RemoveWindow(sBattlePointsWindowId);
+pub unsafe fn CloseBattlePointsWindow() {
+    ClearStdWindowAndFrameToTransparent(sBattlePointsWindowId.get(), TRUE);
+    RemoveWindow(sBattlePointsWindowId.get());
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TakeFrontierBattlePoints() {
+pub unsafe fn TakeFrontierBattlePoints() {
     if (*gSaveBlock2Ptr).frontier.battlePoints < gSpecialVar_0x8004 {
         (*gSaveBlock2Ptr).frontier.battlePoints = 0;
     } else {
-        (*gSaveBlock2Ptr).frontier.battlePoints -= gSpecialVar_0x8004;
+        (*gSaveBlock2Ptr).frontier.battlePoints -= *(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut();
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GiveFrontierBattlePoints() {
+pub unsafe fn GiveFrontierBattlePoints() {
     if (*gSaveBlock2Ptr).frontier.battlePoints as i32 + gSpecialVar_0x8004 as i32
         > MAX_BATTLE_FRONTIER_POINTS as i32
     {
         (*gSaveBlock2Ptr).frontier.battlePoints = MAX_BATTLE_FRONTIER_POINTS;
     } else {
-        (*gSaveBlock2Ptr).frontier.battlePoints =
-            (*gSaveBlock2Ptr).frontier.battlePoints + gSpecialVar_0x8004;
+        (*gSaveBlock2Ptr).frontier.battlePoints += *(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut();
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFrontierBattlePoints() -> u16 {
-    return (*gSaveBlock2Ptr).frontier.battlePoints;
+pub unsafe fn GetFrontierBattlePoints() -> u16 {
+    (*gSaveBlock2Ptr).frontier.battlePoints
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowFrontierExchangeCornerItemIconWindow() {
-    sFrontierExchangeCorner_ItemIconWindowId =
-        AddWindow((&raw const *sFrontierExchangeCorner_ItemIconWindowTemplate_19).cast_mut()) as u8;
-    SetStandardWindowBorderStyle(sFrontierExchangeCorner_ItemIconWindowId, FALSE);
-    CopyWindowToVram(sFrontierExchangeCorner_ItemIconWindowId, COPYWIN_GFX);
+pub unsafe fn ShowFrontierExchangeCornerItemIconWindow() {
+    sFrontierExchangeCorner_ItemIconWindowId.set(AddWindow(
+        (&raw const *sFrontierExchangeCorner_ItemIconWindowTemplate_19).cast_mut(),
+    ) as u8);
+    SetStandardWindowBorderStyle(sFrontierExchangeCorner_ItemIconWindowId.get(), FALSE);
+    CopyWindowToVram(sFrontierExchangeCorner_ItemIconWindowId.get(), COPYWIN_GFX);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CloseFrontierExchangeCornerItemIconWindow() {
-    ClearStdWindowAndFrameToTransparent(sFrontierExchangeCorner_ItemIconWindowId, TRUE);
-    RemoveWindow(sFrontierExchangeCorner_ItemIconWindowId);
+pub unsafe fn CloseFrontierExchangeCornerItemIconWindow() {
+    ClearStdWindowAndFrameToTransparent(sFrontierExchangeCorner_ItemIconWindowId.get(), TRUE);
+    RemoveWindow(sFrontierExchangeCorner_ItemIconWindowId.get());
 }
-pub(crate) unsafe extern "C" fn FillFrontierExchangeCornerWindowAndItemIcon(
-    menu: u16,
-    selection: u16,
-) {
-    if menu >= SCROLL_MULTI_BF_EXCHANGE_CORNER_DECOR_VENDOR_1
-        && menu <= SCROLL_MULTI_BF_EXCHANGE_CORNER_HOLD_ITEM_VENDOR
+unsafe fn FillFrontierExchangeCornerWindowAndItemIcon(menu: u16, selection: u16) {
+    if (SCROLL_MULTI_BF_EXCHANGE_CORNER_DECOR_VENDOR_1
+        ..=SCROLL_MULTI_BF_EXCHANGE_CORNER_HOLD_ITEM_VENDOR)
+        .contains(&menu)
     {
         FillWindowPixelRect(0, 17, 0, 0, 216, 32);
         match menu {
@@ -2770,14 +2842,14 @@ pub(crate) unsafe extern "C" fn FillFrontierExchangeCornerWindowAndItemIcon(
                 } else {
                     FreeSpriteTilesByTag(TAG_ITEM_ICON);
                     FreeSpritePaletteByTag(TAG_ITEM_ICON);
-                    sScrollableMultichoice_ItemSpriteId = AddDecorationIconObject(
+                    sScrollableMultichoice_ItemSpriteId.set(AddDecorationIconObject(
                         sFrontierExchangeCorner_Decor1_17[selection] as u8,
                         33,
                         88,
                         0,
                         TAG_ITEM_ICON,
                         TAG_ITEM_ICON,
-                    );
+                    ));
                 }
             }
             SCROLL_MULTI_BF_EXCHANGE_CORNER_DECOR_VENDOR_2 => {
@@ -2798,14 +2870,14 @@ pub(crate) unsafe extern "C" fn FillFrontierExchangeCornerWindowAndItemIcon(
                 } else {
                     FreeSpriteTilesByTag(TAG_ITEM_ICON);
                     FreeSpritePaletteByTag(TAG_ITEM_ICON);
-                    sScrollableMultichoice_ItemSpriteId = AddDecorationIconObject(
+                    sScrollableMultichoice_ItemSpriteId.set(AddDecorationIconObject(
                         sFrontierExchangeCorner_Decor2_15[selection] as u8,
                         33,
                         88,
                         0,
                         TAG_ITEM_ICON,
                         TAG_ITEM_ICON,
-                    );
+                    ));
                 }
             }
             SCROLL_MULTI_BF_EXCHANGE_CORNER_VITAMIN_VENDOR => {
@@ -2838,68 +2910,77 @@ pub(crate) unsafe extern "C" fn FillFrontierExchangeCornerWindowAndItemIcon(
         }
     }
 }
-pub(crate) unsafe extern "C" fn ShowFrontierExchangeCornerItemIcon(item: u16) {
+unsafe fn ShowFrontierExchangeCornerItemIcon(item: u16) {
     FreeSpriteTilesByTag(TAG_ITEM_ICON);
     FreeSpritePaletteByTag(TAG_ITEM_ICON);
-    sScrollableMultichoice_ItemSpriteId = AddItemIconSprite(TAG_ITEM_ICON, TAG_ITEM_ICON, item);
-    if sScrollableMultichoice_ItemSpriteId != MAX_SPRITES {
-        gSprites[sScrollableMultichoice_ItemSpriteId]
+    sScrollableMultichoice_ItemSpriteId.set(AddItemIconSprite(TAG_ITEM_ICON, TAG_ITEM_ICON, item));
+    if sScrollableMultichoice_ItemSpriteId.get() != MAX_SPRITES {
+        gSprites[sScrollableMultichoice_ItemSpriteId.get()]
             .oam
             .set_priority(0);
-        gSprites[sScrollableMultichoice_ItemSpriteId].x = 36;
-        gSprites[sScrollableMultichoice_ItemSpriteId].y = 92;
+        gSprites[sScrollableMultichoice_ItemSpriteId.get()].x = 36;
+        gSprites[sScrollableMultichoice_ItemSpriteId.get()].y = 92;
     }
 }
-pub(crate) unsafe extern "C" fn HideFrontierExchangeCornerItemIcon(menu: u16, unused: u16) {
-    if sScrollableMultichoice_ItemSpriteId != MAX_SPRITES {
+unsafe fn HideFrontierExchangeCornerItemIcon(menu: u16, unused: u16) {
+    if sScrollableMultichoice_ItemSpriteId.get() != MAX_SPRITES {
         match menu {
             SCROLL_MULTI_BF_EXCHANGE_CORNER_DECOR_VENDOR_1
             | SCROLL_MULTI_BF_EXCHANGE_CORNER_DECOR_VENDOR_2
             | SCROLL_MULTI_BF_EXCHANGE_CORNER_VITAMIN_VENDOR
             | SCROLL_MULTI_BF_EXCHANGE_CORNER_HOLD_ITEM_VENDOR => {
                 DestroySpriteAndFreeResources(
-                    &raw mut gSprites[sScrollableMultichoice_ItemSpriteId],
+                    &raw mut gSprites[sScrollableMultichoice_ItemSpriteId.get()],
                 );
             }
             _ => {}
         }
-        sScrollableMultichoice_ItemSpriteId = MAX_SPRITES;
+        sScrollableMultichoice_ItemSpriteId.set(MAX_SPRITES);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferBattleFrontierTutorMoveName() {
+pub unsafe fn BufferBattleFrontierTutorMoveName() {
     if gSpecialVar_0x8005 != 0 {
         StringCopy(
             gStringVar1.as_mut_ptr(),
-            gMoveNames[sBattleFrontier_TutorMoves2[gSpecialVar_0x8004]]
-                .as_ptr()
-                .cast_mut(),
+            (*(&raw const crate::data::data_tables::gMoveNames)
+                .cast::<CArray<CArray<u8, 13>, 355>>())[sBattleFrontier_TutorMoves2
+                [*(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut()]]
+            .as_ptr()
+            .cast_mut(),
         );
     } else {
         StringCopy(
             gStringVar1.as_mut_ptr(),
-            gMoveNames[sBattleFrontier_TutorMoves1[gSpecialVar_0x8004]]
-                .as_ptr()
-                .cast_mut(),
+            (*(&raw const crate::data::data_tables::gMoveNames)
+                .cast::<CArray<CArray<u8, 13>, 355>>())[sBattleFrontier_TutorMoves1
+                [*(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut()]]
+            .as_ptr()
+            .cast_mut(),
         );
     }
 }
-pub(crate) unsafe extern "C" fn ShowBattleFrontierTutorWindow(menu: u8, selection: u16) {
+unsafe fn ShowBattleFrontierTutorWindow(menu: u8, selection: u16) {
     if menu == SCROLL_MULTI_BF_MOVE_TUTOR_1 || menu == SCROLL_MULTI_BF_MOVE_TUTOR_2 {
         if gSpecialVar_0x8006 == 0 {
-            sTutorMoveAndElevatorWindowId =
-                AddWindow((&raw const *sBattleFrontierTutor_WindowTemplate_10).cast_mut()) as u8;
-            SetStandardWindowBorderStyle(sTutorMoveAndElevatorWindowId, FALSE);
+            sTutorMoveAndElevatorWindowId.set(AddWindow(
+                (&raw const *sBattleFrontierTutor_WindowTemplate_10).cast_mut(),
+            ) as u8);
+            SetStandardWindowBorderStyle(sTutorMoveAndElevatorWindowId.get(), FALSE);
         }
         ShowBattleFrontierTutorMoveDescription(menu, selection);
     }
 }
-pub(crate) unsafe extern "C" fn ShowBattleFrontierTutorMoveDescription(menu: u8, selection: u16) {
+unsafe fn ShowBattleFrontierTutorMoveDescription(menu: u8, selection: u16) {
     if menu == SCROLL_MULTI_BF_MOVE_TUTOR_1 || menu == SCROLL_MULTI_BF_MOVE_TUTOR_2 {
-        FillWindowPixelRect(sTutorMoveAndElevatorWindowId, 17, 0, 0, 96, 48);
+        FillWindowPixelRect(sTutorMoveAndElevatorWindowId.get(), 17, 0, 0, 96, 48);
         if menu == SCROLL_MULTI_BF_MOVE_TUTOR_2 {
             AddTextPrinterParameterized(
-                sTutorMoveAndElevatorWindowId,
+                sTutorMoveAndElevatorWindowId.get(),
                 FONT_NORMAL,
                 sBattleFrontier_TutorMoveDescriptions2_9[selection],
                 0,
@@ -2909,7 +2990,7 @@ pub(crate) unsafe extern "C" fn ShowBattleFrontierTutorMoveDescription(menu: u8,
             );
         } else {
             AddTextPrinterParameterized(
-                sTutorMoveAndElevatorWindowId,
+                sTutorMoveAndElevatorWindowId.get(),
                 FONT_NORMAL,
                 sBattleFrontier_TutorMoveDescriptions1_8[selection],
                 0,
@@ -2921,30 +3002,30 @@ pub(crate) unsafe extern "C" fn ShowBattleFrontierTutorMoveDescription(menu: u8,
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CloseBattleFrontierTutorWindow() {
-    ClearStdWindowAndFrameToTransparent(sTutorMoveAndElevatorWindowId, TRUE);
-    RemoveWindow(sTutorMoveAndElevatorWindowId);
+pub unsafe fn CloseBattleFrontierTutorWindow() {
+    ClearStdWindowAndFrameToTransparent(sTutorMoveAndElevatorWindowId.get(), TRUE);
+    RemoveWindow(sTutorMoveAndElevatorWindowId.get());
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScrollableMultichoice_RedrawPersistentMenu() {
+pub unsafe fn ScrollableMultichoice_RedrawPersistentMenu() {
     let mut scrollOffset: u16 = 0;
     let mut selectedRow: u16 = 0;
-    let mut i: u8 = 0;
-    let mut taskId: u8 = FindTaskIdByFunc(Some(Task_ScrollableMultichoice_WaitReturnToList));
+    let taskId: u8 = FindTaskIdByFunc(Some(Task_ScrollableMultichoice_WaitReturnToList));
     if taskId != TASK_NONE {
-        let mut task: *mut Task = &raw mut gTasks[taskId];
+        let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
         ListMenuGetScrollAndRow(
-            (*task).data[14] as u8,
+            (*task).data[tListTaskId] as u8,
             &raw mut scrollOffset,
             &raw mut selectedRow,
         );
-        SetStandardWindowBorderStyle((*task).data[13] as u8, FALSE);
-        i = 0;
-        while i < MAX_SCROLL_MULTI_ON_SCREEN as u8 {
+        SetStandardWindowBorderStyle((*task).data[tWindowId] as u8, FALSE);
+        for i in 0..(MAX_SCROLL_MULTI_ON_SCREEN as u8) {
             AddTextPrinterParameterized5(
-                (*task).data[13] as u8,
+                (*task).data[tWindowId] as u8,
                 FONT_NORMAL,
-                sScrollableMultichoiceOptions[gSpecialVar_0x8004][scrollOffset as i32 + i as i32],
+                sScrollableMultichoiceOptions[*(&raw const crate::ffi::gSpecialVar_0x8004)
+                    .cast::<u16>()
+                    .cast_mut()][scrollOffset as i32 + i as i32],
                 10,
                 i * 16,
                 TEXT_SKIP_DRAW,
@@ -2952,33 +3033,34 @@ pub unsafe extern "C" fn ScrollableMultichoice_RedrawPersistentMenu() {
                 0,
                 0,
             );
-            i += 1;
         }
         AddTextPrinterParameterized(
-            (*task).data[13] as u8,
+            (*task).data[tWindowId] as u8,
             FONT_NORMAL,
-            gText_SelectorArrow.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_SelectorArrow).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             0,
             selectedRow as u8 * 16,
             TEXT_SKIP_DRAW,
             None,
         );
-        PutWindowTilemap((*task).data[13] as u8);
-        CopyWindowToVram((*task).data[13] as u8, COPYWIN_FULL);
+        PutWindowTilemap((*task).data[tWindowId] as u8);
+        CopyWindowToVram((*task).data[tWindowId] as u8, COPYWIN_FULL);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBattleFrontierTutorMoveIndex() {
+pub unsafe fn GetBattleFrontierTutorMoveIndex() {
     let mut i: u8 = 0;
-    let mut moveTutor: u16 = 0;
-    let mut moveIndex: u16 = 0;
     gSpecialVar_0x8005 = 0;
-    moveTutor = VarGet(VAR_TEMP_FRONTIER_TUTOR_ID);
-    moveIndex = VarGet(VAR_TEMP_FRONTIER_TUTOR_SELECTION);
+    let moveTutor: u16 = VarGet(VAR_TEMP_FRONTIER_TUTOR_ID);
+    let moveIndex: u16 = VarGet(VAR_TEMP_FRONTIER_TUTOR_SELECTION);
     if moveTutor != 0 {
         i = 0;
         loop {
-            if gTutorMoves[i] == sBattleFrontier_TutorMoves2[moveIndex] {
+            if (*(&raw const crate::data::party_menu::gTutorMoves).cast::<CArray<u16, 0>>())[i]
+                == sBattleFrontier_TutorMoves2[moveIndex]
+            {
                 gSpecialVar_0x8005 = i as u16;
                 break;
             }
@@ -2990,7 +3072,9 @@ pub unsafe extern "C" fn GetBattleFrontierTutorMoveIndex() {
     } else {
         i = 0;
         loop {
-            if gTutorMoves[i] == sBattleFrontier_TutorMoves1[moveIndex] {
+            if (*(&raw const crate::data::party_menu::gTutorMoves).cast::<CArray<u16, 0>>())[i]
+                == sBattleFrontier_TutorMoves1[moveIndex]
+            {
                 gSpecialVar_0x8005 = i as u16;
                 break;
             }
@@ -3002,32 +3086,32 @@ pub unsafe extern "C" fn GetBattleFrontierTutorMoveIndex() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScrollableMultichoice_ClosePersistentMenu() {
-    let mut taskId: u8 = FindTaskIdByFunc(Some(Task_ScrollableMultichoice_WaitReturnToList));
+pub unsafe fn ScrollableMultichoice_ClosePersistentMenu() {
+    let taskId: u8 = FindTaskIdByFunc(Some(Task_ScrollableMultichoice_WaitReturnToList));
     if taskId != TASK_NONE {
-        let mut task: *mut Task = &raw mut gTasks[taskId];
-        DestroyListMenuTask((*task).data[14] as u8, null_mut(), null_mut());
+        let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
+        DestroyListMenuTask((*task).data[tListTaskId] as u8, null_mut(), null_mut());
         Free(sScrollableMultichoice_ListMenuItem as *mut c_void);
-        ClearStdWindowAndFrameToTransparent((*task).data[13] as u8, TRUE);
-        FillWindowPixelBuffer((*task).data[13] as u8, 0);
-        ClearWindowTilemap((*task).data[13] as u8);
-        CopyWindowToVram((*task).data[13] as u8, COPYWIN_GFX);
-        RemoveWindow((*task).data[13] as u8);
+        ClearStdWindowAndFrameToTransparent((*task).data[tWindowId] as u8, TRUE);
+        FillWindowPixelBuffer((*task).data[tWindowId] as u8, 0);
+        ClearWindowTilemap((*task).data[tWindowId] as u8);
+        CopyWindowToVram((*task).data[tWindowId] as u8, COPYWIN_GFX);
+        RemoveWindow((*task).data[tWindowId] as u8);
         DestroyTask(taskId);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoDeoxysRockInteraction() {
+pub unsafe fn DoDeoxysRockInteraction() {
     CreateTask(Some(Task_DeoxysRockInteraction), 8);
 }
-pub(crate) unsafe extern "C" fn Task_DeoxysRockInteraction(taskId: u8) {
+pub(crate) unsafe fn Task_DeoxysRockInteraction(taskId: u8) {
     if FlagGet(FLAG_DEOXYS_ROCK_COMPLETE) == TRUE {
         gSpecialVar_Result = DEOXYS_ROCK_COMPLETE;
         ScriptContext_Enable();
         DestroyTask(taskId);
     } else {
         let mut rockLevel: u16 = VarGet(VAR_DEOXYS_ROCK_LEVEL);
-        let mut stepCount: u16 = VarGet(VAR_DEOXYS_ROCK_STEP_COUNT);
+        let stepCount: u16 = VarGet(VAR_DEOXYS_ROCK_STEP_COUNT);
         VarSet(VAR_DEOXYS_ROCK_STEP_COUNT, 0);
         if rockLevel != 0 && (sStoneMaxStepCounts_7[rockLevel as i32 - 1] as u16) < stepCount {
             ChangeDeoxysRockLevel(0);
@@ -3048,7 +3132,7 @@ pub(crate) unsafe extern "C" fn Task_DeoxysRockInteraction(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn ChangeDeoxysRockLevel(rockLevel: u8) {
+unsafe fn ChangeDeoxysRockLevel(rockLevel: u8) {
     let mut objectEventId: u8 = 0;
     LoadPalette(
         (&raw const sDeoxysRockPalettes[rockLevel]).cast_mut() as *mut c_void,
@@ -3084,14 +3168,13 @@ pub(crate) unsafe extern "C" fn ChangeDeoxysRockLevel(rockLevel: u8) {
         sDeoxysRockCoords[rockLevel][1] as i16,
     );
 }
-pub(crate) unsafe extern "C" fn WaitForDeoxysRockMovement(taskId: u8) {
+pub(crate) unsafe fn WaitForDeoxysRockMovement(taskId: u8) {
     if FieldEffectActiveListContains(FLDEFF_MOVE_DEOXYS_ROCK) == FALSE {
         ScriptContext_Enable();
         DestroyTask(taskId);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IncrementBirthIslandRockStepCount() {
+pub unsafe fn IncrementBirthIslandRockStepCount() {
     let mut stepCount: u16 = VarGet(VAR_DEOXYS_ROCK_STEP_COUNT);
     if (*gSaveBlock1Ptr).location.mapNum == 58 && (*gSaveBlock1Ptr).location.mapGroup == 26 {
         if ({
@@ -3106,7 +3189,7 @@ pub unsafe extern "C" fn IncrementBirthIslandRockStepCount() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetDeoxysRockPalette() {
+pub unsafe fn SetDeoxysRockPalette() {
     LoadPalette(
         (&raw const sDeoxysRockPalettes[VarGet(VAR_DEOXYS_ROCK_LEVEL) as u8]).cast_mut()
             as *mut c_void,
@@ -3115,33 +3198,28 @@ pub unsafe extern "C" fn SetDeoxysRockPalette() {
     );
     BlendPalettes(0x4000000, 16, 0);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetPCBoxToSendMon(boxId: u8) {
-    sPCBoxToSendMon = boxId;
+pub unsafe fn SetPCBoxToSendMon(boxId: u8) {
+    sPCBoxToSendMon.set(boxId);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPCBoxToSendMon() -> u16 {
-    return sPCBoxToSendMon as u16;
+pub unsafe fn GetPCBoxToSendMon() -> u16 {
+    sPCBoxToSendMon.get() as u16
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShouldShowBoxWasFullMessage() -> u8 {
-    if FlagGet(FLAG_SHOWN_BOX_WAS_FULL_MESSAGE) == 0 {
-        if StorageGetCurrentBox() as u16 != VarGet(VAR_PC_BOX_TO_SEND_MON) {
-            FlagSet(FLAG_SHOWN_BOX_WAS_FULL_MESSAGE);
-            return TRUE;
-        }
+pub unsafe fn ShouldShowBoxWasFullMessage() -> u8 {
+    if FlagGet(FLAG_SHOWN_BOX_WAS_FULL_MESSAGE) == 0
+        && StorageGetCurrentBox() as u16 != VarGet(VAR_PC_BOX_TO_SEND_MON)
+    {
+        FlagSet(FLAG_SHOWN_BOX_WAS_FULL_MESSAGE);
+        return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsDestinationBoxFull() -> u8 {
-    let mut r#box: i32 = 0;
-    let mut i: i32 = 0;
+pub unsafe fn IsDestinationBoxFull() -> u8 {
     SetPCBoxToSendMon(VarGet(VAR_PC_BOX_TO_SEND_MON) as u8);
-    r#box = StorageGetCurrentBox() as i32;
+    let mut r#box: i32 = StorageGetCurrentBox() as i32;
     loop {
-        i = 0;
-        while i < IN_BOX_COUNT {
+        for i in 0..IN_BOX_COUNT {
             if GetBoxMonData3(
                 GetBoxedMonPtr(r#box as u8, i as u8),
                 MON_DATA_SPECIES,
@@ -3154,7 +3232,6 @@ pub unsafe extern "C" fn IsDestinationBoxFull() -> u8 {
                 VarSet(VAR_PC_BOX_TO_SEND_MON, r#box as u16);
                 return ShouldShowBoxWasFullMessage();
             }
-            i += 1;
         }
         if ({
             r#box += 1;
@@ -3167,10 +3244,10 @@ pub unsafe extern "C" fn IsDestinationBoxFull() -> u8 {
             break;
         }
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateAbnormalWeatherEvent() {
+pub unsafe fn CreateAbnormalWeatherEvent() {
     let mut randomValue: u16 = Random();
     VarSet(VAR_ABNORMAL_WEATHER_STEP_COUNTER, 0);
     if FlagGet(FLAG_DEFEATED_KYOGRE) == TRUE {
@@ -3198,8 +3275,8 @@ pub unsafe extern "C" fn CreateAbnormalWeatherEvent() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetAbnormalWeatherMapNameAndType() -> u32 {
-    let mut abnormalWeather: u16 = VarGet(VAR_ABNORMAL_WEATHER_LOCATION);
+pub unsafe fn GetAbnormalWeatherMapNameAndType() -> u32 {
+    let abnormalWeather: u16 = VarGet(VAR_ABNORMAL_WEATHER_LOCATION);
     GetMapName(
         gStringVar1.as_mut_ptr(),
         sAbnormalWeatherMapNumbers_6[abnormalWeather as i32 - 1] as u16,
@@ -3212,13 +3289,12 @@ pub unsafe extern "C" fn GetAbnormalWeatherMapNameAndType() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AbnormalWeatherHasExpired() -> u8 {
+pub unsafe fn AbnormalWeatherHasExpired() -> u8 {
     let mut steps: u16 = VarGet(VAR_ABNORMAL_WEATHER_STEP_COUNTER);
-    let mut abnormalWeather: u16 = VarGet(VAR_ABNORMAL_WEATHER_LOCATION);
+    let abnormalWeather: u16 = VarGet(VAR_ABNORMAL_WEATHER_LOCATION);
     if abnormalWeather == ABNORMAL_WEATHER_NONE {
         return FALSE;
     }
@@ -3228,14 +3304,11 @@ pub unsafe extern "C" fn AbnormalWeatherHasExpired() -> u8 {
     }) > 999
     {
         VarSet(VAR_ABNORMAL_WEATHER_STEP_COUNTER, 0);
-        if (*gSaveBlock1Ptr).location.mapGroup == 24 {
-            match (*gSaveBlock1Ptr).location.mapNum {
-                101 | 102 | 103 | 104 | 105 => {
-                    VarSet(VAR_SHOULD_END_ABNORMAL_WEATHER, 1);
-                    return FALSE;
-                }
-                _ => {}
-            }
+        if (*gSaveBlock1Ptr).location.mapGroup == 24
+            && let 101..=105 = (*gSaveBlock1Ptr).location.mapNum
+        {
+            VarSet(VAR_SHOULD_END_ABNORMAL_WEATHER, 1);
+            return FALSE;
         }
         if (*gSaveBlock1Ptr).location.mapGroup == 0 {
             match (*gSaveBlock1Ptr).location.mapNum {
@@ -3261,74 +3334,69 @@ pub unsafe extern "C" fn AbnormalWeatherHasExpired() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Unused_SetWeatherSunny() {
+pub unsafe fn Unused_SetWeatherSunny() {
     SetCurrentAndNextWeather(WEATHER_SUNNY);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMartEmployeeObjectEventId() -> u32 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 12 {
-        if (*gSaveBlock1Ptr).location.mapGroup as i32 == sPokeMarts_4[i][0] as i32 {
-            if (*gSaveBlock1Ptr).location.mapNum as i32 == sPokeMarts_4[i][1] as i32 {
-                return sPokeMarts_4[i][2] as u32;
-            }
-        }
-        i += 1;
-    }
-    return 1;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsTrainerRegistered() -> u32 {
-    let mut index: i32 = GetRematchIdxByTrainerIdx(gSpecialVar_0x8004 as i32);
-    if index >= 0 {
-        if FlagGet(TRAINER_REGISTERED_FLAGS_START + index as u16) == TRUE {
-            return TRUE as u32;
+pub unsafe fn GetMartEmployeeObjectEventId() -> u32 {
+    for i in 0..12u8 {
+        if (*gSaveBlock1Ptr).location.mapGroup as i32 == sPokeMarts_4[i][0] as i32
+            && (*gSaveBlock1Ptr).location.mapNum as i32 == sPokeMarts_4[i][1] as i32
+        {
+            return sPokeMarts_4[i][2] as u32;
         }
     }
-    return FALSE as u32;
+    1
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShouldDistributeEonTicket() -> u32 {
+pub unsafe fn IsTrainerRegistered() -> u32 {
+    let index: i32 = GetRematchIdxByTrainerIdx(gSpecialVar_0x8004 as i32);
+    if index >= 0 && FlagGet(TRAINER_REGISTERED_FLAGS_START + index as u16) == TRUE {
+        return TRUE as u32;
+    }
+    FALSE as u32
+}
+#[unsafe(no_mangle)]
+pub unsafe fn ShouldDistributeEonTicket() -> u32 {
     if VarGet(VAR_DISTRIBUTE_EON_TICKET) == 0 {
         return FALSE as u32;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleTowerReconnectLink() {
-    sBattleTowerMultiBattleTypeFlags = gBattleTypeFlags;
+pub unsafe fn BattleTowerReconnectLink() {
+    sBattleTowerMultiBattleTypeFlags.set(gBattleTypeFlags);
     gBattleTypeFlags = 0;
     if gReceivedRemoteLinkPlayers == 0 {
         CreateTask(Some(Task_ReconnectWithLinkPlayers), 5);
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LinkRetireStatusWithBattleTowerPartner() {
+pub unsafe fn LinkRetireStatusWithBattleTowerPartner() {
     CreateTask(Some(Task_LinkRetireStatusWithBattleTowerPartner), 5);
 }
-pub(crate) unsafe extern "C" fn Task_LinkRetireStatusWithBattleTowerPartner(taskId: u8) {
-    match gTasks[taskId].data[0] {
+pub(crate) unsafe fn Task_LinkRetireStatusWithBattleTowerPartner(taskId: u8) {
+    match task_get(taskId, tState) {
         0 => {
             if FuncIsActiveTask(Some(Task_ReconnectWithLinkPlayers)) == 0 {
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
         1 => {
             if IsLinkTaskFinished() == TRUE {
                 if GetMultiplayerId() == 0 {
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 } else {
                     SendBlock(
                         BitmaskAllOtherLinkPlayers(),
                         &raw mut gSpecialVar_0x8004 as *mut c_void,
                         2,
                     );
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
         }
@@ -3353,20 +3421,20 @@ pub(crate) unsafe extern "C" fn Task_LinkRetireStatusWithBattleTowerPartner(task
                         gSpecialVar_Result = BATTLE_TOWER_LINKSTAT_CONTINUE;
                     }
                 }
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
         3 => {
             if IsLinkTaskFinished() == TRUE {
                 if GetMultiplayerId() != 0 {
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 } else {
                     SendBlock(
                         BitmaskAllOtherLinkPlayers(),
                         &raw mut gSpecialVar_Result as *mut c_void,
                         2,
                     );
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
         }
@@ -3375,45 +3443,53 @@ pub(crate) unsafe extern "C" fn Task_LinkRetireStatusWithBattleTowerPartner(task
                 if GetMultiplayerId() != 0 {
                     gSpecialVar_Result = gBlockRecvBuffer[0][0];
                     ResetBlockReceivedFlag(0);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 } else {
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             }
         }
         5 => {
             if GetMultiplayerId() == 0 {
                 if gSpecialVar_Result == BATTLE_TOWER_LINKSTAT_MEMBER_RETIRE {
-                    ShowFieldAutoScrollMessage(gText_YourPartnerHasRetired.as_ptr().cast_mut());
+                    ShowFieldAutoScrollMessage(
+                        (*crate::asmdata::gText_YourPartnerHasRetired.cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
+                    );
                 }
             } else {
                 if gSpecialVar_Result == BATTLE_TOWER_LINKSTAT_LEADER_RETIRE {
-                    ShowFieldAutoScrollMessage(gText_YourPartnerHasRetired.as_ptr().cast_mut());
+                    ShowFieldAutoScrollMessage(
+                        (*crate::asmdata::gText_YourPartnerHasRetired.cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
+                    );
                 }
             }
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         6 => {
             if IsTextPrinterActive(0) == 0 {
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
         7 => {
             if IsLinkTaskFinished() == TRUE {
                 SetLinkStandbyCallback();
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
         8 => {
             if IsLinkTaskFinished() == TRUE {
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
         9 => {
             if gWirelessCommType == 0 {
                 SetCloseLinkCallback();
             }
-            gBattleTypeFlags = sBattleTowerMultiBattleTypeFlags;
+            gBattleTypeFlags = sBattleTowerMultiBattleTypeFlags.get();
             ScriptContext_Enable();
             DestroyTask(taskId);
         }
@@ -3421,7 +3497,7 @@ pub(crate) unsafe extern "C" fn Task_LinkRetireStatusWithBattleTowerPartner(task
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Script_DoRayquazaScene() {
+pub unsafe fn Script_DoRayquazaScene() {
     if gSpecialVar_0x8004 == 0 {
         DoRayquazaScene(0, TRUE, Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
     } else {
@@ -3429,12 +3505,12 @@ pub unsafe extern "C" fn Script_DoRayquazaScene() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoopWingFlapSE() {
+pub unsafe fn LoopWingFlapSE() {
     CreateTask(Some(Task_LoopWingFlapSE), 8);
     PlaySE(SE_M_WING_ATTACK);
 }
-pub(crate) unsafe extern "C" fn Task_LoopWingFlapSE(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_LoopWingFlapSE(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(1) += 1;
     if *data.at(1) as i32 == gSpecialVar_0x8005 as i32 {
         *data += 1;
@@ -3446,23 +3522,19 @@ pub(crate) unsafe extern "C" fn Task_LoopWingFlapSE(taskId: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CloseBattlePikeCurtain() {
-    let mut taskId: u8 = CreateTask(Some(Task_CloseBattlePikeCurtain), 8);
-    gTasks[taskId].data[0] = 4;
-    gTasks[taskId].data[1] = 4;
-    gTasks[taskId].data[2] = 4;
-    gTasks[taskId].data[3] = 0;
+pub unsafe fn CloseBattlePikeCurtain() {
+    let taskId: u8 = CreateTask(Some(Task_CloseBattlePikeCurtain), 8);
+    task_set(taskId, 0, 4);
+    task_set(taskId, 1, 4);
+    task_set(taskId, 2, 4);
+    task_set(taskId, tCurrentFrame, 0);
 }
-pub(crate) unsafe extern "C" fn Task_CloseBattlePikeCurtain(taskId: u8) {
-    let mut x: u8 = 0;
-    let mut y: u8 = 0;
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_CloseBattlePikeCurtain(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(*data.at(3)) -= 1;
     if *data.at(*data.at(3)) == 0 {
-        y = 0;
-        while y < CURTAIN_HEIGHT {
-            x = 0;
-            while x < CURTAIN_WIDTH {
+        for y in 0..CURTAIN_HEIGHT {
+            for x in 0..CURTAIN_WIDTH {
                 MapGridSetMetatileIdAt(
                     (*gSaveBlock1Ptr).pos.x as i32 + x as i32 + MAP_OFFSET - 1,
                     (*gSaveBlock1Ptr).pos.y as i32 + y as i32 + MAP_OFFSET - 3,
@@ -3471,9 +3543,7 @@ pub(crate) unsafe extern "C" fn Task_CloseBattlePikeCurtain(taskId: u8) {
                         + y as u16 * METATILE_ROW_WIDTH
                         + *data.at(3) as u16 * CURTAIN_HEIGHT as u16 * METATILE_ROW_WIDTH,
                 );
-                x += 1;
             }
-            y += 1;
         }
         DrawWholeMapView();
         *data.at(3) += 1;
@@ -3484,12 +3554,12 @@ pub(crate) unsafe extern "C" fn Task_CloseBattlePikeCurtain(taskId: u8) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBattlePyramidHint() {
+pub unsafe fn GetBattlePyramidHint() {
     gSpecialVar_Result = (gSpecialVar_0x8004 as i32 / 7) as u16;
     gSpecialVar_Result -= (gSpecialVar_Result as i32 / 20) as u16 * TOTAL_PYRAMID_ROUNDS;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetHealLocationFromDewford() {
+pub unsafe fn ResetHealLocationFromDewford() {
     if (*gSaveBlock1Ptr).lastHealLocation.mapGroup == 0
         && (*gSaveBlock1Ptr).lastHealLocation.mapNum == 11
     {
@@ -3497,33 +3567,32 @@ pub unsafe extern "C" fn ResetHealLocationFromDewford() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InPokemonCenter() -> u8 {
-    let mut i: i32 = 0;
-    let mut map: u16 = (((*gSaveBlock1Ptr).location.mapGroup as u16) << 8)
+pub unsafe fn InPokemonCenter() -> u8 {
+    let map: u16 = (((*gSaveBlock1Ptr).location.mapGroup as u16) << 8)
         + (*gSaveBlock1Ptr).location.mapNum as u16;
-    i = 0;
+    let mut i: i32 = 0;
     while sPokemonCenters_3[i] != MAP_UNDEFINED {
         if sPokemonCenters_3[i] == map {
             return TRUE;
         }
         i += 1;
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetFanClub() {
+pub unsafe fn ResetFanClub() {
     (*gSaveBlock1Ptr).vars[65] = 0;
     (*gSaveBlock1Ptr).vars[66] = 0;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryLoseFansFromPlayTimeAfterLinkBattle() {
+pub unsafe fn TryLoseFansFromPlayTimeAfterLinkBattle() {
     if DidPlayerGetFirstFans() != 0 {
         TryLoseFansFromPlayTime();
         (*gSaveBlock1Ptr).vars[66] = (*gSaveBlock2Ptr).playTimeHours;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateTrainerFanClubGameClear() {
+pub unsafe fn UpdateTrainerFanClubGameClear() {
     if ((*gSaveBlock1Ptr).vars[65] >> 7) as i32 & 1 == 0 {
         SetPlayerGotFirstFans();
         SetInitialFansOfPlayer();
@@ -3536,8 +3605,7 @@ pub unsafe extern "C" fn UpdateTrainerFanClubGameClear() {
         VarSet(VAR_LILYCOVE_FAN_CLUB_STATE, 1);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryGainNewFanFromCounter(incrementId: u8) -> u8 {
+pub unsafe fn TryGainNewFanFromCounter(incrementId: u8) -> u8 {
     if VarGet(VAR_LILYCOVE_FAN_CLUB_STATE) == 2 {
         if ((*gSaveBlock1Ptr).vars[65] as i32 & 0x007F) + sCounterIncrements_2[incrementId] as i32
             > 19
@@ -3552,13 +3620,11 @@ pub unsafe extern "C" fn TryGainNewFanFromCounter(incrementId: u8) -> u8 {
             (*gSaveBlock1Ptr).vars[65] += sCounterIncrements_2[incrementId] as u16;
         }
     }
-    return (*gSaveBlock1Ptr).vars[65] as u8 & 0x007F;
+    (*gSaveBlock1Ptr).vars[65] as u8 & 0x007F
 }
-pub(crate) unsafe extern "C" fn PlayerGainRandomTrainerFan() -> u16 {
-    let mut i: u8 = 0;
+unsafe fn PlayerGainRandomTrainerFan() -> u16 {
     let mut idx: u8 = 0;
-    i = 0;
-    while i < 8 {
+    for i in 0..8u8 {
         if shr_i32(
             (*gSaveBlock1Ptr).vars[65] as i32,
             sFanClubMemberIds_1[i] as u32,
@@ -3571,19 +3637,16 @@ pub(crate) unsafe extern "C" fn PlayerGainRandomTrainerFan() -> u16 {
                 return idx as u16;
             }
         }
-        i += 1;
     }
     (*gSaveBlock1Ptr).vars[65] |= shl_i32(1, sFanClubMemberIds_1[idx] as u32) as u16;
-    return idx as u16;
+    idx as u16
 }
-pub(crate) unsafe extern "C" fn PlayerLoseRandomTrainerFan() -> u16 {
-    let mut i: u8 = 0;
+unsafe fn PlayerLoseRandomTrainerFan() -> u16 {
     let mut idx: u8 = 0;
     if GetNumFansOfPlayerInTrainerFanClub() == 1 {
         return 0;
     }
-    i = 0;
-    while i < 8 {
+    for i in 0..8u8 {
         if shr_i32(
             (*gSaveBlock1Ptr).vars[65] as i32,
             sFanClubMemberIds_0[i] as u32,
@@ -3596,7 +3659,6 @@ pub(crate) unsafe extern "C" fn PlayerLoseRandomTrainerFan() -> u16 {
                 return idx as u16;
             }
         }
-        i += 1;
     }
     if shr_i32(
         (*gSaveBlock1Ptr).vars[65] as i32,
@@ -3606,14 +3668,12 @@ pub(crate) unsafe extern "C" fn PlayerLoseRandomTrainerFan() -> u16 {
     {
         (*gSaveBlock1Ptr).vars[65] ^= shl_i32(1, sFanClubMemberIds_0[idx] as u32) as u16;
     }
-    return idx as u16;
+    idx as u16
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetNumFansOfPlayerInTrainerFanClub() -> u16 {
-    let mut i: u8 = 0;
+pub unsafe fn GetNumFansOfPlayerInTrainerFanClub() -> u16 {
     let mut numFans: u8 = 0;
-    i = 0;
-    while i < NUM_TRAINER_FAN_CLUB_MEMBERS {
+    for i in 0..NUM_TRAINER_FAN_CLUB_MEMBERS {
         if shr_i32(
             (*gSaveBlock1Ptr).vars[65] as i32,
             i as u32 + FANCLUB_MEMBER1,
@@ -3622,12 +3682,11 @@ pub unsafe extern "C" fn GetNumFansOfPlayerInTrainerFanClub() -> u16 {
         {
             numFans += 1;
         }
-        i += 1;
     }
-    return numFans as u16;
+    numFans as u16
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryLoseFansFromPlayTime() {
+pub unsafe fn TryLoseFansFromPlayTime() {
     let mut i: u8 = 0;
     if (*gSaveBlock2Ptr).playTimeHours < 999 {
         loop {
@@ -3648,19 +3707,22 @@ pub unsafe extern "C" fn TryLoseFansFromPlayTime() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsFanClubMemberFanOfPlayer() -> u8 {
-    return shr_i32((*gSaveBlock1Ptr).vars[65] as i32, gSpecialVar_0x8004 as u32) as u8 & 1;
+pub unsafe fn IsFanClubMemberFanOfPlayer() -> u8 {
+    shr_i32((*gSaveBlock1Ptr).vars[65] as i32, gSpecialVar_0x8004 as u32) as u8 & 1
 }
-pub(crate) unsafe extern "C" fn SetInitialFansOfPlayer() {
+unsafe fn SetInitialFansOfPlayer() {
     (*gSaveBlock1Ptr).vars[65] |= 8192;
     (*gSaveBlock1Ptr).vars[65] |= 256;
     (*gSaveBlock1Ptr).vars[65] |= 1024;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferFanClubTrainerName() {
+pub unsafe fn BufferFanClubTrainerName() {
     let mut whichLinkTrainer: u8 = 0;
     let mut whichNPCTrainer: u8 = 0;
-    match gSpecialVar_0x8004 {
+    match *(&raw const crate::ffi::gSpecialVar_0x8004)
+        .cast::<u16>()
+        .cast_mut()
+    {
         8 => {}
         FANCLUB_MEMBER2 => {}
         FANCLUB_MEMBER3 => {
@@ -3692,34 +3754,69 @@ pub unsafe extern "C" fn BufferFanClubTrainerName() {
         whichNPCTrainer,
     );
 }
-pub(crate) unsafe extern "C" fn BufferFanClubTrainerName_(
+unsafe fn BufferFanClubTrainerName_(
     linkRecords: *mut LinkBattleRecords,
     whichLinkTrainer: u8,
     whichNPCTrainer: u8,
 ) {
-    let mut record: *mut LinkBattleRecord = &raw mut (*linkRecords).entries[whichLinkTrainer];
+    let record: *mut LinkBattleRecord = &raw mut (*linkRecords).entries[whichLinkTrainer];
     if (*record).name[0] == EOS {
         match whichNPCTrainer {
             0 => {
-                StringCopy(gStringVar1.as_mut_ptr(), gText_Wallace.as_ptr().cast_mut());
+                StringCopy(
+                    gStringVar1.as_mut_ptr(),
+                    (*(&raw const crate::data::strings::gText_Wallace).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                );
             }
             1 => {
-                StringCopy(gStringVar1.as_mut_ptr(), gText_Steven.as_ptr().cast_mut());
+                StringCopy(
+                    gStringVar1.as_mut_ptr(),
+                    (*(&raw const crate::data::strings::gText_Steven).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                );
             }
             2 => {
-                StringCopy(gStringVar1.as_mut_ptr(), gText_Brawly.as_ptr().cast_mut());
+                StringCopy(
+                    gStringVar1.as_mut_ptr(),
+                    (*(&raw const crate::data::strings::gText_Brawly).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                );
             }
             3 => {
-                StringCopy(gStringVar1.as_mut_ptr(), gText_Winona.as_ptr().cast_mut());
+                StringCopy(
+                    gStringVar1.as_mut_ptr(),
+                    (*(&raw const crate::data::strings::gText_Winona).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                );
             }
             4 => {
-                StringCopy(gStringVar1.as_mut_ptr(), gText_Phoebe.as_ptr().cast_mut());
+                StringCopy(
+                    gStringVar1.as_mut_ptr(),
+                    (*(&raw const crate::data::strings::gText_Phoebe).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                );
             }
             5 => {
-                StringCopy(gStringVar1.as_mut_ptr(), gText_Glacia.as_ptr().cast_mut());
+                StringCopy(
+                    gStringVar1.as_mut_ptr(),
+                    (*(&raw const crate::data::strings::gText_Glacia).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                );
             }
             _ => {
-                StringCopy(gStringVar1.as_mut_ptr(), gText_Wallace.as_ptr().cast_mut());
+                StringCopy(
+                    gStringVar1.as_mut_ptr(),
+                    (*(&raw const crate::data::strings::gText_Wallace).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                );
             }
         }
     } else {
@@ -3735,8 +3832,7 @@ pub(crate) unsafe extern "C" fn BufferFanClubTrainerName_(
         );
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateTrainerFansAfterLinkBattle() {
+pub unsafe fn UpdateTrainerFansAfterLinkBattle() {
     if VarGet(VAR_LILYCOVE_FAN_CLUB_STATE) == 2 {
         TryLoseFansFromPlayTimeAfterLinkBattle();
         if gBattleOutcome == B_OUTCOME_WON {
@@ -3746,14 +3842,14 @@ pub unsafe extern "C" fn UpdateTrainerFansAfterLinkBattle() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn DidPlayerGetFirstFans() -> u8 {
-    return ((*gSaveBlock1Ptr).vars[65] >> 7) as u8 & 1;
+unsafe fn DidPlayerGetFirstFans() -> u8 {
+    ((*gSaveBlock1Ptr).vars[65] >> 7) as u8 & 1
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetPlayerGotFirstFans() {
+pub unsafe fn SetPlayerGotFirstFans() {
     (*gSaveBlock1Ptr).vars[65] |= 128;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Script_TryGainNewFanFromCounter() -> u8 {
-    return TryGainNewFanFromCounter(gSpecialVar_0x8004 as u8);
+pub unsafe fn Script_TryGainNewFanFromCounter() -> u8 {
+    TryGainNewFanFromCounter(gSpecialVar_0x8004 as u8)
 }

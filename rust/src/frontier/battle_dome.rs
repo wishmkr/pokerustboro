@@ -3,37 +3,224 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::agb_main::{SetHBlankCallback, SetVBlankCallback};
+use crate::battle_main::gDisplayedStringBattle;
+use crate::battle_main::{
+    gBattle_BG0_X, gBattle_BG0_Y, gBattle_BG1_X, gBattle_BG1_Y, gBattle_BG2_X, gBattle_BG2_Y,
+    gBattle_BG3_X, gBattle_BG3_Y, gBattleOutcome, gBattleResults,
+};
+use crate::battle_script_commands::AI_TypeCalc;
+use crate::battle_setup::gTrainerBattleOpponent_A;
+use crate::battle_tower::{
+    GetFrontierOpponentClass, GetFrontierTrainerFrontSpriteId, GetRandomFrontierMonFromSet,
+    GetRandomScaledFrontierTrainerId, SetBattleFacilityTrainerGfxId, SetFacilityPtrsGetLevel,
+    gFacilityTrainerMons, gFacilityTrainers,
+};
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, ResetBgsAndClearDma3BusyFlags, ShowBg,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::{VarGet, VarSet};
+use crate::ffi::{gSpecialVar_0x8005, gSpecialVar_0x8006, gSpecialVar_Result};
+use crate::frontier_util::{
+    GetCurrentFacilityWinStreak, GetFrontierBrainMonEvs, GetFrontierBrainMonMove,
+    GetFrontierBrainMonNature, GetFrontierBrainMonSpecies, GetFrontierBrainStatus,
+    SaveGameFrontier,
+};
+use crate::gpu_regs::{EnableInterrupts, SetGpuReg};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::menu::DecompressAndLoadBgGfxUsingHeap;
+use crate::overworld::{CB2_ReturnToFieldContinueScriptPlayMapMusic, SetDynamicWarp};
+use crate::palette::gPlttBufferFaded;
+use crate::palette::{
+    BeginNormalPaletteFade, LoadCompressedPalette, ResetPaletteFade, TransferPlttBuffer,
+    UpdatePaletteFade, gPaletteFade,
+};
+use crate::party_menu::ClearSelectedPartyOrder;
+use crate::party_menu::gSelectedOrderFromParty;
+use crate::pokemon::{
+    CalculatePlayerPartyCount, CreateMonWithEVSpreadNatureOTID, GetMonData3, GetNature,
+    GetNatureFromPersonality, ModifyStatByNature, PlayerGenderToFrontTrainerPicId, SetMonData,
+    SetMonMoveSlot, ZeroEnemyPartyMons, gEnemyParty, gPlayerParty,
+};
+use crate::pokemon_icon::{
+    CreateMonIcon, FreeAndDestroyMonIconSprite, FreeMonIconPalettes, LoadMonIconPalettes,
+    UpdateMonIconFrame,
+};
+use crate::random::Random;
+use crate::scanline_effect::{
+    ScanlineEffect_Clear, ScanlineEffect_InitHBlankDmaTransfer, ScanlineEffect_Stop,
+};
+use crate::script_pokemon_util::ReducePlayerPartyToSelectedMons;
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData, gReservedSpritePaletteCount,
+};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar4};
+use crate::task::{DestroyTask, RunTasks};
+use crate::task::{gTasks, task_get, task_set};
+use crate::text::{DeactivateAllTextPrinters, RunTextPrinters};
+use crate::trainer_pokemon_sprites::{CreateTrainerPicSprite, FreeAndDestroyTrainerPicSprite};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::util::gBitTable;
+use crate::window::{
+    CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, PutWindowTilemap,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CopyToBgTilemapBufferRect_ChangePalette` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBufferRect_ChangePalette(
+    a0: u8,
+    a1: *mut c_void,
+    a2: u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: u8,
+) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBufferRect_ChangePalette(a0, a1 as _, a2, a3, a4, a5, a6);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `GetStringCenterAlignXOffsetWithLetterSpacing` with this module's view of its types.
+#[inline]
+unsafe fn GetStringCenterAlignXOffsetWithLetterSpacing(
+    a0: i32,
+    a1: *mut u8,
+    a2: i32,
+    a3: i32,
+) -> i32 {
+    unsafe {
+        crate::international_string_util::GetStringCenterAlignXOffsetWithLetterSpacing(
+            a0, a1 as _, a2, a3,
+        )
+    }
+}
+/// `GetStringWidthDifference` with this module's view of its types.
+#[inline]
+unsafe fn GetStringWidthDifference(a0: i32, a1: *mut u8, a2: i32, a3: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringWidthDifference(a0, a1 as _, a2, a3) }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LZDecompressWram` with this module's view of its types.
+#[inline]
+unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::decompress::LZDecompressWram(a0 as _, a1 as _);
+    }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `ScanlineEffect_SetParams` with this module's view of its types.
+#[inline]
+unsafe fn ScanlineEffect_SetParams(a0: ScanlineEffectParams) {
+    unsafe {
+        crate::scanline_effect::ScanlineEffect_SetParams(core::mem::transmute(a0));
+    }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StringAppend` with this module's view of its types.
+#[inline]
+unsafe fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringAppend(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringExpandPlaceholders(a0 as _, a1 as _) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const tState: usize = 0;
+const tNotInteractive: usize = 1;
+const tTournamentId: usize = 1;
+const tMode: usize = 2;
+const tUsingAlternateSlot: usize = 2;
+const sMonIconStill: usize = 3;
+const tPrevTaskId: usize = 3;
+const tIsPrevTourneyTree: usize = 4;
 // Data tables (translate with cdata.py): sBattleStyleMovePoints sBattleStyleThresholds sUnusedArray sTourneyTreeCursorMovementMap sTourneyTreeBgTemplates sInfoCardBgTemplates sTourneyTreeWindowTemplates sInfoCardWindowTemplates sTourneyTreeScanlineEffectParams sTourneyTreeButtonsSpriteSheet sTourneyTreeButtonsSpritePal sOamData_TourneyTreePokeball sOamData_TourneyTreeCloseButton sOamData_VerticalScrollArrow sOamData_HorizontalScrollArrow sSpriteAnim_TourneyTreePokeballNormal sSpriteAnim_TourneyTreePokeballSelected sSpriteAnimTable_TourneyTreePokeball sTourneyTreePokeballSpriteTemplate sSpriteAnim_TourneyTreeCancelButtonNormal sSpriteAnim_TourneyTreeCancelButtonSelected sSpriteAnimTable_TourneyTreeCancelButton sCancelButtonSpriteTemplate sSpriteAnim_TourneyTreeExitButtonNormal sSpriteAnim_TourneyTreeExitButtonSelected sSpriteAnimTable_TourneyTreeExitButton sExitButtonSpriteTemplate sSpriteAnim_UpArrow sSpriteAnim_DownArrow sSpriteAnim_LeftArrow sSpriteAnim_RightArrow sSpriteAnimTable_VerticalScrollArrow sSpriteAnimTable_HorizontalScrollArrow sHorizontalScrollArrowSpriteTemplate sVerticalScrollArrowSpriteTemplate sTourneyTreeTrainerIds sBattleDomeFunctions sWinStreakFlags sWinStreakMasks sIdToOpponentId sTourneyTreeTrainerOpponentIds sIdToMatchNumber sLastMatchCardNum sTrainerAndRoundToLastMatchCardNum sTournamentIdToPairedTrainerIds sBattleDomePotentialTexts sBattleDomeOpponentStyleTexts sBattleDomeOpponentStatsTexts sInfoTrainerMonX sInfoTrainerMonY sSpeciesNameTextYCoords sStatTextOffsets sBattleDomeMatchNumberTexts sBattleDomeWinTexts sLeftTrainerMonX sLeftTrainerMonY sRightTrainerMonX sRightTrainerMonY sTourneyTreeTrainerIds2 sCompetitorRangeByMatch sTrainerNamePositions sTourneyTreePokeballCoords sLineSectionTrainer1Round1 sLineSectionTrainer1Round2 sLineSectionTrainer1Semifinal sLineSectionTrainer1Final sLineSectionTrainer9Round1 sLineSectionTrainer9Round2 sLineSectionTrainer9Semifinal sLineSectionTrainer9Final sLineSectionTrainer13Round1 sLineSectionTrainer13Round2 sLineSectionTrainer13Semifinal sLineSectionTrainer13Final sLineSectionTrainer5Round1 sLineSectionTrainer5Round2 sLineSectionTrainer5Semifinal sLineSectionTrainer5Final sLineSectionTrainer8Round1 sLineSectionTrainer8Round2 sLineSectionTrainer8Semifinal sLineSectionTrainer8Final sLineSectionTrainer16Round1 sLineSectionTrainer16Round2 sLineSectionTrainer16Semifinal sLineSectionTrainer16Final sLineSectionTrainer12Round1 sLineSectionTrainer12Round2 sLineSectionTrainer12Semifinal sLineSectionTrainer12Final sLineSectionTrainer4Round1 sLineSectionTrainer4Round2 sLineSectionTrainer4Semifinal sLineSectionTrainer4Final sLineSectionTrainer3Round1 sLineSectionTrainer3Round2 sLineSectionTrainer3Semifinal sLineSectionTrainer3Final sLineSectionTrainer11Round1 sLineSectionTrainer11Round2 sLineSectionTrainer11Semifinal sLineSectionTrainer11Final sLineSectionTrainer15Round1 sLineSectionTrainer15Round2 sLineSectionTrainer15Semifinal sLineSectionTrainer15Final sLineSectionTrainer7Round1 sLineSectionTrainer7Round2 sLineSectionTrainer7Semifinal sLineSectionTrainer7Final sLineSectionTrainer6Round1 sLineSectionTrainer6Round2 sLineSectionTrainer6Semifinal sLineSectionTrainer6Final sLineSectionTrainer14Round1 sLineSectionTrainer14Round2 sLineSectionTrainer14Semifinal sLineSectionTrainer14Final sLineSectionTrainer10Round1 sLineSectionTrainer10Round2 sLineSectionTrainer10Semifinal sLineSectionTrainer10Final sLineSectionTrainer2Round1 sLineSectionTrainer2Round2 sLineSectionTrainer2Semifinal sLineSectionTrainer2Final sTourneyTreeLineSections sTourneyTreeLineSectionArrayCounts
 
 /// `struct TourneyTreeInfoCard`
@@ -116,7 +303,7 @@ const WIN_TRAINER_MON1_NAME: u8 = 1;
 const WIN_TRAINER_NAME: i32 = 0;
 const WONDER_GUARD_EFFECTIVENESS: u8 = 40;
 
-static sBattleDomeFunctions: Table<CArray<Option<unsafe extern "C" fn()>, 23>> =
+static sBattleDomeFunctions: Table<CArray<Option<unsafe fn()>, 23>> =
     Table((&raw const crate::data::battle_dome::sBattleDomeFunctions).cast());
 static sBattleDomeMatchNumberTexts: Table<CArray<*mut u8, 15>> =
     Table((&raw const crate::data::battle_dome::sBattleDomeMatchNumberTexts).cast());
@@ -203,206 +390,54 @@ static sWinStreakFlags: Table<CArray<CArray<u32, 2>, 2>> =
 static sWinStreakMasks: Table<CArray<CArray<u32, 2>, 2>> =
     Table((&raw const crate::data::battle_dome::sWinStreakMasks).cast());
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gPlayerPartyLostHP: u32 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPlayerPartyMaxHP: u32 = 0;
+pub(crate) static sPlayerPartyMaxHP: crate::global::Global<u32> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sInfoCard: *mut TourneyTreeInfoCard = null_mut();
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sTilemapBuffer: *mut u8 = null_mut();
 
-unsafe extern "C" {
-    static gBattleFrontierHeldItems: CArray<u16, 0>;
-    static gBattleFrontierMons: CArray<FacilityMon, 0>;
-    static gBattleFrontierTrainers: CArray<BattleFrontierTrainer, 0>;
-    static gBattleMoves: CArray<BattleMove, 0>;
-    static mut gBattleOutcome: u8;
-    static mut gBattleResults: BattleResults;
-    static gBattleWindowTextPalette: CArray<u32, 0>;
-    static mut gBattle_BG0_X: u16;
-    static mut gBattle_BG0_Y: u16;
-    static mut gBattle_BG1_X: u16;
-    static mut gBattle_BG1_Y: u16;
-    static mut gBattle_BG2_X: u16;
-    static mut gBattle_BG2_Y: u16;
-    static mut gBattle_BG3_X: u16;
-    static mut gBattle_BG3_Y: u16;
-    static gBitTable: CArray<u32, 0>;
-    static mut gDisplayedStringBattle: CArray<u8, 300>;
-    static gDomeTourneyInfoCardBg_Tilemap: CArray<u32, 0>;
-    static gDomeTourneyInfoCard_Gfx: CArray<u32, 0>;
-    static gDomeTourneyInfoCard_Tilemap: CArray<u32, 0>;
-    static gDomeTourneyLineDown_Tilemap: CArray<u32, 0>;
-    static gDomeTourneyLineUp_Tilemap: CArray<u32, 0>;
-    static gDomeTourneyLine_Gfx: CArray<u32, 0>;
-    static gDomeTourneyMatchCardBg_Pal: CArray<u32, 0>;
-    static gDomeTourneyTreeButtons_Pal: CArray<u32, 0>;
-    static gDomeTourneyTree_Gfx: CArray<u32, 0>;
-    static gDomeTourneyTree_Pal: CArray<u32, 0>;
-    static gDomeTourneyTree_Tilemap: CArray<u32, 0>;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static gFacilityClassToTrainerClass: CArray<u8, 0>;
-    static mut gFacilityTrainerMons: *mut FacilityMon;
-    static mut gFacilityTrainers: *mut BattleFrontierTrainer;
-    static mut gMain: Main;
-    static gMoveNames: CArray<CArray<u8, 13>, 355>;
-    static gNatureStatTable: CArray<CArray<i8, 5>, 0>;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gPlttBufferFaded: CArray<u16, 512>;
-    static mut gReservedSpritePaletteCount: u8;
-    static gRoundsStringTable: CArray<*mut u8, 0>;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gScanlineEffectRegBuffers: CArray<CArray<u16, 960>, 2>;
-    static mut gSelectedOrderFromParty: CArray<u8, 4>;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_0x8005: u16;
-    static mut gSpecialVar_0x8006: u16;
-    static mut gSpecialVar_Result: u16;
-    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_BattleTourney: CArray<u8, 0>;
-    static mut gTrainerBattleOpponent_A: u16;
-    static gTrainerClassNames: CArray<CArray<u8, 13>, 0>;
-    static gTrainers: CArray<Trainer, 0>;
-    static gTypeEffectiveness: CArray<u8, 336>;
-    fn AI_TypeCalc(a0: u16, a1: u16, a2: u8) -> u8;
-    fn AddTextPrinter(
-        a0: *mut TextPrinterTemplate,
-        a1: u8,
-        a2: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BuildOamBuffer();
-    fn CB2_ReturnToFieldContinueScriptPlayMapMusic();
-    fn CalculatePlayerPartyCount() -> u8;
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ClearSelectedPartyOrder();
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBufferRect_ChangePalette(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-    );
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateMonIcon(
-        a0: u16,
-        a1: Option<unsafe extern "C" fn(*mut Sprite)>,
-        a2: i16,
-        a3: i16,
-        a4: u8,
-        a5: u32,
-        a6: u32,
-    ) -> u8;
-    fn CreateMonWithEVSpreadNatureOTID(
-        a0: *mut Pokemon,
-        a1: u16,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u32,
-    );
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateTrainerPicSprite(a0: u16, a1: u8, a2: i16, a3: i16, a4: u8, a5: u16) -> u16;
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut c_void, a2: u32, a3: u16, a4: u8);
-    fn DestroyTask(a0: u8);
-    fn EnableInterrupts(a0: u16);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeAndDestroyMonIconSprite(a0: *mut Sprite);
-    fn FreeAndDestroyTrainerPicSprite(a0: u16) -> u16;
-    fn FreeMonIconPalettes();
-    fn GetCurrentFacilityWinStreak() -> u32;
-    fn GetFrontierBrainMonEvs(a0: u8, a1: u8) -> u8;
-    fn GetFrontierBrainMonMove(a0: u8, a1: u8) -> u16;
-    fn GetFrontierBrainMonNature(a0: u8) -> u8;
-    fn GetFrontierBrainMonSpecies(a0: u8) -> u16;
-    fn GetFrontierBrainStatus() -> u8;
-    fn GetFrontierOpponentClass(a0: u16) -> u8;
-    fn GetFrontierTrainerFrontSpriteId(a0: u16) -> u8;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetNature(a0: *mut Pokemon) -> u8;
-    fn GetNatureFromPersonality(a0: u32) -> u8;
-    fn GetRandomFrontierMonFromSet(a0: u16) -> u16;
-    fn GetRandomScaledFrontierTrainerId(a0: u8, a1: u8) -> u16;
-    fn GetStringCenterAlignXOffsetWithLetterSpacing(a0: i32, a1: *mut u8, a2: i32, a3: i32) -> i32;
-    fn GetStringWidthDifference(a0: i32, a1: *mut u8, a2: i32, a3: i32) -> i32;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn LZDecompressWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadMonIconPalettes();
-    fn LoadOam();
-    fn ModifyStatByNature(a0: u8, a1: u16, a2: u8) -> u16;
-    fn PlaySE(a0: u16);
-    fn PlayerGenderToFrontTrainerPicId(a0: u8) -> u16;
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn Random() -> u16;
-    fn ReducePlayerPartyToSelectedMons();
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn RunTasks();
-    fn RunTextPrinters();
-    fn SaveGameFrontier();
-    fn ScanlineEffect_Clear();
-    fn ScanlineEffect_InitHBlankDmaTransfer();
-    fn ScanlineEffect_SetParams(a0: ScanlineEffectParams);
-    fn ScanlineEffect_Stop();
-    fn SetBattleFacilityTrainerGfxId(a0: u16, a1: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetDynamicWarp(a0: i32, a1: i8, a2: i8, a3: i8);
-    fn SetFacilityPtrsGetLevel() -> u8;
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetHBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
-    fn SetMonMoveSlot(a0: *mut Pokemon, a1: u16, a2: u8);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TransferPlttBuffer();
-    fn UpdateMonIconFrame(a0: *mut Sprite) -> u8;
-    fn UpdatePaletteFade() -> u8;
-    fn VarGet(a0: u16) -> u16;
-    fn VarSet(a0: u16, a1: u16) -> u8;
-    fn ZeroEnemyPartyMons();
+/// `AddTextPrinter` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinter(
+    a0: *mut TextPrinterTemplate,
+    a1: u8,
+    a2: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe { crate::text::AddTextPrinter(a0 as _, a1, core::mem::transmute(a2)) }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CallBattleDomeFunction() {
-    sBattleDomeFunctions[gSpecialVar_0x8004].unwrap_unchecked()();
+pub unsafe fn CallBattleDomeFunction() {
+    sBattleDomeFunctions[*(&raw const crate::ffi::gSpecialVar_0x8004)
+        .cast::<u16>()
+        .cast_mut()]
+    .unwrap_unchecked()();
 }
-pub(crate) unsafe extern "C" fn InitDomeChallenge() {
-    let mut lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
-    let mut battleMode: u32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u32;
+pub(crate) unsafe fn InitDomeChallenge() {
+    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let battleMode: u32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u32;
     (*gSaveBlock2Ptr).frontier.challengeStatus = 0;
     (*gSaveBlock2Ptr).frontier.curChallengeBattleNum = 0;
     (*gSaveBlock2Ptr).frontier.set_challengePaused(FALSE);
@@ -418,10 +453,13 @@ pub(crate) unsafe extern "C" fn InitDomeChallenge() {
     );
     gTrainerBattleOpponent_A = 0;
 }
-pub(crate) unsafe extern "C" fn GetDomeData() {
-    let mut lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
-    let mut battleMode: u32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u32;
-    match gSpecialVar_0x8005 {
+pub(crate) unsafe fn GetDomeData() {
+    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let battleMode: u32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u32;
+    match *(&raw const crate::ffi::gSpecialVar_0x8005)
+        .cast::<u16>()
+        .cast_mut()
+    {
         DOME_DATA_WIN_STREAK => {
             gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode];
         }
@@ -487,12 +525,18 @@ pub(crate) unsafe extern "C" fn GetDomeData() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SetDomeData() {
-    let mut lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
-    let mut battleMode: u32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u32;
-    match gSpecialVar_0x8005 {
+pub(crate) unsafe fn SetDomeData() {
+    let lvlMode: u32 = (*gSaveBlock2Ptr).frontier.lvlMode() as u32;
+    let battleMode: u32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u32;
+    match *(&raw const crate::ffi::gSpecialVar_0x8005)
+        .cast::<u16>()
+        .cast_mut()
+    {
         DOME_DATA_WIN_STREAK => {
-            (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] = gSpecialVar_0x8006;
+            (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] =
+                *(&raw const crate::ffi::gSpecialVar_0x8006)
+                    .cast::<u16>()
+                    .cast_mut();
         }
         DOME_DATA_WIN_STREAK_ACTIVE => {
             if gSpecialVar_0x8006 != 0 {
@@ -576,32 +620,25 @@ pub(crate) unsafe extern "C" fn SetDomeData() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn InitDomeTrainers() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn InitDomeTrainers() {
     let mut j: i32 = 0;
     let mut k: i32 = 0;
-    let mut monLevel: i32 = 0;
     let mut species: CArray<i32, 3> = zeroed();
-    let mut monTypesBits: i32 = 0;
-    let mut monTypesCount: i32 = 0;
     let mut trainerId: i32 = 0;
     let mut monId: i32 = 0;
-    let mut rankingScores: *mut u16 = null_mut();
-    let mut statValues: *mut i32 = null_mut();
     let mut ivs: u8 = 0;
     species[0] = 0;
     species[1] = 0;
     species[2] = 0;
-    rankingScores = AllocZeroed(32) as *mut u16;
-    statValues = AllocZeroed(24) as *mut i32;
+    let rankingScores: *mut u16 = AllocZeroed(32) as *mut u16;
+    let statValues: *mut i32 = AllocZeroed(24) as *mut i32;
     (*gSaveBlock2Ptr).frontier.domeLvlMode = (*gSaveBlock2Ptr).frontier.lvlMode() + 1;
     (*gSaveBlock2Ptr).frontier.domeBattleMode = VarGet(VAR_FRONTIER_BATTLE_MODE) as u8 + 1;
     (*gSaveBlock2Ptr).frontier.domeTrainers[0].set_trainerId(TRAINER_PLAYER);
     (*gSaveBlock2Ptr).frontier.domeTrainers[0].set_isEliminated(0);
     (*gSaveBlock2Ptr).frontier.domeTrainers[0].set_eliminatedAt(0);
     (*gSaveBlock2Ptr).frontier.domeTrainers[0].set_forfeited(0);
-    i = 0;
-    while i < FRONTIER_PARTY_SIZE {
+    for i in 0..FRONTIER_PARTY_SIZE {
         (*gSaveBlock2Ptr).frontier.domeMonIds[0][i] = GetMonData3(
             &raw mut gPlayerParty[(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1],
             MON_DATA_SPECIES,
@@ -616,21 +653,18 @@ pub(crate) unsafe extern "C" fn InitDomeTrainers() {
             ) as u16;
             j += 1;
         }
-        j = 0;
-        while j < NUM_STATS {
+        for j in 0..NUM_STATS {
             (*gSaveBlock2Ptr).frontier.domePlayerPartyData[i].evs[j] = GetMonData3(
                 &raw mut gPlayerParty[(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1],
                 MON_DATA_HP_EV + j,
                 null_mut(),
             ) as u8;
-            j += 1;
         }
         (*gSaveBlock2Ptr).frontier.domePlayerPartyData[i].nature = GetNature(
             &raw mut gPlayerParty[(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1],
         );
-        i += 1;
     }
-    i = 1;
+    let mut i: i32 = 1;
     while i < DOME_TOURNAMENT_TRAINERS_COUNT {
         if i > 5 {
             loop {
@@ -666,13 +700,12 @@ pub(crate) unsafe extern "C" fn InitDomeTrainers() {
             }
             (*gSaveBlock2Ptr).frontier.domeTrainers[i].set_trainerId(trainerId as u16);
         }
-        j = 0;
-        while j < FRONTIER_PARTY_SIZE {
+        for j in 0..FRONTIER_PARTY_SIZE {
             loop {
                 monId = GetRandomFrontierMonFromSet(trainerId as u16) as i32;
                 k = 0;
                 while k < j {
-                    let mut alreadySelectedMonId: i32 =
+                    let alreadySelectedMonId: i32 =
                         (*gSaveBlock2Ptr).frontier.domeMonIds[i][k] as i32;
                     if alreadySelectedMonId == monId
                         || species[0] == (*gFacilityTrainerMons.at(monId)).species as i32
@@ -690,17 +723,15 @@ pub(crate) unsafe extern "C" fn InitDomeTrainers() {
             }
             (*gSaveBlock2Ptr).frontier.domeMonIds[i][j] = monId as u16;
             species[j] = (*gFacilityTrainerMons.at(monId)).species as i32;
-            j += 1;
         }
         (*gSaveBlock2Ptr).frontier.domeTrainers[i].set_isEliminated(FALSE as u16);
         (*gSaveBlock2Ptr).frontier.domeTrainers[i].set_eliminatedAt(0);
         (*gSaveBlock2Ptr).frontier.domeTrainers[i].set_forfeited(FALSE as u16);
         i += 1;
     }
-    monTypesBits = 0;
+    let mut monTypesBits: i32 = 0;
     *rankingScores = 0;
-    i = 0;
-    while i < FRONTIER_PARTY_SIZE {
+    for i in 0..FRONTIER_PARTY_SIZE {
         trainerId = (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1;
         *rankingScores +=
             GetMonData3(&raw mut gPlayerParty[trainerId], MON_DATA_ATK, null_mut()) as u16;
@@ -717,21 +748,22 @@ pub(crate) unsafe extern "C" fn InitDomeTrainers() {
             MON_DATA_MAX_HP,
             null_mut(),
         ) as u16;
-        monTypesBits |= gBitTable[gSpeciesInfo[GetMonData3(
+        monTypesBits |= gBitTable[(*(&raw const crate::data::pokemon::gSpeciesInfo)
+            .cast::<CArray<SpeciesInfo, 0>>())[GetMonData3(
             &raw mut gPlayerParty[trainerId],
             MON_DATA_SPECIES,
             null_mut(),
         )]
         .types[0]] as i32;
-        monTypesBits |= gBitTable[gSpeciesInfo[GetMonData3(
+        monTypesBits |= gBitTable[(*(&raw const crate::data::pokemon::gSpeciesInfo)
+            .cast::<CArray<SpeciesInfo, 0>>())[GetMonData3(
             &raw mut gPlayerParty[trainerId],
             MON_DATA_SPECIES,
             null_mut(),
         )]
         .types[1]] as i32;
-        i += 1;
     }
-    monTypesCount = 0;
+    let mut monTypesCount: i32 = 0;
     j = 0;
     while j < 32 {
         if monTypesBits & 1 != 0 {
@@ -740,15 +772,13 @@ pub(crate) unsafe extern "C" fn InitDomeTrainers() {
         monTypesBits >>= 1;
         j += 1;
     }
-    monLevel = SetFacilityPtrsGetLevel() as i32;
+    let monLevel: i32 = SetFacilityPtrsGetLevel() as i32;
     *rankingScores += (monTypesCount * monLevel / 20) as u16;
-    i = 1;
-    while i < DOME_TOURNAMENT_TRAINERS_COUNT {
+    for i in 1..DOME_TOURNAMENT_TRAINERS_COUNT {
         monTypesBits = 0;
         *rankingScores.at(i) = 0;
         ivs = GetDomeTrainerMonIvs((*gSaveBlock2Ptr).frontier.domeTrainers[i].trainerId());
-        j = 0;
-        while j < FRONTIER_PARTY_SIZE {
+        for j in 0..FRONTIER_PARTY_SIZE {
             CalcDomeMonStats(
                 (*gFacilityTrainerMons.at((*gSaveBlock2Ptr).frontier.domeMonIds[i][j])).species,
                 monLevel,
@@ -763,30 +793,27 @@ pub(crate) unsafe extern "C" fn InitDomeTrainers() {
             *rankingScores.at(i) += *statValues.at(5) as u16;
             *rankingScores.at(i) += *statValues.at(3) as u16;
             *rankingScores.at(i) += *statValues as u16;
-            monTypesBits |= gBitTable[gSpeciesInfo
+            monTypesBits |= gBitTable[(*(&raw const crate::data::pokemon::gSpeciesInfo)
+                .cast::<CArray<SpeciesInfo, 0>>())
                 [(*gFacilityTrainerMons.at((*gSaveBlock2Ptr).frontier.domeMonIds[i][j])).species]
                 .types[0]] as i32;
-            monTypesBits |= gBitTable[gSpeciesInfo
+            monTypesBits |= gBitTable[(*(&raw const crate::data::pokemon::gSpeciesInfo)
+                .cast::<CArray<SpeciesInfo, 0>>())
                 [(*gFacilityTrainerMons.at((*gSaveBlock2Ptr).frontier.domeMonIds[i][j])).species]
                 .types[1]] as i32;
-            j += 1;
         }
         monTypesCount = 0;
-        j = 0;
-        while j < 32 {
+        for j in 0..32i32 {
             if monTypesBits & 1 != 0 {
                 monTypesCount += 1;
             }
             monTypesBits >>= 1;
-            j += 1;
         }
         *rankingScores.at(i) += (monTypesCount * monLevel / 20) as u16;
-        i += 1;
     }
     i = 0;
     while i < 15 {
-        j = i + 1;
-        while j < DOME_TOURNAMENT_TRAINERS_COUNT {
+        for j in (i + 1)..DOME_TOURNAMENT_TRAINERS_COUNT {
             if *rankingScores.at(i) < *rankingScores.at(j) {
                 SwapDomeTrainers(i, j, rankingScores);
             } else {
@@ -800,7 +827,6 @@ pub(crate) unsafe extern "C" fn InitDomeTrainers() {
                     }
                 }
             }
-            j += 1;
         }
         i += 1;
     }
@@ -819,31 +845,25 @@ pub(crate) unsafe extern "C" fn InitDomeTrainers() {
             j = 1;
             (*gSaveBlock2Ptr).frontier.domeTrainers[j].set_trainerId(TRAINER_FRONTIER_BRAIN);
         }
-        i = 0;
-        while i < FRONTIER_PARTY_SIZE {
+        for i in 0..FRONTIER_PARTY_SIZE {
             (*gSaveBlock2Ptr).frontier.domeMonIds[j][i] = GetFrontierBrainMonSpecies(i as u8);
-            i += 1;
         }
     }
     Free(rankingScores as *mut c_void);
     Free(statValues as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn CalcDomeMonStats(
+unsafe fn CalcDomeMonStats(
     species: u16,
     level: i32,
     ivs: i32,
     evBits: u8,
     nature: u8,
-    mut stats: *mut i32,
+    stats: *mut i32,
 ) {
-    let mut i: i32 = 0;
-    let mut count: i32 = 0;
-    let mut bits: u8 = 0;
-    let mut resultingEvs: u16 = 0;
     let mut evs: CArray<i32, 6> = zeroed();
-    count = 0;
-    bits = evBits;
-    i = 0;
+    let mut count: i32 = 0;
+    let mut bits: u8 = evBits;
+    let mut i: i32 = 0;
     while i < NUM_STATS {
         if bits as i32 & 1 != 0 {
             count += 1;
@@ -851,98 +871,112 @@ pub(crate) unsafe extern "C" fn CalcDomeMonStats(
         bits >>= 1;
         i += 1;
     }
-    resultingEvs = div_i32(MAX_TOTAL_EVS, count) as u16;
-    i = 0;
-    while i < NUM_STATS {
+    let resultingEvs: u16 = div_i32(MAX_TOTAL_EVS, count) as u16;
+    for i in 0..NUM_STATS {
         evs[i] = 0;
         if evBits as i32 & bits as i32 != 0 {
             evs[i] = resultingEvs as i32;
         }
         bits <<= 1;
-        i += 1;
     }
     if species == SPECIES_SHEDINJA {
         *stats = 1;
     } else {
-        let mut n: i32 = 2 * gSpeciesInfo[species].baseHP as i32;
+        let n: i32 = 2
+            * (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+                [species]
+                .baseHP as i32;
         *stats = (n + ivs + evs[0] / 4) * level / 100 + level + 10;
     }
     {
-        let mut baseStat: u8 = gSpeciesInfo[species].baseAttack;
+        let baseStat: u8 = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+            .cast::<CArray<SpeciesInfo, 0>>())[species]
+            .baseAttack;
         *stats.at(1) = (2 * baseStat as i32 + ivs + evs[1] / 4) * level / 100 + 5;
         *stats.at(1) = ModifyStatByNature(nature, *stats.at(1) as u16, STAT_ATK) as u8 as i32;
     }
     {
-        let mut baseStat: u8 = gSpeciesInfo[species].baseDefense;
+        let baseStat: u8 = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+            .cast::<CArray<SpeciesInfo, 0>>())[species]
+            .baseDefense;
         *stats.at(2) = (STAT_DEF * baseStat as i32 + ivs + evs[2] / 4) * level / 100 + 5;
         *stats.at(2) = ModifyStatByNature(nature, *stats.at(2) as u16, STAT_DEF as u8) as u8 as i32;
     }
     {
-        let mut baseStat: u8 = gSpeciesInfo[species].baseSpeed;
+        let baseStat: u8 = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+            .cast::<CArray<SpeciesInfo, 0>>())[species]
+            .baseSpeed;
         *stats.at(3) = (2 * baseStat as i32 + ivs + evs[3] / 4) * level / 100 + 5;
         *stats.at(3) = ModifyStatByNature(nature, *stats.at(3) as u16, STAT_SPEED) as u8 as i32;
     }
     {
-        let mut baseStat: u8 = gSpeciesInfo[species].baseSpAttack;
+        let baseStat: u8 = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+            .cast::<CArray<SpeciesInfo, 0>>())[species]
+            .baseSpAttack;
         *stats.at(4) = (2 * baseStat as i32 + ivs + evs[4] / 4) * level / 100 + 5;
         *stats.at(4) = ModifyStatByNature(nature, *stats.at(4) as u16, STAT_SPATK) as u8 as i32;
     }
     {
-        let mut baseStat: u8 = gSpeciesInfo[species].baseSpDefense;
+        let baseStat: u8 = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+            .cast::<CArray<SpeciesInfo, 0>>())[species]
+            .baseSpDefense;
         *stats.at(5) = (2 * baseStat as i32 + ivs + evs[5] / 4) * level / 100 + STAT_SPDEF;
         *stats.at(5) =
             ModifyStatByNature(nature, *stats.at(5) as u16, STAT_SPDEF as u8) as u8 as i32;
     }
 }
-pub(crate) unsafe extern "C" fn SwapDomeTrainers(id1: i32, id2: i32, mut statsArray: *mut u16) {
-    let mut i: i32 = 0;
-    let mut temp: u16 = 0;
-    temp = *statsArray.at(id1);
+unsafe fn SwapDomeTrainers(id1: i32, id2: i32, statsArray: *mut u16) {
+    let mut temp: u16 = *statsArray.at(id1);
     *statsArray.at(id1) = *statsArray.at(id2);
     *statsArray.at(id2) = temp;
     temp = (*gSaveBlock2Ptr).frontier.domeTrainers[id1].trainerId();
     (*gSaveBlock2Ptr).frontier.domeTrainers[id1]
         .set_trainerId((*gSaveBlock2Ptr).frontier.domeTrainers[id2].trainerId());
     (*gSaveBlock2Ptr).frontier.domeTrainers[id2].set_trainerId(temp);
-    i = 0;
-    while i < FRONTIER_PARTY_SIZE {
+    for i in 0..FRONTIER_PARTY_SIZE {
         temp = (*gSaveBlock2Ptr).frontier.domeMonIds[id1][i];
         (*gSaveBlock2Ptr).frontier.domeMonIds[id1][i] =
             (*gSaveBlock2Ptr).frontier.domeMonIds[id2][i];
         (*gSaveBlock2Ptr).frontier.domeMonIds[id2][i] = temp;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn BufferDomeRoundText() {
+pub(crate) unsafe fn BufferDomeRoundText() {
     StringCopy(
         gStringVar1.as_mut_ptr(),
-        gRoundsStringTable[(*gSaveBlock2Ptr).frontier.curChallengeBattleNum],
+        (*(&raw const crate::data::battle_message::gRoundsStringTable)
+            .cast::<CArray<*mut u8, 0>>())[(*gSaveBlock2Ptr).frontier.curChallengeBattleNum],
     );
 }
-pub(crate) unsafe extern "C" fn BufferDomeOpponentName() {
+pub(crate) unsafe fn BufferDomeOpponentName() {
     StringCopy(
         gStringVar1.as_mut_ptr(),
-        gRoundsStringTable[(*gSaveBlock2Ptr).frontier.curChallengeBattleNum],
+        (*(&raw const crate::data::battle_message::gRoundsStringTable)
+            .cast::<CArray<*mut u8, 0>>())[(*gSaveBlock2Ptr).frontier.curChallengeBattleNum],
     );
     CopyDomeTrainerName(gStringVar2.as_mut_ptr(), gTrainerBattleOpponent_A);
 }
-pub(crate) unsafe extern "C" fn InitDomeOpponentParty() {
+pub(crate) unsafe fn InitDomeOpponentParty() {
     gPlayerPartyLostHP = 0;
-    sPlayerPartyMaxHP = GetMonData3(&raw mut gPlayerParty[0], MON_DATA_MAX_HP, null_mut());
-    sPlayerPartyMaxHP += GetMonData3(&raw mut gPlayerParty[1], MON_DATA_MAX_HP, null_mut());
+    sPlayerPartyMaxHP.set(GetMonData3(
+        &raw mut gPlayerParty[0],
+        MON_DATA_MAX_HP,
+        null_mut(),
+    ));
+    {
+        let rhs = GetMonData3(&raw mut gPlayerParty[1], MON_DATA_MAX_HP, null_mut());
+        sPlayerPartyMaxHP.set(sPlayerPartyMaxHP.get() + rhs)
+    };
     CalculatePlayerPartyCount();
     CreateDomeOpponentMons(TrainerIdToTournamentId(gTrainerBattleOpponent_A) as u16);
 }
-pub(crate) unsafe extern "C" fn CreateDomeOpponentMon(
+unsafe fn CreateDomeOpponentMon(
     monPartyId: u8,
     tournamentTrainerId: u16,
     tournamentMonId: u8,
     otId: u32,
 ) {
-    let mut i: i32 = 0;
-    let mut friendship: u8 = MAX_FRIENDSHIP;
-    let mut fixedIv: u8 = GetDomeTrainerMonIvs(tournamentTrainerId);
-    let mut level: u8 = SetFacilityPtrsGetLevel();
+    let fixedIv: u8 = GetDomeTrainerMonIvs(tournamentTrainerId);
+    let level: u8 = SetFacilityPtrsGetLevel();
     CreateMonWithEVSpreadNatureOTID(
         &raw mut gEnemyParty[monPartyId],
         (*gFacilityTrainerMons
@@ -958,9 +992,8 @@ pub(crate) unsafe extern "C" fn CreateDomeOpponentMon(
         .evSpread,
         otId,
     );
-    friendship = MAX_FRIENDSHIP;
-    i = 0;
-    while i < MAX_MON_MOVES {
+    let mut friendship: u8 = MAX_FRIENDSHIP;
+    for i in 0..MAX_MON_MOVES {
         SetMonMoveSlot(
             &raw mut gEnemyParty[monPartyId],
             (*gFacilityTrainerMons
@@ -975,7 +1008,6 @@ pub(crate) unsafe extern "C" fn CreateDomeOpponentMon(
         {
             friendship = 0;
         }
-        i += 1;
     }
     SetMonData(
         &raw mut gEnemyParty[monPartyId],
@@ -985,29 +1017,26 @@ pub(crate) unsafe extern "C" fn CreateDomeOpponentMon(
     SetMonData(
         &raw mut gEnemyParty[monPartyId],
         MON_DATA_HELD_ITEM,
-        (&raw const gBattleFrontierHeldItems[(*gFacilityTrainerMons
+        (&raw const (*(&raw const crate::data::battle_tower::gBattleFrontierHeldItems)
+            .cast::<CArray<u16, 0>>())[(*gFacilityTrainerMons
             .at((*gSaveBlock2Ptr).frontier.domeMonIds[tournamentTrainerId][tournamentMonId]))
         .itemTableId])
             .cast_mut() as *mut c_void,
     );
 }
-pub(crate) unsafe extern "C" fn CreateDomeOpponentMons(tournamentTrainerId: u16) {
+unsafe fn CreateDomeOpponentMons(tournamentTrainerId: u16) {
     let mut monsCount: u8 = 0;
-    let mut otId: u32 = 0;
     let mut i: i32 = 0;
-    let mut selectedMonBits: i32 = 0;
     ZeroEnemyPartyMons();
-    selectedMonBits = GetDomeTrainerSelectedMons(tournamentTrainerId);
-    otId = Random() as u32 | (Random() as u32) << 16;
+    let mut selectedMonBits: i32 = GetDomeTrainerSelectedMons(tournamentTrainerId);
+    let otId: u32 = Random() as u32 | (Random() as u32) << 16;
     if Random() as i32 % 10 > 5 {
-        i = 0;
-        while i < FRONTIER_PARTY_SIZE {
+        for i in 0..FRONTIER_PARTY_SIZE {
             if selectedMonBits & 1 != 0 {
                 CreateDomeOpponentMon(monsCount, tournamentTrainerId, i as u8, otId);
                 monsCount += 1;
             }
             selectedMonBits >>= 1;
-            i += 1;
         }
     } else {
         i = 2;
@@ -1021,8 +1050,7 @@ pub(crate) unsafe extern "C" fn CreateDomeOpponentMons(tournamentTrainerId: u16)
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetDomeTrainerSelectedMons(tournamentTrainerId: u16) -> i32 {
+pub unsafe fn GetDomeTrainerSelectedMons(tournamentTrainerId: u16) -> i32 {
     let mut selectedMonBits: i32 = 0;
     if Random() as i32 & 1 != 0 {
         selectedMonBits = SelectOpponentMons_Good(tournamentTrainerId, FALSE);
@@ -1035,23 +1063,14 @@ pub unsafe extern "C" fn GetDomeTrainerSelectedMons(tournamentTrainerId: u16) ->
             selectedMonBits = SelectOpponentMons_Good(tournamentTrainerId, TRUE);
         }
     }
-    return selectedMonBits;
+    selectedMonBits
 }
-pub(crate) unsafe extern "C" fn SelectOpponentMons_Good(
-    tournamentTrainerId: u16,
-    allowRandom: u8,
-) -> i32 {
-    let mut i: i32 = 0;
-    let mut moveIndex: i32 = 0;
-    let mut playerMonId: i32 = 0;
+unsafe fn SelectOpponentMons_Good(tournamentTrainerId: u16, allowRandom: u8) -> i32 {
     let mut partyMovePoints: CArray<i32, 3> = zeroed();
-    i = 0;
-    while i < FRONTIER_PARTY_SIZE {
+    for i in 0..FRONTIER_PARTY_SIZE {
         partyMovePoints[i] = 0;
-        moveIndex = 0;
-        while moveIndex < MAX_MON_MOVES {
-            playerMonId = 0;
-            while playerMonId < FRONTIER_PARTY_SIZE {
+        for moveIndex in 0..MAX_MON_MOVES {
+            for playerMonId in 0..FRONTIER_PARTY_SIZE {
                 if (*gSaveBlock2Ptr).frontier.domeTrainers[tournamentTrainerId].trainerId()
                     == TRAINER_FRONTIER_BRAIN
                 {
@@ -1077,29 +1096,17 @@ pub(crate) unsafe extern "C" fn SelectOpponentMons_Good(
                         EFFECTIVENESS_MODE_GOOD,
                     );
                 }
-                playerMonId += 1;
             }
-            moveIndex += 1;
         }
-        i += 1;
     }
-    return SelectOpponentMonsFromParty(partyMovePoints.as_mut_ptr(), allowRandom);
+    SelectOpponentMonsFromParty(partyMovePoints.as_mut_ptr(), allowRandom)
 }
-pub(crate) unsafe extern "C" fn SelectOpponentMons_Bad(
-    tournamentTrainerId: u16,
-    allowRandom: u8,
-) -> i32 {
-    let mut i: i32 = 0;
-    let mut moveIndex: i32 = 0;
-    let mut playerMonId: i32 = 0;
+unsafe fn SelectOpponentMons_Bad(tournamentTrainerId: u16, allowRandom: u8) -> i32 {
     let mut partyMovePoints: CArray<i32, 3> = zeroed();
-    i = 0;
-    while i < FRONTIER_PARTY_SIZE {
+    for i in 0..FRONTIER_PARTY_SIZE {
         partyMovePoints[i] = 0;
-        moveIndex = 0;
-        while moveIndex < MAX_MON_MOVES {
-            playerMonId = 0;
-            while playerMonId < FRONTIER_PARTY_SIZE {
+        for moveIndex in 0..MAX_MON_MOVES {
+            for playerMonId in 0..FRONTIER_PARTY_SIZE {
                 if (*gSaveBlock2Ptr).frontier.domeTrainers[tournamentTrainerId].trainerId()
                     == TRAINER_FRONTIER_BRAIN
                 {
@@ -1125,23 +1132,15 @@ pub(crate) unsafe extern "C" fn SelectOpponentMons_Bad(
                         EFFECTIVENESS_MODE_BAD,
                     );
                 }
-                playerMonId += 1;
             }
-            moveIndex += 1;
         }
-        i += 1;
     }
-    return SelectOpponentMonsFromParty(partyMovePoints.as_mut_ptr(), allowRandom);
+    SelectOpponentMonsFromParty(partyMovePoints.as_mut_ptr(), allowRandom)
 }
-pub(crate) unsafe extern "C" fn SelectOpponentMonsFromParty(
-    mut partyMovePoints: *mut i32,
-    allowRandom: u8,
-) -> i32 {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+unsafe fn SelectOpponentMonsFromParty(partyMovePoints: *mut i32, allowRandom: u8) -> i32 {
     let mut selectedMonBits: i32 = 0;
     let mut partyPositions: CArray<i32, 3> = zeroed();
-    i = 0;
+    let mut i: i32 = 0;
     while i < FRONTIER_PARTY_SIZE {
         partyPositions[i] = i;
         i += 1;
@@ -1150,9 +1149,11 @@ pub(crate) unsafe extern "C" fn SelectOpponentMonsFromParty(
         if allowRandom != 0 {
             i = 0;
             while i != DOME_BATTLE_PARTY_SIZE {
-                let mut rand: u32 = Random() as u32 & FRONTIER_PARTY_SIZE as u32;
+                let rand: u32 = Random() as u32 & FRONTIER_PARTY_SIZE as u32;
                 if rand != FRONTIER_PARTY_SIZE as u32
-                    && selectedMonBits as u32 & gBitTable[rand] == 0
+                    && selectedMonBits as u32
+                        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[rand]
+                        == 0
                 {
                     selectedMonBits |= gBitTable[rand] as i32;
                     i += 1;
@@ -1162,8 +1163,7 @@ pub(crate) unsafe extern "C" fn SelectOpponentMonsFromParty(
     } else {
         i = 0;
         while i < DOME_BATTLE_PARTY_SIZE {
-            j = i + 1;
-            while j < FRONTIER_PARTY_SIZE {
+            for j in (i + 1)..FRONTIER_PARTY_SIZE {
                 let mut temp: i32 = 0;
                 if *partyMovePoints.at(i) < *partyMovePoints.at(j) {
                     temp = *partyMovePoints.at(i);
@@ -1181,62 +1181,87 @@ pub(crate) unsafe extern "C" fn SelectOpponentMonsFromParty(
                     partyPositions[i] = partyPositions[j];
                     partyPositions[j] = temp;
                 }
-                j += 1;
             }
             i += 1;
         }
-        i = 0;
-        while i < DOME_BATTLE_PARTY_SIZE {
+        for i in 0..DOME_BATTLE_PARTY_SIZE {
             selectedMonBits |= gBitTable[partyPositions[i]] as i32;
-            i += 1;
         }
     }
-    return selectedMonBits;
+    selectedMonBits
 }
-pub(crate) unsafe extern "C" fn GetTypeEffectivenessPoints(
-    r#move: i32,
-    targetSpecies: i32,
-    mode: i32,
-) -> i32 {
-    let mut defType1: i32 = 0;
-    let mut defType2: i32 = 0;
-    let mut defAbility: i32 = 0;
-    let mut moveType: i32 = 0;
+unsafe fn GetTypeEffectivenessPoints(r#move: i32, targetSpecies: i32, mode: i32) -> i32 {
     let mut i: i32 = 0;
     let mut typePower: i32 = TYPE_x1;
-    if r#move == 0 || r#move == MOVE_UNAVAILABLE as i32 || gBattleMoves[r#move].power == 0 {
+    if r#move == 0
+        || r#move == MOVE_UNAVAILABLE as i32
+        || (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+            [r#move]
+            .power
+            == 0
+    {
         return 0;
     }
-    defType1 = gSpeciesInfo[targetSpecies].types[0] as i32;
-    defType2 = gSpeciesInfo[targetSpecies].types[1] as i32;
-    defAbility = gSpeciesInfo[targetSpecies].abilities[0] as i32;
-    moveType = gBattleMoves[r#move].r#type as i32;
+    let defType1: i32 = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+        .cast::<CArray<SpeciesInfo, 0>>())[targetSpecies]
+        .types[0] as i32;
+    let defType2: i32 = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+        .cast::<CArray<SpeciesInfo, 0>>())[targetSpecies]
+        .types[1] as i32;
+    let defAbility: i32 = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+        .cast::<CArray<SpeciesInfo, 0>>())[targetSpecies]
+        .abilities[0] as i32;
+    let moveType: i32 = (*(&raw const crate::data::pokemon::gBattleMoves)
+        .cast::<CArray<BattleMove, 0>>())[r#move]
+        .r#type as i32;
     if defAbility == ABILITY_LEVITATE as i32 && moveType == TYPE_GROUND as i32 {
         if mode == EFFECTIVENESS_MODE_BAD {
             typePower = 8;
         }
     } else {
-        while gTypeEffectiveness[i + 0] != TYPE_ENDTABLE {
-            if gTypeEffectiveness[i + 0] == TYPE_FORESIGHT {
+        while (*(&raw const crate::data::battle_main::gTypeEffectiveness).cast::<CArray<u8, 336>>())
+            [i]
+            != TYPE_ENDTABLE
+        {
+            if (*(&raw const crate::data::battle_main::gTypeEffectiveness)
+                .cast::<CArray<u8, 336>>())[i]
+                == TYPE_FORESIGHT
+            {
                 i += 3;
                 continue;
             }
-            if gTypeEffectiveness[i + 0] as i32 == moveType {
-                if gTypeEffectiveness[i + 1] as i32 == defType1 {
-                    if defAbility == ABILITY_WONDER_GUARD as i32
-                        && gTypeEffectiveness[i + 2] == WONDER_GUARD_EFFECTIVENESS
-                        || defAbility != ABILITY_WONDER_GUARD as i32
-                    {
-                        typePower = typePower * gTypeEffectiveness[i + 2] as i32 / 10;
-                    }
+            if (*(&raw const crate::data::battle_main::gTypeEffectiveness)
+                .cast::<CArray<u8, 336>>())[i] as i32
+                == moveType
+            {
+                if (*(&raw const crate::data::battle_main::gTypeEffectiveness)
+                    .cast::<CArray<u8, 336>>())[i + 1] as i32
+                    == defType1
+                    && (defAbility == ABILITY_WONDER_GUARD as i32
+                        && (*(&raw const crate::data::battle_main::gTypeEffectiveness)
+                            .cast::<CArray<u8, 336>>())[i + 2]
+                            == WONDER_GUARD_EFFECTIVENESS
+                        || defAbility != ABILITY_WONDER_GUARD as i32)
+                {
+                    typePower = typePower
+                        * (*(&raw const crate::data::battle_main::gTypeEffectiveness)
+                            .cast::<CArray<u8, 336>>())[i + 2] as i32
+                        / 10;
                 }
-                if gTypeEffectiveness[i + 1] as i32 == defType2 && defType1 != defType2 {
-                    if defAbility == ABILITY_WONDER_GUARD as i32
-                        && gTypeEffectiveness[i + 2] == WONDER_GUARD_EFFECTIVENESS
-                        || defAbility != ABILITY_WONDER_GUARD as i32
-                    {
-                        typePower = typePower * gTypeEffectiveness[i + 2] as i32 / 10;
-                    }
+                if (*(&raw const crate::data::battle_main::gTypeEffectiveness)
+                    .cast::<CArray<u8, 336>>())[i + 1] as i32
+                    == defType2
+                    && defType1 != defType2
+                    && (defAbility == ABILITY_WONDER_GUARD as i32
+                        && (*(&raw const crate::data::battle_main::gTypeEffectiveness)
+                            .cast::<CArray<u8, 336>>())[i + 2]
+                            == WONDER_GUARD_EFFECTIVENESS
+                        || defAbility != ABILITY_WONDER_GUARD as i32)
+                {
+                    typePower = typePower
+                        * (*(&raw const crate::data::battle_main::gTypeEffectiveness)
+                            .cast::<CArray<u8, 336>>())[i + 2] as i32
+                        / 10;
                 }
             }
             i += 3;
@@ -1299,9 +1324,9 @@ pub(crate) unsafe extern "C" fn GetTypeEffectivenessPoints(
         },
         _ => {}
     }
-    return typePower;
+    typePower
 }
-pub(crate) unsafe extern "C" fn GetDomeTrainerMonIvs(trainerId: u16) -> u8 {
+unsafe fn GetDomeTrainerMonIvs(trainerId: u16) -> u8 {
     let mut fixedIv: u8 = 0;
     if trainerId <= 99 {
         fixedIv = 3;
@@ -1320,13 +1345,12 @@ pub(crate) unsafe extern "C" fn GetDomeTrainerMonIvs(trainerId: u16) -> u8 {
     } else {
         fixedIv = MAX_PER_STAT_IVS;
     }
-    return fixedIv;
+    fixedIv
 }
-pub(crate) unsafe extern "C" fn TournamentIdOfOpponent(roundId: i32, trainerId: i32) -> i32 {
-    let mut i: i32 = 0;
+unsafe fn TournamentIdOfOpponent(roundId: i32, trainerId: i32) -> i32 {
     let mut j: i32 = 0;
     let mut opponentMax: i32 = 0;
-    i = 0;
+    let mut i: i32 = 0;
     while i < DOME_TOURNAMENT_TRAINERS_COUNT {
         if (*gSaveBlock2Ptr).frontier.domeTrainers[i].trainerId() as i32 == trainerId {
             break;
@@ -1365,31 +1389,31 @@ pub(crate) unsafe extern "C" fn TournamentIdOfOpponent(roundId: i32, trainerId: 
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn SetDomeOpponentId() {
+pub(crate) unsafe fn SetDomeOpponentId() {
     gTrainerBattleOpponent_A = TrainerIdOfPlayerOpponent();
 }
-pub(crate) unsafe extern "C" fn TrainerIdOfPlayerOpponent() -> u16 {
-    return (*gSaveBlock2Ptr).frontier.domeTrainers[TournamentIdOfOpponent(
+unsafe fn TrainerIdOfPlayerOpponent() -> u16 {
+    (*gSaveBlock2Ptr).frontier.domeTrainers[TournamentIdOfOpponent(
         (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32,
         TRAINER_PLAYER as i32,
     )]
-    .trainerId();
+    .trainerId()
 }
-pub(crate) unsafe extern "C" fn SetDomeOpponentGraphicsId() {
+pub(crate) unsafe fn SetDomeOpponentGraphicsId() {
     SetBattleFacilityTrainerGfxId(gTrainerBattleOpponent_A, 0);
 }
-pub(crate) unsafe extern "C" fn SaveDomeChallenge() {
+pub(crate) unsafe fn SaveDomeChallenge() {
     (*gSaveBlock2Ptr).frontier.challengeStatus = gSpecialVar_0x8005 as u8;
     VarSet(VAR_TEMP_CHALLENGE_STATUS, 0);
     (*gSaveBlock2Ptr).frontier.set_challengePaused(TRUE);
     SaveGameFrontier();
 }
-pub(crate) unsafe extern "C" fn IncrementDomeStreaks() {
-    let mut lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
-    let mut battleMode: u8 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u8;
+pub(crate) unsafe fn IncrementDomeStreaks() {
+    let lvlMode: u8 = (*gSaveBlock2Ptr).frontier.lvlMode();
+    let battleMode: u8 = VarGet(VAR_FRONTIER_BATTLE_MODE) as u8;
     if (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] < 999 {
         (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] += 1;
     }
@@ -1403,20 +1427,24 @@ pub(crate) unsafe extern "C" fn IncrementDomeStreaks() {
             (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode];
     }
 }
-pub(crate) unsafe extern "C" fn ShowDomeOpponentInfo() {
-    let mut taskId: u8 = CreateTask(Some(Task_ShowTourneyInfoCard), 0);
-    gTasks[taskId].data[0] = 0;
-    gTasks[taskId].data[1] = TrainerIdToTournamentId(TrainerIdOfPlayerOpponent()) as i16;
-    gTasks[taskId].data[2] = INFOCARD_NEXT_OPPONENT;
-    gTasks[taskId].data[3] = 0;
+pub(crate) unsafe fn ShowDomeOpponentInfo() {
+    let taskId: u8 = CreateTask(Some(Task_ShowTourneyInfoCard), 0);
+    task_set(taskId, tState, 0);
+    task_set(
+        taskId,
+        tTournamentId,
+        TrainerIdToTournamentId(TrainerIdOfPlayerOpponent()) as i16,
+    );
+    task_set(taskId, tMode, INFOCARD_NEXT_OPPONENT);
+    task_set(taskId, tPrevTaskId, 0);
     SetMainCallback2(Some(CB2_TourneyTree));
 }
-pub(crate) unsafe extern "C" fn Task_ShowTourneyInfoCard(taskId: u8) {
+pub(crate) unsafe fn Task_ShowTourneyInfoCard(taskId: u8) {
     let mut i: i32 = 0;
-    let mut tournamentId: i32 = gTasks[taskId].data[1] as i32;
-    let mut mode: i32 = gTasks[taskId].data[2] as i32;
-    let mut id: i32 = gTasks[taskId].data[3] as i32;
-    match gTasks[taskId].data[0] {
+    let tournamentId: i32 = task_get(taskId, 1) as i32;
+    let mode: i32 = task_get(taskId, 2) as i32;
+    let mut id: i32 = task_get(taskId, 3) as i32;
+    match task_get(taskId, 0) {
         0 => {
             SetHBlankCallback(None);
             SetVBlankCallback(None);
@@ -1449,7 +1477,7 @@ pub(crate) unsafe extern "C" fn Task_ShowTourneyInfoCard(taskId: u8) {
                 gBattle_BG2_X = 0;
                 gBattle_BG2_Y = DISPLAY_HEIGHT;
             }
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
         1 => {
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
@@ -1466,44 +1494,73 @@ pub(crate) unsafe extern "C" fn Task_ShowTourneyInfoCard(taskId: u8) {
             ResetSpriteData();
             FreeAllSpritePalettes();
             gReservedSpritePaletteCount = 4;
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
         2 => {
             DecompressAndLoadBgGfxUsingHeap(
                 2,
-                gDomeTourneyInfoCard_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gDomeTourneyInfoCard_Gfx)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0x2000,
                 0,
                 0,
             );
             DecompressAndLoadBgGfxUsingHeap(
                 2,
-                gDomeTourneyInfoCard_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gDomeTourneyInfoCard_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0x2000,
                 0,
                 1,
             );
             DecompressAndLoadBgGfxUsingHeap(
                 3,
-                gDomeTourneyInfoCardBg_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gDomeTourneyInfoCardBg_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0x800,
                 0,
                 1,
             );
             LoadCompressedSpriteSheet(sTourneyTreeButtonsSpriteSheet.as_ptr().cast_mut());
             LoadCompressedPalette(
-                gDomeTourneyTree_Pal.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gDomeTourneyTree_Pal)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 BG_PLTT_OFFSET,
                 BG_PLTT_SIZE,
             );
             LoadCompressedPalette(
-                gDomeTourneyTreeButtons_Pal.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gDomeTourneyTreeButtons_Pal)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 OBJ_PLTT_OFFSET,
                 OBJ_PLTT_SIZE,
             );
-            LoadCompressedPalette(gBattleWindowTextPalette.as_ptr().cast_mut(), 240, 32);
+            LoadCompressedPalette(
+                (*(&raw const crate::data::graphics::gBattleWindowTextPalette)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
+                240,
+                32,
+            );
             if mode == INFOCARD_MATCH {
-                LoadCompressedPalette(gDomeTourneyMatchCardBg_Pal.as_ptr().cast_mut(), 80, 32);
+                LoadCompressedPalette(
+                    (*(&raw const crate::data::graphics::gDomeTourneyMatchCardBg_Pal)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                    80,
+                    32,
+                );
             }
             {
                 {
@@ -1520,22 +1577,20 @@ pub(crate) unsafe extern "C" fn Task_ShowTourneyInfoCard(taskId: u8) {
             ShowBg(1);
             ShowBg(2);
             ShowBg(3);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
         3 => {
             SetVBlankCallback(Some(VblankCb_TourneyInfoCard));
             sInfoCard = AllocZeroed(20) as *mut TourneyTreeInfoCard;
-            i = 0;
-            while i < NUM_INFOCARD_SPRITES {
+            for i in 0..NUM_INFOCARD_SPRITES {
                 (*sInfoCard).spriteIds[i] = SPRITE_NONE;
-                i += 1;
             }
             LoadMonIconPalettes();
             i = CreateTask(Some(Task_HandleInfoCardInput), 0) as i32;
-            gTasks[i].data[0] = 0;
-            gTasks[i].data[2] = 0;
-            gTasks[i].data[3] = mode as i16;
-            gTasks[i].data[4] = id as i16;
+            task_set(i, 0, 0);
+            task_set(i, 2, 0);
+            task_set(i, 3, mode as i16);
+            task_set(i, 4, id as i16);
             if mode == INFOCARD_MATCH {
                 DisplayMatchInfoOnCard(0, tournamentId as u8);
                 (*sInfoCard).pos = 1;
@@ -1587,7 +1642,7 @@ pub(crate) unsafe extern "C" fn Task_ShowTourneyInfoCard(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_TrainerIconCardScrollUp(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_TrainerIconCardScrollUp(sprite: *mut Sprite) {
     (*sprite).y += 4;
     if (*sprite).data[0] != 0 {
         if (*sprite).y >= -32 {
@@ -1607,7 +1662,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_TrainerIconCardScrollUp(sprite: *mut Sp
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_TrainerIconCardScrollDown(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_TrainerIconCardScrollDown(sprite: *mut Sprite) {
     (*sprite).y -= 4;
     if (*sprite).data[0] != 0 {
         if (*sprite).y <= 192 {
@@ -1627,7 +1682,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_TrainerIconCardScrollDown(sprite: *mut 
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_TrainerIconCardScrollLeft(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_TrainerIconCardScrollLeft(sprite: *mut Sprite) {
     (*sprite).x += 4;
     if (*sprite).data[0] != 0 {
         if (*sprite).x >= -32 {
@@ -1647,7 +1702,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_TrainerIconCardScrollLeft(sprite: *mut 
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_TrainerIconCardScrollRight(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_TrainerIconCardScrollRight(sprite: *mut Sprite) {
     (*sprite).x -= 4;
     if (*sprite).data[0] != 0 {
         if (*sprite).x <= 272 {
@@ -1667,13 +1722,13 @@ pub(crate) unsafe extern "C" fn SpriteCB_TrainerIconCardScrollRight(sprite: *mut
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_MonIconDomeInfo(sprite: *mut Sprite) {
-    if (*sprite).data[3] == 0 {
+pub(crate) unsafe fn SpriteCB_MonIconDomeInfo(sprite: *mut Sprite) {
+    if (*sprite).data[sMonIconStill] == 0 {
         UpdateMonIconFrame(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_MonIconCardScrollUp(sprite: *mut Sprite) {
-    if (*sprite).data[3] == 0 {
+pub(crate) unsafe fn SpriteCB_MonIconCardScrollUp(sprite: *mut Sprite) {
+    if (*sprite).data[sMonIconStill] == 0 {
         UpdateMonIconFrame(sprite);
     }
     (*sprite).y += 4;
@@ -1695,8 +1750,8 @@ pub(crate) unsafe extern "C" fn SpriteCB_MonIconCardScrollUp(sprite: *mut Sprite
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_MonIconCardScrollDown(sprite: *mut Sprite) {
-    if (*sprite).data[3] == 0 {
+pub(crate) unsafe fn SpriteCB_MonIconCardScrollDown(sprite: *mut Sprite) {
+    if (*sprite).data[sMonIconStill] == 0 {
         UpdateMonIconFrame(sprite);
     }
     (*sprite).y -= 4;
@@ -1718,8 +1773,8 @@ pub(crate) unsafe extern "C" fn SpriteCB_MonIconCardScrollDown(sprite: *mut Spri
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_MonIconCardScrollLeft(sprite: *mut Sprite) {
-    if (*sprite).data[3] == 0 {
+pub(crate) unsafe fn SpriteCB_MonIconCardScrollLeft(sprite: *mut Sprite) {
+    if (*sprite).data[sMonIconStill] == 0 {
         UpdateMonIconFrame(sprite);
     }
     (*sprite).x += 4;
@@ -1741,8 +1796,8 @@ pub(crate) unsafe extern "C" fn SpriteCB_MonIconCardScrollLeft(sprite: *mut Spri
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_MonIconCardScrollRight(sprite: *mut Sprite) {
-    if (*sprite).data[3] == 0 {
+pub(crate) unsafe fn SpriteCB_MonIconCardScrollRight(sprite: *mut Sprite) {
+    if (*sprite).data[sMonIconStill] == 0 {
         UpdateMonIconFrame(sprite);
     }
     (*sprite).x -= 4;
@@ -1764,12 +1819,12 @@ pub(crate) unsafe extern "C" fn SpriteCB_MonIconCardScrollRight(sprite: *mut Spr
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_HorizontalScrollArrow(sprite: *mut Sprite) {
-    let mut taskId1: i32 = (*sprite).data[0] as i32;
-    let mut arrId: i32 = gTasks[gTasks[taskId1].data[4]].data[1] as i32;
-    let mut tournmanetTrainerId: i32 = sTourneyTreeTrainerIds[arrId] as i32;
-    let mut roundId: i32 = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32;
-    if gTasks[taskId1].data[3] == 1 {
+pub(crate) unsafe fn SpriteCB_HorizontalScrollArrow(sprite: *mut Sprite) {
+    let taskId1: i32 = (*sprite).data[0] as i32;
+    let arrId: i32 = (*gTasks.as_ptr())[task_get(taskId1, 4)].data[1] as i32;
+    let tournmanetTrainerId: i32 = sTourneyTreeTrainerIds[arrId] as i32;
+    let roundId: i32 = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32;
+    if task_get(taskId1, 3) == 1 {
         if (*sprite).data[1] != 0 {
             if (*gSaveBlock2Ptr).frontier.domeTrainers[tournmanetTrainerId].isEliminated() != 0
                 && (*sInfoCard).pos as i32 - 1
@@ -1783,7 +1838,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_HorizontalScrollArrow(sprite: *mut Spri
             {
                 (*sprite).set_invisible(FALSE as u16);
             } else {
-                if gTasks[taskId1].data[0] == 2 {
+                if task_get(taskId1, 0) == 2 {
                     (*sprite).set_invisible(TRUE as u16);
                 }
             }
@@ -1791,7 +1846,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_HorizontalScrollArrow(sprite: *mut Spri
             if (*sInfoCard).pos != 0 {
                 (*sprite).set_invisible(FALSE as u16);
             } else {
-                if gTasks[taskId1].data[0] == 2 {
+                if task_get(taskId1, 0) == 2 {
                     (*sprite).set_invisible(TRUE as u16);
                 }
             }
@@ -1799,7 +1854,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_HorizontalScrollArrow(sprite: *mut Spri
     } else {
         if (*sprite).data[1] != 0 {
             if (*sInfoCard).pos > 1 {
-                if gTasks[taskId1].data[0] == 2 {
+                if task_get(taskId1, 0) == 2 {
                     (*sprite).set_invisible(TRUE as u16);
                 }
             } else {
@@ -1809,18 +1864,18 @@ pub(crate) unsafe extern "C" fn SpriteCB_HorizontalScrollArrow(sprite: *mut Spri
             if (*sInfoCard).pos != 0 {
                 (*sprite).set_invisible(FALSE as u16);
             } else {
-                if gTasks[taskId1].data[0] == 2 {
+                if task_get(taskId1, 0) == 2 {
                     (*sprite).set_invisible(TRUE as u16);
                 }
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_VerticalScrollArrow(sprite: *mut Sprite) {
-    let mut taskId1: i32 = (*sprite).data[0] as i32;
-    if gTasks[taskId1].data[3] == 1 {
+pub(crate) unsafe fn SpriteCB_VerticalScrollArrow(sprite: *mut Sprite) {
+    let taskId1: i32 = (*sprite).data[0] as i32;
+    if task_get(taskId1, 3) == 1 {
         if (*sInfoCard).pos != 0 {
-            if gTasks[taskId1].data[0] == 2 {
+            if task_get(taskId1, 0) == 2 {
                 (*sprite).set_invisible(TRUE as u16);
             }
         } else {
@@ -1828,7 +1883,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_VerticalScrollArrow(sprite: *mut Sprite
         }
     } else {
         if (*sInfoCard).pos != 1 {
-            if gTasks[taskId1].data[0] == 2 {
+            if task_get(taskId1, 0) == 2 {
                 (*sprite).set_invisible(TRUE as u16);
             }
         } else {
@@ -1836,23 +1891,23 @@ pub(crate) unsafe extern "C" fn SpriteCB_VerticalScrollArrow(sprite: *mut Sprite
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandleInfoCardInput(taskId: u8) {
     let mut i: i32 = 0;
     let mut windowId: i32 = 0;
-    let mut mode: i32 = gTasks[taskId].data[3] as i32;
-    let mut taskId2: i32 = gTasks[taskId].data[4] as i32;
+    let mode: i32 = task_get(taskId, 3) as i32;
+    let taskId2: i32 = task_get(taskId, 4) as i32;
     let mut trainerTourneyId: i32 = 0;
     let mut matchNo: i32 = 0;
-    match gTasks[taskId].data[0] {
+    match task_get(taskId, 0) {
         STATE_FADE_IN => {
             if gPaletteFade.active() == 0 {
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
-                gTasks[taskId].data[0] = STATE_WAIT_FADE;
+                task_set(taskId, 0, STATE_WAIT_FADE);
             }
         }
         STATE_WAIT_FADE => {
             if gPaletteFade.active() == 0 {
-                gTasks[taskId].data[0] = STATE_GET_INPUT;
+                task_set(taskId, 0, STATE_GET_INPUT);
             }
         }
         STATE_GET_INPUT => {
@@ -1860,32 +1915,30 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
             match i {
                 9 => {
                     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-                    gTasks[taskId].data[0] = STATE_CLOSE_CARD;
+                    task_set(taskId, 0, STATE_CLOSE_CARD);
                 }
-                1..=4 | 5..=8 => {
-                    gTasks[taskId].data[5] = i as i16;
-                    if gTasks[taskId].data[2] != 0 {
+                1..=8 => {
+                    task_set(taskId, 5, i as i16);
+                    if task_get(taskId, 2) != 0 {
                         windowId = NUM_INFO_CARD_WINDOWS;
                     } else {
                         windowId = 0;
                     }
-                    i = windowId;
-                    while i < windowId + NUM_INFO_CARD_WINDOWS {
+                    for i in windowId..(windowId + NUM_INFO_CARD_WINDOWS) {
                         CopyWindowToVram(i as u8, COPYWIN_GFX);
                         FillWindowPixelBuffer(i as u8, 0);
-                        i += 1;
                     }
-                    gTasks[taskId].data[0] = STATE_REACT_INPUT;
+                    task_set(taskId, 0, STATE_REACT_INPUT);
                 }
                 0 => {}
                 _ => {}
             }
         }
         STATE_REACT_INPUT => {
-            i = gTasks[taskId].data[5] as i32;
+            i = task_get(taskId, 5) as i32;
             match i {
                 TRAINERCARD_INPUT_UP | MATCHCARD_INPUT_UP => {
-                    if gTasks[taskId].data[2] != 0 {
+                    if task_get(taskId, 2) != 0 {
                         gBattle_BG0_X = 0;
                         gBattle_BG0_Y = 0;
                         gBattle_BG1_X = 0;
@@ -1900,26 +1953,24 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                         if (*sInfoCard).pos == 0 {
                             gBattle_BG2_X = 0;
                             gBattle_BG2_Y = 320;
-                            trainerTourneyId =
-                                sTourneyTreeTrainerIds[gTasks[taskId2].data[1]] as i32;
+                            trainerTourneyId = sTourneyTreeTrainerIds[task_get(taskId2, 1)] as i32;
                             DisplayTrainerInfoOnCard(
-                                gTasks[taskId].data[2] as u8 | MOVE_CARD_UP,
+                                task_get(taskId, 2) as u8 | MOVE_CARD_UP,
                                 trainerTourneyId as u8,
                             );
                         } else {
                             gBattle_BG2_X = 256;
                             gBattle_BG2_Y = 0;
-                            trainerTourneyId =
-                                sTourneyTreeTrainerIds[gTasks[taskId2].data[1]] as i32;
+                            trainerTourneyId = sTourneyTreeTrainerIds[task_get(taskId2, 1)] as i32;
                             DisplayTrainerInfoOnCard(
-                                gTasks[taskId].data[2] as u8 | MOVE_CARD_UP,
+                                task_get(taskId, 2) as u8 | MOVE_CARD_UP,
                                 trainerTourneyId as u8,
                             );
                             (*sInfoCard).pos = 0;
                         }
                     } else {
                         if (*sInfoCard).pos == 0 {
-                            matchNo = gTasks[taskId2].data[1] as i32 - 16;
+                            matchNo = task_get(taskId2, 1) as i32 - 16;
                             BufferDomeWinString(
                                 matchNo as u8,
                                 (*sInfoCard).tournamentIds.as_mut_ptr(),
@@ -1928,11 +1979,11 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                             gBattle_BG2_Y = 320;
                             trainerTourneyId = (*sInfoCard).tournamentIds[0] as i32;
                             DisplayTrainerInfoOnCard(
-                                gTasks[taskId].data[2] as u8 | MOVE_CARD_UP,
+                                task_get(taskId, 2) as u8 | MOVE_CARD_UP,
                                 trainerTourneyId as u8,
                             );
                         } else if (*sInfoCard).pos == 2 {
-                            matchNo = gTasks[taskId2].data[1] as i32 - 16;
+                            matchNo = task_get(taskId2, 1) as i32 - 16;
                             BufferDomeWinString(
                                 matchNo as u8,
                                 (*sInfoCard).tournamentIds.as_mut_ptr(),
@@ -1941,15 +1992,15 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                             gBattle_BG2_Y = 320;
                             trainerTourneyId = (*sInfoCard).tournamentIds[1] as i32;
                             DisplayTrainerInfoOnCard(
-                                gTasks[taskId].data[2] as u8 | MOVE_CARD_UP,
+                                task_get(taskId, 2) as u8 | MOVE_CARD_UP,
                                 trainerTourneyId as u8,
                             );
                         } else {
                             gBattle_BG2_X = 256;
                             gBattle_BG2_Y = DISPLAY_HEIGHT;
-                            matchNo = gTasks[taskId2].data[1] as i32 - 16;
+                            matchNo = task_get(taskId2, 1) as i32 - 16;
                             DisplayMatchInfoOnCard(
-                                gTasks[taskId].data[2] as u8 | MOVE_CARD_UP,
+                                task_get(taskId, 2) as u8 | MOVE_CARD_UP,
                                 matchNo as u8,
                             );
                         }
@@ -1961,7 +2012,7 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_TrainerIconCardScrollUp);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2] ^ 1;
+                                    task_get(taskId, 2) ^ 1;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[3] =
@@ -1972,21 +2023,19 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_MonIconCardScrollUp);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2] ^ 1;
+                                    task_get(taskId, 2) ^ 1;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                             }
                         }
                         i += 1;
                     }
-                    i = 8;
-                    while i < NUM_INFOCARD_SPRITES {
+                    for i in 8..NUM_INFOCARD_SPRITES {
                         if i < 10 {
                             if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_TrainerIconCardScrollUp);
-                                gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2];
+                                gSprites[(*sInfoCard).spriteIds[i]].data[0] = task_get(taskId, 2);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[3] =
@@ -1996,19 +2045,17 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                             if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_MonIconCardScrollUp);
-                                gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2];
+                                gSprites[(*sInfoCard).spriteIds[i]].data[0] = task_get(taskId, 2);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                             }
                         }
-                        i += 1;
                     }
-                    gTasks[taskId].data[0] = STATE_MOVE_UP;
-                    gTasks[taskId].data[5] = 0;
+                    task_set(taskId, 0, STATE_MOVE_UP);
+                    task_set(taskId, 5, 0);
                 }
                 TRAINERCARD_INPUT_DOWN | MATCHCARD_INPUT_DOWN => {
-                    if gTasks[taskId].data[2] != 0 {
+                    if task_get(taskId, 2) != 0 {
                         gBattle_BG0_X = 0;
                         gBattle_BG0_Y = 0;
                         gBattle_BG1_X = 0;
@@ -2023,26 +2070,24 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                         if (*sInfoCard).pos == 0 {
                             gBattle_BG2_X = 0;
                             gBattle_BG2_Y = DISPLAY_HEIGHT;
-                            trainerTourneyId =
-                                sTourneyTreeTrainerIds[gTasks[taskId2].data[1]] as i32;
+                            trainerTourneyId = sTourneyTreeTrainerIds[task_get(taskId2, 1)] as i32;
                             DisplayTrainerInfoOnCard(
-                                gTasks[taskId].data[2] as u8 | MOVE_CARD_DOWN,
+                                task_get(taskId, 2) as u8 | MOVE_CARD_DOWN,
                                 trainerTourneyId as u8,
                             );
                         } else {
                             gBattle_BG2_X = 0;
                             gBattle_BG2_Y = 0;
-                            trainerTourneyId =
-                                sTourneyTreeTrainerIds[gTasks[taskId2].data[1]] as i32;
+                            trainerTourneyId = sTourneyTreeTrainerIds[task_get(taskId2, 1)] as i32;
                             DisplayTrainerInfoOnCard(
-                                gTasks[taskId].data[2] as u8 | MOVE_CARD_DOWN,
+                                task_get(taskId, 2) as u8 | MOVE_CARD_DOWN,
                                 trainerTourneyId as u8,
                             );
                             (*sInfoCard).pos = 0;
                         }
                     } else {
                         if (*sInfoCard).pos == 0 {
-                            matchNo = gTasks[taskId2].data[1] as i32 - 16;
+                            matchNo = task_get(taskId2, 1) as i32 - 16;
                             BufferDomeWinString(
                                 matchNo as u8,
                                 (*sInfoCard).tournamentIds.as_mut_ptr(),
@@ -2051,11 +2096,11 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                             gBattle_BG2_Y = DISPLAY_HEIGHT;
                             trainerTourneyId = (*sInfoCard).tournamentIds[0] as i32;
                             DisplayTrainerInfoOnCard(
-                                gTasks[taskId].data[2] as u8 | MOVE_CARD_DOWN,
+                                task_get(taskId, 2) as u8 | MOVE_CARD_DOWN,
                                 trainerTourneyId as u8,
                             );
                         } else if (*sInfoCard).pos == 2 {
-                            matchNo = gTasks[taskId2].data[1] as i32 - 16;
+                            matchNo = task_get(taskId2, 1) as i32 - 16;
                             BufferDomeWinString(
                                 matchNo as u8,
                                 (*sInfoCard).tournamentIds.as_mut_ptr(),
@@ -2064,15 +2109,15 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                             gBattle_BG2_Y = DISPLAY_HEIGHT;
                             trainerTourneyId = (*sInfoCard).tournamentIds[1] as i32;
                             DisplayTrainerInfoOnCard(
-                                gTasks[taskId].data[2] as u8 | MOVE_CARD_DOWN,
+                                task_get(taskId, 2) as u8 | MOVE_CARD_DOWN,
                                 trainerTourneyId as u8,
                             );
                         } else {
                             gBattle_BG2_X = 256;
                             gBattle_BG2_Y = 0;
-                            matchNo = gTasks[taskId2].data[1] as i32 - 16;
+                            matchNo = task_get(taskId2, 1) as i32 - 16;
                             DisplayMatchInfoOnCard(
-                                gTasks[taskId].data[2] as u8 | MOVE_CARD_DOWN,
+                                task_get(taskId, 2) as u8 | MOVE_CARD_DOWN,
                                 matchNo as u8,
                             );
                         }
@@ -2084,7 +2129,7 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_TrainerIconCardScrollDown);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2] ^ 1;
+                                    task_get(taskId, 2) ^ 1;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[3] =
@@ -2095,21 +2140,19 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_MonIconCardScrollDown);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2] ^ 1;
+                                    task_get(taskId, 2) ^ 1;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                             }
                         }
                         i += 1;
                     }
-                    i = 8;
-                    while i < NUM_INFOCARD_SPRITES {
+                    for i in 8..NUM_INFOCARD_SPRITES {
                         if i < 10 {
                             if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_TrainerIconCardScrollDown);
-                                gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2];
+                                gSprites[(*sInfoCard).spriteIds[i]].data[0] = task_get(taskId, 2);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[3] =
@@ -2119,19 +2162,17 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                             if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_MonIconCardScrollDown);
-                                gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2];
+                                gSprites[(*sInfoCard).spriteIds[i]].data[0] = task_get(taskId, 2);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                             }
                         }
-                        i += 1;
                     }
-                    gTasks[taskId].data[0] = STATE_MOVE_DOWN;
-                    gTasks[taskId].data[5] = 0;
+                    task_set(taskId, 0, STATE_MOVE_DOWN);
+                    task_set(taskId, 5, 0);
                 }
                 TRAINERCARD_INPUT_LEFT => {
-                    if gTasks[taskId].data[2] != 0 {
+                    if task_get(taskId, 2) != 0 {
                         gBattle_BG0_X = 0;
                         gBattle_BG0_Y = 0;
                         gBattle_BG1_X = 256;
@@ -2145,18 +2186,18 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                     if (*sInfoCard).pos == 0 {
                         gBattle_BG2_X = 256;
                         gBattle_BG2_Y = DISPLAY_HEIGHT;
-                        trainerTourneyId = sTourneyTreeTrainerIds[gTasks[taskId2].data[1]] as i32;
+                        trainerTourneyId = sTourneyTreeTrainerIds[task_get(taskId2, 1)] as i32;
                         DisplayTrainerInfoOnCard(
-                            gTasks[taskId].data[2] as u8 | MOVE_CARD_LEFT,
+                            task_get(taskId, 2) as u8 | MOVE_CARD_LEFT,
                             trainerTourneyId as u8,
                         );
                     } else {
                         gBattle_BG2_X = 256;
                         gBattle_BG2_Y = 0;
-                        matchNo = sIdToMatchNumber[gTasks[taskId2].data[1]]
+                        matchNo = sIdToMatchNumber[task_get(taskId2, 1)]
                             [(*sInfoCard).pos as i32 - 1] as i32;
                         DisplayMatchInfoOnCard(
-                            gTasks[taskId].data[2] as u8 | MOVE_CARD_LEFT,
+                            task_get(taskId, 2) as u8 | MOVE_CARD_LEFT,
                             matchNo as u8,
                         );
                     }
@@ -2167,7 +2208,7 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_TrainerIconCardScrollLeft);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2] ^ 1;
+                                    task_get(taskId, 2) ^ 1;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[3] =
@@ -2178,21 +2219,19 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_MonIconCardScrollLeft);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2] ^ 1;
+                                    task_get(taskId, 2) ^ 1;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                             }
                         }
                         i += 1;
                     }
-                    i = 8;
-                    while i < NUM_INFOCARD_SPRITES {
+                    for i in 8..NUM_INFOCARD_SPRITES {
                         if i < 10 {
                             if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_TrainerIconCardScrollLeft);
-                                gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2];
+                                gSprites[(*sInfoCard).spriteIds[i]].data[0] = task_get(taskId, 2);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[3] =
@@ -2202,19 +2241,17 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                             if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_MonIconCardScrollLeft);
-                                gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2];
+                                gSprites[(*sInfoCard).spriteIds[i]].data[0] = task_get(taskId, 2);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                             }
                         }
-                        i += 1;
                     }
-                    gTasks[taskId].data[0] = STATE_MOVE_LEFT;
-                    gTasks[taskId].data[5] = 0;
+                    task_set(taskId, 0, STATE_MOVE_LEFT);
+                    task_set(taskId, 5, 0);
                 }
                 MATCHCARD_INPUT_LEFT => {
-                    if gTasks[taskId].data[2] != 0 {
+                    if task_get(taskId, 2) != 0 {
                         gBattle_BG0_X = 0;
                         gBattle_BG0_Y = 0;
                         gBattle_BG1_X = 256;
@@ -2230,15 +2267,15 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                         gBattle_BG2_Y = DISPLAY_HEIGHT;
                         trainerTourneyId = (*sInfoCard).tournamentIds[0] as i32;
                         DisplayTrainerInfoOnCard(
-                            gTasks[taskId].data[2] as u8 | MOVE_CARD_LEFT,
+                            task_get(taskId, 2) as u8 | MOVE_CARD_LEFT,
                             trainerTourneyId as u8,
                         );
                     } else {
                         gBattle_BG2_X = 0;
                         gBattle_BG2_Y = DISPLAY_HEIGHT;
-                        matchNo = gTasks[taskId2].data[1] as i32 - 16;
+                        matchNo = task_get(taskId2, 1) as i32 - 16;
                         DisplayMatchInfoOnCard(
-                            gTasks[taskId].data[2] as u8 | MOVE_CARD_LEFT,
+                            task_get(taskId, 2) as u8 | MOVE_CARD_LEFT,
                             matchNo as u8,
                         );
                     }
@@ -2249,7 +2286,7 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_TrainerIconCardScrollLeft);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2] ^ 1;
+                                    task_get(taskId, 2) ^ 1;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[3] =
@@ -2260,21 +2297,19 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_MonIconCardScrollLeft);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2] ^ 1;
+                                    task_get(taskId, 2) ^ 1;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                             }
                         }
                         i += 1;
                     }
-                    i = 8;
-                    while i < NUM_INFOCARD_SPRITES {
+                    for i in 8..NUM_INFOCARD_SPRITES {
                         if i < 10 {
                             if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_TrainerIconCardScrollLeft);
-                                gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2];
+                                gSprites[(*sInfoCard).spriteIds[i]].data[0] = task_get(taskId, 2);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[3] =
@@ -2284,19 +2319,17 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                             if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_MonIconCardScrollLeft);
-                                gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2];
+                                gSprites[(*sInfoCard).spriteIds[i]].data[0] = task_get(taskId, 2);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                             }
                         }
-                        i += 1;
                     }
-                    gTasks[taskId].data[0] = STATE_MOVE_LEFT;
-                    gTasks[taskId].data[5] = 0;
+                    task_set(taskId, 0, STATE_MOVE_LEFT);
+                    task_set(taskId, 5, 0);
                 }
                 4 => {
-                    if gTasks[taskId].data[2] != 0 {
+                    if task_get(taskId, 2) != 0 {
                         gBattle_BG0_X = 0;
                         gBattle_BG0_Y = 0;
                         gBattle_BG1_X = 65280;
@@ -2314,10 +2347,10 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                         gBattle_BG2_X = 0;
                         gBattle_BG2_Y = 0;
                     }
-                    matchNo = sIdToMatchNumber[gTasks[taskId2].data[1]][(*sInfoCard).pos as i32 - 1]
-                        as i32;
+                    matchNo =
+                        sIdToMatchNumber[task_get(taskId2, 1)][(*sInfoCard).pos as i32 - 1] as i32;
                     DisplayMatchInfoOnCard(
-                        gTasks[taskId].data[2] as u8 | MOVE_CARD_RIGHT,
+                        task_get(taskId, 2) as u8 | MOVE_CARD_RIGHT,
                         matchNo as u8,
                     );
                     i = 0;
@@ -2327,7 +2360,7 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_TrainerIconCardScrollRight);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2] ^ 1;
+                                    task_get(taskId, 2) ^ 1;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[3] =
@@ -2338,21 +2371,19 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_MonIconCardScrollRight);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2] ^ 1;
+                                    task_get(taskId, 2) ^ 1;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                             }
                         }
                         i += 1;
                     }
-                    i = 8;
-                    while i < NUM_INFOCARD_SPRITES {
+                    for i in 8..NUM_INFOCARD_SPRITES {
                         if i < 10 {
                             if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_TrainerIconCardScrollRight);
-                                gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2];
+                                gSprites[(*sInfoCard).spriteIds[i]].data[0] = task_get(taskId, 2);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[3] =
@@ -2362,19 +2393,17 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                             if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_MonIconCardScrollRight);
-                                gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2];
+                                gSprites[(*sInfoCard).spriteIds[i]].data[0] = task_get(taskId, 2);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                             }
                         }
-                        i += 1;
                     }
-                    gTasks[taskId].data[0] = STATE_MOVE_RIGHT;
-                    gTasks[taskId].data[5] = 0;
+                    task_set(taskId, 0, STATE_MOVE_RIGHT);
+                    task_set(taskId, 5, 0);
                 }
                 MATCHCARD_INPUT_RIGHT => {
-                    if gTasks[taskId].data[2] != 0 {
+                    if task_get(taskId, 2) != 0 {
                         gBattle_BG0_X = 0;
                         gBattle_BG0_Y = 0;
                         gBattle_BG1_X = 65280;
@@ -2390,15 +2419,15 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                         gBattle_BG2_Y = DISPLAY_HEIGHT;
                         trainerTourneyId = (*sInfoCard).tournamentIds[1] as i32;
                         DisplayTrainerInfoOnCard(
-                            gTasks[taskId].data[2] as u8 | MOVE_CARD_RIGHT,
+                            task_get(taskId, 2) as u8 | MOVE_CARD_RIGHT,
                             trainerTourneyId as u8,
                         );
                     } else {
                         gBattle_BG2_X = 0;
                         gBattle_BG2_Y = DISPLAY_HEIGHT;
-                        matchNo = gTasks[taskId2].data[1] as i32 - 16;
+                        matchNo = task_get(taskId2, 1) as i32 - 16;
                         DisplayMatchInfoOnCard(
-                            gTasks[taskId].data[2] as u8 | MOVE_CARD_RIGHT,
+                            task_get(taskId, 2) as u8 | MOVE_CARD_RIGHT,
                             matchNo as u8,
                         );
                     }
@@ -2409,7 +2438,7 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_TrainerIconCardScrollRight);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2] ^ 1;
+                                    task_get(taskId, 2) ^ 1;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[3] =
@@ -2420,21 +2449,19 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_MonIconCardScrollRight);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2] ^ 1;
+                                    task_get(taskId, 2) ^ 1;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                             }
                         }
                         i += 1;
                     }
-                    i = 8;
-                    while i < NUM_INFOCARD_SPRITES {
+                    for i in 8..NUM_INFOCARD_SPRITES {
                         if i < 10 {
                             if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_TrainerIconCardScrollRight);
-                                gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2];
+                                gSprites[(*sInfoCard).spriteIds[i]].data[0] = task_get(taskId, 2);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[3] =
@@ -2444,137 +2471,127 @@ pub(crate) unsafe extern "C" fn Task_HandleInfoCardInput(taskId: u8) {
                             if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
                                 gSprites[(*sInfoCard).spriteIds[i]].callback =
                                     Some(SpriteCB_MonIconCardScrollRight);
-                                gSprites[(*sInfoCard).spriteIds[i]].data[0] =
-                                    gTasks[taskId].data[2];
+                                gSprites[(*sInfoCard).spriteIds[i]].data[0] = task_get(taskId, 2);
                                 gSprites[(*sInfoCard).spriteIds[i]].data[1] = 0;
                                 gSprites[(*sInfoCard).spriteIds[i]].data[2] = i as i16;
                             }
                         }
-                        i += 1;
                     }
-                    gTasks[taskId].data[0] = STATE_MOVE_RIGHT;
-                    gTasks[taskId].data[5] = 0;
+                    task_set(taskId, 0, STATE_MOVE_RIGHT);
+                    task_set(taskId, 5, 0);
                 }
                 _ => {}
             }
         }
         STATE_MOVE_UP => {
             if ({
-                gTasks[taskId].data[5] += 1;
-                gTasks[taskId].data[5]
+                task_set(taskId, 5, task_get(taskId, 5) + 1);
+                task_get(taskId, 5)
             }) != 41
             {
                 gBattle_BG0_Y -= 4;
                 gBattle_BG1_Y -= 4;
                 gBattle_BG2_Y -= 4;
             } else {
-                gTasks[taskId].data[0] = STATE_GET_INPUT;
+                task_set(taskId, 0, STATE_GET_INPUT);
             }
         }
         STATE_MOVE_DOWN => {
             if ({
-                gTasks[taskId].data[5] += 1;
-                gTasks[taskId].data[5]
+                task_set(taskId, 5, task_get(taskId, 5) + 1);
+                task_get(taskId, 5)
             }) != 41
             {
                 gBattle_BG0_Y += 4;
                 gBattle_BG1_Y += 4;
                 gBattle_BG2_Y += 4;
             } else {
-                gTasks[taskId].data[0] = STATE_GET_INPUT;
+                task_set(taskId, 0, STATE_GET_INPUT);
             }
         }
         STATE_MOVE_LEFT => {
             if ({
-                gTasks[taskId].data[5] += 1;
-                gTasks[taskId].data[5]
+                task_set(taskId, 5, task_get(taskId, 5) + 1);
+                task_get(taskId, 5)
             }) != 65
             {
                 gBattle_BG0_X -= 4;
                 gBattle_BG1_X -= 4;
                 gBattle_BG2_X -= 4;
             } else {
-                gTasks[taskId].data[0] = STATE_GET_INPUT;
+                task_set(taskId, 0, STATE_GET_INPUT);
             }
         }
         STATE_MOVE_RIGHT => {
             if ({
-                gTasks[taskId].data[5] += 1;
-                gTasks[taskId].data[5]
+                task_set(taskId, 5, task_get(taskId, 5) + 1);
+                task_get(taskId, 5)
             }) != 65
             {
                 gBattle_BG0_X += 4;
                 gBattle_BG1_X += 4;
                 gBattle_BG2_X += 4;
             } else {
-                gTasks[taskId].data[0] = STATE_GET_INPUT;
+                task_set(taskId, 0, STATE_GET_INPUT);
             }
         }
-        STATE_CLOSE_CARD => {
-            if gPaletteFade.active() == 0 {
-                i = 0;
-                while i < 8 {
-                    if i < 2 {
-                        if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
-                            FreeAndDestroyTrainerPicSprite((*sInfoCard).spriteIds[i] as u16);
-                        }
-                    } else {
-                        if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
-                            FreeAndDestroyMonIconSprite(
-                                &raw mut gSprites[(*sInfoCard).spriteIds[i]],
-                            );
-                        }
+        STATE_CLOSE_CARD if gPaletteFade.active() == 0 => {
+            for i in 0..8i32 {
+                if i < 2 {
+                    if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
+                        FreeAndDestroyTrainerPicSprite((*sInfoCard).spriteIds[i] as u16);
                     }
-                    i += 1;
-                }
-                i = 8;
-                while i < NUM_INFOCARD_SPRITES {
-                    if i < 10 {
-                        if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
-                            FreeAndDestroyTrainerPicSprite((*sInfoCard).spriteIds[i] as u16);
-                        }
-                    } else {
-                        if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
-                            FreeAndDestroyMonIconSprite(
-                                &raw mut gSprites[(*sInfoCard).spriteIds[i]],
-                            );
-                        }
-                    }
-                    i += 1;
-                }
-                FreeMonIconPalettes();
-                Free(sInfoCard as *mut c_void);
-                sInfoCard = null_mut();
-                FreeAllWindowBuffers();
-                if mode == INFOCARD_NEXT_OPPONENT as i32 {
-                    SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
                 } else {
-                    i = CreateTask(Some(Task_ShowTourneyTree), 0) as i32;
-                    gTasks[i].data[0] = 0;
-                    gTasks[i].data[1] = FALSE as i16;
-                    gTasks[i].data[2] = 3;
-                    gTasks[i].data[3] = gTasks[taskId].data[4];
-                    gTasks[i].data[4] = gTasks[taskId2].data[6];
+                    if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
+                        FreeAndDestroyMonIconSprite(&raw mut gSprites[(*sInfoCard).spriteIds[i]]);
+                    }
                 }
-                DestroyTask(taskId);
             }
+            i = 8;
+            while i < NUM_INFOCARD_SPRITES {
+                if i < 10 {
+                    if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
+                        FreeAndDestroyTrainerPicSprite((*sInfoCard).spriteIds[i] as u16);
+                    }
+                } else {
+                    if (*sInfoCard).spriteIds[i] != SPRITE_NONE {
+                        FreeAndDestroyMonIconSprite(&raw mut gSprites[(*sInfoCard).spriteIds[i]]);
+                    }
+                }
+                i += 1;
+            }
+            FreeMonIconPalettes();
+            Free(sInfoCard as *mut c_void);
+            sInfoCard = null_mut();
+            FreeAllWindowBuffers();
+            if mode == INFOCARD_NEXT_OPPONENT as i32 {
+                SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
+            } else {
+                i = CreateTask(Some(Task_ShowTourneyTree), 0) as i32;
+                task_set(i, 0, 0);
+                task_set(i, 1, FALSE as i16);
+                task_set(i, 2, 3);
+                task_set(i, 3, task_get(taskId, 4));
+                task_set(i, 4, task_get(taskId2, 6));
+            }
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Task_GetInfoCardInput(taskId: u8) -> u8 {
+unsafe fn Task_GetInfoCardInput(taskId: u8) -> u8 {
     let mut input: u8 = INFOCARD_INPUT_NONE;
-    let mut taskId2: i32 = gTasks[taskId].data[4] as i32;
-    let mut position: i32 = gTasks[taskId2].data[1] as i32;
-    let mut tourneyId: u8 = sTourneyTreeTrainerIds[position];
-    let mut roundId: u16 = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum;
+    let taskId2: i32 = task_get(taskId, 4) as i32;
+    let mut position: i32 = task_get(taskId2, 1) as i32;
+    let tourneyId: u8 = sTourneyTreeTrainerIds[position];
+    let roundId: u16 = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum;
     if gMain.newKeys as i32 & 3 != 0 {
         input = INFOCARD_INPUT_AB;
     }
-    if gTasks[taskId].data[3] == INFOCARD_NEXT_OPPONENT {
+    if task_get(taskId, 3) == INFOCARD_NEXT_OPPONENT {
         return input;
     }
-    if gTasks[taskId].data[3] == INFOCARD_TRAINER {
+    if task_get(taskId, 3) == INFOCARD_TRAINER {
         if gMain.newKeys as i32 & DPAD_UP != 0 && (*sInfoCard).pos == 0 {
             if position == 0 {
                 position = 15;
@@ -2609,10 +2626,14 @@ pub(crate) unsafe extern "C" fn Task_GetInfoCardInput(taskId: u8) -> u8 {
         }
         if input == INFOCARD_INPUT_AB {
             if (*sInfoCard).pos != 0 {
-                gTasks[taskId2].data[1] = sTrainerAndRoundToLastMatchCardNum[position / 2]
-                    [(*sInfoCard).pos as i32 - 1] as i16;
+                task_set(
+                    taskId2,
+                    1,
+                    sTrainerAndRoundToLastMatchCardNum[position / 2][(*sInfoCard).pos as i32 - 1]
+                        as i16,
+                );
             } else {
-                gTasks[taskId2].data[1] = position as i16;
+                task_set(taskId2, 1, position as i16);
             }
         }
     } else {
@@ -2641,26 +2662,35 @@ pub(crate) unsafe extern "C" fn Task_GetInfoCardInput(taskId: u8) -> u8 {
         }
         if input == INFOCARD_INPUT_AB {
             if (*sInfoCard).pos == 0 {
-                gTasks[taskId2].data[1] =
-                    sTournamentIdToPairedTrainerIds[(*sInfoCard).tournamentIds[0]] as i16;
+                task_set(
+                    taskId2,
+                    1,
+                    sTournamentIdToPairedTrainerIds[(*sInfoCard).tournamentIds[0]] as i16,
+                );
             } else if (*sInfoCard).pos == 2 {
-                gTasks[taskId2].data[1] =
-                    sTournamentIdToPairedTrainerIds[(*sInfoCard).tournamentIds[1]] as i16;
+                task_set(
+                    taskId2,
+                    1,
+                    sTournamentIdToPairedTrainerIds[(*sInfoCard).tournamentIds[1]] as i16,
+                );
             } else {
-                gTasks[taskId2].data[1] = position as i16;
+                task_set(taskId2, 1, position as i16);
             }
         }
     }
     if input != INFOCARD_INPUT_NONE && input != INFOCARD_INPUT_AB {
         PlaySE(SE_SELECT);
-        gTasks[taskId2].data[1] = position as i16;
-        gTasks[taskId].data[2] ^= 1;
+        task_set(taskId2, 1, position as i16);
+        task_set(
+            taskId,
+            tUsingAlternateSlot,
+            task_get(taskId, tUsingAlternateSlot) ^ 1,
+        );
     }
-    return input;
+    input
 }
-pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourneyId: u8) {
+unsafe fn DisplayTrainerInfoOnCard(flags: u8, trainerTourneyId: u8) {
     let mut textPrinter: TextPrinterTemplate = zeroed();
-    let mut i: i32 = 0;
     let mut j: i32 = 0;
     let mut k: i32 = 0;
     let mut trainerId: i32 = 0;
@@ -2670,7 +2700,7 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
     let mut x: i32 = 0;
     let mut y: i32 = 0;
     let mut palSlot: u8 = 0;
-    let mut allocatedArray: *mut i16 =
+    let allocatedArray: *mut i16 =
         AllocZeroed(2 * (if 18 >= 16 { 18 } else { 16 }) as u32) as *mut i16;
     trainerId = (*gSaveBlock2Ptr).frontier.domeTrainers[trainerTourneyId].trainerId() as i32;
     if flags as i32 & CARD_ALTERNATE_SLOT != 0 {
@@ -2721,8 +2751,7 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
     if flags as i32 & MOVE_CARD != 0 {
         gSprites[(*sInfoCard).spriteIds[arrId]].set_invisible(TRUE as u16);
     }
-    i = 0;
-    while i < FRONTIER_PARTY_SIZE {
+    for i in 0..FRONTIER_PARTY_SIZE {
         if trainerId == TRAINER_PLAYER as i32 {
             (*sInfoCard).spriteIds[2 + i + arrId] = CreateMonIcon(
                 (*gSaveBlock2Ptr).frontier.domeMonIds[trainerTourneyId][i],
@@ -2768,7 +2797,6 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
         if flags as i32 & MOVE_CARD != 0 {
             gSprites[(*sInfoCard).spriteIds[2 + i + arrId]].set_invisible(TRUE as u16);
         }
-        i += 1;
     }
     textPrinter.fontId = FONT_SHORT;
     textPrinter.x = 0;
@@ -2781,16 +2809,21 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
     textPrinter.set_fgColor(TEXT_DYNAMIC_COLOR_5);
     textPrinter.set_bgColor(TEXT_COLOR_TRANSPARENT);
     textPrinter.set_shadowColor(TEXT_DYNAMIC_COLOR_4);
-    i = 0;
+    let mut i: i32 = 0;
     if trainerId == TRAINER_PLAYER as i32 {
-        j = gFacilityClassToTrainerClass[60] as i32;
+        j = (*(&raw const crate::data::pokemon::gFacilityClassToTrainerClass)
+            .cast::<CArray<u8, 0>>())[60] as i32;
     } else if trainerId == TRAINER_FRONTIER_BRAIN as i32 {
         j = GetDomeBrainTrainerClass() as i32;
     } else {
         j = GetFrontierOpponentClass(trainerId as u16) as i32;
     }
-    while gTrainerClassNames[j][i] != EOS {
-        gStringVar1[i] = gTrainerClassNames[j][i];
+    while (*(&raw const crate::data::data_tables::gTrainerClassNames)
+        .cast::<CArray<CArray<u8, 13>, 0>>())[j][i]
+        != EOS
+    {
+        gStringVar1[i] = (*(&raw const crate::data::data_tables::gTrainerClassNames)
+            .cast::<CArray<CArray<u8, 13>, 0>>())[j][i];
         i += 1;
     }
     gStringVar1[i] = CHAR_SPACE;
@@ -2819,21 +2852,23 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
     CopyWindowToVram(windowId as u8, COPYWIN_FULL);
     AddTextPrinter(&raw mut textPrinter, 0, None);
     textPrinter.letterSpacing = 0;
-    i = 0;
-    while i < FRONTIER_PARTY_SIZE {
+    for i in 0..FRONTIER_PARTY_SIZE {
         textPrinter.currentY = sSpeciesNameTextYCoords[i];
         if trainerId == TRAINER_PLAYER as i32 {
-            textPrinter.currentChar = gSpeciesNames
+            textPrinter.currentChar = (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())
                 [(*gSaveBlock2Ptr).frontier.domeMonIds[trainerTourneyId][i]]
                 .as_ptr()
                 .cast_mut();
         } else if trainerId == TRAINER_FRONTIER_BRAIN as i32 {
-            textPrinter.currentChar = gSpeciesNames
+            textPrinter.currentChar = (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())
                 [(*gSaveBlock2Ptr).frontier.domeMonIds[trainerTourneyId][i]]
                 .as_ptr()
                 .cast_mut();
         } else {
-            textPrinter.currentChar = gSpeciesNames[(*gFacilityTrainerMons
+            textPrinter.currentChar = (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())[(*gFacilityTrainerMons
                 .at((*gSaveBlock2Ptr).frontier.domeMonIds[trainerTourneyId][i]))
             .species]
                 .as_ptr()
@@ -2851,7 +2886,6 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
             COPYWIN_FULL,
         );
         AddTextPrinter(&raw mut textPrinter, 0, None);
-        i += 1;
     }
     PutWindowTilemap(windowId as u8 + WIN_TRAINER_FLAVOR_TEXT);
     CopyWindowToVram(windowId as u8 + WIN_TRAINER_FLAVOR_TEXT, COPYWIN_FULL);
@@ -2866,12 +2900,9 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
     textPrinter.y = 4;
     textPrinter.currentY = 4;
     AddTextPrinter(&raw mut textPrinter, 0, None);
-    i = 0;
-    while i < FRONTIER_PARTY_SIZE {
-        j = 0;
-        while j < MAX_MON_MOVES {
-            k = 0;
-            while k < NUM_MOVE_POINT_TYPES {
+    for i in 0..FRONTIER_PARTY_SIZE {
+        for j in 0..MAX_MON_MOVES {
+            for k in 0..NUM_MOVE_POINT_TYPES {
                 if trainerId == TRAINER_FRONTIER_BRAIN as i32 {
                     *allocatedArray.at(k) +=
                         sBattleStyleMovePoints[GetFrontierBrainMonMove(i as u8, j as u8)][k] as i16;
@@ -2884,18 +2915,14 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
                         .at((*gSaveBlock2Ptr).frontier.domeMonIds[trainerTourneyId][i]))
                     .moves[j]][k] as i16;
                 }
-                k += 1;
             }
-            j += 1;
         }
-        i += 1;
     }
     i = 0;
     while i < 31 {
         let mut thresholdStatCount: i32 = 0;
         k = 0;
-        j = 0;
-        while j < NUM_MOVE_POINT_TYPES {
+        for j in 0..NUM_MOVE_POINT_TYPES {
             if sBattleStyleThresholds[i][j] != 0 {
                 thresholdStatCount += 1;
                 if *allocatedArray.at(j) != 0
@@ -2904,7 +2931,6 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
                     k += 1;
                 }
             }
-            j += 1;
         }
         if thresholdStatCount == k {
             break;
@@ -2921,8 +2947,7 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
         i += 1;
     }
     if trainerId == TRAINER_FRONTIER_BRAIN as i32 || trainerId == TRAINER_PLAYER as i32 {
-        i = 0;
-        while i < FRONTIER_PARTY_SIZE {
+        for i in 0..FRONTIER_PARTY_SIZE {
             j = 0;
             while j < NUM_STATS {
                 if trainerId == TRAINER_FRONTIER_BRAIN as i32 {
@@ -2934,26 +2959,29 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
                 j += 1;
             }
             *allocatedArray.at(6) += *allocatedArray;
-            j = 0;
-            while j < NUM_NATURE_STATS {
+            for j in 0..NUM_NATURE_STATS {
                 if trainerId == TRAINER_FRONTIER_BRAIN as i32 {
                     nature = GetFrontierBrainMonNature(i as u8);
                 } else {
                     nature = (*gSaveBlock2Ptr).frontier.domePlayerPartyData[i].nature;
                 }
-                if gNatureStatTable[nature][j] > 0 {
+                if (*(&raw const crate::data::pokemon::gNatureStatTable)
+                    .cast::<CArray<CArray<i8, 5>, 0>>())[nature][j]
+                    > 0
+                {
                     *allocatedArray.at(j + NUM_STATS + 1) +=
                         (*allocatedArray.at(j + 1) as i32 * 110 / 100) as i16;
-                } else if gNatureStatTable[nature][j] < 0 {
+                } else if (*(&raw const crate::data::pokemon::gNatureStatTable)
+                    .cast::<CArray<CArray<i8, 5>, 0>>())[nature][j]
+                    < 0
+                {
                     *allocatedArray.at(j + NUM_STATS + 1) +=
                         (*allocatedArray.at(j + 1) as i32 * 90 / 100) as i16;
                     *allocatedArray.at(j + NUM_STATS + NUM_NATURE_STATS + 2) += 1;
                 } else {
                     *allocatedArray.at(j + NUM_STATS + 1) += *allocatedArray.at(j + 1);
                 }
-                j += 1;
             }
-            i += 1;
         }
         j = 0;
         i = 0;
@@ -2961,27 +2989,22 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
             j += *allocatedArray.at(NUM_STATS + i) as i32;
             i += 1;
         }
-        i = 0;
-        while i < NUM_STATS {
+        for i in 0..NUM_STATS {
             *allocatedArray.at(i) =
                 div_i32(*allocatedArray.at(NUM_STATS + i) as i32 * 100, j) as i16;
-            i += 1;
         }
     } else {
-        i = 0;
-        while i < FRONTIER_PARTY_SIZE {
+        for i in 0..FRONTIER_PARTY_SIZE {
             let mut evBits: i32 = (*gFacilityTrainerMons
                 .at((*gSaveBlock2Ptr).frontier.domeMonIds[trainerTourneyId][i]))
             .evSpread as i32;
             k = 0;
-            j = 0;
-            while j < NUM_STATS {
+            for j in 0..NUM_STATS {
                 *allocatedArray.at(j) = 0;
                 if evBits & 1 != 0 {
                     k += 1;
                 }
                 evBits >>= 1;
-                j += 1;
             }
             k = div_i32(MAX_TOTAL_EVS, k);
             evBits = (*gFacilityTrainerMons
@@ -2996,24 +3019,27 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
                 j += 1;
             }
             *allocatedArray.at(6) += *allocatedArray;
-            j = 0;
-            while j < NUM_NATURE_STATS {
+            for j in 0..NUM_NATURE_STATS {
                 nature = (*gFacilityTrainerMons
                     .at((*gSaveBlock2Ptr).frontier.domeMonIds[trainerTourneyId][i]))
                 .nature;
-                if gNatureStatTable[nature][j] > 0 {
+                if (*(&raw const crate::data::pokemon::gNatureStatTable)
+                    .cast::<CArray<CArray<i8, 5>, 0>>())[nature][j]
+                    > 0
+                {
                     *allocatedArray.at(j + NUM_STATS + 1) +=
                         (*allocatedArray.at(j + 1) as i32 * 110 / 100) as i16;
-                } else if gNatureStatTable[nature][j] < 0 {
+                } else if (*(&raw const crate::data::pokemon::gNatureStatTable)
+                    .cast::<CArray<CArray<i8, 5>, 0>>())[nature][j]
+                    < 0
+                {
                     *allocatedArray.at(j + NUM_STATS + 1) +=
                         (*allocatedArray.at(j + 1) as i32 * 90 / 100) as i16;
                     *allocatedArray.at(j + NUM_STATS + NUM_NATURE_STATS + 2) += 1;
                 } else {
                     *allocatedArray.at(j + NUM_STATS + 1) += *allocatedArray.at(j + 1);
                 }
-                j += 1;
             }
-            i += 1;
         }
         j = 0;
         i = 0;
@@ -3021,17 +3047,14 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
             j += *allocatedArray.at(i + NUM_STATS) as i32;
             i += 1;
         }
-        i = 0;
-        while i < NUM_STATS {
+        for i in 0..NUM_STATS {
             *allocatedArray.at(i) =
                 div_i32(*allocatedArray.at(NUM_STATS + i) as i32 * 100, j) as i16;
-            i += 1;
         }
     }
     i = 0;
     j = 0;
-    k = 0;
-    while k < NUM_STATS {
+    for k in 0..NUM_STATS {
         if *allocatedArray.at(k) > 29 {
             if i == 2 {
                 if *allocatedArray.at(6) < *allocatedArray.at(k) {
@@ -3080,7 +3103,6 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
                 j += 1;
             }
         }
-        k += 1;
     }
     if i == 2 {
         i = sStatTextOffsets[*allocatedArray.at(6)] as i32
@@ -3103,15 +3125,11 @@ pub(crate) unsafe extern "C" fn DisplayTrainerInfoOnCard(flags: u8, trainerTourn
     AddTextPrinter(&raw mut textPrinter, 0, None);
     Free(allocatedArray as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn BufferDomeWinString(
-    matchNum: u8,
-    mut tournamentIds: *mut u8,
-) -> i32 {
-    let mut i: i32 = 0;
+unsafe fn BufferDomeWinString(matchNum: u8, tournamentIds: *mut u8) -> i32 {
     let mut tournamentId: u8 = 0;
     let mut winStringId: i32 = 0;
     let mut count: i32 = 0;
-    i = sCompetitorRangeByMatch[matchNum][0] as i32;
+    let mut i: i32 = sCompetitorRangeByMatch[matchNum][0] as i32;
     while i < sCompetitorRangeByMatch[matchNum][0] as i32
         + sCompetitorRangeByMatch[matchNum][1] as i32
     {
@@ -3156,7 +3174,9 @@ pub(crate) unsafe extern "C" fn BufferDomeWinString(
             {
                 StringCopy(
                     gStringVar2.as_mut_ptr(),
-                    gMoveNames[(*gSaveBlock2Ptr).frontier.domeWinningMoves[tournamentId]]
+                    (*(&raw const crate::data::data_tables::gMoveNames)
+                        .cast::<CArray<CArray<u8, 13>, 355>>())
+                        [(*gSaveBlock2Ptr).frontier.domeWinningMoves[tournamentId]]
                         .as_ptr()
                         .cast_mut(),
                 );
@@ -3199,16 +3219,14 @@ pub(crate) unsafe extern "C" fn BufferDomeWinString(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn DisplayMatchInfoOnCard(flags: u8, matchNo: u8) {
+unsafe fn DisplayMatchInfoOnCard(flags: u8, matchNo: u8) {
     let mut textPrinter: TextPrinterTemplate = zeroed();
     let mut tournamentIds: CArray<i32, 2> = zeroed();
     let mut trainerIds: CArray<i32, 2> = zeroed();
     let mut lost: CArray<u32, 2> = zeroed();
-    let mut i: i32 = 0;
-    let mut winStringId: i32 = 0;
     let mut arrId: i32 = 0;
     let mut windowId: i32 = 0;
     let mut x: i32 = 0;
@@ -3231,9 +3249,8 @@ pub(crate) unsafe extern "C" fn DisplayMatchInfoOnCard(flags: u8, matchNo: u8) {
     if flags as i32 & MOVE_CARD_UP as i32 != 0 {
         y = -160;
     }
-    winStringId = BufferDomeWinString(matchNo, (*sInfoCard).tournamentIds.as_mut_ptr());
-    i = 0;
-    while i < NUM_INFOCARD_TRAINERS {
+    let winStringId: i32 = BufferDomeWinString(matchNo, (*sInfoCard).tournamentIds.as_mut_ptr());
+    for i in 0..NUM_INFOCARD_TRAINERS {
         tournamentIds[i] = (*sInfoCard).tournamentIds[i] as i32;
         trainerIds[i] =
             (*gSaveBlock2Ptr).frontier.domeTrainers[tournamentIds[i]].trainerId() as i32;
@@ -3245,7 +3262,6 @@ pub(crate) unsafe extern "C" fn DisplayMatchInfoOnCard(flags: u8, matchNo: u8) {
         } else {
             lost[i] = FALSE as u32;
         }
-        i += 1;
     }
     if trainerIds[0] == TRAINER_PLAYER as i32 {
         (*sInfoCard).spriteIds[arrId] = CreateTrainerPicSprite(
@@ -3319,7 +3335,7 @@ pub(crate) unsafe extern "C" fn DisplayMatchInfoOnCard(flags: u8, matchNo: u8) {
             .oam
             .set_paletteNum(3);
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i < FRONTIER_PARTY_SIZE {
         if trainerIds[0] == TRAINER_PLAYER as i32 {
             (*sInfoCard).spriteIds[2 + i + arrId] = CreateMonIcon(
@@ -3370,12 +3386,11 @@ pub(crate) unsafe extern "C" fn DisplayMatchInfoOnCard(flags: u8, matchNo: u8) {
             gSprites[(*sInfoCard).spriteIds[2 + i + arrId]]
                 .oam
                 .set_paletteNum(3);
-            gSprites[(*sInfoCard).spriteIds[2 + i + arrId]].data[3] = TRUE as i16;
+            gSprites[(*sInfoCard).spriteIds[2 + i + arrId]].data[sMonIconStill] = TRUE as i16;
         }
         i += 1;
     }
-    i = 0;
-    while i < FRONTIER_PARTY_SIZE {
+    for i in 0..FRONTIER_PARTY_SIZE {
         if trainerIds[1] == TRAINER_PLAYER as i32 {
             (*sInfoCard).spriteIds[5 + i + arrId] = CreateMonIcon(
                 (*gSaveBlock2Ptr).frontier.domeMonIds[tournamentIds[1]][i],
@@ -3425,9 +3440,8 @@ pub(crate) unsafe extern "C" fn DisplayMatchInfoOnCard(flags: u8, matchNo: u8) {
             gSprites[(*sInfoCard).spriteIds[5 + i + arrId]]
                 .oam
                 .set_paletteNum(3);
-            gSprites[(*sInfoCard).spriteIds[5 + i + arrId]].data[3] = TRUE as i16;
+            gSprites[(*sInfoCard).spriteIds[5 + i + arrId]].data[sMonIconStill] = TRUE as i16;
         }
-        i += 1;
     }
     textPrinter.x = 0;
     textPrinter.y = 2;
@@ -3520,57 +3534,56 @@ pub(crate) unsafe extern "C" fn DisplayMatchInfoOnCard(flags: u8, matchNo: u8) {
     CopyWindowToVram(windowId as u8 + WIN_MATCH_NUMBER, COPYWIN_FULL);
     AddTextPrinter(&raw mut textPrinter, 0, None);
 }
-pub(crate) unsafe extern "C" fn ShowDomeTourneyTree() {
-    let mut taskId: u8 = CreateTask(Some(Task_ShowTourneyTree), 0);
-    gTasks[taskId].data[0] = 0;
-    gTasks[taskId].data[1] = FALSE as i16;
-    gTasks[taskId].data[2] = 2;
-    gTasks[taskId].data[4] = FALSE as i16;
+pub(crate) unsafe fn ShowDomeTourneyTree() {
+    let taskId: u8 = CreateTask(Some(Task_ShowTourneyTree), 0);
+    task_set(taskId, tState, 0);
+    task_set(taskId, tNotInteractive, FALSE as i16);
+    task_set(taskId, 2, 2);
+    task_set(taskId, tIsPrevTourneyTree, FALSE as i16);
     SetMainCallback2(Some(CB2_TourneyTree));
 }
-pub(crate) unsafe extern "C" fn ShowPreviousDomeTourneyTree() {
-    let mut taskId: u8 = 0;
+pub(crate) unsafe fn ShowPreviousDomeTourneyTree() {
     SetFacilityTrainerAndMonPtrs();
     (*gSaveBlock2Ptr)
         .frontier
         .set_lvlMode((*gSaveBlock2Ptr).frontier.domeLvlMode - 1);
     (*gSaveBlock2Ptr).frontier.curChallengeBattleNum = DOME_FINAL;
-    taskId = CreateTask(Some(Task_ShowTourneyTree), 0);
-    gTasks[taskId].data[0] = 0;
-    gTasks[taskId].data[1] = FALSE as i16;
-    gTasks[taskId].data[2] = 2;
-    gTasks[taskId].data[4] = TRUE as i16;
+    let taskId: u8 = CreateTask(Some(Task_ShowTourneyTree), 0);
+    task_set(taskId, tState, 0);
+    task_set(taskId, tNotInteractive, FALSE as i16);
+    task_set(taskId, 2, 2);
+    task_set(taskId, tIsPrevTourneyTree, TRUE as i16);
     SetMainCallback2(Some(CB2_TourneyTree));
 }
-pub(crate) unsafe extern "C" fn Task_HandleTourneyTreeInput(taskId: u8) {
+pub(crate) unsafe fn Task_HandleTourneyTreeInput(taskId: u8) {
     let mut newTaskId: u8 = 0;
-    let mut spriteId: i32 = gTasks[taskId].data[1] as i32;
-    match gTasks[taskId].data[0] {
+    let spriteId: i32 = task_get(taskId, 1) as i32;
+    match task_get(taskId, tState) {
         STATE_FADE_IN => {
             if gPaletteFade.active() == 0 {
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
-                gTasks[taskId].data[0] = STATE_WAIT_FADE;
+                task_set(taskId, tState, STATE_WAIT_FADE);
                 StartSpriteAnim(&raw mut gSprites[spriteId], 1);
             }
         }
         STATE_WAIT_FADE => {
             if gPaletteFade.active() == 0 {
-                gTasks[taskId].data[0] = STATE_GET_INPUT;
+                task_set(taskId, tState, STATE_GET_INPUT);
             }
         }
         STATE_GET_INPUT => match UpdateTourneyTreeCursor(taskId) {
             TOURNEY_TREE_NO_SELECTION => {}
             TOURNEY_TREE_SELECTED_TRAINER => {
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-                gTasks[taskId].data[0] = STATE_SHOW_INFOCARD_TRAINER;
+                task_set(taskId, tState, STATE_SHOW_INFOCARD_TRAINER);
             }
             TOURNEY_TREE_SELECTED_MATCH => {
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-                gTasks[taskId].data[0] = STATE_SHOW_INFOCARD_MATCH;
+                task_set(taskId, tState, STATE_SHOW_INFOCARD_MATCH);
             }
             _ => {
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-                gTasks[taskId].data[0] = 7;
+                task_set(taskId, tState, 7);
             }
         },
         STATE_SHOW_INFOCARD_TRAINER => {
@@ -3580,11 +3593,11 @@ pub(crate) unsafe extern "C" fn Task_HandleTourneyTreeInput(taskId: u8) {
                 Free(sTilemapBuffer as *mut c_void);
                 sTilemapBuffer = null_mut();
                 newTaskId = CreateTask(Some(Task_ShowTourneyInfoCard), 0);
-                gTasks[newTaskId].data[0] = 0;
-                gTasks[newTaskId].data[1] = sTourneyTreeTrainerIds[spriteId] as i16;
-                gTasks[newTaskId].data[2] = INFOCARD_TRAINER;
-                gTasks[newTaskId].data[3] = taskId as i16;
-                gTasks[taskId].data[0] = 4;
+                task_set(newTaskId, tState, 0);
+                task_set(newTaskId, 1, sTourneyTreeTrainerIds[spriteId] as i16);
+                task_set(newTaskId, tMode, INFOCARD_TRAINER);
+                task_set(newTaskId, tPrevTaskId, taskId as i16);
+                task_set(taskId, tState, 4);
                 (*sInfoCard).pos = 0;
             }
         }
@@ -3596,33 +3609,35 @@ pub(crate) unsafe extern "C" fn Task_HandleTourneyTreeInput(taskId: u8) {
                 Free(sTilemapBuffer as *mut c_void);
                 sTilemapBuffer = null_mut();
                 newTaskId = CreateTask(Some(Task_ShowTourneyInfoCard), 0);
-                gTasks[newTaskId].data[0] = 0;
-                gTasks[newTaskId].data[1] = spriteId as i16 - DOME_TOURNAMENT_TRAINERS_COUNT as i16;
-                gTasks[newTaskId].data[2] = INFOCARD_MATCH as i16;
-                gTasks[newTaskId].data[3] = taskId as i16;
-                gTasks[taskId].data[0] = 6;
+                task_set(newTaskId, tState, 0);
+                task_set(
+                    newTaskId,
+                    1,
+                    spriteId as i16 - DOME_TOURNAMENT_TRAINERS_COUNT as i16,
+                );
+                task_set(newTaskId, tMode, INFOCARD_MATCH as i16);
+                task_set(newTaskId, tPrevTaskId, taskId as i16);
+                task_set(taskId, tState, 6);
             }
         }
         6 => {}
-        7 => {
-            if gPaletteFade.active() == 0 {
-                FreeAllWindowBuffers();
-                ScanlineEffect_Stop();
-                Free(sTilemapBuffer as *mut c_void);
-                sTilemapBuffer = null_mut();
-                SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
-                DestroyTask(gTasks[taskId].data[7] as u8);
-                DestroyTask(taskId);
-            }
+        7 if gPaletteFade.active() == 0 => {
+            FreeAllWindowBuffers();
+            ScanlineEffect_Stop();
+            Free(sTilemapBuffer as *mut c_void);
+            sTilemapBuffer = null_mut();
+            SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
+            DestroyTask(task_get(taskId, 7) as u8);
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn UpdateTourneyTreeCursor(taskId: u8) -> u8 {
+unsafe fn UpdateTourneyTreeCursor(taskId: u8) -> u8 {
     let mut selection: u8 = TOURNEY_TREE_NO_SELECTION;
     let mut direction: i32 = MOVE_DIR_NONE;
-    let mut tourneyTreeCursorSpriteId: i32 = gTasks[taskId].data[1] as i32;
-    let mut roundId: i32 = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32;
+    let mut tourneyTreeCursorSpriteId: i32 = task_get(taskId, 1) as i32;
+    let roundId: i32 = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32;
     if gMain.newKeys == B_BUTTON as u16
         || gMain.newKeys as i32 & A_BUTTON != 0
             && tourneyTreeCursorSpriteId == TOURNEY_TREE_CLOSE_BUTTON
@@ -3662,20 +3677,19 @@ pub(crate) unsafe extern "C" fn UpdateTourneyTreeCursor(taskId: u8) -> u8 {
         tourneyTreeCursorSpriteId =
             sTourneyTreeCursorMovementMap[tourneyTreeCursorSpriteId][roundId][direction] as i32;
         StartSpriteAnim(&raw mut gSprites[tourneyTreeCursorSpriteId], 1);
-        gTasks[taskId].data[1] = tourneyTreeCursorSpriteId as i16;
+        task_set(taskId, 1, tourneyTreeCursorSpriteId as i16);
     }
-    return selection;
+    selection
 }
-pub(crate) unsafe extern "C" fn ShowNonInteractiveDomeTourneyTree() {
-    let mut taskId: u8 = CreateTask(Some(Task_ShowTourneyTree), 0);
-    gTasks[taskId].data[0] = 0;
-    gTasks[taskId].data[1] = TRUE as i16;
-    gTasks[taskId].data[2] = 2;
-    gTasks[taskId].data[4] = FALSE as i16;
+pub(crate) unsafe fn ShowNonInteractiveDomeTourneyTree() {
+    let taskId: u8 = CreateTask(Some(Task_ShowTourneyTree), 0);
+    task_set(taskId, tState, 0);
+    task_set(taskId, tNotInteractive, TRUE as i16);
+    task_set(taskId, 2, 2);
+    task_set(taskId, tIsPrevTourneyTree, FALSE as i16);
     SetMainCallback2(Some(CB2_TourneyTree));
 }
-pub(crate) unsafe extern "C" fn ResolveDomeRoundWinners() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn ResolveDomeRoundWinners() {
     if gSpecialVar_0x8005 == DOME_PLAYER_WON_MATCH {
         (*gSaveBlock2Ptr).frontier.domeTrainers[TrainerIdToTournamentId(gTrainerBattleOpponent_A)]
             .set_isEliminated(TRUE as u16);
@@ -3697,31 +3711,22 @@ pub(crate) unsafe extern "C" fn ResolveDomeRoundWinners() {
             (*gSaveBlock2Ptr).frontier.domeTrainers[TrainerIdToTournamentId(TRAINER_PLAYER)]
                 .set_forfeited(TRUE as u16);
         }
-        i = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32;
-        while i < DOME_ROUNDS_COUNT {
+        for i in ((*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32)..DOME_ROUNDS_COUNT {
             DecideRoundWinners(i as u8);
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn GetWinningMove(
-    winnerTournamentId: i32,
-    loserTournamentId: i32,
-    roundId: u8,
-) -> u16 {
-    let mut i: i32 = 0;
+unsafe fn GetWinningMove(winnerTournamentId: i32, loserTournamentId: i32, roundId: u8) -> u16 {
     let mut j: i32 = 0;
-    let mut k: i32 = 0;
     let mut moveScores: CArray<i32, 12> = zeroed();
     let mut moves: CArray<u16, 12> = zeroed();
     let mut bestScore: u16 = 0;
     let mut bestId: u16 = 0;
     let mut movePower: i32 = 0;
     SetFacilityPtrsGetLevel();
-    i = 0;
+    let mut i: i32 = 0;
     while i < FRONTIER_PARTY_SIZE {
-        j = 0;
-        while j < MAX_MON_MOVES {
+        for j in 0..MAX_MON_MOVES {
             moveScores[i * MAX_MON_MOVES + j] = 0;
             if (*gSaveBlock2Ptr).frontier.domeTrainers[winnerTournamentId].trainerId()
                 == TRAINER_FRONTIER_BRAIN
@@ -3732,7 +3737,9 @@ pub(crate) unsafe extern "C" fn GetWinningMove(
                     .at((*gSaveBlock2Ptr).frontier.domeMonIds[winnerTournamentId][i]))
                 .moves[j];
             }
-            movePower = gBattleMoves[moves[i * MAX_MON_MOVES + j]].power as i32;
+            movePower = (*(&raw const crate::data::pokemon::gBattleMoves)
+                .cast::<CArray<BattleMove, 0>>())[moves[i * MAX_MON_MOVES + j]]
+                .power as i32;
             if movePower == 0 {
                 movePower = 40;
             } else if movePower == 1 {
@@ -3740,12 +3747,10 @@ pub(crate) unsafe extern "C" fn GetWinningMove(
             } else if moves[i * MAX_MON_MOVES + j] == MOVE_SELF_DESTRUCT
                 || moves[i * MAX_MON_MOVES + j] == MOVE_EXPLOSION
             {
-                movePower = movePower / 2;
+                movePower /= 2;
             }
-            k = 0;
-            while k < FRONTIER_PARTY_SIZE {
+            for k in 0..FRONTIER_PARTY_SIZE {
                 let mut var: u32 = 0;
-                let mut targetSpecies: u16 = SPECIES_NONE;
                 let mut targetAbility: u16 = ABILITY_NONE as u16;
                 loop {
                     var = Random() as u32 | (Random() as u32) << 16;
@@ -3757,13 +3762,17 @@ pub(crate) unsafe extern "C" fn GetWinningMove(
                         break;
                     }
                 }
-                targetSpecies = (*gFacilityTrainerMons
+                let targetSpecies: u16 = (*gFacilityTrainerMons
                     .at((*gSaveBlock2Ptr).frontier.domeMonIds[loserTournamentId][k]))
                 .species;
                 if var & 1 != 0 {
-                    targetAbility = gSpeciesInfo[targetSpecies].abilities[1] as u16;
+                    targetAbility = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                        .cast::<CArray<SpeciesInfo, 0>>())[targetSpecies]
+                        .abilities[1] as u16;
                 } else {
-                    targetAbility = gSpeciesInfo[targetSpecies].abilities[0] as u16;
+                    targetAbility = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                        .cast::<CArray<SpeciesInfo, 0>>())[targetSpecies]
+                        .abilities[0] as u16;
                 }
                 var = AI_TypeCalc(
                     moves[i * MAX_MON_MOVES + j],
@@ -3783,17 +3792,15 @@ pub(crate) unsafe extern "C" fn GetWinningMove(
                 } else {
                     moveScores[i * MAX_MON_MOVES + j] += movePower;
                 }
-                k += 1;
             }
             if (bestScore as i32) < moveScores[i * MAX_MON_MOVES + j] {
                 bestId = i as u16 * MAX_MON_MOVES as u16 + j as u16;
                 bestScore = moveScores[i * MAX_MON_MOVES + j] as u16;
-            } else if bestScore as i32 == moveScores[i * MAX_MON_MOVES + j] {
-                if moves[bestId] < moves[i * MAX_MON_MOVES + j] {
-                    bestId = i as u16 * MAX_MON_MOVES as u16 + j as u16;
-                }
+            } else if bestScore as i32 == moveScores[i * MAX_MON_MOVES + j]
+                && moves[bestId] < moves[i * MAX_MON_MOVES + j]
+            {
+                bestId = i as u16 * MAX_MON_MOVES as u16 + j as u16;
             }
-            j += 1;
         }
         i += 1;
     }
@@ -3813,17 +3820,14 @@ pub(crate) unsafe extern "C" fn GetWinningMove(
             moveScores[j] = 0;
             bestScore = 0;
             j = 0;
-            k = 0;
-            while k < 12 {
+            for k in 0..12i32 {
                 j += moveScores[k];
-                k += 1;
             }
             if j == 0 {
                 break;
             }
             j = 0;
-            k = 0;
-            while k < 12 {
+            for k in 0..12i32 {
                 if (bestScore as i32) < moveScores[k] {
                     j = k;
                     bestScore = moveScores[k] as u16;
@@ -3831,7 +3835,6 @@ pub(crate) unsafe extern "C" fn GetWinningMove(
                     j = k;
                     bestScore = moveScores[k] as u16;
                 }
-                k += 1;
             }
         }
         if i == roundId as i32 - 1 {
@@ -3841,14 +3844,14 @@ pub(crate) unsafe extern "C" fn GetWinningMove(
     if moveScores[j] == 0 {
         j = bestId as i32;
     }
-    return moves[j];
+    moves[j]
 }
-pub(crate) unsafe extern "C" fn Task_ShowTourneyTree(taskId: u8) {
+pub(crate) unsafe fn Task_ShowTourneyTree(taskId: u8) {
     let mut i: i32 = 0;
     let mut textPrinter: TextPrinterTemplate = zeroed();
-    let mut notInteractive: i32 = gTasks[taskId].data[1] as i32;
-    let mut r4: i32 = gTasks[taskId].data[2] as i32;
-    match gTasks[taskId].data[0] {
+    let notInteractive: i32 = task_get(taskId, 1) as i32;
+    let r4: i32 = task_get(taskId, 2) as i32;
+    match task_get(taskId, 0) {
         0 => {
             SetHBlankCallback(None);
             SetVBlankCallback(None);
@@ -3876,7 +3879,7 @@ pub(crate) unsafe extern "C" fn Task_ShowTourneyTree(taskId: u8) {
             ChangeBgY(2, 0, BG_COORD_SET);
             ChangeBgX(3, 0, BG_COORD_SET);
             ChangeBgY(3, 0xB00, BG_COORD_SET);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
         1 => {
             SetGpuReg(REG_OFFSET_BLDCNT, 0);
@@ -3892,55 +3895,81 @@ pub(crate) unsafe extern "C" fn Task_ShowTourneyTree(taskId: u8) {
             ResetPaletteFade();
             ResetSpriteData();
             FreeAllSpritePalettes();
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
         2 => {
             sTilemapBuffer = AllocZeroed(BG_SCREEN_SIZE) as *mut u8;
             LZDecompressWram(
-                gDomeTourneyTree_Tilemap.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gDomeTourneyTree_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 sTilemapBuffer as *mut c_void,
             );
             SetBgTilemapBuffer(1, sTilemapBuffer as *mut c_void);
             CopyBgTilemapBufferToVram(1);
             DecompressAndLoadBgGfxUsingHeap(
                 1,
-                gDomeTourneyTree_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gDomeTourneyTree_Gfx).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0x2000,
                 0,
                 0,
             );
             DecompressAndLoadBgGfxUsingHeap(
                 2,
-                gDomeTourneyLine_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gDomeTourneyLine_Gfx).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0x2000,
                 0,
                 0,
             );
             DecompressAndLoadBgGfxUsingHeap(
                 2,
-                gDomeTourneyLineDown_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gDomeTourneyLineDown_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0x2000,
                 0,
                 1,
             );
             DecompressAndLoadBgGfxUsingHeap(
                 3,
-                gDomeTourneyLineUp_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gDomeTourneyLineUp_Tilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0x2000,
                 0,
                 1,
             );
             LoadCompressedPalette(
-                gDomeTourneyTree_Pal.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gDomeTourneyTree_Pal)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 BG_PLTT_OFFSET,
                 BG_PLTT_SIZE,
             );
             LoadCompressedPalette(
-                gDomeTourneyTreeButtons_Pal.as_ptr().cast_mut(),
+                (*(&raw const crate::data::graphics::gDomeTourneyTreeButtons_Pal)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 OBJ_PLTT_OFFSET,
                 OBJ_PLTT_SIZE,
             );
-            LoadCompressedPalette(gBattleWindowTextPalette.as_ptr().cast_mut(), 240, 32);
+            LoadCompressedPalette(
+                (*(&raw const crate::data::graphics::gBattleWindowTextPalette)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
+                240,
+                32,
+            );
             {
                 {
                     let mut tmp: u32 = 0;
@@ -3956,22 +3985,20 @@ pub(crate) unsafe extern "C" fn Task_ShowTourneyTree(taskId: u8) {
             ShowBg(1);
             ShowBg(2);
             ShowBg(3);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
         3 => {
             LoadCompressedSpriteSheet(sTourneyTreeButtonsSpriteSheet.as_ptr().cast_mut());
             if notInteractive == FALSE as i32 {
-                i = 0;
-                while i < 31 {
+                for i in 0..31i32 {
                     CreateSprite(
                         (&raw const *sTourneyTreePokeballSpriteTemplate).cast_mut(),
                         sTourneyTreePokeballCoords[i][0] as i16,
                         sTourneyTreePokeballCoords[i][1] as i16,
                         0,
                     );
-                    i += 1;
                 }
-                if gTasks[taskId].data[4] != 0 {
+                if task_get(taskId, tIsPrevTourneyTree) != 0 {
                     CreateSprite(
                         (&raw const *sExitButtonSpriteTemplate).cast_mut(),
                         218,
@@ -3988,11 +4015,15 @@ pub(crate) unsafe extern "C" fn Task_ShowTourneyTree(taskId: u8) {
                 }
             }
             SetGpuReg(REG_OFFSET_DISPCNT, 32576);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
         4 => {
             textPrinter.fontId = FONT_SHORT;
-            textPrinter.currentChar = gText_BattleTourney.as_ptr().cast_mut();
+            textPrinter.currentChar =
+                (*(&raw const crate::data::battle_message::gText_BattleTourney)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
             textPrinter.windowId = TOURNEYWIN_TITLE;
             textPrinter.x = 0;
             textPrinter.y = 0;
@@ -4010,8 +4041,7 @@ pub(crate) unsafe extern "C" fn Task_ShowTourneyTree(taskId: u8) {
             textPrinter.set_bgColor(TEXT_COLOR_TRANSPARENT);
             textPrinter.set_shadowColor(TEXT_DYNAMIC_COLOR_4);
             AddTextPrinter(&raw mut textPrinter, 0, None);
-            i = 0;
-            while i < DOME_TOURNAMENT_TRAINERS_COUNT {
+            for i in 0..DOME_TOURNAMENT_TRAINERS_COUNT {
                 let mut roundId: i32 = 0;
                 let mut var2: i32 = 0;
                 CopyDomeTrainerName(
@@ -4041,7 +4071,7 @@ pub(crate) unsafe extern "C" fn Task_ShowTourneyTree(taskId: u8) {
                             DrawTourneyAdvancementLine(i as u8, var2 as u8);
                         }
                     } else if (*gSaveBlock2Ptr).frontier.curChallengeBattleNum != DOME_ROUND1 {
-                        if gTasks[taskId].data[4] != 0 {
+                        if task_get(taskId, tIsPrevTourneyTree) != 0 {
                             var2 = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32;
                         } else {
                             var2 = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1;
@@ -4049,7 +4079,7 @@ pub(crate) unsafe extern "C" fn Task_ShowTourneyTree(taskId: u8) {
                         DrawTourneyAdvancementLine(i as u8, var2 as u8);
                     }
                 }
-                if gTasks[taskId].data[4] != 0 {
+                if task_get(taskId, tIsPrevTourneyTree) != 0 {
                     roundId = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32;
                 } else {
                     roundId = (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1;
@@ -4092,9 +4122,8 @@ pub(crate) unsafe extern "C" fn Task_ShowTourneyTree(taskId: u8) {
                 textPrinter.windowId = sTrainerNamePositions[i][0];
                 textPrinter.currentY = sTrainerNamePositions[i][1];
                 AddTextPrinter(&raw mut textPrinter, 0, None);
-                i += 1;
             }
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, 0, task_get(taskId, 0) + 1);
         }
         5 => {
             PutWindowTilemap(TOURNEYWIN_NAMES_LEFT);
@@ -4108,27 +4137,35 @@ pub(crate) unsafe extern "C" fn Task_ShowTourneyTree(taskId: u8) {
             if r4 == 2 {
                 if notInteractive == FALSE as i32 {
                     i = CreateTask(Some(Task_HandleTourneyTreeInput), 0) as i32;
-                    gTasks[i].data[0] = notInteractive as i16;
-                    gTasks[i].data[1] = notInteractive as i16;
-                    gTasks[i].data[6] = gTasks[taskId].data[4];
+                    task_set(i, 0, notInteractive as i16);
+                    task_set(i, 1, notInteractive as i16);
+                    task_set(i, 6, task_get(taskId, tIsPrevTourneyTree));
                 } else {
                     i = CreateTask(Some(Task_HandleStaticTourneyTreeInput), 0) as i32;
-                    gTasks[i].data[0] = 0;
+                    task_set(i, 0, 0);
                 }
             } else {
-                i = gTasks[taskId].data[3] as i32;
-                gTasks[i].data[0] = 0;
+                i = task_get(taskId, 3) as i32;
+                task_set(i, 0, 0);
             }
             ScanlineEffect_Clear();
             i = 0;
             while i < 91 {
-                gScanlineEffectRegBuffers[0][i] = 7946;
-                gScanlineEffectRegBuffers[1][i] = 7946;
+                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                    .cast::<CArray<CArray<u16, 960>, 2>>()
+                    .cast_mut())[0][i] = 7946;
+                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                    .cast::<CArray<CArray<u16, 960>, 2>>()
+                    .cast_mut())[1][i] = 7946;
                 i += 1;
             }
             while i < 160 {
-                gScanlineEffectRegBuffers[0][i] = 7945;
-                gScanlineEffectRegBuffers[1][i] = 7945;
+                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                    .cast::<CArray<CArray<u16, 960>, 2>>()
+                    .cast_mut())[0][i] = 7945;
+                (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                    .cast::<CArray<CArray<u16, 960>, 2>>()
+                    .cast_mut())[1][i] = 7945;
                 i += 1;
             }
             ScanlineEffect_SetParams(*sTourneyTreeScanlineEffectParams);
@@ -4137,11 +4174,9 @@ pub(crate) unsafe extern "C" fn Task_ShowTourneyTree(taskId: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn DrawTourneyAdvancementLine(tournamentId: u8, roundId: u8) {
+unsafe fn DrawTourneyAdvancementLine(tournamentId: u8, roundId: u8) {
+    let lineSection: *mut TourneyTreeLineSection = sTourneyTreeLineSections[tournamentId][roundId];
     let mut i: i32 = 0;
-    let mut lineSection: *mut TourneyTreeLineSection =
-        sTourneyTreeLineSections[tournamentId][roundId];
-    i = 0;
     while i < sTourneyTreeLineSectionArrayCounts[tournamentId][roundId] as i32 {
         CopyToBgTilemapBufferRect_ChangePalette(
             1,
@@ -4156,18 +4191,17 @@ pub(crate) unsafe extern "C" fn DrawTourneyAdvancementLine(tournamentId: u8, rou
     }
     CopyBgTilemapBufferToVram(1);
 }
-pub(crate) unsafe extern "C" fn Task_HandleStaticTourneyTreeInput(taskId: u8) {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn Task_HandleStaticTourneyTreeInput(taskId: u8) {
     let mut textPrinter: TextPrinterTemplate = zeroed();
-    match gTasks[taskId].data[0] {
+    match task_get(taskId, tState) {
         STATE_FADE_IN => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0x10, 0, 0);
-            gTasks[taskId].data[0] = STATE_SHOW_RESULTS;
+            task_set(taskId, tState, STATE_SHOW_RESULTS);
         }
         STATE_SHOW_RESULTS => {
             if gPaletteFade.active() == 0 {
-                gTasks[taskId].data[0] = STATE_DELAY;
-                gTasks[taskId].data[3] = 64;
+                task_set(taskId, tState, STATE_DELAY);
+                task_set(taskId, 3, 64);
                 textPrinter.fontId = FONT_SHORT;
                 textPrinter.x = 0;
                 textPrinter.y = 0;
@@ -4177,8 +4211,7 @@ pub(crate) unsafe extern "C" fn Task_HandleStaticTourneyTreeInput(taskId: u8) {
                 textPrinter.set_fgColor(TEXT_DYNAMIC_COLOR_2);
                 textPrinter.set_bgColor(TEXT_COLOR_TRANSPARENT);
                 textPrinter.set_shadowColor(TEXT_DYNAMIC_COLOR_4);
-                i = 0;
-                while i < DOME_TOURNAMENT_TRAINERS_COUNT {
+                for i in 0..DOME_TOURNAMENT_TRAINERS_COUNT {
                     CopyDomeTrainerName(
                         gDisplayedStringBattle.as_mut_ptr(),
                         (*gSaveBlock2Ptr).frontier.domeTrainers[i].trainerId(),
@@ -4203,46 +4236,43 @@ pub(crate) unsafe extern "C" fn Task_HandleStaticTourneyTreeInput(taskId: u8) {
                         AddTextPrinter(&raw mut textPrinter, 0, None);
                     }
                     if (*gSaveBlock2Ptr).frontier.domeTrainers[i].isEliminated() == 0 {
-                        let mut roundId: i32 =
+                        let roundId: i32 =
                             (*gSaveBlock2Ptr).frontier.curChallengeBattleNum as i32 - 1;
                         DrawTourneyAdvancementLine(i as u8, roundId as u8);
                     }
-                    i += 1;
                 }
             }
         }
         STATE_DELAY => {
             if ({
-                gTasks[taskId].data[3] -= 1;
-                gTasks[taskId].data[3]
+                task_set(taskId, 3, task_get(taskId, 3) - 1);
+                task_get(taskId, 3)
             }) == 0
             {
-                gTasks[taskId].data[0] = STATE_WAIT_FOR_INPUT;
+                task_set(taskId, tState, STATE_WAIT_FOR_INPUT);
             }
         }
         STATE_WAIT_FOR_INPUT => {
             if gMain.newKeys as i32 & 3 != 0 {
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-                gTasks[taskId].data[0] = STATE_CLOSE_TOURNEY_TREE;
+                task_set(taskId, tState, STATE_CLOSE_TOURNEY_TREE);
             }
         }
-        STATE_CLOSE_TOURNEY_TREE => {
-            if gPaletteFade.active() == 0 {
-                SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
-                DestroyTask(taskId);
-            }
+        STATE_CLOSE_TOURNEY_TREE if gPaletteFade.active() == 0 => {
+            SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CB2_TourneyTree() {
+pub(crate) unsafe fn CB2_TourneyTree() {
     AnimateSprites();
     BuildOamBuffer();
     RunTextPrinters();
     UpdatePaletteFade();
     RunTasks();
 }
-pub(crate) unsafe extern "C" fn VblankCb_TourneyInfoCard() {
+pub(crate) unsafe fn VblankCb_TourneyInfoCard() {
     ChangeBgX(3, 0x80, BG_COORD_ADD);
     ChangeBgY(3, 0x80, BG_COORD_SUB);
     SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_X);
@@ -4255,44 +4285,44 @@ pub(crate) unsafe extern "C" fn VblankCb_TourneyInfoCard() {
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn HblankCb_TourneyTree() {
-    let mut vCount: u16 = (67108870 as usize as *mut u16).read_volatile();
+pub(crate) unsafe fn HblankCb_TourneyTree() {
+    let vCount: u16 = (67108870_usize as *mut u16).read_volatile();
     if vCount < 42 {
-        volatile_write(67108936 as usize as *mut u16, 16191);
-        volatile_write(67108928 as usize as *mut u32, 0);
+        volatile_write(67108936_usize as *mut u16, 16191);
+        volatile_write(67108928_usize as *mut u32, 0);
     } else if vCount < 50 {
-        volatile_write(67108936 as usize as *mut u16, 15163);
-        volatile_write(67108928 as usize as *mut u32, 0x989b5558);
+        volatile_write(67108936_usize as *mut u16, 15163);
+        volatile_write(67108928_usize as *mut u32, 0x989b5558);
     } else if vCount < 58 {
-        volatile_write(67108936 as usize as *mut u16, 16191);
-        volatile_write(67108928 as usize as *mut u32, 0);
+        volatile_write(67108936_usize as *mut u16, 16191);
+        volatile_write(67108928_usize as *mut u32, 0);
     } else if vCount < 75 {
-        volatile_write(67108936 as usize as *mut u16, 15163);
-        volatile_write(67108928 as usize as *mut u32, 0x90985860);
+        volatile_write(67108936_usize as *mut u16, 15163);
+        volatile_write(67108928_usize as *mut u32, 0x90985860);
     } else if vCount < 82 {
-        volatile_write(67108936 as usize as *mut u16, 15163);
-        volatile_write(67108928 as usize as *mut u32, 0x989b5558);
+        volatile_write(67108936_usize as *mut u16, 15163);
+        volatile_write(67108928_usize as *mut u32, 0x989b5558);
     } else if vCount < 95 {
-        volatile_write(67108936 as usize as *mut u16, 16191);
-        volatile_write(67108928 as usize as *mut u32, 0);
+        volatile_write(67108936_usize as *mut u16, 16191);
+        volatile_write(67108928_usize as *mut u32, 0);
     } else if vCount < 103 {
-        volatile_write(67108936 as usize as *mut u16, 14135);
-        volatile_write(67108928 as usize as *mut u32, 0x989b5558);
+        volatile_write(67108936_usize as *mut u16, 14135);
+        volatile_write(67108928_usize as *mut u32, 0x989b5558);
     } else if vCount < 119 {
-        volatile_write(67108936 as usize as *mut u16, 14135);
-        volatile_write(67108928 as usize as *mut u32, 0x90985860);
+        volatile_write(67108936_usize as *mut u16, 14135);
+        volatile_write(67108928_usize as *mut u32, 0x90985860);
     } else if vCount < 127 {
-        volatile_write(67108936 as usize as *mut u16, 16191);
-        volatile_write(67108928 as usize as *mut u32, 0);
+        volatile_write(67108936_usize as *mut u16, 16191);
+        volatile_write(67108928_usize as *mut u32, 0);
     } else if vCount < 135 {
-        volatile_write(67108936 as usize as *mut u16, 14135);
-        volatile_write(67108928 as usize as *mut u32, 0x989b5558);
+        volatile_write(67108936_usize as *mut u16, 14135);
+        volatile_write(67108928_usize as *mut u32, 0x989b5558);
     } else {
-        volatile_write(67108936 as usize as *mut u16, 16191);
-        volatile_write(67108928 as usize as *mut u32, 0);
+        volatile_write(67108936_usize as *mut u16, 16191);
+        volatile_write(67108928_usize as *mut u32, 0);
     }
 }
-pub(crate) unsafe extern "C" fn VblankCb_TourneyTree() {
+pub(crate) unsafe fn VblankCb_TourneyTree() {
     SetGpuReg(REG_OFFSET_BG0HOFS, gBattle_BG0_X);
     SetGpuReg(REG_OFFSET_BG0VOFS, gBattle_BG0_Y);
     SetGpuReg(REG_OFFSET_BG1HOFS, gBattle_BG1_X);
@@ -4304,21 +4334,23 @@ pub(crate) unsafe extern "C" fn VblankCb_TourneyTree() {
     TransferPlttBuffer();
     ScanlineEffect_InitHBlankDmaTransfer();
 }
-pub(crate) unsafe extern "C" fn SetFacilityTrainerAndMonPtrs() {
-    gFacilityTrainerMons = gBattleFrontierMons.as_ptr().cast_mut();
-    gFacilityTrainers = gBattleFrontierTrainers.as_ptr().cast_mut();
+pub(crate) unsafe fn SetFacilityTrainerAndMonPtrs() {
+    gFacilityTrainerMons = (*(&raw const crate::data::battle_tower::gBattleFrontierMons)
+        .cast::<CArray<FacilityMon, 0>>())
+    .as_ptr()
+    .cast_mut();
+    gFacilityTrainers = (*(&raw const crate::data::battle_tower::gBattleFrontierTrainers)
+        .cast::<CArray<BattleFrontierTrainer, 0>>())
+    .as_ptr()
+    .cast_mut();
 }
-pub(crate) unsafe extern "C" fn ResetSketchedMoves() {
-    let mut i: i32 = 0;
-    let mut moveSlot: i32 = 0;
-    i = 0;
-    while i < DOME_BATTLE_PARTY_SIZE {
-        let mut playerMonId: i32 = (*gSaveBlock2Ptr).frontier.selectedPartyMons
+pub(crate) unsafe fn ResetSketchedMoves() {
+    for i in 0..DOME_BATTLE_PARTY_SIZE {
+        let playerMonId: i32 = (*gSaveBlock2Ptr).frontier.selectedPartyMons
             [gSelectedOrderFromParty[i] as i32 - 1] as i32
             - 1;
         let mut count: i32 = 0;
-        moveSlot = 0;
-        while moveSlot < MAX_MON_MOVES {
+        for moveSlot in 0..MAX_MON_MOVES {
             count = 0;
             while count < MAX_MON_MOVES {
                 if GetMonData3(
@@ -4337,17 +4369,13 @@ pub(crate) unsafe extern "C" fn ResetSketchedMoves() {
             if count == MAX_MON_MOVES {
                 SetMonMoveSlot(&raw mut gPlayerParty[i], MOVE_SKETCH, moveSlot as u8);
             }
-            moveSlot += 1;
         }
         (*gSaveBlock1Ptr).playerParty[playerMonId] = gPlayerParty[i];
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn RestoreDomePlayerPartyHeldItems() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < DOME_BATTLE_PARTY_SIZE {
-        let mut playerMonId: i32 = (*gSaveBlock2Ptr).frontier.selectedPartyMons
+pub(crate) unsafe fn RestoreDomePlayerPartyHeldItems() {
+    for i in 0..DOME_BATTLE_PARTY_SIZE {
+        let playerMonId: i32 = (*gSaveBlock2Ptr).frontier.selectedPartyMons
             [gSelectedOrderFromParty[i] as i32 - 1] as i32
             - 1;
         let mut item: u16 = GetMonData3(
@@ -4360,23 +4388,21 @@ pub(crate) unsafe extern "C" fn RestoreDomePlayerPartyHeldItems() {
             MON_DATA_HELD_ITEM,
             &raw mut item as *mut c_void,
         );
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ReduceDomePlayerPartyToSelectedMons() {
+pub(crate) unsafe fn ReduceDomePlayerPartyToSelectedMons() {
     ReducePlayerPartyToSelectedMons();
 }
-pub(crate) unsafe extern "C" fn GetPlayerSeededBeforeOpponent() {
+pub(crate) unsafe fn GetPlayerSeededBeforeOpponent() {
     if TrainerIdToTournamentId(gTrainerBattleOpponent_A) > TrainerIdToTournamentId(TRAINER_PLAYER) {
         gSpecialVar_Result = 1;
     } else {
         gSpecialVar_Result = 2;
     }
 }
-pub(crate) unsafe extern "C" fn BufferLastDomeWinnerName() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn BufferLastDomeWinnerName() {
     SetFacilityTrainerAndMonPtrs();
-    i = 0;
+    let mut i: i32 = 0;
     while i < DOME_TOURNAMENT_TRAINERS_COUNT {
         if (*gSaveBlock2Ptr).frontier.domeTrainers[i].isEliminated() == 0 {
             break;
@@ -4388,20 +4414,14 @@ pub(crate) unsafe extern "C" fn BufferLastDomeWinnerName() {
         (*gSaveBlock2Ptr).frontier.domeTrainers[i].trainerId(),
     );
 }
-pub(crate) unsafe extern "C" fn InitRandomTourneyTreeResults() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn InitRandomTourneyTreeResults() {
     let mut j: i32 = 0;
     let mut k: i32 = 0;
-    let mut monLevel: i32 = 0;
     let mut species: CArray<i32, 3> = zeroed();
     let mut monTypesBits: i32 = 0;
     let mut trainerId: i32 = 0;
     let mut monId: i32 = 0;
-    let mut zero1: i32 = 0;
-    let mut zero2: i32 = 0;
     let mut lvlMode: u8 = 0;
-    let mut statSums: *mut u16 = null_mut();
-    let mut statValues: *mut i32 = null_mut();
     let mut ivs: u8 = 0;
     species[0] = 0;
     species[1] = 0;
@@ -4412,16 +4432,15 @@ pub(crate) unsafe extern "C" fn InitRandomTourneyTreeResults() {
     {
         return;
     }
-    statSums = AllocZeroed(32) as *mut u16;
-    statValues = AllocZeroed(24) as *mut i32;
+    let statSums: *mut u16 = AllocZeroed(32) as *mut u16;
+    let statValues: *mut i32 = AllocZeroed(24) as *mut i32;
     lvlMode = (*gSaveBlock2Ptr).frontier.lvlMode();
     (*gSaveBlock2Ptr).frontier.set_lvlMode(FRONTIER_LVL_50);
-    zero1 = 0;
-    zero2 = 0;
+    let zero1: i32 = 0;
+    let zero2: i32 = 0;
     (*gSaveBlock2Ptr).frontier.domeLvlMode = zero1 as u8 + 1;
     (*gSaveBlock2Ptr).frontier.domeBattleMode = zero2 as u8 + 1;
-    i = 0;
-    while i < DOME_TOURNAMENT_TRAINERS_COUNT {
+    for i in 0..DOME_TOURNAMENT_TRAINERS_COUNT {
         loop {
             if i < 5 {
                 trainerId = Random() as i32 % 10;
@@ -4442,13 +4461,12 @@ pub(crate) unsafe extern "C" fn InitRandomTourneyTreeResults() {
             }
         }
         (*gSaveBlock2Ptr).frontier.domeTrainers[i].set_trainerId(trainerId as u16);
-        j = 0;
-        while j < FRONTIER_PARTY_SIZE {
+        for j in 0..FRONTIER_PARTY_SIZE {
             loop {
                 monId = GetRandomFrontierMonFromSet(trainerId as u16) as i32;
                 k = 0;
                 while k < j {
-                    let mut alreadySelectedMonId: i32 =
+                    let alreadySelectedMonId: i32 =
                         (*gSaveBlock2Ptr).frontier.domeMonIds[i][k] as i32;
                     if alreadySelectedMonId == monId
                         || species[0] == (*gFacilityTrainerMons.at(monId)).species as i32
@@ -4466,21 +4484,17 @@ pub(crate) unsafe extern "C" fn InitRandomTourneyTreeResults() {
             }
             (*gSaveBlock2Ptr).frontier.domeMonIds[i][j] = monId as u16;
             species[j] = (*gFacilityTrainerMons.at(monId)).species as i32;
-            j += 1;
         }
         (*gSaveBlock2Ptr).frontier.domeTrainers[i].set_isEliminated(FALSE as u16);
         (*gSaveBlock2Ptr).frontier.domeTrainers[i].set_eliminatedAt(0);
         (*gSaveBlock2Ptr).frontier.domeTrainers[i].set_forfeited(FALSE as u16);
-        i += 1;
     }
-    monLevel = FRONTIER_MAX_LEVEL_50 as i32;
-    i = 0;
-    while i < DOME_TOURNAMENT_TRAINERS_COUNT {
+    let monLevel: i32 = FRONTIER_MAX_LEVEL_50 as i32;
+    for i in 0..DOME_TOURNAMENT_TRAINERS_COUNT {
         monTypesBits = 0;
         *statSums.at(i) = 0;
         ivs = GetDomeTrainerMonIvs((*gSaveBlock2Ptr).frontier.domeTrainers[i].trainerId());
-        j = 0;
-        while j < FRONTIER_PARTY_SIZE {
+        for j in 0..FRONTIER_PARTY_SIZE {
             CalcDomeMonStats(
                 (*gFacilityTrainerMons.at((*gSaveBlock2Ptr).frontier.domeMonIds[i][j])).species,
                 monLevel,
@@ -4495,79 +4509,66 @@ pub(crate) unsafe extern "C" fn InitRandomTourneyTreeResults() {
             *statSums.at(i) += *statValues.at(5) as u16;
             *statSums.at(i) += *statValues.at(3) as u16;
             *statSums.at(i) += *statValues as u16;
-            monTypesBits |= gBitTable[gSpeciesInfo
+            monTypesBits |= gBitTable[(*(&raw const crate::data::pokemon::gSpeciesInfo)
+                .cast::<CArray<SpeciesInfo, 0>>())
                 [(*gFacilityTrainerMons.at((*gSaveBlock2Ptr).frontier.domeMonIds[i][j])).species]
                 .types[0]] as i32;
-            monTypesBits |= gBitTable[gSpeciesInfo
+            monTypesBits |= gBitTable[(*(&raw const crate::data::pokemon::gSpeciesInfo)
+                .cast::<CArray<SpeciesInfo, 0>>())
                 [(*gFacilityTrainerMons.at((*gSaveBlock2Ptr).frontier.domeMonIds[i][j])).species]
                 .types[1]] as i32;
-            j += 1;
         }
         trainerId = 0;
-        j = 0;
-        while j < 32 {
+        for j in 0..32i32 {
             if monTypesBits & 1 != 0 {
                 trainerId += 1;
             }
             monTypesBits >>= 1;
-            j += 1;
         }
         *statSums.at(i) += (trainerId * monLevel / 20) as u16;
-        i += 1;
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i < 15 {
-        j = i + 1;
-        while j < DOME_TOURNAMENT_TRAINERS_COUNT {
+        for j in (i + 1)..DOME_TOURNAMENT_TRAINERS_COUNT {
             if *statSums.at(i) < *statSums.at(j) {
                 SwapDomeTrainers(i, j, statSums);
-            } else if *statSums.at(i) == *statSums.at(j) {
-                if (*gSaveBlock2Ptr).frontier.domeTrainers[i].trainerId()
+            } else if *statSums.at(i) == *statSums.at(j)
+                && (*gSaveBlock2Ptr).frontier.domeTrainers[i].trainerId()
                     > (*gSaveBlock2Ptr).frontier.domeTrainers[j].trainerId()
-                {
-                    SwapDomeTrainers(i, j, statSums);
-                }
+            {
+                SwapDomeTrainers(i, j, statSums);
             }
-            j += 1;
         }
         i += 1;
     }
     Free(statSums as *mut c_void);
     Free(statValues as *mut c_void);
-    i = 0;
-    while i < DOME_ROUNDS_COUNT {
+    for i in 0..DOME_ROUNDS_COUNT {
         DecideRoundWinners(i as u8);
-        i += 1;
     }
     (*gSaveBlock2Ptr).frontier.set_lvlMode(lvlMode);
 }
-pub(crate) unsafe extern "C" fn TrainerIdToTournamentId(trainerId: u16) -> i32 {
+unsafe fn TrainerIdToTournamentId(trainerId: u16) -> i32 {
     let mut i: i32 = 0;
-    i = 0;
     while i < DOME_TOURNAMENT_TRAINERS_COUNT {
         if (*gSaveBlock2Ptr).frontier.domeTrainers[i].trainerId() == trainerId {
             break;
         }
         i += 1;
     }
-    return i;
+    i
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TrainerIdToDomeTournamentId(trainerId: u16) -> i32 {
+pub unsafe fn TrainerIdToDomeTournamentId(trainerId: u16) -> i32 {
     let mut i: i32 = 0;
-    i = 0;
     while i < DOME_TOURNAMENT_TRAINERS_COUNT {
         if (*gSaveBlock2Ptr).frontier.domeTrainers[i].trainerId() == trainerId {
             break;
         }
         i += 1;
     }
-    return i;
+    i
 }
-pub(crate) unsafe extern "C" fn GetOpposingNPCTournamentIdByRound(
-    tournamentId: u8,
-    round: u8,
-) -> u8 {
+unsafe fn GetOpposingNPCTournamentIdByRound(tournamentId: u8, round: u8) -> u8 {
     let mut tournamentIds: CArray<u8, 2> = zeroed();
     BufferDomeWinString(
         sTrainerAndRoundToLastMatchCardNum
@@ -4582,21 +4583,17 @@ pub(crate) unsafe extern "C" fn GetOpposingNPCTournamentIdByRound(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn DecideRoundWinners(roundId: u8) {
-    let mut i: i32 = 0;
-    let mut moveSlot: i32 = 0;
+unsafe fn DecideRoundWinners(roundId: u8) {
     let mut monId1: i32 = 0;
-    let mut monId2: i32 = 0;
     let mut tournamentId1: i32 = 0;
     let mut tournamentId2: i32 = 0;
     let mut species: i32 = 0;
     let mut points1: i32 = 0;
     let mut points2: i32 = 0;
-    i = 0;
-    while i < DOME_TOURNAMENT_TRAINERS_COUNT {
+    for i in 0..DOME_TOURNAMENT_TRAINERS_COUNT {
         'l1: {
             if (*gSaveBlock2Ptr).frontier.domeTrainers[i].isEliminated() != 0
                 || (*gSaveBlock2Ptr).frontier.domeTrainers[i].trainerId() == TRAINER_PLAYER
@@ -4631,10 +4628,8 @@ pub(crate) unsafe extern "C" fn DecideRoundWinners(roundId: u8) {
             } else if tournamentId2 != 0xFF {
                 monId1 = 0;
                 while monId1 < FRONTIER_PARTY_SIZE {
-                    moveSlot = 0;
-                    while moveSlot < MAX_MON_MOVES {
-                        monId2 = 0;
-                        while monId2 < FRONTIER_PARTY_SIZE {
+                    for moveSlot in 0..MAX_MON_MOVES {
+                        for monId2 in 0..FRONTIER_PARTY_SIZE {
                             points1 += GetTypeEffectivenessPoints(
                                 (*gFacilityTrainerMons
                                     .at((*gSaveBlock2Ptr).frontier.domeMonIds[tournamentId1]
@@ -4646,30 +4641,40 @@ pub(crate) unsafe extern "C" fn DecideRoundWinners(roundId: u8) {
                                 .species as i32,
                                 EFFECTIVENESS_MODE_AI_VS_AI,
                             );
-                            monId2 += 1;
                         }
-                        moveSlot += 1;
                     }
                     species = (*gFacilityTrainerMons
                         .at((*gSaveBlock2Ptr).frontier.domeMonIds[tournamentId1][monId1]))
                     .species as i32;
-                    points1 += (gSpeciesInfo[species].baseHP as i32
-                        + gSpeciesInfo[species].baseAttack as i32
-                        + gSpeciesInfo[species].baseDefense as i32
-                        + gSpeciesInfo[species].baseSpeed as i32
-                        + gSpeciesInfo[species].baseSpAttack as i32
-                        + gSpeciesInfo[species].baseSpDefense as i32)
+                    points1 += ((*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<
+                        SpeciesInfo,
+                        0,
+                    >>(
+                    ))[species]
+                        .baseHP as i32
+                        + (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[species]
+                            .baseAttack as i32
+                        + (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[species]
+                            .baseDefense as i32
+                        + (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[species]
+                            .baseSpeed as i32
+                        + (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[species]
+                            .baseSpAttack as i32
+                        + (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[species]
+                            .baseSpDefense as i32)
                         / 10;
                     monId1 += 1;
                 }
                 points1 += Random() as i32 & 0x1F;
                 points1 += tournamentId1;
-                monId1 = 0;
-                while monId1 < FRONTIER_PARTY_SIZE {
-                    moveSlot = 0;
-                    while moveSlot < MAX_MON_MOVES {
-                        monId2 = 0;
-                        while monId2 < FRONTIER_PARTY_SIZE {
+                for monId1 in 0..FRONTIER_PARTY_SIZE {
+                    for moveSlot in 0..MAX_MON_MOVES {
+                        for monId2 in 0..FRONTIER_PARTY_SIZE {
                             points2 += GetTypeEffectivenessPoints(
                                 (*gFacilityTrainerMons
                                     .at((*gSaveBlock2Ptr).frontier.domeMonIds[tournamentId2]
@@ -4681,21 +4686,33 @@ pub(crate) unsafe extern "C" fn DecideRoundWinners(roundId: u8) {
                                 .species as i32,
                                 EFFECTIVENESS_MODE_AI_VS_AI,
                             );
-                            monId2 += 1;
                         }
-                        moveSlot += 1;
                     }
                     species = (*gFacilityTrainerMons
                         .at((*gSaveBlock2Ptr).frontier.domeMonIds[tournamentId2][monId1]))
                     .species as i32;
-                    points2 += (gSpeciesInfo[species].baseHP as i32
-                        + gSpeciesInfo[species].baseAttack as i32
-                        + gSpeciesInfo[species].baseDefense as i32
-                        + gSpeciesInfo[species].baseSpeed as i32
-                        + gSpeciesInfo[species].baseSpAttack as i32
-                        + gSpeciesInfo[species].baseSpDefense as i32)
+                    points2 += ((*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<
+                        SpeciesInfo,
+                        0,
+                    >>(
+                    ))[species]
+                        .baseHP as i32
+                        + (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[species]
+                            .baseAttack as i32
+                        + (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[species]
+                            .baseDefense as i32
+                        + (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[species]
+                            .baseSpeed as i32
+                        + (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[species]
+                            .baseSpAttack as i32
+                        + (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[species]
+                            .baseSpDefense as i32)
                         / 10;
-                    monId1 += 1;
                 }
                 points2 += Random() as i32 & 0x1F;
                 points2 += tournamentId2;
@@ -4730,42 +4747,39 @@ pub(crate) unsafe extern "C" fn DecideRoundWinners(roundId: u8) {
                 }
             }
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CopyDomeTrainerName(mut str: *mut u8, trainerId: u16) {
-    let mut i: i32 = 0;
+unsafe fn CopyDomeTrainerName(str: *mut u8, trainerId: u16) {
+    let i: i32 = 0;
     SetFacilityPtrsGetLevel();
     if trainerId == TRAINER_FRONTIER_BRAIN {
         CopyDomeBrainTrainerName(str);
     } else {
         if trainerId == TRAINER_PLAYER {
-            i = 0;
-            while i < PLAYER_NAME_LENGTH {
+            for i in 0..PLAYER_NAME_LENGTH {
                 *str.at(i) = (*gSaveBlock2Ptr).playerName[i];
-                i += 1;
             }
         } else if trainerId < FRONTIER_TRAINERS_COUNT {
-            i = 0;
-            while i < PLAYER_NAME_LENGTH {
+            for i in 0..PLAYER_NAME_LENGTH {
                 *str.at(i) = (*gFacilityTrainers.at(trainerId)).trainerName[i];
-                i += 1;
             }
         }
         *str.at(i) = EOS;
     }
 }
-pub(crate) unsafe extern "C" fn GetDomeBrainTrainerPicId() -> u8 {
-    return gTrainers[806].trainerPic;
+unsafe fn GetDomeBrainTrainerPicId() -> u8 {
+    (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())[806].trainerPic
 }
-pub(crate) unsafe extern "C" fn GetDomeBrainTrainerClass() -> u8 {
-    return gTrainers[806].trainerClass;
+unsafe fn GetDomeBrainTrainerClass() -> u8 {
+    (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())[806]
+        .trainerClass
 }
-pub(crate) unsafe extern "C" fn CopyDomeBrainTrainerName(mut str: *mut u8) {
+unsafe fn CopyDomeBrainTrainerName(str: *mut u8) {
     let mut i: i32 = 0;
-    i = 0;
     while i < PLAYER_NAME_LENGTH {
-        *str.at(i) = gTrainers[806].trainerName[i];
+        *str.at(i) = (*(&raw const crate::data::data_tables::gTrainers)
+            .cast::<CArray<Trainer, 0>>())[806]
+            .trainerName[i];
         i += 1;
     }
     *str.at(i) = EOS;

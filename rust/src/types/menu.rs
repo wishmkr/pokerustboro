@@ -19,8 +19,8 @@ unsafe impl Sync for MenuAction {}
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub union MenuAction_func {
-    pub void_u8: Option<unsafe extern "C" fn(u8)>,
-    pub u8_void: Option<unsafe extern "C" fn() -> u8>,
+    pub void_u8: Option<unsafe fn(u8)>,
+    pub u8_void: Option<unsafe fn() -> u8>,
 }
 
 unsafe impl Sync for MenuAction_func {}

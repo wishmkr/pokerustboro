@@ -54,16 +54,27 @@ impl DewfordTrend {
     }
 }
 
-unsafe extern "C" {
-    fn GetRandomEasyChatWordFromGroup(group_id: u16) -> u16;
-    fn TryPutTrendWatcherOnAir(words: *const u16);
-    fn ConvertEasyChatWordsToString(
-        dest: *mut u8,
-        src: *const u16,
-        columns: u16,
-        rows: u16,
-    ) -> *mut u8;
-    fn GetLinkPlayerCount() -> u8;
+/// `GetRandomEasyChatWordFromGroup` with this module's view of its types.
+#[inline]
+unsafe fn GetRandomEasyChatWordFromGroup(a0: u16) -> u16 {
+    unsafe { crate::easy_chat::GetRandomEasyChatWordFromGroup(a0) }
+}
+/// `TryPutTrendWatcherOnAir` with this module's view of its types.
+#[inline]
+unsafe fn TryPutTrendWatcherOnAir(a0: *const u16) {
+    unsafe {
+        crate::tv::TryPutTrendWatcherOnAir(a0 as _);
+    }
+}
+/// `ConvertEasyChatWordsToString` with this module's view of its types.
+#[inline]
+unsafe fn ConvertEasyChatWordsToString(a0: *mut u8, a1: *const u16, a2: u16, a3: u16) -> *mut u8 {
+    unsafe { crate::easy_chat::ConvertEasyChatWordsToString(a0 as _, a1 as _, a2, a3) as *mut u8 }
+}
+/// `GetLinkPlayerCount` with this module's view of its types.
+#[inline]
+unsafe fn GetLinkPlayerCount() -> u8 {
+    unsafe { crate::link::GetLinkPlayerCount() }
 }
 
 #[inline]
@@ -71,6 +82,7 @@ unsafe fn saved_trends() -> *mut DewfordTrend {
     unsafe {
         (&raw const gSaveBlock1Ptr)
             .read()
+            .cast::<u8>()
             .add(SB1_DEWFORD_TRENDS)
             .cast()
     }
@@ -78,11 +90,11 @@ unsafe fn saved_trends() -> *mut DewfordTrend {
 
 #[inline]
 fn random_bit() -> u32 {
-    u32::from(unsafe { Random() } & 1)
+    u32::from(Random() & 1)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitDewfordTrend() {
+pub unsafe fn InitDewfordTrend() {
     let trends = unsafe { saved_trends() };
     for i in 0..SAVED_TRENDS_COUNT {
         let trend = unsafe { &mut *trends.add(i) };
@@ -100,7 +112,7 @@ pub unsafe extern "C" fn InitDewfordTrend() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateDewfordTrendPerDay(days: u16) {
+pub unsafe fn UpdateDewfordTrendPerDay(days: u16) {
     if days == 0 {
         return;
     }
@@ -148,7 +160,7 @@ pub unsafe extern "C" fn UpdateDewfordTrendPerDay(days: u16) {
 /// Saves the phrase among the trends, and says whether it became the
 /// current trendy phrase.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TrySetTrendyPhrase(phrase: *const u16) -> u8 {
+pub unsafe fn TrySetTrendyPhrase(phrase: *const u16) -> u8 {
     if unsafe { is_phrase_in_saved_trends(phrase) } {
         return 0;
     }
@@ -204,11 +216,7 @@ unsafe fn sort_trends(trends: *mut DewfordTrend, count: u16, mode: u8) {
 
 /// Merges the trends received by record mixing with our own.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ReceiveDewfordTrendData(
-    linked_trends: *const u8,
-    size: usize,
-    _unused: u8,
-) {
+pub unsafe fn ReceiveDewfordTrendData(linked_trends: *const u8, size: usize, _unused: u8) {
     let linked = unsafe { Alloc(BUFFER_SIZE) }.cast::<DewfordTrend>();
     if linked.is_null() {
         return;
@@ -256,7 +264,7 @@ pub unsafe extern "C" fn ReceiveDewfordTrendData(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BufferTrendyPhraseString() {
+pub unsafe fn BufferTrendyPhraseString() {
     let index = usize::from(unsafe { (&raw const gSpecialVar_0x8004).read() });
     let trend = unsafe { saved_trends().add(index) };
     unsafe {
@@ -271,7 +279,7 @@ pub unsafe extern "C" fn BufferTrendyPhraseString() {
 
 /// Whether the current phrase is "boring" (only changes an NPC's comment).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsTrendyPhraseBoring() {
+pub unsafe fn IsTrendyPhraseBoring() {
     let trends = unsafe { saved_trends() };
     let (first, second) = unsafe { (trends.read(), trends.add(1).read()) };
     let boring = i32::from(first.trendiness()) - i32::from(second.trendiness()) <= 1
@@ -282,7 +290,7 @@ pub unsafe extern "C" fn IsTrendyPhraseBoring() {
 
 /// The Dewford Hall painting's title depends on the current phrase.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetDewfordHallPaintingNameIndex() {
+pub unsafe fn GetDewfordHallPaintingNameIndex() {
     let words = unsafe { (*saved_trends()).words };
     unsafe { (&raw mut gSpecialVar_Result).write(words[0].wrapping_add(words[1]) & 7) };
 }
@@ -323,17 +331,17 @@ fn compare_trends(a: &DewfordTrend, b: &DewfordTrend, mode: u8) -> bool {
 }
 
 fn seed_trend_rng(trend: &mut DewfordTrend) {
-    let mut rand = unsafe { Random() } % 98;
+    let mut rand = Random() % 98;
     if rand > 50 {
-        rand = unsafe { Random() } % 98;
+        rand = Random() % 98;
         if rand > 80 {
-            rand = unsafe { Random() } % 98;
+            rand = Random() % 98;
         }
     }
     trend.set_max_trendiness(u32::from(rand) + 30);
-    let roll = unsafe { Random() } % (rand + 1);
+    let roll = Random() % (rand + 1);
     trend.set_trendiness(u32::from(roll) + 30);
-    trend.rand = unsafe { Random() };
+    trend.rand = Random();
 }
 
 unsafe fn is_phrase_in_saved_trends(phrase: *const u16) -> bool {

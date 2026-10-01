@@ -3,37 +3,39 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::eq_op,
+    clippy::if_same_then_else,
+    clippy::missing_transmute_annotations
 )]
 
+use crate::battle_transition::Task_BattleTransition_Intro;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::fieldmap::gMapHeader;
+use crate::palette::gPaletteFade;
+use crate::palette::gPlttBufferUnfaded;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::util::BlendPalette;
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+unsafe fn FindTaskIdByFunc(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
 // Data tables (translate with cdata.py): gTilesetAnims_General_Flower_Frame1 gTilesetAnims_General_Flower_Frame0 gTilesetAnims_General_Flower_Frame2 tileset_anims_space_0 gTilesetAnims_General_Flower gTilesetAnims_General_Water_Frame0 gTilesetAnims_General_Water_Frame1 gTilesetAnims_General_Water_Frame2 gTilesetAnims_General_Water_Frame3 gTilesetAnims_General_Water_Frame4 gTilesetAnims_General_Water_Frame5 gTilesetAnims_General_Water_Frame6 gTilesetAnims_General_Water_Frame7 gTilesetAnims_General_Water gTilesetAnims_General_SandWaterEdge_Frame0 gTilesetAnims_General_SandWaterEdge_Frame1 gTilesetAnims_General_SandWaterEdge_Frame2 gTilesetAnims_General_SandWaterEdge_Frame3 gTilesetAnims_General_SandWaterEdge_Frame4 gTilesetAnims_General_SandWaterEdge_Frame5 gTilesetAnims_General_SandWaterEdge_Frame6 gTilesetAnims_General_SandWaterEdge gTilesetAnims_General_Waterfall_Frame0 gTilesetAnims_General_Waterfall_Frame1 gTilesetAnims_General_Waterfall_Frame2 gTilesetAnims_General_Waterfall_Frame3 gTilesetAnims_General_Waterfall gTilesetAnims_General_LandWaterEdge_Frame0 gTilesetAnims_General_LandWaterEdge_Frame1 gTilesetAnims_General_LandWaterEdge_Frame2 gTilesetAnims_General_LandWaterEdge_Frame3 gTilesetAnims_General_LandWaterEdge gTilesetAnims_Lavaridge_Steam_Frame0 gTilesetAnims_Lavaridge_Steam_Frame1 gTilesetAnims_Lavaridge_Steam_Frame2 gTilesetAnims_Lavaridge_Steam_Frame3 gTilesetAnims_Lavaridge_Steam gTilesetAnims_Pacifidlog_LogBridges_Frame0 gTilesetAnims_Pacifidlog_LogBridges_Frame1 gTilesetAnims_Pacifidlog_LogBridges_Frame2 gTilesetAnims_Pacifidlog_LogBridges gTilesetAnims_Underwater_Seaweed_Frame0 gTilesetAnims_Underwater_Seaweed_Frame1 gTilesetAnims_Underwater_Seaweed_Frame2 gTilesetAnims_Underwater_Seaweed_Frame3 gTilesetAnims_Underwater_Seaweed gTilesetAnims_Pacifidlog_WaterCurrents_Frame0 gTilesetAnims_Pacifidlog_WaterCurrents_Frame1 gTilesetAnims_Pacifidlog_WaterCurrents_Frame2 gTilesetAnims_Pacifidlog_WaterCurrents_Frame3 gTilesetAnims_Pacifidlog_WaterCurrents_Frame4 gTilesetAnims_Pacifidlog_WaterCurrents_Frame5 gTilesetAnims_Pacifidlog_WaterCurrents_Frame6 gTilesetAnims_Pacifidlog_WaterCurrents_Frame7 gTilesetAnims_Pacifidlog_WaterCurrents gTilesetAnims_Mauville_Flower1_Frame0 gTilesetAnims_Mauville_Flower1_Frame1 gTilesetAnims_Mauville_Flower1_Frame2 gTilesetAnims_Mauville_Flower1_Frame3 gTilesetAnims_Mauville_Flower1_Frame4 gTilesetAnims_Mauville_Flower2_Frame0 gTilesetAnims_Mauville_Flower2_Frame1 gTilesetAnims_Mauville_Flower2_Frame2 gTilesetAnims_Mauville_Flower2_Frame3 gTilesetAnims_Mauville_Flower2_Frame4 tileset_anims_space_1 gTilesetAnims_Mauville_Flower1_VDests gTilesetAnims_Mauville_Flower2_VDests gTilesetAnims_Mauville_Flower1 gTilesetAnims_Mauville_Flower2 gTilesetAnims_Mauville_Flower1_B gTilesetAnims_Mauville_Flower2_B gTilesetAnims_Rustboro_WindyWater_Frame0 gTilesetAnims_Rustboro_WindyWater_Frame1 gTilesetAnims_Rustboro_WindyWater_Frame2 gTilesetAnims_Rustboro_WindyWater_Frame3 gTilesetAnims_Rustboro_WindyWater_Frame4 gTilesetAnims_Rustboro_WindyWater_Frame5 gTilesetAnims_Rustboro_WindyWater_Frame6 gTilesetAnims_Rustboro_WindyWater_Frame7 gTilesetAnims_Rustboro_WindyWater_VDests gTilesetAnims_Rustboro_WindyWater gTilesetAnims_Rustboro_Fountain_Frame0 gTilesetAnims_Rustboro_Fountain_Frame1 tileset_anims_space_2 gTilesetAnims_Rustboro_Fountain gTilesetAnims_Lavaridge_Cave_Lava_Frame0 gTilesetAnims_Lavaridge_Cave_Lava_Frame1 gTilesetAnims_Lavaridge_Cave_Lava_Frame2 gTilesetAnims_Lavaridge_Cave_Lava_Frame3 gTilesetAnims_Lavaridge_Cave_Lava_Frame4 gTilesetAnims_Lavaridge_Cave_Lava_Frame5 gTilesetAnims_Lavaridge_Cave_Lava_Frame6 gTilesetAnims_Lavaridge_Cave_Lava_Frame7 tileset_anims_space_3 gTilesetAnims_Lavaridge_Cave_Lava gTilesetAnims_EverGrande_Flowers_Frame0 gTilesetAnims_EverGrande_Flowers_Frame1 gTilesetAnims_EverGrande_Flowers_Frame2 gTilesetAnims_EverGrande_Flowers_Frame3 gTilesetAnims_EverGrande_Flowers_Frame4 gTilesetAnims_EverGrande_Flowers_Frame5 gTilesetAnims_EverGrande_Flowers_Frame6 gTilesetAnims_EverGrande_Flowers_Frame7 tileset_anims_space_4 gTilesetAnims_EverGrande_VDests gTilesetAnims_EverGrande_Flowers gTilesetAnims_Dewford_Flag_Frame0 gTilesetAnims_Dewford_Flag_Frame1 gTilesetAnims_Dewford_Flag_Frame2 gTilesetAnims_Dewford_Flag_Frame3 gTilesetAnims_Dewford_Flag gTilesetAnims_BattleFrontierOutsideWest_Flag_Frame0 gTilesetAnims_BattleFrontierOutsideWest_Flag_Frame1 gTilesetAnims_BattleFrontierOutsideWest_Flag_Frame2 gTilesetAnims_BattleFrontierOutsideWest_Flag_Frame3 gTilesetAnims_BattleFrontierOutsideWest_Flag gTilesetAnims_BattleFrontierOutsideEast_Flag_Frame0 gTilesetAnims_BattleFrontierOutsideEast_Flag_Frame1 gTilesetAnims_BattleFrontierOutsideEast_Flag_Frame2 gTilesetAnims_BattleFrontierOutsideEast_Flag_Frame3 gTilesetAnims_BattleFrontierOutsideEast_Flag gTilesetAnims_Slateport_Balloons_Frame0 gTilesetAnims_Slateport_Balloons_Frame1 gTilesetAnims_Slateport_Balloons_Frame2 gTilesetAnims_Slateport_Balloons_Frame3 gTilesetAnims_Slateport_Balloons gTilesetAnims_Building_TvTurnedOn_Frame0 gTilesetAnims_Building_TvTurnedOn_Frame1 gTilesetAnims_Building_TvTurnedOn gTilesetAnims_SootopolisGym_SideWaterfall_Frame0 gTilesetAnims_SootopolisGym_SideWaterfall_Frame1 gTilesetAnims_SootopolisGym_SideWaterfall_Frame2 gTilesetAnims_SootopolisGym_FrontWaterfall_Frame0 gTilesetAnims_SootopolisGym_FrontWaterfall_Frame1 gTilesetAnims_SootopolisGym_FrontWaterfall_Frame2 gTilesetAnims_SootopolisGym_SideWaterfall gTilesetAnims_SootopolisGym_FrontWaterfall gTilesetAnims_EliteFour_FloorLight_Frame0 gTilesetAnims_EliteFour_FloorLight_Frame1 gTilesetAnims_EliteFour_WallLights_Frame0 gTilesetAnims_EliteFour_WallLights_Frame1 gTilesetAnims_EliteFour_WallLights_Frame2 gTilesetAnims_EliteFour_WallLights_Frame3 tileset_anims_space_5 gTilesetAnims_EliteFour_WallLights gTilesetAnims_EliteFour_FloorLight gTilesetAnims_MauvilleGym_ElectricGates_Frame0 gTilesetAnims_MauvilleGym_ElectricGates_Frame1 tileset_anims_space_6 gTilesetAnims_MauvilleGym_ElectricGates gTilesetAnims_BikeShop_BlinkingLights_Frame0 gTilesetAnims_BikeShop_BlinkingLights_Frame1 tileset_anims_space_7 gTilesetAnims_BikeShop_BlinkingLights gTilesetAnims_Sootopolis_StormyWater_Frame0 gTilesetAnims_Sootopolis_StormyWater_Frame1 gTilesetAnims_Sootopolis_StormyWater_Frame2 gTilesetAnims_Sootopolis_StormyWater_Frame3 gTilesetAnims_Sootopolis_StormyWater_Frame4 gTilesetAnims_Sootopolis_StormyWater_Frame5 gTilesetAnims_Sootopolis_StormyWater_Frame6 gTilesetAnims_Sootopolis_StormyWater_Frame7 tileset_anims_space_8 gTilesetAnims_Unused1_Frame0 gTilesetAnims_Unused1_Frame1 gTilesetAnims_Unused1_Frame2 gTilesetAnims_Unused1_Frame3 gTilesetAnims_Sootopolis_StormyWater gTilesetAnims_BattlePyramid_Torch_Frame0 gTilesetAnims_BattlePyramid_Torch_Frame1 gTilesetAnims_BattlePyramid_Torch_Frame2 tileset_anims_space_9 gTilesetAnims_BattlePyramid_StatueShadow_Frame0 gTilesetAnims_BattlePyramid_StatueShadow_Frame1 gTilesetAnims_BattlePyramid_StatueShadow_Frame2 tileset_anims_space_10 gTilesetAnims_Unused2_Frame0 tileset_anims_space_11 gTilesetAnims_Unused2_Frame1 gTilesetAnims_BattlePyramid_Torch gTilesetAnims_BattlePyramid_StatueShadow sTilesetAnims_BattleDomeFloorLightPals
 
 /// `__typeof__(sTilesetDMA3TransferBuffer[0])`
@@ -136,26 +138,29 @@ static sTilesetAnims_BattleDomeFloorLightPals: Table<CArray<*mut u16, 4>> =
 
 pub(crate) static mut sTilesetDMA3TransferBuffer: CArray<sTilesetDMA3TransferBuffer_0_t, 20> =
     unsafe { zeroed() };
-pub(crate) static mut sTilesetDMA3TransferBufferSize: u8 = 0;
-pub(crate) static mut sPrimaryTilesetAnimCounter: u16 = 0;
-pub(crate) static mut sPrimaryTilesetAnimCounterMax: u16 = 0;
-pub(crate) static mut sSecondaryTilesetAnimCounter: u16 = 0;
-pub(crate) static mut sSecondaryTilesetAnimCounterMax: u16 = 0;
-pub(crate) static mut sPrimaryTilesetAnimCallback: Option<unsafe extern "C" fn(u16)> = None;
-pub(crate) static mut sSecondaryTilesetAnimCallback: Option<unsafe extern "C" fn(u16)> = None;
+pub(crate) static sTilesetDMA3TransferBufferSize: crate::global::Global<u8> =
+    crate::global::Global::new(0);
+pub(crate) static sPrimaryTilesetAnimCounter: crate::global::Global<u16> =
+    crate::global::Global::new(0);
+pub(crate) static sPrimaryTilesetAnimCounterMax: crate::global::Global<u16> =
+    crate::global::Global::new(0);
+pub(crate) static sSecondaryTilesetAnimCounter: crate::global::Global<u16> =
+    crate::global::Global::new(0);
+pub(crate) static sSecondaryTilesetAnimCounterMax: crate::global::Global<u16> =
+    crate::global::Global::new(0);
+pub(crate) static mut sPrimaryTilesetAnimCallback: Option<unsafe fn(u16)> = None;
+pub(crate) static mut sSecondaryTilesetAnimCallback: Option<unsafe fn(u16)> = None;
 
-unsafe extern "C" {
-    static mut gMapHeader: MapHeader;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    fn BlendPalette(a0: u16, a1: u16, a2: u8, a3: u16);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn Task_BattleTransition_Intro(a0: u8);
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
 }
 
-pub(crate) unsafe extern "C" fn ResetTilesetAnimBuffer() {
-    sTilesetDMA3TransferBufferSize = 0;
+unsafe fn ResetTilesetAnimBuffer() {
+    sTilesetDMA3TransferBufferSize.set(0);
     {
         {
             let mut tmp: u32 = 0;
@@ -168,27 +173,21 @@ pub(crate) unsafe extern "C" fn ResetTilesetAnimBuffer() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn AppendTilesetAnimToBuffer(
-    src: *mut u16,
-    dest: *mut u16,
-    size: u16,
-) {
-    if sTilesetDMA3TransferBufferSize < 20 {
-        sTilesetDMA3TransferBuffer[sTilesetDMA3TransferBufferSize].src = src;
-        sTilesetDMA3TransferBuffer[sTilesetDMA3TransferBufferSize].dest = dest;
-        sTilesetDMA3TransferBuffer[sTilesetDMA3TransferBufferSize].size = size;
-        sTilesetDMA3TransferBufferSize += 1;
+unsafe fn AppendTilesetAnimToBuffer(src: *mut u16, dest: *mut u16, size: u16) {
+    if sTilesetDMA3TransferBufferSize.get() < 20 {
+        sTilesetDMA3TransferBuffer[sTilesetDMA3TransferBufferSize.get()].src = src;
+        sTilesetDMA3TransferBuffer[sTilesetDMA3TransferBufferSize.get()].dest = dest;
+        sTilesetDMA3TransferBuffer[sTilesetDMA3TransferBufferSize.get()].size = size;
+        sTilesetDMA3TransferBufferSize.set(sTilesetDMA3TransferBufferSize.get() + 1);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TransferTilesetAnimsBuffer() {
+pub unsafe fn TransferTilesetAnimsBuffer() {
     let mut i: i32 = 0;
-    i = 0;
-    while i < sTilesetDMA3TransferBufferSize as i32 {
+    while i < sTilesetDMA3TransferBufferSize.get() as i32 {
         {
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(dmaRegs, sTilesetDMA3TransferBuffer[i].src as usize as u32);
                     volatile_write(
                         dmaRegs.at(1),
@@ -204,45 +203,42 @@ pub unsafe extern "C" fn TransferTilesetAnimsBuffer() {
         }
         i += 1;
     }
-    sTilesetDMA3TransferBufferSize = 0;
+    sTilesetDMA3TransferBufferSize.set(0);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnimations() {
+pub unsafe fn InitTilesetAnimations() {
     ResetTilesetAnimBuffer();
     _InitPrimaryTilesetAnimation();
     _InitSecondaryTilesetAnimation();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitSecondaryTilesetAnimation() {
+pub unsafe fn InitSecondaryTilesetAnimation() {
     _InitSecondaryTilesetAnimation();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateTilesetAnimations() {
+pub unsafe fn UpdateTilesetAnimations() {
     ResetTilesetAnimBuffer();
     if ({
-        sPrimaryTilesetAnimCounter += 1;
-        sPrimaryTilesetAnimCounter
-    }) >= sPrimaryTilesetAnimCounterMax
+        sPrimaryTilesetAnimCounter.set(sPrimaryTilesetAnimCounter.get() + 1);
+        sPrimaryTilesetAnimCounter.get()
+    }) >= sPrimaryTilesetAnimCounterMax.get()
     {
-        sPrimaryTilesetAnimCounter = 0;
+        sPrimaryTilesetAnimCounter.set(0);
     }
     if ({
-        sSecondaryTilesetAnimCounter += 1;
-        sSecondaryTilesetAnimCounter
-    }) >= sSecondaryTilesetAnimCounterMax
+        sSecondaryTilesetAnimCounter.set(sSecondaryTilesetAnimCounter.get() + 1);
+        sSecondaryTilesetAnimCounter.get()
+    }) >= sSecondaryTilesetAnimCounterMax.get()
     {
-        sSecondaryTilesetAnimCounter = 0;
+        sSecondaryTilesetAnimCounter.set(0);
     }
     if sPrimaryTilesetAnimCallback.is_some() {
-        sPrimaryTilesetAnimCallback.unwrap_unchecked()(sPrimaryTilesetAnimCounter);
+        sPrimaryTilesetAnimCallback.unwrap_unchecked()(sPrimaryTilesetAnimCounter.get());
     }
     if sSecondaryTilesetAnimCallback.is_some() {
-        sSecondaryTilesetAnimCallback.unwrap_unchecked()(sSecondaryTilesetAnimCounter);
+        sSecondaryTilesetAnimCallback.unwrap_unchecked()(sSecondaryTilesetAnimCounter.get());
     }
 }
-pub(crate) unsafe extern "C" fn _InitPrimaryTilesetAnimation() {
-    sPrimaryTilesetAnimCounter = 0;
-    sPrimaryTilesetAnimCounterMax = 0;
+unsafe fn _InitPrimaryTilesetAnimation() {
+    sPrimaryTilesetAnimCounter.set(0);
+    sPrimaryTilesetAnimCounterMax.set(0);
     sPrimaryTilesetAnimCallback = None;
     if !(*gMapHeader.mapLayout).primaryTileset.is_null()
         && (*(*gMapHeader.mapLayout).primaryTileset).callback.is_some()
@@ -252,9 +248,9 @@ pub(crate) unsafe extern "C" fn _InitPrimaryTilesetAnimation() {
             .unwrap_unchecked()();
     }
 }
-pub(crate) unsafe extern "C" fn _InitSecondaryTilesetAnimation() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = 0;
+unsafe fn _InitSecondaryTilesetAnimation() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(0);
     sSecondaryTilesetAnimCallback = None;
     if !(*gMapHeader.mapLayout).secondaryTileset.is_null()
         && (*(*gMapHeader.mapLayout).secondaryTileset)
@@ -266,19 +262,17 @@ pub(crate) unsafe extern "C" fn _InitSecondaryTilesetAnimation() {
             .unwrap_unchecked()();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_General() {
-    sPrimaryTilesetAnimCounter = 0;
-    sPrimaryTilesetAnimCounterMax = 256;
+pub unsafe fn InitTilesetAnim_General() {
+    sPrimaryTilesetAnimCounter.set(0);
+    sPrimaryTilesetAnimCounterMax.set(256);
     sPrimaryTilesetAnimCallback = Some(TilesetAnim_General);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Building() {
-    sPrimaryTilesetAnimCounter = 0;
-    sPrimaryTilesetAnimCounterMax = 256;
+pub unsafe fn InitTilesetAnim_Building() {
+    sPrimaryTilesetAnimCounter.set(0);
+    sPrimaryTilesetAnimCounterMax.set(256);
     sPrimaryTilesetAnimCallback = Some(TilesetAnim_Building);
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_General(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_General(timer: u16) {
     if timer as i32 % 16 == 0 {
         QueueAnimTiles_General_Flower((timer as i32 / 16) as u16);
     }
@@ -295,182 +289,159 @@ pub(crate) unsafe extern "C" fn TilesetAnim_General(timer: u16) {
         QueueAnimTiles_General_LandWaterEdge((timer as i32 / 16) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_Building(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_Building(timer: u16) {
     if timer as i32 % 8 == 0 {
         QueueAnimTiles_Building_TVTurnedOn((timer as i32 / 8) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_General_Flower(timer: u16) {
-    let mut i: u16 = timer % 4;
+unsafe fn QueueAnimTiles_General_Flower(timer: u16) {
+    let i: u16 = timer % 4;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_General_Flower[i],
-        100679552 as usize as *mut u16,
+        100679552_usize as *mut u16,
         128,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_General_Water(timer: u16) {
-    let mut i: u8 = (timer % 8) as u8;
+unsafe fn QueueAnimTiles_General_Water(timer: u16) {
+    let i: u8 = (timer % 8) as u8;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_General_Water[i],
-        0x6003600 as usize as *mut u16,
+        0x6003600_usize as *mut u16,
         960,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_General_SandWaterEdge(timer: u16) {
-    let mut i: u16 = timer % 8;
+unsafe fn QueueAnimTiles_General_SandWaterEdge(timer: u16) {
+    let i: u16 = timer % 8;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_General_SandWaterEdge[i],
-        0x6003a00 as usize as *mut u16,
+        0x6003a00_usize as *mut u16,
         320,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_General_Waterfall(timer: u16) {
-    let mut i: u16 = timer % 4;
+unsafe fn QueueAnimTiles_General_Waterfall(timer: u16) {
+    let i: u16 = timer % 4;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_General_Waterfall[i],
-        0x6003e00 as usize as *mut u16,
+        0x6003e00_usize as *mut u16,
         192,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Petalburg() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_Petalburg() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = None;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Rustboro() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_Rustboro() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_Rustboro);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Dewford() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_Dewford() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_Dewford);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Slateport() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_Slateport() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_Slateport);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Mauville() {
-    sSecondaryTilesetAnimCounter = sPrimaryTilesetAnimCounter;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_Mauville() {
+    sSecondaryTilesetAnimCounter.set(sPrimaryTilesetAnimCounter.get());
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_Mauville);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Lavaridge() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_Lavaridge() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_Lavaridge);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Fallarbor() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_Fallarbor() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = None;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Fortree() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_Fortree() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = None;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Lilycove() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_Lilycove() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = None;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Mossdeep() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_Mossdeep() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = None;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_EverGrande() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_EverGrande() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_EverGrande);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Pacifidlog() {
-    sSecondaryTilesetAnimCounter = sPrimaryTilesetAnimCounter;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_Pacifidlog() {
+    sSecondaryTilesetAnimCounter.set(sPrimaryTilesetAnimCounter.get());
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_Pacifidlog);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Sootopolis() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_Sootopolis() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_Sootopolis);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_BattleFrontierOutsideWest() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_BattleFrontierOutsideWest() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_BattleFrontierOutsideWest);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_BattleFrontierOutsideEast() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_BattleFrontierOutsideEast() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_BattleFrontierOutsideEast);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Underwater() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = 128;
+pub unsafe fn InitTilesetAnim_Underwater() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(128);
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_Underwater);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_SootopolisGym() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = 240;
+pub unsafe fn InitTilesetAnim_SootopolisGym() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(240);
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_SootopolisGym);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_Cave() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_Cave() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_Cave);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_EliteFour() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = 128;
+pub unsafe fn InitTilesetAnim_EliteFour() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(128);
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_EliteFour);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_MauvilleGym() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_MauvilleGym() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_MauvilleGym);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_BikeShop() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_BikeShop() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_BikeShop);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_BattlePyramid() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_BattlePyramid() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_BattlePyramid);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitTilesetAnim_BattleDome() {
-    sSecondaryTilesetAnimCounter = 0;
-    sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
+pub unsafe fn InitTilesetAnim_BattleDome() {
+    sSecondaryTilesetAnimCounter.set(0);
+    sSecondaryTilesetAnimCounterMax.set(sPrimaryTilesetAnimCounterMax.get());
     sSecondaryTilesetAnimCallback = Some(TilesetAnim_BattleDome);
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_Rustboro(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_Rustboro(timer: u16) {
     if timer as i32 % 8 == 0 {
         QueueAnimTiles_Rustboro_WindyWater((timer as i32 / 8) as u16, 0);
         QueueAnimTiles_Rustboro_Fountain((timer as i32 / 8) as u16);
@@ -497,17 +468,17 @@ pub(crate) unsafe extern "C" fn TilesetAnim_Rustboro(timer: u16) {
         QueueAnimTiles_Rustboro_WindyWater((timer as i32 / 8) as u16, 7);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_Dewford(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_Dewford(timer: u16) {
     if timer as i32 % 8 == 0 {
         QueueAnimTiles_Dewford_Flag((timer as i32 / 8) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_Slateport(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_Slateport(timer: u16) {
     if timer as i32 % 16 == 0 {
         QueueAnimTiles_Slateport_Balloons((timer as i32 / 16) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_Mauville(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_Mauville(timer: u16) {
     if timer as i32 % 8 == 0 {
         QueueAnimTiles_Mauville_Flowers((timer as i32 / 8) as u16, 0);
     }
@@ -533,7 +504,7 @@ pub(crate) unsafe extern "C" fn TilesetAnim_Mauville(timer: u16) {
         QueueAnimTiles_Mauville_Flowers((timer as i32 / 8) as u16, 7);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_Lavaridge(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_Lavaridge(timer: u16) {
     if timer as i32 % 16 == 0 {
         QueueAnimTiles_Lavaridge_Steam((timer as i32 / 16) as u8);
     }
@@ -541,7 +512,7 @@ pub(crate) unsafe extern "C" fn TilesetAnim_Lavaridge(timer: u16) {
         QueueAnimTiles_Lavaridge_Lava((timer as i32 / 16) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_EverGrande(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_EverGrande(timer: u16) {
     if timer as i32 % 8 == 0 {
         QueueAnimTiles_EverGrande_Flowers((timer as i32 / 8) as u16, 0);
     }
@@ -567,7 +538,7 @@ pub(crate) unsafe extern "C" fn TilesetAnim_EverGrande(timer: u16) {
         QueueAnimTiles_EverGrande_Flowers((timer as i32 / 8) as u16, 7);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_Pacifidlog(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_Pacifidlog(timer: u16) {
     if timer as i32 % 16 == 0 {
         QueueAnimTiles_Pacifidlog_LogBridges((timer as i32 / 16) as u8);
     }
@@ -575,78 +546,78 @@ pub(crate) unsafe extern "C" fn TilesetAnim_Pacifidlog(timer: u16) {
         QueueAnimTiles_Pacifidlog_WaterCurrents((timer as i32 / 16) as u8);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_Sootopolis(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_Sootopolis(timer: u16) {
     if timer as i32 % 16 == 0 {
         QueueAnimTiles_Sootopolis_StormyWater((timer as i32 / 16) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_Underwater(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_Underwater(timer: u16) {
     if timer as i32 % 16 == 0 {
         QueueAnimTiles_Underwater_Seaweed((timer as i32 / 16) as u8);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_Cave(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_Cave(timer: u16) {
     if timer as i32 % 16 == 1 {
         QueueAnimTiles_Cave_Lava((timer as i32 / 16) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_BattleFrontierOutsideWest(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_BattleFrontierOutsideWest(timer: u16) {
     if timer as i32 % 8 == 0 {
         QueueAnimTiles_BattleFrontierOutsideWest_Flag((timer as i32 / 8) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_BattleFrontierOutsideEast(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_BattleFrontierOutsideEast(timer: u16) {
     if timer as i32 % 8 == 0 {
         QueueAnimTiles_BattleFrontierOutsideEast_Flag((timer as i32 / 8) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_General_LandWaterEdge(timer: u16) {
-    let mut i: u16 = timer % 4;
+unsafe fn QueueAnimTiles_General_LandWaterEdge(timer: u16) {
+    let i: u16 = timer % 4;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_General_LandWaterEdge[i],
-        0x6003c00 as usize as *mut u16,
+        0x6003c00_usize as *mut u16,
         320,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_Lavaridge_Steam(timer: u8) {
+unsafe fn QueueAnimTiles_Lavaridge_Steam(timer: u8) {
     let mut i: u8 = timer % 4;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_Lavaridge_Steam[i],
-        0x6006400 as usize as *mut u16,
+        0x6006400_usize as *mut u16,
         128,
     );
     i = ((timer as i32 + 2) % 4) as u8;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_Lavaridge_Steam[i],
-        100689024 as usize as *mut u16,
+        100689024_usize as *mut u16,
         128,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_Pacifidlog_LogBridges(timer: u8) {
-    let mut i: u8 = timer % 4;
+unsafe fn QueueAnimTiles_Pacifidlog_LogBridges(timer: u8) {
+    let i: u8 = timer % 4;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_Pacifidlog_LogBridges[i],
-        0x6007a00 as usize as *mut u16,
+        0x6007a00_usize as *mut u16,
         960,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_Underwater_Seaweed(timer: u8) {
-    let mut i: u8 = timer % 4;
+unsafe fn QueueAnimTiles_Underwater_Seaweed(timer: u8) {
+    let i: u8 = timer % 4;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_Underwater_Seaweed[i],
-        0x6007e00 as usize as *mut u16,
+        0x6007e00_usize as *mut u16,
         128,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_Pacifidlog_WaterCurrents(timer: u8) {
-    let mut i: u8 = timer % 8;
+unsafe fn QueueAnimTiles_Pacifidlog_WaterCurrents(timer: u8) {
+    let i: u8 = timer % 8;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_Pacifidlog_WaterCurrents[i],
-        0x6007e00 as usize as *mut u16,
+        0x6007e00_usize as *mut u16,
         256,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_Mauville_Flowers(mut timer_div: u16, timer_mod: u8) {
+unsafe fn QueueAnimTiles_Mauville_Flowers(mut timer_div: u16, timer_mod: u8) {
     timer_div -= timer_mod as u16;
     if (timer_div as u32) < (if 12 < 12 { 12 } else { 12 }) {
         timer_div = rem_u32(timer_div as u32, if 12 < 12 { 12 } else { 12 }) as u16;
@@ -674,12 +645,9 @@ pub(crate) unsafe extern "C" fn QueueAnimTiles_Mauville_Flowers(mut timer_div: u
         );
     }
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_Rustboro_WindyWater(
-    mut timer_div: u16,
-    timer_mod: u8,
-) {
+unsafe fn QueueAnimTiles_Rustboro_WindyWater(mut timer_div: u16, timer_mod: u8) {
     timer_div -= timer_mod as u16;
-    timer_div = timer_div % 8;
+    timer_div %= 8;
     if !gTilesetAnims_Rustboro_WindyWater[timer_div].is_null() {
         AppendTilesetAnimToBuffer(
             gTilesetAnims_Rustboro_WindyWater[timer_div],
@@ -688,85 +656,82 @@ pub(crate) unsafe extern "C" fn QueueAnimTiles_Rustboro_WindyWater(
         );
     }
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_Rustboro_Fountain(timer: u16) {
-    let mut i: u16 = timer % 2;
+unsafe fn QueueAnimTiles_Rustboro_Fountain(timer: u16) {
+    let i: u16 = timer % 2;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_Rustboro_Fountain[i],
-        0x6007800 as usize as *mut u16,
+        0x6007800_usize as *mut u16,
         128,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_Lavaridge_Lava(timer: u16) {
-    let mut i: u16 = timer % 4;
+unsafe fn QueueAnimTiles_Lavaridge_Lava(timer: u16) {
+    let i: u16 = timer % 4;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_Lavaridge_Cave_Lava[i],
-        0x6005400 as usize as *mut u16,
+        0x6005400_usize as *mut u16,
         128,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_EverGrande_Flowers(
-    mut timer_div: u16,
-    timer_mod: u8,
-) {
+unsafe fn QueueAnimTiles_EverGrande_Flowers(mut timer_div: u16, timer_mod: u8) {
     timer_div -= timer_mod as u16;
-    timer_div = timer_div % 8;
+    timer_div %= 8;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_EverGrande_Flowers[timer_div],
         gTilesetAnims_EverGrande_VDests[timer_mod],
         128,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_Cave_Lava(timer: u16) {
-    let mut i: u16 = timer % 4;
+unsafe fn QueueAnimTiles_Cave_Lava(timer: u16) {
+    let i: u16 = timer % 4;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_Lavaridge_Cave_Lava[i],
-        0x6007400 as usize as *mut u16,
+        0x6007400_usize as *mut u16,
         128,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_Dewford_Flag(timer: u16) {
-    let mut i: u16 = timer % 4;
+unsafe fn QueueAnimTiles_Dewford_Flag(timer: u16) {
+    let i: u16 = timer % 4;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_Dewford_Flag[i],
-        100685120 as usize as *mut u16,
+        100685120_usize as *mut u16,
         192,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_BattleFrontierOutsideWest_Flag(timer: u16) {
-    let mut i: u16 = timer % 4;
+unsafe fn QueueAnimTiles_BattleFrontierOutsideWest_Flag(timer: u16) {
+    let i: u16 = timer % 4;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_BattleFrontierOutsideWest_Flag[i],
-        100686656 as usize as *mut u16,
+        100686656_usize as *mut u16,
         192,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_BattleFrontierOutsideEast_Flag(timer: u16) {
-    let mut i: u16 = timer % 4;
+unsafe fn QueueAnimTiles_BattleFrontierOutsideEast_Flag(timer: u16) {
+    let i: u16 = timer % 4;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_BattleFrontierOutsideEast_Flag[i],
-        100686656 as usize as *mut u16,
+        100686656_usize as *mut u16,
         192,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_Slateport_Balloons(timer: u16) {
-    let mut i: u16 = timer % 4;
+unsafe fn QueueAnimTiles_Slateport_Balloons(timer: u16) {
+    let i: u16 = timer % 4;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_Slateport_Balloons[i],
-        0x6005c00 as usize as *mut u16,
+        0x6005c00_usize as *mut u16,
         128,
     );
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_MauvilleGym(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_MauvilleGym(timer: u16) {
     if timer as i32 % 2 == 0 {
         QueueAnimTiles_MauvilleGym_ElectricGates((timer as i32 / 2) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_SootopolisGym(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_SootopolisGym(timer: u16) {
     if timer as i32 % 8 == 0 {
         QueueAnimTiles_SootopolisGym_Waterfalls((timer as i32 / 8) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_EliteFour(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_EliteFour(timer: u16) {
     if timer as i32 % 64 == 1 {
         QueueAnimTiles_EliteFour_GroundLights((timer as i32 / 64) as u16);
     }
@@ -774,105 +739,105 @@ pub(crate) unsafe extern "C" fn TilesetAnim_EliteFour(timer: u16) {
         QueueAnimTiles_EliteFour_WallLights((timer as i32 / 8) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_BikeShop(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_BikeShop(timer: u16) {
     if timer as i32 % 4 == 0 {
         QueueAnimTiles_BikeShop_BlinkingLights((timer as i32 / 4) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_BattlePyramid(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_BattlePyramid(timer: u16) {
     if timer as i32 % 8 == 0 {
         QueueAnimTiles_BattlePyramid_Torch((timer as i32 / 8) as u16);
         QueueAnimTiles_BattlePyramid_StatueShadow((timer as i32 / 8) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_BattleDome(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_BattleDome(timer: u16) {
     if timer as i32 % 4 == 0 {
         BlendAnimPalette_BattleDome_FloorLights((timer as i32 / 4) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn TilesetAnim_BattleDome2(timer: u16) {
+pub(crate) unsafe fn TilesetAnim_BattleDome2(timer: u16) {
     if timer as i32 % 4 == 0 {
         BlendAnimPalette_BattleDome_FloorLightsNoBlend((timer as i32 / 4) as u16);
     }
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_Building_TVTurnedOn(timer: u16) {
-    let mut i: u16 = timer % 2;
+unsafe fn QueueAnimTiles_Building_TVTurnedOn(timer: u16) {
+    let i: u16 = timer % 2;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_Building_TvTurnedOn[i],
-        0x6003e00 as usize as *mut u16,
+        0x6003e00_usize as *mut u16,
         128,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_SootopolisGym_Waterfalls(timer: u16) {
-    let mut i: u16 = rem_u32(timer as u32, if 3 < 3 { 3 } else { 3 }) as u16;
+unsafe fn QueueAnimTiles_SootopolisGym_Waterfalls(timer: u16) {
+    let i: u16 = rem_u32(timer as u32, if 3 < 3 { 3 } else { 3 }) as u16;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_SootopolisGym_SideWaterfall[i],
-        0x6007e00 as usize as *mut u16,
+        0x6007e00_usize as *mut u16,
         384,
     );
     AppendTilesetAnimToBuffer(
         gTilesetAnims_SootopolisGym_FrontWaterfall[i],
-        0x6007a00 as usize as *mut u16,
+        0x6007a00_usize as *mut u16,
         640,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_EliteFour_WallLights(timer: u16) {
-    let mut i: u16 = timer % 4;
+unsafe fn QueueAnimTiles_EliteFour_WallLights(timer: u16) {
+    let i: u16 = timer % 4;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_EliteFour_WallLights[i],
-        0x6007f00 as usize as *mut u16,
+        0x6007f00_usize as *mut u16,
         32,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_EliteFour_GroundLights(timer: u16) {
-    let mut i: u16 = timer % 2;
+unsafe fn QueueAnimTiles_EliteFour_GroundLights(timer: u16) {
+    let i: u16 = timer % 2;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_EliteFour_FloorLight[i],
-        0x6007c00 as usize as *mut u16,
+        0x6007c00_usize as *mut u16,
         128,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_MauvilleGym_ElectricGates(timer: u16) {
-    let mut i: u16 = timer % 2;
+unsafe fn QueueAnimTiles_MauvilleGym_ElectricGates(timer: u16) {
+    let i: u16 = timer % 2;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_MauvilleGym_ElectricGates[i],
-        0x6005200 as usize as *mut u16,
+        0x6005200_usize as *mut u16,
         NUM_TILES_IN_PRIMARY,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_BikeShop_BlinkingLights(timer: u16) {
-    let mut i: u16 = timer % 2;
+unsafe fn QueueAnimTiles_BikeShop_BlinkingLights(timer: u16) {
+    let i: u16 = timer % 2;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_BikeShop_BlinkingLights[i],
-        0x6007e00 as usize as *mut u16,
+        0x6007e00_usize as *mut u16,
         288,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_Sootopolis_StormyWater(timer: u16) {
-    let mut i: u16 = timer % 8;
+unsafe fn QueueAnimTiles_Sootopolis_StormyWater(timer: u16) {
+    let i: u16 = timer % 8;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_Sootopolis_StormyWater[i],
-        0x6005e00 as usize as *mut u16,
+        0x6005e00_usize as *mut u16,
         3072,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_BattlePyramid_Torch(timer: u16) {
-    let mut i: u16 = timer % 3;
+unsafe fn QueueAnimTiles_BattlePyramid_Torch(timer: u16) {
+    let i: u16 = timer % 3;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_BattlePyramid_Torch[i],
-        100684512 as usize as *mut u16,
+        100684512_usize as *mut u16,
         256,
     );
 }
-pub(crate) unsafe extern "C" fn QueueAnimTiles_BattlePyramid_StatueShadow(timer: u16) {
-    let mut i: u16 = timer % 3;
+unsafe fn QueueAnimTiles_BattlePyramid_StatueShadow(timer: u16) {
+    let i: u16 = timer % 3;
     AppendTilesetAnimToBuffer(
         gTilesetAnims_BattlePyramid_StatueShadow[i],
-        100684000 as usize as *mut u16,
+        100684000_usize as *mut u16,
         256,
     );
 }
-pub(crate) unsafe extern "C" fn BlendAnimPalette_BattleDome_FloorLights(timer: u16) {
+unsafe fn BlendAnimPalette_BattleDome_FloorLights(timer: u16) {
     CpuSet(
         sTilesetAnims_BattleDomeFloorLightPals[timer % 4] as *mut c_void,
         &raw mut gPlttBufferUnfaded[128] as *mut c_void,
@@ -886,10 +851,10 @@ pub(crate) unsafe extern "C" fn BlendAnimPalette_BattleDome_FloorLights(timer: u
     );
     if FindTaskIdByFunc(Some(Task_BattleTransition_Intro)) != TASK_NONE {
         sSecondaryTilesetAnimCallback = Some(TilesetAnim_BattleDome2);
-        sSecondaryTilesetAnimCounterMax = 32;
+        sSecondaryTilesetAnimCounterMax.set(32);
     }
 }
-pub(crate) unsafe extern "C" fn BlendAnimPalette_BattleDome_FloorLightsNoBlend(timer: u16) {
+unsafe fn BlendAnimPalette_BattleDome_FloorLightsNoBlend(timer: u16) {
     CpuSet(
         sTilesetAnims_BattleDomeFloorLightPals[timer % 4] as *mut c_void,
         &raw mut gPlttBufferUnfaded[128] as *mut c_void,
@@ -903,8 +868,8 @@ pub(crate) unsafe extern "C" fn BlendAnimPalette_BattleDome_FloorLightsNoBlend(t
             gPaletteFade.blendColor() & 0x7FFF,
         );
         if ({
-            sSecondaryTilesetAnimCounterMax -= 1;
-            sSecondaryTilesetAnimCounterMax
+            sSecondaryTilesetAnimCounterMax.set(sSecondaryTilesetAnimCounterMax.get() - 1);
+            sSecondaryTilesetAnimCounterMax.get()
         }) == 0
         {
             sSecondaryTilesetAnimCallback = None;

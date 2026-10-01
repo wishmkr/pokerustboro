@@ -45,7 +45,7 @@ static HEAL_LOCATIONS: [HealLocation; 22] = [
 ];
 
 #[unsafe(no_mangle)]
-pub extern "C" fn GetHealLocationIndexByMap(map_group: u16, map_num: u16) -> u32 {
+pub fn GetHealLocationIndexByMap(map_group: u16, map_num: u16) -> u32 {
     let mut index = 0;
     while index < HEAL_LOCATIONS.len() {
         let entry = unsafe {
@@ -65,13 +65,13 @@ pub extern "C" fn GetHealLocationIndexByMap(map_group: u16, map_num: u16) -> u32
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn GetHealLocationByMap(map_group: u16, map_num: u16) -> *const HealLocation {
+pub fn GetHealLocationByMap(map_group: u16, map_num: u16) -> *const HealLocation {
     let index = GetHealLocationIndexByMap(map_group, map_num);
     GetHealLocation(index)
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn GetHealLocation(index: u32) -> *const HealLocation {
+pub fn GetHealLocation(index: u32) -> *const HealLocation {
     if index == 0 || index > HEAL_LOCATIONS.len() as u32 {
         ptr::null()
     } else {

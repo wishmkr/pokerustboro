@@ -1,45 +1,45 @@
-//! Script flags and variables.
+//! Script flags and variables (was src/event_data.c).
 //!
-//! The `gSpecialVar_*` globals this file owns in C live in [`crate::ffi`],
-//! because a crate can only define each `no_mangle` symbol once and nearly
-//! every other module reads one of them.
+//! Flags are bits, variables are `u16`s, both addressed by id (`FLAG_*`,
+//! `VAR_*`):
+//!
+//! | ids | what | where |
+//! |---|---|---|
+//! | flags `1..0x4000` | saved flags | `SaveBlock1::flags`, one bit each |
+//! | flags `0x4000..0x4080` | special flags, reset at boot | this module |
+//! | vars `0x4000..0x4100` | saved variables | `SaveBlock1::vars` |
+//! | vars `0x8000..=0x8015` | special variables (`gSpecialVar_*`) | globals, reached through `gSpecialVars` |
+//!
+//! [`flag_get`], [`flag_set`], [`var_get`], [`var_set`] and the rest are the
+//! safe API: they ignore ids outside the table above. The C names
+//! (`FlagGet`, `VarSet`...) keep C's behaviour for any id, including
+//! reading and writing past the end of the save's tables for invalid ones,
+//! so that the game behaves exactly as before for code that still calls them.
+//!
+//! The `gSpecialVar_*` globals themselves are defined in [`crate::ffi`]: a
+//! crate can define each `no_mangle` symbol only once and nearly every
+//! module reads one of them.
 
-use crate::ffi::SAVE2_POKEDEX_OFFSET;
+use crate::c::CArray;
+use crate::global::Global;
+use crate::save_blocks::{save_block1, save_block2};
 
-const NUM_SPECIAL_FLAGS: usize = 128;
-const NUM_TEMP_FLAGS: usize = 32;
-const NUM_DAILY_FLAGS: usize = 64;
-const NUM_TEMP_VARS: usize = 16;
+const SPECIAL_FLAGS_START: u16 = 0x4000;
+const NUM_SPECIAL_FLAGS: u16 = 0x80;
+const VARS_START: u16 = 0x4000;
+const NUM_VARS: u16 = 0x100;
+const SPECIAL_VARS_START: u16 = 0x8000;
+const NUM_SPECIAL_VARS: u16 = 0x16;
 
-/// 8 flags per byte.
-const SPECIAL_FLAGS_SIZE: usize = NUM_SPECIAL_FLAGS / 8;
-const TEMP_FLAGS_SIZE: usize = NUM_TEMP_FLAGS / 8;
-const DAILY_FLAGS_SIZE: usize = NUM_DAILY_FLAGS / 8;
-/// Half a var per byte.
-const TEMP_VARS_SIZE: usize = NUM_TEMP_VARS * 2;
+/// The length of `SaveBlock1::flags`.
+const SAVED_FLAG_BYTES: usize = 300;
 
 const TEMP_FLAGS_START: u16 = 0x0000;
+const NUM_TEMP_FLAGS: u16 = 32;
 const DAILY_FLAGS_START: u16 = 0x0920;
-const SPECIAL_FLAGS_START: u16 = 0x4000;
+const NUM_DAILY_FLAGS: u16 = 64;
 const TEMP_VARS_START: u16 = 0x4000;
-const VARS_START: u16 = 0x4000;
-const SPECIAL_VARS_START: u16 = 0x8000;
-
-/// `offsetof(struct SaveBlock1, flags)` and its size.
-const SAVE1_FLAGS_OFFSET: usize = 0x1270;
-const SAVE1_FLAGS_SIZE: usize = 300;
-/// `offsetof(struct SaveBlock1, vars)` and its size in bytes.
-const SAVE1_VARS_OFFSET: usize = 0x139c;
-const SAVE1_VARS_SIZE: usize = 512;
-
-/// Offsets inside `struct Pokedex`, itself at `SAVE2_POKEDEX_OFFSET`.
-const POKEDEX_ORDER: usize = 0;
-const POKEDEX_MODE: usize = 1;
-const POKEDEX_NATIONAL_MAGIC: usize = 2;
-const DEX_MODE_NATIONAL: u8 = 1;
-const NATIONAL_DEX_MAGIC: u8 = 0xda;
-const NATIONAL_DEX_VAR_VALUE: u16 = 0x302;
-const RESET_RTC_VAR_VALUE: u16 = 0x920;
+const NUM_TEMP_VARS: u16 = 16;
 
 const FLAG_SYS_ENC_UP_ITEM: u16 = 0x8ad;
 const FLAG_SYS_ENC_DOWN_ITEM: u16 = 0x8ae;
@@ -63,249 +63,439 @@ const VAR_GIFT_PICHU_SLOT: u16 = 0x40dd;
 const VAR_GIFT_UNUSED_1: u16 = 0x40de;
 const NUM_GIFT_UNUSED_VARS: u16 = 7;
 
+/// Written to the Pokédex and to `VAR_NATIONAL_DEX` when the National Dex
+/// is enabled; all three must agree for it to count as enabled.
+const NATIONAL_DEX_MAGIC: u8 = 0xda;
+const NATIONAL_DEX_VAR_VALUE: u16 = 0x302;
+const DEX_MODE_NATIONAL: u8 = 1;
+const RESET_RTC_VAR_VALUE: u16 = 0x920;
+
+/// Flags 0x4000..0x4080, not saved.
 #[unsafe(link_section = "ewram_data")]
-static mut SPECIAL_FLAGS: [u8; SPECIAL_FLAGS_SIZE] = [0; SPECIAL_FLAGS_SIZE];
+static SPECIAL_FLAGS: Global<CArray<u8, { NUM_SPECIAL_FLAGS as usize / 8 }>> =
+    Global::new(CArray([0; NUM_SPECIAL_FLAGS as usize / 8]));
 
-unsafe extern "C" {
-    static mut gSaveBlock1Ptr: *mut u8;
-    static mut gSaveBlock2Ptr: *mut u8;
-    /// Table of pointers to the `gSpecialVar_*` globals, built in
-    /// `data/event_scripts.s`.
-    static gSpecialVars: *mut u16;
-
-    fn ResetPokedexScrollPositions();
-}
-
+/// `ResetPokedexScrollPositions` with this module's view of its types.
 #[inline]
-unsafe fn zero(destination: *mut u8, count: usize) {
-    unsafe { core::ptr::write_bytes(destination, 0, count) };
+unsafe fn ResetPokedexScrollPositions() {
+    {
+        crate::pokedex::ResetPokedexScrollPositions();
+    }
 }
 
-#[inline]
-unsafe fn pokedex_byte(offset: usize) -> *mut u8 {
-    unsafe { gSaveBlock2Ptr.add(SAVE2_POKEDEX_OFFSET + offset) }
+// -------------------------------------------------------------------- flags
+
+/// Where a flag is kept.
+#[derive(Clone, Copy)]
+enum FlagByte {
+    /// byte of `SaveBlock1::flags`
+    Saved(usize),
+    /// byte of [`SPECIAL_FLAGS`]
+    Special(usize),
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitEventData() {
-    unsafe { zero(gSaveBlock1Ptr.add(SAVE1_FLAGS_OFFSET), SAVE1_FLAGS_SIZE) };
-    unsafe { zero(gSaveBlock1Ptr.add(SAVE1_VARS_OFFSET), SAVE1_VARS_SIZE) };
-    unsafe { zero((&raw mut SPECIAL_FLAGS).cast::<u8>(), SPECIAL_FLAGS_SIZE) };
+/// The byte holding flag `id` (bit `id % 8`), if `id` is a valid flag.
+fn flag_byte(id: u16) -> Option<FlagByte> {
+    match id {
+        0 => None,
+        1..SPECIAL_FLAGS_START => {
+            let byte = usize::from(id / 8);
+            (byte < SAVED_FLAG_BYTES).then_some(FlagByte::Saved(byte))
+        }
+        _ if id < SPECIAL_FLAGS_START + NUM_SPECIAL_FLAGS => Some(FlagByte::Special(usize::from(
+            (id - SPECIAL_FLAGS_START) / 8,
+        ))),
+        _ => None,
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearTempFieldEventData() {
-    unsafe {
-        zero(
-            gSaveBlock1Ptr.add(SAVE1_FLAGS_OFFSET + TEMP_FLAGS_START as usize / 8),
-            TEMP_FLAGS_SIZE,
-        )
-    };
-    unsafe {
-        zero(
-            gSaveBlock1Ptr.add(SAVE1_VARS_OFFSET + (TEMP_VARS_START - VARS_START) as usize * 2),
-            TEMP_VARS_SIZE,
-        )
-    };
-    unsafe { FlagClear(FLAG_SYS_ENC_UP_ITEM) };
-    unsafe { FlagClear(FLAG_SYS_ENC_DOWN_ITEM) };
-    unsafe { FlagClear(FLAG_SYS_USE_STRENGTH) };
-    unsafe { FlagClear(FLAG_SYS_CTRL_OBJ_DELETE) };
-    unsafe { FlagClear(FLAG_NURSE_UNION_ROOM_REMINDER) };
+fn update_flag_byte(byte: FlagByte, f: impl FnOnce(u8) -> u8) {
+    match byte {
+        // SAFETY: the save blocks are set up at boot; the borrow ends here.
+        FlagByte::Saved(i) => {
+            let flags = &mut unsafe { save_block1() }.flags;
+            flags[i] = f(flags[i]);
+        }
+        FlagByte::Special(i) => {
+            SPECIAL_FLAGS.update(|mut flags| {
+                flags[i] = f(flags[i]);
+                flags
+            });
+        }
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearDailyFlags() {
-    unsafe {
-        zero(
-            gSaveBlock1Ptr.add(SAVE1_FLAGS_OFFSET + DAILY_FLAGS_START as usize / 8),
-            DAILY_FLAGS_SIZE,
-        )
-    };
+fn read_flag_byte(byte: FlagByte) -> u8 {
+    match byte {
+        // SAFETY: as in update_flag_byte.
+        FlagByte::Saved(i) => unsafe { save_block1() }.flags[i],
+        FlagByte::Special(i) => SPECIAL_FLAGS.get()[i],
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DisableNationalPokedex() {
-    let national_dex_var = unsafe { GetVarPointer(VAR_NATIONAL_DEX) };
-    unsafe { pokedex_byte(POKEDEX_NATIONAL_MAGIC).write(0) };
-    unsafe { national_dex_var.write(0) };
-    unsafe { FlagClear(FLAG_SYS_NATIONAL_DEX) };
+/// Whether flag `id` is set (false for an invalid id).
+pub fn flag_get(id: u16) -> bool {
+    flag_byte(id).is_some_and(|byte| read_flag_byte(byte) & 1 << (id % 8) != 0)
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn EnableNationalPokedex() {
-    let national_dex_var = unsafe { GetVarPointer(VAR_NATIONAL_DEX) };
-    unsafe { pokedex_byte(POKEDEX_NATIONAL_MAGIC).write(NATIONAL_DEX_MAGIC) };
-    unsafe { national_dex_var.write(NATIONAL_DEX_VAR_VALUE) };
-    unsafe { FlagSet(FLAG_SYS_NATIONAL_DEX) };
-    unsafe { pokedex_byte(POKEDEX_MODE).write(DEX_MODE_NATIONAL) };
-    unsafe { pokedex_byte(POKEDEX_ORDER).write(0) };
+/// Sets flag `id` (nothing for an invalid id).
+pub fn flag_set(id: u16) {
+    if let Some(byte) = flag_byte(id) {
+        update_flag_byte(byte, |b| b | 1 << (id % 8));
+    }
+}
+
+/// Clears flag `id` (nothing for an invalid id).
+pub fn flag_clear(id: u16) {
+    if let Some(byte) = flag_byte(id) {
+        update_flag_byte(byte, |b| b & !(1 << (id % 8)));
+    }
+}
+
+// --------------------------------------------------------------------- vars
+
+/// Variable `id`: a saved one (index into `SaveBlock1::vars`) or a special
+/// one (index into `gSpecialVars`).
+#[derive(Clone, Copy)]
+enum VarSlot {
+    Saved(usize),
+    Special(usize),
+}
+
+fn var_slot(id: u16) -> Option<VarSlot> {
+    match id {
+        VARS_START..SPECIAL_VARS_START if id < VARS_START + NUM_VARS => {
+            Some(VarSlot::Saved(usize::from(id - VARS_START)))
+        }
+        SPECIAL_VARS_START.. if id < SPECIAL_VARS_START + NUM_SPECIAL_VARS => {
+            Some(VarSlot::Special(usize::from(id - SPECIAL_VARS_START)))
+        }
+        _ => None,
+    }
+}
+
+/// `gSpecialVars`: pointers to the `gSpecialVar_*` globals, in id order
+/// (data/event_scripts.s, now crate::asmdata).
+fn special_vars() -> *const *mut u16 {
+    crate::asmdata::gSpecialVars.cast()
+}
+
+fn var_ptr(slot: VarSlot) -> *mut u16 {
+    match slot {
+        // SAFETY: the save blocks are set up at boot; no reference is kept.
+        VarSlot::Saved(i) => &raw mut unsafe { save_block1() }.vars[i],
+        // SAFETY: `i` is within the table, whose entries point to globals.
+        VarSlot::Special(i) => unsafe { special_vars().add(usize::from(i)).read() },
+    }
+}
+
+/// The value of variable `id`. An id that isn't a variable reads as itself:
+/// that's how scripts pass a number where a variable is expected.
+pub fn var_get(id: u16) -> u16 {
+    match var_slot(id) {
+        // SAFETY: var_ptr gives a valid pointer for a valid slot.
+        Some(slot) => unsafe { var_ptr(slot).read() },
+        None => id,
+    }
+}
+
+/// Sets variable `id`. Returns false for an id that isn't a variable.
+pub fn var_set(id: u16, value: u16) -> bool {
+    match var_slot(id) {
+        Some(slot) => {
+            // SAFETY: as in var_get.
+            unsafe { var_ptr(slot).write(value) };
+            true
+        }
+        None => false,
+    }
+}
+
+// ------------------------------------------------------------------ resets
+
+/// Clears all flags and variables (new game).
+pub fn init_event_data() {
+    // SAFETY: the save blocks are set up at boot; the borrow ends here.
+    let save = unsafe { save_block1() };
+    save.flags.0.fill(0);
+    save.vars.0.fill(0);
+    SPECIAL_FLAGS.set(CArray([0; NUM_SPECIAL_FLAGS as usize / 8]));
+}
+
+/// Clears the temporary flags and variables and a few system flags (on
+/// every map change).
+pub fn clear_temp_field_event_data() {
+    {
+        // SAFETY: as in init_event_data.
+        let save = unsafe { save_block1() };
+        let temp_flags =
+            usize::from(TEMP_FLAGS_START / 8)..usize::from((TEMP_FLAGS_START + NUM_TEMP_FLAGS) / 8);
+        save.flags.0[temp_flags].fill(0);
+        let temp_vars = usize::from(TEMP_VARS_START - VARS_START)
+            ..usize::from(TEMP_VARS_START - VARS_START + NUM_TEMP_VARS);
+        save.vars.0[temp_vars].fill(0);
+    }
+    for flag in [
+        FLAG_SYS_ENC_UP_ITEM,
+        FLAG_SYS_ENC_DOWN_ITEM,
+        FLAG_SYS_USE_STRENGTH,
+        FLAG_SYS_CTRL_OBJ_DELETE,
+        FLAG_NURSE_UNION_ROOM_REMINDER,
+    ] {
+        flag_clear(flag);
+    }
+}
+
+/// Clears the flags that reset every day.
+pub fn clear_daily_flags() {
+    // SAFETY: as in init_event_data.
+    let save = unsafe { save_block1() };
+    let daily =
+        usize::from(DAILY_FLAGS_START / 8)..usize::from((DAILY_FLAGS_START + NUM_DAILY_FLAGS) / 8);
+    save.flags.0[daily].fill(0);
+}
+
+// --------------------------------------------------------- National Pokédex
+
+pub fn disable_national_pokedex() {
+    // SAFETY: the save blocks are set up at boot; the borrow ends here.
+    unsafe { save_block2() }.pokedex.nationalMagic = 0;
+    var_set(VAR_NATIONAL_DEX, 0);
+    flag_clear(FLAG_SYS_NATIONAL_DEX);
+}
+
+pub fn enable_national_pokedex() {
+    {
+        // SAFETY: as in disable_national_pokedex.
+        let dex = &mut unsafe { save_block2() }.pokedex;
+        dex.nationalMagic = NATIONAL_DEX_MAGIC;
+    }
+    var_set(VAR_NATIONAL_DEX, NATIONAL_DEX_VAR_VALUE);
+    flag_set(FLAG_SYS_NATIONAL_DEX);
+    {
+        // SAFETY: as above.
+        let dex = &mut unsafe { save_block2() }.pokedex;
+        dex.mode = DEX_MODE_NATIONAL;
+        dex.order = 0;
+    }
+    // SAFETY: a plain C function with no preconditions.
     unsafe { ResetPokedexScrollPositions() };
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsNationalPokedexEnabled() -> u32 {
-    let enabled = unsafe { pokedex_byte(POKEDEX_NATIONAL_MAGIC).read() } == NATIONAL_DEX_MAGIC
-        && unsafe { VarGet(VAR_NATIONAL_DEX) } == NATIONAL_DEX_VAR_VALUE
-        && unsafe { FlagGet(FLAG_SYS_NATIONAL_DEX) } != 0;
-    u32::from(enabled)
+pub fn is_national_pokedex_enabled() -> bool {
+    // SAFETY: as in disable_national_pokedex.
+    let magic = unsafe { save_block2() }.pokedex.nationalMagic;
+    magic == NATIONAL_DEX_MAGIC
+        && var_get(VAR_NATIONAL_DEX) == NATIONAL_DEX_VAR_VALUE
+        && flag_get(FLAG_SYS_NATIONAL_DEX)
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DisableMysteryEvent() {
-    unsafe { FlagClear(FLAG_SYS_MYSTERY_EVENT_ENABLE) };
-}
+// -------------------------------------------- Mystery Event / Gift, RTC reset
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn EnableMysteryEvent() {
-    unsafe { FlagSet(FLAG_SYS_MYSTERY_EVENT_ENABLE) };
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsMysteryEventEnabled() -> u32 {
-    u32::from(unsafe { FlagGet(FLAG_SYS_MYSTERY_EVENT_ENABLE) })
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DisableMysteryGift() {
-    unsafe { FlagClear(FLAG_SYS_MYSTERY_GIFT_ENABLE) };
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn EnableMysteryGift() {
-    unsafe { FlagSet(FLAG_SYS_MYSTERY_GIFT_ENABLE) };
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsMysteryGiftEnabled() -> u32 {
-    u32::from(unsafe { FlagGet(FLAG_SYS_MYSTERY_GIFT_ENABLE) })
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearMysteryGiftFlags() {
-    unsafe { FlagClear(FLAG_MYSTERY_GIFT_DONE) };
-    let mut index = 0u16;
-    while index < NUM_MYSTERY_GIFT_FLAGS {
-        unsafe { FlagClear(FLAG_MYSTERY_GIFT_1 + index) };
-        index += 1;
+pub fn clear_mystery_gift_flags() {
+    flag_clear(FLAG_MYSTERY_GIFT_DONE);
+    for flag in FLAG_MYSTERY_GIFT_1..FLAG_MYSTERY_GIFT_1 + NUM_MYSTERY_GIFT_FLAGS {
+        flag_clear(flag);
     }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearMysteryGiftVars() {
-    unsafe { VarSet(VAR_GIFT_PICHU_SLOT, 0) };
-    let mut index = 0u16;
-    while index < NUM_GIFT_UNUSED_VARS {
-        unsafe { VarSet(VAR_GIFT_UNUSED_1 + index, 0) };
-        index += 1;
+pub fn clear_mystery_gift_vars() {
+    var_set(VAR_GIFT_PICHU_SLOT, 0);
+    for var in VAR_GIFT_UNUSED_1..VAR_GIFT_UNUSED_1 + NUM_GIFT_UNUSED_VARS {
+        var_set(var, 0);
     }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DisableResetRTC() {
-    unsafe { VarSet(VAR_RESET_RTC_ENABLE, 0) };
-    unsafe { FlagClear(FLAG_SYS_RESET_RTC_ENABLE) };
+pub fn enable_reset_rtc(enable: bool) {
+    var_set(
+        VAR_RESET_RTC_ENABLE,
+        if enable { RESET_RTC_VAR_VALUE } else { 0 },
+    );
+    if enable {
+        flag_set(FLAG_SYS_RESET_RTC_ENABLE);
+    } else {
+        flag_clear(FLAG_SYS_RESET_RTC_ENABLE);
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn EnableResetRTC() {
-    unsafe { VarSet(VAR_RESET_RTC_ENABLE, RESET_RTC_VAR_VALUE) };
-    unsafe { FlagSet(FLAG_SYS_RESET_RTC_ENABLE) };
+pub fn can_reset_rtc() -> bool {
+    flag_get(FLAG_SYS_RESET_RTC_ENABLE) && var_get(VAR_RESET_RTC_ENABLE) == RESET_RTC_VAR_VALUE
 }
 
+// ------------------------------------------------------------------ C names
+//
+// The flag and var functions below keep C's exact behaviour for every id
+// (a pointer computed without bounds checks), for callers that may rely on
+// it; the rest only forward to the safe functions.
+
+/// C's `GetFlagPointer`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CanResetRTC() -> u32 {
-    let can = unsafe { FlagGet(FLAG_SYS_RESET_RTC_ENABLE) } != 0
-        && unsafe { VarGet(VAR_RESET_RTC_ENABLE) } == RESET_RTC_VAR_VALUE;
-    u32::from(can)
+pub unsafe fn GetFlagPointer(id: u16) -> *mut u8 {
+    if id == 0 {
+        core::ptr::null_mut()
+    } else if id < SPECIAL_FLAGS_START {
+        unsafe { save_block1() }
+            .flags
+            .as_mut_ptr()
+            .wrapping_add(usize::from(id / 8))
+    } else {
+        SPECIAL_FLAGS
+            .as_ptr()
+            .cast::<u8>()
+            .wrapping_add(usize::from((id - SPECIAL_FLAGS_START) / 8))
+    }
 }
 
+/// C's `GetVarPointer`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetVarPointer(id: u16) -> *mut u16 {
+pub unsafe fn GetVarPointer(id: u16) -> *mut u16 {
     if id < VARS_START {
         core::ptr::null_mut()
     } else if id < SPECIAL_VARS_START {
-        unsafe {
-            gSaveBlock1Ptr
-                .add(SAVE1_VARS_OFFSET + (id - VARS_START) as usize * 2)
-                .cast::<u16>()
-        }
+        unsafe { save_block1() }
+            .vars
+            .as_mut_ptr()
+            .wrapping_add(usize::from(id - VARS_START))
     } else {
         unsafe {
-            (&raw const gSpecialVars)
-                .cast::<*mut u16>()
-                .add((id - SPECIAL_VARS_START) as usize)
+            special_vars()
+                .add(usize::from(id - SPECIAL_VARS_START))
                 .read()
         }
     }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn VarGet(id: u16) -> u16 {
-    let pointer = unsafe { GetVarPointer(id) };
-    if pointer.is_null() {
-        // An out-of-range id reads back as its own literal value, which is
-        // how scripts pass immediates where a var is expected.
-        return id;
+pub unsafe fn FlagSet(id: u16) -> u8 {
+    let p = unsafe { GetFlagPointer(id) };
+    if !p.is_null() {
+        unsafe { *p |= 1 << (id & 7) };
     }
-    unsafe { pointer.read() }
+    0
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn VarSet(id: u16, value: u16) -> u8 {
-    let pointer = unsafe { GetVarPointer(id) };
-    if pointer.is_null() {
+pub unsafe fn FlagClear(id: u16) -> u8 {
+    let p = unsafe { GetFlagPointer(id) };
+    if !p.is_null() {
+        unsafe { *p &= !(1 << (id & 7)) };
+    }
+    0
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn FlagGet(id: u16) -> u8 {
+    let p = unsafe { GetFlagPointer(id) };
+    if p.is_null() {
         return 0;
     }
-    unsafe { pointer.write(value) };
+    (unsafe { *p } >> (id & 7) & 1).into()
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn VarGet(id: u16) -> u16 {
+    let p = unsafe { GetVarPointer(id) };
+    if p.is_null() { id } else { unsafe { *p } }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn VarSet(id: u16, value: u16) -> u8 {
+    let p = unsafe { GetVarPointer(id) };
+    if p.is_null() {
+        return 0;
+    }
+    unsafe { *p = value };
     1
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn VarGetObjectEventGraphicsId(id: u8) -> u8 {
+pub unsafe fn VarGetObjectEventGraphicsId(id: u8) -> u8 {
     unsafe { VarGet(VAR_OBJ_GFX_ID_0 + u16::from(id)) as u8 }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFlagPointer(id: u16) -> *mut u8 {
-    if id == 0 {
-        core::ptr::null_mut()
-    } else if id < SPECIAL_FLAGS_START {
-        unsafe { gSaveBlock1Ptr.add(SAVE1_FLAGS_OFFSET + id as usize / 8) }
-    } else {
-        unsafe {
-            (&raw mut SPECIAL_FLAGS)
-                .cast::<u8>()
-                .add((id - SPECIAL_FLAGS_START) as usize / 8)
-        }
-    }
+pub fn InitEventData() {
+    init_event_data();
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FlagSet(id: u16) -> u8 {
-    let pointer = unsafe { GetFlagPointer(id) };
-    if !pointer.is_null() {
-        unsafe { pointer.write(pointer.read() | 1 << (id & 7)) };
-    }
-    0
+pub fn ClearTempFieldEventData() {
+    clear_temp_field_event_data();
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FlagClear(id: u16) -> u8 {
-    let pointer = unsafe { GetFlagPointer(id) };
-    if !pointer.is_null() {
-        unsafe { pointer.write(pointer.read() & !(1 << (id & 7))) };
-    }
-    0
+pub fn ClearDailyFlags() {
+    clear_daily_flags();
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FlagGet(id: u16) -> u8 {
-    let pointer = unsafe { GetFlagPointer(id) };
-    if pointer.is_null() {
-        return 0;
-    }
-    u8::from(unsafe { pointer.read() } >> (id & 7) & 1 != 0)
+pub fn DisableNationalPokedex() {
+    disable_national_pokedex();
+}
+
+#[unsafe(no_mangle)]
+pub fn EnableNationalPokedex() {
+    enable_national_pokedex();
+}
+
+#[unsafe(no_mangle)]
+pub fn IsNationalPokedexEnabled() -> u32 {
+    is_national_pokedex_enabled().into()
+}
+
+#[unsafe(no_mangle)]
+pub fn DisableMysteryEvent() {
+    flag_clear(FLAG_SYS_MYSTERY_EVENT_ENABLE);
+}
+
+#[unsafe(no_mangle)]
+pub fn EnableMysteryEvent() {
+    flag_set(FLAG_SYS_MYSTERY_EVENT_ENABLE);
+}
+
+#[unsafe(no_mangle)]
+pub fn IsMysteryEventEnabled() -> u32 {
+    flag_get(FLAG_SYS_MYSTERY_EVENT_ENABLE).into()
+}
+
+#[unsafe(no_mangle)]
+pub fn DisableMysteryGift() {
+    flag_clear(FLAG_SYS_MYSTERY_GIFT_ENABLE);
+}
+
+#[unsafe(no_mangle)]
+pub fn EnableMysteryGift() {
+    flag_set(FLAG_SYS_MYSTERY_GIFT_ENABLE);
+}
+
+#[unsafe(no_mangle)]
+pub fn IsMysteryGiftEnabled() -> u32 {
+    flag_get(FLAG_SYS_MYSTERY_GIFT_ENABLE).into()
+}
+
+#[unsafe(no_mangle)]
+pub fn ClearMysteryGiftFlags() {
+    clear_mystery_gift_flags();
+}
+
+#[unsafe(no_mangle)]
+pub fn ClearMysteryGiftVars() {
+    clear_mystery_gift_vars();
+}
+
+#[unsafe(no_mangle)]
+pub fn DisableResetRTC() {
+    enable_reset_rtc(false);
+}
+
+#[unsafe(no_mangle)]
+pub fn EnableResetRTC() {
+    enable_reset_rtc(true);
+}
+
+#[unsafe(no_mangle)]
+pub fn CanResetRTC() -> u32 {
+    can_reset_rtc().into()
 }
 
 #[cfg(test)]
@@ -313,40 +503,42 @@ mod tests {
     use super::*;
 
     #[test]
-    fn flag_and_var_region_sizes_match_the_c_definitions() {
-        assert_eq!(SPECIAL_FLAGS_SIZE, 16);
-        assert_eq!(TEMP_FLAGS_SIZE, 4);
-        assert_eq!(DAILY_FLAGS_SIZE, 8);
-        assert_eq!(TEMP_VARS_SIZE, 32);
-        // Flag and var ids are sparse. SPECIAL_FLAGS_START (0x4000) is far
-        // past the 2400 flags the save block holds and SPECIAL_VARS_START
-        // (0x8000) far past its 256 vars; nothing is allocated in between.
-        // What has to fit is every id the game actually uses.
-        assert!(FLAG_SYS_MYSTERY_GIFT_ENABLE as usize / 8 < SAVE1_FLAGS_SIZE);
-        let highest_var_index =
-            (VAR_GIFT_UNUSED_1 + NUM_GIFT_UNUSED_VARS - 1 - VARS_START) as usize;
-        assert!(highest_var_index < SAVE1_VARS_SIZE / 2);
+    fn flag_ids_map_to_their_byte() {
+        assert!(flag_byte(0).is_none());
+        assert!(matches!(
+            flag_byte(SPECIAL_FLAGS_START),
+            Some(FlagByte::Special(0))
+        ));
+        assert!(matches!(
+            flag_byte(SPECIAL_FLAGS_START + 0x7f),
+            Some(FlagByte::Special(15))
+        ));
+        assert!(flag_byte(SPECIAL_FLAGS_START + 0x80).is_none());
     }
 
     #[test]
-    fn contiguous_id_runs_cover_the_original_enumerations() {
-        assert_eq!(FLAG_MYSTERY_GIFT_1 + NUM_MYSTERY_GIFT_FLAGS - 1, 0x1f3);
-        assert_eq!(VAR_GIFT_UNUSED_1 + NUM_GIFT_UNUSED_VARS - 1, 0x40e4);
+    fn var_ids_map_to_their_slot() {
+        assert!(var_slot(0x3fff).is_none());
+        assert!(matches!(var_slot(0x4000), Some(VarSlot::Saved(0))));
+        assert!(matches!(var_slot(0x40ff), Some(VarSlot::Saved(255))));
+        assert!(var_slot(0x4100).is_none());
+        assert!(matches!(var_slot(0x8015), Some(VarSlot::Special(21))));
+        assert!(var_slot(0x8016).is_none());
     }
 
     #[test]
-    fn var_ids_below_the_var_range_read_back_as_themselves() {
-        // GetVarPointer returns NULL there, and VarGet turns that into the id.
-        assert!(VARS_START > 0);
-        assert!(SPECIAL_VARS_START > VARS_START);
+    fn a_number_passed_as_a_var_reads_as_itself() {
+        assert_eq!(var_get(123), 123);
+        assert_eq!(var_get(0x5000), 0x5000);
     }
 
     #[test]
-    fn a_flag_id_selects_a_byte_and_a_bit() {
-        for id in [1u16, 7, 8, 9, 0x3fff] {
-            let byte = id as usize / 8;
-            let bit = 1u8 << (id & 7);
-            assert_eq!(byte * 8 + (bit.trailing_zeros() as usize), id as usize);
-        }
+    fn special_flags_can_be_set_and_cleared() {
+        let id = SPECIAL_FLAGS_START + 9;
+        flag_set(id);
+        assert!(flag_get(id));
+        assert!(!flag_get(id + 1));
+        flag_clear(id);
+        assert!(!flag_get(id));
     }
 }

@@ -3,37 +3,238 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::agb_main::{SetHBlankCallback, SetVBlankCallback};
+use crate::bg::{HideBg, ResetBgsAndClearDma3BusyFlags, ShowBg};
 #[allow(unused_imports)]
 use crate::c::*;
+use crate::coins::{GetCoins, SetCoins};
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::field_effect::{MultiplyInvertedPaletteRGBComponents, MultiplyPaletteRGBComponents};
+use crate::gpu_regs::{EnableInterrupts, SetGpuReg};
+use crate::main_menu::CreateYesNoMenuParameterized;
+use crate::menu::{
+    AddTextPrinterParameterized3, ClearDialogWindowAndFrame, DrawDialogueFrame,
+    Menu_ProcessInputNoWrapClearOnChoose,
+};
+use crate::overworld::IncrementGameStat;
+use crate::palette::{
+    BeginNormalPaletteFade, LoadPalette, ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade,
+    gPaletteFade,
+};
+use crate::random::Random;
+use crate::sound::{
+    GetCurrentMapMusic, IsFanfareTaskInactive, PlayFanfare, PlayNewMapMusic, PlaySE, StopMapMusic,
+};
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, FreeOamMatrix, GetSpriteTileStartByTag,
+    IndexOfSpritePaletteTag, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData, gOamLimit,
+    gSpriteCoordOffsetX, gSpriteCoordOffsetY,
+};
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::task::{gTasks, task_get, task_set};
+use crate::text::DeactivateAllTextPrinters;
+use crate::text_window::{LoadMessageBoxGfx, LoadUserWindowBorderGfx};
+use crate::trig::{Cos, Sin};
+use crate::tv::{
+    AlertTVThatPlayerPlayedSlotMachine, IncrementDailySlotsUses, TryPutFindThatGamerOnAir,
+};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::util::{LoadWordFromTwoHalfwords, StoreWordInTwoHalfwords};
+use crate::window::{
+    ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, PutWindowTilemap, RemoveWindow,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `CreateInvisibleSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateInvisibleSprite(a0: Option<unsafe fn(*mut Sprite)>) -> u8 {
+    unsafe { crate::sprite::CreateInvisibleSprite(core::mem::transmute(a0)) }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+unsafe fn FindTaskIdByFunc(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn InitSpriteAffineAnim(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::InitSpriteAffineAnim(a0 as _);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LZDecompressWram` with this module's view of its types.
+#[inline]
+unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::decompress::LZDecompressWram(a0 as _, a1 as _);
+    }
+}
+/// `LoadBgTilemap` with this module's view of its types.
+#[inline]
+unsafe fn LoadBgTilemap(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
+    unsafe { crate::bg::LoadBgTilemap(a0, a1 as _, a2, a3) }
+}
+/// `LoadBgTiles` with this module's view of its types.
+#[inline]
+unsafe fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
+    unsafe { crate::bg::LoadBgTiles(a0, a1 as _, a2, a3) }
+}
+/// `LoadSpritePalettes` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalettes(a0: *mut SpritePalette) {
+    unsafe {
+        crate::sprite::LoadSpritePalettes(a0 as _);
+    }
+}
+/// `LoadSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
+    unsafe { crate::sprite::LoadSpriteSheet(a0 as _) }
+}
+/// `LoadSpriteSheets` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheets(a0: *mut SpriteSheet) {
+    unsafe {
+        crate::sprite::LoadSpriteSheets(a0 as _);
+    }
+}
+/// `SetSpriteSheetFrameTileNum` with this module's view of its types.
+#[inline]
+unsafe fn SetSpriteSheetFrameTileNum(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SetSpriteSheetFrameTileNum(a0 as _);
+    }
+}
+/// `SetSubspriteTables` with this module's view of its types.
+#[inline]
+unsafe fn SetSubspriteTables(a0: *mut Sprite, a1: *mut SubspriteTable) {
+    unsafe {
+        crate::sprite::SetSubspriteTables(a0 as _, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StartSpriteAnimIfDifferent` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnimIfDifferent(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnimIfDifferent(a0 as _, a1);
+    }
+}
+// The C's names for task and sprite data slots.
+const sFlashPal: usize = 0;
+const sIsPayout: usize = 0;
+const sMatchLineId: usize = 0;
+const sState: usize = 0;
+const tMachineId: usize = 0;
+const tState: usize = 0;
+const sDigitMin: usize = 1;
+const sFlashing: usize = 1;
+const sMoveY: usize = 1;
+const sXDir: usize = 1;
+const tExitCallback: usize = 1;
+const tExtraTurns: usize = 1;
+const tNumBolts: usize = 1;
+const tReelSpeed: usize = 1;
+const tShockMagnitude: usize = 1;
+const sDigitMax: usize = 2;
+const sFlashState: usize = 2;
+const sNumFullFlashes: usize = 2;
+const sTimer: usize = 2;
+const sYDir: usize = 2;
+const tSpriteId: usize = 2;
+const tTimer3: usize = 2;
+const sCurNum: usize = 3;
+const sFlashDir: usize = 3;
+const sColor: usize = 4;
+const tRtReelSpeed: usize = 4;
+const sColorIdx: usize = 5;
+const sColorIncr: usize = 5;
+const tTimer1: usize = 5;
+const sSpriteId: usize = 6;
+const tExplodeChecks: usize = 6;
+const sAnimFinished: usize = 7;
+const sAtOriginalColor: usize = 7;
+const sDelay: usize = 7;
+const sWaitForAnim: usize = 7;
+const tMoving: usize = 14;
+const tAnimating: usize = 15;
+const tReelId: usize = 15;
 // Data tables (translate with cdata.py): sDigitalDisplayScenes sUnkPalette sSpecialDrawOdds sBiasSymbols sBiasesSpecial sBiasesRegular sDigitalDisplay_SpriteCoords sDigitalDisplay_SpriteCallbacks sSpriteTemplates_DigitalDisplay sSubspriteTables_DigitalDisplay sSpriteTemplate_PikaPowerBolt sSpriteTemplate_ReelTimeSmoke sSpriteTemplate_ReelTimeDuck sSpriteTemplate_ReelTimeExplosion sSpriteTemplate_ReelTimePikachuAura sReelTimeExplodeProbability sPokeballShiningPalTable sReelTimeSpeed_Probabilities sQuarterSpeed_ProbabilityBoost sSlotMatchFlags sSlotPayouts sReelBackground_Tilemap sReelTimeGfx sSlotMachineSpriteSheets sSlotMachineSpritePalettes sDigitalDisplay_Pal sInitialReelPositions sBiasProbabilities_Special sBiasProbabilities_Regular sReelTimeProbabilities_NormalGame sReelTimeProbabilities_LuckyGame sSymbolToMatch sReelTimeSymbols sReelSymbols sLitMatchLinePalTable sDarkMatchLinePalTable sMatchLinePalOffsets sBetToMatchLineIds sMatchLinesPerBet sFlashingLightsPalTable sSlotMachineMenu_Pal sReelTimeWindow_Tilemap sEmptyTilemap sDigitalDisplaySceneExitCallbacks sSpriteTemplate_ReelTimeBolt sSpriteTemplate_ReelTimeNumberGap sSpriteTemplate_ReelTimeShadow sSpriteTemplate_ReelTimeNumbers sSpriteTemplate_BrokenReelTimeMachine sSpriteTemplate_ReelTimeMachineAntennae sSpriteTemplate_ReelTimeMachine sSpriteTemplate_ReelBackground sSpriteTemplate_CoinNumber sSpriteTemplate_ReelSymbol sSpriteTemplate_ReelTimePikachu sSubspriteTable_ReelTimeNumberGap sSubspriteTable_ReelTimeShadow sSubspriteTable_BrokenReelTimeMachine sSubspriteTable_ReelTimeMachineAntennae sSubspriteTable_ReelTimeMachine sSubspriteTable_ReelBackground sBgTemplates sWindowTemplates sWindowTemplate_InfoBox sColors_ReeltimeHelp sSlotTasks sPayoutTasks sReelTasks sDecideStop_Bias sDecideStop_NoBias sReelStopShocks sDecideStop_Bias_Reel1_Bets sDecideStop_Bias_Reel2_Bets sDecideStop_Bias_Reel3_Bets sDecideStop_NoBias_Reel2_Bets sDecideStop_NoBias_Reel3_Bets sReelStopButtonTasks sReelButtonOffsets sPikaPowerBoltTasks sPikaPowerTileTable sReelTimeTasks sReelTimePikachuAnimIds sReelTimeBoltDelays sPikachuAuraFlashDelays sInfoBoxTasks sDigitalDisplayTasks sReelSymbols sReelTimeSymbols sInitialReelPositions sSpecialDrawOdds sBiasProbabilities_Special sBiasProbabilities_Regular sReelTimeProbabilities_NormalGame sReelTimeProbabilities_LuckyGame sReelTimeExplodeProbability sReelTimeSpeed_Probabilities sQuarterSpeed_ProbabilityBoost sBiasSymbols sBiasesSpecial sBiasesRegular sSymbolToMatch sSlotMatchFlags sSlotPayouts sDigitalDisplay_SpriteCoords sDigitalDisplay_SpriteCallbacks sDigitalDisplay_InsertBet sDigitalDisplay_StopReel sDigitalDisplay_Win sDigitalDisplay_Lose sDigitalDisplay_ReelTime sDigitalDisplay_BonusBig sDigitalDisplay_BonusRegular sDigitalDisplayScenes sDigitalDisplaySceneExitCallbacks sOam_8x8 sOam_8x16 sOam_16x16 sOam_16x32 sOam_32x32 sOam_32x64 sOam_64x32 sOam_64x64 sImageTable_ReelTimeNumbers sImageTable_ReelTimeShadow sImageTable_ReelTimeNumberGap sImageTable_ReelTimeBolt sImageTable_ReelTimePikachuAura sImageTable_ReelTimeExplosion sImageTable_ReelTimeDuck sImageTable_ReelTimeSmoke sImageTable_PikaPowerBolt sAnim_SingleFrame sAnim_ReelTimeDuck sAnim_ReelTimePikachu_Still sAnim_ReelTimePikachu_ChargingSlow sAnim_ReelTimePikachu_ChargingMedium sAnim_ReelTimePikachu_ChargingFast sAnim_ReelTimePikachu_Cheering sAnim_ReelTimePikachu_FellOver sAnim_ReelTimeNumber_0 sAnim_ReelTimeNumber_1 sAnim_ReelTimeNumber_2 sAnim_ReelTimeNumber_3 sAnim_ReelTimeNumber_4 sAnim_ReelTimeNumber_5 sAnim_ReelTimeBolt sAnim_ReelTimeExplosion sAnim_DigitalDisplay_AButton_Flashing sAnim_DigitalDisplay_AButton_Static sAnim_DigitalDisplay_DPad_Flashing sAnim_DigitalDisplay_Pokeball_Rocking sAnim_DigitalDisplay_Pokeball_Static sAnim_DigitalDisplay_Number_1 sAnim_DigitalDisplay_Number_2 sAnim_DigitalDisplay_Number_3 sAnim_DigitalDisplay_Number_4 sAnim_DigitalDisplay_Number_5 sAnims_SingleFrame sAnims_ReelTimeDuck sAnims_ReelTimePikachu sAnims_ReelTimeNumbers sAnims_ReelTimeBolt sAnims_ReelTimeExplosion sAnims_DigitalDisplay_AButton sAnims_DigitalDisplay_DPad sAnims_DigitalDisplay_Pokeball sAnims_DigitalDisplay_Number sAffineAnim_ReelTimeSmoke sAffineAnims_ReelTimeSmoke sAffineAnim_PikaPowerBolt sAffineAnims_PikaPowerBolt sSpriteTemplate_ReelSymbol sSpriteTemplate_CoinNumber sSpriteTemplate_ReelBackground sSpriteTemplate_ReelTimePikachu sSpriteTemplate_ReelTimeMachineAntennae sSpriteTemplate_ReelTimeMachine sSpriteTemplate_BrokenReelTimeMachine sSpriteTemplate_ReelTimeNumbers sSpriteTemplate_ReelTimeShadow sSpriteTemplate_ReelTimeNumberGap sSpriteTemplate_ReelTimeBolt sSpriteTemplate_ReelTimePikachuAura sSpriteTemplate_ReelTimeExplosion sSpriteTemplate_ReelTimeDuck sSpriteTemplate_ReelTimeSmoke sSpriteTemplate_DigitalDisplay_Reel sSpriteTemplate_DigitalDisplay_Time sSpriteTemplate_DigitalDisplay_Insert sSpriteTemplate_DigitalDisplay_Stop sSpriteTemplate_DigitalDisplay_Win sSpriteTemplate_DigitalDisplay_Lose sSpriteTemplate_DigitalDisplay_Bonus sSpriteTemplate_DigitalDisplay_Big sSpriteTemplate_DigitalDisplay_Reg sSpriteTemplate_DigitalDisplay_AButton sSpriteTemplate_DigitalDisplay_Smoke sSpriteTemplate_DigitalDisplay_Number sSpriteTemplate_DigitalDisplay_Pokeball sSpriteTemplate_DigitalDisplay_DPad sSpriteTemplate_PikaPowerBolt sSubsprites_ReelBackground sSubspriteTable_ReelBackground sSubsprites_ReelTimeMachineAntennae sSubspriteTable_ReelTimeMachineAntennae sSubsprites_ReelTimeMachine sSubspriteTable_ReelTimeMachine sSubsprites_BrokenReelTimeMachine sSubspriteTable_BrokenReelTimeMachine sSubsprites_ReelTimeShadow sSubspriteTable_ReelTimeShadow sSubsprites_ReelTimeNumberGap sSubspriteTable_ReelTimeNumberGap sSubsprites_DigitalDisplay_Reel sSubspriteTable_DigitalDisplay_Reel sSubsprites_DigitalDisplay_Time sSubspriteTable_DigitalDisplay_Time sSubsprites_DigitalDisplay_Insert sSubspriteTable_DigitalDisplay_Insert sSubsprites_DigitalDisplay_Unused1 sSubspriteTable_DigitalDisplay_Unused1 sSubsprites_DigitalDisplay_Win sSubspriteTable_DigitalDisplay_Win sSubsprites_DigitalDisplay_SmokeBig sSubsprites_DigitalDisplay_SmokeSmall sSubspriteTable_DigitalDisplay_Smoke sSubsprites_DigitalDisplay_Pokeball sSubspriteTable_DigitalDisplay_Pokeball sSubsprites_DigitalDisplay_DPad sSubspriteTable_DigitalDisplay_DPad sSubsprites_DigitalDisplay_StopS sSubspriteTable_DigitalDisplay_StopS sSubsprites_DigitalDisplay_StopT sSubspriteTable_DigitalDisplay_StopT sSubsprites_DigitalDisplay_StopO sSubspriteTable_DigitalDisplay_StopO sSubsprites_DigitalDisplay_StopP sSubspriteTable_DigitalDisplay_StopP sSubsprites_DigitalDisplay_BonusB sSubspriteTable_DigitalDisplay_BonusB sSubsprites_DigitalDisplay_BonusO sSubspriteTable_DigitalDisplay_BonusO sSubsprites_DigitalDisplay_BonusN sSubspriteTable_DigitalDisplay_BonusN sSubsprites_DigitalDisplay_BonusU sSubspriteTable_DigitalDisplay_BonusU sSubsprites_DigitalDisplay_BonusS sSubspriteTable_DigitalDisplay_BonusS sSubsprites_DigitalDisplay_BigB sSubspriteTable_DigitalDisplay_BigB sSubsprites_DigitalDisplay_BigI sSubspriteTable_DigitalDisplay_BigI sSubsprites_DigitalDisplay_BigG sSubspriteTable_DigitalDisplay_BigG sSubsprites_DigitalDisplay_RegR sSubspriteTable_DigitalDisplay_RegR sSubsprites_DigitalDisplay_RegE sSubspriteTable_DigitalDisplay_RegE sSubsprites_DigitalDisplay_RegG sSubspriteTable_DigitalDisplay_RegG sSpriteTemplates_DigitalDisplay sSubspriteTables_DigitalDisplay sSlotMachineSpriteSheets sReelBackground_Tilemap sUnusedColors sMiddleRowLit_Pal sTopRowLit_Pal sBottomRowt_Pal sNWSEDiagLit_Pal sNESWDiagLit_Pal sLitMatchLinePalTable sDarkMatchLinePalTable sMatchLinePalOffsets sBetToMatchLineIds sMatchLinesPerBet sFlashingLightsInside_Pal sFlashingLightsMiddle_Pal sFlashingLightsOutside_Pal sFlashingLightsPalTable sSlotMachineMenu_Pal sPokeballShining0_Pal sPokeballShining1_Pal sPokeballShining2_Pal sPokeballShiningPalTable sDigitalDisplay_Pal sUnkPalette sSlotMachineSpritePalettes sReelTimeGfx sReelTimeWindow_Tilemap sEmptyTilemap
 
 /// `struct SlotMachine`
@@ -84,7 +285,7 @@ pub struct SlotMachine {
     pub winIn: u16,
     pub winOut: u16,
     pub backupMapMusic: u16,
-    pub prevMainCb: Option<unsafe extern "C" fn()>,
+    pub prevMainCb: Option<unsafe fn()>,
 }
 
 unsafe impl Sync for SlotMachine {}
@@ -287,38 +488,37 @@ static sColors_ReeltimeHelp: Table<CArray<u8, 3>> =
     Table((&raw const crate::data::slot_machine::sColors_ReeltimeHelp).cast());
 static sDarkMatchLinePalTable: Table<CArray<*mut u16, 5>> =
     Table((&raw const crate::data::slot_machine::sDarkMatchLinePalTable).cast());
-static sDecideStop_Bias: Table<CArray<Option<unsafe extern "C" fn() -> u8>, 3>> =
+static sDecideStop_Bias: Table<CArray<Option<unsafe fn() -> u8>, 3>> =
     Table((&raw const crate::data::slot_machine::sDecideStop_Bias).cast());
-static sDecideStop_Bias_Reel1_Bets: Table<CArray<Option<unsafe extern "C" fn(u8, u8) -> u8>, 3>> =
+static sDecideStop_Bias_Reel1_Bets: Table<CArray<Option<unsafe fn(u8, u8) -> u8>, 3>> =
     Table((&raw const crate::data::slot_machine::sDecideStop_Bias_Reel1_Bets).cast());
-static sDecideStop_Bias_Reel2_Bets: Table<CArray<Option<unsafe extern "C" fn() -> u8>, 3>> =
+static sDecideStop_Bias_Reel2_Bets: Table<CArray<Option<unsafe fn() -> u8>, 3>> =
     Table((&raw const crate::data::slot_machine::sDecideStop_Bias_Reel2_Bets).cast());
-static sDecideStop_Bias_Reel3_Bets: Table<CArray<Option<unsafe extern "C" fn(u8) -> u8>, 3>> =
+static sDecideStop_Bias_Reel3_Bets: Table<CArray<Option<unsafe fn(u8) -> u8>, 3>> =
     Table((&raw const crate::data::slot_machine::sDecideStop_Bias_Reel3_Bets).cast());
-static sDecideStop_NoBias: Table<CArray<Option<unsafe extern "C" fn()>, 3>> =
+static sDecideStop_NoBias: Table<CArray<Option<unsafe fn()>, 3>> =
     Table((&raw const crate::data::slot_machine::sDecideStop_NoBias).cast());
-static sDecideStop_NoBias_Reel2_Bets: Table<CArray<Option<unsafe extern "C" fn()>, 3>> =
+static sDecideStop_NoBias_Reel2_Bets: Table<CArray<Option<unsafe fn()>, 3>> =
     Table((&raw const crate::data::slot_machine::sDecideStop_NoBias_Reel2_Bets).cast());
-static sDecideStop_NoBias_Reel3_Bets: Table<CArray<Option<unsafe extern "C" fn()>, 3>> =
+static sDecideStop_NoBias_Reel3_Bets: Table<CArray<Option<unsafe fn()>, 3>> =
     Table((&raw const crate::data::slot_machine::sDecideStop_NoBias_Reel3_Bets).cast());
-static sDigitalDisplaySceneExitCallbacks: Table<CArray<Option<unsafe extern "C" fn()>, 7>> =
+static sDigitalDisplaySceneExitCallbacks: Table<CArray<Option<unsafe fn()>, 7>> =
     Table((&raw const crate::data::slot_machine::sDigitalDisplaySceneExitCallbacks).cast());
 static sDigitalDisplayScenes: Table<CArray<*mut DigitalDisplaySprite, 7>> =
     Table((&raw const crate::data::slot_machine::sDigitalDisplayScenes).cast());
-static sDigitalDisplayTasks: Table<CArray<Option<unsafe extern "C" fn(*mut Task)>, 1>> =
+static sDigitalDisplayTasks: Table<CArray<Option<unsafe fn(*mut Task)>, 1>> =
     Table((&raw const crate::data::slot_machine::sDigitalDisplayTasks).cast());
 static sDigitalDisplay_Pal: Table<*mut u16> =
     Table((&raw const crate::data::slot_machine::sDigitalDisplay_Pal).cast());
-static sDigitalDisplay_SpriteCallbacks: Table<
-    CArray<Option<unsafe extern "C" fn(*mut Sprite)>, 35>,
-> = Table((&raw const crate::data::slot_machine::sDigitalDisplay_SpriteCallbacks).cast());
+static sDigitalDisplay_SpriteCallbacks: Table<CArray<Option<unsafe fn(*mut Sprite)>, 35>> =
+    Table((&raw const crate::data::slot_machine::sDigitalDisplay_SpriteCallbacks).cast());
 static sDigitalDisplay_SpriteCoords: Table<CArray<CArray<i16, 2>, 35>> =
     Table((&raw const crate::data::slot_machine::sDigitalDisplay_SpriteCoords).cast());
 static sEmptyTilemap: Table<CArray<u16, 1>> =
     Table((&raw const crate::data::slot_machine::sEmptyTilemap).cast());
 static sFlashingLightsPalTable: Table<CArray<*mut u16, 3>> =
     Table((&raw const crate::data::slot_machine::sFlashingLightsPalTable).cast());
-static sInfoBoxTasks: Table<CArray<Option<unsafe extern "C" fn(*mut Task)>, 15>> =
+static sInfoBoxTasks: Table<CArray<Option<unsafe fn(*mut Task)>, 15>> =
     Table((&raw const crate::data::slot_machine::sInfoBoxTasks).cast());
 static sInitialReelPositions: Table<CArray<CArray<i16, 2>, 3>> =
     Table((&raw const crate::data::slot_machine::sInitialReelPositions).cast());
@@ -328,9 +528,9 @@ static sMatchLinePalOffsets: Table<CArray<u8, 5>> =
     Table((&raw const crate::data::slot_machine::sMatchLinePalOffsets).cast());
 static sMatchLinesPerBet: Table<CArray<u8, 3>> =
     Table((&raw const crate::data::slot_machine::sMatchLinesPerBet).cast());
-static sPayoutTasks: Table<CArray<Option<unsafe extern "C" fn(*mut Task) -> u8>, 3>> =
+static sPayoutTasks: Table<CArray<Option<unsafe fn(*mut Task) -> u8>, 3>> =
     Table((&raw const crate::data::slot_machine::sPayoutTasks).cast());
-static sPikaPowerBoltTasks: Table<CArray<Option<unsafe extern "C" fn(*mut Task)>, 4>> =
+static sPikaPowerBoltTasks: Table<CArray<Option<unsafe fn(*mut Task)>, 4>> =
     Table((&raw const crate::data::slot_machine::sPikaPowerBoltTasks).cast());
 static sPikaPowerTileTable: Table<CArray<CArray<u16, 2>, 3>> =
     Table((&raw const crate::data::slot_machine::sPikaPowerTileTable).cast());
@@ -344,13 +544,13 @@ static sReelBackground_Tilemap: Table<*mut u8> =
     Table((&raw const crate::data::slot_machine::sReelBackground_Tilemap).cast());
 static sReelButtonOffsets: Table<CArray<i16, 3>> =
     Table((&raw const crate::data::slot_machine::sReelButtonOffsets).cast());
-static sReelStopButtonTasks: Table<CArray<Option<unsafe extern "C" fn(*mut Task, u8)>, 3>> =
+static sReelStopButtonTasks: Table<CArray<Option<unsafe fn(*mut Task, u8)>, 3>> =
     Table((&raw const crate::data::slot_machine::sReelStopButtonTasks).cast());
 static sReelStopShocks: Table<CArray<u16, 5>> =
     Table((&raw const crate::data::slot_machine::sReelStopShocks).cast());
 static sReelSymbols: Table<CArray<CArray<u8, 21>, 3>> =
     Table((&raw const crate::data::slot_machine::sReelSymbols).cast());
-static sReelTasks: Table<CArray<Option<unsafe extern "C" fn(*mut Task) -> u8>, 5>> =
+static sReelTasks: Table<CArray<Option<unsafe fn(*mut Task) -> u8>, 5>> =
     Table((&raw const crate::data::slot_machine::sReelTasks).cast());
 static sReelTimeBoltDelays: Table<CArray<i16, 4>> =
     Table((&raw const crate::data::slot_machine::sReelTimeBoltDelays).cast());
@@ -368,7 +568,7 @@ static sReelTimeSpeed_Probabilities: Table<CArray<CArray<u16, 2>, 5>> =
     Table((&raw const crate::data::slot_machine::sReelTimeSpeed_Probabilities).cast());
 static sReelTimeSymbols: Table<CArray<u8, 6>> =
     Table((&raw const crate::data::slot_machine::sReelTimeSymbols).cast());
-static sReelTimeTasks: Table<CArray<Option<unsafe extern "C" fn(*mut Task)>, 19>> =
+static sReelTimeTasks: Table<CArray<Option<unsafe fn(*mut Task)>, 19>> =
     Table((&raw const crate::data::slot_machine::sReelTimeTasks).cast());
 static sReelTimeWindow_Tilemap: Table<CArray<u16, 220>> =
     Table((&raw const crate::data::slot_machine::sReelTimeWindow_Tilemap).cast());
@@ -382,7 +582,7 @@ static sSlotMatchFlags: Table<CArray<u16, 9>> =
     Table((&raw const crate::data::slot_machine::sSlotMatchFlags).cast());
 static sSlotPayouts: Table<CArray<u16, 9>> =
     Table((&raw const crate::data::slot_machine::sSlotPayouts).cast());
-static sSlotTasks: Table<CArray<Option<unsafe extern "C" fn(*mut Task) -> u8>, 29>> =
+static sSlotTasks: Table<CArray<Option<unsafe fn(*mut Task) -> u8>, 29>> =
     Table((&raw const crate::data::slot_machine::sSlotTasks).cast());
 static sSpecialDrawOdds: Table<CArray<CArray<u8, 3>, 6>> =
     Table((&raw const crate::data::slot_machine::sSpecialDrawOdds).cast());
@@ -502,151 +702,74 @@ pub(crate) static mut sSlotMachine: *mut SlotMachine = null_mut();
 pub(crate) static mut sImageTables_DigitalDisplay: CArray<*mut SpriteFrameImage, 26> =
     unsafe { zeroed() };
 
-unsafe extern "C" {
-    static mut gMain: Main;
-    static mut gOamLimit: u8;
-    static mut gPaletteFade: PaletteFadeControl;
-    static gSlotMachineDigitalDisplay_Gfx: CArray<u32, 0>;
-    static gSlotMachineInfoBox_Tilemap: CArray<u16, 0>;
-    static gSlotMachineMenu_Gfx: CArray<u32, 0>;
-    static gSlotMachineMenu_Pal: CArray<u16, 0>;
-    static gSlotMachineMenu_Tilemap: CArray<u16, 0>;
-    static mut gSpriteCoordOffsetX: i16;
-    static mut gSpriteCoordOffsetY: i16;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_QuitTheGame: CArray<u8, 0>;
-    static gText_ReelTimeHelp: CArray<u8, 0>;
-    static gText_YouDontHaveThreeCoins: CArray<u8, 0>;
-    static gText_YouveGot9999Coins: CArray<u8, 0>;
-    static gText_YouveRunOutOfCoins: CArray<u8, 0>;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddTextPrinterParameterized3(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: *mut u8,
-        a5: i8,
-        a6: *mut u8,
-    );
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AlertTVThatPlayerPlayedSlotMachine(a0: u16);
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BuildOamBuffer();
-    fn ClearDialogWindowAndFrame(a0: u8, a1: u8);
-    fn ClearWindowTilemap(a0: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn Cos(a0: i16, a1: i16) -> i16;
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateInvisibleSprite(a0: Option<unsafe extern "C" fn(*mut Sprite)>) -> u8;
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateYesNoMenuParameterized(a0: u8, a1: u8, a2: u16, a3: u16, a4: u8, a5: u8);
-    fn DeactivateAllTextPrinters();
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DrawDialogueFrame(a0: u8, a1: u8);
-    fn EnableInterrupts(a0: u16);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeOamMatrix(a0: u8);
-    fn GetCoins() -> u16;
-    fn GetCurrentMapMusic() -> u16;
-    fn GetSpriteTileStartByTag(a0: u16) -> u16;
-    fn HideBg(a0: u8);
-    fn IncrementDailySlotsUses();
-    fn IncrementGameStat(a0: u8);
-    fn IndexOfSpritePaletteTag(a0: u16) -> u8;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitSpriteAffineAnim(a0: *mut Sprite);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsFanfareTaskInactive() -> u8;
-    fn LZDecompressWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadBgTilemap(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadMessageBoxGfx(a0: u8, a1: u16, a2: u8);
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpritePalettes(a0: *mut SpritePalette);
-    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
-    fn LoadSpriteSheets(a0: *mut SpriteSheet);
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn LoadWordFromTwoHalfwords(a0: *mut u16, a1: *mut u32);
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn MultiplyInvertedPaletteRGBComponents(a0: u16, a1: u8, a2: u8, a3: u8);
-    fn MultiplyPaletteRGBComponents(a0: u16, a1: u8, a2: u8, a3: u8);
-    fn PlayFanfare(a0: u16);
-    fn PlayNewMapMusic(a0: u16);
-    fn PlaySE(a0: u16);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn Random() -> u16;
-    fn RemoveWindow(a0: u8);
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn RunTasks();
-    fn SetCoins(a0: u16);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetHBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetSpriteSheetFrameTileNum(a0: *mut Sprite);
-    fn SetSubspriteTables(a0: *mut Sprite, a1: *mut SubspriteTable);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn Sin(a0: i16, a1: i16) -> i16;
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StartSpriteAnimIfDifferent(a0: *mut Sprite, a1: u8);
-    fn StopMapMusic();
-    fn StoreWordInTwoHalfwords(a0: *mut u16, a1: u32);
-    fn TransferPlttBuffer();
-    fn TryPutFindThatGamerOnAir(a0: u16);
-    fn UpdatePaletteFade() -> u8;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn Task_FadeToSlotMachine(taskId: u8) {
-    match gTasks[taskId].data[0] {
+pub(crate) unsafe fn Task_FadeToSlotMachine(taskId: u8) {
+    match task_get(taskId, tState) {
         0 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, 0);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
-        1 => {
-            if gPaletteFade.active() == 0 {
-                SetMainCallback2(Some(CB2_SlotMachineSetup));
-                DestroyTask(taskId);
-            }
+        1 if gPaletteFade.active() == 0 => {
+            SetMainCallback2(Some(CB2_SlotMachineSetup));
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlaySlotMachine(
-    machineId: u8,
-    exitCallback: Option<unsafe extern "C" fn()>,
-) {
-    let mut taskId: u8 = 0;
+pub unsafe fn PlaySlotMachine(machineId: u8, exitCallback: Option<unsafe fn()>) {
     sSlotMachine = AllocZeroed(104) as *mut SlotMachine;
     PlaySlotMachine_Internal(machineId, exitCallback);
-    taskId = CreateTask(Some(Task_FadeToSlotMachine), 0);
-    gTasks[taskId].data[0] = 0;
+    let taskId: u8 = CreateTask(Some(Task_FadeToSlotMachine), 0);
+    task_set(taskId, tState, 0);
 }
-pub(crate) unsafe extern "C" fn CB2_SlotMachineSetup() {
+pub(crate) unsafe fn CB2_SlotMachineSetup() {
     match gMain.state {
         0 => {
             SlotMachineSetup_InitBgsWindows();
@@ -705,13 +828,13 @@ pub(crate) unsafe extern "C" fn CB2_SlotMachineSetup() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn CB2_SlotMachine() {
+pub(crate) unsafe fn CB2_SlotMachine() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn SlotMachine_VBlankCB() {
+pub(crate) unsafe fn SlotMachine_VBlankCB() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
@@ -720,27 +843,24 @@ pub(crate) unsafe extern "C" fn SlotMachine_VBlankCB() {
     SetGpuReg(REG_OFFSET_WININ, (*sSlotMachine).winIn);
     SetGpuReg(REG_OFFSET_WINOUT, (*sSlotMachine).winOut);
 }
-pub(crate) unsafe extern "C" fn PlaySlotMachine_Internal(
-    machineId: u8,
-    exitCallback: Option<unsafe extern "C" fn()>,
-) {
-    let mut task: *mut Task = &raw mut gTasks[CreateTask(Some(SlotMachineDummyTask), 0xFF)];
-    (*task).data[0] = machineId as i16;
+unsafe fn PlaySlotMachine_Internal(machineId: u8, exitCallback: Option<unsafe fn()>) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[CreateTask(Some(SlotMachineDummyTask), 0xFF)];
+    (*task).data[tMachineId] = machineId as i16;
     StoreWordInTwoHalfwords(
-        &raw mut (*task).data[1] as *mut u16,
+        &raw mut (*task).data[tExitCallback] as *mut u16,
         core::mem::transmute::<_, usize>(exitCallback) as i32 as u32,
     );
 }
-pub(crate) unsafe extern "C" fn SlotMachine_InitFromTask() {
-    let mut task: *mut Task = &raw mut gTasks[FindTaskIdByFunc(Some(SlotMachineDummyTask))];
-    (*sSlotMachine).machineId = (*task).data[0] as u8;
+unsafe fn SlotMachine_InitFromTask() {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[FindTaskIdByFunc(Some(SlotMachineDummyTask))];
+    (*sSlotMachine).machineId = (*task).data[tMachineId] as u8;
     LoadWordFromTwoHalfwords(
-        &raw mut (*task).data[1] as *mut u16,
+        &raw mut (*task).data[tExitCallback] as *mut u16,
         &raw mut (*sSlotMachine).prevMainCb as *mut u32,
     );
 }
-pub(crate) unsafe extern "C" fn SlotMachineDummyTask(taskId: u8) {}
-pub(crate) unsafe extern "C" fn SlotMachineSetup_InitBgsWindows() {
+pub(crate) unsafe fn SlotMachineDummyTask(taskId: u8) {}
+unsafe fn SlotMachineSetup_InitBgsWindows() {
     SetVBlankCallback(None);
     SetHBlankCallback(None);
     {
@@ -759,12 +879,12 @@ pub(crate) unsafe extern "C" fn SlotMachineSetup_InitBgsWindows() {
     InitWindows(sWindowTemplates.as_ptr().cast_mut());
     DeactivateAllTextPrinters();
 }
-pub(crate) unsafe extern "C" fn SlotMachineSetup_InitVBlank() {
+unsafe fn SlotMachineSetup_InitVBlank() {
     SetVBlankCallback(Some(SlotMachine_VBlankCB));
     EnableInterrupts(INTR_FLAG_VBLANK);
     SetGpuReg(REG_OFFSET_DISPCNT, 12352);
 }
-pub(crate) unsafe extern "C" fn SlotMachineSetup_InitVRAM() {
+unsafe fn SlotMachineSetup_InitVRAM() {
     {
         let mut _dest: *mut c_void = BG_VRAM as usize as *mut u16 as *mut c_void;
         let mut _size: u32 = BG_VRAM_SIZE;
@@ -775,7 +895,7 @@ pub(crate) unsafe extern "C" fn SlotMachineSetup_InitVRAM() {
                     volatile_write(&raw mut tmp, 0);
                     {
                         {
-                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                             volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                             volatile_write(dmaRegs.at(1), _dest as usize as u32);
                             volatile_write(dmaRegs.at(2), 0x81000800);
@@ -793,10 +913,10 @@ pub(crate) unsafe extern "C" fn SlotMachineSetup_InitVRAM() {
                         volatile_write(&raw mut tmp, 0);
                         {
                             {
-                                let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                 volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                 volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                volatile_write(dmaRegs.at(2), 0x81000000 | (_size / 2));
                                 let _ = (dmaRegs.at(2)).read_volatile();
                             }
                         }
@@ -807,7 +927,7 @@ pub(crate) unsafe extern "C" fn SlotMachineSetup_InitVRAM() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SlotMachineSetup_InitOAM() {
+unsafe fn SlotMachineSetup_InitOAM() {
     {
         {
             let mut _dest: *mut u16 = OAM as i32 as usize as *mut u16;
@@ -818,10 +938,10 @@ pub(crate) unsafe extern "C" fn SlotMachineSetup_InitOAM() {
                     volatile_write(&raw mut tmp, 0);
                     {
                         {
-                            let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                            let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                             volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                             volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                            volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                            volatile_write(dmaRegs.at(2), 0x81000000 | (_size / 2));
                             let _ = (dmaRegs.at(2)).read_volatile();
                         }
                     }
@@ -830,7 +950,7 @@ pub(crate) unsafe extern "C" fn SlotMachineSetup_InitOAM() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SlotMachineSetup_InitGpuRegs() {
+unsafe fn SlotMachineSetup_InitGpuRegs() {
     SetGpuReg(REG_OFFSET_BG0CNT, 0);
     SetGpuReg(REG_OFFSET_BG1CNT, 0);
     SetGpuReg(REG_OFFSET_BG2CNT, 0);
@@ -848,8 +968,7 @@ pub(crate) unsafe extern "C" fn SlotMachineSetup_InitGpuRegs() {
     SetGpuReg(REG_OFFSET_BLDCNT, 4168);
     SetGpuReg(REG_OFFSET_BLDALPHA, 2057);
 }
-pub(crate) unsafe extern "C" fn InitSlotMachine() {
-    let mut i: u8 = 0;
+unsafe fn InitSlotMachine() {
     SlotMachine_InitFromTask();
     (*sSlotMachine).state = SLOTTASK_UNFADE;
     (*sSlotMachine).pikaPowerBolts = 0;
@@ -869,25 +988,23 @@ pub(crate) unsafe extern "C" fn InitSlotMachine() {
     (*sSlotMachine).winIn = 63;
     (*sSlotMachine).winOut = 63;
     (*sSlotMachine).backupMapMusic = GetCurrentMapMusic();
-    i = 0;
-    while i < NUM_REELS {
+    for i in 0..NUM_REELS {
         (*sSlotMachine).reelShockOffsets[i] = 0;
         (*sSlotMachine).reelPositions[i] = sInitialReelPositions[i][(*sSlotMachine).luckyGame] % 21;
         (*sSlotMachine).reelPixelOffsets[i] =
             REEL_HEIGHT - (*sSlotMachine).reelPositions[i] * REEL_SYMBOL_HEIGHT;
-        (*sSlotMachine).reelPixelOffsets[i] = (*sSlotMachine).reelPixelOffsets[i] % 504;
-        i += 1;
+        (*sSlotMachine).reelPixelOffsets[i] %= 504;
     }
     AlertTVThatPlayerPlayedSlotMachine(GetCoins());
 }
-pub(crate) unsafe extern "C" fn SlotMachineSetup_InitPalsSpritesTasks() {
+unsafe fn SlotMachineSetup_InitPalsSpritesTasks() {
     ResetPaletteFade();
     ResetSpriteData();
     gOamLimit = 0x80;
     FreeAllSpritePalettes();
     ResetTasks();
 }
-pub(crate) unsafe extern "C" fn SlotMachineSetup_InitTilemaps() {
+unsafe fn SlotMachineSetup_InitTilemaps() {
     sSelectedPikaPowerTile = Alloc(8) as *mut u16;
     sReelOverlay_Tilemap = AllocZeroed(14) as *mut u16;
     sReelButtonPress_Tilemap = AllocZeroed(8) as *mut u16;
@@ -899,7 +1016,7 @@ pub(crate) unsafe extern "C" fn SlotMachineSetup_InitTilemaps() {
     *sReelOverlay_Tilemap.at(5) = 0x28BE;
     *sReelOverlay_Tilemap.at(6) = 0x20BF;
 }
-pub(crate) unsafe extern "C" fn SlotMachineSetup_LoadGfxAndTilemaps() {
+unsafe fn SlotMachineSetup_LoadGfxAndTilemaps() {
     LoadMenuGfx();
     LoadMenuAndReelOverlayTilemaps();
     LoadSlotMachineGfx();
@@ -907,37 +1024,39 @@ pub(crate) unsafe extern "C" fn SlotMachineSetup_LoadGfxAndTilemaps() {
     LoadUserWindowBorderGfx(0, 0x214, 224);
     PutWindowTilemap(WIN_MSG);
 }
-pub(crate) unsafe extern "C" fn CreateSlotMachineSprites() {
+unsafe fn CreateSlotMachineSprites() {
     CreateReelSymbolSprites();
     CreateCreditPayoutNumberSprites();
     CreateInvisibleFlashMatchLineSprites();
     CreateReelBackgroundSprite();
 }
-pub(crate) unsafe extern "C" fn CreateGameplayTasks() {
+unsafe fn CreateGameplayTasks() {
     CreatePikaPowerBoltTask();
     CreateReelTasks();
     CreateDigitalDisplayTask();
     CreateSlotMachineTasks();
 }
-pub(crate) unsafe extern "C" fn CreateSlotMachineTasks() {
+unsafe fn CreateSlotMachineTasks() {
     Task_SlotMachine(CreateTask(Some(Task_SlotMachine), 0));
 }
-pub(crate) unsafe extern "C" fn Task_SlotMachine(taskId: u8) {
-    while sSlotTasks[(*sSlotMachine).state].unwrap_unchecked()(&raw mut gTasks[taskId]) != 0 {}
+pub(crate) unsafe fn Task_SlotMachine(taskId: u8) {
+    while sSlotTasks[(*sSlotMachine).state].unwrap_unchecked()(&raw mut (*gTasks.as_ptr())[taskId])
+        != 0
+    {}
 }
-pub(crate) unsafe extern "C" fn SlotTask_UnfadeScreen(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_UnfadeScreen(task: *mut Task) -> u8 {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
     LoadPikaPowerMeter((*sSlotMachine).pikaPowerBolts);
     (*sSlotMachine).state += 1;
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_WaitUnfade(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_WaitUnfade(task: *mut Task) -> u8 {
     if gPaletteFade.active() == 0 {
         (*sSlotMachine).state += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_ReadyNewSpin(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_ReadyNewSpin(task: *mut Task) -> u8 {
     (*sSlotMachine).payout = 0;
     (*sSlotMachine).bet = 0;
     (*sSlotMachine).currentReel = LEFT_REEL as i16;
@@ -949,33 +1068,30 @@ pub(crate) unsafe extern "C" fn SlotTask_ReadyNewSpin(task: *mut Task) -> u8 {
         (*sSlotMachine).state = SLOTTASK_READY_NEW_RT_SPIN;
         CreateDigitalDisplayScene(DIG_DISPLAY_REEL_TIME);
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn SlotTask_ReadyNewReelTimeSpin(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_ReadyNewReelTimeSpin(task: *mut Task) -> u8 {
     if IsDigitalDisplayAnimFinished() != 0 {
         (*sSlotMachine).state = SLOTTASK_ASK_INSERT_BET;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_AskInsertBet(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_AskInsertBet(task: *mut Task) -> u8 {
     CreateDigitalDisplayScene(DIG_DISPLAY_INSERT_BET);
     (*sSlotMachine).state = SLOTTASK_BET_INPUT;
     if (*sSlotMachine).coins >= MAX_COINS {
         (*sSlotMachine).state = SLOTTASK_MSG_MAX_COINS;
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn SlotTask_HandleBetInput(task: *mut Task) -> u8 {
-    let mut i: i16 = 0;
+pub(crate) unsafe fn SlotTask_HandleBetInput(task: *mut Task) -> u8 {
     if gMain.newKeys as i32 & SELECT_BUTTON != 0 {
         OpenInfoBox(DIG_DISPLAY_INSERT_BET);
         (*sSlotMachine).state = SLOTTASK_WAIT_INFO_BOX;
     } else if gMain.newKeys as i32 & R_BUTTON != 0 {
         if (*sSlotMachine).coins as i32 - (MAX_BET as i32 - (*sSlotMachine).bet as i32) >= 0 {
-            i = (*sSlotMachine).bet;
-            while i < MAX_BET {
+            for i in (*sSlotMachine).bet..MAX_BET {
                 LightenBetTiles(i as u8);
-                i += 1;
             }
             (*sSlotMachine).coins -= MAX_BET - (*sSlotMachine).bet;
             (*sSlotMachine).bet = MAX_BET;
@@ -1000,14 +1116,16 @@ pub(crate) unsafe extern "C" fn SlotTask_HandleBetInput(task: *mut Task) -> u8 {
             (*sSlotMachine).state = SLOTTASK_ASK_QUIT;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_PrintMsg_Need3Coins(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_PrintMsg_Need3Coins(task: *mut Task) -> u8 {
     DrawDialogueFrame(WIN_MSG, FALSE);
     AddTextPrinterParameterized(
         WIN_MSG,
         FONT_NORMAL,
-        gText_YouDontHaveThreeCoins.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_YouDontHaveThreeCoins).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         0,
@@ -1015,22 +1133,22 @@ pub(crate) unsafe extern "C" fn SlotTask_PrintMsg_Need3Coins(task: *mut Task) ->
     );
     CopyWindowToVram(WIN_MSG, COPYWIN_FULL);
     (*sSlotMachine).state = SLOTTASK_WAIT_MSG_NEED_3_COINS;
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_WaitMsg_Need3Coins(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_WaitMsg_Need3Coins(task: *mut Task) -> u8 {
     if gMain.newKeys as i32 & 3 != 0 {
         ClearDialogWindowAndFrame(WIN_MSG, TRUE);
         (*sSlotMachine).state = SLOTTASK_BET_INPUT;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_WaitInfoBox(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_WaitInfoBox(task: *mut Task) -> u8 {
     if IsInfoBoxClosed() != 0 {
         (*sSlotMachine).state = SLOTTASK_BET_INPUT;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_StartSpin(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_StartSpin(task: *mut Task) -> u8 {
     DrawMachineBias();
     DestroyDigitalDisplayScene();
     SpinSlotReel(LEFT_REEL);
@@ -1049,17 +1167,17 @@ pub(crate) unsafe extern "C" fn SlotTask_StartSpin(task: *mut Task) -> u8 {
     if (*sSlotMachine).reelTimeSpinsLeft != 0 {
         (*sSlotMachine).reelSpeed = ReelTimeSpeed() as i16;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_StartReelTimeSpin(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_StartReelTimeSpin(task: *mut Task) -> u8 {
     if IsReelTimeTaskDone() != 0 {
         CreateDigitalDisplayScene(DIG_DISPLAY_STOP_REEL);
         (*sSlotMachine).machineBias &= 223;
         (*sSlotMachine).state = SLOTTASK_RESET_BIAS_FAILURE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_ResetBiasFailure(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_ResetBiasFailure(task: *mut Task) -> u8 {
     if ({
         (*task).data[0] += 1;
         (*task).data[0]
@@ -1068,18 +1186,18 @@ pub(crate) unsafe extern "C" fn SlotTask_ResetBiasFailure(task: *mut Task) -> u8
         ResetBiasFailure();
         (*sSlotMachine).state = SLOTTASK_WAIT_REEL_STOP;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_WaitReelStop(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_WaitReelStop(task: *mut Task) -> u8 {
     if gMain.newKeys as i32 & A_BUTTON != 0 {
         PlaySE(SE_CONTEST_PLACE);
         StopSlotReel((*sSlotMachine).currentReel as u8);
         PressStopReelButton((*sSlotMachine).currentReel as u8);
         (*sSlotMachine).state = SLOTTASK_WAIT_ALL_REELS_STOP;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_WaitAllReelsStop(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_WaitAllReelsStop(task: *mut Task) -> u8 {
     if IsSlotReelMoving((*sSlotMachine).currentReel as u8) == 0 {
         (*sSlotMachine).currentReel += 1;
         (*sSlotMachine).state = SLOTTASK_WAIT_REEL_STOP;
@@ -1088,9 +1206,9 @@ pub(crate) unsafe extern "C" fn SlotTask_WaitAllReelsStop(task: *mut Task) -> u8
         }
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_CheckMatches(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_CheckMatches(task: *mut Task) -> u8 {
     (*sSlotMachine).machineBias &= 192;
     CheckMatch();
     if (*sSlotMachine).reelTimeSpinsLeft != 0 {
@@ -1144,15 +1262,15 @@ pub(crate) unsafe extern "C" fn SlotTask_CheckMatches(task: *mut Task) -> u8 {
             (*sSlotMachine).netCoinLoss = MAX_COINS;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_WaitPayout(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_WaitPayout(task: *mut Task) -> u8 {
     if IsFinalTask_Task_Payout() != 0 {
         (*sSlotMachine).state = SLOTTASK_END_PAYOUT;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_EndPayout(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_EndPayout(task: *mut Task) -> u8 {
     if TryStopSlotMachineLights() != 0 {
         (*sSlotMachine).state = SLOTTASK_RESET_BET_TILES;
         if (*sSlotMachine).matches as i32 & 384 != 0 {
@@ -1170,9 +1288,9 @@ pub(crate) unsafe extern "C" fn SlotTask_EndPayout(task: *mut Task) -> u8 {
             (*sSlotMachine).state = SLOTTASK_WAIT_RT_ANIM;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_MatchedPower(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_MatchedPower(task: *mut Task) -> u8 {
     if IsPikaPowerBoltAnimating() == 0 {
         (*sSlotMachine).state = SLOTTASK_RESET_BET_TILES;
         if (*sSlotMachine).matches as i32 & 4 != 0 {
@@ -1183,25 +1301,25 @@ pub(crate) unsafe extern "C" fn SlotTask_MatchedPower(task: *mut Task) -> u8 {
             }
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_WaitReelTimeAnim(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_WaitReelTimeAnim(task: *mut Task) -> u8 {
     if IsDigitalDisplayAnimFinished() != 0 {
         (*sSlotMachine).state = SLOTTASK_RESET_BET_TILES;
         if (*sSlotMachine).matches as i32 & 4 != 0 {
             (*sSlotMachine).state = SLOTTASK_START_SPIN;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_ResetBetTiles(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_ResetBetTiles(task: *mut Task) -> u8 {
     DarkenBetTiles(0);
     DarkenBetTiles(1);
     DarkenBetTiles(2);
     (*sSlotMachine).state = SLOTTASK_READY_NEW_SPIN;
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_NoMatches(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_NoMatches(task: *mut Task) -> u8 {
     if ({
         (*task).data[1] += 1;
         (*task).data[1]
@@ -1210,14 +1328,16 @@ pub(crate) unsafe extern "C" fn SlotTask_NoMatches(task: *mut Task) -> u8 {
         (*task).data[1] = 0;
         (*sSlotMachine).state = SLOTTASK_RESET_BET_TILES;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_AskQuit(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_AskQuit(task: *mut Task) -> u8 {
     DrawDialogueFrame(WIN_MSG, FALSE);
     AddTextPrinterParameterized(
         WIN_MSG,
         FONT_NORMAL,
-        gText_QuitTheGame.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_QuitTheGame).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         0,
@@ -1226,10 +1346,10 @@ pub(crate) unsafe extern "C" fn SlotTask_AskQuit(task: *mut Task) -> u8 {
     CopyWindowToVram(WIN_MSG, COPYWIN_FULL);
     CreateYesNoMenuParameterized(0x15, 7, 0x214, 0x180, 0xE, 0xF);
     (*sSlotMachine).state = SLOTTASK_HANDLE_QUIT_INPUT;
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_HandleQuitInput(task: *mut Task) -> u8 {
-    let mut input: i8 = Menu_ProcessInputNoWrapClearOnChoose();
+pub(crate) unsafe fn SlotTask_HandleQuitInput(task: *mut Task) -> u8 {
+    let input: i8 = Menu_ProcessInputNoWrapClearOnChoose();
     if input == 0 {
         ClearDialogWindowAndFrame(WIN_MSG, TRUE);
         DarkenBetTiles(0);
@@ -1241,14 +1361,16 @@ pub(crate) unsafe extern "C" fn SlotTask_HandleQuitInput(task: *mut Task) -> u8 
         ClearDialogWindowAndFrame(WIN_MSG, TRUE);
         (*sSlotMachine).state = SLOTTASK_BET_INPUT;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_PrintMsg_MaxCoins(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_PrintMsg_MaxCoins(task: *mut Task) -> u8 {
     DrawDialogueFrame(WIN_MSG, FALSE);
     AddTextPrinterParameterized(
         WIN_MSG,
         FONT_NORMAL,
-        gText_YouveGot9999Coins.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_YouveGot9999Coins).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         0,
@@ -1256,21 +1378,23 @@ pub(crate) unsafe extern "C" fn SlotTask_PrintMsg_MaxCoins(task: *mut Task) -> u
     );
     CopyWindowToVram(WIN_MSG, COPYWIN_FULL);
     (*sSlotMachine).state = SLOTTASK_WAIT_MSG_MAX_COINS;
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_WaitMsg_MaxCoins(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_WaitMsg_MaxCoins(task: *mut Task) -> u8 {
     if gMain.newKeys as i32 & 3 != 0 {
         ClearDialogWindowAndFrame(WIN_MSG, TRUE);
         (*sSlotMachine).state = SLOTTASK_BET_INPUT;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_PrintMsg_NoMoreCoins(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_PrintMsg_NoMoreCoins(task: *mut Task) -> u8 {
     DrawDialogueFrame(WIN_MSG, FALSE);
     AddTextPrinterParameterized(
         WIN_MSG,
         FONT_NORMAL,
-        gText_YouveRunOutOfCoins.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_YouveRunOutOfCoins).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         0,
@@ -1278,23 +1402,23 @@ pub(crate) unsafe extern "C" fn SlotTask_PrintMsg_NoMoreCoins(task: *mut Task) -
     );
     CopyWindowToVram(WIN_MSG, COPYWIN_FULL);
     (*sSlotMachine).state = SLOTTASK_WAIT_MSG_NO_MORE_COINS;
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_WaitMsg_NoMoreCoins(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_WaitMsg_NoMoreCoins(task: *mut Task) -> u8 {
     if gMain.newKeys as i32 & 3 != 0 {
         ClearDialogWindowAndFrame(WIN_MSG, TRUE);
         (*sSlotMachine).state = SLOTTASK_END;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_EndGame(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_EndGame(task: *mut Task) -> u8 {
     SetCoins((*sSlotMachine).coins as u16);
     TryPutFindThatGamerOnAir(GetCoins());
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
     (*sSlotMachine).state += 1;
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn SlotTask_FreeDataStructures(task: *mut Task) -> u8 {
+pub(crate) unsafe fn SlotTask_FreeDataStructures(task: *mut Task) -> u8 {
     if gPaletteFade.active() == 0 {
         SetMainCallback2((*sSlotMachine).prevMainCb);
         Free(sImageTable_DigitalDisplay_Reel as *mut c_void);
@@ -1362,72 +1486,64 @@ pub(crate) unsafe extern "C" fn SlotTask_FreeDataStructures(task: *mut Task) -> 
         Free(sSlotMachine as *mut c_void);
         sSlotMachine = null_mut();
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DrawMachineBias() {
+unsafe fn DrawMachineBias() {
     let mut whichBias: u8 = 0;
-    if (*sSlotMachine).reelTimeSpinsLeft == 0 {
-        if (*sSlotMachine).machineBias as i32 & 192 == 0 {
-            if ShouldTrySpecialBias() != 0 {
-                whichBias = TrySelectBias_Special();
-                if whichBias != 3 {
-                    (*sSlotMachine).machineBias |= sBiasesSpecial[whichBias] as u8;
-                    if whichBias != 1 {
-                        return;
-                    }
+    if (*sSlotMachine).reelTimeSpinsLeft == 0 && (*sSlotMachine).machineBias as i32 & 192 == 0 {
+        if ShouldTrySpecialBias() != 0 {
+            whichBias = TrySelectBias_Special();
+            if whichBias != 3 {
+                (*sSlotMachine).machineBias |= sBiasesSpecial[whichBias] as u8;
+                if whichBias != 1 {
+                    return;
                 }
             }
-            whichBias = TrySelectBias_Regular();
-            if whichBias != 5 {
-                (*sSlotMachine).machineBias |= sBiasesRegular[whichBias] as u8;
-            }
+        }
+        whichBias = TrySelectBias_Regular();
+        if whichBias != 5 {
+            (*sSlotMachine).machineBias |= sBiasesRegular[whichBias] as u8;
         }
     }
 }
-pub(crate) unsafe extern "C" fn ResetBiasFailure() {
+unsafe fn ResetBiasFailure() {
     (*sSlotMachine).didNotFailBias = FALSE;
     if (*sSlotMachine).machineBias != 0 {
         (*sSlotMachine).didNotFailBias = TRUE;
     }
 }
-pub(crate) unsafe extern "C" fn GetBiasSymbol(mut machineBias: u8) -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 8 {
+unsafe fn GetBiasSymbol(mut machineBias: u8) -> u8 {
+    for i in 0..8u8 {
         if machineBias as i32 & 1 != 0 {
             return sBiasSymbols[i];
         }
         machineBias >>= 1;
-        i += 1;
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn ShouldTrySpecialBias() -> u8 {
-    let mut rval: u8 = Random() as u8;
+unsafe fn ShouldTrySpecialBias() -> u8 {
+    let rval: u8 = Random() as u8;
     if sSpecialDrawOdds[(*sSlotMachine).machineId][(*sSlotMachine).bet as i32 - 1] > rval {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn TrySelectBias_Special() -> u8 {
+unsafe fn TrySelectBias_Special() -> u8 {
     let mut whichBias: i16 = 0;
-    whichBias = 0;
     while whichBias < 3 {
-        let mut rval: i16 = Random() as i16 & 0xff;
-        let mut value: i16 =
-            sBiasProbabilities_Special[whichBias][(*sSlotMachine).machineId] as i16;
+        let rval: i16 = Random() as i16 & 0xff;
+        let value: i16 = sBiasProbabilities_Special[whichBias][(*sSlotMachine).machineId] as i16;
         if value > rval {
             break;
         }
         whichBias += 1;
     }
-    return whichBias as u8;
+    whichBias as u8
 }
-pub(crate) unsafe extern "C" fn TrySelectBias_Regular() -> u8 {
+unsafe fn TrySelectBias_Regular() -> u8 {
     let mut whichBias: i16 = 0;
-    whichBias = 0;
     while whichBias < 5 {
-        let mut rval: i16 = Random() as i16 & 0xff;
+        let rval: i16 = Random() as i16 & 0xff;
         let mut value: i16 =
             sBiasProbabilities_Regular[whichBias][(*sSlotMachine).machineId] as i16;
         if whichBias == 0 && (*sSlotMachine).luckyGame == TRUE {
@@ -1446,9 +1562,9 @@ pub(crate) unsafe extern "C" fn TrySelectBias_Regular() -> u8 {
         }
         whichBias += 1;
     }
-    return whichBias as u8;
+    whichBias as u8
 }
-pub(crate) unsafe extern "C" fn GetReelTimeSpinProbability(spins: u8) -> u8 {
+unsafe fn GetReelTimeSpinProbability(spins: u8) -> u8 {
     if (*sSlotMachine).luckyGame == FALSE {
         return sReelTimeProbabilities_NormalGame[spins][(*sSlotMachine).pikaPowerBolts];
     } else {
@@ -1456,18 +1572,16 @@ pub(crate) unsafe extern "C" fn GetReelTimeSpinProbability(spins: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn GetReelTimeDraw() {
-    let mut rval: u8 = 0;
-    let mut spins: i16 = 0;
+unsafe fn GetReelTimeDraw() {
     (*sSlotMachine).reelTimeDraw = 0;
-    rval = Random() as u8;
+    let mut rval: u8 = Random() as u8;
     if rval < GetReelTimeSpinProbability(0) {
         return;
     }
-    spins = 5;
+    let mut spins: i16 = 5;
     while spins > 0 {
         rval = Random() as u8;
         if rval < GetReelTimeSpinProbability(spins as u8) {
@@ -1477,8 +1591,8 @@ pub(crate) unsafe extern "C" fn GetReelTimeDraw() {
     }
     (*sSlotMachine).reelTimeDraw = spins as u8;
 }
-pub(crate) unsafe extern "C" fn ShouldReelTimeMachineExplode(check: u16) -> u8 {
-    let mut rval: u16 = Random() & 0xff;
+unsafe fn ShouldReelTimeMachineExplode(check: u16) -> u8 {
+    let rval: u16 = Random() & 0xff;
     if rval < sReelTimeExplodeProbability[check] {
         return TRUE;
     } else {
@@ -1486,13 +1600,11 @@ pub(crate) unsafe extern "C" fn ShouldReelTimeMachineExplode(check: u16) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ReelTimeSpeed() -> u16 {
+unsafe fn ReelTimeSpeed() -> u16 {
     let mut i: u8 = 0;
-    let mut rval: u8 = 0;
-    let mut value: u8 = 0;
     if (*sSlotMachine).netCoinLoss >= 300 {
         i = 4;
     } else if (*sSlotMachine).netCoinLoss >= 250 {
@@ -1502,8 +1614,8 @@ pub(crate) unsafe extern "C" fn ReelTimeSpeed() -> u16 {
     } else if (*sSlotMachine).netCoinLoss >= 150 {
         i = 1;
     }
-    rval = (Random() as i32 % 100) as u8;
-    value = sReelTimeSpeed_Probabilities[i][0] as u8;
+    let mut rval: u8 = (Random() as i32 % 100) as u8;
+    let mut value: u8 = sReelTimeSpeed_Probabilities[i][0] as u8;
     if rval < value {
         return REEL_HALF_SPEED;
     }
@@ -1513,9 +1625,9 @@ pub(crate) unsafe extern "C" fn ReelTimeSpeed() -> u16 {
     if rval < value {
         return REEL_QUARTER_SPEED;
     }
-    return REEL_NORMAL_SPEED as u16;
+    REEL_NORMAL_SPEED as u16
 }
-pub(crate) unsafe extern "C" fn CheckMatch() {
+unsafe fn CheckMatch() {
     (*sSlotMachine).matches = 0;
     CheckMatch_CenterRow();
     if (*sSlotMachine).bet > 1 {
@@ -1525,30 +1637,22 @@ pub(crate) unsafe extern "C" fn CheckMatch() {
         CheckMatch_Diagonals();
     }
 }
-pub(crate) unsafe extern "C" fn CheckMatch_CenterRow() {
-    let mut sym1: u8 = 0;
-    let mut sym2: u8 = 0;
-    let mut sym3: u8 = 0;
-    let mut r#match: u8 = 0;
-    sym1 = GetSymbolAtRest(LEFT_REEL, 2);
-    sym2 = GetSymbolAtRest(MIDDLE_REEL, 2);
-    sym3 = GetSymbolAtRest(RIGHT_REEL, 2);
-    r#match = GetMatchFromSymbols(sym1, sym2, sym3);
+unsafe fn CheckMatch_CenterRow() {
+    let sym1: u8 = GetSymbolAtRest(LEFT_REEL, 2);
+    let sym2: u8 = GetSymbolAtRest(MIDDLE_REEL, 2);
+    let sym3: u8 = GetSymbolAtRest(RIGHT_REEL, 2);
+    let r#match: u8 = GetMatchFromSymbols(sym1, sym2, sym3);
     if r#match != MATCH_NONE {
         (*sSlotMachine).payout += sSlotPayouts[r#match] as i16;
         (*sSlotMachine).matches |= sSlotMatchFlags[r#match];
         FlashMatchLine(MATCH_MIDDLE_ROW);
     }
 }
-pub(crate) unsafe extern "C" fn CheckMatch_TopAndBottom() {
-    let mut sym1: u8 = 0;
-    let mut sym2: u8 = 0;
-    let mut sym3: u8 = 0;
-    let mut r#match: u8 = 0;
-    sym1 = GetSymbolAtRest(LEFT_REEL, 1);
-    sym2 = GetSymbolAtRest(MIDDLE_REEL, 1);
-    sym3 = GetSymbolAtRest(RIGHT_REEL, 1);
-    r#match = GetMatchFromSymbols(sym1, sym2, sym3);
+unsafe fn CheckMatch_TopAndBottom() {
+    let mut sym1: u8 = GetSymbolAtRest(LEFT_REEL, 1);
+    let mut sym2: u8 = GetSymbolAtRest(MIDDLE_REEL, 1);
+    let mut sym3: u8 = GetSymbolAtRest(RIGHT_REEL, 1);
+    let mut r#match: u8 = GetMatchFromSymbols(sym1, sym2, sym3);
     if r#match != MATCH_NONE {
         if r#match == MATCH_CHERRY {
             r#match = MATCH_TOPBOT_CHERRY;
@@ -1570,15 +1674,11 @@ pub(crate) unsafe extern "C" fn CheckMatch_TopAndBottom() {
         FlashMatchLine(MATCH_BOTTOM_ROW);
     }
 }
-pub(crate) unsafe extern "C" fn CheckMatch_Diagonals() {
-    let mut sym1: u8 = 0;
-    let mut sym2: u8 = 0;
-    let mut sym3: u8 = 0;
-    let mut r#match: u8 = 0;
-    sym1 = GetSymbolAtRest(LEFT_REEL, 1);
-    sym2 = GetSymbolAtRest(MIDDLE_REEL, 2);
-    sym3 = GetSymbolAtRest(RIGHT_REEL, 3);
-    r#match = GetMatchFromSymbols(sym1, sym2, sym3);
+unsafe fn CheckMatch_Diagonals() {
+    let mut sym1: u8 = GetSymbolAtRest(LEFT_REEL, 1);
+    let mut sym2: u8 = GetSymbolAtRest(MIDDLE_REEL, 2);
+    let mut sym3: u8 = GetSymbolAtRest(RIGHT_REEL, 3);
+    let mut r#match: u8 = GetMatchFromSymbols(sym1, sym2, sym3);
     if r#match != MATCH_NONE {
         if r#match != MATCH_CHERRY {
             (*sSlotMachine).payout += sSlotPayouts[r#match] as i16;
@@ -1598,7 +1698,7 @@ pub(crate) unsafe extern "C" fn CheckMatch_Diagonals() {
         FlashMatchLine(MATCH_NESW_DIAG);
     }
 }
-pub(crate) unsafe extern "C" fn GetMatchFromSymbols(sym1: u8, sym2: u8, sym3: u8) -> u8 {
+fn GetMatchFromSymbols(sym1: u8, sym2: u8, sym3: u8) -> u8 {
     if sym1 == sym2 && sym1 == sym3 {
         return sSymbolToMatch[sym1];
     }
@@ -1611,12 +1711,12 @@ pub(crate) unsafe extern "C" fn GetMatchFromSymbols(sym1: u8, sym2: u8, sym3: u8
     if sym1 == SYMBOL_CHERRY {
         return MATCH_CHERRY;
     }
-    return MATCH_NONE;
+    MATCH_NONE
 }
-pub(crate) unsafe extern "C" fn AwardPayout() {
+unsafe fn AwardPayout() {
     Task_Payout(CreateTask(Some(Task_Payout), 4));
 }
-pub(crate) unsafe extern "C" fn IsFinalTask_Task_Payout() -> u8 {
+unsafe fn IsFinalTask_Task_Payout() -> u8 {
     if FindTaskIdByFunc(Some(Task_Payout)) == TAIL_SENTINEL {
         return TRUE;
     } else {
@@ -1624,23 +1724,25 @@ pub(crate) unsafe extern "C" fn IsFinalTask_Task_Payout() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn Task_Payout(taskId: u8) {
-    while sPayoutTasks[gTasks[taskId].data[0]].unwrap_unchecked()(&raw mut gTasks[taskId]) != 0 {}
+pub(crate) unsafe fn Task_Payout(taskId: u8) {
+    while sPayoutTasks[task_get(taskId, 0)].unwrap_unchecked()(&raw mut (*gTasks.as_ptr())[taskId])
+        != 0
+    {}
 }
-pub(crate) unsafe extern "C" fn PayoutTask_Init(task: *mut Task) -> u8 {
+pub(crate) unsafe fn PayoutTask_Init(task: *mut Task) -> u8 {
     if IsMatchLineDoneFlashingBeforePayout() != 0 {
-        (*task).data[0] += 1;
+        (*task).data[tState] += 1;
         if (*sSlotMachine).payout == 0 {
-            (*task).data[0] = PAYOUT_TASK_FREE;
+            (*task).data[tState] = PAYOUT_TASK_FREE;
             return TRUE;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn PayoutTask_GivePayout(task: *mut Task) -> u8 {
+pub(crate) unsafe fn PayoutTask_GivePayout(task: *mut Task) -> u8 {
     if ({
         let t1 = (*task).data[1];
         (*task).data[1] -= 1;
@@ -1668,47 +1770,46 @@ pub(crate) unsafe extern "C" fn PayoutTask_GivePayout(task: *mut Task) -> u8 {
         (*sSlotMachine).payout = 0;
     }
     if (*sSlotMachine).payout == 0 {
-        (*task).data[0] += 1;
+        (*task).data[tState] += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn PayoutTask_Free(task: *mut Task) -> u8 {
+pub(crate) unsafe fn PayoutTask_Free(task: *mut Task) -> u8 {
     if TryStopMatchLinesFlashing() != 0 {
         DestroyTask(FindTaskIdByFunc(Some(Task_Payout)));
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn GetSymbolAtRest(reel: u8, offset: i16) -> u8 {
+unsafe fn GetSymbolAtRest(reel: u8, offset: i16) -> u8 {
     let mut pos: i16 = (((*sSlotMachine).reelPositions[reel] as i32 + offset as i32) % 21) as i16;
     if pos < 0 {
         pos += SYMBOLS_PER_REEL;
     }
-    return sReelSymbols[reel][pos];
+    sReelSymbols[reel][pos]
 }
-pub(crate) unsafe extern "C" fn GetSymbol(reel: u8, offset: i16) -> u8 {
+unsafe fn GetSymbol(reel: u8, offset: i16) -> u8 {
     let mut inc: i16 = 0;
-    let mut pixelOffset: i16 = (*sSlotMachine).reelPixelOffsets[reel] % 24;
+    let pixelOffset: i16 = (*sSlotMachine).reelPixelOffsets[reel] % 24;
     if pixelOffset != 0 {
         inc = -1;
     }
-    return GetSymbolAtRest(reel, offset + inc);
+    GetSymbolAtRest(reel, offset + inc)
 }
-pub(crate) unsafe extern "C" fn GetReelTimeSymbol(offset: i16) -> u8 {
+unsafe fn GetReelTimeSymbol(offset: i16) -> u8 {
     let mut newPosition: i16 =
         (((*sSlotMachine).reeltimePosition as i32 + offset as i32) % 6) as i16;
     if newPosition < 0 {
         newPosition += REELTIME_SYMBOLS;
     }
-    return sReelTimeSymbols[newPosition];
+    sReelTimeSymbols[newPosition]
 }
-pub(crate) unsafe extern "C" fn AdvanceSlotReel(reelIndex: u8, value: i16) {
+unsafe fn AdvanceSlotReel(reelIndex: u8, value: i16) {
     (*sSlotMachine).reelPixelOffsets[reelIndex] += value;
-    (*sSlotMachine).reelPixelOffsets[reelIndex] = (*sSlotMachine).reelPixelOffsets[reelIndex] % 504;
+    (*sSlotMachine).reelPixelOffsets[reelIndex] %= 504;
     (*sSlotMachine).reelPositions[reelIndex] =
         SYMBOLS_PER_REEL - (*sSlotMachine).reelPixelOffsets[reelIndex] / 24;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AdvanceSlotReelToNextSymbol(reelIndex: u8, mut value: i16) -> i16 {
+pub unsafe fn AdvanceSlotReelToNextSymbol(reelIndex: u8, mut value: i16) -> i16 {
     let mut offset: i16 = (*sSlotMachine).reelPixelOffsets[reelIndex] % 24;
     if offset != 0 {
         if offset < value {
@@ -1717,15 +1818,14 @@ pub unsafe extern "C" fn AdvanceSlotReelToNextSymbol(reelIndex: u8, mut value: i
         AdvanceSlotReel(reelIndex, value);
         offset = (*sSlotMachine).reelPixelOffsets[reelIndex] % 24;
     }
-    return offset;
+    offset
 }
-pub(crate) unsafe extern "C" fn AdvanceReeltimeReel(value: i16) {
+unsafe fn AdvanceReeltimeReel(value: i16) {
     (*sSlotMachine).reeltimePixelOffset += value;
-    (*sSlotMachine).reeltimePixelOffset = (*sSlotMachine).reeltimePixelOffset % 120;
+    (*sSlotMachine).reeltimePixelOffset %= 120;
     (*sSlotMachine).reeltimePosition = REELTIME_SYMBOLS - (*sSlotMachine).reeltimePixelOffset / 20;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AdvanceReeltimeReelToNextSymbol(mut value: i16) -> i16 {
+pub unsafe fn AdvanceReeltimeReelToNextSymbol(mut value: i16) -> i16 {
     let mut offset: i16 = (*sSlotMachine).reeltimePixelOffset % 20;
     if offset != 0 {
         if offset < value {
@@ -1734,113 +1834,121 @@ pub unsafe extern "C" fn AdvanceReeltimeReelToNextSymbol(mut value: i16) -> i16 
         AdvanceReeltimeReel(value);
         offset = (*sSlotMachine).reeltimePixelOffset % 20;
     }
-    return offset;
+    offset
 }
-pub(crate) unsafe extern "C" fn CreateReelTasks() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < NUM_REELS {
-        let mut taskId: u8 = CreateTask(Some(Task_Reel), 2);
-        gTasks[taskId].data[15] = i as i16;
+unsafe fn CreateReelTasks() {
+    for i in 0..NUM_REELS {
+        let taskId: u8 = CreateTask(Some(Task_Reel), 2);
+        task_set(taskId, tReelId, i as i16);
         (*sSlotMachine).slotReelTasks[i] = taskId;
         Task_Reel(taskId);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SpinSlotReel(reelIndex: u8) {
-    gTasks[(*sSlotMachine).slotReelTasks[reelIndex]].data[0] = REEL_TASK_SPIN;
-    gTasks[(*sSlotMachine).slotReelTasks[reelIndex]].data[14] = TRUE as i16;
+unsafe fn SpinSlotReel(reelIndex: u8) {
+    task_set(
+        (*sSlotMachine).slotReelTasks[reelIndex],
+        tState,
+        REEL_TASK_SPIN,
+    );
+    task_set(
+        (*sSlotMachine).slotReelTasks[reelIndex],
+        tMoving,
+        TRUE as i16,
+    );
 }
-pub(crate) unsafe extern "C" fn StopSlotReel(reelIndex: u8) {
-    gTasks[(*sSlotMachine).slotReelTasks[reelIndex]].data[0] = REEL_TASK_DECIDE_STOP;
+unsafe fn StopSlotReel(reelIndex: u8) {
+    task_set(
+        (*sSlotMachine).slotReelTasks[reelIndex],
+        tState,
+        REEL_TASK_DECIDE_STOP,
+    );
 }
-pub(crate) unsafe extern "C" fn IsSlotReelMoving(reelIndex: u8) -> u8 {
-    return gTasks[(*sSlotMachine).slotReelTasks[reelIndex]].data[14] as u8;
+unsafe fn IsSlotReelMoving(reelIndex: u8) -> u8 {
+    task_get((*sSlotMachine).slotReelTasks[reelIndex], tMoving) as u8
 }
-pub(crate) unsafe extern "C" fn Task_Reel(taskId: u8) {
-    while sReelTasks[gTasks[taskId].data[0]].unwrap_unchecked()(&raw mut gTasks[taskId]) != 0 {}
+pub(crate) unsafe fn Task_Reel(taskId: u8) {
+    while sReelTasks[task_get(taskId, tState)].unwrap_unchecked()(
+        &raw mut (*gTasks.as_ptr())[taskId],
+    ) != 0
+    {}
 }
-pub(crate) unsafe extern "C" fn ReelTask_StayStill(task: *mut Task) -> u8 {
-    return FALSE;
+pub(crate) fn ReelTask_StayStill(task: *mut Task) -> u8 {
+    FALSE
 }
-pub(crate) unsafe extern "C" fn ReelTask_Spin(task: *mut Task) -> u8 {
-    AdvanceSlotReel((*task).data[15] as u8, (*sSlotMachine).reelSpeed);
-    return FALSE;
+pub(crate) unsafe fn ReelTask_Spin(task: *mut Task) -> u8 {
+    AdvanceSlotReel((*task).data[tReelId] as u8, (*sSlotMachine).reelSpeed);
+    FALSE
 }
-pub(crate) unsafe extern "C" fn ReelTask_DecideStop(task: *mut Task) -> u8 {
-    (*task).data[0] += 1;
-    (*sSlotMachine).winnerRows[(*task).data[15]] = 0;
-    (*sSlotMachine).reelExtraTurns[(*task).data[15]] = 0;
-    if (*sSlotMachine).reelTimeSpinsLeft == 0 {
-        if (*sSlotMachine).machineBias == 0
+pub(crate) unsafe fn ReelTask_DecideStop(task: *mut Task) -> u8 {
+    (*task).data[tState] += 1;
+    (*sSlotMachine).winnerRows[(*task).data[tReelId]] = 0;
+    (*sSlotMachine).reelExtraTurns[(*task).data[tReelId]] = 0;
+    if (*sSlotMachine).reelTimeSpinsLeft == 0
+        && ((*sSlotMachine).machineBias == 0
             || (*sSlotMachine).didNotFailBias == 0
-            || sDecideStop_Bias[(*task).data[15]].unwrap_unchecked()() == 0
-        {
-            (*sSlotMachine).didNotFailBias = FALSE;
-            sDecideStop_NoBias[(*task).data[15]].unwrap_unchecked()();
-        }
+            || sDecideStop_Bias[(*task).data[tReelId]].unwrap_unchecked()() == 0)
+    {
+        (*sSlotMachine).didNotFailBias = FALSE;
+        sDecideStop_NoBias[(*task).data[tReelId]].unwrap_unchecked()();
     }
-    (*task).data[1] = (*sSlotMachine).reelExtraTurns[(*task).data[15]];
-    return TRUE;
+    (*task).data[tExtraTurns] = (*sSlotMachine).reelExtraTurns[(*task).data[tReelId]];
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ReelTask_MoveToStop(task: *mut Task) -> u8 {
+pub(crate) unsafe fn ReelTask_MoveToStop(task: *mut Task) -> u8 {
     let mut reelStopShocks: CArray<u16, 5> = zeroed();
-    let mut reelPixelPos: i16 = 0;
     memcpy(
         reelStopShocks.as_mut_ptr() as *mut u8,
         sReelStopShocks.as_ptr().cast_mut() as *mut u8,
         10,
     );
-    reelPixelPos = (*sSlotMachine).reelPixelOffsets[(*task).data[15]] % 24;
+    let mut reelPixelPos: i16 = (*sSlotMachine).reelPixelOffsets[(*task).data[tReelId]] % 24;
     if reelPixelPos != 0 {
         reelPixelPos =
-            AdvanceSlotReelToNextSymbol((*task).data[15] as u8, (*sSlotMachine).reelSpeed);
-    } else if (*sSlotMachine).reelExtraTurns[(*task).data[15]] != 0 {
-        (*sSlotMachine).reelExtraTurns[(*task).data[15]] -= 1;
-        AdvanceSlotReel((*task).data[15] as u8, (*sSlotMachine).reelSpeed);
-        reelPixelPos = (*sSlotMachine).reelPixelOffsets[(*task).data[15]] % 24;
+            AdvanceSlotReelToNextSymbol((*task).data[tReelId] as u8, (*sSlotMachine).reelSpeed);
+    } else if (*sSlotMachine).reelExtraTurns[(*task).data[tReelId]] != 0 {
+        (*sSlotMachine).reelExtraTurns[(*task).data[tReelId]] -= 1;
+        AdvanceSlotReel((*task).data[tReelId] as u8, (*sSlotMachine).reelSpeed);
+        reelPixelPos = (*sSlotMachine).reelPixelOffsets[(*task).data[tReelId]] % 24;
     }
-    if reelPixelPos == 0 && (*sSlotMachine).reelExtraTurns[(*task).data[15]] == 0 {
-        (*task).data[0] += 1;
+    if reelPixelPos == 0 && (*sSlotMachine).reelExtraTurns[(*task).data[tReelId]] == 0 {
+        (*task).data[tState] += 1;
         (*task).data[1] = reelStopShocks[(*task).data[1]] as i16;
         (*task).data[2] = 0;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn ReelTask_ShakingStop(task: *mut Task) -> u8 {
-    (*sSlotMachine).reelShockOffsets[(*task).data[15]] = (*task).data[1] as u16;
-    (*task).data[1] = -(*task).data[1];
+pub(crate) unsafe fn ReelTask_ShakingStop(task: *mut Task) -> u8 {
+    (*sSlotMachine).reelShockOffsets[(*task).data[tReelId]] = (*task).data[tShockMagnitude] as u16;
+    (*task).data[tShockMagnitude] = -(*task).data[tShockMagnitude];
     (*task).data[2] += 1;
     if (*task).data[2] as i32 & 0x3 == 0 {
-        (*task).data[1] >>= 1;
+        (*task).data[tShockMagnitude] >>= 1;
     }
-    if (*task).data[1] == 0 {
-        (*task).data[0] = 0;
-        (*task).data[14] = FALSE as i16;
-        (*sSlotMachine).reelShockOffsets[(*task).data[15]] = 0;
+    if (*task).data[tShockMagnitude] == 0 {
+        (*task).data[tState] = 0;
+        (*task).data[tMoving] = FALSE as i16;
+        (*sSlotMachine).reelShockOffsets[(*task).data[tReelId]] = 0;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel1() -> u8 {
+pub(crate) unsafe fn DecideStop_Bias_Reel1() -> u8 {
     let mut sym2: u8 = GetBiasSymbol((*sSlotMachine).machineBias);
     let mut sym1: u8 = sym2;
     if (*sSlotMachine).machineBias as i32 & 192 != 0 {
         sym1 = SYMBOL_7_RED;
         sym2 = SYMBOL_7_BLUE;
     }
-    return sDecideStop_Bias_Reel1_Bets[(*sSlotMachine).bet as i32 - 1].unwrap_unchecked()(
-        sym1, sym2,
-    );
+    sDecideStop_Bias_Reel1_Bets[(*sSlotMachine).bet as i32 - 1].unwrap_unchecked()(sym1, sym2)
 }
-pub(crate) unsafe extern "C" fn EitherSymbolAtPos_Reel1(pos: i16, sym1: u8, sym2: u8) -> u8 {
-    let mut sym: u8 = GetSymbol(LEFT_REEL, pos);
+unsafe fn EitherSymbolAtPos_Reel1(pos: i16, sym1: u8, sym2: u8) -> u8 {
+    let sym: u8 = GetSymbol(LEFT_REEL, pos);
     if sym == sym1 || sym == sym2 {
         (*sSlotMachine).biasSymbol = sym;
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn AreCherriesOnScreen_Reel1(turns: i16) -> u8 {
+unsafe fn AreCherriesOnScreen_Reel1(turns: i16) -> u8 {
     if GetSymbol(LEFT_REEL, 1 - turns) == SYMBOL_CHERRY
         || GetSymbol(LEFT_REEL, 2 - turns) == SYMBOL_CHERRY
         || GetSymbol(LEFT_REEL, 3 - turns) == SYMBOL_CHERRY
@@ -1851,10 +1959,10 @@ pub(crate) unsafe extern "C" fn AreCherriesOnScreen_Reel1(turns: i16) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn BiasedTowardCherryOr7s() -> u8 {
+unsafe fn BiasedTowardCherryOr7s() -> u8 {
     if (*sSlotMachine).machineBias as i32 & 194 != 0 {
         return TRUE;
     } else {
@@ -1862,12 +1970,11 @@ pub(crate) unsafe extern "C" fn BiasedTowardCherryOr7s() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel1_Bet1(sym1: u8, sym2: u8) -> u8 {
+pub(crate) unsafe fn DecideStop_Bias_Reel1_Bet1(sym1: u8, sym2: u8) -> u8 {
     let mut i: i16 = 0;
-    i = 0;
     while i <= MAX_EXTRA_TURNS {
         if EitherSymbolAtPos_Reel1(2 - i, sym1, sym2) != 0 {
             (*sSlotMachine).winnerRows[0] = 2;
@@ -1876,53 +1983,50 @@ pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel1_Bet1(sym1: u8, sym2: u8) -
         }
         i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel1_Bet2or3(sym1: u8, sym2: u8) -> u8 {
+pub(crate) unsafe fn DecideStop_Bias_Reel1_Bet2or3(sym1: u8, sym2: u8) -> u8 {
     let mut i: i16 = 0;
-    let mut cherry7Bias: u8 = BiasedTowardCherryOr7s();
+    let cherry7Bias: u8 = BiasedTowardCherryOr7s();
     if cherry7Bias != 0 || AreCherriesOnScreen_Reel1(0) == 0 {
-        i = 1;
-        while i <= 3 {
+        for i in 1..=3i16 {
             if EitherSymbolAtPos_Reel1(i, sym1, sym2) != 0 {
                 (*sSlotMachine).winnerRows[0] = i;
                 (*sSlotMachine).reelExtraTurns[0] = 0;
                 return TRUE;
             }
-            i += 1;
         }
     }
     i = 1;
     while i <= MAX_EXTRA_TURNS {
-        let mut cherry7BiasCopy: u8 = cherry7Bias;
-        if cherry7BiasCopy != 0 || AreCherriesOnScreen_Reel1(i) == 0 {
-            if EitherSymbolAtPos_Reel1(1 - i, sym1, sym2) != 0 {
-                if i == 1 && (cherry7BiasCopy != 0 || AreCherriesOnScreen_Reel1(3) == 0) {
-                    (*sSlotMachine).winnerRows[0] = 3;
-                    (*sSlotMachine).reelExtraTurns[0] = 3;
-                    return TRUE;
-                }
-                if i <= 3 && (cherry7BiasCopy != 0 || AreCherriesOnScreen_Reel1(i + 1) == 0) {
-                    (*sSlotMachine).winnerRows[0] = 2;
-                    (*sSlotMachine).reelExtraTurns[0] = i + 1;
-                    return TRUE;
-                }
-                (*sSlotMachine).winnerRows[0] = 1;
-                (*sSlotMachine).reelExtraTurns[0] = i;
+        let cherry7BiasCopy: u8 = cherry7Bias;
+        if (cherry7BiasCopy != 0 || AreCherriesOnScreen_Reel1(i) == 0)
+            && EitherSymbolAtPos_Reel1(1 - i, sym1, sym2) != 0
+        {
+            if i == 1 && (cherry7BiasCopy != 0 || AreCherriesOnScreen_Reel1(3) == 0) {
+                (*sSlotMachine).winnerRows[0] = 3;
+                (*sSlotMachine).reelExtraTurns[0] = 3;
                 return TRUE;
             }
+            if i <= 3 && (cherry7BiasCopy != 0 || AreCherriesOnScreen_Reel1(i + 1) == 0) {
+                (*sSlotMachine).winnerRows[0] = 2;
+                (*sSlotMachine).reelExtraTurns[0] = i + 1;
+                return TRUE;
+            }
+            (*sSlotMachine).winnerRows[0] = 1;
+            (*sSlotMachine).reelExtraTurns[0] = i;
+            return TRUE;
         }
         i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel2() -> u8 {
-    return sDecideStop_Bias_Reel2_Bets[(*sSlotMachine).bet as i32 - 1].unwrap_unchecked()();
+pub(crate) unsafe fn DecideStop_Bias_Reel2() -> u8 {
+    sDecideStop_Bias_Reel2_Bets[(*sSlotMachine).bet as i32 - 1].unwrap_unchecked()()
 }
-pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel2_Bet1or2() -> u8 {
+pub(crate) unsafe fn DecideStop_Bias_Reel2_Bet1or2() -> u8 {
+    let reel1BiasRow: i16 = (*sSlotMachine).winnerRows[0];
     let mut i: i16 = 0;
-    let mut reel1BiasRow: i16 = (*sSlotMachine).winnerRows[0];
-    i = 0;
     while i <= MAX_EXTRA_TURNS {
         if GetSymbol(MIDDLE_REEL, reel1BiasRow - i) == (*sSlotMachine).biasSymbol {
             (*sSlotMachine).winnerRows[1] = reel1BiasRow;
@@ -1931,9 +2035,9 @@ pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel2_Bet1or2() -> u8 {
         }
         i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel2_Bet3() -> u8 {
+pub(crate) unsafe fn DecideStop_Bias_Reel2_Bet3() -> u8 {
     let mut i: i16 = 0;
     if DecideStop_Bias_Reel2_Bet1or2() != 0 {
         if (*sSlotMachine).winnerRows[0] != 2
@@ -1963,9 +2067,9 @@ pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel2_Bet3() -> u8 {
             i += 1;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel3() -> u8 {
+pub(crate) unsafe fn DecideStop_Bias_Reel3() -> u8 {
     let mut biasSymbol: u8 = (*sSlotMachine).biasSymbol;
     if (*sSlotMachine).machineBias as i32 & BIAS_MIXED_7 != 0 {
         biasSymbol = SYMBOL_7_RED;
@@ -1973,14 +2077,11 @@ pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel3() -> u8 {
             biasSymbol = SYMBOL_7_BLUE;
         }
     }
-    return sDecideStop_Bias_Reel3_Bets[(*sSlotMachine).bet as i32 - 1].unwrap_unchecked()(
-        biasSymbol,
-    );
+    sDecideStop_Bias_Reel3_Bets[(*sSlotMachine).bet as i32 - 1].unwrap_unchecked()(biasSymbol)
 }
-pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel3_Bet1or2(biasSymbol: u8) -> u8 {
+pub(crate) unsafe fn DecideStop_Bias_Reel3_Bet1or2(biasSymbol: u8) -> u8 {
+    let reel2BiasRow: i16 = (*sSlotMachine).winnerRows[1];
     let mut i: i16 = 0;
-    let mut reel2BiasRow: i16 = (*sSlotMachine).winnerRows[1];
-    i = 0;
     while i <= MAX_EXTRA_TURNS {
         if GetSymbol(RIGHT_REEL, reel2BiasRow - i) == biasSymbol {
             (*sSlotMachine).winnerRows[2] = reel2BiasRow;
@@ -1989,10 +2090,9 @@ pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel3_Bet1or2(biasSymbol: u8) ->
         }
         i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel3_Bet3(biasSymbol: u8) -> u8 {
-    let mut i: i16 = 0;
+pub(crate) unsafe fn DecideStop_Bias_Reel3_Bet3(biasSymbol: u8) -> u8 {
     let mut biasRow: i16 = 0;
     if (*sSlotMachine).winnerRows[0] == (*sSlotMachine).winnerRows[1] {
         return DecideStop_Bias_Reel3_Bet1or2(biasSymbol);
@@ -2002,7 +2102,7 @@ pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel3_Bet3(biasSymbol: u8) -> u8
     } else {
         biasRow = 1;
     }
-    i = 0;
+    let mut i: i16 = 0;
     while i <= MAX_EXTRA_TURNS {
         if GetSymbol(RIGHT_REEL, biasRow - i) == biasSymbol {
             (*sSlotMachine).reelExtraTurns[2] = i;
@@ -2011,16 +2111,16 @@ pub(crate) unsafe extern "C" fn DecideStop_Bias_Reel3_Bet3(biasSymbol: u8) -> u8
         }
         i += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel1() {
+pub(crate) unsafe fn DecideStop_NoBias_Reel1() {
     let mut i: i16 = 0;
     while AreCherriesOnScreen_Reel1(i) != 0 {
         i += 1;
     }
     (*sSlotMachine).reelExtraTurns[0] = i;
 }
-pub(crate) unsafe extern "C" fn IfSymbol7_SwitchColor(symbol: *mut u8) -> u8 {
+unsafe fn IfSymbol7_SwitchColor(symbol: *mut u8) -> u8 {
     if *symbol == SYMBOL_7_RED {
         *symbol = SYMBOL_7_BLUE;
         return TRUE;
@@ -2029,19 +2129,18 @@ pub(crate) unsafe extern "C" fn IfSymbol7_SwitchColor(symbol: *mut u8) -> u8 {
         *symbol = SYMBOL_7_RED;
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel2() {
+pub(crate) unsafe fn DecideStop_NoBias_Reel2() {
     sDecideStop_NoBias_Reel2_Bets[(*sSlotMachine).bet as i32 - 1].unwrap_unchecked()();
 }
-pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel2_Bet1() {
+pub(crate) unsafe fn DecideStop_NoBias_Reel2_Bet1() {
     if (*sSlotMachine).winnerRows[0] != 0
         && (*sSlotMachine).machineBias as i32 & BIAS_STRAIGHT_7 != 0
     {
         let mut reel1MiddleSym: u8 = GetSymbol(LEFT_REEL, 2 - (*sSlotMachine).reelExtraTurns[0]);
         if IfSymbol7_SwitchColor(&raw mut reel1MiddleSym) != 0 {
             let mut i: i16 = 0;
-            i = 0;
             while i <= MAX_EXTRA_TURNS {
                 if reel1MiddleSym == GetSymbol(MIDDLE_REEL, 2 - i) {
                     (*sSlotMachine).winnerRows[1] = 2;
@@ -2053,7 +2152,7 @@ pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel2_Bet1() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel2_Bet2() {
+pub(crate) unsafe fn DecideStop_NoBias_Reel2_Bet2() {
     if (*sSlotMachine).winnerRows[0] != 0
         && (*sSlotMachine).machineBias as i32 & BIAS_STRAIGHT_7 != 0
     {
@@ -2063,7 +2162,6 @@ pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel2_Bet2() {
         );
         if IfSymbol7_SwitchColor(&raw mut reel1BiasSym) != 0 {
             let mut i: i16 = 0;
-            i = 0;
             while i <= MAX_EXTRA_TURNS {
                 if reel1BiasSym == GetSymbol(MIDDLE_REEL, (*sSlotMachine).winnerRows[0] - i) {
                     (*sSlotMachine).winnerRows[1] = (*sSlotMachine).winnerRows[0];
@@ -2075,7 +2173,7 @@ pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel2_Bet2() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel2_Bet3() {
+pub(crate) unsafe fn DecideStop_NoBias_Reel2_Bet3() {
     let mut i: i16 = 0;
     let mut j: i16 = 0;
     let mut reel1BiasSym: u8 = 0;
@@ -2132,7 +2230,7 @@ pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel2_Bet3() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn MismatchedSyms_77(sym1: u8, sym2: u8) -> u8 {
+fn MismatchedSyms_77(sym1: u8, sym2: u8) -> u8 {
     if sym1 == SYMBOL_7_RED && sym2 == SYMBOL_7_BLUE
         || sym1 == SYMBOL_7_BLUE && sym2 == SYMBOL_7_RED
     {
@@ -2142,10 +2240,10 @@ pub(crate) unsafe extern "C" fn MismatchedSyms_77(sym1: u8, sym2: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn MismatchedSyms_777(sym1: u8, sym2: u8, sym3: u8) -> u8 {
+fn MismatchedSyms_777(sym1: u8, sym2: u8, sym3: u8) -> u8 {
     if sym1 == SYMBOL_7_RED && sym2 == SYMBOL_7_BLUE && sym3 == SYMBOL_7_RED
         || sym1 == SYMBOL_7_BLUE && sym2 == SYMBOL_7_RED && sym3 == SYMBOL_7_BLUE
     {
@@ -2155,10 +2253,10 @@ pub(crate) unsafe extern "C" fn MismatchedSyms_777(sym1: u8, sym2: u8, sym3: u8)
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn NeitherMatchNor7Mismatch(sym1: u8, sym2: u8, sym3: u8) -> u8 {
+fn NeitherMatchNor7Mismatch(sym1: u8, sym2: u8, sym3: u8) -> u8 {
     if sym1 == SYMBOL_7_RED && sym2 == SYMBOL_7_BLUE && sym3 == SYMBOL_7_RED
         || sym1 == SYMBOL_7_BLUE && sym2 == SYMBOL_7_RED && sym3 == SYMBOL_7_BLUE
         || sym1 == SYMBOL_7_RED && sym2 == SYMBOL_7_RED && sym3 == SYMBOL_7_BLUE
@@ -2167,15 +2265,15 @@ pub(crate) unsafe extern "C" fn NeitherMatchNor7Mismatch(sym1: u8, sym2: u8, sym
     {
         return FALSE;
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel3() {
+pub(crate) unsafe fn DecideStop_NoBias_Reel3() {
     sDecideStop_NoBias_Reel3_Bets[(*sSlotMachine).bet as i32 - 1].unwrap_unchecked()();
 }
-pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel3_Bet1() {
+pub(crate) unsafe fn DecideStop_NoBias_Reel3_Bet1() {
     let mut i: i16 = 0;
-    let mut sym1: u8 = GetSymbol(LEFT_REEL, 2 - (*sSlotMachine).reelExtraTurns[0]);
-    let mut sym2: u8 = GetSymbol(MIDDLE_REEL, 2 - (*sSlotMachine).reelExtraTurns[1]);
+    let sym1: u8 = GetSymbol(LEFT_REEL, 2 - (*sSlotMachine).reelExtraTurns[0]);
+    let sym2: u8 = GetSymbol(MIDDLE_REEL, 2 - (*sSlotMachine).reelExtraTurns[1]);
     if sym1 == sym2 {
         loop {
             let mut sym3: u8 = 0;
@@ -2212,7 +2310,7 @@ pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel3_Bet1() {
     }
     (*sSlotMachine).reelExtraTurns[2] = i;
 }
-pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel3_Bet2() {
+pub(crate) unsafe fn DecideStop_NoBias_Reel3_Bet2() {
     let mut extraTurns: i16 = 0;
     let mut i: i16 = 0;
     let mut sym1: u8 = 0;
@@ -2244,9 +2342,7 @@ pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel3_Bet2() {
     }
     loop {
         let mut numMatches: i16 = 0;
-        i = 1;
-        numMatches = 0;
-        while i <= 3 {
+        for i in 1..=3i16 {
             sym1 = GetSymbol(LEFT_REEL, i - (*sSlotMachine).reelExtraTurns[0]);
             sym2 = GetSymbol(MIDDLE_REEL, i - (*sSlotMachine).reelExtraTurns[1]);
             sym3 = GetSymbol(RIGHT_REEL, i - extraTurns);
@@ -2257,7 +2353,6 @@ pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel3_Bet2() {
                 numMatches += 1;
                 break;
             }
-            i += 1;
         }
         if numMatches == 0 {
             break;
@@ -2266,7 +2361,7 @@ pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel3_Bet2() {
     }
     (*sSlotMachine).reelExtraTurns[2] = extraTurns;
 }
-pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel3_Bet3() {
+pub(crate) unsafe fn DecideStop_NoBias_Reel3_Bet3() {
     let mut sym1: u8 = 0;
     let mut sym2: u8 = 0;
     let mut sym3: u8 = 0;
@@ -2326,22 +2421,22 @@ pub(crate) unsafe extern "C" fn DecideStop_NoBias_Reel3_Bet3() {
         (*sSlotMachine).reelExtraTurns[2] += 1;
     }
 }
-pub(crate) unsafe extern "C" fn PressStopReelButton(reelNum: u8) {
-    let mut taskId: u8 = CreateTask(Some(Task_PressStopReelButton), 5);
-    gTasks[taskId].data[15] = reelNum as i16;
+unsafe fn PressStopReelButton(reelNum: u8) {
+    let taskId: u8 = CreateTask(Some(Task_PressStopReelButton), 5);
+    task_set(taskId, 15, reelNum as i16);
     Task_PressStopReelButton(taskId);
 }
-pub(crate) unsafe extern "C" fn Task_PressStopReelButton(taskId: u8) {
-    sReelStopButtonTasks[gTasks[taskId].data[0]].unwrap_unchecked()(
-        &raw mut gTasks[taskId],
+pub(crate) unsafe fn Task_PressStopReelButton(taskId: u8) {
+    sReelStopButtonTasks[task_get(taskId, 0)].unwrap_unchecked()(
+        &raw mut (*gTasks.as_ptr())[taskId],
         taskId,
     );
 }
-pub(crate) unsafe extern "C" fn StopReelButton_Press(task: *mut Task, taskId: u8) {
+pub(crate) unsafe fn StopReelButton_Press(task: *mut Task, taskId: u8) {
     SetReelButtonTilemap(sReelButtonOffsets[(*task).data[15]], 0x62, 0x63, 0x72, 0x73);
     (*task).data[0] += 1;
 }
-pub(crate) unsafe extern "C" fn StopReelButton_Wait(task: *mut Task, taskId: u8) {
+pub(crate) unsafe fn StopReelButton_Wait(task: *mut Task, taskId: u8) {
     if ({
         (*task).data[1] += 1;
         (*task).data[1]
@@ -2350,146 +2445,135 @@ pub(crate) unsafe extern "C" fn StopReelButton_Wait(task: *mut Task, taskId: u8)
         (*task).data[0] += 1;
     }
 }
-pub(crate) unsafe extern "C" fn StopReelButton_Unpress(task: *mut Task, taskId: u8) {
+pub(crate) unsafe fn StopReelButton_Unpress(task: *mut Task, taskId: u8) {
     SetReelButtonTilemap(sReelButtonOffsets[(*task).data[15]], 0x42, 0x43, 0x52, 0x53);
     DestroyTask(taskId);
 }
-pub(crate) unsafe extern "C" fn LightenMatchLine(matchLineId: u8) {
+unsafe fn LightenMatchLine(matchLineId: u8) {
     LoadPalette(
         sLitMatchLinePalTable[matchLineId] as *mut c_void,
         sMatchLinePalOffsets[matchLineId] as u16,
         2,
     );
 }
-pub(crate) unsafe extern "C" fn DarkenMatchLine(matchLineId: u8) {
+unsafe fn DarkenMatchLine(matchLineId: u8) {
     LoadPalette(
         sDarkMatchLinePalTable[matchLineId] as *mut c_void,
         sMatchLinePalOffsets[matchLineId] as u16,
         2,
     );
 }
-pub(crate) unsafe extern "C" fn LightenBetTiles(betVal: u8) {
+unsafe fn LightenBetTiles(betVal: u8) {
     let mut i: u8 = 0;
-    i = 0;
     while i < sMatchLinesPerBet[betVal] {
         LightenMatchLine(sBetToMatchLineIds[betVal][i]);
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn DarkenBetTiles(betVal: u8) {
+unsafe fn DarkenBetTiles(betVal: u8) {
     let mut i: u8 = 0;
-    i = 0;
     while i < sMatchLinesPerBet[betVal] {
         DarkenMatchLine(sBetToMatchLineIds[betVal][i]);
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateInvisibleFlashMatchLineSprites() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 5 {
-        let mut spriteId: u8 = CreateInvisibleSprite(Some(SpriteCB_FlashMatchingLines));
-        gSprites[spriteId].data[0] = i as i16;
+unsafe fn CreateInvisibleFlashMatchLineSprites() {
+    for i in 0..5u8 {
+        let spriteId: u8 = CreateInvisibleSprite(Some(SpriteCB_FlashMatchingLines));
+        gSprites[spriteId].data[sMatchLineId] = i as i16;
         (*sSlotMachine).flashMatchLineSpriteIds[i] = spriteId;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn FlashMatchLine(matchLineId: u8) {
-    let mut sprite: *mut Sprite =
+unsafe fn FlashMatchLine(matchLineId: u8) {
+    let sprite: *mut Sprite =
         &raw mut gSprites[(*sSlotMachine).flashMatchLineSpriteIds[matchLineId]];
-    (*sprite).data[1] = TRUE as i16;
-    (*sprite).data[2] = 4;
+    (*sprite).data[sFlashing] = TRUE as i16;
+    (*sprite).data[sNumFullFlashes] = 4;
     (*sprite).data[3] = 0;
-    (*sprite).data[4] = 0;
-    (*sprite).data[5] = 2;
-    (*sprite).data[7] = FALSE as i16;
+    (*sprite).data[sColor] = 0;
+    (*sprite).data[sColorIncr] = 2;
+    (*sprite).data[sAtOriginalColor] = FALSE as i16;
 }
-pub(crate) unsafe extern "C" fn IsMatchLineDoneFlashingBeforePayout() -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 5 {
-        let mut sprite: *mut Sprite = &raw mut gSprites[(*sSlotMachine).flashMatchLineSpriteIds[i]];
-        if (*sprite).data[1] != 0 && (*sprite).data[2] != 0 {
+unsafe fn IsMatchLineDoneFlashingBeforePayout() -> u8 {
+    for i in 0..5u8 {
+        let sprite: *mut Sprite = &raw mut gSprites[(*sSlotMachine).flashMatchLineSpriteIds[i]];
+        if (*sprite).data[sFlashing] != 0 && (*sprite).data[sNumFullFlashes] != 0 {
             return FALSE;
         }
-        i += 1;
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn TryStopMatchLinesFlashing() -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 5 {
+unsafe fn TryStopMatchLinesFlashing() -> u8 {
+    for i in 0..5u8 {
         if TryStopMatchLineFlashing((*sSlotMachine).flashMatchLineSpriteIds[i]) == 0 {
             return FALSE;
         }
-        i += 1;
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn TryStopMatchLineFlashing(spriteId: u8) -> u8 {
-    let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
-    if (*sprite).data[1] == 0 {
+unsafe fn TryStopMatchLineFlashing(spriteId: u8) -> u8 {
+    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    if (*sprite).data[sFlashing] == 0 {
         return TRUE;
     }
-    if (*sprite).data[7] != 0 {
-        (*sprite).data[1] = FALSE as i16;
+    if (*sprite).data[sAtOriginalColor] != 0 {
+        (*sprite).data[sFlashing] = FALSE as i16;
     }
-    return (*sprite).data[7] as u8;
+    (*sprite).data[sAtOriginalColor] as u8
 }
-pub(crate) unsafe extern "C" fn SpriteCB_FlashMatchingLines(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_FlashMatchingLines(sprite: *mut Sprite) {
     let mut maxColorChange: i16 = 0;
-    if (*sprite).data[1] != 0 {
+    if (*sprite).data[sFlashing] != 0 {
         if ({
             let t1 = (*sprite).data[3];
             (*sprite).data[3] -= 1;
             t1
         }) == 0
         {
-            (*sprite).data[7] = FALSE as i16;
+            (*sprite).data[sAtOriginalColor] = FALSE as i16;
             (*sprite).data[3] = 1;
-            (*sprite).data[4] += (*sprite).data[5];
+            (*sprite).data[sColor] += (*sprite).data[sColorIncr];
             maxColorChange = 4;
-            if (*sprite).data[2] != 0 {
+            if (*sprite).data[sNumFullFlashes] != 0 {
                 maxColorChange = 8;
             }
-            if (*sprite).data[4] <= 0 {
-                (*sprite).data[7] = TRUE as i16;
-                (*sprite).data[5] = -(*sprite).data[5];
-                if (*sprite).data[2] != 0 {
-                    (*sprite).data[2] -= 1;
+            if (*sprite).data[sColor] <= 0 {
+                (*sprite).data[sAtOriginalColor] = TRUE as i16;
+                (*sprite).data[sColorIncr] = -(*sprite).data[sColorIncr];
+                if (*sprite).data[sNumFullFlashes] != 0 {
+                    (*sprite).data[sNumFullFlashes] -= 1;
                 }
-            } else if (*sprite).data[4] >= maxColorChange {
-                (*sprite).data[5] = -(*sprite).data[5];
+            } else if (*sprite).data[sColor] >= maxColorChange {
+                (*sprite).data[sColorIncr] = -(*sprite).data[sColorIncr];
             }
-            if (*sprite).data[2] != 0 {
+            if (*sprite).data[sNumFullFlashes] != 0 {
                 (*sprite).data[3] <<= 1;
             }
         }
         MultiplyPaletteRGBComponents(
-            sMatchLinePalOffsets[(*sprite).data[0]] as u16,
-            (*sprite).data[4] as u8,
-            (*sprite).data[4] as u8,
-            (*sprite).data[4] as u8,
+            sMatchLinePalOffsets[(*sprite).data[sMatchLineId]] as u16,
+            (*sprite).data[sColor] as u8,
+            (*sprite).data[sColor] as u8,
+            (*sprite).data[sColor] as u8,
         );
     }
 }
-pub(crate) unsafe extern "C" fn FlashSlotMachineLights() {
-    let mut taskId: u8 = CreateTask(Some(Task_FlashSlotMachineLights), 6);
-    gTasks[taskId].data[3] = 1;
+unsafe fn FlashSlotMachineLights() {
+    let taskId: u8 = CreateTask(Some(Task_FlashSlotMachineLights), 6);
+    task_set(taskId, sFlashDir, 1);
     Task_FlashSlotMachineLights(taskId);
 }
-pub(crate) unsafe extern "C" fn TryStopSlotMachineLights() -> u8 {
-    let mut taskId: u8 = FindTaskIdByFunc(Some(Task_FlashSlotMachineLights));
-    if gTasks[taskId].data[2] == 0 {
+unsafe fn TryStopSlotMachineLights() -> u8 {
+    let taskId: u8 = FindTaskIdByFunc(Some(Task_FlashSlotMachineLights));
+    if task_get(taskId, sFlashState) == 0 {
         DestroyTask(taskId);
         LoadPalette(*sSlotMachineMenu_Pal as *mut c_void, 16, 32);
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Task_FlashSlotMachineLights(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
+pub(crate) unsafe fn Task_FlashSlotMachineLights(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
     if ({
         let t1 = (*task).data[1];
         (*task).data[1] -= 1;
@@ -2497,53 +2581,56 @@ pub(crate) unsafe extern "C" fn Task_FlashSlotMachineLights(taskId: u8) {
     }) == 0
     {
         (*task).data[1] = 4;
-        (*task).data[2] += (*task).data[3];
-        if (*task).data[2] == 0 || (*task).data[2] == 2 {
-            (*task).data[3] = -(*task).data[3];
+        (*task).data[sFlashState] += (*task).data[sFlashDir];
+        if (*task).data[sFlashState] == 0 || (*task).data[sFlashState] == 2 {
+            (*task).data[sFlashDir] = -(*task).data[sFlashDir];
         }
     }
     LoadPalette(
-        sFlashingLightsPalTable[(*task).data[2]] as *mut c_void,
+        sFlashingLightsPalTable[(*task).data[sFlashState]] as *mut c_void,
         16,
         32,
     );
 }
-pub(crate) unsafe extern "C" fn CreatePikaPowerBoltTask() {
+unsafe fn CreatePikaPowerBoltTask() {
     (*sSlotMachine).pikaPowerBoltTaskId = CreateTask(Some(Task_CreatePikaPowerBolt), 8);
 }
-pub(crate) unsafe extern "C" fn AddPikaPowerBolt(bolts: u8) {
-    let mut task: *mut Task = &raw mut gTasks[(*sSlotMachine).pikaPowerBoltTaskId];
+unsafe fn AddPikaPowerBolt(bolts: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*sSlotMachine).pikaPowerBoltTaskId];
     ResetPikaPowerBoltTask(task);
-    (*task).data[0] = PIKABOLT_TASK_ADD_BOLT;
-    (*task).data[1] += 1;
-    (*task).data[15] = TRUE as i16;
+    (*task).data[tState] = PIKABOLT_TASK_ADD_BOLT;
+    (*task).data[tNumBolts] += 1;
+    (*task).data[tAnimating] = TRUE as i16;
 }
-pub(crate) unsafe extern "C" fn ResetPikaPowerBolts() {
-    let mut task: *mut Task = &raw mut gTasks[(*sSlotMachine).pikaPowerBoltTaskId];
+unsafe fn ResetPikaPowerBolts() {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*sSlotMachine).pikaPowerBoltTaskId];
     ResetPikaPowerBoltTask(task);
-    (*task).data[0] = PIKABOLT_TASK_CLEAR_ALL;
-    (*task).data[15] = TRUE as i16;
+    (*task).data[tState] = PIKABOLT_TASK_CLEAR_ALL;
+    (*task).data[tAnimating] = TRUE as i16;
 }
-pub(crate) unsafe extern "C" fn IsPikaPowerBoltAnimating() -> u8 {
-    return gTasks[(*sSlotMachine).pikaPowerBoltTaskId].data[15] as u8;
+unsafe fn IsPikaPowerBoltAnimating() -> u8 {
+    task_get((*sSlotMachine).pikaPowerBoltTaskId, tAnimating) as u8
 }
-pub(crate) unsafe extern "C" fn Task_CreatePikaPowerBolt(taskId: u8) {
-    sPikaPowerBoltTasks[gTasks[taskId].data[0]].unwrap_unchecked()(&raw mut gTasks[taskId]);
+pub(crate) unsafe fn Task_CreatePikaPowerBolt(taskId: u8) {
+    sPikaPowerBoltTasks[task_get(taskId, tState)].unwrap_unchecked()(
+        &raw mut (*gTasks.as_ptr())[taskId],
+    );
 }
-pub(crate) unsafe extern "C" fn PikaPowerBolt_Idle(task: *mut Task) {}
-pub(crate) unsafe extern "C" fn PikaPowerBolt_AddBolt(task: *mut Task) {
-    (*task).data[2] = CreatePikaPowerBoltSprite(((*task).data[1] << 3) + 20, 20) as i16;
-    (*task).data[0] += 1;
+pub(crate) fn PikaPowerBolt_Idle(task: *mut Task) {}
+pub(crate) unsafe fn PikaPowerBolt_AddBolt(task: *mut Task) {
+    (*task).data[tSpriteId] =
+        CreatePikaPowerBoltSprite(((*task).data[tNumBolts] << 3) + 20, 20) as i16;
+    (*task).data[tState] += 1;
 }
-pub(crate) unsafe extern "C" fn PikaPowerBolt_WaitAnim(task: *mut Task) {
-    if gSprites[(*task).data[2]].data[7] != 0 {
-        let mut r5: i16 = (*task).data[1] + 2;
+pub(crate) unsafe fn PikaPowerBolt_WaitAnim(task: *mut Task) {
+    if gSprites[(*task).data[tSpriteId]].data[7] != 0 {
+        let r5: i16 = (*task).data[tNumBolts] + 2;
         let mut r3: i16 = 0;
         let mut r2: i16 = 0;
-        if (*task).data[1] == 1 {
+        if (*task).data[tNumBolts] == 1 {
             r3 = 1;
             r2 = 1;
-        } else if (*task).data[1] == 16 {
+        } else if (*task).data[tNumBolts] == 16 {
             r3 = 2;
             r2 = 2;
         }
@@ -2554,19 +2641,19 @@ pub(crate) unsafe extern "C" fn PikaPowerBolt_WaitAnim(task: *mut Task) {
             2,
             r5 as u16 + 0x40,
         );
-        DestroyPikaPowerBoltSprite((*task).data[2] as u8);
-        (*task).data[0] = PIKABOLT_TASK_IDLE;
-        (*task).data[15] = 0;
+        DestroyPikaPowerBoltSprite((*task).data[tSpriteId] as u8);
+        (*task).data[tState] = PIKABOLT_TASK_IDLE;
+        (*task).data[tAnimating] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn PikaPowerBolt_ClearAll(task: *mut Task) {
-    let mut r5: i16 = (*task).data[1] + 2;
+pub(crate) unsafe fn PikaPowerBolt_ClearAll(task: *mut Task) {
+    let r5: i16 = (*task).data[tNumBolts] + 2;
     let mut r3: i16 = 0;
     let mut r2: i16 = 3;
-    if (*task).data[1] == 1 {
+    if (*task).data[tNumBolts] == 1 {
         r3 = 1;
         r2 = 1;
-    } else if (*task).data[1] == 16 {
+    } else if (*task).data[tNumBolts] == 16 {
         r3 = 2;
         r2 = 2;
     }
@@ -2578,7 +2665,7 @@ pub(crate) unsafe extern "C" fn PikaPowerBolt_ClearAll(task: *mut Task) {
             2,
             r5 as u16 + 0x40,
         );
-        (*task).data[1] -= 1;
+        (*task).data[tNumBolts] -= 1;
     }
     if ({
         (*task).data[2] += 1;
@@ -2587,25 +2674,21 @@ pub(crate) unsafe extern "C" fn PikaPowerBolt_ClearAll(task: *mut Task) {
     {
         (*task).data[2] = 0;
     }
-    if (*task).data[1] == 0 {
-        (*task).data[0] = PIKABOLT_TASK_IDLE;
-        (*task).data[15] = 0;
+    if (*task).data[tNumBolts] == 0 {
+        (*task).data[tState] = PIKABOLT_TASK_IDLE;
+        (*task).data[tAnimating] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn ResetPikaPowerBoltTask(task: *mut Task) {
-    let mut i: u8 = 0;
-    i = 2;
-    while i < NUM_TASK_DATA {
+unsafe fn ResetPikaPowerBoltTask(task: *mut Task) {
+    for i in 2..NUM_TASK_DATA {
         (*task).data[i] = 0;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn LoadPikaPowerMeter(bolts: u8) {
-    let mut i: i16 = 0;
+unsafe fn LoadPikaPowerMeter(bolts: u8) {
     let mut r3: i16 = 0;
     let mut r1: i16 = 0;
     let mut r4: i16 = 3;
-    i = 0;
+    let mut i: i16 = 0;
     while i < bolts as i16 {
         r3 = 0;
         r1 = 0;
@@ -2646,29 +2729,31 @@ pub(crate) unsafe extern "C" fn LoadPikaPowerMeter(bolts: u8) {
         i += 1;
         r4 += 1;
     }
-    gTasks[(*sSlotMachine).pikaPowerBoltTaskId].data[1] = bolts as i16;
+    task_set((*sSlotMachine).pikaPowerBoltTaskId, 1, bolts as i16);
 }
-pub(crate) unsafe extern "C" fn BeginReelTime() {
-    let mut taskId: u8 = CreateTask(Some(Task_ReelTime), 7);
+unsafe fn BeginReelTime() {
+    let taskId: u8 = CreateTask(Some(Task_ReelTime), 7);
     Task_ReelTime(taskId);
 }
-pub(crate) unsafe extern "C" fn IsReelTimeTaskDone() -> u8 {
+unsafe fn IsReelTimeTaskDone() -> u8 {
     if FindTaskIdByFunc(Some(Task_ReelTime)) == TAIL_SENTINEL {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Task_ReelTime(taskId: u8) {
-    sReelTimeTasks[gTasks[taskId].data[0]].unwrap_unchecked()(&raw mut gTasks[taskId]);
+pub(crate) unsafe fn Task_ReelTime(taskId: u8) {
+    sReelTimeTasks[task_get(taskId, tState)].unwrap_unchecked()(
+        &raw mut (*gTasks.as_ptr())[taskId],
+    );
 }
-pub(crate) unsafe extern "C" fn ReelTime_Init(task: *mut Task) {
+pub(crate) unsafe fn ReelTime_Init(task: *mut Task) {
     (*sSlotMachine).reelTimeSpinsLeft = 0;
     (*sSlotMachine).reeltimePixelOffset = 0;
     (*sSlotMachine).reeltimePosition = 0;
-    (*task).data[0] += 1;
+    (*task).data[tState] += 1;
     (*task).data[1] = 0;
     (*task).data[2] = 30;
-    (*task).data[4] = 1280;
+    (*task).data[tRtReelSpeed] = 1280;
     gSpriteCoordOffsetX = 0;
     gSpriteCoordOffsetY = 0;
     SetGpuReg(REG_OFFSET_BG1HOFS, 0);
@@ -2683,11 +2768,10 @@ pub(crate) unsafe extern "C" fn ReelTime_Init(task: *mut Task) {
     StopMapMusic();
     PlayNewMapMusic(MUS_ROULETTE);
 }
-pub(crate) unsafe extern "C" fn ReelTime_WindowEnter(task: *mut Task) {
-    let mut r3: i16 = 0;
+pub(crate) unsafe fn ReelTime_WindowEnter(task: *mut Task) {
     gSpriteCoordOffsetX -= 8;
     (*task).data[1] += 8;
-    r3 = (((*task).data[1] as i32 + 240 & 0xff) >> 3) as i16;
+    let r3: i16 = ((((*task).data[1] as i32 + 240) & 0xff) >> 3) as i16;
     SetGpuReg(REG_OFFSET_BG1HOFS, (*task).data[1] as u16 & 0x1ff);
     if r3 != (*task).data[2] && (*task).data[3] <= 18 {
         (*task).data[2] = r3;
@@ -2695,25 +2779,24 @@ pub(crate) unsafe extern "C" fn ReelTime_WindowEnter(task: *mut Task) {
         LoadReelTimeWindowTilemap(r3, (*task).data[3]);
     }
     if (*task).data[1] >= 200 {
-        (*task).data[0] += 1;
+        (*task).data[tState] += 1;
         (*task).data[3] = 0;
     }
-    AdvanceReeltimeReel((*task).data[4] >> 8);
+    AdvanceReeltimeReel((*task).data[tRtReelSpeed] >> 8);
 }
-pub(crate) unsafe extern "C" fn ReelTime_WaitStartPikachu(task: *mut Task) {
-    AdvanceReeltimeReel((*task).data[4] >> 8);
+pub(crate) unsafe fn ReelTime_WaitStartPikachu(task: *mut Task) {
+    AdvanceReeltimeReel((*task).data[tRtReelSpeed] >> 8);
     if ({
-        (*task).data[5] += 1;
-        (*task).data[5]
+        (*task).data[tTimer1] += 1;
+        (*task).data[tTimer1]
     }) >= 60
     {
-        (*task).data[0] += 1;
+        (*task).data[tState] += 1;
         CreateReelTimeBoltSprites();
         CreateReelTimePikachuAuraSprites();
     }
 }
-pub(crate) unsafe extern "C" fn ReelTime_PikachuSpeedUp1(task: *mut Task) {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn ReelTime_PikachuSpeedUp1(task: *mut Task) {
     let mut pikachuAnimIds: CArray<u8, 4> = zeroed();
     let mut reelTimeBoltDelays: CArray<i16, 4> = zeroed();
     let mut pikachuAuraFlashDelays: CArray<i16, 4> = zeroed();
@@ -2732,30 +2815,30 @@ pub(crate) unsafe extern "C" fn ReelTime_PikachuSpeedUp1(task: *mut Task) {
         sPikachuAuraFlashDelays.as_ptr().cast_mut() as *mut u8,
         8,
     );
-    AdvanceReeltimeReel((*task).data[4] >> 8);
-    (*task).data[4] -= 4;
-    i = 4 - ((*task).data[4] >> 8) as i32;
+    AdvanceReeltimeReel((*task).data[tRtReelSpeed] >> 8);
+    (*task).data[tRtReelSpeed] -= 4;
+    let i: i32 = 4 - ((*task).data[tRtReelSpeed] >> 8) as i32;
     SetReelTimeBoltDelay(reelTimeBoltDelays[i]);
     SetReelTimePikachuAuraFlashDelay(pikachuAuraFlashDelays[i]);
     StartSpriteAnimIfDifferent(
         &raw mut gSprites[(*sSlotMachine).reelTimePikachuSpriteId],
         pikachuAnimIds[i],
     );
-    if (*task).data[4] <= 0x100 {
-        (*task).data[0] += 1;
-        (*task).data[4] = 0x100;
-        (*task).data[5] = 0;
+    if (*task).data[tRtReelSpeed] <= 0x100 {
+        (*task).data[tState] += 1;
+        (*task).data[tRtReelSpeed] = 0x100;
+        (*task).data[tTimer1] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn ReelTime_PikachuSpeedUp2(task: *mut Task) {
-    AdvanceReeltimeReel((*task).data[4] >> 8);
+pub(crate) unsafe fn ReelTime_PikachuSpeedUp2(task: *mut Task) {
+    AdvanceReeltimeReel((*task).data[tRtReelSpeed] >> 8);
     if ({
-        (*task).data[5] += 1;
-        (*task).data[5]
+        (*task).data[tTimer1] += 1;
+        (*task).data[tTimer1]
     }) >= 80
     {
-        (*task).data[0] += 1;
-        (*task).data[5] = 0;
+        (*task).data[tState] += 1;
+        (*task).data[tTimer1] = 0;
         SetReelTimePikachuAuraFlashDelay(2);
         StartSpriteAnimIfDifferent(
             &raw mut gSprites[(*sSlotMachine).reelTimePikachuSpriteId],
@@ -2763,55 +2846,55 @@ pub(crate) unsafe extern "C" fn ReelTime_PikachuSpeedUp2(task: *mut Task) {
         );
     }
 }
-pub(crate) unsafe extern "C" fn ReelTime_WaitReel(task: *mut Task) {
-    AdvanceReeltimeReel((*task).data[4] >> 8);
-    (*task).data[4] = (*task).data[4] as u8 as i16 + 0x80;
+pub(crate) unsafe fn ReelTime_WaitReel(task: *mut Task) {
+    AdvanceReeltimeReel((*task).data[tRtReelSpeed] >> 8);
+    (*task).data[tRtReelSpeed] = (*task).data[tRtReelSpeed] as u8 as i16 + 0x80;
     if ({
-        (*task).data[5] += 1;
-        (*task).data[5]
+        (*task).data[tTimer1] += 1;
+        (*task).data[tTimer1]
     }) >= 80
     {
-        (*task).data[0] += 1;
-        (*task).data[5] = 0;
+        (*task).data[tState] += 1;
+        (*task).data[tTimer1] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn ReelTime_CheckExplode(task: *mut Task) {
-    AdvanceReeltimeReel((*task).data[4] >> 8);
-    (*task).data[4] = (*task).data[4] as u8 as i16 + 0x40;
+pub(crate) unsafe fn ReelTime_CheckExplode(task: *mut Task) {
+    AdvanceReeltimeReel((*task).data[tRtReelSpeed] >> 8);
+    (*task).data[tRtReelSpeed] = (*task).data[tRtReelSpeed] as u8 as i16 + 0x40;
     if ({
-        (*task).data[5] += 1;
-        (*task).data[5]
+        (*task).data[tTimer1] += 1;
+        (*task).data[tTimer1]
     }) >= 40
     {
-        (*task).data[5] = 0;
+        (*task).data[tTimer1] = 0;
         if (*sSlotMachine).reelTimeDraw != 0 {
-            if (*sSlotMachine).reelTimeSpinsLeft as i16 <= (*task).data[6] {
-                (*task).data[0] += 1;
+            if (*sSlotMachine).reelTimeSpinsLeft as i16 <= (*task).data[tExplodeChecks] {
+                (*task).data[tState] += 1;
             }
-        } else if (*task).data[6] > 3 {
-            (*task).data[0] += 1;
-        } else if ShouldReelTimeMachineExplode((*task).data[6] as u16) != 0 {
-            (*task).data[0] = RT_TASK_EXPLODE;
+        } else if (*task).data[tExplodeChecks] > 3 {
+            (*task).data[tState] += 1;
+        } else if ShouldReelTimeMachineExplode((*task).data[tExplodeChecks] as u16) != 0 {
+            (*task).data[tState] = RT_TASK_EXPLODE;
         }
-        (*task).data[6] += 1;
+        (*task).data[tExplodeChecks] += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ReelTime_LandOnOutcome(task: *mut Task) {
+pub(crate) unsafe fn ReelTime_LandOnOutcome(task: *mut Task) {
     let mut reeltimePixelOffset: i16 = (*sSlotMachine).reeltimePixelOffset % 20;
     if reeltimePixelOffset != 0 {
-        reeltimePixelOffset = AdvanceReeltimeReelToNextSymbol((*task).data[4] >> 8);
-        (*task).data[4] = (*task).data[4] as u8 as i16 + 0x40;
+        reeltimePixelOffset = AdvanceReeltimeReelToNextSymbol((*task).data[tRtReelSpeed] >> 8);
+        (*task).data[tRtReelSpeed] = (*task).data[tRtReelSpeed] as u8 as i16 + 0x40;
     } else if GetReelTimeSymbol(1) != (*sSlotMachine).reelTimeDraw {
-        AdvanceReeltimeReel((*task).data[4] >> 8);
+        AdvanceReeltimeReel((*task).data[tRtReelSpeed] >> 8);
         reeltimePixelOffset = (*sSlotMachine).reeltimePixelOffset % 20;
-        (*task).data[4] = (*task).data[4] as u8 as i16 + 0x40;
+        (*task).data[tRtReelSpeed] = (*task).data[tRtReelSpeed] as u8 as i16 + 0x40;
     }
     if reeltimePixelOffset == 0 && GetReelTimeSymbol(1) == (*sSlotMachine).reelTimeDraw {
-        (*task).data[4] = 0;
-        (*task).data[0] += 1;
+        (*task).data[tRtReelSpeed] = 0;
+        (*task).data[tState] += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ReelTime_PikachuReact(task: *mut Task) {
+pub(crate) unsafe fn ReelTime_PikachuReact(task: *mut Task) {
     if ({
         (*task).data[4] += 1;
         (*task).data[4]
@@ -2820,7 +2903,7 @@ pub(crate) unsafe extern "C" fn ReelTime_PikachuReact(task: *mut Task) {
         StopMapMusic();
         DestroyReelTimeBoltSprites();
         DestroyReelTimePikachuAuraSprites();
-        (*task).data[0] += 1;
+        (*task).data[tState] += 1;
         if (*sSlotMachine).reelTimeDraw == 0 {
             (*task).data[4] = 0xa0;
             StartSpriteAnimIfDifferent(
@@ -2843,7 +2926,7 @@ pub(crate) unsafe extern "C" fn ReelTime_PikachuReact(task: *mut Task) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn ReelTime_WaitClearPikaPower(task: *mut Task) {
+pub(crate) unsafe fn ReelTime_WaitClearPikaPower(task: *mut Task) {
     if ((*task).data[4] == 0
         || ({
             (*task).data[4] -= 1;
@@ -2851,23 +2934,22 @@ pub(crate) unsafe extern "C" fn ReelTime_WaitClearPikaPower(task: *mut Task) {
         }) == 0)
         && IsPikaPowerBoltAnimating() == 0
     {
-        (*task).data[0] += 1;
+        (*task).data[tState] += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ReelTime_CloseWindow(task: *mut Task) {
-    let mut r4: i16 = 0;
+pub(crate) unsafe fn ReelTime_CloseWindow(task: *mut Task) {
     gSpriteCoordOffsetX -= 8;
     (*task).data[1] += 8;
     (*task).data[3] += 8;
-    r4 = (((*task).data[1] as i32 - 8 & 0xff) >> 3) as i16;
+    let r4: i16 = ((((*task).data[1] as i32 - 8) & 0xff) >> 3) as i16;
     SetGpuReg(REG_OFFSET_BG1HOFS, (*task).data[1] as u16 & 0x1ff);
     if (*task).data[3] >> 3 <= 25 {
         ClearReelTimeWindowTilemap(r4);
     } else {
-        (*task).data[0] += 1;
+        (*task).data[tState] += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ReelTime_DestroySprites(task: *mut Task) {
+pub(crate) unsafe fn ReelTime_DestroySprites(task: *mut Task) {
     (*sSlotMachine).reelTimeSpinsUsed = 0;
     (*sSlotMachine).reelTimeSpinsLeft = (*sSlotMachine).reelTimeDraw;
     gSpriteCoordOffsetX = 0;
@@ -2881,19 +2963,19 @@ pub(crate) unsafe extern "C" fn ReelTime_DestroySprites(task: *mut Task) {
         DestroyTask(FindTaskIdByFunc(Some(Task_ReelTime)));
     } else {
         CreateDigitalDisplayScene(DIG_DISPLAY_REEL_TIME);
-        (*task).data[1] = ReelTimeSpeed() as i16;
-        (*task).data[2] = 0;
+        (*task).data[tReelSpeed] = ReelTimeSpeed() as i16;
+        (*task).data[tTimer3] = 0;
         (*task).data[3] = 0;
-        (*task).data[0] += 1;
+        (*task).data[tState] += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ReelTime_SetReelSpeed(task: *mut Task) {
-    if (*sSlotMachine).reelSpeed == (*task).data[1] {
-        (*task).data[0] += 1;
+pub(crate) unsafe fn ReelTime_SetReelSpeed(task: *mut Task) {
+    if (*sSlotMachine).reelSpeed == (*task).data[tReelSpeed] {
+        (*task).data[tState] += 1;
     } else if (*sSlotMachine).reelPixelOffsets[0] % 24 == 0
         && ({
-            (*task).data[2] += 1;
-            (*task).data[2]
+            (*task).data[tTimer3] += 1;
+            (*task).data[tTimer3]
         }) as i32
             & 0x07
             == 0
@@ -2901,12 +2983,12 @@ pub(crate) unsafe extern "C" fn ReelTime_SetReelSpeed(task: *mut Task) {
         (*sSlotMachine).reelSpeed >>= 1;
     }
 }
-pub(crate) unsafe extern "C" fn ReelTime_EndSuccess(task: *mut Task) {
+pub(crate) unsafe fn ReelTime_EndSuccess(task: *mut Task) {
     if IsDigitalDisplayAnimFinished() != 0 {
         DestroyTask(FindTaskIdByFunc(Some(Task_ReelTime)));
     }
 }
-pub(crate) unsafe extern "C" fn ReelTime_ExplodeMachine(task: *mut Task) {
+pub(crate) unsafe fn ReelTime_ExplodeMachine(task: *mut Task) {
     DestroyReelTimeMachineSprites();
     DestroyReelTimeBoltSprites();
     DestroyReelTimePikachuAuraSprites();
@@ -2916,22 +2998,22 @@ pub(crate) unsafe extern "C" fn ReelTime_ExplodeMachine(task: *mut Task) {
         &raw mut gSprites[(*sSlotMachine).reelTimePikachuSpriteId],
         5,
     );
-    (*task).data[0] += 1;
+    (*task).data[tState] += 1;
     (*task).data[4] = 4;
-    (*task).data[5] = 0;
+    (*task).data[tTimer1] = 0;
     StopMapMusic();
     PlayFanfare(MUS_TOO_BAD);
     PlaySE(SE_M_EXPLOSION);
 }
-pub(crate) unsafe extern "C" fn ReelTime_WaitExplode(task: *mut Task) {
+pub(crate) unsafe fn ReelTime_WaitExplode(task: *mut Task) {
     gSpriteCoordOffsetY = (*task).data[4];
     SetGpuReg(REG_OFFSET_BG1VOFS, (*task).data[4] as u16);
-    if (*task).data[5] as i32 & 0x01 != 0 {
+    if (*task).data[tTimer1] as i32 & 0x01 != 0 {
         (*task).data[4] = -(*task).data[4];
     }
     if ({
-        (*task).data[5] += 1;
-        (*task).data[5]
+        (*task).data[tTimer1] += 1;
+        (*task).data[tTimer1]
     }) as i32
         & 0x1f
         == 0
@@ -2944,19 +3026,19 @@ pub(crate) unsafe extern "C" fn ReelTime_WaitExplode(task: *mut Task) {
         CreateBrokenReelTimeMachineSprite();
         CreateReelTimeSmokeSprite();
         gSprites[(*sSlotMachine).reelTimeShadowSpriteIds[0]].set_invisible(0);
-        (*task).data[0] += 1;
-        (*task).data[5] = 0;
+        (*task).data[tState] += 1;
+        (*task).data[tTimer1] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn ReelTime_WaitSmoke(task: *mut Task) {
+pub(crate) unsafe fn ReelTime_WaitSmoke(task: *mut Task) {
     gSpriteCoordOffsetY = 0;
     SetGpuReg(REG_OFFSET_BG1VOFS, 0);
     if IsReelTimeSmokeAnimFinished() != 0 {
-        (*task).data[0] += 1;
+        (*task).data[tState] += 1;
         DestroyReelTimeSmokeSprite();
     }
 }
-pub(crate) unsafe extern "C" fn ReelTime_EndFailure(task: *mut Task) {
+pub(crate) unsafe fn ReelTime_EndFailure(task: *mut Task) {
     gSpriteCoordOffsetX = 0;
     SetGpuReg(REG_OFFSET_BG1HOFS, 0);
     PlayNewMapMusic((*sSlotMachine).backupMapMusic);
@@ -2966,10 +3048,8 @@ pub(crate) unsafe extern "C" fn ReelTime_EndFailure(task: *mut Task) {
     DestroyReelTimeDuckSprites();
     DestroyTask(FindTaskIdByFunc(Some(Task_ReelTime)));
 }
-pub(crate) unsafe extern "C" fn LoadReelTimeWindowTilemap(a0: i16, a1: i16) {
-    let mut i: i16 = 0;
-    i = 4;
-    while i < 15 {
+unsafe fn LoadReelTimeWindowTilemap(a0: i16, a1: i16) {
+    for i in 4..15i16 {
         LoadBgTilemap(
             1,
             (&raw const sReelTimeWindow_Tilemap[a1 as i32 + (i as i32 - 4) * 20]).cast_mut()
@@ -2977,28 +3057,24 @@ pub(crate) unsafe extern "C" fn LoadReelTimeWindowTilemap(a0: i16, a1: i16) {
             2,
             32 * i as u16 + a0 as u16,
         );
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ClearReelTimeWindowTilemap(a0: i16) {
-    let mut i: u8 = 0;
-    i = 4;
-    while i < 15 {
+unsafe fn ClearReelTimeWindowTilemap(a0: i16) {
+    for i in 4..15u8 {
         LoadBgTilemap(
             1,
             sEmptyTilemap.as_ptr().cast_mut() as *mut c_void,
             2,
             32 * i as u16 + a0 as u16,
         );
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn OpenInfoBox(digDisplayId: u8) {
-    let mut taskId: u8 = CreateTask(Some(Task_InfoBox), 1);
-    gTasks[taskId].data[1] = digDisplayId as i16;
+unsafe fn OpenInfoBox(digDisplayId: u8) {
+    let taskId: u8 = CreateTask(Some(Task_InfoBox), 1);
+    task_set(taskId, 1, digDisplayId as i16);
     Task_InfoBox(taskId);
 }
-pub(crate) unsafe extern "C" fn IsInfoBoxClosed() -> u8 {
+unsafe fn IsInfoBoxClosed() -> u8 {
     if FindTaskIdByFunc(Some(Task_InfoBox)) == TASK_NONE {
         return TRUE;
     } else {
@@ -3006,30 +3082,30 @@ pub(crate) unsafe extern "C" fn IsInfoBoxClosed() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn Task_InfoBox(taskId: u8) {
-    sInfoBoxTasks[gTasks[taskId].data[0]].unwrap_unchecked()(&raw mut gTasks[taskId]);
+pub(crate) unsafe fn Task_InfoBox(taskId: u8) {
+    sInfoBoxTasks[task_get(taskId, tState)].unwrap_unchecked()(&raw mut (*gTasks.as_ptr())[taskId]);
 }
-pub(crate) unsafe extern "C" fn InfoBox_FadeIn(task: *mut Task) {
+pub(crate) unsafe fn InfoBox_FadeIn(task: *mut Task) {
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-    (*task).data[0] += 1;
+    (*task).data[tState] += 1;
 }
-pub(crate) unsafe extern "C" fn InfoBox_WaitFade(task: *mut Task) {
+pub(crate) unsafe fn InfoBox_WaitFade(task: *mut Task) {
     if gPaletteFade.active() == 0 {
-        (*task).data[0] += 1;
+        (*task).data[tState] += 1;
     }
 }
-pub(crate) unsafe extern "C" fn InfoBox_DrawWindow(task: *mut Task) {
+pub(crate) unsafe fn InfoBox_DrawWindow(task: *mut Task) {
     DestroyDigitalDisplayScene();
     LoadInfoBoxTilemap();
     AddWindow((&raw const *sWindowTemplate_InfoBox).cast_mut());
     PutWindowTilemap(WIN_INFO);
     FillWindowPixelBuffer(WIN_INFO, 0);
-    (*task).data[0] += 1;
+    (*task).data[tState] += 1;
 }
-pub(crate) unsafe extern "C" fn InfoBox_AddText(task: *mut Task) {
+pub(crate) unsafe fn InfoBox_AddText(task: *mut Task) {
     AddTextPrinterParameterized3(
         WIN_INFO,
         FONT_NORMAL,
@@ -3037,59 +3113,55 @@ pub(crate) unsafe extern "C" fn InfoBox_AddText(task: *mut Task) {
         5,
         sColors_ReeltimeHelp.as_ptr().cast_mut(),
         0,
-        gText_ReelTimeHelp.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_ReelTimeHelp).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     CopyWindowToVram(WIN_INFO, COPYWIN_FULL);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-    (*task).data[0] += 1;
+    (*task).data[tState] += 1;
 }
-pub(crate) unsafe extern "C" fn InfoBox_WaitInput(task: *mut Task) {
+pub(crate) unsafe fn InfoBox_WaitInput(task: *mut Task) {
     if gMain.newKeys as i32 & 6 != 0 {
         FillWindowPixelBuffer(WIN_INFO, 0);
         ClearWindowTilemap(WIN_INFO);
         CopyWindowToVram(WIN_INFO, COPYWIN_MAP);
         RemoveWindow(WIN_INFO);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-        (*task).data[0] += 1;
+        (*task).data[tState] += 1;
     }
 }
-pub(crate) unsafe extern "C" fn InfoBox_LoadSlotMachineTilemap(task: *mut Task) {
+pub(crate) unsafe fn InfoBox_LoadSlotMachineTilemap(task: *mut Task) {
     LoadSlotMachineMenuTilemap();
     ShowBg(3);
-    (*task).data[0] += 1;
+    (*task).data[tState] += 1;
 }
-pub(crate) unsafe extern "C" fn InfoBox_CreateDigitalDisplay(task: *mut Task) {
+pub(crate) unsafe fn InfoBox_CreateDigitalDisplay(task: *mut Task) {
     CreateDigitalDisplayScene((*task).data[1] as u8);
-    (*task).data[0] += 1;
+    (*task).data[tState] += 1;
 }
-pub(crate) unsafe extern "C" fn InfoBox_LoadPikaPowerMeter(task: *mut Task) {
+pub(crate) unsafe fn InfoBox_LoadPikaPowerMeter(task: *mut Task) {
     LoadPikaPowerMeter((*sSlotMachine).pikaPowerBolts);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
-    (*task).data[0] += 1;
+    (*task).data[tState] += 1;
 }
-pub(crate) unsafe extern "C" fn InfoBox_FreeTask(task: *mut Task) {
+pub(crate) unsafe fn InfoBox_FreeTask(task: *mut Task) {
     DestroyTask(FindTaskIdByFunc(Some(Task_InfoBox)));
 }
-pub(crate) unsafe extern "C" fn CreateDigitalDisplayTask() {
-    let mut i: u8 = 0;
-    let mut task: *mut Task = null_mut();
-    i = CreateTask(Some(Task_DigitalDisplay), 3);
+unsafe fn CreateDigitalDisplayTask() {
+    let i: u8 = CreateTask(Some(Task_DigitalDisplay), 3);
     (*sSlotMachine).digDisplayTaskId = i;
-    task = &raw mut gTasks[i];
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[i];
     (*task).data[1] = -1;
-    i = 4;
-    while i < NUM_TASK_DATA {
+    for i in 4..NUM_TASK_DATA {
         (*task).data[i] = MAX_SPRITES as i16;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateDigitalDisplayScene(id: u8) {
-    let mut i: u8 = 0;
-    let mut task: *mut Task = null_mut();
+unsafe fn CreateDigitalDisplayScene(id: u8) {
     DestroyDigitalDisplayScene();
-    task = &raw mut gTasks[(*sSlotMachine).digDisplayTaskId];
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*sSlotMachine).digDisplayTaskId];
     (*task).data[1] = id as i16;
-    i = 0;
+    let mut i: u8 = 0;
     while (*sDigitalDisplayScenes[id].at(i)).spriteTemplateId != 255 {
         let mut spriteId: u8 = 0;
         spriteId = CreateStdDigitalDisplaySprite(
@@ -3101,68 +3173,59 @@ pub(crate) unsafe extern "C" fn CreateDigitalDisplayScene(id: u8) {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn AddDigitalDisplaySprite(
+unsafe fn AddDigitalDisplaySprite(
     templateIdx: u8,
-    callback: Option<unsafe extern "C" fn(*mut Sprite)>,
+    callback: Option<unsafe fn(*mut Sprite)>,
     x: i16,
     y: i16,
     spriteId: i16,
 ) {
-    let mut i: u8 = 0;
-    let mut task: *mut Task = &raw mut gTasks[(*sSlotMachine).digDisplayTaskId];
-    i = 4;
-    while i < NUM_TASK_DATA {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*sSlotMachine).digDisplayTaskId];
+    for i in 4..NUM_TASK_DATA {
         if (*task).data[i] == MAX_SPRITES as i16 {
             (*task).data[i] =
                 CreateDigitalDisplaySprite(templateIdx, callback, x, y, spriteId) as i16;
             break;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyDigitalDisplayScene() {
-    let mut i: u8 = 0;
-    let mut task: *mut Task = &raw mut gTasks[(*sSlotMachine).digDisplayTaskId];
+unsafe fn DestroyDigitalDisplayScene() {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*sSlotMachine).digDisplayTaskId];
     if (*task).data[1] as u16 != 0xFFFF {
         sDigitalDisplaySceneExitCallbacks[(*task).data[1]].unwrap_unchecked()();
     }
-    i = 4;
-    while i < NUM_TASK_DATA {
+    for i in 4..NUM_TASK_DATA {
         if (*task).data[i] != MAX_SPRITES as i16 {
             DestroySprite(&raw mut gSprites[(*task).data[i]]);
             (*task).data[i] = MAX_SPRITES as i16;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn IsDigitalDisplayAnimFinished() -> u8 {
-    let mut i: u8 = 0;
-    let mut task: *mut Task = &raw mut gTasks[(*sSlotMachine).digDisplayTaskId];
-    i = 4;
-    while i < NUM_TASK_DATA {
-        if (*task).data[i] != MAX_SPRITES as i16 {
-            if gSprites[(*task).data[i]].data[7] != 0 {
-                return FALSE;
-            }
+unsafe fn IsDigitalDisplayAnimFinished() -> u8 {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[(*sSlotMachine).digDisplayTaskId];
+    for i in 4..NUM_TASK_DATA {
+        if (*task).data[i] != MAX_SPRITES as i16
+            && gSprites[(*task).data[i]].data[sWaitForAnim] != 0
+        {
+            return FALSE;
         }
-        i += 1;
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn Task_DigitalDisplay(taskId: u8) {
-    sDigitalDisplayTasks[gTasks[taskId].data[0]].unwrap_unchecked()(&raw mut gTasks[taskId]);
+pub(crate) unsafe fn Task_DigitalDisplay(taskId: u8) {
+    sDigitalDisplayTasks[task_get(taskId, 0)].unwrap_unchecked()(
+        &raw mut (*gTasks.as_ptr())[taskId],
+    );
 }
-pub(crate) unsafe extern "C" fn DigitalDisplay_Idle(task: *mut Task) {}
-pub(crate) unsafe extern "C" fn CreateReelSymbolSprites() {
-    let mut i: i16 = 0;
+pub(crate) fn DigitalDisplay_Idle(task: *mut Task) {}
+unsafe fn CreateReelSymbolSprites() {
     let mut j: i16 = 0;
-    let mut x: i16 = 0;
-    i = 0;
-    x = 0x30;
+    let mut i: i16 = 0;
+    let mut x: i16 = 0x30;
     while i < 3 {
         j = 0;
         while j < 120 {
-            let mut sprite: *mut Sprite = gSprites.as_mut_ptr().at(CreateSprite(
+            let sprite: *mut Sprite = gSprites.as_mut_ptr().at(CreateSprite(
                 (&raw const *sSpriteTemplate_ReelSymbol).cast_mut(),
                 x,
                 0,
@@ -3178,9 +3241,9 @@ pub(crate) unsafe extern "C" fn CreateReelSymbolSprites() {
         x += 0x28;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ReelSymbol(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ReelSymbol(sprite: *mut Sprite) {
     (*sprite).data[2] = (*sSlotMachine).reelPixelOffsets[(*sprite).data[0]] + (*sprite).data[1];
-    (*sprite).data[2] = (*sprite).data[2] % 120;
+    (*sprite).data[2] %= 120;
     (*sprite).y =
         (*sSlotMachine).reelShockOffsets[(*sprite).data[0]] as i16 + 28 + (*sprite).data[2];
     (*sprite).sheetTileStart = GetSpriteTileStartByTag(GetSymbolAtRest(
@@ -3189,11 +3252,9 @@ pub(crate) unsafe extern "C" fn SpriteCB_ReelSymbol(sprite: *mut Sprite) {
     ) as u16);
     SetSpriteSheetFrameTileNum(sprite);
 }
-pub(crate) unsafe extern "C" fn CreateCreditPayoutNumberSprites() {
-    let mut i: i16 = 0;
-    let mut x: i16 = 0;
-    x = 203;
-    i = 1;
+unsafe fn CreateCreditPayoutNumberSprites() {
+    let mut x: i16 = 203;
+    let mut i: i16 = 1;
     while i <= MAX_COINS {
         CreateCoinNumberSprite(x, 23, FALSE, i);
         i *= 10;
@@ -3207,40 +3268,35 @@ pub(crate) unsafe extern "C" fn CreateCreditPayoutNumberSprites() {
         x -= 7;
     }
 }
-pub(crate) unsafe extern "C" fn CreateCoinNumberSprite(
-    x: i16,
-    y: i16,
-    isPayout: u8,
-    digitMult: i16,
-) {
-    let mut sprite: *mut Sprite = &raw mut gSprites[CreateSprite(
+unsafe fn CreateCoinNumberSprite(x: i16, y: i16, isPayout: u8, digitMult: i16) {
+    let sprite: *mut Sprite = &raw mut gSprites[CreateSprite(
         (&raw const *sSpriteTemplate_CoinNumber).cast_mut(),
         x,
         y,
         13,
     )];
     (*sprite).oam.set_priority(2);
-    (*sprite).data[0] = isPayout as i16;
-    (*sprite).data[1] = digitMult;
-    (*sprite).data[2] = digitMult * 10;
-    (*sprite).data[3] = -1;
+    (*sprite).data[sIsPayout] = isPayout as i16;
+    (*sprite).data[sDigitMin] = digitMult;
+    (*sprite).data[sDigitMax] = digitMult * 10;
+    (*sprite).data[sCurNum] = -1;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_CoinNumber(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_CoinNumber(sprite: *mut Sprite) {
     let mut tag: u16 = (*sSlotMachine).coins as u16;
-    if (*sprite).data[0] != 0 {
+    if (*sprite).data[sIsPayout] != 0 {
         tag = (*sSlotMachine).payout as u16;
     }
-    if (*sprite).data[3] as i32 != tag as i32 {
-        (*sprite).data[3] = tag as i16;
-        tag = rem_i32(tag as i32, (*sprite).data[2] as u16 as i32) as u16;
-        tag = div_i32(tag as i32, (*sprite).data[1] as u16 as i32) as u16;
+    if (*sprite).data[sCurNum] as i32 != tag as i32 {
+        (*sprite).data[sCurNum] = tag as i16;
+        tag = rem_i32(tag as i32, (*sprite).data[sDigitMax] as u16 as i32) as u16;
+        tag = div_i32(tag as i32, (*sprite).data[sDigitMin] as u16 as i32) as u16;
         tag += GFXTAG_NUM_0;
         (*sprite).sheetTileStart = GetSpriteTileStartByTag(tag);
         SetSpriteSheetFrameTileNum(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn CreateReelBackgroundSprite() {
-    let mut spriteId: u8 = CreateSprite(
+unsafe fn CreateReelBackgroundSprite() {
+    let spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_ReelBackground).cast_mut(),
         88,
         72,
@@ -3252,9 +3308,7 @@ pub(crate) unsafe extern "C" fn CreateReelBackgroundSprite() {
         sSubspriteTable_ReelBackground.as_ptr().cast_mut(),
     );
 }
-pub(crate) unsafe extern "C" fn CreateReelTimePikachuSprite() {
-    let mut spriteTemplate: SpriteTemplate = zeroed();
-    let mut spriteId: u8 = 0;
+unsafe fn CreateReelTimePikachuSprite() {
     if sImageTable_ReelTimePikachu.is_null() {
         sImageTable_ReelTimePikachu = AllocZeroed(40) as *mut SpriteFrameImage;
     }
@@ -3268,21 +3322,21 @@ pub(crate) unsafe extern "C" fn CreateReelTimePikachuSprite() {
     (*sImageTable_ReelTimePikachu.at(3)).size = 0x800;
     (*sImageTable_ReelTimePikachu.at(4)).data = sReelTimeGfxPtr.at(8192) as *mut c_void;
     (*sImageTable_ReelTimePikachu.at(4)).size = 0x800;
-    spriteTemplate = *sSpriteTemplate_ReelTimePikachu;
+    let mut spriteTemplate: SpriteTemplate = *sSpriteTemplate_ReelTimePikachu;
     spriteTemplate.images = sImageTable_ReelTimePikachu;
-    spriteId = CreateSprite(&raw mut spriteTemplate, 280, 80, 1);
+    let spriteId: u8 = CreateSprite(&raw mut spriteTemplate, 280, 80, 1);
     gSprites[spriteId].oam.set_priority(1);
     gSprites[spriteId].set_coordOffsetEnabled(TRUE as u16);
     (*sSlotMachine).reelTimePikachuSpriteId = spriteId;
 }
-pub(crate) unsafe extern "C" fn DestroyReelTimePikachuSprite() {
+unsafe fn DestroyReelTimePikachuSprite() {
     DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimePikachuSpriteId]);
     if !sImageTable_ReelTimePikachu.is_null() {
         Free(sImageTable_ReelTimePikachu as *mut c_void);
         sImageTable_ReelTimePikachu = null_mut();
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ReelTimePikachu(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ReelTimePikachu(sprite: *mut Sprite) {
     (*sprite).y2 = {
         (*sprite).x2 = 0;
         (*sprite).x2
@@ -3299,19 +3353,16 @@ pub(crate) unsafe extern "C" fn SpriteCB_ReelTimePikachu(sprite: *mut Sprite) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn CreateReelTimeMachineSprites() {
-    let mut spriteTemplate: SpriteTemplate = zeroed();
-    let mut spriteId: u8 = 0;
-    let mut sprite: *mut Sprite = null_mut();
+unsafe fn CreateReelTimeMachineSprites() {
     if sImageTable_ReelTimeMachineAntennae.is_null() {
         sImageTable_ReelTimeMachineAntennae = AllocZeroed(8) as *mut SpriteFrameImage;
     }
     (*sImageTable_ReelTimeMachineAntennae).data = sReelTimeGfxPtr.at(10240) as *mut c_void;
     (*sImageTable_ReelTimeMachineAntennae).size = 0x300;
-    spriteTemplate = *sSpriteTemplate_ReelTimeMachineAntennae;
+    let mut spriteTemplate: SpriteTemplate = *sSpriteTemplate_ReelTimeMachineAntennae;
     spriteTemplate.images = sImageTable_ReelTimeMachineAntennae;
-    spriteId = CreateSprite(&raw mut spriteTemplate, 368, 52, 7);
-    sprite = &raw mut gSprites[spriteId];
+    let mut spriteId: u8 = CreateSprite(&raw mut spriteTemplate, 368, 52, 7);
+    let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
     (*sprite).oam.set_priority(1);
     (*sprite).set_coordOffsetEnabled(TRUE as u16);
     SetSubspriteTables(
@@ -3333,19 +3384,16 @@ pub(crate) unsafe extern "C" fn CreateReelTimeMachineSprites() {
     SetSubspriteTables(sprite, sSubspriteTable_ReelTimeMachine.as_ptr().cast_mut());
     (*sSlotMachine).reelTimeMachineSpriteIds[1] = spriteId;
 }
-pub(crate) unsafe extern "C" fn CreateBrokenReelTimeMachineSprite() {
-    let mut spriteTemplate: SpriteTemplate = zeroed();
-    let mut spriteId: u8 = 0;
-    let mut sprite: *mut Sprite = null_mut();
+unsafe fn CreateBrokenReelTimeMachineSprite() {
     if sImageTable_BrokenReelTimeMachine.is_null() {
         sImageTable_BrokenReelTimeMachine = AllocZeroed(8) as *mut SpriteFrameImage;
     }
     (*sImageTable_BrokenReelTimeMachine).data = sReelTimeGfxPtr.at(12288) as *mut c_void;
     (*sImageTable_BrokenReelTimeMachine).size = 0x600;
-    spriteTemplate = *sSpriteTemplate_BrokenReelTimeMachine;
+    let mut spriteTemplate: SpriteTemplate = *sSpriteTemplate_BrokenReelTimeMachine;
     spriteTemplate.images = sImageTable_BrokenReelTimeMachine;
-    spriteId = CreateSprite(&raw mut spriteTemplate, 168 - gSpriteCoordOffsetX, 80, 7);
-    sprite = &raw mut gSprites[spriteId];
+    let spriteId: u8 = CreateSprite(&raw mut spriteTemplate, 168 - gSpriteCoordOffsetX, 80, 7);
+    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
     (*sprite).oam.set_priority(1);
     (*sprite).set_coordOffsetEnabled(TRUE as u16);
     SetSubspriteTables(
@@ -3354,19 +3402,17 @@ pub(crate) unsafe extern "C" fn CreateBrokenReelTimeMachineSprite() {
     );
     (*sSlotMachine).reelTimeBrokenMachineSpriteId = spriteId;
 }
-pub(crate) unsafe extern "C" fn CreateReelTimeNumberSprites() {
+unsafe fn CreateReelTimeNumberSprites() {
     let mut i: u8 = 0;
     let mut r5: i16 = 0;
-    i = 0;
-    r5 = 0;
     while i < 3 {
-        let mut spriteId: u8 = CreateSprite(
+        let spriteId: u8 = CreateSprite(
             (&raw const *sSpriteTemplate_ReelTimeNumbers).cast_mut(),
             368,
             0,
             10,
         );
-        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
         (*sprite).oam.set_priority(1);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
         (*sprite).data[7] = r5;
@@ -3375,14 +3421,14 @@ pub(crate) unsafe extern "C" fn CreateReelTimeNumberSprites() {
         r5 += 20;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ReelTimeNumbers(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ReelTimeNumbers(sprite: *mut Sprite) {
     let mut r0: i16 =
         (*sSlotMachine).reeltimePixelOffset as u16 as i16 + (*sprite).data[7] as u16 as i16;
-    r0 = r0 % 40;
+    r0 %= 40;
     (*sprite).y = r0 + 59;
     StartSpriteAnimIfDifferent(sprite, GetReelTimeSymbol(r0 / 20));
 }
-pub(crate) unsafe extern "C" fn CreateReelTimeShadowSprites() {
+unsafe fn CreateReelTimeShadowSprites() {
     let mut spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_ReelTimeShadow).cast_mut(),
         368,
@@ -3406,14 +3452,14 @@ pub(crate) unsafe extern "C" fn CreateReelTimeShadowSprites() {
     SetSubspriteTables(sprite, sSubspriteTable_ReelTimeShadow.as_ptr().cast_mut());
     (*sSlotMachine).reelTimeShadowSpriteIds[1] = spriteId;
 }
-pub(crate) unsafe extern "C" fn CreateReelTimeNumberGapSprite() {
-    let mut spriteId: u8 = CreateSprite(
+unsafe fn CreateReelTimeNumberGapSprite() {
+    let spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_ReelTimeNumberGap).cast_mut(),
         368,
         76,
         11,
     );
-    let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
     (*sprite).set_coordOffsetEnabled(TRUE as u16);
     (*sprite).oam.set_priority(1);
     SetSubspriteTables(
@@ -3422,13 +3468,10 @@ pub(crate) unsafe extern "C" fn CreateReelTimeNumberGapSprite() {
     );
     (*sSlotMachine).reelTimeNumberGapSpriteId = spriteId;
 }
-pub(crate) unsafe extern "C" fn DestroyReelTimeMachineSprites() {
-    let mut i: u8 = 0;
+unsafe fn DestroyReelTimeMachineSprites() {
     DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeNumberGapSpriteId]);
-    i = 0;
-    while i < 2 {
+    for i in 0..2u8 {
         DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeMachineSpriteIds[i]]);
-        i += 1;
     }
     if !sImageTable_ReelTimeMachineAntennae.is_null() {
         Free(sImageTable_ReelTimeMachineAntennae as *mut c_void);
@@ -3438,28 +3481,23 @@ pub(crate) unsafe extern "C" fn DestroyReelTimeMachineSprites() {
         Free(sImageTable_ReelTimeMachine as *mut c_void);
         sImageTable_ReelTimeMachine = null_mut();
     }
-    i = 0;
-    while i < 3 {
+    for i in 0..3u8 {
         DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeNumberSpriteIds[i]]);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyReelTimeShadowSprites() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 2 {
+unsafe fn DestroyReelTimeShadowSprites() {
+    for i in 0..2u8 {
         DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeShadowSpriteIds[i]]);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyBrokenReelTimeMachineSprite() {
+unsafe fn DestroyBrokenReelTimeMachineSprite() {
     DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeBrokenMachineSpriteId]);
     if !sImageTable_BrokenReelTimeMachine.is_null() {
         Free(sImageTable_BrokenReelTimeMachine as *mut c_void);
         sImageTable_BrokenReelTimeMachine = null_mut();
     }
 }
-pub(crate) unsafe extern "C" fn CreateReelTimeBoltSprites() {
+unsafe fn CreateReelTimeBoltSprites() {
     let mut spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_ReelTimeBolt).cast_mut(),
         152,
@@ -3471,9 +3509,9 @@ pub(crate) unsafe extern "C" fn CreateReelTimeBoltSprites() {
     (*sprite).set_hFlip(TRUE as u16);
     (*sSlotMachine).reelTimeBoltSpriteIds[0] = spriteId;
     (*sprite).data[0] = 8;
-    (*sprite).data[1] = -1;
-    (*sprite).data[2] = -1;
-    (*sprite).data[7] = 32;
+    (*sprite).data[sXDir] = -1;
+    (*sprite).data[sYDir] = -1;
+    (*sprite).data[sDelay] = 32;
     spriteId = CreateSprite(
         (&raw const *sSpriteTemplate_ReelTimeBolt).cast_mut(),
         184,
@@ -3483,11 +3521,11 @@ pub(crate) unsafe extern "C" fn CreateReelTimeBoltSprites() {
     sprite = &raw mut gSprites[spriteId];
     (*sprite).oam.set_priority(1);
     (*sSlotMachine).reelTimeBoltSpriteIds[1] = spriteId;
-    (*sprite).data[1] = 1;
-    (*sprite).data[2] = -1;
-    (*sprite).data[7] = 32;
+    (*sprite).data[sXDir] = 1;
+    (*sprite).data[sYDir] = -1;
+    (*sprite).data[sDelay] = 32;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ReelTimeBolt(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ReelTimeBolt(sprite: *mut Sprite) {
     if (*sprite).data[0] != 0 {
         (*sprite).data[0] -= 1;
         (*sprite).x2 = 0;
@@ -3495,31 +3533,28 @@ pub(crate) unsafe extern "C" fn SpriteCB_ReelTimeBolt(sprite: *mut Sprite) {
         (*sprite).set_invisible(TRUE as u16);
     } else {
         (*sprite).set_invisible(FALSE as u16);
-        (*sprite).x2 += (*sprite).data[1];
-        (*sprite).y2 += (*sprite).data[2];
+        (*sprite).x2 += (*sprite).data[sXDir];
+        (*sprite).y2 += (*sprite).data[sYDir];
         if ({
             (*sprite).data[3] += 1;
             (*sprite).data[3]
         }) >= 8
         {
-            (*sprite).data[0] = (*sprite).data[7];
+            (*sprite).data[0] = (*sprite).data[sDelay];
             (*sprite).data[3] = 0;
         }
     }
 }
-pub(crate) unsafe extern "C" fn SetReelTimeBoltDelay(delay: i16) {
-    gSprites[(*sSlotMachine).reelTimeBoltSpriteIds[0]].data[7] = delay;
-    gSprites[(*sSlotMachine).reelTimeBoltSpriteIds[1]].data[7] = delay;
+unsafe fn SetReelTimeBoltDelay(delay: i16) {
+    gSprites[(*sSlotMachine).reelTimeBoltSpriteIds[0]].data[sDelay] = delay;
+    gSprites[(*sSlotMachine).reelTimeBoltSpriteIds[1]].data[sDelay] = delay;
 }
-pub(crate) unsafe extern "C" fn DestroyReelTimeBoltSprites() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 2 {
+unsafe fn DestroyReelTimeBoltSprites() {
+    for i in 0..2u8 {
         DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeBoltSpriteIds[i]]);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateReelTimePikachuAuraSprites() {
+unsafe fn CreateReelTimePikachuAuraSprites() {
     let mut spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_ReelTimePikachuAura).cast_mut(),
         72,
@@ -3527,10 +3562,10 @@ pub(crate) unsafe extern "C" fn CreateReelTimePikachuAuraSprites() {
         3,
     );
     gSprites[spriteId].oam.set_priority(1);
-    gSprites[spriteId].data[0] = TRUE as i16;
-    gSprites[spriteId].data[5] = 0;
+    gSprites[spriteId].data[sFlashPal] = TRUE as i16;
+    gSprites[spriteId].data[sColorIdx] = 0;
     gSprites[spriteId].data[6] = 16;
-    gSprites[spriteId].data[7] = 8;
+    gSprites[spriteId].data[sDelay] = 8;
     (*sSlotMachine).reelTimePikachuAuraSpriteIds[0] = spriteId;
     spriteId = CreateSprite(
         (&raw const *sSpriteTemplate_ReelTimePikachuAura).cast_mut(),
@@ -3542,9 +3577,9 @@ pub(crate) unsafe extern "C" fn CreateReelTimePikachuAuraSprites() {
     gSprites[spriteId].set_hFlip(TRUE as u16);
     (*sSlotMachine).reelTimePikachuAuraSpriteIds[1] = spriteId;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ReelTimePikachuAura(sprite: *mut Sprite) {
-    let mut colors: CArray<u8, 2> = CArray([16, 0]);
-    if (*sprite).data[0] != 0
+pub(crate) unsafe fn SpriteCB_ReelTimePikachuAura(sprite: *mut Sprite) {
+    let colors: CArray<u8, 2> = CArray([16, 0]);
+    if (*sprite).data[sFlashPal] != 0
         && ({
             (*sprite).data[6] -= 1;
             (*sprite).data[6]
@@ -3552,34 +3587,31 @@ pub(crate) unsafe extern "C" fn SpriteCB_ReelTimePikachuAura(sprite: *mut Sprite
     {
         MultiplyInvertedPaletteRGBComponents(
             0x100 + IndexOfSpritePaletteTag(PALTAG_PIKA_AURA) as u16 * 16 + 3,
-            colors[(*sprite).data[5]],
-            colors[(*sprite).data[5]],
-            colors[(*sprite).data[5]],
+            colors[(*sprite).data[sColorIdx]],
+            colors[(*sprite).data[sColorIdx]],
+            colors[(*sprite).data[sColorIdx]],
         );
-        (*sprite).data[5] += 1;
-        (*sprite).data[5] &= 1;
-        (*sprite).data[6] = (*sprite).data[7];
+        (*sprite).data[sColorIdx] += 1;
+        (*sprite).data[sColorIdx] &= 1;
+        (*sprite).data[6] = (*sprite).data[sDelay];
     }
 }
-pub(crate) unsafe extern "C" fn SetReelTimePikachuAuraFlashDelay(delay: i16) {
-    gSprites[(*sSlotMachine).reelTimePikachuAuraSpriteIds[0]].data[7] = delay;
+unsafe fn SetReelTimePikachuAuraFlashDelay(delay: i16) {
+    gSprites[(*sSlotMachine).reelTimePikachuAuraSpriteIds[0]].data[sDelay] = delay;
 }
-pub(crate) unsafe extern "C" fn DestroyReelTimePikachuAuraSprites() {
-    let mut i: u8 = 0;
+unsafe fn DestroyReelTimePikachuAuraSprites() {
     MultiplyInvertedPaletteRGBComponents(
         0x100 + IndexOfSpritePaletteTag(PALTAG_PIKA_AURA) as u16 * 16 + 3,
         0,
         0,
         0,
     );
-    i = 0;
-    while i < 2 {
+    for i in 0..2u8 {
         DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimePikachuAuraSpriteIds[i]]);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateReelTimeExplosionSprite() {
-    let mut spriteId: u8 = CreateSprite(
+unsafe fn CreateReelTimeExplosionSprite() {
+    let spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_ReelTimeExplosion).cast_mut(),
         168,
         80,
@@ -3588,32 +3620,29 @@ pub(crate) unsafe extern "C" fn CreateReelTimeExplosionSprite() {
     gSprites[spriteId].oam.set_priority(1);
     (*sSlotMachine).reelTimeExplosionSpriteId = spriteId;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ReelTimeExplosion(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ReelTimeExplosion(sprite: *mut Sprite) {
     (*sprite).y2 = gSpriteCoordOffsetY;
 }
-pub(crate) unsafe extern "C" fn DestroyReelTimeExplosionSprite() {
+unsafe fn DestroyReelTimeExplosionSprite() {
     DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeExplosionSpriteId]);
 }
-pub(crate) unsafe extern "C" fn CreateReelTimeDuckSprites() {
-    let mut i: u8 = 0;
-    let mut sp: CArray<u16, 4> = CArray([0, 64, 128, 192]);
-    i = 0;
-    while i < 4 {
-        let mut spriteId: u8 = CreateSprite(
+unsafe fn CreateReelTimeDuckSprites() {
+    let sp: CArray<u16, 4> = CArray([0, 64, 128, 192]);
+    for i in 0..4u8 {
+        let spriteId: u8 = CreateSprite(
             (&raw const *sSpriteTemplate_ReelTimeDuck).cast_mut(),
             80 - gSpriteCoordOffsetX,
             68,
             0,
         );
-        let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+        let sprite: *mut Sprite = &raw mut gSprites[spriteId];
         (*sprite).oam.set_priority(1);
         (*sprite).set_coordOffsetEnabled(TRUE as u16);
         (*sprite).data[0] = sp[i] as i16;
         (*sSlotMachine).reelTimeDuckSpriteIds[i] = spriteId;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ReelTimeDuck(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_ReelTimeDuck(sprite: *mut Sprite) {
     (*sprite).data[0] -= 2;
     (*sprite).data[0] &= 0xff;
     (*sprite).x2 = Cos((*sprite).data[0], 20);
@@ -3631,129 +3660,119 @@ pub(crate) unsafe extern "C" fn SpriteCB_ReelTimeDuck(sprite: *mut Sprite) {
         (*sprite).data[1] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyReelTimeDuckSprites() {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < 4 {
+unsafe fn DestroyReelTimeDuckSprites() {
+    for i in 0..4u8 {
         DestroySprite(&raw mut gSprites[(*sSlotMachine).reelTimeDuckSpriteIds[i]]);
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateReelTimeSmokeSprite() {
-    let mut spriteId: u8 = CreateSprite(
+unsafe fn CreateReelTimeSmokeSprite() {
+    let spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_ReelTimeSmoke).cast_mut(),
         168,
         60,
         8,
     );
-    let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
     (*sprite).oam.set_priority(1);
     (*sprite).oam.set_affineMode(ST_OAM_AFFINE_DOUBLE);
     InitSpriteAffineAnim(sprite);
     (*sSlotMachine).reelTimeSmokeSpriteId = spriteId;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_ReelTimeSmoke(sprite: *mut Sprite) {
-    if (*sprite).data[0] == 0 {
+pub(crate) unsafe fn SpriteCB_ReelTimeSmoke(sprite: *mut Sprite) {
+    if (*sprite).data[sState] == 0 {
         if (*sprite).affineAnimEnded() != 0 {
-            (*sprite).data[0] += 1;
+            (*sprite).data[sState] += 1;
         }
-    } else if (*sprite).data[0] == 1 {
+    } else if (*sprite).data[sState] == 1 {
         (*sprite).set_invisible((*sprite).invisible() ^ 1);
         if ({
-            (*sprite).data[2] += 1;
-            (*sprite).data[2]
+            (*sprite).data[sTimer] += 1;
+            (*sprite).data[sTimer]
         }) >= 24
         {
-            (*sprite).data[0] += 1;
-            (*sprite).data[2] = 0;
+            (*sprite).data[sState] += 1;
+            (*sprite).data[sTimer] = 0;
         }
     } else {
         (*sprite).set_invisible(TRUE as u16);
         if ({
-            (*sprite).data[2] += 1;
-            (*sprite).data[2]
+            (*sprite).data[sTimer] += 1;
+            (*sprite).data[sTimer]
         }) >= 16
         {
-            (*sprite).data[7] = TRUE as i16;
+            (*sprite).data[sAnimFinished] = TRUE as i16;
         }
     }
-    (*sprite).data[1] &= 0xff;
-    (*sprite).data[1] += 16;
-    (*sprite).y2 -= (*sprite).data[1] >> 8;
+    (*sprite).data[sMoveY] &= 0xff;
+    (*sprite).data[sMoveY] += 16;
+    (*sprite).y2 -= (*sprite).data[sMoveY] >> 8;
 }
-pub(crate) unsafe extern "C" fn IsReelTimeSmokeAnimFinished() -> u8 {
-    return gSprites[(*sSlotMachine).reelTimeSmokeSpriteId].data[7] as u8;
+unsafe fn IsReelTimeSmokeAnimFinished() -> u8 {
+    gSprites[(*sSlotMachine).reelTimeSmokeSpriteId].data[sAnimFinished] as u8
 }
-pub(crate) unsafe extern "C" fn DestroyReelTimeSmokeSprite() {
-    let mut sprite: *mut Sprite = &raw mut gSprites[(*sSlotMachine).reelTimeSmokeSpriteId];
+unsafe fn DestroyReelTimeSmokeSprite() {
+    let sprite: *mut Sprite = &raw mut gSprites[(*sSlotMachine).reelTimeSmokeSpriteId];
     FreeOamMatrix((*sprite).oam.matrixNum() as u8);
     DestroySprite(sprite);
 }
-pub(crate) unsafe extern "C" fn CreatePikaPowerBoltSprite(x: i16, y: i16) -> u8 {
-    let mut spriteId: u8 = CreateSprite(
+unsafe fn CreatePikaPowerBoltSprite(x: i16, y: i16) -> u8 {
+    let spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_PikaPowerBolt).cast_mut(),
         x,
         y,
         12,
     );
-    let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
     (*sprite).oam.set_priority(2);
     (*sprite).oam.set_affineMode(ST_OAM_AFFINE_DOUBLE);
     InitSpriteAffineAnim(sprite);
-    return spriteId;
+    spriteId
 }
-pub(crate) unsafe extern "C" fn SpriteCB_PikaPowerBolt(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_PikaPowerBolt(sprite: *mut Sprite) {
     if (*sprite).affineAnimEnded() != 0 {
         (*sprite).data[7] = TRUE as i16;
     }
 }
-pub(crate) unsafe extern "C" fn DestroyPikaPowerBoltSprite(spriteId: u8) {
-    let mut sprite: *mut Sprite = &raw mut gSprites[spriteId];
+unsafe fn DestroyPikaPowerBoltSprite(spriteId: u8) {
+    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
     FreeOamMatrix((*sprite).oam.matrixNum() as u8);
     DestroySprite(sprite);
 }
-pub(crate) unsafe extern "C" fn CreateStdDigitalDisplaySprite(
-    templateIdx: u8,
-    dispInfoId: u8,
-    spriteId: i16,
-) -> u8 {
-    return CreateDigitalDisplaySprite(
+unsafe fn CreateStdDigitalDisplaySprite(templateIdx: u8, dispInfoId: u8, spriteId: i16) -> u8 {
+    CreateDigitalDisplaySprite(
         templateIdx,
         sDigitalDisplay_SpriteCallbacks[dispInfoId],
         sDigitalDisplay_SpriteCoords[dispInfoId][0],
         sDigitalDisplay_SpriteCoords[dispInfoId][1],
         spriteId,
-    );
+    )
 }
-pub(crate) unsafe extern "C" fn CreateDigitalDisplaySprite(
+unsafe fn CreateDigitalDisplaySprite(
     templateIdx: u8,
-    callback: Option<unsafe extern "C" fn(*mut Sprite)>,
+    callback: Option<unsafe fn(*mut Sprite)>,
     x: i16,
     y: i16,
     internalSpriteId: i16,
 ) -> u8 {
-    let mut spriteTemplate: SpriteTemplate = zeroed();
-    let mut spriteId: u8 = 0;
-    let mut sprite: *mut Sprite = null_mut();
-    spriteTemplate = *sSpriteTemplates_DigitalDisplay[templateIdx];
+    let mut spriteTemplate: SpriteTemplate = *sSpriteTemplates_DigitalDisplay[templateIdx];
     spriteTemplate.images = sImageTables_DigitalDisplay[templateIdx];
-    spriteId = CreateSprite(&raw mut spriteTemplate, x, y, 16);
-    sprite = &raw mut gSprites[spriteId];
+    let spriteId: u8 = CreateSprite(&raw mut spriteTemplate, x, y, 16);
+    let sprite: *mut Sprite = &raw mut gSprites[spriteId];
     (*sprite).oam.set_priority(3);
     (*sprite).callback = callback;
-    (*sprite).data[6] = internalSpriteId;
-    (*sprite).data[7] = TRUE as i16;
+    (*sprite).data[sSpriteId] = internalSpriteId;
+    (*sprite).data[sWaitForAnim] = TRUE as i16;
     if !sSubspriteTables_DigitalDisplay[templateIdx].is_null() {
         SetSubspriteTables(sprite, sSubspriteTables_DigitalDisplay[templateIdx]);
     }
-    return spriteId;
+    spriteId
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_Static(sprite: *mut Sprite) {
-    (*sprite).data[7] = FALSE as i16;
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_Static(sprite: *mut Sprite) {
+    (*sprite).data[sWaitForAnim] = FALSE as i16;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_Smoke(sprite: *mut Sprite) {
-    let mut targetX: CArray<i16, 4> = CArray([4, -4, 4, -4]);
-    let mut targetY: CArray<i16, 4> = CArray([4, 4, -4, -4]);
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_Smoke(sprite: *mut Sprite) {
+    let targetX: CArray<i16, 4> = CArray([4, -4, 4, -4]);
+    let targetY: CArray<i16, 4> = CArray([4, 4, -4, -4]);
     if ({
         let t1 = (*sprite).data[1];
         (*sprite).data[1] += 1;
@@ -3766,30 +3785,30 @@ pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_Smoke(sprite: *mut Sprit
     (*sprite).x2 = 0;
     (*sprite).y2 = 0;
     if (*sprite).subspriteTableNum() != 0 {
-        (*sprite).x2 = targetX[(*sprite).data[6]];
-        (*sprite).y2 = targetY[(*sprite).data[6]];
+        (*sprite).x2 = targetX[(*sprite).data[sSpriteId]];
+        (*sprite).y2 = targetY[(*sprite).data[sSpriteId]];
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_SmokeNE(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_SmokeNE(sprite: *mut Sprite) {
     (*sprite).set_hFlip(TRUE as u16);
     SpriteCB_DigitalDisplay_Smoke(sprite);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_SmokeSW(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_SmokeSW(sprite: *mut Sprite) {
     (*sprite).set_vFlip(TRUE as u16);
     SpriteCB_DigitalDisplay_Smoke(sprite);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_SmokeSE(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_SmokeSE(sprite: *mut Sprite) {
     (*sprite).set_hFlip(TRUE as u16);
     (*sprite).set_vFlip(TRUE as u16);
     SpriteCB_DigitalDisplay_Smoke(sprite);
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_Reel(sprite: *mut Sprite) {
-    match (*sprite).data[0] {
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_Reel(sprite: *mut Sprite) {
+    match (*sprite).data[sState] {
         0 => {
             (*sprite).x += 4;
             if (*sprite).x >= 208 {
                 (*sprite).x = 208;
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
             }
         }
         1 => {
@@ -3798,28 +3817,28 @@ pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_Reel(sprite: *mut Sprite
                 (*sprite).data[1]
             }) > 90
             {
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
             }
         }
         2 => {
             (*sprite).x += 4;
             if (*sprite).x >= 272 {
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
             }
         }
         3 => {
-            (*sprite).data[7] = FALSE as i16;
+            (*sprite).data[sWaitForAnim] = FALSE as i16;
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_Time(sprite: *mut Sprite) {
-    match (*sprite).data[0] {
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_Time(sprite: *mut Sprite) {
+    match (*sprite).data[sState] {
         0 => {
             (*sprite).x -= 4;
             if (*sprite).x <= 208 {
                 (*sprite).x = 208;
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
             }
         }
         1 => {
@@ -3828,98 +3847,91 @@ pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_Time(sprite: *mut Sprite
                 (*sprite).data[1]
             }) > 90
             {
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
             }
         }
         2 => {
             (*sprite).x -= 4;
             if (*sprite).x <= 144 {
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
             }
         }
         3 => {
-            (*sprite).data[7] = FALSE as i16;
+            (*sprite).data[sWaitForAnim] = FALSE as i16;
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_ReelTimeNumber(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_ReelTimeNumber(sprite: *mut Sprite) {
     'l1: {
-        let sw1: i16 = (*sprite).data[0];
+        let sw1: i16 = (*sprite).data[sState];
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
             StartSpriteAnim(sprite, (*sSlotMachine).reelTimeSpinsLeft - 1);
-            (*sprite).data[0] += 1;
+            (*sprite).data[sState] += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             if ({
                 (*sprite).data[1] += 1;
                 (*sprite).data[1]
             }) >= 4
             {
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
                 (*sprite).data[1] = 0;
             }
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             (*sprite).x += 4;
             if (*sprite).x >= 208 {
                 (*sprite).x = 208;
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
             }
             break 'l1;
         }
         if sw1 == 3 {
-            fall = true;
             if ({
                 (*sprite).data[1] += 1;
                 (*sprite).data[1]
             }) > 90
             {
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
             }
             break 'l1;
         }
         if sw1 == 4 {
-            fall = true;
             (*sprite).x += 4;
             if (*sprite).x >= 248 {
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
             }
             break 'l1;
         }
         if sw1 == 5 {
-            fall = true;
-            (*sprite).data[7] = FALSE as i16;
+            (*sprite).data[sWaitForAnim] = FALSE as i16;
             break 'l1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_PokeballRocking(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_PokeballRocking(sprite: *mut Sprite) {
     'l1: {
-        let sw1: i16 = (*sprite).data[0];
+        let sw1: i16 = (*sprite).data[sState];
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
             (*sprite).set_animPaused(TRUE);
-            (*sprite).data[0] += 1;
+            (*sprite).data[sState] += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             (*sprite).y += 8;
             if (*sprite).y >= 0x70 {
                 (*sprite).y = 0x70;
                 (*sprite).data[1] = 16;
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
             }
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             if (*sprite).data[2] == 0 {
                 (*sprite).y -= (*sprite).data[1];
                 (*sprite).data[1] = -(*sprite).data[1];
@@ -3931,8 +3943,8 @@ pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_PokeballRocking(sprite: 
                     (*sprite).data[1] >>= 2;
                     (*sprite).data[3] = 0;
                     if (*sprite).data[1] == 0 {
-                        (*sprite).data[0] += 1;
-                        (*sprite).data[7] = FALSE as i16;
+                        (*sprite).data[sState] += 1;
+                        (*sprite).data[sWaitForAnim] = FALSE as i16;
                         (*sprite).set_animPaused(FALSE);
                     }
                 }
@@ -3943,30 +3955,30 @@ pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_PokeballRocking(sprite: 
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_Stop(sprite: *mut Sprite) {
-    match (*sprite).data[0] {
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_Stop(sprite: *mut Sprite) {
+    match (*sprite).data[sState] {
         0 => {
             if ({
                 (*sprite).data[1] += 1;
                 (*sprite).data[1]
             }) > 8
             {
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
             }
         }
         1 => {
             (*sprite).y += 2;
             if (*sprite).y >= 0x30 {
                 (*sprite).y = 0x30;
-                (*sprite).data[0] += 1;
-                (*sprite).data[7] = FALSE as i16;
+                (*sprite).data[sState] += 1;
+                (*sprite).data[sWaitForAnim] = FALSE as i16;
             }
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_AButtonStop(sprite: *mut Sprite) {
-    match (*sprite).data[0] {
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_AButtonStop(sprite: *mut Sprite) {
+    match (*sprite).data[sState] {
         0 => {
             (*sprite).set_invisible(TRUE as u16);
             if ({
@@ -3974,7 +3986,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_AButtonStop(sprite: *mut
                 (*sprite).data[1]
             }) > 0x20
             {
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
                 (*sprite).data[1] = 5;
                 (*sprite).oam.set_mosaic(TRUE as u32);
                 (*sprite).set_invisible(FALSE as u16);
@@ -3997,8 +4009,8 @@ pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_AButtonStop(sprite: *mut
             (*sprite).data[2] &= 0xff;
             (*sprite).data[2] += 0x80;
             if (*sprite).data[1] == 0 {
-                (*sprite).data[0] += 1;
-                (*sprite).data[7] = FALSE as i16;
+                (*sprite).data[sState] += 1;
+                (*sprite).data[sWaitForAnim] = FALSE as i16;
                 (*sprite).oam.set_mosaic(FALSE as u32);
                 StartSpriteAnim(sprite, 0);
             }
@@ -4006,7 +4018,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_AButtonStop(sprite: *mut
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_PokeballShining(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_PokeballShining(sprite: *mut Sprite) {
     if (*sprite).data[1] < 3 {
         LoadPalette(
             sPokeballShiningPalTable[(*sprite).data[1]] as *mut c_void,
@@ -4037,36 +4049,34 @@ pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_PokeballShining(sprite: 
         }
     }
     StartSpriteAnimIfDifferent(sprite, 1);
-    (*sprite).data[7] = FALSE as i16;
+    (*sprite).data[sWaitForAnim] = FALSE as i16;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_RegBonus(sprite: *mut Sprite) {
-    let mut letterXOffset: CArray<i16, 8> = CArray([0, -40, 0, 0, 48, 0, 24, 0]);
-    let mut letterYOffset: CArray<i16, 8> = CArray([-32, 0, -32, -48, 0, -48, 0, -48]);
-    let mut letterDelay: CArray<i16, 8> = CArray([16, 12, 16, 0, 0, 4, 8, 8]);
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_RegBonus(sprite: *mut Sprite) {
+    let letterXOffset: CArray<i16, 8> = CArray([0, -40, 0, 0, 48, 0, 24, 0]);
+    let letterYOffset: CArray<i16, 8> = CArray([-32, 0, -32, -48, 0, -48, 0, -48]);
+    let letterDelay: CArray<i16, 8> = CArray([16, 12, 16, 0, 0, 4, 8, 8]);
     'l1: {
-        let sw1: i16 = (*sprite).data[0];
+        let sw1: i16 = (*sprite).data[sState];
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
-            (*sprite).x2 = letterXOffset[(*sprite).data[6]];
-            (*sprite).y2 = letterYOffset[(*sprite).data[6]];
-            (*sprite).data[1] = letterDelay[(*sprite).data[6]];
-            (*sprite).data[0] += 1;
+            (*sprite).x2 = letterXOffset[(*sprite).data[sSpriteId]];
+            (*sprite).y2 = letterYOffset[(*sprite).data[sSpriteId]];
+            (*sprite).data[1] = letterDelay[(*sprite).data[sSpriteId]];
+            (*sprite).data[sState] += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             if ({
                 let t2 = (*sprite).data[1];
                 (*sprite).data[1] -= 1;
                 t2
             }) == 0
             {
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
             }
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             if (*sprite).x2 > 0 {
                 (*sprite).x2 -= 4;
             } else if (*sprite).x2 < 0 {
@@ -4078,27 +4088,27 @@ pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_RegBonus(sprite: *mut Sp
                 (*sprite).y2 += 4;
             }
             if (*sprite).x2 == 0 && (*sprite).y2 == 0 {
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
             }
             break 'l1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_BigBonus(sprite: *mut Sprite) {
-    let mut sp0: CArray<i16, 8> = CArray([160, 192, 224, 104, 80, 64, 48, 24]);
-    if (*sprite).data[0] == 0 {
-        (*sprite).data[0] += 1;
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_BigBonus(sprite: *mut Sprite) {
+    let sp0: CArray<i16, 8> = CArray([160, 192, 224, 104, 80, 64, 48, 24]);
+    if (*sprite).data[sState] == 0 {
+        (*sprite).data[sState] += 1;
         (*sprite).data[1] = 12;
     }
-    (*sprite).x2 = Cos(sp0[(*sprite).data[6]], (*sprite).data[1]);
-    (*sprite).y2 = Sin(sp0[(*sprite).data[6]], (*sprite).data[1]);
+    (*sprite).x2 = Cos(sp0[(*sprite).data[sSpriteId]], (*sprite).data[1]);
+    (*sprite).y2 = Sin(sp0[(*sprite).data[sSpriteId]], (*sprite).data[1]);
     if (*sprite).data[1] != 0 {
         (*sprite).data[1] -= 1;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_AButtonStart(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_DigitalDisplay_AButtonStart(sprite: *mut Sprite) {
     'l1: {
-        let sw1: i16 = (*sprite).data[0];
+        let sw1: i16 = (*sprite).data[sState];
         let mut fall = false;
         if sw1 == 0 {
             fall = true;
@@ -4106,10 +4116,9 @@ pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_AButtonStart(sprite: *mu
             (*sSlotMachine).winOut = 63;
             (*sSlotMachine).win0v = 8328;
             (*sprite).set_invisible(TRUE as u16);
-            (*sprite).data[0] += 1;
+            (*sprite).data[sState] += 1;
         }
         if fall || sw1 == 1 {
-            fall = true;
             (*sprite).data[1] += 2;
             (*sprite).data[2] = (*sprite).data[1] + 176;
             (*sprite).data[3] = DISPLAY_WIDTH as i16 - (*sprite).data[1];
@@ -4121,7 +4130,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_AButtonStart(sprite: *mu
             }
             (*sSlotMachine).win0h = ((*sprite).data[2] as u16) << 8 | (*sprite).data[3] as u16;
             if (*sprite).data[1] > 51 {
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
                 (*sSlotMachine).winIn = 63;
             }
             break 'l1;
@@ -4135,11 +4144,10 @@ pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_AButtonStart(sprite: *mu
             (*sSlotMachine).win0h = 49376;
             (*sSlotMachine).win0v = 26752;
             (*sSlotMachine).winIn = 47;
-            (*sprite).data[0] += 1;
+            (*sprite).data[sState] += 1;
             (*sprite).data[1] = 0;
         }
         if fall || sw1 == 3 {
-            fall = true;
             (*sprite).data[1] += 2;
             (*sprite).data[2] = (*sprite).data[1] + 192;
             (*sprite).data[3] = 224 - (*sprite).data[1];
@@ -4151,36 +4159,38 @@ pub(crate) unsafe extern "C" fn SpriteCB_DigitalDisplay_AButtonStart(sprite: *mu
             }
             (*sSlotMachine).win0h = ((*sprite).data[2] as u16) << 8 | (*sprite).data[3] as u16;
             if (*sprite).data[1] > 15 {
-                (*sprite).data[0] += 1;
+                (*sprite).data[sState] += 1;
                 (*sSlotMachine).winIn = 63;
             }
             break 'l1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn EndDigitalDisplayScene_Dummy() {}
-pub(crate) unsafe extern "C" fn EndDigitalDisplayScene_StopReel() {
+pub(crate) fn EndDigitalDisplayScene_Dummy() {}
+pub(crate) unsafe fn EndDigitalDisplayScene_StopReel() {
     SetGpuReg(REG_OFFSET_MOSAIC, 0);
 }
-pub(crate) unsafe extern "C" fn EndDigitalDisplayScene_Win() {
+pub(crate) unsafe fn EndDigitalDisplayScene_Win() {
     LoadPalette(
         *sDigitalDisplay_Pal as *mut c_void,
         0x100 + IndexOfSpritePaletteTag(PALTAG_DIG_DISPLAY) as u16 * 16,
         32,
     );
 }
-pub(crate) unsafe extern "C" fn EndDigitalDisplayScene_InsertBet() {
+pub(crate) unsafe fn EndDigitalDisplayScene_InsertBet() {
     (*sSlotMachine).win0h = DISPLAY_WIDTH;
     (*sSlotMachine).win0v = DISPLAY_HEIGHT;
     (*sSlotMachine).winIn = 63;
     (*sSlotMachine).winOut = 63;
 }
-pub(crate) unsafe extern "C" fn LoadSlotMachineGfx() {
-    let mut i: u8 = 0;
+unsafe fn LoadSlotMachineGfx() {
     LoadReelBackground();
     sDigitalDisplayGfxPtr = Alloc(0x3200) as *mut u8;
     LZDecompressWram(
-        gSlotMachineDigitalDisplay_Gfx.as_ptr().cast_mut(),
+        (*(&raw const crate::data::graphics::gSlotMachineDigitalDisplay_Gfx)
+            .cast::<CArray<u32, 0>>())
+        .as_ptr()
+        .cast_mut(),
         sDigitalDisplayGfxPtr as *mut c_void,
     );
     sReelTimeGfxPtr = Alloc(0x3600) as *mut u8;
@@ -4189,12 +4199,10 @@ pub(crate) unsafe extern "C" fn LoadSlotMachineGfx() {
         sReelTimeGfxPtr as *mut c_void,
     );
     sSlotMachineSpritesheetsPtr = AllocZeroed(176) as *mut SpriteSheet;
-    i = 0;
-    while i < 22 {
+    for i in 0..22u8 {
         (*sSlotMachineSpritesheetsPtr.at(i)).data = sSlotMachineSpriteSheets[i].data;
         (*sSlotMachineSpritesheetsPtr.at(i)).size = sSlotMachineSpriteSheets[i].size;
         (*sSlotMachineSpritesheetsPtr.at(i)).tag = sSlotMachineSpriteSheets[i].tag;
-        i += 1;
     }
     (*sSlotMachineSpritesheetsPtr.at(17)).data = sDigitalDisplayGfxPtr.at(2560) as *mut c_void;
     (*sSlotMachineSpritesheetsPtr.at(18)).data = sDigitalDisplayGfxPtr.at(5120) as *mut c_void;
@@ -4203,62 +4211,60 @@ pub(crate) unsafe extern "C" fn LoadSlotMachineGfx() {
     LoadSpriteSheets(sSlotMachineSpritesheetsPtr);
     LoadSpritePalettes(sSlotMachineSpritePalettes.as_ptr().cast_mut());
 }
-pub(crate) unsafe extern "C" fn LoadReelBackground() {
-    let mut dest: *mut u8 = null_mut();
-    let mut i: u8 = 0;
+unsafe fn LoadReelBackground() {
     let mut j: u8 = 0;
     sReelBackgroundSpriteSheet = AllocZeroed(8) as *mut SpriteSheet;
     sReelBackground_Gfx = AllocZeroed(0x2000) as *mut u8;
-    dest = sReelBackground_Gfx;
-    i = 0;
-    while i < 0x40 {
+    let mut dest: *mut u8 = sReelBackground_Gfx;
+    for i in 0..0x40 {
         j = 0;
         while j < 0x20 {
             *dest = *(*sReelBackground_Tilemap).at(j);
             j += 1;
             dest = dest.at(1);
         }
-        i += 1;
     }
     (*sReelBackgroundSpriteSheet).data = sReelBackground_Gfx as *mut c_void;
     (*sReelBackgroundSpriteSheet).size = 0x800;
     (*sReelBackgroundSpriteSheet).tag = GFXTAG_REEL_BG;
     LoadSpriteSheet(sReelBackgroundSpriteSheet);
 }
-pub(crate) unsafe extern "C" fn LoadMenuGfx() {
+unsafe fn LoadMenuGfx() {
     sMenuGfx = Alloc(0x2200) as *mut u16;
     LZDecompressWram(
-        gSlotMachineMenu_Gfx.as_ptr().cast_mut(),
+        (*(&raw const crate::data::graphics::gSlotMachineMenu_Gfx).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
         sMenuGfx as *mut c_void,
     );
     LoadBgTiles(2, sMenuGfx as *mut c_void, 0x2200, 0);
     LoadPalette(
-        gSlotMachineMenu_Pal.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gSlotMachineMenu_Pal).cast::<CArray<u16, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         0,
         160,
     );
     LoadPalette(sUnkPalette.as_ptr().cast_mut() as *mut c_void, 208, 32);
 }
-pub(crate) unsafe extern "C" fn LoadMenuAndReelOverlayTilemaps() {
+unsafe fn LoadMenuAndReelOverlayTilemaps() {
     LoadSlotMachineMenuTilemap();
     LoadSlotMachineReelOverlay();
 }
-pub(crate) unsafe extern "C" fn LoadSlotMachineMenuTilemap() {
+unsafe fn LoadSlotMachineMenuTilemap() {
     LoadBgTilemap(
         2,
-        gSlotMachineMenu_Tilemap.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gSlotMachineMenu_Tilemap).cast::<CArray<u16, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         0x500,
         0,
     );
 }
-pub(crate) unsafe extern "C" fn LoadSlotMachineReelOverlay() {
-    let mut x: i16 = 0;
-    let mut y: i16 = 0;
-    let mut dx: i16 = 0;
-    x = 4;
+unsafe fn LoadSlotMachineReelOverlay() {
+    let mut x: i16 = 4;
     while x < 18 {
-        dx = 0;
-        while dx < 4 {
+        for dx in 0..4i16 {
             LoadBgTilemap(
                 3,
                 sReelOverlay_Tilemap as *mut c_void,
@@ -4283,7 +4289,6 @@ pub(crate) unsafe extern "C" fn LoadSlotMachineReelOverlay() {
                 2,
                 x as u16 + dx as u16 + 384,
             );
-            dx += 1;
         }
         LoadBgTilemap(
             3,
@@ -4297,20 +4302,18 @@ pub(crate) unsafe extern "C" fn LoadSlotMachineReelOverlay() {
             2,
             x as u16 + 384,
         );
-        y = 7;
-        while y <= 11 {
+        for y in 7..=11i16 {
             LoadBgTilemap(
                 3,
                 sReelOverlay_Tilemap.at(6) as *mut c_void,
                 2,
                 x as u16 + y as u16 * 32,
             );
-            y += 1;
         }
         x += 5;
     }
 }
-pub(crate) unsafe extern "C" fn SetReelButtonTilemap(
+unsafe fn SetReelButtonTilemap(
     offset: i16,
     topLeft: u16,
     topRight: u16,
@@ -4346,16 +4349,18 @@ pub(crate) unsafe extern "C" fn SetReelButtonTilemap(
         513 + offset as u16,
     );
 }
-pub(crate) unsafe extern "C" fn LoadInfoBoxTilemap() {
+unsafe fn LoadInfoBoxTilemap() {
     LoadBgTilemap(
         2,
-        gSlotMachineInfoBox_Tilemap.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gSlotMachineInfoBox_Tilemap).cast::<CArray<u16, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         0x500,
         0,
     );
     HideBg(3);
 }
-pub(crate) unsafe extern "C" fn SetDigitalDisplayImagePtrs() {
+unsafe fn SetDigitalDisplayImagePtrs() {
     sImageTables_DigitalDisplay[0] = sImageTable_DigitalDisplay_Reel;
     sImageTables_DigitalDisplay[1] = sImageTable_DigitalDisplay_Time;
     sImageTables_DigitalDisplay[2] = sImageTable_DigitalDisplay_Insert;
@@ -4383,7 +4388,7 @@ pub(crate) unsafe extern "C" fn SetDigitalDisplayImagePtrs() {
     sImageTables_DigitalDisplay[24] = sImageTable_DigitalDisplay_Reg;
     sImageTables_DigitalDisplay[25] = null_mut();
 }
-pub(crate) unsafe extern "C" fn AllocDigitalDisplayGfx() {
+unsafe fn AllocDigitalDisplayGfx() {
     sImageTable_DigitalDisplay_Reel = AllocZeroed(8) as *mut SpriteFrameImage;
     (*sImageTable_DigitalDisplay_Reel).data = sDigitalDisplayGfxPtr as *mut c_void;
     (*sImageTable_DigitalDisplay_Reel).size = 0x600;

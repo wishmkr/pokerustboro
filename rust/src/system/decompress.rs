@@ -17,12 +17,26 @@ const SHEET_SIZE: usize = 8;
 #[unsafe(link_section = "ewram_data")]
 pub static mut gDecompressionBuffer: Align4<[u8; 0x4000]> = Align4([0; 0x4000]);
 
-unsafe extern "C" {
-    static gMonFrontPicTable: CompressedSpriteSheet;
-    static gMonBackPicTable: CompressedSpriteSheet;
-    fn LZ77UnCompWram(src: *const u32, dest: *mut core::ffi::c_void);
-    fn LZ77UnCompVram(src: *const u32, dest: *mut core::ffi::c_void);
-    fn DrawSpindaSpots(species: u16, personality: u32, dest: *mut u8, is_front_pic: u8);
+/// `LZ77UnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompWram(a0: *const u32, a1: *mut core::ffi::c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
+    }
+}
+/// `LZ77UnCompVram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompVram(a0: *const u32, a1: *mut core::ffi::c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompVram(a0 as _, a1 as _);
+    }
+}
+/// `DrawSpindaSpots` with this module's view of its types.
+#[inline]
+unsafe fn DrawSpindaSpots(a0: u16, a1: u32, a2: *mut u8, a3: u8) {
+    unsafe {
+        crate::pokemon::DrawSpindaSpots(a0, a1, a2 as _, a3);
+    }
 }
 
 /// `struct SpriteSheet { const void *data; u16 size; u16 tag; }`
@@ -54,12 +68,12 @@ unsafe fn table_entry(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LZDecompressWram(src: *const u32, dest: *mut u8) {
+pub unsafe fn LZDecompressWram(src: *const u32, dest: *mut u8) {
     unsafe { LZ77UnCompWram(src, dest.cast()) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LZDecompressVram(src: *const u32, dest: *mut u8) {
+pub unsafe fn LZDecompressVram(src: *const u32, dest: *mut u8) {
     unsafe { LZ77UnCompVram(src, dest.cast()) };
 }
 
@@ -83,12 +97,12 @@ unsafe fn load_palette(src: *const CompressedSpritePalette, into: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadCompressedSpriteSheet(src: *const CompressedSpriteSheet) -> u16 {
+pub unsafe fn LoadCompressedSpriteSheet(src: *const CompressedSpriteSheet) -> u16 {
     unsafe { load_sheet(src, buffer()) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadCompressedSpriteSheetOverrideBuffer(
+pub unsafe fn LoadCompressedSpriteSheetOverrideBuffer(
     src: *const CompressedSpriteSheet,
     into: *mut u8,
 ) {
@@ -96,12 +110,12 @@ pub unsafe extern "C" fn LoadCompressedSpriteSheetOverrideBuffer(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadCompressedSpritePalette(src: *const CompressedSpritePalette) {
+pub unsafe fn LoadCompressedSpritePalette(src: *const CompressedSpritePalette) {
     unsafe { load_palette(src, buffer()) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadCompressedSpritePaletteOverrideBuffer(
+pub unsafe fn LoadCompressedSpritePaletteOverrideBuffer(
     src: *const CompressedSpritePalette,
     into: *mut u8,
 ) {
@@ -110,7 +124,8 @@ pub unsafe extern "C" fn LoadCompressedSpritePaletteOverrideBuffer(
 
 unsafe fn decompress_pic(src: *const CompressedSpriteSheet, into: *mut u8, species: i32) {
     let src = if species > NUM_SPECIES {
-        &raw const gMonFrontPicTable
+        &raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+            .cast::<CompressedSpriteSheet>())
     } else {
         src
     };
@@ -118,7 +133,7 @@ unsafe fn decompress_pic(src: *const CompressedSpriteSheet, into: *mut u8, speci
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DecompressPicFromTable(
+pub unsafe fn DecompressPicFromTable(
     src: *const CompressedSpriteSheet,
     into: *mut u8,
     species: i32,
@@ -128,7 +143,7 @@ pub unsafe extern "C" fn DecompressPicFromTable(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DecompressPicFromTable_2(
+pub unsafe fn DecompressPicFromTable_2(
     src: *const CompressedSpriteSheet,
     into: *mut u8,
     species: i32,
@@ -137,7 +152,7 @@ pub unsafe extern "C" fn DecompressPicFromTable_2(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DecompressPicFromTable_DontHandleDeoxys(
+pub unsafe fn DecompressPicFromTable_DontHandleDeoxys(
     src: *const CompressedSpriteSheet,
     into: *mut u8,
     species: i32,
@@ -146,7 +161,13 @@ pub unsafe extern "C" fn DecompressPicFromTable_DontHandleDeoxys(
 }
 
 unsafe fn is_front_pic(src: *const CompressedSpriteSheet, species: i32) -> u8 {
-    let front = unsafe { table_entry(&raw const gMonFrontPicTable, species as usize) };
+    let front = unsafe {
+        table_entry(
+            &raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+                .cast::<CompressedSpriteSheet>()),
+            species as usize,
+        )
+    };
     u8::from(core::ptr::eq(src, front))
 }
 
@@ -172,13 +193,16 @@ unsafe fn load_special_pic(
             (letter as u16).wrapping_add(SPECIES_UNOWN_B - 1)
         };
         let table = if is_front_pic == 0 {
-            &raw const gMonBackPicTable
+            &raw const (*(&raw const crate::data::data_tables::gMonBackPicTable)
+                .cast::<CompressedSpriteSheet>())
         } else {
-            &raw const gMonFrontPicTable
+            &raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+                .cast::<CompressedSpriteSheet>())
         };
         unsafe { table_entry(table, usize::from(index)) }
     } else if species > NUM_SPECIES {
-        &raw const gMonFrontPicTable
+        &raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+            .cast::<CompressedSpriteSheet>())
     } else {
         src
     };
@@ -186,7 +210,7 @@ unsafe fn load_special_pic(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadSpecialPokePic(
+pub unsafe fn LoadSpecialPokePic(
     src: *const CompressedSpriteSheet,
     dest: *mut u8,
     species: i32,
@@ -199,7 +223,7 @@ pub unsafe extern "C" fn LoadSpecialPokePic(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadSpecialPokePic_2(
+pub unsafe fn LoadSpecialPokePic_2(
     src: *const CompressedSpriteSheet,
     dest: *mut u8,
     species: i32,
@@ -210,7 +234,7 @@ pub unsafe extern "C" fn LoadSpecialPokePic_2(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadSpecialPokePic_DontHandleDeoxys(
+pub unsafe fn LoadSpecialPokePic_DontHandleDeoxys(
     src: *const CompressedSpriteSheet,
     dest: *mut u8,
     species: i32,
@@ -222,7 +246,7 @@ pub unsafe extern "C" fn LoadSpecialPokePic_DontHandleDeoxys(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleLoadSpecialPokePic(
+pub unsafe fn HandleLoadSpecialPokePic(
     src: *const CompressedSpriteSheet,
     dest: *mut u8,
     species: i32,
@@ -233,7 +257,7 @@ pub unsafe extern "C" fn HandleLoadSpecialPokePic(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleLoadSpecialPokePic_2(
+pub unsafe fn HandleLoadSpecialPokePic_2(
     src: *const CompressedSpriteSheet,
     dest: *mut u8,
     species: i32,
@@ -243,7 +267,7 @@ pub unsafe extern "C" fn HandleLoadSpecialPokePic_2(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleLoadSpecialPokePic_DontHandleDeoxys(
+pub unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
     src: *const CompressedSpriteSheet,
     dest: *mut u8,
     species: i32,
@@ -261,12 +285,12 @@ pub unsafe extern "C" fn HandleLoadSpecialPokePic_DontHandleDeoxys(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Unused_LZDecompressWramIndirect(src: *const *const u32, dest: *mut u8) {
+pub unsafe fn Unused_LZDecompressWramIndirect(src: *const *const u32, dest: *mut u8) {
     unsafe { LZ77UnCompWram(src.read(), dest.cast()) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetDecompressedDataSize(ptr: *const u32) -> u32 {
+pub unsafe fn GetDecompressedDataSize(ptr: *const u32) -> u32 {
     let bytes = ptr.cast::<u8>();
     unsafe {
         (u32::from(bytes.add(3).read()) << 16)
@@ -276,9 +300,7 @@ pub unsafe extern "C" fn GetDecompressedDataSize(ptr: *const u32) -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadCompressedSpriteSheetUsingHeap(
-    src: *const CompressedSpriteSheet,
-) -> u8 {
+pub unsafe fn LoadCompressedSpriteSheetUsingHeap(src: *const CompressedSpriteSheet) -> u8 {
     let size = unsafe { (*src).data.read() } >> 8;
     let heap = unsafe { AllocZeroed(size) };
     unsafe { load_sheet(src, heap) };
@@ -287,9 +309,7 @@ pub unsafe extern "C" fn LoadCompressedSpriteSheetUsingHeap(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LoadCompressedSpritePaletteUsingHeap(
-    src: *const CompressedSpritePalette,
-) -> u8 {
+pub unsafe fn LoadCompressedSpritePaletteUsingHeap(src: *const CompressedSpritePalette) -> u8 {
     let size = unsafe { (*src).data.read() } >> 8;
     let heap = unsafe { AllocZeroed(size) };
     unsafe { load_palette(src, heap) };

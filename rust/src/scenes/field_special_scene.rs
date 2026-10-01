@@ -8,8 +8,7 @@ use crate::data::field_special_scene::{
 use crate::event_data::{FlagClear, FlagSet, GetVarPointer, VarGet};
 use crate::ffi::{
     A_BUTTON, CreateTask, DestroyTask, OBJECT_EVENT_SIZE, PLTT_SIZE, PlaySE, TASK_IS_ACTIVE_OFFSET,
-    gObjectEvents, gPlayerAvatar, gPlttBufferFaded, joy_new, set_task_data, set_task_func, sprite,
-    task, task_data,
+    joy_new, set_task_data, set_task_func, sprite, task, task_data,
 };
 use crate::load_save::gSaveBlock1Ptr;
 use crate::script_movement::ScriptMovement_StartObjectMovementScript;
@@ -58,44 +57,154 @@ const IDLE_CHECK: i16 = 1;
 const EXECUTE_MOVEMENT: i16 = 2;
 const EXIT_PORTHOLE: i16 = 3;
 
-unsafe extern "C" {
-    fn SetObjectEventSpritePosByLocalIdAndMap(
-        local_id: u8,
-        map_num: u8,
-        map_group: u8,
-        x: i16,
-        y: i16,
-    );
-    fn SetCameraPanning(horizontal: i16, vertical: i16);
-    fn SetCameraPanningCallback(callback: Option<unsafe extern "C" fn()>);
-    fn FadeInFromBlack();
-    fn InstallCameraPanAheadCallback();
-    fn MapGridSetMetatileIdAt(x: i32, y: i32, metatile: u16);
-    fn DrawWholeMapView();
-    fn LockPlayerFieldControls();
-    fn UnlockPlayerFieldControls();
-    fn GetSSTidalLocation(map_group: *mut i8, map_num: *mut i8, x: *mut i16, y: *mut i16) -> u8;
-    fn SetWarpDestination(map_group: i8, map_num: i8, warp_id: i8, x: i8, y: i8);
-    fn ScriptMovement_IsObjectMovementFinished(local_id: u8, map_num: u8, map_group: u8) -> u8;
-    fn CountSSTidalStep(delta: u16) -> u32;
-    fn SetWarpDestinationToDynamicWarp(unused: u8);
-    fn DoDiveWarp();
-    fn CreateObjectGraphicsSprite(
-        graphics_id: u16,
-        callback: unsafe extern "C" fn(*mut u8),
-        x: i16,
-        y: i16,
-        subpriority: u8,
-    ) -> u8;
-    fn GetFaceDirectionAnimNum(direction: u8) -> u8;
-    fn SetDynamicWarp(unused: i32, map_group: i8, map_num: i8, warp_id: i8);
-    fn DoPortholeWarp();
-    fn CpuFastSet(src: *const core::ffi::c_void, dest: *mut core::ffi::c_void, control: u32);
+/// `SetObjectEventSpritePosByLocalIdAndMap` with this module's view of its types.
+#[inline]
+unsafe fn SetObjectEventSpritePosByLocalIdAndMap(a0: u8, a1: u8, a2: u8, a3: i16, a4: i16) {
+    unsafe {
+        crate::event_object_movement::SetObjectEventSpritePosByLocalIdAndMap(a0, a1, a2, a3, a4);
+    }
+}
+/// `SetCameraPanning` with this module's view of its types.
+#[inline]
+unsafe fn SetCameraPanning(a0: i16, a1: i16) {
+    unsafe {
+        crate::field_camera::SetCameraPanning(a0, a1);
+    }
+}
+/// `SetCameraPanningCallback` with this module's view of its types.
+#[inline]
+unsafe fn SetCameraPanningCallback(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::field_camera::SetCameraPanningCallback(a0);
+    }
+}
+/// `FadeInFromBlack` with this module's view of its types.
+#[inline]
+unsafe fn FadeInFromBlack() {
+    unsafe {
+        crate::field_screen_effect::FadeInFromBlack();
+    }
+}
+/// `InstallCameraPanAheadCallback` with this module's view of its types.
+#[inline]
+unsafe fn InstallCameraPanAheadCallback() {
+    unsafe {
+        crate::field_camera::InstallCameraPanAheadCallback();
+    }
+}
+/// `MapGridSetMetatileIdAt` with this module's view of its types.
+#[inline]
+unsafe fn MapGridSetMetatileIdAt(a0: i32, a1: i32, a2: u16) {
+    unsafe {
+        crate::fieldmap::MapGridSetMetatileIdAt(a0, a1, a2);
+    }
+}
+/// `DrawWholeMapView` with this module's view of its types.
+#[inline]
+unsafe fn DrawWholeMapView() {
+    unsafe {
+        crate::field_camera::DrawWholeMapView();
+    }
+}
+/// `LockPlayerFieldControls` with this module's view of its types.
+#[inline]
+unsafe fn LockPlayerFieldControls() {
+    unsafe {
+        crate::script::LockPlayerFieldControls();
+    }
+}
+/// `UnlockPlayerFieldControls` with this module's view of its types.
+#[inline]
+unsafe fn UnlockPlayerFieldControls() {
+    unsafe {
+        crate::script::UnlockPlayerFieldControls();
+    }
+}
+/// `GetSSTidalLocation` with this module's view of its types.
+#[inline]
+unsafe fn GetSSTidalLocation(a0: *mut i8, a1: *mut i8, a2: *mut i16, a3: *mut i16) -> u8 {
+    unsafe { crate::field_specials::GetSSTidalLocation(a0 as _, a1 as _, a2 as _, a3 as _) }
+}
+/// `SetWarpDestination` with this module's view of its types.
+#[inline]
+unsafe fn SetWarpDestination(a0: i8, a1: i8, a2: i8, a3: i8, a4: i8) {
+    unsafe {
+        crate::overworld::SetWarpDestination(a0, a1, a2, a3, a4);
+    }
+}
+/// `ScriptMovement_IsObjectMovementFinished` with this module's view of its types.
+#[inline]
+unsafe fn ScriptMovement_IsObjectMovementFinished(a0: u8, a1: u8, a2: u8) -> u8 {
+    unsafe { crate::script_movement::ScriptMovement_IsObjectMovementFinished(a0, a1, a2) }
+}
+/// `CountSSTidalStep` with this module's view of its types.
+#[inline]
+unsafe fn CountSSTidalStep(a0: u16) -> u32 {
+    unsafe { crate::field_specials::CountSSTidalStep(a0) }
+}
+/// `SetWarpDestinationToDynamicWarp` with this module's view of its types.
+#[inline]
+unsafe fn SetWarpDestinationToDynamicWarp(a0: u8) {
+    unsafe {
+        crate::overworld::SetWarpDestinationToDynamicWarp(a0);
+    }
+}
+/// `DoDiveWarp` with this module's view of its types.
+#[inline]
+unsafe fn DoDiveWarp() {
+    unsafe {
+        crate::field_screen_effect::DoDiveWarp();
+    }
+}
+/// `CreateObjectGraphicsSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateObjectGraphicsSprite(
+    a0: u16,
+    a1: unsafe fn(*mut u8),
+    a2: i16,
+    a3: i16,
+    a4: u8,
+) -> u8 {
+    unsafe {
+        crate::event_object_movement::CreateObjectGraphicsSprite(
+            a0,
+            core::mem::transmute(a1),
+            a2,
+            a3,
+            a4,
+        )
+    }
+}
+/// `GetFaceDirectionAnimNum` with this module's view of its types.
+#[inline]
+unsafe fn GetFaceDirectionAnimNum(a0: u8) -> u8 {
+    unsafe { crate::event_object_movement::GetFaceDirectionAnimNum(a0) }
+}
+/// `SetDynamicWarp` with this module's view of its types.
+#[inline]
+unsafe fn SetDynamicWarp(a0: i32, a1: i8, a2: i8, a3: i8) {
+    unsafe {
+        crate::overworld::SetDynamicWarp(a0, a1, a2, a3);
+    }
+}
+/// `DoPortholeWarp` with this module's view of its types.
+#[inline]
+unsafe fn DoPortholeWarp() {
+    unsafe {
+        crate::field_screen_effect::DoPortholeWarp();
+    }
+}
+/// `CpuFastSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuFastSet(a0: *const core::ffi::c_void, a1: *mut core::ffi::c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuFastSet(a0 as _, a1 as _, a2);
+    }
 }
 
 #[inline]
 unsafe fn location() -> (u8, u8) {
-    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read() };
+    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read().cast::<u8>() };
     unsafe {
         (
             sb1.add(SB1_LOCATION_MAP_NUM).read(),
@@ -159,7 +268,7 @@ unsafe fn place_boxes(camera_x: i16, timer: i32) {
     };
 }
 
-unsafe extern "C" fn task_truck1(task_id: u8) {
+unsafe fn task_truck1(task_id: u8) {
     let timer = i32::from(unsafe { task_data(task_id, 0) });
     unsafe { place_boxes(0, timer) };
     // An arbitrary limit that is never reached.
@@ -194,7 +303,7 @@ fn pan_at(step: usize) -> i16 {
     i16::from(unsafe { sTruckCamera_HorizontalTable.as_ptr().add(step).read() } as i8)
 }
 
-unsafe extern "C" fn task_truck2(task_id: u8) {
+unsafe fn task_truck2(task_id: u8) {
     unsafe { set_task_data(task_id, 2, task_data(task_id, 2).wrapping_add(1)) };
     let Some(step) = (unsafe { advance_pan(task_id) }) else {
         return;
@@ -208,7 +317,7 @@ unsafe extern "C" fn task_truck2(task_id: u8) {
     unsafe { place_boxes(camera_x, vertical) };
 }
 
-unsafe extern "C" fn task_truck3(task_id: u8) {
+unsafe fn task_truck3(task_id: u8) {
     let Some(step) = (unsafe { advance_pan(task_id) }) else {
         return;
     };
@@ -226,7 +335,7 @@ unsafe fn set_truck_door(metatiles: [u16; 3]) {
     unsafe { DrawWholeMapView() };
 }
 
-unsafe extern "C" fn task_handle_truck_sequence(task_id: u8) {
+unsafe fn task_handle_truck_sequence(task_id: u8) {
     let get = |i| unsafe { task_data(task_id, i) };
     let put = |i, v| unsafe { set_task_data(task_id, i, v) };
     const STATE: usize = 0;
@@ -294,7 +403,7 @@ unsafe extern "C" fn task_handle_truck_sequence(task_id: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ExecuteTruckSequence() {
+pub unsafe fn ExecuteTruckSequence() {
     unsafe { set_truck_door(METATILE_DOOR_CLOSED) };
     unsafe { LockPlayerFieldControls() };
     // CpuFastFill(0, gPlttBufferFaded, PLTT_SIZE)
@@ -302,7 +411,10 @@ pub unsafe extern "C" fn ExecuteTruckSequence() {
     unsafe {
         CpuFastSet(
             (&raw const zero).cast(),
-            (&raw mut gPlttBufferFaded).cast(),
+            (&raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+                .cast::<[u16; crate::ffi::PLTT_BUFFER_SIZE]>()
+                .cast_mut()))
+                .cast(),
             (1 << 24) | (PLTT_SIZE as u32 / 4),
         )
     };
@@ -310,8 +422,8 @@ pub unsafe extern "C" fn ExecuteTruckSequence() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn EndTruckSequence(_task_id: u8) {
-    if unsafe { FuncIsActiveTask(task_handle_truck_sequence) } == 0 {
+pub unsafe fn EndTruckSequence(_task_id: u8) {
+    if FuncIsActiveTask(task_handle_truck_sequence) == 0 {
         unsafe { place_box(LOCALID_TRUCK_BOX_TOP, BOX1_OFFSET, 0, 0) };
         unsafe { place_box(LOCALID_TRUCK_BOX_BOTTOM_L, BOX2_OFFSET, 0, 0) };
         unsafe { place_box(LOCALID_TRUCK_BOX_BOTTOM_R, BOX3_OFFSET, 0, 0) };
@@ -319,7 +431,7 @@ pub unsafe extern "C" fn EndTruckSequence(_task_id: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TrySetPortholeWarpDestination() -> u8 {
+pub unsafe fn TrySetPortholeWarpDestination() -> u8 {
     let (mut map_group, mut map_num, mut x, mut y) = (0i8, 0i8, 0i16, 0i16);
     if unsafe { GetSSTidalLocation(&raw mut map_group, &raw mut map_num, &raw mut x, &raw mut y) }
         != SS_TIDAL_LOCATION_CURRENTS
@@ -331,7 +443,7 @@ pub unsafe extern "C" fn TrySetPortholeWarpDestination() -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Task_HandlePorthole(task_id: u8) {
+pub unsafe fn Task_HandlePorthole(task_id: u8) {
     let cruise_state = unsafe { GetVarPointer(VAR_SS_TIDAL_STATE) };
     let (map_num, map_group) = unsafe { location() };
     let get = |i| unsafe { task_data(task_id, i) };
@@ -413,15 +525,20 @@ unsafe fn show_ss_tidal_while_sailing() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldCB_ShowPortholeView() {
+pub unsafe fn FieldCB_ShowPortholeView() {
     unsafe { show_ss_tidal_while_sailing() };
     let id = usize::from(unsafe {
-        (&raw const gPlayerAvatar)
+        (&raw const (*(&raw const crate::field_player_avatar::gPlayerAvatar)
+            .cast::<u8>()
+            .cast_mut()))
             .add(PLAYER_AVATAR_OBJECT_EVENT_ID)
             .read()
     });
     let object = unsafe {
-        (&raw mut gObjectEvents).add(id * OBJECT_EVENT_SIZE + OBJECT_EVENT_INVISIBLE_BYTE)
+        (&raw mut (*(&raw const crate::field_player_avatar::gObjectEvents)
+            .cast::<u8>()
+            .cast_mut()))
+            .add(id * OBJECT_EVENT_SIZE + OBJECT_EVENT_INVISIBLE_BYTE)
     };
     unsafe { object.write(object.read() | OBJECT_EVENT_INVISIBLE_BIT) };
     unsafe { FadeInFromBlack() };
@@ -430,11 +547,11 @@ pub unsafe extern "C" fn FieldCB_ShowPortholeView() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LookThroughPorthole() {
+pub unsafe fn LookThroughPorthole() {
     unsafe { FlagSet(FLAG_SYS_CRUISE_MODE) };
     unsafe { FlagSet(FLAG_DONT_TRANSITION_MUSIC) };
     unsafe { FlagSet(FLAG_HIDE_MAP_NAME_POPUP) };
-    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read() };
+    let sb1 = unsafe { (&raw const gSaveBlock1Ptr).read().cast::<u8>() };
     let group = unsafe { sb1.add(SB1_LOCATION_MAP_GROUP).read() } as i8;
     let num = unsafe { sb1.add(SB1_LOCATION_MAP_NUM).read() } as i8;
     unsafe { SetDynamicWarp(0, group, num, WARP_ID_NONE) };

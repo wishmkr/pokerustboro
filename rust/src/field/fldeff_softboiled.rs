@@ -19,37 +19,91 @@ const PARTY_MENU_SLOT_ID_OFFSET: usize = 9;
 const PARTY_MENU_SLOT_ID2_OFFSET: usize = 10;
 const PARTY_MENU_ACTION_OFFSET: usize = 11;
 
-unsafe extern "C" {
-    static mut gPartyMenu: u8;
-    static gText_PkmnHPRestoredByVar2: u8;
-    static gText_CantBeUsedOnPkmn: u8;
-
-    fn GetCursorSelectionMonId() -> u8;
-    fn AnimatePartySlot(slot: u8, anim_num: u8);
-    fn DisplayPartyMenuStdMessage(string_id: u32);
-    fn DisplayPartyMenuMessage(string: *const u8, keep_open: u8) -> u8;
-    fn IsPartyMenuTextPrinterActive() -> u8;
-    fn PartyMenuModifyHP(
-        task_id: u8,
-        slot: u8,
-        hp_increment: i8,
-        hp_difference: i16,
-        task: TaskFunc,
-    );
-    fn Task_HandleChooseMonInput(task_id: u8);
-    fn ScheduleBgCopyTilemapToVram(bg_id: u8);
-    fn ClearStdWindowAndFrameToTransparent(window_id: u8, copy_to_vram: u8);
-    fn ClearWindowTilemap(window_id: u8);
+/// `GetCursorSelectionMonId` with this module's view of its types.
+#[inline]
+unsafe fn GetCursorSelectionMonId() -> u8 {
+    unsafe { crate::party_menu::GetCursorSelectionMonId() }
+}
+/// `AnimatePartySlot` with this module's view of its types.
+#[inline]
+unsafe fn AnimatePartySlot(a0: u8, a1: u8) {
+    unsafe {
+        crate::party_menu::AnimatePartySlot(a0, a1);
+    }
+}
+/// `DisplayPartyMenuStdMessage` with this module's view of its types.
+#[inline]
+unsafe fn DisplayPartyMenuStdMessage(a0: u32) {
+    unsafe {
+        crate::party_menu::DisplayPartyMenuStdMessage(a0);
+    }
+}
+/// `DisplayPartyMenuMessage` with this module's view of its types.
+#[inline]
+unsafe fn DisplayPartyMenuMessage(a0: *const u8, a1: u8) -> u8 {
+    unsafe { crate::party_menu::DisplayPartyMenuMessage(a0 as _, a1) }
+}
+/// `IsPartyMenuTextPrinterActive` with this module's view of its types.
+#[inline]
+unsafe fn IsPartyMenuTextPrinterActive() -> u8 {
+    unsafe { crate::party_menu::IsPartyMenuTextPrinterActive() }
+}
+/// `PartyMenuModifyHP` with this module's view of its types.
+#[inline]
+unsafe fn PartyMenuModifyHP(a0: u8, a1: u8, a2: i8, a3: i16, a4: TaskFunc) {
+    unsafe {
+        crate::party_menu::PartyMenuModifyHP(a0, a1, a2, a3, core::mem::transmute(a4));
+    }
+}
+/// `Task_HandleChooseMonInput` with this module's view of its types.
+#[inline]
+unsafe fn Task_HandleChooseMonInput(a0: u8) {
+    unsafe {
+        crate::party_menu::Task_HandleChooseMonInput(a0);
+    }
+}
+/// `ScheduleBgCopyTilemapToVram` with this module's view of its types.
+#[inline]
+unsafe fn ScheduleBgCopyTilemapToVram(a0: u8) {
+    unsafe {
+        crate::menu::ScheduleBgCopyTilemapToVram(a0);
+    }
+}
+/// `ClearStdWindowAndFrameToTransparent` with this module's view of its types.
+#[inline]
+unsafe fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8) {
+    unsafe {
+        crate::menu::ClearStdWindowAndFrameToTransparent(a0, a1);
+    }
+}
+/// `ClearWindowTilemap` with this module's view of its types.
+#[inline]
+unsafe fn ClearWindowTilemap(a0: u8) {
+    unsafe {
+        crate::window::ClearWindowTilemap(a0);
+    }
 }
 
 #[inline]
 unsafe fn party_menu_byte(offset: usize) -> u8 {
-    unsafe { (&raw const gPartyMenu).add(offset).read_volatile() }
+    unsafe {
+        (&raw const (*(&raw const crate::party_menu::gPartyMenu)
+            .cast::<u8>()
+            .cast_mut()))
+            .add(offset)
+            .read_volatile()
+    }
 }
 
 #[inline]
 unsafe fn set_party_menu_byte(offset: usize, value: u8) {
-    unsafe { (&raw mut gPartyMenu).add(offset).write_volatile(value) };
+    unsafe {
+        (&raw mut (*(&raw const crate::party_menu::gPartyMenu)
+            .cast::<u8>()
+            .cast_mut()))
+            .add(offset)
+            .write_volatile(value)
+    };
 }
 
 #[inline]
@@ -73,7 +127,7 @@ unsafe fn current_hp(slot: u8) -> u16 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetUpFieldMove_SoftBoiled() -> u8 {
+pub unsafe fn SetUpFieldMove_SoftBoiled() -> u8 {
     let slot = unsafe { GetCursorSelectionMonId() };
     let max = unsafe { max_hp(slot) };
     let hp = unsafe { current_hp(slot) };
@@ -82,7 +136,7 @@ pub unsafe extern "C" fn SetUpFieldMove_SoftBoiled() -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ChooseMonForSoftboiled(task_id: u8) {
+pub unsafe fn ChooseMonForSoftboiled(task_id: u8) {
     unsafe { set_party_menu_byte(PARTY_MENU_ACTION_OFFSET, PARTY_ACTION_SOFTBOILED) };
     unsafe { set_party_menu_byte(PARTY_MENU_SLOT_ID2_OFFSET, slot_id()) };
     unsafe { AnimatePartySlot(GetCursorSelectionMonId(), 1) };
@@ -91,7 +145,7 @@ pub unsafe extern "C" fn ChooseMonForSoftboiled(task_id: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Task_TryUseSoftboiledOnPartyMon(task_id: u8) {
+pub unsafe fn Task_TryUseSoftboiledOnPartyMon(task_id: u8) {
     let user = unsafe { slot_id() };
     let recipient = unsafe { slot_id2() };
 
@@ -123,7 +177,7 @@ pub unsafe extern "C" fn Task_TryUseSoftboiledOnPartyMon(task_id: u8) {
     };
 }
 
-unsafe extern "C" fn task_softboiled_restore_health(task_id: u8) {
+unsafe fn task_softboiled_restore_health(task_id: u8) {
     unsafe { PlaySE(SE_USE_ITEM) };
     unsafe {
         PartyMenuModifyHP(
@@ -136,7 +190,7 @@ unsafe extern "C" fn task_softboiled_restore_health(task_id: u8) {
     };
 }
 
-unsafe extern "C" fn task_display_hp_restored_message(task_id: u8) {
+unsafe fn task_display_hp_restored_message(task_id: u8) {
     let _ = unsafe {
         GetMonNickname(
             party_mon(slot_id2() as usize),
@@ -146,7 +200,8 @@ unsafe extern "C" fn task_display_hp_restored_message(task_id: u8) {
     let _ = unsafe {
         StringExpandPlaceholders(
             (&raw mut gStringVar4).cast::<u8>(),
-            &raw const gText_PkmnHPRestoredByVar2,
+            &raw const (*(&raw const crate::data::strings::gText_PkmnHPRestoredByVar2)
+                .cast::<u8>()),
         )
     };
     let _ = unsafe { DisplayPartyMenuMessage((&raw const gStringVar4).cast::<u8>(), 0) };
@@ -154,7 +209,7 @@ unsafe extern "C" fn task_display_hp_restored_message(task_id: u8) {
     unsafe { set_task_func(task_id, task_finish_softboiled) };
 }
 
-unsafe extern "C" fn task_finish_softboiled(task_id: u8) {
+unsafe fn task_finish_softboiled(task_id: u8) {
     if unsafe { IsPartyMenuTextPrinterActive() } == 1 {
         return;
     }
@@ -169,7 +224,7 @@ unsafe extern "C" fn task_finish_softboiled(task_id: u8) {
     unsafe { set_task_func(task_id, Task_HandleChooseMonInput) };
 }
 
-unsafe extern "C" fn task_choose_new_mon_for_softboiled(task_id: u8) {
+unsafe fn task_choose_new_mon_for_softboiled(task_id: u8) {
     if unsafe { IsPartyMenuTextPrinterActive() } == 1 {
         return;
     }
@@ -180,7 +235,12 @@ unsafe extern "C" fn task_choose_new_mon_for_softboiled(task_id: u8) {
 
 unsafe fn cant_use_softboiled_on_mon(task_id: u8) {
     unsafe { PlaySE(SE_SELECT) };
-    let _ = unsafe { DisplayPartyMenuMessage(&raw const gText_CantBeUsedOnPkmn, 0) };
+    let _ = unsafe {
+        DisplayPartyMenuMessage(
+            &raw const (*(&raw const crate::data::strings::gText_CantBeUsedOnPkmn).cast::<u8>()),
+            0,
+        )
+    };
     unsafe { ScheduleBgCopyTilemapToVram(2) };
     unsafe { set_task_func(task_id, task_choose_new_mon_for_softboiled) };
 }

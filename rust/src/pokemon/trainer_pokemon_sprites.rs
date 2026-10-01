@@ -85,33 +85,32 @@ static mut CREATING_TEMPLATE: crate::ffi::Align4<[u8; 24]> = crate::ffi::Align4(
 #[unsafe(link_section = "ewram_data")]
 static mut SPRITE_PICS: [PicData; PICS_COUNT] = [DUMMY_PIC; PICS_COUNT];
 
-unsafe extern "C" {
-    static gMonFrontPicTable: CompressedSpriteSheet;
-    static gMonBackPicTable: CompressedSpriteSheet;
-    static gTrainerFrontPicTable: CompressedSpriteSheet;
-    static gTrainerBackPicTable: CompressedSpriteSheet;
-    static gTrainerFrontPicPaletteTable: CompressedSpritePalette;
-    static gAnims_MonPic: u8;
-    static gTrainerFrontAnimsPtrTable: [*const RomPtr<crate::ffi::AnimCmd>; 1];
-    static gMonFrontAnimsPtrTable: [*const RomPtr<crate::ffi::AnimCmd>; 1];
-    static gAffineAnims_BattleSpriteOpponentSide: u8;
-    static gAffineAnims_BattleSpritePlayerSide: u8;
-    static gFacilityClassToPicIndex: u8;
-
-    fn GetMonSpritePalFromSpeciesAndPersonality(
-        species: u16,
-        ot_id: u32,
-        personality: u32,
-    ) -> *const u32;
-    fn GetMonSpritePalStructFromOtIdPersonality(
-        species: u16,
-        ot_id: u32,
-        personality: u32,
-    ) -> *const CompressedSpritePalette;
-    fn LoadCompressedPalette(src: *const u32, offset: u16, size: u16);
+/// `GetMonSpritePalFromSpeciesAndPersonality` with this module's view of its types.
+#[inline]
+unsafe fn GetMonSpritePalFromSpeciesAndPersonality(a0: u16, a1: u32, a2: u32) -> *const u32 {
+    unsafe { crate::pokemon::GetMonSpritePalFromSpeciesAndPersonality(a0, a1, a2) as *const u32 }
+}
+/// `GetMonSpritePalStructFromOtIdPersonality` with this module's view of its types.
+#[inline]
+unsafe fn GetMonSpritePalStructFromOtIdPersonality(
+    a0: u16,
+    a1: u32,
+    a2: u32,
+) -> *const CompressedSpritePalette {
+    unsafe {
+        crate::pokemon::GetMonSpritePalStructFromOtIdPersonality(a0, a1, a2)
+            as *const CompressedSpritePalette
+    }
+}
+/// `LoadCompressedPalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedPalette(a0: *const u32, a1: u16, a2: u16) {
+    unsafe {
+        crate::palette::LoadCompressedPalette(a0 as _, a1, a2);
+    }
 }
 
-unsafe extern "C" fn dummy_pic_sprite_callback(_sprite: *mut u8) {}
+unsafe fn dummy_pic_sprite_callback(_sprite: *mut u8) {}
 
 #[inline]
 fn template() -> *mut SpriteTemplate {
@@ -133,14 +132,15 @@ unsafe fn sheet(table: *const CompressedSpriteSheet, index: u16) -> *const Compr
 
 #[inline]
 unsafe fn trainer_palette(index: u16) -> *const CompressedSpritePalette {
-    (&raw const gTrainerFrontPicPaletteTable)
+    (&raw const (*(&raw const crate::data::data_tables::gTrainerFrontPicPaletteTable)
+        .cast::<CompressedSpritePalette>()))
         .cast::<u8>()
         .wrapping_add(usize::from(index) * SHEET_SIZE)
         .cast()
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetAllPicSprites() -> u16 {
+pub unsafe fn ResetAllPicSprites() -> u16 {
     for i in 0..PICS_COUNT {
         unsafe { pics().add(i).write(DUMMY_PIC) };
     }
@@ -157,9 +157,11 @@ unsafe fn decompress_pic(
 ) -> bool {
     if !is_trainer {
         let table = if is_front_pic != 0 {
-            &raw const gMonFrontPicTable
+            &raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+                .cast::<CompressedSpriteSheet>())
         } else {
-            &raw const gMonBackPicTable
+            &raw const (*(&raw const crate::data::data_tables::gMonBackPicTable)
+                .cast::<CompressedSpriteSheet>())
         };
         let src = unsafe { sheet(table, pic_id) };
         let species = i32::from(pic_id);
@@ -174,9 +176,11 @@ unsafe fn decompress_pic(
         // Trainer back pics aren't compressed; decompressing them works only
         // because the bytes where a header would be are all zero. Kept as is.
         let table = if is_front_pic != 0 {
-            &raw const gTrainerFrontPicTable
+            &raw const (*(&raw const crate::data::data_tables::gTrainerFrontPicTable)
+                .cast::<CompressedSpriteSheet>())
         } else {
-            &raw const gTrainerBackPicTable
+            &raw const (*(&raw const crate::data::data_tables::gTrainerBackPicTable)
+                .cast::<CompressedSpriteSheet>())
         };
         unsafe { DecompressPicFromTable(sheet(table, pic_id), dest, i32::from(pic_id)) };
     }
@@ -327,11 +331,12 @@ unsafe fn create_pic_sprite(
         (*t).tile_tag = TAG_NONE;
         (*t).oam = &raw const OAM_NORMAL;
         (*t).anims = if is_trainer {
-            (&raw const gTrainerFrontAnimsPtrTable)
+            (&raw const (*(&raw const crate::data::data_tables::gTrainerFrontAnimsPtrTable)
+                .cast::<[*const RomPtr<crate::ffi::AnimCmd>; 1]>()))
                 .cast::<*const RomPtr<crate::ffi::AnimCmd>>()
                 .read()
         } else {
-            (&raw const gAnims_MonPic).cast()
+            (&raw const (*(&raw const crate::data::data_tables::gAnims_MonPic).cast::<u8>())).cast()
         };
         (*t).images = images.cast();
         (*t).affine_anims = (&raw const gDummySpriteAffineAnimTable).cast();
@@ -351,7 +356,7 @@ unsafe fn create_pic_sprite(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateMonPicSprite_Affine(
+pub unsafe fn CreateMonPicSprite_Affine(
     species: u16,
     ot_id: u32,
     personality: u32,
@@ -388,18 +393,19 @@ pub unsafe extern "C" fn CreateMonPicSprite_Affine(
     let t = template();
     unsafe {
         (*t).tile_tag = TAG_NONE;
-        (*t).anims = (&raw const gMonFrontAnimsPtrTable)
+        (*t).anims = (&raw const (*(&raw const crate::data::data_tables::gMonFrontAnimsPtrTable)
+            .cast::<[*const RomPtr<crate::ffi::AnimCmd>; 1]>()))
             .cast::<*const RomPtr<crate::ffi::AnimCmd>>()
             .add(usize::from(species))
             .read();
         (*t).images = images.cast();
         let (affine, oam): (*const u8, *const OamData) = match kind {
             MON_PIC_AFFINE_FRONT => (
-                &raw const gAffineAnims_BattleSpriteOpponentSide,
+                &raw const (*(&raw const crate::data::data_tables::gAffineAnims_BattleSpriteOpponentSide).cast::<u8>()),
                 &raw const OAM_AFFINE,
             ),
             MON_PIC_AFFINE_BACK => (
-                &raw const gAffineAnims_BattleSpritePlayerSide,
+                &raw const (*(&raw const crate::data::data_tables::gAffineAnims_BattleSpritePlayerSide).cast::<u8>()),
                 &raw const OAM_AFFINE,
             ),
             _ => (
@@ -490,7 +496,7 @@ unsafe fn create_trainer_card_sprite(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateMonPicSprite_HandleDeoxys(
+pub unsafe fn CreateMonPicSprite_HandleDeoxys(
     species: u16,
     ot_id: u32,
     personality: u32,
@@ -517,13 +523,13 @@ pub unsafe extern "C" fn CreateMonPicSprite_HandleDeoxys(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeAndDestroyMonPicSprite(sprite_id: u16) -> u16 {
+pub unsafe fn FreeAndDestroyMonPicSprite(sprite_id: u16) -> u16 {
     unsafe { free_and_destroy_pic_sprite(sprite_id) }
 }
 
 /// Unused (FRLG only).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateTrainerCardMonIconSprite(
+pub unsafe fn CreateTrainerCardMonIconSprite(
     species: u16,
     ot_id: u32,
     personality: u32,
@@ -549,7 +555,7 @@ pub unsafe extern "C" fn CreateTrainerCardMonIconSprite(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateTrainerPicSprite(
+pub unsafe fn CreateTrainerPicSprite(
     species: u16,
     is_front_pic: u8,
     x: i16,
@@ -574,12 +580,12 @@ pub unsafe extern "C" fn CreateTrainerPicSprite(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeAndDestroyTrainerPicSprite(sprite_id: u16) -> u16 {
+pub unsafe fn FreeAndDestroyTrainerPicSprite(sprite_id: u16) -> u16 {
     unsafe { free_and_destroy_pic_sprite(sprite_id) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateTrainerCardTrainerPicSprite(
+pub unsafe fn CreateTrainerCardTrainerPicSprite(
     species: u16,
     is_front_pic: u8,
     dest_x: u16,
@@ -603,14 +609,18 @@ pub unsafe extern "C" fn CreateTrainerCardTrainerPicSprite(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayerGenderToFrontTrainerPicId_Debug(gender: u8, get_class: u8) -> u16 {
+pub unsafe fn PlayerGenderToFrontTrainerPicId_Debug(gender: u8, get_class: u8) -> u16 {
     if get_class == 1 {
         let class = if gender != MALE {
             FACILITY_CLASS_MAY
         } else {
             FACILITY_CLASS_BRENDAN
         };
-        return u16::from(unsafe { (&raw const gFacilityClassToPicIndex).add(class).read() });
+        return u16::from(unsafe {
+            (&raw const (*(&raw const crate::data::pokemon::gFacilityClassToPicIndex).cast::<u8>()))
+                .add(class)
+                .read()
+        });
     }
     u16::from(gender)
 }

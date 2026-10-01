@@ -1,6 +1,7 @@
 //! The Safari Zone: a ball count, a step timer, and up to ten Pokeblock
 //! feeders left lying on the ground to attract Pokemon.
 
+use crate::battle_main::gBattleOutcome;
 use crate::ffi::{
     ConvertIntToDecimalStringN, FlagClear, FlagGet, FlagSet, StringCopy, gSpecialVar_Result,
     gStringVar1, gStringVar2,
@@ -40,50 +41,115 @@ const SAVE1_LOCATION_MAP_NUM: usize = 5;
 /// `offsetof(struct BattleResults, pokeblockThrows)`
 const BATTLE_RESULTS_POKEBLOCK_THROWS: usize = 31;
 
-type MainCallback = unsafe extern "C" fn();
+type MainCallback = unsafe fn();
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gNumSafariBalls: u8 = 0;
 
 #[unsafe(link_section = "ewram_data")]
-static mut STEP_COUNTER: u16 = 0;
+static STEP_COUNTER: crate::global::Global<u16> = crate::global::Global::new(0);
 
 #[unsafe(link_section = "ewram_data")]
-static mut CAUGHT_MONS: u8 = 0;
+static CAUGHT_MONS: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[unsafe(link_section = "ewram_data")]
-static mut PKBLK_USES: u8 = 0;
+static PKBLK_USES: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[unsafe(link_section = "ewram_data")]
 static mut POKEBLOCK_FEEDERS: crate::ffi::Align4<[[u8; FEEDER_STRIDE]; NUM_POKEBLOCK_FEEDERS]> =
     crate::ffi::Align4([[0; FEEDER_STRIDE]; NUM_POKEBLOCK_FEEDERS]);
 
-unsafe extern "C" {
-    static mut gSaveBlock1Ptr: *mut u8;
-    static mut gBattleResults: u8;
-    static mut gBattleOutcome: u8;
-    static mut gFieldCallback: Option<MainCallback>;
-    static gPokeblockNames: *const u8;
-
-    static SafariZone_EventScript_TimesUp: u8;
-    static SafariZone_EventScript_RetirePrompt: u8;
-    static SafariZone_EventScript_OutOfBallsMidBattle: u8;
-    static SafariZone_EventScript_OutOfBalls: u8;
-
-    fn IncrementGameStat(index: u8);
-    fn TryPutSafariFanClubOnAir(mons_caught: u8, pokeblocks_used: u8);
-    fn ScriptContext_SetupScript(script: *const u8);
-    fn ScriptContext_Stop();
-    fn RunScriptImmediately(script: *const u8);
-    fn WarpIntoMap();
-    fn SetMainCallback2(callback: MainCallback);
-    fn CB2_ReturnToField();
-    fn CB2_LoadMap();
-    fn CB2_ReturnToFieldContinueScriptPlayMapMusic();
-    fn FieldCB_ReturnToFieldNoScriptCheckMusic();
-    fn GetXYCoordsOneStepInFrontOfPlayer(x: *mut i16, y: *mut i16);
-    fn PlayerGetDestCoords(x: *mut i16, y: *mut i16);
+/// `IncrementGameStat` with this module's view of its types.
+#[inline]
+unsafe fn IncrementGameStat(a0: u8) {
+    unsafe {
+        crate::overworld::IncrementGameStat(a0);
+    }
+}
+/// `TryPutSafariFanClubOnAir` with this module's view of its types.
+#[inline]
+unsafe fn TryPutSafariFanClubOnAir(a0: u8, a1: u8) {
+    unsafe {
+        crate::tv::TryPutSafariFanClubOnAir(a0, a1);
+    }
+}
+/// `ScriptContext_SetupScript` with this module's view of its types.
+#[inline]
+unsafe fn ScriptContext_SetupScript(a0: *const u8) {
+    unsafe {
+        crate::script::ScriptContext_SetupScript(a0 as _);
+    }
+}
+/// `ScriptContext_Stop` with this module's view of its types.
+#[inline]
+unsafe fn ScriptContext_Stop() {
+    unsafe {
+        crate::script::ScriptContext_Stop();
+    }
+}
+/// `RunScriptImmediately` with this module's view of its types.
+#[inline]
+unsafe fn RunScriptImmediately(a0: *const u8) {
+    unsafe {
+        crate::script::RunScriptImmediately(a0 as _);
+    }
+}
+/// `WarpIntoMap` with this module's view of its types.
+#[inline]
+unsafe fn WarpIntoMap() {
+    unsafe {
+        crate::overworld::WarpIntoMap();
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: MainCallback) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
+}
+/// `CB2_ReturnToField` with this module's view of its types.
+#[inline]
+unsafe fn CB2_ReturnToField() {
+    unsafe {
+        crate::overworld::CB2_ReturnToField();
+    }
+}
+/// `CB2_LoadMap` with this module's view of its types.
+#[inline]
+unsafe fn CB2_LoadMap() {
+    unsafe {
+        crate::overworld::CB2_LoadMap();
+    }
+}
+/// `CB2_ReturnToFieldContinueScriptPlayMapMusic` with this module's view of its types.
+#[inline]
+unsafe fn CB2_ReturnToFieldContinueScriptPlayMapMusic() {
+    unsafe {
+        crate::overworld::CB2_ReturnToFieldContinueScriptPlayMapMusic();
+    }
+}
+/// `FieldCB_ReturnToFieldNoScriptCheckMusic` with this module's view of its types.
+#[inline]
+unsafe fn FieldCB_ReturnToFieldNoScriptCheckMusic() {
+    unsafe {
+        crate::field_screen_effect::FieldCB_ReturnToFieldNoScriptCheckMusic();
+    }
+}
+/// `GetXYCoordsOneStepInFrontOfPlayer` with this module's view of its types.
+#[inline]
+unsafe fn GetXYCoordsOneStepInFrontOfPlayer(a0: *mut i16, a1: *mut i16) {
+    unsafe {
+        crate::field_player_avatar::GetXYCoordsOneStepInFrontOfPlayer(a0 as _, a1 as _);
+    }
+}
+/// `PlayerGetDestCoords` with this module's view of its types.
+#[inline]
+unsafe fn PlayerGetDestCoords(a0: *mut i16, a1: *mut i16) {
+    unsafe {
+        crate::field_player_avatar::PlayerGetDestCoords(a0 as _, a1 as _);
+    }
 }
 
 #[inline]
@@ -107,21 +173,27 @@ unsafe fn feeder_u8(index: usize, offset: usize) -> u8 {
 
 #[inline]
 unsafe fn current_map_num() -> u8 {
-    unsafe { gSaveBlock1Ptr.add(SAVE1_LOCATION_MAP_NUM).read_volatile() }
+    unsafe {
+        (*(&raw const crate::load_save::gSaveBlock1Ptr)
+            .cast::<*mut u8>()
+            .cast_mut())
+        .add(SAVE1_LOCATION_MAP_NUM)
+        .read_volatile()
+    }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetSafariZoneFlag() -> u32 {
+pub unsafe fn GetSafariZoneFlag() -> u32 {
     u32::from(unsafe { FlagGet(FLAG_SYS_SAFARI_MODE) })
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetSafariZoneFlag() {
+pub unsafe fn SetSafariZoneFlag() {
     unsafe { FlagSet(FLAG_SYS_SAFARI_MODE) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetSafariZoneFlag() {
+pub unsafe fn ResetSafariZoneFlag() {
     unsafe { FlagClear(FLAG_SYS_SAFARI_MODE) };
 }
 
@@ -136,28 +208,28 @@ unsafe fn clear_all_pokeblock_feeders() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn EnterSafariMode() {
+pub unsafe fn EnterSafariMode() {
     unsafe { IncrementGameStat(GAME_STAT_ENTERED_SAFARI_ZONE) };
     unsafe { SetSafariZoneFlag() };
     unsafe { clear_all_pokeblock_feeders() };
     unsafe { (&raw mut gNumSafariBalls).write_volatile(SAFARI_BALLS) };
-    unsafe { (&raw mut STEP_COUNTER).write_volatile(SAFARI_STEPS) };
-    unsafe { (&raw mut CAUGHT_MONS).write_volatile(0) };
-    unsafe { (&raw mut PKBLK_USES).write_volatile(0) };
+    unsafe { (STEP_COUNTER.as_ptr()).write_volatile(SAFARI_STEPS) };
+    unsafe { (CAUGHT_MONS.as_ptr()).write_volatile(0) };
+    unsafe { (PKBLK_USES.as_ptr()).write_volatile(0) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ExitSafariMode() {
+pub unsafe fn ExitSafariMode() {
     unsafe {
         TryPutSafariFanClubOnAir(
-            (&raw const CAUGHT_MONS).read_volatile(),
-            (&raw const PKBLK_USES).read_volatile(),
+            (CAUGHT_MONS.as_ptr().cast_const()).read_volatile(),
+            (PKBLK_USES.as_ptr().cast_const()).read_volatile(),
         )
     };
     unsafe { ResetSafariZoneFlag() };
     unsafe { clear_all_pokeblock_feeders() };
     unsafe { (&raw mut gNumSafariBalls).write_volatile(0) };
-    unsafe { (&raw mut STEP_COUNTER).write_volatile(0) };
+    unsafe { (STEP_COUNTER.as_ptr()).write_volatile(0) };
 }
 
 unsafe fn decrement_feeder_step_counters() {
@@ -175,60 +247,84 @@ unsafe fn decrement_feeder_step_counters() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SafariZoneTakeStep() -> u8 {
+pub unsafe fn SafariZoneTakeStep() -> u8 {
     if unsafe { GetSafariZoneFlag() } == 0 {
         return 0;
     }
 
     unsafe { decrement_feeder_step_counters() };
-    let steps = unsafe { (&raw const STEP_COUNTER).read_volatile() }.wrapping_sub(1);
-    unsafe { (&raw mut STEP_COUNTER).write_volatile(steps) };
+    let steps = unsafe { (STEP_COUNTER.as_ptr().cast_const()).read_volatile() }.wrapping_sub(1);
+    unsafe { (STEP_COUNTER.as_ptr()).write_volatile(steps) };
 
     if steps == 0 {
-        unsafe { ScriptContext_SetupScript(&raw const SafariZone_EventScript_TimesUp) };
+        unsafe {
+            ScriptContext_SetupScript(
+                &raw const (*crate::asmdata::SafariZone_EventScript_TimesUp.cast::<u8>()),
+            )
+        };
         return 1;
     }
     0
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SafariZoneRetirePrompt() {
-    unsafe { ScriptContext_SetupScript(&raw const SafariZone_EventScript_RetirePrompt) };
+pub unsafe fn SafariZoneRetirePrompt() {
+    unsafe {
+        ScriptContext_SetupScript(
+            &raw const (*crate::asmdata::SafariZone_EventScript_RetirePrompt.cast::<u8>()),
+        )
+    };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_EndSafariBattle() {
+pub unsafe fn CB2_EndSafariBattle() {
     let throws = unsafe {
-        (&raw const gBattleResults)
+        (&raw const (*(&raw const crate::battle_main::gBattleResults)
+            .cast::<u8>()
+            .cast_mut()))
             .add(BATTLE_RESULTS_POKEBLOCK_THROWS)
             .read_volatile()
     };
-    let uses = unsafe { (&raw const PKBLK_USES).read_volatile() }.wrapping_add(throws);
-    unsafe { (&raw mut PKBLK_USES).write_volatile(uses) };
+    let uses = unsafe { (PKBLK_USES.as_ptr().cast_const()).read_volatile() }.wrapping_add(throws);
+    unsafe { (PKBLK_USES.as_ptr()).write_volatile(uses) };
 
     let outcome = unsafe { (&raw const gBattleOutcome).read_volatile() };
     if outcome == B_OUTCOME_CAUGHT {
-        let caught = unsafe { (&raw const CAUGHT_MONS).read_volatile() }.wrapping_add(1);
-        unsafe { (&raw mut CAUGHT_MONS).write_volatile(caught) };
+        let caught = unsafe { (CAUGHT_MONS.as_ptr().cast_const()).read_volatile() }.wrapping_add(1);
+        unsafe { (CAUGHT_MONS.as_ptr()).write_volatile(caught) };
     }
 
     if unsafe { (&raw const gNumSafariBalls).read_volatile() } != 0 {
         unsafe { SetMainCallback2(CB2_ReturnToField) };
     } else if outcome == B_OUTCOME_NO_SAFARI_BALLS {
         // Ran out mid-battle: warp out and tell the player on arrival.
-        unsafe { RunScriptImmediately(&raw const SafariZone_EventScript_OutOfBallsMidBattle) };
+        unsafe {
+            RunScriptImmediately(
+                &raw const (*crate::asmdata::SafariZone_EventScript_OutOfBallsMidBattle
+                    .cast::<u8>()),
+            )
+        };
         unsafe { WarpIntoMap() };
-        unsafe { (&raw mut gFieldCallback).write(Some(FieldCB_ReturnToFieldNoScriptCheckMusic)) };
+        unsafe {
+            (&raw mut (*(&raw const crate::overworld::gFieldCallback)
+                .cast::<Option<MainCallback>>()
+                .cast_mut()))
+                .write(Some(FieldCB_ReturnToFieldNoScriptCheckMusic))
+        };
         unsafe { SetMainCallback2(CB2_LoadMap) };
     } else if outcome == B_OUTCOME_CAUGHT {
-        unsafe { ScriptContext_SetupScript(&raw const SafariZone_EventScript_OutOfBalls) };
+        unsafe {
+            ScriptContext_SetupScript(
+                &raw const (*crate::asmdata::SafariZone_EventScript_OutOfBalls.cast::<u8>()),
+            )
+        };
         unsafe { ScriptContext_Stop() };
         unsafe { SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic) };
     }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPokeblockFeederInFront() {
+pub unsafe fn GetPokeblockFeederInFront() {
     let mut x = 0i16;
     let mut y = 0i16;
     unsafe { GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y) };
@@ -241,7 +337,8 @@ pub unsafe extern "C" fn GetPokeblockFeederInFront() {
             unsafe { (&raw mut gSpecialVar_Result).write_volatile(i as u16) };
             let color = unsafe { feeder_u8(i, FEEDER_POKEBLOCK) } as usize;
             let name = unsafe {
-                (&raw const gPokeblockNames)
+                (&raw const (*(&raw const crate::data::pokeblock::gPokeblockNames)
+                    .cast::<*const u8>()))
                     .cast::<*const u8>()
                     .add(color)
                     .read()
@@ -255,7 +352,7 @@ pub unsafe extern "C" fn GetPokeblockFeederInFront() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPokeblockFeederWithinRange() {
+pub unsafe fn GetPokeblockFeederWithinRange() {
     let mut x = 0i16;
     let mut y = 0i16;
     unsafe { PlayerGetDestCoords(&raw mut x, &raw mut y) };
@@ -285,7 +382,7 @@ pub unsafe extern "C" fn GetPokeblockFeederWithinRange() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SafariZoneGetPokeblockInFront() -> *mut u8 {
+pub unsafe fn SafariZoneGetPokeblockInFront() -> *mut u8 {
     unsafe { GetPokeblockFeederInFront() };
     let result = unsafe { (&raw const gSpecialVar_Result).read_volatile() };
     if result == 0xffff {
@@ -296,7 +393,7 @@ pub unsafe extern "C" fn SafariZoneGetPokeblockInFront() -> *mut u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SafariZoneGetActivePokeblock() -> *mut u8 {
+pub unsafe fn SafariZoneGetActivePokeblock() -> *mut u8 {
     unsafe { GetPokeblockFeederWithinRange() };
     let result = unsafe { (&raw const gSpecialVar_Result).read_volatile() };
     if result == 0xffff {
@@ -307,7 +404,7 @@ pub unsafe extern "C" fn SafariZoneGetActivePokeblock() -> *mut u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SafariZoneActivatePokeblockFeeder(pkbl_id: u8) {
+pub unsafe fn SafariZoneActivatePokeblockFeeder(pkbl_id: u8) {
     for i in 0..NUM_POKEBLOCK_FEEDERS {
         // A free slot is one that is entirely zeroed.
         if unsafe { feeder_u8(i, FEEDER_MAP_NUM) } != 0
@@ -325,7 +422,10 @@ pub unsafe extern "C" fn SafariZoneActivatePokeblockFeeder(pkbl_id: u8) {
         unsafe { slot.add(FEEDER_MAP_NUM).write_volatile(current_map_num()) };
         unsafe {
             core::ptr::copy_nonoverlapping(
-                gSaveBlock1Ptr.add(SAVE1_POKEBLOCKS + pkbl_id as usize * POKEBLOCK_SIZE),
+                (*(&raw const crate::load_save::gSaveBlock1Ptr)
+                    .cast::<*mut u8>()
+                    .cast_mut())
+                .add(SAVE1_POKEBLOCKS + pkbl_id as usize * POKEBLOCK_SIZE),
                 slot.add(FEEDER_POKEBLOCK),
                 POKEBLOCK_SIZE,
             )
@@ -338,7 +438,7 @@ pub unsafe extern "C" fn SafariZoneActivatePokeblockFeeder(pkbl_id: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetInFrontFeederPokeblockAndSteps() -> u8 {
+pub unsafe fn GetInFrontFeederPokeblockAndSteps() -> u8 {
     unsafe { GetPokeblockFeederInFront() };
     let result = unsafe { (&raw const gSpecialVar_Result).read_volatile() };
     if result == 0xffff {

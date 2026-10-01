@@ -308,7 +308,7 @@ pub struct SpriteTemplate {
     pub anims: *mut *mut AnimCmd,
     pub images: *mut SpriteFrameImage,
     pub affineAnims: *mut *mut AffineAnimCmd,
-    pub callback: Option<unsafe extern "C" fn(*mut Sprite)>,
+    pub callback: Option<unsafe fn(*mut Sprite)>,
 }
 
 unsafe impl Sync for SpriteTemplate {}
@@ -323,7 +323,7 @@ pub struct Sprite {
     pub affineAnims: *mut *mut AffineAnimCmd,
     pub template: *mut SpriteTemplate,
     pub subspriteTables: *mut SubspriteTable,
-    pub callback: Option<unsafe extern "C" fn(*mut Sprite)>,
+    pub callback: Option<unsafe fn(*mut Sprite)>,
     pub x: i16,
     pub y: i16,
     pub x2: i16,

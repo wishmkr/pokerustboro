@@ -90,20 +90,52 @@ const CMD_SIZE: usize = 12;
 #[unsafe(link_section = "ewram_data")]
 static mut SERVER: *mut u8 = core::ptr::null_mut();
 
-unsafe extern "C" {
-    static gMysteryGiftServerScript_SendWonderNews: u8;
-    static gMysteryGiftServerScript_SendWonderCard: u8;
-
-    fn MysteryGift_ValidateLinkGameData(data: *const u8, is_wonder_news: u32) -> u32;
-    fn MysteryGift_CompareCardFlags(flag_id: *const u16, data: *const u8, unused: *const u8)
-    -> u32;
-    fn MysteryGift_CheckStamps(stamp: *const u16, data: *const u8, unused: *const u8) -> u32;
-    fn MysteryGift_DoesQuestionnaireMatch(data: *const u8, words: *const u16) -> u32;
-    fn MysteryGift_GetCardStatFromLinkData(data: *const u8, stat: u32) -> u16;
-    fn GetSavedWonderCard() -> *mut u8;
-    fn GetSavedWonderNews() -> *mut u8;
-    fn DisableWonderCardSending(card: *mut u8);
-    fn GetSavedRamScriptIfValid() -> *mut u8;
+/// `MysteryGift_ValidateLinkGameData` with this module's view of its types.
+#[inline]
+unsafe fn MysteryGift_ValidateLinkGameData(a0: *const u8, a1: u32) -> u32 {
+    unsafe { crate::mystery_gift::MysteryGift_ValidateLinkGameData(a0 as _, a1) }
+}
+/// `MysteryGift_CompareCardFlags` with this module's view of its types.
+#[inline]
+unsafe fn MysteryGift_CompareCardFlags(a0: *const u16, a1: *const u8, a2: *const u8) -> u32 {
+    unsafe { crate::mystery_gift::MysteryGift_CompareCardFlags(a0 as _, a1 as _, a2 as _) }
+}
+/// `MysteryGift_CheckStamps` with this module's view of its types.
+#[inline]
+unsafe fn MysteryGift_CheckStamps(a0: *const u16, a1: *const u8, a2: *const u8) -> u32 {
+    unsafe { crate::mystery_gift::MysteryGift_CheckStamps(a0 as _, a1 as _, a2 as _) }
+}
+/// `MysteryGift_DoesQuestionnaireMatch` with this module's view of its types.
+#[inline]
+unsafe fn MysteryGift_DoesQuestionnaireMatch(a0: *const u8, a1: *const u16) -> u32 {
+    unsafe { crate::mystery_gift::MysteryGift_DoesQuestionnaireMatch(a0 as _, a1 as _) }
+}
+/// `MysteryGift_GetCardStatFromLinkData` with this module's view of its types.
+#[inline]
+unsafe fn MysteryGift_GetCardStatFromLinkData(a0: *const u8, a1: u32) -> u16 {
+    unsafe { crate::mystery_gift::MysteryGift_GetCardStatFromLinkData(a0 as _, a1) }
+}
+/// `GetSavedWonderCard` with this module's view of its types.
+#[inline]
+unsafe fn GetSavedWonderCard() -> *mut u8 {
+    unsafe { crate::mystery_gift::GetSavedWonderCard() as *mut u8 }
+}
+/// `GetSavedWonderNews` with this module's view of its types.
+#[inline]
+unsafe fn GetSavedWonderNews() -> *mut u8 {
+    unsafe { crate::mystery_gift::GetSavedWonderNews() as *mut u8 }
+}
+/// `DisableWonderCardSending` with this module's view of its types.
+#[inline]
+unsafe fn DisableWonderCardSending(a0: *mut u8) {
+    unsafe {
+        crate::mystery_gift::DisableWonderCardSending(a0 as _);
+    }
+}
+/// `GetSavedRamScriptIfValid` with this module's view of its types.
+#[inline]
+unsafe fn GetSavedRamScriptIfValid() -> *mut u8 {
+    unsafe { crate::script::GetSavedRamScriptIfValid() as *mut u8 }
 }
 
 #[inline]
@@ -156,17 +188,21 @@ unsafe fn create(script: *const u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MysterGiftServer_CreateForNews() {
-    unsafe { create(&raw const gMysteryGiftServerScript_SendWonderNews) };
+pub unsafe fn MysterGiftServer_CreateForNews() {
+    unsafe {
+        create(&raw const (*(&raw const crate::data::mystery_gift_scripts::gMysteryGiftServerScript_SendWonderNews).cast::<u8>()))
+    };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MysterGiftServer_CreateForCard() {
-    unsafe { create(&raw const gMysteryGiftServerScript_SendWonderCard) };
+pub unsafe fn MysterGiftServer_CreateForCard() {
+    unsafe {
+        create(&raw const (*(&raw const crate::data::mystery_gift_scripts::gMysteryGiftServerScript_SendWonderCard).cast::<u8>()))
+    };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MysterGiftServer_Run(end_val: *mut u16) -> u32 {
+pub unsafe fn MysterGiftServer_Run(end_val: *mut u16) -> u32 {
     let server = unsafe { (&raw const SERVER).read() };
     if server.is_null() {
         return SVR_RET_END;

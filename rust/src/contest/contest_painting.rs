@@ -3,37 +3,103 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::if_same_then_else,
+    clippy::missing_transmute_annotations,
+    clippy::useless_transmute,
+    unused_assignments
 )]
 
+use crate::agb_main::gMain;
+use crate::agb_main::{InitKeys, SetVBlankCallback};
+use crate::battle_gfx_sfx_util::{AllocateMonSpritesGfx, FreeMonSpritesGfx};
+use crate::battle_main::gMonSpritesGfxPtr;
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, ResetBgsAndClearDma3BusyFlags, ShowBg,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::contest::{gCurContestWinner, gCurContestWinnerIsForArtist, gCurContestWinnerSaveIdx};
+use crate::gpu_regs::SetGpuReg;
+use crate::image_processing_effects::{
+    ApplyImageProcessingEffects, ApplyImageProcessingQuantization, ConvertImageProcessingToGBA,
+};
+use crate::international_string_util::ConvertInternationalContestantName;
+use crate::international_string_util::GetStringCenterAlignXOffset;
+use crate::lilycove_lady::BufferContestName;
+use crate::load_save::gSaveBlock1Ptr;
+use crate::palette::{
+    BeginFastPaletteFade, BeginNormalPaletteFade, LoadPalette, ResetPaletteFade,
+    TransferPlttBuffer, UpdatePaletteFade, gPaletteFade,
+};
+use crate::pokemon::GetMonSpritePalFromSpeciesAndPersonality;
+use crate::random::SeedRng;
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::sprite::{LoadOam, ProcessSpriteCopyRequests, ResetSpriteData};
+use crate::string_util::{StringAppend, StringCopy, StringExpandPlaceholders};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar3, gStringVar4};
+use crate::text::{DeactivateAllTextPrinters, RunTextPrinters};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{CopyWindowToVram, FillWindowPixelBuffer, PutWindowTilemap, RemoveWindow};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `HandleLoadSpecialPokePic_DontHandleDeoxys` with this module's view of its types.
+#[inline]
+unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
+    a0: *mut CompressedSpriteSheet,
+    a1: *mut c_void,
+    a2: i32,
+    a3: u32,
+) {
+    unsafe {
+        crate::decompress::HandleLoadSpecialPokePic_DontHandleDeoxys(a0 as _, a1 as _, a2, a3);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `LZDecompressVram` with this module's view of its types.
+#[inline]
+unsafe fn LZDecompressVram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::decompress::LZDecompressVram(a0 as _, a1 as _);
+    }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
 // Data tables (translate with cdata.py): sPictureFramePalettes sPictureFrameTiles_Cool sPictureFrameTiles_Beauty sPictureFrameTiles_Cute sPictureFrameTiles_Smart sPictureFrameTiles_Tough sPictureFrameTiles_HallLobby sPictureFrameTilemap_Cool sPictureFrameTilemap_Beauty sPictureFrameTilemap_Cute sPictureFrameTilemap_Smart sPictureFrameTilemap_Tough sPictureFrameTilemap_HallLobby sContestCategoryNames_Unused sContestRankNames sBgTemplates sWindowTemplate sMuseumCaptions sContestPaintingMonOamData sBgPalette
 
 static sBgPalette: Table<CArray<u16, 2>> =
@@ -75,132 +141,101 @@ static sPictureFrameTiles_Tough: Table<CArray<u32, 1100>> =
 static sWindowTemplate: Table<WindowTemplate> =
     Table((&raw const crate::data::contest_painting::sWindowTemplate).cast());
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gContestMonPixels: *mut CArray<CArray<u16, 32>, 0> = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gImageProcessingContext: ImageProcessingContext = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gContestPaintingWinner: *mut ContestWinner = null_mut();
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gContestPaintingMonPalette: *mut u16 = null_mut();
-pub(crate) static mut sHoldState: u8 = 0;
-pub(crate) static mut sMosaicVal: u16 = 0;
-pub(crate) static mut sFadeCounter: u16 = 0;
-pub(crate) static mut sVarsInitialized: u8 = 0;
-pub(crate) static mut sWindowId: u8 = 0;
+pub(crate) static sHoldState: crate::global::Global<u8> = crate::global::Global::new(0);
+pub(crate) static sMosaicVal: crate::global::Global<u16> = crate::global::Global::new(0);
+pub(crate) static sFadeCounter: crate::global::Global<u16> = crate::global::Global::new(0);
+pub(crate) static sVarsInitialized: crate::global::Global<u8> = crate::global::Global::new(0);
+pub(crate) static sWindowId: crate::global::Global<u8> = crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static gContestHallPaintingCaption: CArray<u8, 0>;
-    static mut gCurContestWinner: ContestWinner;
-    static mut gCurContestWinnerIsForArtist: u8;
-    static mut gCurContestWinnerSaveIdx: u8;
-    static mut gMain: Main;
-    static gMonBackPicTable: CArray<CompressedSpriteSheet, 0>;
-    static gMonFrontPicTable: CArray<CompressedSpriteSheet, 0>;
-    static mut gMonSpritesGfxPtr: *mut MonSpritesGfx;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar3: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static gText_Space: CArray<u8, 0>;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AllocateMonSpritesGfx();
-    fn ApplyImageProcessingEffects(a0: *mut ImageProcessingContext);
-    fn ApplyImageProcessingQuantization(a0: *mut ImageProcessingContext);
-    fn BeginFastPaletteFade(a0: u8);
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BufferContestName(a0: *mut u8, a1: u8);
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ConvertImageProcessingToGBA(a0: *mut ImageProcessingContext);
-    fn ConvertInternationalContestantName(a0: *mut u8);
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn DeactivateAllTextPrinters();
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut c_void);
-    fn FreeMonSpritesGfx();
-    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
-    fn GetMonSpritePalFromSpeciesAndPersonality(a0: u16, a1: u32, a2: u32) -> *mut u32;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn HandleLoadSpecialPokePic_DontHandleDeoxys(
-        a0: *mut CompressedSpriteSheet,
-        a1: *mut c_void,
-        a2: i32,
-        a3: u32,
-    );
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitKeys();
-    fn LZDecompressVram(a0: *mut u32, a1: *mut c_void);
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn RLUnCompVram(a0: *mut u32, a1: *mut c_void);
-    fn RLUnCompWram(a0: *mut u32, a1: *mut c_void);
-    fn RemoveWindow(a0: u8);
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn RunTextPrinters();
-    fn ScanlineEffect_Stop();
-    fn SeedRng(a0: u16);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `GetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
+    unsafe { crate::bg::GetBgTilemapBuffer(a0) as *mut c_void }
+}
+/// `RLUnCompVram` with this module's view of its types.
+#[inline]
+unsafe fn RLUnCompVram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::RLUnCompVram(a0 as _, a1 as _);
+    }
+}
+/// `RLUnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn RLUnCompWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::RLUnCompWram(a0 as _, a1 as _);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetContestWinnerForPainting(contestWinnerId: i32) {
-    let mut saveIdx: *mut u8 = &raw mut gCurContestWinnerSaveIdx;
-    let mut isForArtist: *mut u8 = &raw mut gCurContestWinnerIsForArtist;
+pub unsafe fn SetContestWinnerForPainting(contestWinnerId: i32) {
+    let saveIdx: *mut u8 = &raw mut gCurContestWinnerSaveIdx;
+    let isForArtist: *mut u8 = &raw mut gCurContestWinnerIsForArtist;
     gCurContestWinner = (*gSaveBlock1Ptr).contestWinners[contestWinnerId - 1];
     *saveIdx = contestWinnerId as u8 - 1;
     *isForArtist = FALSE;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ContestPainting() {
+pub unsafe fn CB2_ContestPainting() {
     ShowContestPainting();
 }
-pub(crate) unsafe extern "C" fn CB2_HoldContestPainting() {
+pub(crate) unsafe fn CB2_HoldContestPainting() {
     HoldContestPainting();
     RunTextPrinters();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn CB2_QuitContestPainting() {
+pub(crate) unsafe fn CB2_QuitContestPainting() {
     SetMainCallback2(gMain.savedCallback);
     Free(gContestPaintingMonPalette as *mut c_void);
     gContestPaintingMonPalette = null_mut();
     Free(gContestMonPixels as *mut c_void);
     gContestMonPixels = null_mut();
-    RemoveWindow(sWindowId);
+    RemoveWindow(sWindowId.get());
     Free(GetBgTilemapBuffer(1));
     FreeMonSpritesGfx();
 }
-pub(crate) unsafe extern "C" fn ShowContestPainting() {
+pub(crate) unsafe fn ShowContestPainting() {
     match gMain.state {
         0 => {
             ScanlineEffect_Stop();
@@ -223,7 +258,7 @@ pub(crate) unsafe extern "C" fn ShowContestPainting() {
                             volatile_write(&raw mut tmp, 0);
                             {
                                 {
-                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                     volatile_write(dmaRegs.at(1), _dest as usize as u32);
                                     volatile_write(dmaRegs.at(2), 0x85000400);
@@ -241,10 +276,10 @@ pub(crate) unsafe extern "C" fn ShowContestPainting() {
                                 volatile_write(&raw mut tmp, 0);
                                 {
                                     {
-                                        let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                        let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                         volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                         volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                        volatile_write(dmaRegs.at(2), 0x85000000 | _size / 4);
+                                        volatile_write(dmaRegs.at(2), 0x85000000 | (_size / 4));
                                         let _ = (dmaRegs.at(2)).read_volatile();
                                     }
                                 }
@@ -280,10 +315,10 @@ pub(crate) unsafe extern "C" fn ShowContestPainting() {
                             volatile_write(&raw mut tmp, 0);
                             {
                                 {
-                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                     volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                    volatile_write(dmaRegs.at(2), 0x85000000 | _size / 4);
+                                    volatile_write(dmaRegs.at(2), 0x85000000 | (_size / 4));
                                     let _ = (dmaRegs.at(2)).read_volatile();
                                 }
                             }
@@ -293,66 +328,69 @@ pub(crate) unsafe extern "C" fn ShowContestPainting() {
             }
             BeginFastPaletteFade(2);
             SetVBlankCallback(Some(VBlankCB_ContestPainting));
-            sHoldState = 0;
+            sHoldState.set(0);
             SetGpuReg(0x0, 4928);
             SetMainCallback2(Some(CB2_HoldContestPainting));
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn HoldContestPainting() {
-    match sHoldState {
+unsafe fn HoldContestPainting() {
+    match sHoldState.get() {
         0 => {
             if gPaletteFade.active() == 0 {
-                sHoldState = 1;
+                sHoldState.set(1);
             }
-            if sVarsInitialized != 0 && sFadeCounter != 0 {
-                sFadeCounter -= 1;
+            if sVarsInitialized.get() != 0 && sFadeCounter.get() != 0 {
+                sFadeCounter.set(sFadeCounter.get() - 1);
             }
         }
         1 => {
             if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
-                sHoldState += 1;
+                sHoldState.set(sHoldState.get() + 1);
                 BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
             }
-            if sVarsInitialized != 0 {
-                sFadeCounter = 0;
+            if sVarsInitialized.get() != 0 {
+                sFadeCounter.set(0);
             }
         }
         2 => {
             if gPaletteFade.active() == 0 {
                 SetMainCallback2(Some(CB2_QuitContestPainting));
             }
-            if sVarsInitialized != 0 && sFadeCounter < 30 {
-                sFadeCounter += 1;
+            if sVarsInitialized.get() != 0 && sFadeCounter.get() < 30 {
+                sFadeCounter.set(sFadeCounter.get() + 1);
             }
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn InitContestPaintingWindow() {
+unsafe fn InitContestPaintingWindow() {
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sBgTemplates.as_ptr().cast_mut(), 1);
     ChangeBgX(1, 0, BG_COORD_SET);
     ChangeBgY(1, 0, BG_COORD_SET);
     SetBgTilemapBuffer(1, AllocZeroed(BG_SCREEN_SIZE));
-    sWindowId = AddWindow((&raw const *sWindowTemplate).cast_mut()) as u8;
+    sWindowId.set(AddWindow((&raw const *sWindowTemplate).cast_mut()) as u8);
     DeactivateAllTextPrinters();
-    FillWindowPixelBuffer(sWindowId, 0);
-    PutWindowTilemap(sWindowId);
-    CopyWindowToVram(sWindowId, COPYWIN_FULL);
+    FillWindowPixelBuffer(sWindowId.get(), 0);
+    PutWindowTilemap(sWindowId.get());
+    CopyWindowToVram(sWindowId.get(), COPYWIN_FULL);
     ShowBg(1);
 }
-pub(crate) unsafe extern "C" fn PrintContestPaintingCaption(contestType: u8, isForArtist: u8) {
-    let mut x: i32 = 0;
-    let mut category: u8 = 0;
+unsafe fn PrintContestPaintingCaption(contestType: u8, isForArtist: u8) {
     if isForArtist == TRUE {
         return;
     }
-    category = (*gContestPaintingWinner).contestCategory;
+    let category: u8 = (*gContestPaintingWinner).contestCategory;
     if contestType < MUSEUM_CONTEST_WINNERS_START {
         BufferContestName(gStringVar1.as_mut_ptr(), category);
-        StringAppend(gStringVar1.as_mut_ptr(), gText_Space.as_ptr().cast_mut());
+        StringAppend(
+            gStringVar1.as_mut_ptr(),
+            (*(&raw const crate::data::strings::gText_Space).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
         StringAppend(
             gStringVar1.as_mut_ptr(),
             sContestRankNames[(*gContestPaintingWinner).contestRank],
@@ -368,7 +406,9 @@ pub(crate) unsafe extern "C" fn PrintContestPaintingCaption(contestType: u8, isF
         );
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gContestHallPaintingCaption.as_ptr().cast_mut(),
+            (*crate::asmdata::gContestHallPaintingCaption.cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
     } else {
         StringCopy(
@@ -377,9 +417,9 @@ pub(crate) unsafe extern "C" fn PrintContestPaintingCaption(contestType: u8, isF
         );
         StringExpandPlaceholders(gStringVar4.as_mut_ptr(), sMuseumCaptions[category]);
     }
-    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 208);
+    let x: i32 = GetStringCenterAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 208);
     AddTextPrinterParameterized(
-        sWindowId,
+        sWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         x as u8,
@@ -389,11 +429,11 @@ pub(crate) unsafe extern "C" fn PrintContestPaintingCaption(contestType: u8, isF
     );
     CopyBgTilemapBufferToVram(1);
 }
-pub(crate) unsafe extern "C" fn InitContestPaintingBg() {
+unsafe fn InitContestPaintingBg() {
     SetGpuReg(0x0, 0);
     volatile_write(
-        0x4000200 as usize as *mut u16,
-        (0x4000200 as usize as *mut u16).read_volatile() | INTR_FLAG_VBLANK,
+        0x4000200_usize as *mut u16,
+        (0x4000200_usize as *mut u16).read_volatile() | INTR_FLAG_VBLANK,
     );
     SetGpuReg(REG_OFFSET_BG0CNT, 3138);
     SetGpuReg(0xa, 2629);
@@ -401,37 +441,40 @@ pub(crate) unsafe extern "C" fn InitContestPaintingBg() {
     SetGpuReg(REG_OFFSET_BLDALPHA, 0);
     SetGpuReg(REG_OFFSET_BLDY, 0);
 }
-pub(crate) unsafe extern "C" fn InitContestPaintingVars(reset: u8) {
+fn InitContestPaintingVars(reset: u8) {
     if reset == FALSE {
-        sVarsInitialized = FALSE;
-        sMosaicVal = 0;
-        sFadeCounter = 0;
+        sVarsInitialized.set(FALSE);
+        sMosaicVal.set(0);
+        sFadeCounter.set(0);
     } else {
-        sVarsInitialized = TRUE;
-        sMosaicVal = 15;
-        sFadeCounter = 30;
+        sVarsInitialized.set(TRUE);
+        sMosaicVal.set(15);
+        sFadeCounter.set(30);
     }
 }
-pub(crate) unsafe extern "C" fn UpdateContestPaintingMosaicEffect() {
-    if sVarsInitialized == 0 {
+unsafe fn UpdateContestPaintingMosaicEffect() {
+    if sVarsInitialized.get() == 0 {
         SetGpuReg(REG_OFFSET_MOSAIC, 0);
     } else {
         SetGpuReg(0xa, 2629);
-        sMosaicVal = (sFadeCounter as i32 / 2) as u16;
+        sMosaicVal.set((sFadeCounter.get() as i32 / 2) as u16);
         SetGpuReg(
             REG_OFFSET_MOSAIC,
-            sMosaicVal << 12 | sMosaicVal << 8 | sMosaicVal << 4 | sMosaicVal << 0,
+            sMosaicVal.get() << 12
+                | sMosaicVal.get() << 8
+                | sMosaicVal.get() << 4
+                | sMosaicVal.get(),
         );
     }
 }
-pub(crate) unsafe extern "C" fn VBlankCB_ContestPainting() {
+pub(crate) unsafe fn VBlankCB_ContestPainting() {
     UpdateContestPaintingMosaicEffect();
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn InitContestMonPixels(species: u16, backPic: u8) {
-    let mut pal: *mut c_void = GetMonSpritePalFromSpeciesAndPersonality(
+unsafe fn InitContestMonPixels(species: u16, backPic: u8) {
+    let pal: *mut c_void = GetMonSpritePalFromSpeciesAndPersonality(
         species,
         (*gContestPaintingWinner).trainerId,
         (*gContestPaintingWinner).personality,
@@ -439,7 +482,12 @@ pub(crate) unsafe extern "C" fn InitContestMonPixels(species: u16, backPic: u8) 
     LZDecompressVram(pal as *mut u32, gContestPaintingMonPalette as *mut c_void);
     if backPic == 0 {
         HandleLoadSpecialPokePic_DontHandleDeoxys(
-            (&raw const gMonFrontPicTable[species]).cast_mut(),
+            (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable).cast::<CArray<
+                CompressedSpriteSheet,
+                0,
+            >>(
+            ))[species])
+                .cast_mut(),
             (*gMonSpritesGfxPtr).sprites.ptr[1],
             species as i32,
             (*gContestPaintingWinner).personality,
@@ -451,7 +499,9 @@ pub(crate) unsafe extern "C" fn InitContestMonPixels(species: u16, backPic: u8) 
         );
     } else {
         HandleLoadSpecialPokePic_DontHandleDeoxys(
-            (&raw const gMonBackPicTable[species]).cast_mut(),
+            (&raw const (*(&raw const crate::data::data_tables::gMonBackPicTable)
+                .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
+                .cast_mut(),
             (*gMonSpritesGfxPtr).sprites.ptr[0],
             species as i32,
             (*gContestPaintingWinner).personality,
@@ -463,24 +513,16 @@ pub(crate) unsafe extern "C" fn InitContestMonPixels(species: u16, backPic: u8) 
         );
     }
 }
-pub(crate) unsafe extern "C" fn _InitContestMonPixels(
+unsafe fn _InitContestMonPixels(
     spriteGfx: *mut u8,
     palette: *mut u16,
     destPixels: *mut CArray<CArray<u16, 64>, 64>,
 ) {
-    let mut tileY: u16 = 0;
-    let mut tileX: u16 = 0;
-    let mut pixelY: u16 = 0;
-    let mut pixelX: u16 = 0;
     let mut colorIndex: u8 = 0;
-    tileY = 0;
-    while tileY < 8 {
-        tileX = 0;
-        while tileX < 8 {
-            pixelY = 0;
-            while pixelY < 8 {
-                pixelX = 0;
-                while pixelX < 8 {
+    for tileY in 0..8u16 {
+        for tileX in 0..8u16 {
+            for pixelY in 0..8u16 {
+                for pixelX in 0..8u16 {
                     colorIndex = *spriteGfx.at(32 * (tileY as i32 * 8 + tileX as i32)
                         + ((pixelY as i32) << 2)
                         + (pixelX >> 1) as i32);
@@ -496,18 +538,12 @@ pub(crate) unsafe extern "C" fn _InitContestMonPixels(
                         (*destPixels)[8 * tileY as i32 + pixelY as i32]
                             [tileX as i32 * 8 + pixelX as i32] = *palette.at(colorIndex);
                     }
-                    pixelX += 1;
                 }
-                pixelY += 1;
             }
-            tileX += 1;
         }
-        tileY += 1;
     }
 }
-pub(crate) unsafe extern "C" fn LoadContestPaintingFrame(contestWinnerId: u8, isForArtist: u8) {
-    let mut x: u8 = 0;
-    let mut y: u8 = 0;
+unsafe fn LoadContestPaintingFrame(contestWinnerId: u8, isForArtist: u8) {
     LoadPalette(
         sPictureFramePalettes.as_ptr().cast_mut() as *mut c_void,
         0,
@@ -567,29 +603,19 @@ pub(crate) unsafe extern "C" fn LoadContestPaintingFrame(contestWinnerId: u8, is
             }
             _ => {}
         }
-        y = 0;
-        while y < 20 {
-            x = 0;
-            while x < 32 {
-                *(0x6006000 as usize as *mut u16).at(y as i32 * 32 + x as i32) = 0x1015;
-                x += 1;
+        for y in 0..20u8 {
+            for x in 0..32u8 {
+                *(0x6006000_usize as *mut u16).at(y as i32 * 32 + x as i32) = 0x1015;
             }
-            y += 1;
         }
-        y = 0;
-        while y < 10 {
-            x = 0;
-            while x < 18 {
-                *(0x6006000 as usize as *mut u16).at((y as i32 + 2) * 32 + (x as i32 + 6)) =
+        for y in 0..10u8 {
+            for x in 0..18u8 {
+                *(0x6006000_usize as *mut u16).at((y as i32 + 2) * 32 + (x as i32 + 6)) =
                     (*gContestMonPixels)[y as i32 + 2][x as i32 + 6];
-                x += 1;
             }
-            y += 1;
         }
-        x = 0;
-        while x < 16 {
-            *(0x6006000 as usize as *mut u16).at(64 + (x as i32 + 7)) = (*gContestMonPixels)[2][7];
-            x += 1;
+        for x in 0..16u8 {
+            *(0x6006000_usize as *mut u16).at(64 + (x as i32 + 7)) = (*gContestMonPixels)[2][7];
         }
     } else if contestWinnerId < MUSEUM_CONTEST_WINNERS_START {
         RLUnCompVram(
@@ -598,7 +624,7 @@ pub(crate) unsafe extern "C" fn LoadContestPaintingFrame(contestWinnerId: u8, is
         );
         RLUnCompVram(
             sPictureFrameTilemap_HallLobby.as_ptr().cast_mut(),
-            0x6006000 as usize as *mut c_void,
+            0x6006000_usize as *mut c_void,
         );
     } else {
         match (*gContestPaintingWinner).contestCategory as i32 / 3 {
@@ -609,7 +635,7 @@ pub(crate) unsafe extern "C" fn LoadContestPaintingFrame(contestWinnerId: u8, is
                 );
                 RLUnCompVram(
                     sPictureFrameTilemap_Cool.as_ptr().cast_mut(),
-                    0x6006000 as usize as *mut c_void,
+                    0x6006000_usize as *mut c_void,
                 );
             }
             1 => {
@@ -619,7 +645,7 @@ pub(crate) unsafe extern "C" fn LoadContestPaintingFrame(contestWinnerId: u8, is
                 );
                 RLUnCompVram(
                     sPictureFrameTilemap_Beauty.as_ptr().cast_mut(),
-                    0x6006000 as usize as *mut c_void,
+                    0x6006000_usize as *mut c_void,
                 );
             }
             2 => {
@@ -629,7 +655,7 @@ pub(crate) unsafe extern "C" fn LoadContestPaintingFrame(contestWinnerId: u8, is
                 );
                 RLUnCompVram(
                     sPictureFrameTilemap_Cute.as_ptr().cast_mut(),
-                    0x6006000 as usize as *mut c_void,
+                    0x6006000_usize as *mut c_void,
                 );
             }
             3 => {
@@ -639,7 +665,7 @@ pub(crate) unsafe extern "C" fn LoadContestPaintingFrame(contestWinnerId: u8, is
                 );
                 RLUnCompVram(
                     sPictureFrameTilemap_Smart.as_ptr().cast_mut(),
-                    0x6006000 as usize as *mut c_void,
+                    0x6006000_usize as *mut c_void,
                 );
             }
             4 => {
@@ -649,14 +675,14 @@ pub(crate) unsafe extern "C" fn LoadContestPaintingFrame(contestWinnerId: u8, is
                 );
                 RLUnCompVram(
                     sPictureFrameTilemap_Tough.as_ptr().cast_mut(),
-                    0x6006000 as usize as *mut c_void,
+                    0x6006000_usize as *mut c_void,
                 );
             }
             _ => {}
         }
     }
 }
-pub(crate) unsafe extern "C" fn InitPaintingMonOamData(contestWinnerId: u8) {
+unsafe fn InitPaintingMonOamData(contestWinnerId: u8) {
     gMain.oamBuffer[0] = *sContestPaintingMonOamData;
     gMain.oamBuffer[0].set_tileNum(0);
     if contestWinnerId > 1 {
@@ -667,7 +693,7 @@ pub(crate) unsafe extern "C" fn InitPaintingMonOamData(contestWinnerId: u8) {
         gMain.oamBuffer[0].set_y(24);
     }
 }
-pub(crate) unsafe extern "C" fn GetImageEffectForContestWinner(contestWinnerId: u8) -> u8 {
+unsafe fn GetImageEffectForContestWinner(contestWinnerId: u8) -> u8 {
     let mut contestCategory: u8 = 0;
     if contestWinnerId < MUSEUM_CONTEST_WINNERS_START {
         contestCategory = (*gContestPaintingWinner).contestCategory;
@@ -692,13 +718,13 @@ pub(crate) unsafe extern "C" fn GetImageEffectForContestWinner(contestWinnerId: 
         }
         _ => {}
     }
-    return contestCategory;
+    contestCategory
 }
-pub(crate) unsafe extern "C" fn AllocPaintingResources() {
+unsafe fn AllocPaintingResources() {
     gContestPaintingMonPalette = AllocZeroed(OBJ_PLTT_SIZE as u32) as *mut u16;
     gContestMonPixels = AllocZeroed(0x2000) as *mut CArray<CArray<u16, 32>, 0>;
 }
-pub(crate) unsafe extern "C" fn DoContestPaintingImageProcessing(imageEffect: u8) {
+unsafe fn DoContestPaintingImageProcessing(imageEffect: u8) {
     gImageProcessingContext.canvasPixels = gContestMonPixels as *mut c_void;
     gImageProcessingContext.canvasPalette = gContestPaintingMonPalette;
     gImageProcessingContext.paletteStart = 0;
@@ -725,13 +751,13 @@ pub(crate) unsafe extern "C" fn DoContestPaintingImageProcessing(imageEffect: u8
     ConvertImageProcessingToGBA(&raw mut gImageProcessingContext);
     LoadPalette(gContestPaintingMonPalette as *mut c_void, 256, 512);
 }
-pub(crate) unsafe extern "C" fn CreateContestPaintingPicture(contestWinnerId: u8, isForArtist: u8) {
+unsafe fn CreateContestPaintingPicture(contestWinnerId: u8, isForArtist: u8) {
     AllocPaintingResources();
     InitContestMonPixels((*gContestPaintingWinner).species, FALSE);
     DoContestPaintingImageProcessing(GetImageEffectForContestWinner(contestWinnerId));
     InitPaintingMonOamData(contestWinnerId);
     LoadContestPaintingFrame(contestWinnerId, isForArtist);
 }
-pub(crate) unsafe extern "C" fn SetBackdropFromPalette(palette: *mut u16) {
+unsafe fn SetBackdropFromPalette(palette: *mut u16) {
     LoadPalette(palette as *mut c_void, 0, 2);
 }

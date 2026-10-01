@@ -6,6 +6,7 @@ use crate::ffi::{
     POKEMON_SIZE, SetMonData, VarSet, gSpecialVar_0x8004, gSpecialVar_Result, gStringVar1,
     party_mon,
 };
+use crate::pokemon::gPlayerPartyCount;
 use core::ffi::c_int;
 
 const MON_DATA_MOVE1: c_int = 13;
@@ -42,39 +43,98 @@ const MAIN_SAVED_CALLBACK: usize = 8;
 const CPU_SET_SRC_FIXED: u32 = 0x0100_0000;
 const CPU_SET_32BIT: u32 = 0x0400_0000;
 
-type MainCallback = unsafe extern "C" fn();
+type MainCallback = unsafe fn();
 
-unsafe extern "C" {
-    static mut gMain: u8;
-    static mut gEnemyParty: u8;
-    static mut gPlayerPartyCount: u8;
-    static mut gSelectedOrderFromParty: [u8; 4];
-
-    fn CalculatePPWithBonus(move_id: u16, pp_bonuses: u8, move_index: u8) -> u8;
-    #[allow(clippy::too_many_arguments)]
-    fn CreateMon(
-        mon: *mut u8,
-        species: u16,
-        level: u8,
-        fixed_iv: u8,
-        has_fixed_personality: u8,
-        fixed_personality: u32,
-        ot_id_type: u8,
-        ot_id: u32,
-    );
-    fn CreateEgg(mon: *mut u8, species: u16, set_hatched: u8);
-    fn GiveMonToPlayer(mon: *mut u8) -> u8;
-    fn GetSetPokedexFlag(national_dex_number: u16, case_id: u8) -> i8;
-    fn SpeciesToNationalPokedexNum(species: u16) -> u16;
-    fn GetMonsStateToDoubles() -> u8;
-    fn GetBerryNameByBerryType(berry_type: u8, dest: *mut u8);
-    fn ItemIdToBerryType(item_id: u16) -> u8;
-    fn ZeroEnemyPartyMons();
-    fn SetMonMoveSlot(mon: *mut u8, move_id: u16, slot: u8);
-    fn InitChooseHalfPartyForBattle(caseId: u8);
-    fn CalculatePlayerPartyCount() -> u8;
-    fn SetMainCallback2(callback: MainCallback);
-    fn CB2_ReturnToFieldContinueScriptPlayMapMusic();
+/// `CalculatePPWithBonus` with this module's view of its types.
+#[inline]
+unsafe fn CalculatePPWithBonus(a0: u16, a1: u8, a2: u8) -> u8 {
+    unsafe { crate::pokemon::CalculatePPWithBonus(a0, a1, a2) }
+}
+/// `CreateMon` with this module's view of its types.
+#[inline]
+unsafe fn CreateMon(a0: *mut u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u32, a6: u8, a7: u32) {
+    unsafe {
+        crate::pokemon::CreateMon(a0 as _, a1, a2, a3, a4, a5, a6, a7);
+    }
+}
+/// `CreateEgg` with this module's view of its types.
+#[inline]
+unsafe fn CreateEgg(a0: *mut u8, a1: u16, a2: u8) {
+    unsafe {
+        crate::daycare::CreateEgg(a0 as _, a1, a2);
+    }
+}
+/// `GiveMonToPlayer` with this module's view of its types.
+#[inline]
+unsafe fn GiveMonToPlayer(a0: *mut u8) -> u8 {
+    unsafe { crate::pokemon::GiveMonToPlayer(a0 as _) }
+}
+/// `GetSetPokedexFlag` with this module's view of its types.
+#[inline]
+unsafe fn GetSetPokedexFlag(a0: u16, a1: u8) -> i8 {
+    unsafe { crate::pokedex::GetSetPokedexFlag(a0, a1) }
+}
+/// `SpeciesToNationalPokedexNum` with this module's view of its types.
+#[inline]
+unsafe fn SpeciesToNationalPokedexNum(a0: u16) -> u16 {
+    unsafe { crate::pokemon::SpeciesToNationalPokedexNum(a0) }
+}
+/// `GetMonsStateToDoubles` with this module's view of its types.
+#[inline]
+unsafe fn GetMonsStateToDoubles() -> u8 {
+    unsafe { crate::pokemon::GetMonsStateToDoubles() }
+}
+/// `GetBerryNameByBerryType` with this module's view of its types.
+#[inline]
+unsafe fn GetBerryNameByBerryType(a0: u8, a1: *mut u8) {
+    unsafe {
+        crate::berry::GetBerryNameByBerryType(a0, a1 as _);
+    }
+}
+/// `ItemIdToBerryType` with this module's view of its types.
+#[inline]
+unsafe fn ItemIdToBerryType(a0: u16) -> u8 {
+    unsafe { crate::berry::ItemIdToBerryType(a0) }
+}
+/// `ZeroEnemyPartyMons` with this module's view of its types.
+#[inline]
+unsafe fn ZeroEnemyPartyMons() {
+    unsafe {
+        crate::pokemon::ZeroEnemyPartyMons();
+    }
+}
+/// `SetMonMoveSlot` with this module's view of its types.
+#[inline]
+unsafe fn SetMonMoveSlot(a0: *mut u8, a1: u16, a2: u8) {
+    unsafe {
+        crate::pokemon::SetMonMoveSlot(a0 as _, a1, a2);
+    }
+}
+/// `InitChooseHalfPartyForBattle` with this module's view of its types.
+#[inline]
+unsafe fn InitChooseHalfPartyForBattle(a0: u8) {
+    unsafe {
+        crate::party_menu::InitChooseHalfPartyForBattle(a0);
+    }
+}
+/// `CalculatePlayerPartyCount` with this module's view of its types.
+#[inline]
+unsafe fn CalculatePlayerPartyCount() -> u8 {
+    unsafe { crate::pokemon::CalculatePlayerPartyCount() }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: MainCallback) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
+}
+/// `CB2_ReturnToFieldContinueScriptPlayMapMusic` with this module's view of its types.
+#[inline]
+unsafe fn CB2_ReturnToFieldContinueScriptPlayMapMusic() {
+    unsafe {
+        crate::overworld::CB2_ReturnToFieldContinueScriptPlayMapMusic();
+    }
 }
 
 /// `CpuFill32(0, dest, size)`
@@ -93,7 +153,7 @@ unsafe fn cpu_fill32_zero(dest: *mut u8, size: usize) {
 #[inline]
 unsafe fn set_saved_callback(callback: MainCallback) {
     unsafe {
-        (&raw mut gMain)
+        (&raw mut (*(&raw const crate::agb_main::gMain).cast::<u8>().cast_mut()))
             .add(MAIN_SAVED_CALLBACK)
             .cast::<MainCallback>()
             .write(callback)
@@ -101,7 +161,7 @@ unsafe fn set_saved_callback(callback: MainCallback) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HealPlayerParty() {
+pub unsafe fn HealPlayerParty() {
     let count = unsafe { (&raw const gPlayerPartyCount).read_volatile() } as usize;
 
     for i in 0..count {
@@ -127,7 +187,7 @@ pub unsafe extern "C" fn HealPlayerParty() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptGiveMon(
+pub unsafe fn ScriptGiveMon(
     species: u16,
     level: u8,
     item: u16,
@@ -166,7 +226,7 @@ pub unsafe extern "C" fn ScriptGiveMon(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptGiveEgg(species: u16) -> u8 {
+pub unsafe fn ScriptGiveEgg(species: u16) -> u8 {
     let mut mon = [0u8; POKEMON_SIZE];
     let mon = mon.as_mut_ptr();
 
@@ -178,7 +238,7 @@ pub unsafe extern "C" fn ScriptGiveEgg(species: u16) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HasEnoughMonsForDoubleBattle() {
+pub unsafe fn HasEnoughMonsForDoubleBattle() {
     let state = u16::from(unsafe { GetMonsStateToDoubles() });
     // Anything outside the three known states leaves the var untouched.
     if state == PLAYER_HAS_TWO_USABLE_MONS
@@ -204,7 +264,7 @@ unsafe fn party_has_held_item(item: u16) -> bool {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoesPartyHaveEnigmaBerry() -> u8 {
+pub unsafe fn DoesPartyHaveEnigmaBerry() -> u8 {
     let has_item = unsafe { party_has_held_item(ITEM_ENIGMA_BERRY) };
     if has_item {
         unsafe {
@@ -218,8 +278,11 @@ pub unsafe extern "C" fn DoesPartyHaveEnigmaBerry() -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateScriptedWildMon(species: u16, level: u8, item: u16) {
-    let mon = (&raw mut gEnemyParty).cast::<u8>();
+pub unsafe fn CreateScriptedWildMon(species: u16, level: u8, item: u16) {
+    let mon = (&raw mut (*(&raw const crate::pokemon::gEnemyParty)
+        .cast::<u8>()
+        .cast_mut()))
+        .cast::<u8>();
     unsafe { ZeroEnemyPartyMons() };
     unsafe {
         CreateMon(
@@ -241,7 +304,7 @@ pub unsafe extern "C" fn CreateScriptedWildMon(species: u16, level: u8, item: u1
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptSetMonMoveSlot(mon_index: u8, move_id: u16, slot: u8) {
+pub unsafe fn ScriptSetMonMoveSlot(mon_index: u8, move_id: u16, slot: u8) {
     // The bound is `>` rather than `>=`, so index PARTY_SIZE reads one mon
     // past the party. No script passes that value, and the check is left as
     // the original wrote it.
@@ -257,7 +320,7 @@ pub unsafe extern "C" fn ScriptSetMonMoveSlot(mon_index: u8, move_id: u16, slot:
 /// Back in the event script, `gSpecialVar_Result` is TRUE when the player
 /// actually picked a party.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ChooseHalfPartyForBattle() {
+pub unsafe fn ChooseHalfPartyForBattle() {
     unsafe { set_saved_callback(cb2_return_from_choose_half_party) };
     unsafe { VarSet(VAR_FRONTIER_FACILITY, FACILITY_MULTI_OR_EREADER) };
     unsafe { InitChooseHalfPartyForBattle(0) };
@@ -266,7 +329,9 @@ pub unsafe extern "C" fn ChooseHalfPartyForBattle() {
 #[inline]
 unsafe fn report_selection_result() {
     let picked = unsafe {
-        (&raw const gSelectedOrderFromParty)
+        (&raw const (*(&raw const crate::party_menu::gSelectedOrderFromParty)
+            .cast::<[u8; 4]>()
+            .cast_mut()))
             .cast::<u8>()
             .read_volatile()
     };
@@ -274,23 +339,23 @@ unsafe fn report_selection_result() {
     unsafe { SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic) };
 }
 
-unsafe extern "C" fn cb2_return_from_choose_half_party() {
+unsafe fn cb2_return_from_choose_half_party() {
     unsafe { report_selection_result() };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ChoosePartyForBattleFrontier() {
+pub unsafe fn ChoosePartyForBattleFrontier() {
     unsafe { set_saved_callback(cb2_return_from_choose_battle_frontier_party) };
     let case_id = unsafe { (&raw const gSpecialVar_0x8004).read_volatile() } as u8 + 1;
     unsafe { InitChooseHalfPartyForBattle(case_id) };
 }
 
-unsafe extern "C" fn cb2_return_from_choose_battle_frontier_party() {
+unsafe fn cb2_return_from_choose_battle_frontier_party() {
     unsafe { report_selection_result() };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ReducePlayerPartyToSelectedMons() {
+pub unsafe fn ReducePlayerPartyToSelectedMons() {
     let mut party = [0u8; POKEMON_SIZE * MAX_FRONTIER_PARTY_SIZE];
     unsafe { cpu_fill32_zero(party.as_mut_ptr(), party.len()) };
 
@@ -298,7 +363,9 @@ pub unsafe extern "C" fn ReducePlayerPartyToSelectedMons() {
     // leaves the rest of the scratch party blank.
     for i in 0..MAX_FRONTIER_PARTY_SIZE {
         let choice = unsafe {
-            (&raw const gSelectedOrderFromParty)
+            (&raw const (*(&raw const crate::party_menu::gSelectedOrderFromParty)
+                .cast::<[u8; 4]>()
+                .cast_mut()))
                 .cast::<u8>()
                 .add(i)
                 .read_volatile()

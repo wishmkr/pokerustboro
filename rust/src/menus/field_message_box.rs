@@ -1,44 +1,87 @@
 use crate::ffi::{StringExpandPlaceholders, gStringVar4};
+use crate::task::task_data_ptr;
+use crate::text::gTextFlags;
 use core::ptr::{addr_of, addr_of_mut};
 
 const FIELD_MESSAGE_BOX_HIDDEN: u8 = 0;
 const FIELD_MESSAGE_BOX_NORMAL: u8 = 2;
 const FIELD_MESSAGE_BOX_AUTO_SCROLL: u8 = 3;
 const TASK_NONE: u8 = 0xff;
-const TASK_SIZE: usize = 40;
-const TASK_DATA_OFFSET: usize = 8;
 
-type TaskFunc = unsafe extern "C" fn(u8);
+type TaskFunc = unsafe fn(u8);
 
 #[unsafe(link_section = "ewram_data")]
 static mut FIELD_MESSAGE_BOX_MODE: u8 = FIELD_MESSAGE_BOX_HIDDEN;
 
-unsafe extern "C" {
-    static mut gTextFlags: u8;
-    static mut gTasks: u8;
-
-    fn LoadMessageBoxAndBorderGfx();
-    fn DrawDialogueFrame(window_id: u8, copy_to_vram: u8);
-    fn RunTextPrintersAndIsPrinter0Active() -> u16;
-    fn CreateTask(function: TaskFunc, priority: u8) -> u8;
-    fn DestroyTask(task_id: u8);
-    fn FindTaskIdByFunc(function: TaskFunc) -> u8;
-    fn IsMatchCallTaskActive() -> u32;
-    fn StartMatchCallFromScript(message: *const u8);
-    fn AddTextPrinterForMessage(allow_skipping_delay_with_button_press: u8);
-    fn ClearDialogWindowAndFrame(window_id: u8, copy_to_vram: u8);
-}
-
-unsafe fn task_state(task_id: u8) -> *mut i16 {
+/// `LoadMessageBoxAndBorderGfx` with this module's view of its types.
+#[inline]
+unsafe fn LoadMessageBoxAndBorderGfx() {
     unsafe {
-        (&raw mut gTasks)
-            .add(task_id as usize * TASK_SIZE + TASK_DATA_OFFSET)
-            .cast()
+        crate::menu::LoadMessageBoxAndBorderGfx();
+    }
+}
+/// `DrawDialogueFrame` with this module's view of its types.
+#[inline]
+unsafe fn DrawDialogueFrame(a0: u8, a1: u8) {
+    unsafe {
+        crate::menu::DrawDialogueFrame(a0, a1);
+    }
+}
+/// `RunTextPrintersAndIsPrinter0Active` with this module's view of its types.
+#[inline]
+unsafe fn RunTextPrintersAndIsPrinter0Active() -> u16 {
+    unsafe { crate::menu::RunTextPrintersAndIsPrinter0Active() }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: TaskFunc, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroyTask` with this module's view of its types.
+#[inline]
+unsafe fn DestroyTask(a0: u8) {
+    {
+        crate::task::DestroyTask(a0);
+    }
+}
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+unsafe fn FindTaskIdByFunc(a0: TaskFunc) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
+/// `IsMatchCallTaskActive` with this module's view of its types.
+#[inline]
+unsafe fn IsMatchCallTaskActive() -> u32 {
+    unsafe { crate::match_call::IsMatchCallTaskActive() }
+}
+/// `StartMatchCallFromScript` with this module's view of its types.
+#[inline]
+unsafe fn StartMatchCallFromScript(a0: *const u8) {
+    unsafe {
+        crate::match_call::StartMatchCallFromScript(a0 as _);
+    }
+}
+/// `AddTextPrinterForMessage` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterForMessage(a0: u8) {
+    unsafe {
+        crate::menu::AddTextPrinterForMessage(a0);
+    }
+}
+/// `ClearDialogWindowAndFrame` with this module's view of its types.
+#[inline]
+unsafe fn ClearDialogWindowAndFrame(a0: u8, a1: u8) {
+    unsafe {
+        crate::menu::ClearDialogWindowAndFrame(a0, a1);
     }
 }
 
-unsafe extern "C" fn task_draw_field_message(task_id: u8) {
-    let state = unsafe { task_state(task_id) };
+fn task_state(task_id: u8) -> *mut i16 {
+    task_data_ptr(task_id, 0)
+}
+
+unsafe fn task_draw_field_message(task_id: u8) {
+    let state = task_state(task_id);
     match unsafe { state.read() } {
         0 => {
             unsafe { LoadMessageBoxAndBorderGfx() };
@@ -81,14 +124,14 @@ unsafe fn start_from_buffer() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitFieldMessageBox() {
+pub unsafe fn InitFieldMessageBox() {
     unsafe { addr_of_mut!(FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_HIDDEN) };
     let flags = unsafe { addr_of!(gTextFlags).read() };
     unsafe { addr_of_mut!(gTextFlags).write(flags & !0x0f) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowFieldMessage(message: *const u8) -> u8 {
+pub unsafe fn ShowFieldMessage(message: *const u8) -> u8 {
     if unsafe { addr_of!(FIELD_MESSAGE_BOX_MODE).read() } != FIELD_MESSAGE_BOX_HIDDEN {
         return 0;
     }
@@ -97,7 +140,7 @@ pub unsafe extern "C" fn ShowFieldMessage(message: *const u8) -> u8 {
     1
 }
 
-unsafe extern "C" fn task_hide_pokenav_message_when_done(task_id: u8) {
+unsafe fn task_hide_pokenav_message_when_done(task_id: u8) {
     if unsafe { IsMatchCallTaskActive() } == 0 {
         unsafe { addr_of_mut!(FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_HIDDEN) };
         unsafe { DestroyTask(task_id) };
@@ -105,7 +148,7 @@ unsafe extern "C" fn task_hide_pokenav_message_when_done(task_id: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowPokenavFieldMessage(message: *const u8) -> u8 {
+pub unsafe fn ShowPokenavFieldMessage(message: *const u8) -> u8 {
     if unsafe { addr_of!(FIELD_MESSAGE_BOX_MODE).read() } != FIELD_MESSAGE_BOX_HIDDEN {
         return 0;
     }
@@ -117,7 +160,7 @@ pub unsafe extern "C" fn ShowPokenavFieldMessage(message: *const u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowFieldAutoScrollMessage(message: *const u8) -> u8 {
+pub unsafe fn ShowFieldAutoScrollMessage(message: *const u8) -> u8 {
     if unsafe { addr_of!(FIELD_MESSAGE_BOX_MODE).read() } != FIELD_MESSAGE_BOX_HIDDEN {
         return 0;
     }
@@ -127,7 +170,7 @@ pub unsafe extern "C" fn ShowFieldAutoScrollMessage(message: *const u8) -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowFieldMessageFromBuffer() -> u8 {
+pub unsafe fn ShowFieldMessageFromBuffer() -> u8 {
     if unsafe { addr_of!(FIELD_MESSAGE_BOX_MODE).read() } != FIELD_MESSAGE_BOX_HIDDEN {
         return 0;
     }
@@ -137,35 +180,24 @@ pub unsafe extern "C" fn ShowFieldMessageFromBuffer() -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HideFieldMessageBox() {
+pub unsafe fn HideFieldMessageBox() {
     unsafe { destroy_draw_task() };
     unsafe { ClearDialogWindowAndFrame(0, 1) };
     unsafe { addr_of_mut!(FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_HIDDEN) };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFieldMessageBoxMode() -> u8 {
+pub unsafe fn GetFieldMessageBoxMode() -> u8 {
     unsafe { addr_of!(FIELD_MESSAGE_BOX_MODE).read() }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsFieldMessageBoxHidden() -> u8 {
+pub unsafe fn IsFieldMessageBoxHidden() -> u8 {
     (unsafe { addr_of!(FIELD_MESSAGE_BOX_MODE).read() } == FIELD_MESSAGE_BOX_HIDDEN) as u8
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn StopFieldMessage() {
+pub unsafe fn StopFieldMessage() {
     unsafe { destroy_draw_task() };
     unsafe { addr_of_mut!(FIELD_MESSAGE_BOX_MODE).write(FIELD_MESSAGE_BOX_HIDDEN) };
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn task_state_uses_the_engine_task_layout() {
-        assert_eq!(TASK_DATA_OFFSET, 8);
-        assert_eq!(TASK_SIZE, 40);
-    }
 }

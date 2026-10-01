@@ -3,29 +3,27 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals
 )]
 
+use crate::battle_anim::gBattleAnimArgs;
+use crate::battle_anim::{DestroyAnimSprite, gBattleAnimAttacker, gBattleAnimTarget};
+use crate::battle_anim_mons::{
+    GetBattlerSide, GetBattlerSpriteCoord, InitAnimArcTranslation,
+    InitSpriteDataForLinearTranslation, InitSpritePosToAnimAttacker, InitSpritePosToAnimTarget,
+    SetAverageBattlerPositions, StartAnimLinearTranslation, StoreSpriteCallbackInData6,
+    TranslateAnimHorizontalArc, TranslateSpriteLinearFixedPoint,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::trig::Sin;
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,29 +32,16 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
 // Data tables (translate with cdata.py): sAnim_ToxicBubble sAnims_ToxicBubble gToxicBubbleSpriteTemplate sAnim_PoisonProjectile sAnim_AcidPoisonDroplet sAnim_SludgeBombHit sAnims_PoisonProjectile sAffineAnim_PoisonProjectile sAffineAnim_SludgeBombHit sAffineAnims_PoisonProjectile sAffineAnims_SludgeBombHit gSludgeProjectileSpriteTemplate gAcidPoisonBubbleSpriteTemplate gSludgeBombHitParticleSpriteTemplate sAffineAnim_AcidPoisonDroplet gAffineAnims_Droplet gAcidPoisonDropletSpriteTemplate sAffineAnim_Bubble sAffineAnims_Bubble gPoisonBubbleSpriteTemplate gWaterBubbleSpriteTemplate
 
-unsafe extern "C" {
-    static mut gBattleAnimArgs: CArray<i16, 8>;
-    static mut gBattleAnimAttacker: u8;
-    static mut gBattleAnimTarget: u8;
-    fn DestroyAnimSprite(a0: *mut Sprite);
-    fn GetBattlerSide(a0: u8) -> u8;
-    fn GetBattlerSpriteCoord(a0: u8, a1: u8) -> u8;
-    fn InitAnimArcTranslation(a0: *mut Sprite);
-    fn InitSpriteDataForLinearTranslation(a0: *mut Sprite);
-    fn InitSpritePosToAnimAttacker(a0: *mut Sprite, a1: u8);
-    fn InitSpritePosToAnimTarget(a0: *mut Sprite, a1: u8);
-    fn SetAverageBattlerPositions(a0: u8, a1: u8, a2: *mut i16, a3: *mut i16);
-    fn Sin(a0: i16, a1: i16) -> i16;
-    fn StartAnimLinearTranslation(a0: *mut Sprite);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StoreSpriteCallbackInData6(a0: *mut Sprite, a1: Option<unsafe extern "C" fn(*mut Sprite)>);
-    fn TranslateAnimHorizontalArc(a0: *mut Sprite) -> u8;
-    fn TranslateSpriteLinearFixedPoint(a0: *mut Sprite);
-}
-
-pub(crate) unsafe extern "C" fn AnimSludgeProjectile(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSludgeProjectile(sprite: *mut Sprite) {
     if gBattleAnimArgs[3] == 0 {
         StartSpriteAnim(sprite, 2);
     }
@@ -68,12 +53,12 @@ pub(crate) unsafe extern "C" fn AnimSludgeProjectile(sprite: *mut Sprite) {
     InitAnimArcTranslation(sprite);
     (*sprite).callback = Some(AnimSludgeProjectile_Step);
 }
-pub(crate) unsafe extern "C" fn AnimSludgeProjectile_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSludgeProjectile_Step(sprite: *mut Sprite) {
     if TranslateAnimHorizontalArc(sprite) != 0 {
         DestroyAnimSprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimAcidPoisonBubble(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimAcidPoisonBubble(sprite: *mut Sprite) {
     let mut l1: i16 = 0;
     let mut l2: i16 = 0;
     if gBattleAnimArgs[3] == 0 {
@@ -91,12 +76,12 @@ pub(crate) unsafe extern "C" fn AnimAcidPoisonBubble(sprite: *mut Sprite) {
     InitAnimArcTranslation(sprite);
     (*sprite).callback = Some(AnimAcidPoisonBubble_Step);
 }
-pub(crate) unsafe extern "C" fn AnimAcidPoisonBubble_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimAcidPoisonBubble_Step(sprite: *mut Sprite) {
     if TranslateAnimHorizontalArc(sprite) != 0 {
         DestroyAnimSprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimSludgeBombHitParticle(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSludgeBombHitParticle(sprite: *mut Sprite) {
     (*sprite).data[0] = gBattleAnimArgs[2];
     (*sprite).data[1] = (*sprite).x;
     (*sprite).data[2] = (*sprite).x + gBattleAnimArgs[0];
@@ -107,7 +92,7 @@ pub(crate) unsafe extern "C" fn AnimSludgeBombHitParticle(sprite: *mut Sprite) {
     (*sprite).data[6] = div_i32((*sprite).data[2] as i32, gBattleAnimArgs[2] as i32) as i16;
     (*sprite).callback = Some(AnimSludgeBombHitParticle_Step);
 }
-pub(crate) unsafe extern "C" fn AnimSludgeBombHitParticle_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSludgeBombHitParticle_Step(sprite: *mut Sprite) {
     TranslateSpriteLinearFixedPoint(sprite);
     (*sprite).data[1] -= (*sprite).data[5];
     (*sprite).data[2] -= (*sprite).data[6];
@@ -115,7 +100,7 @@ pub(crate) unsafe extern "C" fn AnimSludgeBombHitParticle_Step(sprite: *mut Spri
         DestroyAnimSprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimAcidPoisonDroplet(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimAcidPoisonDroplet(sprite: *mut Sprite) {
     SetAverageBattlerPositions(
         gBattleAnimTarget,
         TRUE,
@@ -133,7 +118,7 @@ pub(crate) unsafe extern "C" fn AnimAcidPoisonDroplet(sprite: *mut Sprite) {
     (*sprite).callback = Some(StartAnimLinearTranslation);
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
-pub(crate) unsafe extern "C" fn AnimBubbleEffect(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimBubbleEffect(sprite: *mut Sprite) {
     if gBattleAnimArgs[2] == 0 {
         InitSpritePosToAnimTarget(sprite, TRUE);
     } else {
@@ -151,8 +136,8 @@ pub(crate) unsafe extern "C" fn AnimBubbleEffect(sprite: *mut Sprite) {
     }
     (*sprite).callback = Some(AnimBubbleEffect_Step);
 }
-pub(crate) unsafe extern "C" fn AnimBubbleEffect_Step(sprite: *mut Sprite) {
-    (*sprite).data[0] = (*sprite).data[0] + 0xB & 0xFF;
+pub(crate) unsafe fn AnimBubbleEffect_Step(sprite: *mut Sprite) {
+    (*sprite).data[0] = ((*sprite).data[0] + 0xB) & 0xFF;
     (*sprite).x2 = Sin((*sprite).data[0], 4);
     (*sprite).data[1] += 0x30;
     (*sprite).y2 = -((*sprite).data[1] >> 8);

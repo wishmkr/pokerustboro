@@ -3,31 +3,41 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::self_assignment,
+    clippy::type_complexity,
+    dead_code,
+    unused_assignments
 )]
 
+use crate::battle_anim_mons::{GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide};
+use crate::battle_factory::GetAiScriptsInBattleFactory;
+use crate::battle_main::{
+    GetWhoStrikesFirst, gAbsentBattlerFlags, gActiveBattler, gBattleMons, gBattleMoveDamage,
+    gBattleResources, gBattleResults, gBattleScripting, gBattleStruct, gBattleTypeFlags,
+    gBattleWeather, gBattlerTarget, gCritMultiplier, gCurrentMove, gDisableStructs,
+    gDynamicBasePower, gMoveResultFlags, gStatuses3,
+};
+use crate::battle_main::{gBattlerPartyIndexes, gLastMoves, gSideStatuses};
+use crate::battle_script_commands::{AI_CalcDmg, TypeCalc};
+use crate::battle_setup::{gTrainerBattleOpponent_A, gTrainerBattleOpponent_B};
+use crate::battle_util::CheckMoveLimitations;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::item::GetItemHoldEffect;
+use crate::pokemon::{GetGenderFromSpeciesAndPersonality, GetMonData2, gEnemyParty, gPlayerParty};
+use crate::random::Random;
+use crate::recorded_battle::GetAiScriptsInRecordedBattle;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::util::gBitTable;
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
@@ -46,96 +56,47 @@ const AI_ACTION_FLEE: i32 = 2;
 const AI_ACTION_WATCH: i32 = 4;
 const IGNORED_MOVES_END: u16 = 65535;
 
-static sBattleAICmdTable: Table<CArray<Option<unsafe extern "C" fn()>, 99>> =
+static sBattleAICmdTable: Table<CArray<Option<unsafe fn()>, 99>> =
     Table((&raw const crate::data::battle_ai_script_commands::sBattleAICmdTable).cast());
 static sIgnoredPowerfulMoveEffects: Table<CArray<u16, 13>> =
     Table((&raw const crate::data::battle_ai_script_commands::sIgnoredPowerfulMoveEffects).cast());
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gAIScriptPtr: *mut u8 = null_mut();
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sBattler_AI: u8 = 0;
 
-unsafe extern "C" {
-    static mut gAbsentBattlerFlags: u8;
-    static mut gActiveBattler: u8;
-    static gBattleAI_ScriptsTable: CArray<*mut u8, 0>;
-    static mut gBattleMons: CArray<BattlePokemon, 4>;
-    static mut gBattleMoveDamage: i32;
-    static gBattleMoves: CArray<BattleMove, 0>;
-    static mut gBattleResources: *mut BattleResources;
-    static mut gBattleResults: BattleResults;
-    static mut gBattleScripting: BattleScripting;
-    static mut gBattleStruct: *mut BattleStruct;
-    static mut gBattleTypeFlags: u32;
-    static mut gBattleWeather: u16;
-    static mut gBattlerPartyIndexes: CArray<u16, 4>;
-    static mut gBattlerTarget: u8;
-    static gBitTable: CArray<u32, 0>;
-    static mut gCritMultiplier: u8;
-    static mut gCurrentMove: u16;
-    static mut gDisableStructs: CArray<DisableStruct, 4>;
-    static mut gDynamicBasePower: u16;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static mut gLastMoves: CArray<u16, 4>;
-    static mut gMoveResultFlags: u8;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gSideStatuses: CArray<u16, 2>;
-    static gSpeciesInfo: CArray<SpeciesInfo, 0>;
-    static mut gStatuses3: CArray<u32, 4>;
-    static mut gTrainerBattleOpponent_A: u16;
-    static mut gTrainerBattleOpponent_B: u16;
-    static gTrainers: CArray<Trainer, 0>;
-    fn AI_CalcDmg(a0: u8, a1: u8);
-    fn CheckMoveLimitations(a0: u8, a1: u8, a2: u8) -> u8;
-    fn GetAiScriptsInBattleFactory() -> u32;
-    fn GetAiScriptsInRecordedBattle() -> u32;
-    fn GetBattlerAtPosition(a0: u8) -> u8;
-    fn GetBattlerPosition(a0: u8) -> u8;
-    fn GetBattlerSide(a0: u8) -> u8;
-    fn GetGenderFromSpeciesAndPersonality(a0: u16, a1: u32) -> u8;
-    fn GetItemHoldEffect(a0: u16) -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetWhoStrikesFirst(a0: u8, a1: u8, a2: u8) -> u8;
-    fn Random() -> u16;
-    fn TypeCalc(a0: u16, a1: u8, a2: u8) -> u8;
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleAI_HandleItemUseBeforeAISetup(defaultScoreMoves: u8) {
+pub unsafe fn BattleAI_HandleItemUseBeforeAISetup(defaultScoreMoves: u8) {
+    let data: *mut u8 = (*gBattleResources).battleHistory as *mut u8;
     let mut i: i32 = 0;
-    let mut data: *mut u8 = (*gBattleResources).battleHistory as *mut u8;
-    i = 0;
     while i < 84 {
         *data.at(i) = 0;
         i += 1;
     }
     if gBattleTypeFlags & BATTLE_TYPE_TRAINER != 0 && gBattleTypeFlags & 0xa7f0982 == 0 {
-        i = 0;
-        while i < MAX_TRAINER_ITEMS {
-            if gTrainers[gTrainerBattleOpponent_A].items[i] != ITEM_NONE {
+        for i in 0..MAX_TRAINER_ITEMS {
+            if (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
+                [gTrainerBattleOpponent_A]
+                .items[i]
+                != ITEM_NONE
+            {
                 (*(*gBattleResources).battleHistory).trainerItems
                     [(*(*gBattleResources).battleHistory).itemsNo] =
-                    gTrainers[gTrainerBattleOpponent_A].items[i];
+                    (*(&raw const crate::data::data_tables::gTrainers)
+                        .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
+                        .items[i];
                 (*(*gBattleResources).battleHistory).itemsNo += 1;
             }
-            i += 1;
         }
     }
     BattleAI_SetupAIData(defaultScoreMoves);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleAI_SetupAIData(mut defaultScoreMoves: u8) {
-    let mut i: i32 = 0;
-    let mut data: *mut u8 = (*gBattleResources).ai as *mut u8;
-    let mut moveLimitations: u8 = 0;
-    i = 0;
-    while i < 28 {
+pub unsafe fn BattleAI_SetupAIData(mut defaultScoreMoves: u8) {
+    let data: *mut u8 = (*gBattleResources).ai as *mut u8;
+    for i in 0..28i32 {
         *data.at(i) = 0;
-        i += 1;
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i < MAX_MON_MOVES {
         if defaultScoreMoves as i32 & 1 != 0 {
             (*(*gBattleResources).ai).score[i] = 100;
@@ -145,20 +106,21 @@ pub unsafe extern "C" fn BattleAI_SetupAIData(mut defaultScoreMoves: u8) {
         defaultScoreMoves >>= 1;
         i += 1;
     }
-    moveLimitations = CheckMoveLimitations(gActiveBattler, 0, MOVE_LIMITATIONS_ALL);
-    i = 0;
-    while i < MAX_MON_MOVES {
+    let moveLimitations: u8 = CheckMoveLimitations(gActiveBattler, 0, MOVE_LIMITATIONS_ALL);
+    for i in 0..MAX_MON_MOVES {
         if gBitTable[i] & moveLimitations as u32 != 0 {
             (*(*gBattleResources).ai).score[i] = 0;
         }
         (*(*gBattleResources).ai).simulatedRNG[i] = 100 - (Random() as i32 % 16) as u8;
-        i += 1;
     }
     (*(*gBattleResources).AI_ScriptsStack).size = 0;
     sBattler_AI = gActiveBattler;
     if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
         gBattlerTarget = (Random() as u8 & BIT_FLANK) + (GetBattlerSide(gActiveBattler) ^ 1);
-        if gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0 {
+        if gAbsentBattlerFlags as u32
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerTarget]
+            != 0
+        {
             gBattlerTarget ^= BIT_FLANK;
         }
     } else {
@@ -177,18 +139,23 @@ pub unsafe extern "C" fn BattleAI_SetupAIData(mut defaultScoreMoves: u8) {
     } else if gBattleTypeFlags & 0xc3f0900 != 0 {
         (*(*gBattleResources).ai).aiFlags = 7;
     } else if gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS != 0 {
-        (*(*gBattleResources).ai).aiFlags = gTrainers[gTrainerBattleOpponent_A].aiFlags
-            | gTrainers[gTrainerBattleOpponent_B].aiFlags;
+        (*(*gBattleResources).ai).aiFlags = (*(&raw const crate::data::data_tables::gTrainers)
+            .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
+            .aiFlags
+            | (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
+                [gTrainerBattleOpponent_B]
+                .aiFlags;
     } else {
-        (*(*gBattleResources).ai).aiFlags = gTrainers[gTrainerBattleOpponent_A].aiFlags;
+        (*(*gBattleResources).ai).aiFlags = (*(&raw const crate::data::data_tables::gTrainers)
+            .cast::<CArray<Trainer, 0>>())[gTrainerBattleOpponent_A]
+            .aiFlags;
     }
     if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
         (*(*gBattleResources).ai).aiFlags |= AI_SCRIPT_DOUBLE_BATTLE;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleAI_ChooseMoveOrAction() -> u8 {
-    let mut savedCurrentMove: u16 = gCurrentMove;
+pub unsafe fn BattleAI_ChooseMoveOrAction() -> u8 {
+    let savedCurrentMove: u16 = gCurrentMove;
     let mut ret: u8 = 0;
     if gBattleTypeFlags & BATTLE_TYPE_DOUBLE == 0 {
         ret = ChooseMoveOrAction_Singles();
@@ -196,13 +163,11 @@ pub unsafe extern "C" fn BattleAI_ChooseMoveOrAction() -> u8 {
         ret = ChooseMoveOrAction_Doubles();
     }
     gCurrentMove = savedCurrentMove;
-    return ret;
+    ret
 }
-pub(crate) unsafe extern "C" fn ChooseMoveOrAction_Singles() -> u8 {
+unsafe fn ChooseMoveOrAction_Singles() -> u8 {
     let mut currentMoveArray: CArray<u8, 4> = zeroed();
     let mut consideredMoveArray: CArray<u8, 4> = zeroed();
-    let mut numOfBestMoves: u8 = 0;
-    let mut i: i32 = 0;
     RecordLastUsedMoveByTarget();
     while (*(*gBattleResources).ai).aiFlags != 0 {
         if (*(*gBattleResources).ai).aiFlags & 1 != 0 {
@@ -219,11 +184,10 @@ pub(crate) unsafe extern "C" fn ChooseMoveOrAction_Singles() -> u8 {
     if (*(*gBattleResources).ai).aiAction as i32 & AI_ACTION_WATCH != 0 {
         return AI_CHOICE_WATCH;
     }
-    numOfBestMoves = 1;
+    let mut numOfBestMoves: u8 = 1;
     currentMoveArray[0] = (*(*gBattleResources).ai).score[0] as u8;
     consideredMoveArray[0] = 0;
-    i = 1;
-    while i < MAX_MON_MOVES {
+    for i in 1..MAX_MON_MOVES {
         if gBattleMons[sBattler_AI].moves[i] != MOVE_NONE {
             if currentMoveArray[0] as i32 == (*(*gBattleResources).ai).score[i] as i32 {
                 currentMoveArray[numOfBestMoves] = (*(*gBattleResources).ai).score[i] as u8;
@@ -239,23 +203,18 @@ pub(crate) unsafe extern "C" fn ChooseMoveOrAction_Singles() -> u8 {
                 consideredMoveArray[0] = i as u8;
             }
         }
-        i += 1;
     }
-    return consideredMoveArray[rem_i32(Random() as i32, numOfBestMoves as i32)];
+    consideredMoveArray[rem_i32(Random() as i32, numOfBestMoves as i32)]
 }
-pub(crate) unsafe extern "C" fn ChooseMoveOrAction_Doubles() -> u8 {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+unsafe fn ChooseMoveOrAction_Doubles() -> u8 {
     let mut scriptsToRun: i32 = 0;
     let mut bestMovePointsForTarget: CArray<i16, 4> = zeroed();
     let mut mostViableTargetsArray: CArray<i8, 4> = zeroed();
     let mut actionOrMoveIndex: CArray<u8, 4> = zeroed();
     let mut mostViableMovesScores: CArray<u8, 4> = zeroed();
     let mut mostViableMovesIndices: CArray<u8, 4> = zeroed();
-    let mut mostViableTargetsNo: i32 = 0;
     let mut mostViableMovesNo: i32 = 0;
-    let mut mostMovePoints: i16 = 0;
-    i = 0;
+    let mut i: i32 = 0;
     while i < MAX_BATTLERS_COUNT as i32 {
         if i == sBattler_AI as i32 || gBattleMons[i].hp == 0 {
             actionOrMoveIndex[i] = 0xFF;
@@ -290,8 +249,7 @@ pub(crate) unsafe extern "C" fn ChooseMoveOrAction_Doubles() -> u8 {
                 mostViableMovesScores[0] = (*(*gBattleResources).ai).score[0] as u8;
                 mostViableMovesIndices[0] = 0;
                 mostViableMovesNo = 1;
-                j = 1;
-                while j < MAX_MON_MOVES {
+                for j in 1..MAX_MON_MOVES {
                     if gBattleMons[sBattler_AI].moves[j] != 0 {
                         if mostViableMovesScores[0] as i32
                             == (*(*gBattleResources).ai).score[j] as i32
@@ -309,7 +267,6 @@ pub(crate) unsafe extern "C" fn ChooseMoveOrAction_Doubles() -> u8 {
                             mostViableMovesNo = 1;
                         }
                     }
-                    j += 1;
                 }
                 actionOrMoveIndex[i] =
                     mostViableMovesIndices[rem_i32(Random() as i32, mostViableMovesNo)];
@@ -322,11 +279,10 @@ pub(crate) unsafe extern "C" fn ChooseMoveOrAction_Doubles() -> u8 {
         }
         i += 1;
     }
-    mostMovePoints = bestMovePointsForTarget[0];
+    let mut mostMovePoints: i16 = bestMovePointsForTarget[0];
     mostViableTargetsArray[0] = 0;
-    mostViableTargetsNo = 1;
-    i = 1;
-    while i < MAX_BATTLERS_COUNT as i32 {
+    let mut mostViableTargetsNo: i32 = 1;
+    for i in 1..(MAX_BATTLERS_COUNT as i32) {
         if mostMovePoints == bestMovePointsForTarget[i] {
             mostViableTargetsArray[mostViableTargetsNo] = i as i8;
             mostViableTargetsNo += 1;
@@ -336,17 +292,17 @@ pub(crate) unsafe extern "C" fn ChooseMoveOrAction_Doubles() -> u8 {
             mostViableTargetsArray[0] = i as i8;
             mostViableTargetsNo = 1;
         }
-        i += 1;
     }
     gBattlerTarget = mostViableTargetsArray[rem_i32(Random() as i32, mostViableTargetsNo)] as u8;
-    return actionOrMoveIndex[gBattlerTarget];
+    actionOrMoveIndex[gBattlerTarget]
 }
-pub(crate) unsafe extern "C" fn BattleAI_DoAIProcessing() {
+unsafe fn BattleAI_DoAIProcessing() {
     while (*(*gBattleResources).ai).aiState != AIState_FinishedProcessing {
         match (*(*gBattleResources).ai).aiState {
             AIState_DoNotProcess => {}
             AIState_SettingUp => {
-                gAIScriptPtr = gBattleAI_ScriptsTable[(*(*gBattleResources).ai).aiLogicId];
+                gAIScriptPtr = (*crate::asmdata::gBattleAI_ScriptsTable
+                    .cast::<CArray<*mut u8, 0>>())[(*(*gBattleResources).ai).aiLogicId];
                 if gBattleMons[sBattler_AI].pp[(*(*gBattleResources).ai).movesetIndex] == 0 {
                     (*(*gBattleResources).ai).moveConsidered = 0;
                 } else {
@@ -378,10 +334,8 @@ pub(crate) unsafe extern "C" fn BattleAI_DoAIProcessing() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn RecordLastUsedMoveByTarget() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < MAX_MON_MOVES {
+unsafe fn RecordLastUsedMoveByTarget() {
+    for i in 0..MAX_MON_MOVES {
         if (*(*gBattleResources).battleHistory).usedMoves[gBattlerTarget].moves[i]
             == gLastMoves[gBattlerTarget]
         {
@@ -392,36 +346,27 @@ pub(crate) unsafe extern "C" fn RecordLastUsedMoveByTarget() {
                 gLastMoves[gBattlerTarget];
             break;
         }
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearBattlerMoveHistory(battler: u8) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < MAX_MON_MOVES {
+pub unsafe fn ClearBattlerMoveHistory(battler: u8) {
+    for i in 0..MAX_MON_MOVES {
         (*(*gBattleResources).battleHistory).usedMoves[battler].moves[i] = MOVE_NONE;
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordAbilityBattle(battler: u8, abilityId: u8) {
+pub unsafe fn RecordAbilityBattle(battler: u8, abilityId: u8) {
     (*(*gBattleResources).battleHistory).abilities[battler] = abilityId;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearBattlerAbilityHistory(battler: u8) {
+pub unsafe fn ClearBattlerAbilityHistory(battler: u8) {
     (*(*gBattleResources).battleHistory).abilities[battler] = ABILITY_NONE;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordItemEffectBattle(battler: u8, itemEffect: u8) {
+pub unsafe fn RecordItemEffectBattle(battler: u8, itemEffect: u8) {
     (*(*gBattleResources).battleHistory).itemEffects[battler] = itemEffect;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearBattlerItemEffectHistory(battler: u8) {
+pub unsafe fn ClearBattlerItemEffectHistory(battler: u8) {
     (*(*gBattleResources).battleHistory).itemEffects[battler] = 0;
 }
-pub(crate) unsafe extern "C" fn Cmd_if_random_less_than() {
-    let mut random: u16 = Random();
+pub(crate) unsafe fn Cmd_if_random_less_than() {
+    let random: u16 = Random();
     if random as i32 % 256 < *gAIScriptPtr.at(1) as i32 {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
@@ -431,8 +376,8 @@ pub(crate) unsafe extern "C" fn Cmd_if_random_less_than() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_random_greater_than() {
-    let mut random: u16 = Random();
+pub(crate) unsafe fn Cmd_if_random_greater_than() {
+    let random: u16 = Random();
     if random as i32 % 256 > *gAIScriptPtr.at(1) as i32 {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
@@ -442,8 +387,8 @@ pub(crate) unsafe extern "C" fn Cmd_if_random_greater_than() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_random_equal() {
-    let mut random: u16 = Random();
+pub(crate) unsafe fn Cmd_if_random_equal() {
+    let random: u16 = Random();
     if random as i32 % 256 == *gAIScriptPtr.at(1) as i32 {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
@@ -453,8 +398,8 @@ pub(crate) unsafe extern "C" fn Cmd_if_random_equal() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_random_not_equal() {
-    let mut random: u16 = Random();
+pub(crate) unsafe fn Cmd_if_random_not_equal() {
+    let random: u16 = Random();
     if random as i32 % 256 != *gAIScriptPtr.at(1) as i32 {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
@@ -464,7 +409,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_random_not_equal() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_score() {
+pub(crate) unsafe fn Cmd_score() {
     (*(*gBattleResources).ai).score[(*(*gBattleResources).ai).movesetIndex] +=
         *gAIScriptPtr.at(1) as i8;
     if (*(*gBattleResources).ai).score[(*(*gBattleResources).ai).movesetIndex] < 0 {
@@ -472,7 +417,7 @@ pub(crate) unsafe extern "C" fn Cmd_score() {
     }
     gAIScriptPtr = gAIScriptPtr.at(2);
 }
-pub(crate) unsafe extern "C" fn Cmd_if_hp_less_than() {
+pub(crate) unsafe fn Cmd_if_hp_less_than() {
     let mut battler: u16 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u16;
@@ -493,7 +438,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_hp_less_than() {
         gAIScriptPtr = gAIScriptPtr.at(7);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_hp_more_than() {
+pub(crate) unsafe fn Cmd_if_hp_more_than() {
     let mut battler: u16 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u16;
@@ -514,7 +459,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_hp_more_than() {
         gAIScriptPtr = gAIScriptPtr.at(7);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_hp_equal() {
+pub(crate) unsafe fn Cmd_if_hp_equal() {
     let mut battler: u16 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u16;
@@ -535,7 +480,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_hp_equal() {
         gAIScriptPtr = gAIScriptPtr.at(7);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_hp_not_equal() {
+pub(crate) unsafe fn Cmd_if_hp_not_equal() {
     let mut battler: u16 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u16;
@@ -556,15 +501,14 @@ pub(crate) unsafe extern "C" fn Cmd_if_hp_not_equal() {
         gAIScriptPtr = gAIScriptPtr.at(7);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_status() {
+pub(crate) unsafe fn Cmd_if_status() {
     let mut battler: u16 = 0;
-    let mut status: u32 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u16;
     } else {
         battler = gBattlerTarget as u16;
     }
-    status = *gAIScriptPtr.at(2) as u32
+    let status: u32 = *gAIScriptPtr.at(2) as u32
         | (*gAIScriptPtr.at(2).at(1) as u32) << 8
         | (*gAIScriptPtr.at(2).at(2) as u32) << 16
         | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
@@ -577,15 +521,14 @@ pub(crate) unsafe extern "C" fn Cmd_if_status() {
         gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_not_status() {
+pub(crate) unsafe fn Cmd_if_not_status() {
     let mut battler: u16 = 0;
-    let mut status: u32 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u16;
     } else {
         battler = gBattlerTarget as u16;
     }
-    status = *gAIScriptPtr.at(2) as u32
+    let status: u32 = *gAIScriptPtr.at(2) as u32
         | (*gAIScriptPtr.at(2).at(1) as u32) << 8
         | (*gAIScriptPtr.at(2).at(2) as u32) << 16
         | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
@@ -598,15 +541,14 @@ pub(crate) unsafe extern "C" fn Cmd_if_not_status() {
         gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_status2() {
+pub(crate) unsafe fn Cmd_if_status2() {
     let mut battler: u16 = 0;
-    let mut status: u32 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u16;
     } else {
         battler = gBattlerTarget as u16;
     }
-    status = *gAIScriptPtr.at(2) as u32
+    let status: u32 = *gAIScriptPtr.at(2) as u32
         | (*gAIScriptPtr.at(2).at(1) as u32) << 8
         | (*gAIScriptPtr.at(2).at(2) as u32) << 16
         | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
@@ -619,15 +561,14 @@ pub(crate) unsafe extern "C" fn Cmd_if_status2() {
         gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_not_status2() {
+pub(crate) unsafe fn Cmd_if_not_status2() {
     let mut battler: u16 = 0;
-    let mut status: u32 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u16;
     } else {
         battler = gBattlerTarget as u16;
     }
-    status = *gAIScriptPtr.at(2) as u32
+    let status: u32 = *gAIScriptPtr.at(2) as u32
         | (*gAIScriptPtr.at(2).at(1) as u32) << 8
         | (*gAIScriptPtr.at(2).at(2) as u32) << 16
         | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
@@ -640,15 +581,14 @@ pub(crate) unsafe extern "C" fn Cmd_if_not_status2() {
         gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_status3() {
+pub(crate) unsafe fn Cmd_if_status3() {
     let mut battler: u16 = 0;
-    let mut status: u32 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u16;
     } else {
         battler = gBattlerTarget as u16;
     }
-    status = *gAIScriptPtr.at(2) as u32
+    let status: u32 = *gAIScriptPtr.at(2) as u32
         | (*gAIScriptPtr.at(2).at(1) as u32) << 8
         | (*gAIScriptPtr.at(2).at(2) as u32) << 16
         | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
@@ -661,15 +601,14 @@ pub(crate) unsafe extern "C" fn Cmd_if_status3() {
         gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_not_status3() {
+pub(crate) unsafe fn Cmd_if_not_status3() {
     let mut battler: u16 = 0;
-    let mut status: u32 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u16;
     } else {
         battler = gBattlerTarget as u16;
     }
-    status = *gAIScriptPtr.at(2) as u32
+    let status: u32 = *gAIScriptPtr.at(2) as u32
         | (*gAIScriptPtr.at(2).at(1) as u32) << 8
         | (*gAIScriptPtr.at(2).at(2) as u32) << 16
         | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
@@ -682,17 +621,15 @@ pub(crate) unsafe extern "C" fn Cmd_if_not_status3() {
         gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_side_affecting() {
+pub(crate) unsafe fn Cmd_if_side_affecting() {
     let mut battler: u16 = 0;
-    let mut side: u32 = 0;
-    let mut status: u32 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u16;
     } else {
         battler = gBattlerTarget as u16;
     }
-    side = GetBattlerPosition(battler as u8) as u32 & 1;
-    status = *gAIScriptPtr.at(2) as u32
+    let side: u32 = GetBattlerPosition(battler as u8) as u32 & 1;
+    let status: u32 = *gAIScriptPtr.at(2) as u32
         | (*gAIScriptPtr.at(2).at(1) as u32) << 8
         | (*gAIScriptPtr.at(2).at(2) as u32) << 16
         | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
@@ -705,17 +642,15 @@ pub(crate) unsafe extern "C" fn Cmd_if_side_affecting() {
         gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_not_side_affecting() {
+pub(crate) unsafe fn Cmd_if_not_side_affecting() {
     let mut battler: u16 = 0;
-    let mut side: u32 = 0;
-    let mut status: u32 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u16;
     } else {
         battler = gBattlerTarget as u16;
     }
-    side = GetBattlerPosition(battler as u8) as u32 & 1;
-    status = *gAIScriptPtr.at(2) as u32
+    let side: u32 = GetBattlerPosition(battler as u8) as u32 & 1;
+    let status: u32 = *gAIScriptPtr.at(2) as u32
         | (*gAIScriptPtr.at(2).at(1) as u32) << 8
         | (*gAIScriptPtr.at(2).at(2) as u32) << 16
         | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
@@ -728,7 +663,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_not_side_affecting() {
         gAIScriptPtr = gAIScriptPtr.at(10);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_less_than() {
+pub(crate) unsafe fn Cmd_if_less_than() {
     if (*(*gBattleResources).ai).funcResult < *gAIScriptPtr.at(1) as u32 {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
@@ -738,7 +673,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_less_than() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_more_than() {
+pub(crate) unsafe fn Cmd_if_more_than() {
     if (*(*gBattleResources).ai).funcResult > *gAIScriptPtr.at(1) as u32 {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
@@ -748,7 +683,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_more_than() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_equal() {
+pub(crate) unsafe fn Cmd_if_equal() {
     if (*(*gBattleResources).ai).funcResult == *gAIScriptPtr.at(1) as u32 {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
@@ -758,7 +693,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_equal() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_not_equal() {
+pub(crate) unsafe fn Cmd_if_not_equal() {
     if (*(*gBattleResources).ai).funcResult != *gAIScriptPtr.at(1) as u32 {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
@@ -768,12 +703,11 @@ pub(crate) unsafe extern "C" fn Cmd_if_not_equal() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_less_than_ptr() {
-    let mut value: *mut u8 = (*gAIScriptPtr.at(1) as i32
+pub(crate) unsafe fn Cmd_if_less_than_ptr() {
+    let value: *mut u8 = (*gAIScriptPtr.at(1) as i32
         | (*gAIScriptPtr.at(1).at(1) as i32) << 8
         | (*gAIScriptPtr.at(1).at(2) as i32) << 16
-        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize
-        as *mut u8;
+        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
     if (*(*gBattleResources).ai).funcResult < *value as u32 {
         gAIScriptPtr = (*gAIScriptPtr.at(5) as i32
             | (*gAIScriptPtr.at(5).at(1) as i32) << 8
@@ -783,12 +717,11 @@ pub(crate) unsafe extern "C" fn Cmd_if_less_than_ptr() {
         gAIScriptPtr = gAIScriptPtr.at(9);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_more_than_ptr() {
-    let mut value: *mut u8 = (*gAIScriptPtr.at(1) as i32
+pub(crate) unsafe fn Cmd_if_more_than_ptr() {
+    let value: *mut u8 = (*gAIScriptPtr.at(1) as i32
         | (*gAIScriptPtr.at(1).at(1) as i32) << 8
         | (*gAIScriptPtr.at(1).at(2) as i32) << 16
-        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize
-        as *mut u8;
+        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
     if (*(*gBattleResources).ai).funcResult > *value as u32 {
         gAIScriptPtr = (*gAIScriptPtr.at(5) as i32
             | (*gAIScriptPtr.at(5).at(1) as i32) << 8
@@ -798,12 +731,11 @@ pub(crate) unsafe extern "C" fn Cmd_if_more_than_ptr() {
         gAIScriptPtr = gAIScriptPtr.at(9);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_equal_ptr() {
-    let mut value: *mut u8 = (*gAIScriptPtr.at(1) as i32
+pub(crate) unsafe fn Cmd_if_equal_ptr() {
+    let value: *mut u8 = (*gAIScriptPtr.at(1) as i32
         | (*gAIScriptPtr.at(1).at(1) as i32) << 8
         | (*gAIScriptPtr.at(1).at(2) as i32) << 16
-        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize
-        as *mut u8;
+        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
     if (*(*gBattleResources).ai).funcResult == *value as u32 {
         gAIScriptPtr = (*gAIScriptPtr.at(5) as i32
             | (*gAIScriptPtr.at(5).at(1) as i32) << 8
@@ -813,12 +745,11 @@ pub(crate) unsafe extern "C" fn Cmd_if_equal_ptr() {
         gAIScriptPtr = gAIScriptPtr.at(9);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_not_equal_ptr() {
-    let mut value: *mut u8 = (*gAIScriptPtr.at(1) as i32
+pub(crate) unsafe fn Cmd_if_not_equal_ptr() {
+    let value: *mut u8 = (*gAIScriptPtr.at(1) as i32
         | (*gAIScriptPtr.at(1).at(1) as i32) << 8
         | (*gAIScriptPtr.at(1).at(2) as i32) << 16
-        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize
-        as *mut u8;
+        | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
     if (*(*gBattleResources).ai).funcResult != *value as u32 {
         gAIScriptPtr = (*gAIScriptPtr.at(5) as i32
             | (*gAIScriptPtr.at(5).at(1) as i32) << 8
@@ -828,8 +759,8 @@ pub(crate) unsafe extern "C" fn Cmd_if_not_equal_ptr() {
         gAIScriptPtr = gAIScriptPtr.at(9);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_move() {
-    let mut r#move: u16 = *gAIScriptPtr.at(1) as u16 | (*gAIScriptPtr.at(1).at(1) as u16) << 8;
+pub(crate) unsafe fn Cmd_if_move() {
+    let r#move: u16 = *gAIScriptPtr.at(1) as u16 | (*gAIScriptPtr.at(1).at(1) as u16) << 8;
     if (*(*gBattleResources).ai).moveConsidered == r#move {
         gAIScriptPtr = (*gAIScriptPtr.at(3) as i32
             | (*gAIScriptPtr.at(3).at(1) as i32) << 8
@@ -839,8 +770,8 @@ pub(crate) unsafe extern "C" fn Cmd_if_move() {
         gAIScriptPtr = gAIScriptPtr.at(7);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_not_move() {
-    let mut r#move: u16 = *gAIScriptPtr.at(1) as u16 | (*gAIScriptPtr.at(1).at(1) as u16) << 8;
+pub(crate) unsafe fn Cmd_if_not_move() {
+    let r#move: u16 = *gAIScriptPtr.at(1) as u16 | (*gAIScriptPtr.at(1).at(1) as u16) << 8;
     if (*(*gBattleResources).ai).moveConsidered != r#move {
         gAIScriptPtr = (*gAIScriptPtr.at(3) as i32
             | (*gAIScriptPtr.at(3).at(1) as i32) << 8
@@ -850,7 +781,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_not_move() {
         gAIScriptPtr = gAIScriptPtr.at(7);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_in_bytes() {
+pub(crate) unsafe fn Cmd_if_in_bytes() {
     let mut ptr: *mut u8 = (*gAIScriptPtr.at(1) as i32
         | (*gAIScriptPtr.at(1).at(1) as i32) << 8
         | (*gAIScriptPtr.at(1).at(2) as i32) << 16
@@ -868,7 +799,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_in_bytes() {
     }
     gAIScriptPtr = gAIScriptPtr.at(9);
 }
-pub(crate) unsafe extern "C" fn Cmd_if_not_in_bytes() {
+pub(crate) unsafe fn Cmd_if_not_in_bytes() {
     let mut ptr: *mut u8 = (*gAIScriptPtr.at(1) as i32
         | (*gAIScriptPtr.at(1).at(1) as i32) << 8
         | (*gAIScriptPtr.at(1).at(2) as i32) << 16
@@ -885,7 +816,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_not_in_bytes() {
         | (*gAIScriptPtr.at(5).at(2) as i32) << 16
         | (*gAIScriptPtr.at(5).at(3) as i32) << 24) as usize as *mut u8;
 }
-pub(crate) unsafe extern "C" fn Cmd_if_in_hwords() {
+pub(crate) unsafe fn Cmd_if_in_hwords() {
     let mut ptr: *mut u16 = (*gAIScriptPtr.at(1) as i32
         | (*gAIScriptPtr.at(1).at(1) as i32) << 8
         | (*gAIScriptPtr.at(1).at(2) as i32) << 16
@@ -904,7 +835,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_in_hwords() {
     }
     gAIScriptPtr = gAIScriptPtr.at(9);
 }
-pub(crate) unsafe extern "C" fn Cmd_if_not_in_hwords() {
+pub(crate) unsafe fn Cmd_if_not_in_hwords() {
     let mut ptr: *mut u16 = (*gAIScriptPtr.at(1) as i32
         | (*gAIScriptPtr.at(1).at(1) as i32) << 8
         | (*gAIScriptPtr.at(1).at(2) as i32) << 16
@@ -922,12 +853,14 @@ pub(crate) unsafe extern "C" fn Cmd_if_not_in_hwords() {
         | (*gAIScriptPtr.at(5).at(2) as i32) << 16
         | (*gAIScriptPtr.at(5).at(3) as i32) << 24) as usize as *mut u8;
 }
-pub(crate) unsafe extern "C" fn Cmd_if_user_has_attacking_move() {
+pub(crate) unsafe fn Cmd_if_user_has_attacking_move() {
     let mut i: i32 = 0;
-    i = 0;
     while i < MAX_MON_MOVES {
         if gBattleMons[sBattler_AI].moves[i] != 0
-            && gBattleMoves[gBattleMons[sBattler_AI].moves[i]].power != 0
+            && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                [gBattleMons[sBattler_AI].moves[i]]
+                .power
+                != 0
         {
             break;
         }
@@ -942,12 +875,14 @@ pub(crate) unsafe extern "C" fn Cmd_if_user_has_attacking_move() {
             | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_user_has_no_attacking_moves() {
+pub(crate) unsafe fn Cmd_if_user_has_no_attacking_moves() {
     let mut i: i32 = 0;
-    i = 0;
     while i < MAX_MON_MOVES {
         if gBattleMons[sBattler_AI].moves[i] != 0
-            && gBattleMoves[gBattleMons[sBattler_AI].moves[i]].power != 0
+            && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                [gBattleMons[sBattler_AI].moves[i]]
+                .power
+                != 0
         {
             break;
         }
@@ -962,12 +897,12 @@ pub(crate) unsafe extern "C" fn Cmd_if_user_has_no_attacking_moves() {
             | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_get_turn_count() {
+pub(crate) unsafe fn Cmd_get_turn_count() {
     (*(*gBattleResources).ai).funcResult = gBattleResults.battleTurnCounter as u32;
     gAIScriptPtr = gAIScriptPtr.at(1);
 }
-pub(crate) unsafe extern "C" fn Cmd_get_type() {
-    let mut typeVar: u8 = *gAIScriptPtr.at(1);
+pub(crate) unsafe fn Cmd_get_type() {
+    let typeVar: u8 = *gAIScriptPtr.at(1);
     match typeVar {
         AI_TYPE1_USER => {
             (*(*gBattleResources).ai).funcResult = gBattleMons[sBattler_AI].types[0] as u32;
@@ -983,13 +918,15 @@ pub(crate) unsafe extern "C" fn Cmd_get_type() {
         }
         AI_TYPE_MOVE => {
             (*(*gBattleResources).ai).funcResult =
-                gBattleMoves[(*(*gBattleResources).ai).moveConsidered].r#type as u32;
+                (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                    [(*(*gBattleResources).ai).moveConsidered]
+                    .r#type as u32;
         }
         _ => {}
     }
     gAIScriptPtr = gAIScriptPtr.at(2);
 }
-pub(crate) unsafe extern "C" fn BattleAI_GetWantedBattler(wantedBattler: u8) -> u8 {
+unsafe fn BattleAI_GetWantedBattler(wantedBattler: u8) -> u8 {
     match wantedBattler {
         AI_USER => {
             return sBattler_AI;
@@ -1006,11 +943,11 @@ pub(crate) unsafe extern "C" fn BattleAI_GetWantedBattler(wantedBattler: u8) -> 
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_is_of_type() {
-    let mut battler: u8 = BattleAI_GetWantedBattler(*gAIScriptPtr.at(1));
+pub(crate) unsafe fn Cmd_is_of_type() {
+    let battler: u8 = BattleAI_GetWantedBattler(*gAIScriptPtr.at(1));
     if gBattleMons[battler].types[0] == *gAIScriptPtr.at(2)
         || gBattleMons[battler].types[1] == *gAIScriptPtr.at(2)
     {
@@ -1020,37 +957,43 @@ pub(crate) unsafe extern "C" fn Cmd_is_of_type() {
     }
     gAIScriptPtr = gAIScriptPtr.at(3);
 }
-pub(crate) unsafe extern "C" fn Cmd_get_considered_move_power() {
-    (*(*gBattleResources).ai).funcResult =
-        gBattleMoves[(*(*gBattleResources).ai).moveConsidered].power as u32;
+pub(crate) unsafe fn Cmd_get_considered_move_power() {
+    (*(*gBattleResources).ai).funcResult = (*(&raw const crate::data::pokemon::gBattleMoves)
+        .cast::<CArray<BattleMove, 0>>())[(*(*gBattleResources).ai).moveConsidered]
+        .power as u32;
     gAIScriptPtr = gAIScriptPtr.at(1);
 }
-pub(crate) unsafe extern "C" fn Cmd_get_how_powerful_move_is() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn Cmd_get_how_powerful_move_is() {
     let mut checkedMove: i32 = 0;
     let mut moveDmgs: CArray<i32, 4> = zeroed();
-    i = 0;
+    let mut i: i32 = 0;
     while sIgnoredPowerfulMoveEffects[i] != IGNORED_MOVES_END {
-        if gBattleMoves[(*(*gBattleResources).ai).moveConsidered].effect as u16
+        if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+            [(*(*gBattleResources).ai).moveConsidered]
+            .effect as u16
             == sIgnoredPowerfulMoveEffects[i]
         {
             break;
         }
         i += 1;
     }
-    if gBattleMoves[(*(*gBattleResources).ai).moveConsidered].power > 1
+    if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [(*(*gBattleResources).ai).moveConsidered]
+        .power
+        > 1
         && sIgnoredPowerfulMoveEffects[i] == IGNORED_MOVES_END
     {
         gDynamicBasePower = 0;
-        *(&raw mut (*gBattleStruct).dynamicMoveType) = 0;
+        (*gBattleStruct).dynamicMoveType = 0;
         gBattleScripting.dmgMultiplier = 1;
         gMoveResultFlags = 0;
         gCritMultiplier = 1;
-        checkedMove = 0;
-        while checkedMove < MAX_MON_MOVES {
+        for checkedMove in 0..MAX_MON_MOVES {
             i = 0;
             while sIgnoredPowerfulMoveEffects[i] != IGNORED_MOVES_END {
-                if gBattleMoves[gBattleMons[sBattler_AI].moves[checkedMove]].effect as u16
+                if (*(&raw const crate::data::pokemon::gBattleMoves)
+                    .cast::<CArray<BattleMove, 0>>())[gBattleMons[sBattler_AI].moves[checkedMove]]
+                    .effect as u16
                     == sIgnoredPowerfulMoveEffects[i]
                 {
                     break;
@@ -1059,7 +1002,10 @@ pub(crate) unsafe extern "C" fn Cmd_get_how_powerful_move_is() {
             }
             if gBattleMons[sBattler_AI].moves[checkedMove] != MOVE_NONE
                 && sIgnoredPowerfulMoveEffects[i] == IGNORED_MOVES_END
-                && gBattleMoves[gBattleMons[sBattler_AI].moves[checkedMove]].power > 1
+                && (*(&raw const crate::data::pokemon::gBattleMoves)
+                    .cast::<CArray<BattleMove, 0>>())[gBattleMons[sBattler_AI].moves[checkedMove]]
+                    .power
+                    > 1
             {
                 gCurrentMove = gBattleMons[sBattler_AI].moves[checkedMove];
                 AI_CalcDmg(sBattler_AI, gBattlerTarget);
@@ -1073,7 +1019,6 @@ pub(crate) unsafe extern "C" fn Cmd_get_how_powerful_move_is() {
             } else {
                 moveDmgs[checkedMove] = 0;
             }
-            checkedMove += 1;
         }
         checkedMove = 0;
         while checkedMove < MAX_MON_MOVES {
@@ -1092,7 +1037,7 @@ pub(crate) unsafe extern "C" fn Cmd_get_how_powerful_move_is() {
     }
     gAIScriptPtr = gAIScriptPtr.at(1);
 }
-pub(crate) unsafe extern "C" fn Cmd_get_last_used_battler_move() {
+pub(crate) unsafe fn Cmd_get_last_used_battler_move() {
     if *gAIScriptPtr.at(1) == 1 {
         (*(*gBattleResources).ai).funcResult = gLastMoves[sBattler_AI] as u32;
     } else {
@@ -1100,7 +1045,7 @@ pub(crate) unsafe extern "C" fn Cmd_get_last_used_battler_move() {
     }
     gAIScriptPtr = gAIScriptPtr.at(2);
 }
-pub(crate) unsafe extern "C" fn Cmd_if_equal_() {
+pub(crate) unsafe fn Cmd_if_equal_() {
     if *gAIScriptPtr.at(1) as u32 == (*(*gBattleResources).ai).funcResult {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
@@ -1110,7 +1055,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_equal_() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_not_equal_() {
+pub(crate) unsafe fn Cmd_if_not_equal_() {
     if *gAIScriptPtr.at(1) as u32 != (*(*gBattleResources).ai).funcResult {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
@@ -1120,7 +1065,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_not_equal_() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_user_goes() {
+pub(crate) unsafe fn Cmd_if_user_goes() {
     if GetWhoStrikesFirst(sBattler_AI, gBattlerTarget, 1) == *gAIScriptPtr.at(1) {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
@@ -1130,7 +1075,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_user_goes() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_user_doesnt_go() {
+pub(crate) unsafe fn Cmd_if_user_doesnt_go() {
     if GetWhoStrikesFirst(sBattler_AI, gBattlerTarget, 1) != *gAIScriptPtr.at(1) {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
@@ -1140,14 +1085,13 @@ pub(crate) unsafe extern "C" fn Cmd_if_user_doesnt_go() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_nop_2A() {}
-pub(crate) unsafe extern "C" fn Cmd_nop_2B() {}
-pub(crate) unsafe extern "C" fn Cmd_count_usable_party_mons() {
+pub(crate) fn Cmd_nop_2A() {}
+pub(crate) fn Cmd_nop_2B() {}
+pub(crate) unsafe fn Cmd_count_usable_party_mons() {
     let mut battler: u8 = 0;
     let mut battlerOnField1: u8 = 0;
     let mut battlerOnField2: u8 = 0;
     let mut party: *mut Pokemon = null_mut();
-    let mut i: i32 = 0;
     (*(*gBattleResources).ai).funcResult = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI;
@@ -1160,16 +1104,14 @@ pub(crate) unsafe extern "C" fn Cmd_count_usable_party_mons() {
         party = gEnemyParty.as_mut_ptr();
     }
     if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
-        let mut position: u32 = 0;
         battlerOnField1 = gBattlerPartyIndexes[battler] as u8;
-        position = GetBattlerPosition(battler) as u32 ^ 2;
+        let position: u32 = GetBattlerPosition(battler) as u32 ^ 2;
         battlerOnField2 = gBattlerPartyIndexes[GetBattlerAtPosition(position as u8)] as u8;
     } else {
         battlerOnField1 = gBattlerPartyIndexes[battler] as u8;
         battlerOnField2 = gBattlerPartyIndexes[battler] as u8;
     }
-    i = 0;
-    while i < PARTY_SIZE {
+    for i in 0..PARTY_SIZE {
         if i != battlerOnField1 as i32
             && i != battlerOnField2 as i32
             && GetMonData2(party.at(i), MON_DATA_HP) != 0
@@ -1178,20 +1120,20 @@ pub(crate) unsafe extern "C" fn Cmd_count_usable_party_mons() {
         {
             (*(*gBattleResources).ai).funcResult += 1;
         }
-        i += 1;
     }
     gAIScriptPtr = gAIScriptPtr.at(2);
 }
-pub(crate) unsafe extern "C" fn Cmd_get_considered_move() {
+pub(crate) unsafe fn Cmd_get_considered_move() {
     (*(*gBattleResources).ai).funcResult = (*(*gBattleResources).ai).moveConsidered as u32;
     gAIScriptPtr = gAIScriptPtr.at(1);
 }
-pub(crate) unsafe extern "C" fn Cmd_get_considered_move_effect() {
-    (*(*gBattleResources).ai).funcResult =
-        gBattleMoves[(*(*gBattleResources).ai).moveConsidered].effect as u32;
+pub(crate) unsafe fn Cmd_get_considered_move_effect() {
+    (*(*gBattleResources).ai).funcResult = (*(&raw const crate::data::pokemon::gBattleMoves)
+        .cast::<CArray<BattleMove, 0>>())[(*(*gBattleResources).ai).moveConsidered]
+        .effect as u32;
     gAIScriptPtr = gAIScriptPtr.at(1);
 }
-pub(crate) unsafe extern "C" fn Cmd_get_ability() {
+pub(crate) unsafe fn Cmd_get_ability() {
     let mut battler: u8 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI;
@@ -1213,30 +1155,46 @@ pub(crate) unsafe extern "C" fn Cmd_get_ability() {
             gAIScriptPtr = gAIScriptPtr.at(2);
             return;
         }
-        if gSpeciesInfo[gBattleMons[battler].species].abilities[0] != 0 {
-            if gSpeciesInfo[gBattleMons[battler].species].abilities[1] != ABILITY_NONE {
+        if (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+            [gBattleMons[battler].species]
+            .abilities[0]
+            != 0
+        {
+            if (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+                [gBattleMons[battler].species]
+                .abilities[1]
+                != ABILITY_NONE
+            {
                 if Random() as i32 & 1 != 0 {
                     (*(*gBattleResources).ai).funcResult =
-                        gSpeciesInfo[gBattleMons[battler].species].abilities[0] as u32;
+                        (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[gBattleMons[battler].species]
+                            .abilities[0] as u32;
                 } else {
                     (*(*gBattleResources).ai).funcResult =
-                        gSpeciesInfo[gBattleMons[battler].species].abilities[1] as u32;
+                        (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[gBattleMons[battler].species]
+                            .abilities[1] as u32;
                 }
             } else {
                 (*(*gBattleResources).ai).funcResult =
-                    gSpeciesInfo[gBattleMons[battler].species].abilities[0] as u32;
+                    (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                        .cast::<CArray<SpeciesInfo, 0>>())[gBattleMons[battler].species]
+                        .abilities[0] as u32;
             }
         } else {
             (*(*gBattleResources).ai).funcResult =
-                gSpeciesInfo[gBattleMons[battler].species].abilities[1] as u32;
+                (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+                    [gBattleMons[battler].species]
+                    .abilities[1] as u32;
         }
     } else {
         (*(*gBattleResources).ai).funcResult = gBattleMons[battler].ability as u32;
     }
     gAIScriptPtr = gAIScriptPtr.at(2);
 }
-pub(crate) unsafe extern "C" fn Cmd_check_ability() {
-    let mut battler: u32 = BattleAI_GetWantedBattler(*gAIScriptPtr.at(1)) as u32;
+pub(crate) unsafe fn Cmd_check_ability() {
+    let battler: u32 = BattleAI_GetWantedBattler(*gAIScriptPtr.at(1)) as u32;
     let mut ability: u32 = *gAIScriptPtr.at(2) as u32;
     if *gAIScriptPtr.at(1) == AI_TARGET || *gAIScriptPtr.at(1) == AI_TARGET_PARTNER {
         if (*(*gBattleResources).battleHistory).abilities[battler] != ABILITY_NONE {
@@ -1247,22 +1205,42 @@ pub(crate) unsafe extern "C" fn Cmd_check_ability() {
             || gBattleMons[battler].ability == ABILITY_ARENA_TRAP
         {
             ability = gBattleMons[battler].ability as u32;
-        } else if gSpeciesInfo[gBattleMons[battler].species].abilities[0] != 0 {
-            if gSpeciesInfo[gBattleMons[battler].species].abilities[1] != ABILITY_NONE {
-                let mut abilityDummyVariable: u8 = ability as u8;
-                if gSpeciesInfo[gBattleMons[battler].species].abilities[0] != abilityDummyVariable
-                    && gSpeciesInfo[gBattleMons[battler].species].abilities[1]
+        } else if (*(&raw const crate::data::pokemon::gSpeciesInfo)
+            .cast::<CArray<SpeciesInfo, 0>>())[gBattleMons[battler].species]
+            .abilities[0]
+            != 0
+        {
+            if (*(&raw const crate::data::pokemon::gSpeciesInfo).cast::<CArray<SpeciesInfo, 0>>())
+                [gBattleMons[battler].species]
+                .abilities[1]
+                != ABILITY_NONE
+            {
+                let abilityDummyVariable: u8 = ability as u8;
+                if (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                    .cast::<CArray<SpeciesInfo, 0>>())[gBattleMons[battler].species]
+                    .abilities[0]
+                    != abilityDummyVariable
+                    && (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                        .cast::<CArray<SpeciesInfo, 0>>())[gBattleMons[battler].species]
+                        .abilities[1]
                         != abilityDummyVariable
                 {
-                    ability = gSpeciesInfo[gBattleMons[battler].species].abilities[0] as u32;
+                    ability =
+                        (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                            .cast::<CArray<SpeciesInfo, 0>>())[gBattleMons[battler].species]
+                            .abilities[0] as u32;
                 } else {
                     ability = ABILITY_NONE as u32;
                 }
             } else {
-                ability = gSpeciesInfo[gBattleMons[battler].species].abilities[0] as u32;
+                ability = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                    .cast::<CArray<SpeciesInfo, 0>>())[gBattleMons[battler].species]
+                    .abilities[0] as u32;
             }
         } else {
-            ability = gSpeciesInfo[gBattleMons[battler].species].abilities[1] as u32;
+            ability = (*(&raw const crate::data::pokemon::gSpeciesInfo)
+                .cast::<CArray<SpeciesInfo, 0>>())[gBattleMons[battler].species]
+                .abilities[1] as u32;
         }
     } else {
         ability = gBattleMons[battler].ability as u32;
@@ -1276,8 +1254,7 @@ pub(crate) unsafe extern "C" fn Cmd_check_ability() {
     }
     gAIScriptPtr = gAIScriptPtr.at(3);
 }
-pub(crate) unsafe extern "C" fn Cmd_get_highest_type_effectiveness() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn Cmd_get_highest_type_effectiveness() {
     let mut dynamicMoveType: *mut u8 = null_mut();
     gDynamicBasePower = 0;
     dynamicMoveType = &raw mut (*gBattleStruct).dynamicMoveType;
@@ -1286,8 +1263,7 @@ pub(crate) unsafe extern "C" fn Cmd_get_highest_type_effectiveness() {
     gMoveResultFlags = 0;
     gCritMultiplier = 1;
     (*(*gBattleResources).ai).funcResult = 0;
-    i = 0;
-    while i < MAX_MON_MOVES {
+    for i in 0..MAX_MON_MOVES {
         gBattleMoveDamage = 40;
         gCurrentMove = gBattleMons[sBattler_AI].moves[i];
         if gCurrentMove != MOVE_NONE {
@@ -1311,12 +1287,10 @@ pub(crate) unsafe extern "C" fn Cmd_get_highest_type_effectiveness() {
                 (*(*gBattleResources).ai).funcResult = gBattleMoveDamage as u32;
             }
         }
-        i += 1;
     }
     gAIScriptPtr = gAIScriptPtr.at(1);
 }
-pub(crate) unsafe extern "C" fn Cmd_if_type_effectiveness() {
-    let mut damageVar: u8 = 0;
+pub(crate) unsafe fn Cmd_if_type_effectiveness() {
     gDynamicBasePower = 0;
     (*gBattleStruct).dynamicMoveType = 0;
     gBattleScripting.dmgMultiplier = 1;
@@ -1340,7 +1314,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_type_effectiveness() {
     if gMoveResultFlags as i32 & MOVE_RESULT_DOESNT_AFFECT_FOE as i32 != 0 {
         gBattleMoveDamage = AI_EFFECTIVENESS_x0;
     }
-    damageVar = gBattleMoveDamage as u8;
+    let damageVar: u8 = gBattleMoveDamage as u8;
     if damageVar == *gAIScriptPtr.at(1) {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
@@ -1350,12 +1324,9 @@ pub(crate) unsafe extern "C" fn Cmd_if_type_effectiveness() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_nop_32() {}
-pub(crate) unsafe extern "C" fn Cmd_nop_33() {}
-pub(crate) unsafe extern "C" fn Cmd_if_status_in_party() {
-    let mut party: *mut Pokemon = null_mut();
-    let mut i: i32 = 0;
-    let mut statusToCompareTo: u32 = 0;
+pub(crate) fn Cmd_nop_32() {}
+pub(crate) fn Cmd_nop_33() {}
+pub(crate) unsafe fn Cmd_if_status_in_party() {
     let mut battler: u8 = 0;
     match *gAIScriptPtr.at(1) {
         AI_USER => {
@@ -1365,20 +1336,19 @@ pub(crate) unsafe extern "C" fn Cmd_if_status_in_party() {
             battler = gBattlerTarget;
         }
     }
-    party = if GetBattlerSide(battler) == B_SIDE_PLAYER {
+    let party: *mut Pokemon = if GetBattlerSide(battler) == B_SIDE_PLAYER {
         gPlayerParty.as_mut_ptr()
     } else {
         gEnemyParty.as_mut_ptr()
     };
-    statusToCompareTo = *gAIScriptPtr.at(2) as u32
+    let statusToCompareTo: u32 = *gAIScriptPtr.at(2) as u32
         | (*gAIScriptPtr.at(2).at(1) as u32) << 8
         | (*gAIScriptPtr.at(2).at(2) as u32) << 16
         | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
-    i = 0;
-    while i < PARTY_SIZE {
-        let mut species: u16 = GetMonData2(party.at(i), MON_DATA_SPECIES) as u16;
-        let mut hp: u16 = GetMonData2(party.at(i), MON_DATA_HP) as u16;
-        let mut status: u32 = GetMonData2(party.at(i), MON_DATA_STATUS);
+    for i in 0..PARTY_SIZE {
+        let species: u16 = GetMonData2(party.at(i), MON_DATA_SPECIES) as u16;
+        let hp: u16 = GetMonData2(party.at(i), MON_DATA_HP) as u16;
+        let status: u32 = GetMonData2(party.at(i), MON_DATA_STATUS);
         if species != 0 && species != SPECIES_EGG as u16 && hp != 0 && status == statusToCompareTo {
             gAIScriptPtr = (*gAIScriptPtr.at(6) as i32
                 | (*gAIScriptPtr.at(6).at(1) as i32) << 8
@@ -1387,14 +1357,10 @@ pub(crate) unsafe extern "C" fn Cmd_if_status_in_party() {
                 as *mut u8;
             return;
         }
-        i += 1;
     }
     gAIScriptPtr = gAIScriptPtr.at(10);
 }
-pub(crate) unsafe extern "C" fn Cmd_if_status_not_in_party() {
-    let mut party: *mut Pokemon = null_mut();
-    let mut i: i32 = 0;
-    let mut statusToCompareTo: u32 = 0;
+pub(crate) unsafe fn Cmd_if_status_not_in_party() {
     let mut battler: u8 = 0;
     match *gAIScriptPtr.at(1) {
         1 => {
@@ -1404,32 +1370,30 @@ pub(crate) unsafe extern "C" fn Cmd_if_status_not_in_party() {
             battler = gBattlerTarget;
         }
     }
-    party = if GetBattlerSide(battler) == B_SIDE_PLAYER {
+    let party: *mut Pokemon = if GetBattlerSide(battler) == B_SIDE_PLAYER {
         gPlayerParty.as_mut_ptr()
     } else {
         gEnemyParty.as_mut_ptr()
     };
-    statusToCompareTo = *gAIScriptPtr.at(2) as u32
+    let statusToCompareTo: u32 = *gAIScriptPtr.at(2) as u32
         | (*gAIScriptPtr.at(2).at(1) as u32) << 8
         | (*gAIScriptPtr.at(2).at(2) as u32) << 16
         | (*gAIScriptPtr.at(2).at(3) as u32) << 24;
-    i = 0;
-    while i < PARTY_SIZE {
-        let mut species: u16 = GetMonData2(party.at(i), MON_DATA_SPECIES) as u16;
-        let mut hp: u16 = GetMonData2(party.at(i), MON_DATA_HP) as u16;
-        let mut status: u32 = GetMonData2(party.at(i), MON_DATA_STATUS);
+    for i in 0..PARTY_SIZE {
+        let species: u16 = GetMonData2(party.at(i), MON_DATA_SPECIES) as u16;
+        let hp: u16 = GetMonData2(party.at(i), MON_DATA_HP) as u16;
+        let status: u32 = GetMonData2(party.at(i), MON_DATA_STATUS);
         if species != 0 && species != SPECIES_EGG as u16 && hp != 0 && status == statusToCompareTo {
             gAIScriptPtr = gAIScriptPtr.at(10);
             return;
         }
-        i += 1;
     }
     gAIScriptPtr = (*gAIScriptPtr.at(6) as i32
         | (*gAIScriptPtr.at(6).at(1) as i32) << 8
         | (*gAIScriptPtr.at(6).at(2) as i32) << 16
         | (*gAIScriptPtr.at(6).at(3) as i32) << 24) as usize as *mut u8;
 }
-pub(crate) unsafe extern "C" fn Cmd_get_weather() {
+pub(crate) unsafe fn Cmd_get_weather() {
     if gBattleWeather as i32 & B_WEATHER_RAIN != 0 {
         (*(*gBattleResources).ai).funcResult = AI_WEATHER_RAIN;
     }
@@ -1444,8 +1408,12 @@ pub(crate) unsafe extern "C" fn Cmd_get_weather() {
     }
     gAIScriptPtr = gAIScriptPtr.at(1);
 }
-pub(crate) unsafe extern "C" fn Cmd_if_effect() {
-    if gBattleMoves[(*(*gBattleResources).ai).moveConsidered].effect == *gAIScriptPtr.at(1) {
+pub(crate) unsafe fn Cmd_if_effect() {
+    if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [(*(*gBattleResources).ai).moveConsidered]
+        .effect
+        == *gAIScriptPtr.at(1)
+    {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
             | (*gAIScriptPtr.at(2).at(2) as i32) << 16
@@ -1454,8 +1422,12 @@ pub(crate) unsafe extern "C" fn Cmd_if_effect() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_not_effect() {
-    if gBattleMoves[(*(*gBattleResources).ai).moveConsidered].effect != *gAIScriptPtr.at(1) {
+pub(crate) unsafe fn Cmd_if_not_effect() {
+    if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [(*(*gBattleResources).ai).moveConsidered]
+        .effect
+        != *gAIScriptPtr.at(1)
+    {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
             | (*gAIScriptPtr.at(2).at(2) as i32) << 16
@@ -1464,7 +1436,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_not_effect() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_stat_level_less_than() {
+pub(crate) unsafe fn Cmd_if_stat_level_less_than() {
     let mut battler: u32 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u32;
@@ -1480,7 +1452,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_stat_level_less_than() {
         gAIScriptPtr = gAIScriptPtr.at(8);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_stat_level_more_than() {
+pub(crate) unsafe fn Cmd_if_stat_level_more_than() {
     let mut battler: u32 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u32;
@@ -1496,7 +1468,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_stat_level_more_than() {
         gAIScriptPtr = gAIScriptPtr.at(8);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_stat_level_equal() {
+pub(crate) unsafe fn Cmd_if_stat_level_equal() {
     let mut battler: u32 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u32;
@@ -1512,7 +1484,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_stat_level_equal() {
         gAIScriptPtr = gAIScriptPtr.at(8);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_stat_level_not_equal() {
+pub(crate) unsafe fn Cmd_if_stat_level_not_equal() {
     let mut battler: u32 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI as u32;
@@ -1528,8 +1500,12 @@ pub(crate) unsafe extern "C" fn Cmd_if_stat_level_not_equal() {
         gAIScriptPtr = gAIScriptPtr.at(8);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_can_faint() {
-    if gBattleMoves[(*(*gBattleResources).ai).moveConsidered].power < 2 {
+pub(crate) unsafe fn Cmd_if_can_faint() {
+    if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [(*(*gBattleResources).ai).moveConsidered]
+        .power
+        < 2
+    {
         gAIScriptPtr = gAIScriptPtr.at(5);
         return;
     }
@@ -1556,8 +1532,12 @@ pub(crate) unsafe extern "C" fn Cmd_if_can_faint() {
         gAIScriptPtr = gAIScriptPtr.at(5);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_cant_faint() {
-    if gBattleMoves[(*(*gBattleResources).ai).moveConsidered].power < 2 {
+pub(crate) unsafe fn Cmd_if_cant_faint() {
+    if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+        [(*(*gBattleResources).ai).moveConsidered]
+        .power
+        < 2
+    {
         gAIScriptPtr = gAIScriptPtr.at(5);
         return;
     }
@@ -1581,9 +1561,9 @@ pub(crate) unsafe extern "C" fn Cmd_if_cant_faint() {
         gAIScriptPtr = gAIScriptPtr.at(5);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_has_move() {
+pub(crate) unsafe fn Cmd_if_has_move() {
     let mut i: i32 = 0;
-    let mut movePtr: *mut u16 = gAIScriptPtr.at(2) as *mut u16;
+    let movePtr: *mut u16 = gAIScriptPtr.at(2) as *mut u16;
     'l1: {
         match *gAIScriptPtr.at(1) {
             AI_USER => {
@@ -1609,12 +1589,10 @@ pub(crate) unsafe extern "C" fn Cmd_if_has_move() {
                     gAIScriptPtr = gAIScriptPtr.at(8);
                     break 'l1;
                 } else {
-                    i = 0;
-                    while i < MAX_MON_MOVES {
+                    for i in 0..MAX_MON_MOVES {
                         if gBattleMons[sBattler_AI as i32 ^ 2].moves[i] == *movePtr {
                             break;
                         }
-                        i += 1;
                     }
                 }
                 if i == MAX_MON_MOVES {
@@ -1651,9 +1629,9 @@ pub(crate) unsafe extern "C" fn Cmd_if_has_move() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_doesnt_have_move() {
+pub(crate) unsafe fn Cmd_if_doesnt_have_move() {
     let mut i: i32 = 0;
-    let mut movePtr: *mut u16 = gAIScriptPtr.at(2) as *mut u16;
+    let movePtr: *mut u16 = gAIScriptPtr.at(2) as *mut u16;
     match *gAIScriptPtr.at(1) {
         AI_USER | AI_USER_PARTNER => {
             i = 0;
@@ -1696,14 +1674,17 @@ pub(crate) unsafe extern "C" fn Cmd_if_doesnt_have_move() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_has_move_with_effect() {
+pub(crate) unsafe fn Cmd_if_has_move_with_effect() {
     let mut i: i32 = 0;
     match *gAIScriptPtr.at(1) {
         AI_USER | AI_USER_PARTNER => {
             i = 0;
             while i < MAX_MON_MOVES {
                 if gBattleMons[sBattler_AI].moves[i] != 0
-                    && gBattleMoves[gBattleMons[sBattler_AI].moves[i]].effect == *gAIScriptPtr.at(2)
+                    && (*(&raw const crate::data::pokemon::gBattleMoves)
+                        .cast::<CArray<BattleMove, 0>>())[gBattleMons[sBattler_AI].moves[i]]
+                        .effect
+                        == *gAIScriptPtr.at(2)
                 {
                     break;
                 }
@@ -1723,7 +1704,8 @@ pub(crate) unsafe extern "C" fn Cmd_if_has_move_with_effect() {
             i = 0;
             while i < MAX_MON_MOVES {
                 if gBattleMons[sBattler_AI].moves[i] != 0
-                    && gBattleMoves
+                    && (*(&raw const crate::data::pokemon::gBattleMoves)
+                        .cast::<CArray<BattleMove, 0>>())
                         [(*(*gBattleResources).battleHistory).usedMoves[gBattlerTarget].moves[i]]
                         .effect
                         == *gAIScriptPtr.at(2)
@@ -1745,14 +1727,17 @@ pub(crate) unsafe extern "C" fn Cmd_if_has_move_with_effect() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_doesnt_have_move_with_effect() {
+pub(crate) unsafe fn Cmd_if_doesnt_have_move_with_effect() {
     let mut i: i32 = 0;
     match *gAIScriptPtr.at(1) {
         AI_USER | AI_USER_PARTNER => {
             i = 0;
             while i < MAX_MON_MOVES {
                 if gBattleMons[sBattler_AI].moves[i] != 0
-                    && gBattleMoves[gBattleMons[sBattler_AI].moves[i]].effect == *gAIScriptPtr.at(2)
+                    && (*(&raw const crate::data::pokemon::gBattleMoves)
+                        .cast::<CArray<BattleMove, 0>>())[gBattleMons[sBattler_AI].moves[i]]
+                        .effect
+                        == *gAIScriptPtr.at(2)
                 {
                     break;
                 }
@@ -1772,7 +1757,8 @@ pub(crate) unsafe extern "C" fn Cmd_if_doesnt_have_move_with_effect() {
             i = 0;
             while i < MAX_MON_MOVES {
                 if (*(*gBattleResources).battleHistory).usedMoves[gBattlerTarget].moves[i] != 0
-                    && gBattleMoves
+                    && (*(&raw const crate::data::pokemon::gBattleMoves)
+                        .cast::<CArray<BattleMove, 0>>())
                         [(*(*gBattleResources).battleHistory).usedMoves[gBattlerTarget].moves[i]]
                         .effect
                         == *gAIScriptPtr.at(2)
@@ -1794,7 +1780,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_doesnt_have_move_with_effect() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_any_move_disabled_or_encored() {
+pub(crate) unsafe fn Cmd_if_any_move_disabled_or_encored() {
     let mut battler: u8 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI;
@@ -1825,7 +1811,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_any_move_disabled_or_encored() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_curr_move_disabled_or_encored() {
+pub(crate) unsafe fn Cmd_if_curr_move_disabled_or_encored() {
     match *gAIScriptPtr.at(1) {
         0 => {
             if gDisableStructs[gActiveBattler].disabledMove
@@ -1840,29 +1826,25 @@ pub(crate) unsafe extern "C" fn Cmd_if_curr_move_disabled_or_encored() {
                 gAIScriptPtr = gAIScriptPtr.at(6);
             }
         }
-        1 => {
-            if gDisableStructs[gActiveBattler].encoredMove
-                == (*(*gBattleResources).ai).moveConsidered
-            {
-                gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
-                    | (*gAIScriptPtr.at(2).at(1) as i32) << 8
-                    | (*gAIScriptPtr.at(2).at(2) as i32) << 16
-                    | (*gAIScriptPtr.at(2).at(3) as i32) << 24)
-                    as usize as *mut u8;
-            } else {
-                gAIScriptPtr = gAIScriptPtr.at(6);
-            }
+        1 if gDisableStructs[gActiveBattler].encoredMove
+            == (*(*gBattleResources).ai).moveConsidered =>
+        {
+            gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
+                | (*gAIScriptPtr.at(2).at(1) as i32) << 8
+                | (*gAIScriptPtr.at(2).at(2) as i32) << 16
+                | (*gAIScriptPtr.at(2).at(3) as i32) << 24) as usize
+                as *mut u8;
         }
         _ => {
             gAIScriptPtr = gAIScriptPtr.at(6);
         }
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_flee() {
+pub(crate) unsafe fn Cmd_flee() {
     (*(*gBattleResources).ai).aiAction |= 11;
 }
-pub(crate) unsafe extern "C" fn Cmd_if_random_safari_flee() {
-    let mut safariFleeRate: u8 = (*gBattleStruct).safariEscapeFactor * 5;
+pub(crate) unsafe fn Cmd_if_random_safari_flee() {
+    let safariFleeRate: u8 = (*gBattleStruct).safariEscapeFactor * 5;
     if ((Random() as i32 % 100) as u8) < safariFleeRate {
         gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
             | (*gAIScriptPtr.at(1).at(1) as i32) << 8
@@ -1872,10 +1854,10 @@ pub(crate) unsafe extern "C" fn Cmd_if_random_safari_flee() {
         gAIScriptPtr = gAIScriptPtr.at(5);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_watch() {
+pub(crate) unsafe fn Cmd_watch() {
     (*(*gBattleResources).ai).aiAction |= 13;
 }
-pub(crate) unsafe extern "C" fn Cmd_get_hold_effect() {
+pub(crate) unsafe fn Cmd_get_hold_effect() {
     let mut battler: u8 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI;
@@ -1891,18 +1873,16 @@ pub(crate) unsafe extern "C" fn Cmd_get_hold_effect() {
     }
     gAIScriptPtr = gAIScriptPtr.at(2);
 }
-pub(crate) unsafe extern "C" fn Cmd_if_holds_item() {
-    let mut battler: u8 = BattleAI_GetWantedBattler(*gAIScriptPtr.at(1));
+pub(crate) unsafe fn Cmd_if_holds_item() {
+    let battler: u8 = BattleAI_GetWantedBattler(*gAIScriptPtr.at(1));
     let mut item: u16 = 0;
-    let mut itemLo: u8 = 0;
-    let mut itemHi: u8 = 0;
     if battler as i32 & BIT_SIDE as i32 == sBattler_AI as i32 & BIT_SIDE as i32 {
         item = gBattleMons[battler].item;
     } else {
         item = (*(*gBattleResources).battleHistory).itemEffects[battler] as u16;
     }
-    itemHi = *gAIScriptPtr.at(2);
-    itemLo = *gAIScriptPtr.at(3);
+    let itemHi: u8 = *gAIScriptPtr.at(2);
+    let itemLo: u8 = *gAIScriptPtr.at(3);
     if itemLo as i32 | itemHi as i32 == item as i32 {
         gAIScriptPtr = (*gAIScriptPtr.at(4) as i32
             | (*gAIScriptPtr.at(4).at(1) as i32) << 8
@@ -1912,7 +1892,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_holds_item() {
         gAIScriptPtr = gAIScriptPtr.at(8);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_get_gender() {
+pub(crate) unsafe fn Cmd_get_gender() {
     let mut battler: u8 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI;
@@ -1925,7 +1905,7 @@ pub(crate) unsafe extern "C" fn Cmd_get_gender() {
     ) as u32;
     gAIScriptPtr = gAIScriptPtr.at(2);
 }
-pub(crate) unsafe extern "C" fn Cmd_is_first_turn_for() {
+pub(crate) unsafe fn Cmd_is_first_turn_for() {
     let mut battler: u8 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI;
@@ -1935,7 +1915,7 @@ pub(crate) unsafe extern "C" fn Cmd_is_first_turn_for() {
     (*(*gBattleResources).ai).funcResult = gDisableStructs[battler].isFirstTurn as u32;
     gAIScriptPtr = gAIScriptPtr.at(2);
 }
-pub(crate) unsafe extern "C" fn Cmd_get_stockpile_count() {
+pub(crate) unsafe fn Cmd_get_stockpile_count() {
     let mut battler: u8 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI;
@@ -1945,11 +1925,11 @@ pub(crate) unsafe extern "C" fn Cmd_get_stockpile_count() {
     (*(*gBattleResources).ai).funcResult = gDisableStructs[battler].stockpileCounter as u32;
     gAIScriptPtr = gAIScriptPtr.at(2);
 }
-pub(crate) unsafe extern "C" fn Cmd_is_double_battle() {
+pub(crate) unsafe fn Cmd_is_double_battle() {
     (*(*gBattleResources).ai).funcResult = gBattleTypeFlags & BATTLE_TYPE_DOUBLE;
     gAIScriptPtr = gAIScriptPtr.at(1);
 }
-pub(crate) unsafe extern "C" fn Cmd_get_used_held_item() {
+pub(crate) unsafe fn Cmd_get_used_held_item() {
     let mut battler: u8 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI;
@@ -1960,22 +1940,25 @@ pub(crate) unsafe extern "C" fn Cmd_get_used_held_item() {
         *(&raw mut (*gBattleStruct).usedHeldItems[battler] as *mut u8) as u32;
     gAIScriptPtr = gAIScriptPtr.at(2);
 }
-pub(crate) unsafe extern "C" fn Cmd_get_move_type_from_result() {
-    (*(*gBattleResources).ai).funcResult =
-        gBattleMoves[(*(*gBattleResources).ai).funcResult].r#type as u32;
+pub(crate) unsafe fn Cmd_get_move_type_from_result() {
+    (*(*gBattleResources).ai).funcResult = (*(&raw const crate::data::pokemon::gBattleMoves)
+        .cast::<CArray<BattleMove, 0>>())[(*(*gBattleResources).ai).funcResult]
+        .r#type as u32;
     gAIScriptPtr = gAIScriptPtr.at(1);
 }
-pub(crate) unsafe extern "C" fn Cmd_get_move_power_from_result() {
-    (*(*gBattleResources).ai).funcResult =
-        gBattleMoves[(*(*gBattleResources).ai).funcResult].power as u32;
+pub(crate) unsafe fn Cmd_get_move_power_from_result() {
+    (*(*gBattleResources).ai).funcResult = (*(&raw const crate::data::pokemon::gBattleMoves)
+        .cast::<CArray<BattleMove, 0>>())[(*(*gBattleResources).ai).funcResult]
+        .power as u32;
     gAIScriptPtr = gAIScriptPtr.at(1);
 }
-pub(crate) unsafe extern "C" fn Cmd_get_move_effect_from_result() {
-    (*(*gBattleResources).ai).funcResult =
-        gBattleMoves[(*(*gBattleResources).ai).funcResult].effect as u32;
+pub(crate) unsafe fn Cmd_get_move_effect_from_result() {
+    (*(*gBattleResources).ai).funcResult = (*(&raw const crate::data::pokemon::gBattleMoves)
+        .cast::<CArray<BattleMove, 0>>())[(*(*gBattleResources).ai).funcResult]
+        .effect as u32;
     gAIScriptPtr = gAIScriptPtr.at(1);
 }
-pub(crate) unsafe extern "C" fn Cmd_get_protect_count() {
+pub(crate) unsafe fn Cmd_get_protect_count() {
     let mut battler: u8 = 0;
     if *gAIScriptPtr.at(1) == 1 {
         battler = sBattler_AI;
@@ -1985,31 +1968,31 @@ pub(crate) unsafe extern "C" fn Cmd_get_protect_count() {
     (*(*gBattleResources).ai).funcResult = gDisableStructs[battler].protectUses as u32;
     gAIScriptPtr = gAIScriptPtr.at(2);
 }
-pub(crate) unsafe extern "C" fn Cmd_nop_52() {}
-pub(crate) unsafe extern "C" fn Cmd_nop_53() {}
-pub(crate) unsafe extern "C" fn Cmd_nop_54() {}
-pub(crate) unsafe extern "C" fn Cmd_nop_55() {}
-pub(crate) unsafe extern "C" fn Cmd_nop_56() {}
-pub(crate) unsafe extern "C" fn Cmd_nop_57() {}
-pub(crate) unsafe extern "C" fn Cmd_call() {
+pub(crate) fn Cmd_nop_52() {}
+pub(crate) fn Cmd_nop_53() {}
+pub(crate) fn Cmd_nop_54() {}
+pub(crate) fn Cmd_nop_55() {}
+pub(crate) fn Cmd_nop_56() {}
+pub(crate) fn Cmd_nop_57() {}
+pub(crate) unsafe fn Cmd_call() {
     AIStackPushVar(gAIScriptPtr.at(5));
     gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
         | (*gAIScriptPtr.at(1).at(1) as i32) << 8
         | (*gAIScriptPtr.at(1).at(2) as i32) << 16
         | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
 }
-pub(crate) unsafe extern "C" fn Cmd_goto() {
+pub(crate) unsafe fn Cmd_goto() {
     gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
         | (*gAIScriptPtr.at(1).at(1) as i32) << 8
         | (*gAIScriptPtr.at(1).at(2) as i32) << 16
         | (*gAIScriptPtr.at(1).at(3) as i32) << 24) as usize as *mut u8;
 }
-pub(crate) unsafe extern "C" fn Cmd_end() {
+pub(crate) unsafe fn Cmd_end() {
     if AIStackPop() == 0 {
         (*(*gBattleResources).ai).aiAction |= AI_ACTION_DONE;
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_level_cond() {
+pub(crate) unsafe fn Cmd_if_level_cond() {
     match *gAIScriptPtr.at(1) {
         0 => {
             if gBattleMons[sBattler_AI].level > gBattleMons[gBattlerTarget].level {
@@ -2047,7 +2030,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_level_cond() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_target_taunted() {
+pub(crate) unsafe fn Cmd_if_target_taunted() {
     if gDisableStructs[gBattlerTarget].tauntTimer() != 0 {
         gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
             | (*gAIScriptPtr.at(1).at(1) as i32) << 8
@@ -2057,7 +2040,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_target_taunted() {
         gAIScriptPtr = gAIScriptPtr.at(5);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_target_not_taunted() {
+pub(crate) unsafe fn Cmd_if_target_not_taunted() {
     if gDisableStructs[gBattlerTarget].tauntTimer() == 0 {
         gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
             | (*gAIScriptPtr.at(1).at(1) as i32) << 8
@@ -2067,7 +2050,7 @@ pub(crate) unsafe extern "C" fn Cmd_if_target_not_taunted() {
         gAIScriptPtr = gAIScriptPtr.at(5);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_target_is_ally() {
+pub(crate) unsafe fn Cmd_if_target_is_ally() {
     if sBattler_AI as i32 & BIT_SIDE as i32 == gBattlerTarget as i32 & BIT_SIDE as i32 {
         gAIScriptPtr = (*gAIScriptPtr.at(1) as i32
             | (*gAIScriptPtr.at(1).at(1) as i32) << 8
@@ -2077,8 +2060,8 @@ pub(crate) unsafe extern "C" fn Cmd_if_target_is_ally() {
         gAIScriptPtr = gAIScriptPtr.at(5);
     }
 }
-pub(crate) unsafe extern "C" fn Cmd_if_flash_fired() {
-    let mut battler: u8 = BattleAI_GetWantedBattler(*gAIScriptPtr.at(1));
+pub(crate) unsafe fn Cmd_if_flash_fired() {
+    let battler: u8 = BattleAI_GetWantedBattler(*gAIScriptPtr.at(1));
     if (*(*gBattleResources).flags).flags[battler] & RESOURCE_FLAG_FLASH_FIRE != 0 {
         gAIScriptPtr = (*gAIScriptPtr.at(2) as i32
             | (*gAIScriptPtr.at(2).at(1) as i32) << 8
@@ -2088,21 +2071,21 @@ pub(crate) unsafe extern "C" fn Cmd_if_flash_fired() {
         gAIScriptPtr = gAIScriptPtr.at(6);
     }
 }
-pub(crate) unsafe extern "C" fn AIStackPushVar(var: *mut u8) {
+pub(crate) unsafe fn AIStackPushVar(var: *mut u8) {
     (*(*gBattleResources).AI_ScriptsStack).ptr[{
         let t1 = (*(*gBattleResources).AI_ScriptsStack).size;
         (*(*gBattleResources).AI_ScriptsStack).size += 1;
         t1
     }] = var;
 }
-pub(crate) unsafe extern "C" fn AIStackPushVar_cursor() {
+unsafe fn AIStackPushVar_cursor() {
     (*(*gBattleResources).AI_ScriptsStack).ptr[{
         let t1 = (*(*gBattleResources).AI_ScriptsStack).size;
         (*(*gBattleResources).AI_ScriptsStack).size += 1;
         t1
     }] = gAIScriptPtr;
 }
-pub(crate) unsafe extern "C" fn AIStackPop() -> u8 {
+pub(crate) unsafe fn AIStackPop() -> u8 {
     if (*(*gBattleResources).AI_ScriptsStack).size != 0 {
         (*(*gBattleResources).AI_ScriptsStack).size -= 1;
         gAIScriptPtr =
@@ -2113,6 +2096,6 @@ pub(crate) unsafe extern "C" fn AIStackPop() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }

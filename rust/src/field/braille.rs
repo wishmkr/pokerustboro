@@ -48,12 +48,14 @@ const EXT_CTRL_CODE_PLAY_SE: u8 = 0x10;
 /// `gSaveBlock2Ptr->optionsTextSpeed`: bits 0-2 of the halfword at 0x14.
 const SB2_OPTIONS: usize = 0x14;
 
-unsafe extern "C" {
-    fn IsSEPlaying() -> u8;
+/// `IsSEPlaying` with this module's view of its types.
+#[inline]
+unsafe fn IsSEPlaying() -> u8 {
+    unsafe { crate::sound::IsSEPlaying() }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FontFunc_Braille(printer: *mut u8) -> u16 {
+pub unsafe fn FontFunc_Braille(printer: *mut u8) -> u16 {
     match unsafe { get(printer, P_STATE) } {
         RENDER_STATE_HANDLE_CHAR => unsafe { handle_char(printer) },
         RENDER_STATE_WAIT => {
@@ -123,7 +125,7 @@ pub unsafe extern "C" fn FontFunc_Braille(printer: *mut u8) -> u16 {
 
 /// `sScrollDistances[gSaveBlock2Ptr->optionsTextSpeed]`
 unsafe fn scroll_distance() -> u8 {
-    let sb2 = unsafe { (&raw const gSaveBlock2Ptr).read() };
+    let sb2 = unsafe { (&raw const gSaveBlock2Ptr).read().cast::<u8>() };
     let options = unsafe { sb2.add(SB2_OPTIONS).cast::<u16>().read() };
     let speed = usize::from(options & 7);
     unsafe { sScrollDistances.as_ptr().add(speed).read() }
@@ -310,6 +312,6 @@ unsafe fn decompress_glyph_braille(glyph: u16) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetGlyphWidth_Braille(_glyph_id: u16, _is_japanese: u32) -> u32 {
+pub unsafe fn GetGlyphWidth_Braille(_glyph_id: u16, _is_japanese: u32) -> u32 {
     16
 }

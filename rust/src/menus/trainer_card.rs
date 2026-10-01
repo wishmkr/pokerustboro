@@ -3,37 +3,121 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    clippy::useless_transmute,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::agb_main::{SetHBlankCallback, SetVBlankCallback, gGameVersion};
+use crate::bg::LoadBgTiles;
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect,
+    FillBgTilemapBufferRect_Palette0, HideBg, IsDma3ManagerBusyWithBgCopy,
+    ResetBgsAndClearDma3BusyFlags, ShowBg, WriteSequenceToBgTilemapBuffer,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::contest_util::CountPlayerMuseumPaintings;
+use crate::easy_chat::CopyEasyChatWord;
+use crate::event_data::{FlagGet, IsNationalPokedexEnabled};
+use crate::frontier_pass::CB2_ReshowFrontierPass;
+use crate::gpu_regs::{EnableInterrupts, SetGpuReg};
+use crate::international_string_util::{GetStringCenterAlignXOffset, GetStringRightAlignXOffset};
+use crate::link::{
+    SetCloseLinkCallback, gLinkPlayers, gReceivedRemoteLinkPlayers, gWirelessCommType,
+};
+use crate::link_rfu_3::{
+    CreateWirelessStatusIndicatorSprite, LoadWirelessStatusIndicatorSpriteGfx,
+};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::menu::{AddTextPrinterParameterized3, DrawDialogueFrame, LoadMessageBoxAndBorderGfx};
+use crate::money::GetMoney;
+use crate::overworld::{GetGameStat, Overworld_IsRecvQueueAtMax};
+use crate::palette::{
+    BeginNormalPaletteFade, BlendPalettes, LoadPalette, ResetPaletteFade, TintPalette_CustomTone,
+    TintPalette_SepiaTone, TransferPlttBuffer, UpdatePaletteFade,
+};
+use crate::pokedex::{GetHoennPokedexCount, GetNationalPokedexCount, HasAllHoennMons};
+use crate::pokemon::FacilityClassToPicIndex;
+use crate::pokemon_icon::{GetMonIconPaletteIndexFromSpecies, GetMonIconTiles};
+use crate::scanline_effect::{ScanlineEffect_Clear, ScanlineEffect_Stop};
+use crate::sound::{IsSEPlaying, PlaySE};
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData,
+};
+use crate::string_util::ConvertInternationalString;
+use crate::string_util::{ConvertIntToDecimalStringN, StringCopy, StringExpandPlaceholders};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar3, gStringVar4};
+use crate::task::gTasks;
+use crate::task::task_get;
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::text::DeactivateAllTextPrinters;
+use crate::text::GetStringWidth;
+use crate::trainer_pokemon_sprites::CreateTrainerCardTrainerPicSprite;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::union_room::InUnionRoom;
+use crate::window::{
+    CopyWindowToVram, FillWindowPixelBuffer, FillWindowPixelRect, FreeAllWindowBuffers,
+    PutWindowTilemap,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+unsafe fn FindTaskIdByFunc(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+// The C's names for task and sprite data slots.
+const tFlipState: usize = 0;
+const tCardTop: usize = 1;
 // Data tables (translate with cdata.py): sTrainerCardStickers_Gfx sUnused_Pal sHoennTrainerCardBronze_Pal sKantoTrainerCardGreen_Pal sHoennTrainerCardCopper_Pal sKantoTrainerCardBronze_Pal sHoennTrainerCardSilver_Pal sKantoTrainerCardSilver_Pal sHoennTrainerCardGold_Pal sKantoTrainerCardGold_Pal sHoennTrainerCardFemaleBg_Pal sKantoTrainerCardFemaleBg_Pal sHoennTrainerCardBadges_Pal sKantoTrainerCardBadges_Pal sTrainerCardStar_Pal sTrainerCardSticker1_Pal sTrainerCardSticker2_Pal sTrainerCardSticker3_Pal sTrainerCardSticker4_Pal sHoennTrainerCardBadges_Gfx sKantoTrainerCardBadges_Gfx sTrainerCardBgTemplates sTrainerCardWindowTemplates sHoennTrainerCardPals sKantoTrainerCardPals sTrainerCardTextColors sTrainerCardStatColors sTimeColonInvisibleTextColors sTrainerPicOffset sTrainerPicFacilityClass sTrainerCardFlipTasks sTimeColonTextColors sText_HofTime sLinkBattleTexts widths.1 xOffsets.2 yOffsets.0 yOffsetsLine1.4 yOffsetsLine2.3
 
 /// `struct TrainerCardData`
@@ -76,7 +160,7 @@ pub struct TrainerCardData {
     pub cardType: u8,
     pub isHoenn: u8,
     pub blendColor: u16,
-    pub callback2: Option<unsafe extern "C" fn()>,
+    pub callback2: Option<unsafe fn()>,
     pub trainerCard: TrainerCard,
     pub frontTilemap: CArray<u16, 600>,
     pub backTilemap: CArray<u16, 600>,
@@ -183,7 +267,7 @@ static sTimeColonTextColors: Table<CArray<*mut u8, 2>> =
     Table((&raw const crate::data::trainer_card::sTimeColonTextColors).cast());
 static sTrainerCardBgTemplates: Table<CArray<BgTemplate, 4>> =
     Table((&raw const crate::data::trainer_card::sTrainerCardBgTemplates).cast());
-static sTrainerCardFlipTasks: Table<CArray<Option<unsafe extern "C" fn(*mut Task) -> u8>, 6>> =
+static sTrainerCardFlipTasks: Table<CArray<Option<unsafe fn(*mut Task) -> u8>, 6>> =
     Table((&raw const crate::data::trainer_card::sTrainerCardFlipTasks).cast());
 static sTrainerCardStar_Pal: Table<CArray<u16, 16>> =
     Table((&raw const crate::data::trainer_card::sTrainerCardStar_Pal).cast());
@@ -218,170 +302,62 @@ static yOffsetsLine2_3: Table<CArray<u8, 2>> =
 static yOffsets_0: Table<CArray<u8, 2>> =
     Table((&raw const crate::data::trainer_card::yOffsets_0).cast());
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gTrainerCards: CArray<TrainerCard, 4> = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sData: *mut TrainerCardData = null_mut();
 
-unsafe extern "C" {
-    static gGameVersion: u8;
-    static gHoennTrainerCardBack_Tilemap: CArray<u32, 0>;
-    static gHoennTrainerCardBg_Tilemap: CArray<u32, 0>;
-    static gHoennTrainerCardFrontLink_Tilemap: CArray<u32, 0>;
-    static gHoennTrainerCardFront_Tilemap: CArray<u32, 0>;
-    static gHoennTrainerCard_Gfx: CArray<u32, 0>;
-    static gKantoTrainerCardBack_Tilemap: CArray<u32, 0>;
-    static gKantoTrainerCardBg_Tilemap: CArray<u32, 0>;
-    static gKantoTrainerCardFrontLink_Tilemap: CArray<u32, 0>;
-    static gKantoTrainerCardFront_Tilemap: CArray<u32, 0>;
-    static gKantoTrainerCard_Gfx: CArray<u32, 0>;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gMain: Main;
-    static gMonIconPalettes: CArray<CArray<u16, 16>, 0>;
-    static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gScanlineEffectRegBuffers: CArray<CArray<u16, 960>, 2>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar3: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_BattlePtsWon: CArray<u8, 0>;
-    static gText_BattleTower: CArray<u8, 0>;
-    static gText_BerryCrush: CArray<u8, 0>;
-    static gText_Colon2: CArray<u8, 0>;
-    static gText_EmptyString6: CArray<u8, 0>;
-    static gText_HallOfFameDebut: CArray<u8, 0>;
-    static gText_NumBP: CArray<u8, 0>;
-    static gText_NumPokeblocks: CArray<u8, 0>;
-    static gText_PokeblocksWithFriends: CArray<u8, 0>;
-    static gText_PokedollarVar1: CArray<u8, 0>;
-    static gText_PokemonTrades: CArray<u8, 0>;
-    static gText_TrainerCardIDNo: CArray<u8, 0>;
-    static gText_TrainerCardMoney: CArray<u8, 0>;
-    static gText_TrainerCardName: CArray<u8, 0>;
-    static gText_TrainerCardPokedex: CArray<u8, 0>;
-    static gText_TrainerCardTime: CArray<u8, 0>;
-    static gText_UnionTradesAndBattles: CArray<u8, 0>;
-    static gText_Var1sTrainerCard: CArray<u8, 0>;
-    static gText_WaitingTrainerFinishReading: CArray<u8, 0>;
-    static gText_WinsLosses: CArray<u8, 0>;
-    static gText_WinsStraight: CArray<u8, 0>;
-    static gText_WonContestsWFriends: CArray<u8, 0>;
-    static gUnionRoomFacilityClasses: CArray<u16, 0>;
-    static mut gWirelessCommType: u8;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddTextPrinterParameterized3(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: *mut u8,
-        a5: i8,
-        a6: *mut u8,
-    );
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn BuildOamBuffer();
-    fn CB2_ReshowFrontierPass();
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn ConvertInternationalString(a0: *mut u8, a1: u8);
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyEasyChatWord(a0: *mut u8, a1: u16) -> *mut u8;
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CountPlayerMuseumPaintings() -> u8;
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateTrainerCardTrainerPicSprite(a0: u16, a1: u8, a2: u16, a3: u16, a4: u8, a5: u8) -> u16;
-    fn CreateWirelessStatusIndicatorSprite(a0: u8, a1: u8);
-    fn DeactivateAllTextPrinters();
-    fn DestroyTask(a0: u8);
-    fn DrawDialogueFrame(a0: u8, a1: u8);
-    fn EnableInterrupts(a0: u16);
-    fn FacilityClassToPicIndex(a0: u16) -> u16;
-    fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FillWindowPixelRect(a0: u8, a1: u8, a2: u16, a3: u16, a4: u16, a5: u16);
-    fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn GetGameStat(a0: u8) -> u32;
-    fn GetHoennPokedexCount(a0: u8) -> u16;
-    fn GetMonIconPaletteIndexFromSpecies(a0: u16) -> u8;
-    fn GetMonIconTiles(a0: u16, a1: u32) -> *mut u8;
-    fn GetMoney(a0: *mut u32) -> u32;
-    fn GetNationalPokedexCount(a0: u8) -> u16;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetStringWidth(a0: u8, a1: *mut u8, a2: i16) -> i32;
-    fn HasAllHoennMons() -> u16;
-    fn HideBg(a0: u8);
-    fn InUnionRoom() -> u32;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsDma3ManagerBusyWithBgCopy() -> u8;
-    fn IsNationalPokedexEnabled() -> u32;
-    fn IsSEPlaying() -> u8;
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadMessageBoxAndBorderGfx();
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadWirelessStatusIndicatorSpriteGfx();
-    fn Overworld_IsRecvQueueAtMax() -> u32;
-    fn PlaySE(a0: u16);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn RunTasks();
-    fn ScanlineEffect_Clear();
-    fn ScanlineEffect_Stop();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetCloseLinkCallback();
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetHBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TintPalette_CustomTone(a0: *mut u16, a1: u16, a2: u16, a3: u16, a4: u16);
-    fn TintPalette_SepiaTone(a0: *mut u16, a1: u16);
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
-    fn WriteSequenceToBgTilemapBuffer(
-        a0: u8,
-        a1: u16,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: u8,
-        a7: i16,
-    );
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `LZ77UnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn VblankCb_TrainerCard() {
+pub(crate) unsafe fn VblankCb_TrainerCard() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
@@ -390,14 +366,18 @@ pub(crate) unsafe extern "C" fn VblankCb_TrainerCard() {
         {
             {
                 {
-                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                     volatile_write(
                         dmaRegs,
-                        &raw mut gScanlineEffectRegBuffers[0] as usize as u32,
+                        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                            .cast::<CArray<CArray<u16, 960>, 2>>()
+                            .cast_mut())[0] as usize as u32,
                     );
                     volatile_write(
                         dmaRegs.at(1),
-                        &raw mut gScanlineEffectRegBuffers[1] as usize as u32,
+                        &raw mut (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+                            .cast::<CArray<CArray<u16, 960>, 2>>()
+                            .cast_mut())[1] as usize as u32,
                     );
                     volatile_write(dmaRegs.at(2), 0x800000a0);
                     let _ = (dmaRegs.at(2)).read_volatile();
@@ -406,30 +386,29 @@ pub(crate) unsafe extern "C" fn VblankCb_TrainerCard() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn HblankCb_TrainerCard() {
-    let mut backup: u16 = 0;
-    let mut bgVOffset: u16 = 0;
-    backup = (67109384 as usize as *mut u16).read_volatile();
-    volatile_write(67109384 as usize as *mut u16, 0);
-    bgVOffset =
-        gScanlineEffectRegBuffers[1][(67108870 as usize as *mut u16).read_volatile() as i32 & 0xFF];
-    volatile_write(67108882 as usize as *mut u16, bgVOffset);
-    volatile_write(67109384 as usize as *mut u16, backup);
+pub(crate) unsafe fn HblankCb_TrainerCard() {
+    let backup: u16 = (67109384_usize as *mut u16).read_volatile();
+    volatile_write(67109384_usize as *mut u16, 0);
+    let bgVOffset: u16 = (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+        .cast::<CArray<CArray<u16, 960>, 2>>()
+        .cast_mut())[1][(67108870_usize as *mut u16).read_volatile() as i32 & 0xFF];
+    volatile_write(67108882_usize as *mut u16, bgVOffset);
+    volatile_write(67109384_usize as *mut u16, backup);
 }
-pub(crate) unsafe extern "C" fn CB2_TrainerCard() {
+pub(crate) unsafe fn CB2_TrainerCard() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn CloseTrainerCard(taskId: u8) {
+unsafe fn CloseTrainerCard(taskId: u8) {
     SetMainCallback2((*sData).callback2);
     FreeAllWindowBuffers();
     Free(sData as *mut c_void);
     sData = null_mut();
     DestroyTask(taskId);
 }
-pub(crate) unsafe extern "C" fn Task_TrainerCard(taskId: u8) {
+pub(crate) unsafe fn Task_TrainerCard(taskId: u8) {
     match (*sData).mainState {
         0 => {
             if IsDma3ManagerBusyWithBgCopy() == 0 {
@@ -546,7 +525,10 @@ pub(crate) unsafe extern "C" fn Task_TrainerCard(taskId: u8) {
             AddTextPrinterParameterized(
                 WIN_MSG,
                 FONT_NORMAL,
-                gText_WaitingTrainerFinishReading.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_WaitingTrainerFinishReading)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 0,
                 1,
                 255,
@@ -566,26 +548,32 @@ pub(crate) unsafe extern "C" fn Task_TrainerCard(taskId: u8) {
                 CloseTrainerCard(taskId);
             }
         }
-        STATE_WAIT_FLIP_TO_FRONT => {
-            if IsCardFlipTaskActive() != 0 && Overworld_IsRecvQueueAtMax() != TRUE as u32 {
-                (*sData).mainState = STATE_HANDLE_INPUT_FRONT;
-                PlaySE(SE_RG_CARD_OPEN);
-            }
+        STATE_WAIT_FLIP_TO_FRONT
+            if IsCardFlipTaskActive() != 0 && Overworld_IsRecvQueueAtMax() != TRUE as u32 =>
+        {
+            (*sData).mainState = STATE_HANDLE_INPUT_FRONT;
+            PlaySE(SE_RG_CARD_OPEN);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn LoadCardGfx() -> u8 {
+unsafe fn LoadCardGfx() -> u8 {
     match (*sData).gfxLoadState {
         0 => {
             if (*sData).cardType != CARD_TYPE_FRLG {
                 LZ77UnCompWram(
-                    gHoennTrainerCardBg_Tilemap.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gHoennTrainerCardBg_Tilemap)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     (*sData).bgTilemap.as_mut_ptr() as *mut c_void,
                 );
             } else {
                 LZ77UnCompWram(
-                    gKantoTrainerCardBg_Tilemap.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gKantoTrainerCardBg_Tilemap)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     (*sData).bgTilemap.as_mut_ptr() as *mut c_void,
                 );
             }
@@ -593,12 +581,18 @@ pub(crate) unsafe extern "C" fn LoadCardGfx() -> u8 {
         1 => {
             if (*sData).cardType != CARD_TYPE_FRLG {
                 LZ77UnCompWram(
-                    gHoennTrainerCardBack_Tilemap.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gHoennTrainerCardBack_Tilemap)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     (*sData).backTilemap.as_mut_ptr() as *mut c_void,
                 );
             } else {
                 LZ77UnCompWram(
-                    gKantoTrainerCardBack_Tilemap.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gKantoTrainerCardBack_Tilemap)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     (*sData).backTilemap.as_mut_ptr() as *mut c_void,
                 );
             }
@@ -607,24 +601,36 @@ pub(crate) unsafe extern "C" fn LoadCardGfx() -> u8 {
             if (*sData).isLink == 0 {
                 if (*sData).cardType != CARD_TYPE_FRLG {
                     LZ77UnCompWram(
-                        gHoennTrainerCardFront_Tilemap.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::graphics::gHoennTrainerCardFront_Tilemap)
+                            .cast::<CArray<u32, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                         (*sData).frontTilemap.as_mut_ptr() as *mut c_void,
                     );
                 } else {
                     LZ77UnCompWram(
-                        gKantoTrainerCardFront_Tilemap.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::graphics::gKantoTrainerCardFront_Tilemap)
+                            .cast::<CArray<u32, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                         (*sData).frontTilemap.as_mut_ptr() as *mut c_void,
                     );
                 }
             } else {
                 if (*sData).cardType != CARD_TYPE_FRLG {
                     LZ77UnCompWram(
-                        gHoennTrainerCardFrontLink_Tilemap.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::graphics::gHoennTrainerCardFrontLink_Tilemap)
+                            .cast::<CArray<u32, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                         (*sData).frontTilemap.as_mut_ptr() as *mut c_void,
                     );
                 } else {
                     LZ77UnCompWram(
-                        gKantoTrainerCardFrontLink_Tilemap.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::graphics::gKantoTrainerCardFrontLink_Tilemap)
+                            .cast::<CArray<u32, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                         (*sData).frontTilemap.as_mut_ptr() as *mut c_void,
                     );
                 }
@@ -646,12 +652,18 @@ pub(crate) unsafe extern "C" fn LoadCardGfx() -> u8 {
         4 => {
             if (*sData).cardType != CARD_TYPE_FRLG {
                 LZ77UnCompWram(
-                    gHoennTrainerCard_Gfx.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gHoennTrainerCard_Gfx)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     (*sData).cardTiles.as_mut_ptr() as *mut c_void,
                 );
             } else {
                 LZ77UnCompWram(
-                    gKantoTrainerCard_Gfx.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::graphics::gKantoTrainerCard_Gfx)
+                        .cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     (*sData).cardTiles.as_mut_ptr() as *mut c_void,
                 );
             }
@@ -670,9 +682,9 @@ pub(crate) unsafe extern "C" fn LoadCardGfx() -> u8 {
         }
     }
     (*sData).gfxLoadState += 1;
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn CB2_InitTrainerCard() {
+pub(crate) unsafe fn CB2_InitTrainerCard() {
     'l1: {
         let sw1: u8 = gMain.state;
         let matched = sw1 == 0
@@ -688,14 +700,12 @@ pub(crate) unsafe extern "C" fn CB2_InitTrainerCard() {
             || sw1 == 10;
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             ResetGpuRegs();
             SetUpTrainerCardTask();
             gMain.state += 1;
             break 'l1;
         }
         if sw1 == 1 {
-            fall = true;
             {
                 {
                     let mut _dest: *mut u32 = OAM as i32 as usize as *mut c_void as *mut u32;
@@ -706,10 +716,10 @@ pub(crate) unsafe extern "C" fn CB2_InitTrainerCard() {
                             volatile_write(&raw mut tmp, 0);
                             {
                                 {
-                                    let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                    let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                     volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                     volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                    volatile_write(dmaRegs.at(2), 0x85000000 | _size / 4);
+                                    volatile_write(dmaRegs.at(2), 0x85000000 | (_size / 4));
                                     let _ = (dmaRegs.at(2)).read_volatile();
                                 }
                             }
@@ -721,7 +731,6 @@ pub(crate) unsafe extern "C" fn CB2_InitTrainerCard() {
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             if (*sData).blendColor == 0 {
                 {
                     {
@@ -733,10 +742,10 @@ pub(crate) unsafe extern "C" fn CB2_InitTrainerCard() {
                                 volatile_write(&raw mut tmp, 0);
                                 {
                                     {
-                                        let mut dmaRegs: *mut u32 = 67109076 as usize as *mut u32;
+                                        let dmaRegs: *mut u32 = 67109076_usize as *mut u32;
                                         volatile_write(dmaRegs, &raw mut tmp as usize as u32);
                                         volatile_write(dmaRegs.at(1), _dest as usize as u32);
-                                        volatile_write(dmaRegs.at(2), 0x81000000 | _size / 2);
+                                        volatile_write(dmaRegs.at(2), 0x81000000 | (_size / 2));
                                         let _ = (dmaRegs.at(2)).read_volatile();
                                     }
                                 }
@@ -756,79 +765,68 @@ pub(crate) unsafe extern "C" fn CB2_InitTrainerCard() {
             gMain.state += 1;
         }
         if fall || sw1 == 4 {
-            fall = true;
             InitBgsAndWindows();
             gMain.state += 1;
             break 'l1;
         }
         if sw1 == 5 {
-            fall = true;
             LoadMonIconGfx();
             gMain.state += 1;
             break 'l1;
         }
         if sw1 == 6 {
-            fall = true;
             if LoadCardGfx() == TRUE {
                 gMain.state += 1;
             }
             break 'l1;
         }
         if sw1 == 7 {
-            fall = true;
             LoadStickerGfx();
             gMain.state += 1;
             break 'l1;
         }
         if sw1 == 8 {
-            fall = true;
             InitGpuRegs();
             gMain.state += 1;
             break 'l1;
         }
         if sw1 == 9 {
-            fall = true;
             BufferTextsVarsForCardPage2();
             gMain.state += 1;
             break 'l1;
         }
         if sw1 == 10 {
-            fall = true;
             if SetCardBgsAndPals() == TRUE {
                 gMain.state += 1;
             }
             break 'l1;
         }
         if !matched {
-            fall = true;
             SetTrainerCardCb2();
             break 'l1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn GetCappedGameStat(statId: u8, maxValue: u32) -> u32 {
-    let mut statValue: u32 = GetGameStat(statId);
-    return if maxValue < statValue {
+unsafe fn GetCappedGameStat(statId: u8, maxValue: u32) -> u32 {
+    let statValue: u32 = GetGameStat(statId);
+    if maxValue < statValue {
         maxValue
     } else {
         statValue
-    };
+    }
 }
-pub(crate) unsafe extern "C" fn HasAllFrontierSymbols() -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < NUM_FRONTIER_FACILITIES {
+unsafe fn HasAllFrontierSymbols() -> u8 {
+    for i in 0..NUM_FRONTIER_FACILITIES {
         if FlagGet(FLAG_SYS_TOWER_SILVER + 2 * i as u16) == 0
             || FlagGet(FLAG_SYS_TOWER_GOLD + 2 * i as u16) == 0
         {
             return FALSE;
         }
-        i += 1;
     }
-    return TRUE;
+    TRUE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CountPlayerTrainerStars() -> u32 {
+pub unsafe fn CountPlayerTrainerStars() -> u32 {
     let mut stars: u8 = 0;
     if GetGameStat(GAME_STAT_ENTERED_HOF) != 0 {
         stars += 1;
@@ -842,9 +840,9 @@ pub unsafe extern "C" fn CountPlayerTrainerStars() -> u32 {
     if HasAllFrontierSymbols() != 0 {
         stars += 1;
     }
-    return stars as u32;
+    stars as u32
 }
-pub(crate) unsafe extern "C" fn GetRubyTrainerStars(trainerCard: *mut TrainerCard) -> u8 {
+unsafe fn GetRubyTrainerStars(trainerCard: *mut TrainerCard) -> u8 {
     let mut stars: u8 = 0;
     if (*trainerCard).hofDebutHours != 0
         || (*trainerCard).hofDebutMinutes != 0
@@ -861,15 +859,13 @@ pub(crate) unsafe extern "C" fn GetRubyTrainerStars(trainerCard: *mut TrainerCar
     if (*trainerCard).hasAllPaintings != 0 {
         stars += 1;
     }
-    return stars;
+    stars
 }
-pub(crate) unsafe extern "C" fn SetPlayerCardData(trainerCard: *mut TrainerCard, cardType: u8) {
-    let mut playTime: u32 = 0;
-    let mut i: u8 = 0;
+unsafe fn SetPlayerCardData(trainerCard: *mut TrainerCard, cardType: u8) {
     (*trainerCard).gender = (*gSaveBlock2Ptr).playerGender;
     (*trainerCard).playTimeHours = (*gSaveBlock2Ptr).playTimeHours;
     (*trainerCard).playTimeMinutes = (*gSaveBlock2Ptr).playTimeMinutes as u16;
-    playTime = GetGameStat(GAME_STAT_FIRST_HOF_PLAY_TIME);
+    let mut playTime: u32 = GetGameStat(GAME_STAT_FIRST_HOF_PLAY_TIME);
     if GetGameStat(GAME_STAT_ENTERED_HOF) == 0 {
         playTime = 0;
     }
@@ -890,10 +886,8 @@ pub(crate) unsafe extern "C" fn SetPlayerCardData(trainerCard: *mut TrainerCard,
     (*trainerCard).linkBattleLosses = GetCappedGameStat(GAME_STAT_LINK_BATTLE_LOSSES, 9999) as u16;
     (*trainerCard).pokemonTrades = GetCappedGameStat(GAME_STAT_POKEMON_TRADES, 0xFFFF) as u16;
     (*trainerCard).money = GetMoney(&raw mut (*gSaveBlock1Ptr).money);
-    i = 0;
-    while i < TRAINER_CARD_PROFILE_LENGTH {
+    for i in 0..TRAINER_CARD_PROFILE_LENGTH {
         (*trainerCard).easyChatProfile[i] = (*gSaveBlock1Ptr).easyChatProfile[i];
-        i += 1;
     }
     StringCopy(
         (*trainerCard).playerName.as_mut_ptr(),
@@ -908,7 +902,6 @@ pub(crate) unsafe extern "C" fn SetPlayerCardData(trainerCard: *mut TrainerCard,
             (*trainerCard).battleTowerStraightWins = 0;
         }
         if fall || sw1 == CARD_TYPE_FRLG {
-            fall = true;
             (*trainerCard).contestsWithFriends =
                 GetCappedGameStat(GAME_STAT_WON_LINK_CONTEST, 999) as u16;
             (*trainerCard).pokeblocksWithFriends =
@@ -920,7 +913,6 @@ pub(crate) unsafe extern "C" fn SetPlayerCardData(trainerCard: *mut TrainerCard,
             break 'l2;
         }
         if sw1 == CARD_TYPE_RS {
-            fall = true;
             (*trainerCard).battleTowerWins = 0;
             (*trainerCard).battleTowerStraightWins = 0;
             (*trainerCard).contestsWithFriends = 0;
@@ -931,7 +923,7 @@ pub(crate) unsafe extern "C" fn SetPlayerCardData(trainerCard: *mut TrainerCard,
         }
     }
 }
-pub(crate) unsafe extern "C" fn TrainerCard_GenerateCardForPlayer(trainerCard: *mut TrainerCard) {
+unsafe fn TrainerCard_GenerateCardForPlayer(trainerCard: *mut TrainerCard) {
     memset(trainerCard as *mut u8, 0, 100);
     (*trainerCard).version = GAME_VERSION;
     SetPlayerCardData(trainerCard, CARD_TYPE_EMERALD);
@@ -941,16 +933,17 @@ pub(crate) unsafe extern "C" fn TrainerCard_GenerateCardForPlayer(trainerCard: *
         (*trainerCard).stars += 1;
     }
     if (*trainerCard).gender == FEMALE {
-        (*trainerCard).unionRoomClass = gUnionRoomFacilityClasses
-            [(*trainerCard).trainerId as i32 % 8 + NUM_UNION_ROOM_CLASSES as i32]
-            as u8;
+        (*trainerCard).unionRoomClass =
+            (*(&raw const crate::data::pokemon::gUnionRoomFacilityClasses).cast::<CArray<u16, 0>>())
+                [(*trainerCard).trainerId as i32 % 8 + NUM_UNION_ROOM_CLASSES as i32]
+                as u8;
     } else {
         (*trainerCard).unionRoomClass =
-            gUnionRoomFacilityClasses[(*trainerCard).trainerId as i32 % 8] as u8;
+            (*(&raw const crate::data::pokemon::gUnionRoomFacilityClasses).cast::<CArray<u16, 0>>())
+                [(*trainerCard).trainerId as i32 % 8] as u8;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TrainerCard_GenerateCardForLinkPlayer(trainerCard: *mut TrainerCard) {
+pub unsafe fn TrainerCard_GenerateCardForLinkPlayer(trainerCard: *mut TrainerCard) {
     memset(trainerCard as *mut u8, 0, 0x60);
     (*trainerCard).version = GAME_VERSION;
     SetPlayerCardData(trainerCard, CARD_TYPE_EMERALD);
@@ -961,20 +954,17 @@ pub unsafe extern "C" fn TrainerCard_GenerateCardForLinkPlayer(trainerCard: *mut
         (*trainerCard).stars += 1;
     }
     if (*trainerCard).gender == FEMALE {
-        (*trainerCard).unionRoomClass = gUnionRoomFacilityClasses
-            [(*trainerCard).trainerId as i32 % 8 + NUM_UNION_ROOM_CLASSES as i32]
-            as u8;
+        (*trainerCard).unionRoomClass =
+            (*(&raw const crate::data::pokemon::gUnionRoomFacilityClasses).cast::<CArray<u16, 0>>())
+                [(*trainerCard).trainerId as i32 % 8 + NUM_UNION_ROOM_CLASSES as i32]
+                as u8;
     } else {
         (*trainerCard).unionRoomClass =
-            gUnionRoomFacilityClasses[(*trainerCard).trainerId as i32 % 8] as u8;
+            (*(&raw const crate::data::pokemon::gUnionRoomFacilityClasses).cast::<CArray<u16, 0>>())
+                [(*trainerCard).trainerId as i32 % 8] as u8;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyTrainerCardData(
-    dst: *mut TrainerCard,
-    src: *mut TrainerCard,
-    gameVersion: u8,
-) {
+pub unsafe fn CopyTrainerCardData(dst: *mut TrainerCard, src: *mut TrainerCard, gameVersion: u8) {
     memset(dst as *mut u8, 0, 100);
     (*dst).version = gameVersion;
     match VersionToCardType(gameVersion) {
@@ -993,9 +983,7 @@ pub unsafe extern "C" fn CopyTrainerCardData(
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SetDataFromTrainerCard() {
-    let mut i: u8 = 0;
-    let mut badgeFlag: u32 = 0;
+unsafe fn SetDataFromTrainerCard() {
     (*sData).hasPokedex = FALSE;
     (*sData).hasHofResult = FALSE;
     (*sData).hasLinkResults = FALSE;
@@ -1024,8 +1012,8 @@ pub(crate) unsafe extern "C" fn SetDataFromTrainerCard() {
     {
         (*sData).hasBattleTowerWins += 1;
     }
-    i = 0;
-    badgeFlag = FLAG_BADGE01_GET;
+    let mut i: u8 = 0;
+    let mut badgeFlag: u32 = FLAG_BADGE01_GET;
     while badgeFlag < 2159 {
         if FlagGet(badgeFlag as u16) != 0 {
             (*sData).badgeCount[i] += 1;
@@ -1034,7 +1022,7 @@ pub(crate) unsafe extern "C" fn SetDataFromTrainerCard() {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn InitGpuRegs() {
+unsafe fn InitGpuRegs() {
     SetGpuReg(REG_OFFSET_DISPCNT, 12352);
     ShowBg(0);
     ShowBg(1);
@@ -1052,7 +1040,7 @@ pub(crate) unsafe extern "C" fn InitGpuRegs() {
         EnableInterrupts(3);
     }
 }
-pub(crate) unsafe extern "C" fn UpdateCardFlipRegs(cardTop: u16) {
+unsafe fn UpdateCardFlipRegs(cardTop: u16) {
     let mut blendY: i8 = ((cardTop as i32 + 40) / 10) as i8;
     if blendY <= 4 {
         blendY = 0;
@@ -1061,10 +1049,10 @@ pub(crate) unsafe extern "C" fn UpdateCardFlipRegs(cardTop: u16) {
     SetGpuReg(REG_OFFSET_BLDY, (*sData).flipBlendY as u16);
     SetGpuReg(
         REG_OFFSET_WIN0V,
-        (*sData).cardTop << 8 | DISPLAY_HEIGHT - (*sData).cardTop,
+        ((*sData).cardTop << 8) | (DISPLAY_HEIGHT - (*sData).cardTop),
     );
 }
-pub(crate) unsafe extern "C" fn ResetGpuRegs() {
+unsafe fn ResetGpuRegs() {
     SetVBlankCallback(None);
     SetHBlankCallback(None);
     SetGpuReg(0x0, 0);
@@ -1073,7 +1061,7 @@ pub(crate) unsafe extern "C" fn ResetGpuRegs() {
     SetGpuReg(REG_OFFSET_BG2CNT, 0);
     SetGpuReg(REG_OFFSET_BG3CNT, 0);
 }
-pub(crate) unsafe extern "C" fn InitBgsAndWindows() {
+unsafe fn InitBgsAndWindows() {
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sTrainerCardBgTemplates.as_ptr().cast_mut(), 4);
     ChangeBgX(0, 0, BG_COORD_SET);
@@ -1088,17 +1076,17 @@ pub(crate) unsafe extern "C" fn InitBgsAndWindows() {
     DeactivateAllTextPrinters();
     LoadMessageBoxAndBorderGfx();
 }
-pub(crate) unsafe extern "C" fn SetTrainerCardCb2() {
+unsafe fn SetTrainerCardCb2() {
     SetMainCallback2(Some(CB2_TrainerCard));
 }
-pub(crate) unsafe extern "C" fn SetUpTrainerCardTask() {
+unsafe fn SetUpTrainerCardTask() {
     ResetTasks();
     ScanlineEffect_Stop();
     CreateTask(Some(Task_TrainerCard), 0);
     InitTrainerCardData();
     SetDataFromTrainerCard();
 }
-pub(crate) unsafe extern "C" fn PrintAllOnCardFront() -> u8 {
+unsafe fn PrintAllOnCardFront() -> u8 {
     match (*sData).printState {
         0 => {
             PrintNameOnCardFront();
@@ -1124,9 +1112,9 @@ pub(crate) unsafe extern "C" fn PrintAllOnCardFront() -> u8 {
         }
     }
     (*sData).printState += 1;
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn PrintAllOnCardBack() -> u8 {
+unsafe fn PrintAllOnCardBack() -> u8 {
     match (*sData).printState {
         0 => {
             PrintNameOnCardBack();
@@ -1161,9 +1149,9 @@ pub(crate) unsafe extern "C" fn PrintAllOnCardBack() -> u8 {
         }
     }
     (*sData).printState += 1;
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn BufferTextsVarsForCardPage2() {
+unsafe fn BufferTextsVarsForCardPage2() {
     BufferNameForCardBack();
     BufferHofDebutTime();
     BufferLinkBattleResults();
@@ -1174,12 +1162,13 @@ pub(crate) unsafe extern "C" fn BufferTextsVarsForCardPage2() {
     BufferLinkContestNum();
     BufferBattleFacilityStats();
 }
-pub(crate) unsafe extern "C" fn PrintNameOnCardFront() {
+unsafe fn PrintNameOnCardFront() {
     let mut buffer: CArray<u8, 32> = zeroed();
-    let mut txtPtr: *mut u8 = null_mut();
-    txtPtr = StringCopy(
+    let txtPtr: *mut u8 = StringCopy(
         buffer.as_mut_ptr(),
-        gText_TrainerCardName.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_TrainerCardName).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     StringCopy(txtPtr, (*sData).trainerCard.playerName.as_mut_ptr());
     ConvertInternationalString(txtPtr, (*sData).language);
@@ -1205,14 +1194,15 @@ pub(crate) unsafe extern "C" fn PrintNameOnCardFront() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn PrintIdOnCard() {
+unsafe fn PrintIdOnCard() {
     let mut buffer: CArray<u8, 32> = zeroed();
-    let mut txtPtr: *mut u8 = null_mut();
     let mut xPos: i32 = 0;
     let mut top: u32 = 0;
-    txtPtr = StringCopy(
+    let txtPtr: *mut u8 = StringCopy(
         buffer.as_mut_ptr(),
-        gText_TrainerCardIDNo.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_TrainerCardIDNo).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     ConvertIntToDecimalStringN(
         txtPtr,
@@ -1237,7 +1227,7 @@ pub(crate) unsafe extern "C" fn PrintIdOnCard() {
         buffer.as_mut_ptr(),
     );
 }
-pub(crate) unsafe extern "C" fn PrintMoneyOnCard() {
+unsafe fn PrintMoneyOnCard() {
     let mut xOffset: i32 = 0;
     let mut top: u8 = 0;
     if (*sData).isHoenn == 0 {
@@ -1248,7 +1238,9 @@ pub(crate) unsafe extern "C" fn PrintMoneyOnCard() {
             56,
             sTrainerCardTextColors.as_ptr().cast_mut(),
             TEXT_SKIP_DRAW as i8,
-            gText_TrainerCardMoney.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_TrainerCardMoney).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
     } else {
         AddTextPrinterParameterized3(
@@ -1258,7 +1250,9 @@ pub(crate) unsafe extern "C" fn PrintMoneyOnCard() {
             57,
             sTrainerCardTextColors.as_ptr().cast_mut(),
             TEXT_SKIP_DRAW as i8,
-            gText_TrainerCardMoney.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_TrainerCardMoney).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
     }
     ConvertIntToDecimalStringN(
@@ -1269,7 +1263,9 @@ pub(crate) unsafe extern "C" fn PrintMoneyOnCard() {
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_PokedollarVar1.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_PokedollarVar1).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     if (*sData).isHoenn == 0 {
         xOffset = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 144);
@@ -1288,7 +1284,7 @@ pub(crate) unsafe extern "C" fn PrintMoneyOnCard() {
         gStringVar4.as_mut_ptr(),
     );
 }
-pub(crate) unsafe extern "C" fn GetCaughtMonsCount() -> u16 {
+unsafe fn GetCaughtMonsCount() -> u16 {
     if IsNationalPokedexEnabled() != 0 {
         return GetNationalPokedexCount(FLAG_GET_CAUGHT);
     } else {
@@ -1296,10 +1292,10 @@ pub(crate) unsafe extern "C" fn GetCaughtMonsCount() -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn PrintPokedexOnCard() {
+unsafe fn PrintPokedexOnCard() {
     let mut xOffset: i32 = 0;
     let mut top: u8 = 0;
     if FlagGet(FLAG_SYS_POKEDEX_GET) != 0 {
@@ -1311,7 +1307,10 @@ pub(crate) unsafe extern "C" fn PrintPokedexOnCard() {
                 72,
                 sTrainerCardTextColors.as_ptr().cast_mut(),
                 TEXT_SKIP_DRAW as i8,
-                gText_TrainerCardPokedex.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_TrainerCardPokedex)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
         } else {
             AddTextPrinterParameterized3(
@@ -1321,7 +1320,10 @@ pub(crate) unsafe extern "C" fn PrintPokedexOnCard() {
                 73,
                 sTrainerCardTextColors.as_ptr().cast_mut(),
                 TEXT_SKIP_DRAW as i8,
-                gText_TrainerCardPokedex.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_TrainerCardPokedex)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
         }
         StringCopy(
@@ -1331,7 +1333,9 @@ pub(crate) unsafe extern "C" fn PrintPokedexOnCard() {
                 STR_CONV_MODE_LEFT_ALIGN,
                 3,
             ),
-            gText_EmptyString6.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_EmptyString6).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         if (*sData).isHoenn == 0 {
             xOffset = GetStringRightAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 144);
@@ -1351,13 +1355,11 @@ pub(crate) unsafe extern "C" fn PrintPokedexOnCard() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn PrintTimeOnCard() {
+unsafe fn PrintTimeOnCard() {
     let mut hours: u16 = 0;
     let mut minutes: u16 = 0;
-    let mut width: i32 = 0;
     let mut x: u32 = 0;
     let mut y: u32 = 0;
-    let mut totalWidth: u32 = 0;
     if (*sData).isHoenn == 0 {
         AddTextPrinterParameterized3(
             WIN_CARD_TEXT,
@@ -1366,7 +1368,9 @@ pub(crate) unsafe extern "C" fn PrintTimeOnCard() {
             88,
             sTrainerCardTextColors.as_ptr().cast_mut(),
             TEXT_SKIP_DRAW as i8,
-            gText_TrainerCardTime.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_TrainerCardTime).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
     } else {
         AddTextPrinterParameterized3(
@@ -1376,7 +1380,9 @@ pub(crate) unsafe extern "C" fn PrintTimeOnCard() {
             89,
             sTrainerCardTextColors.as_ptr().cast_mut(),
             TEXT_SKIP_DRAW as i8,
-            gText_TrainerCardTime.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_TrainerCardTime).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
     }
     if (*sData).isLink != 0 {
@@ -1392,7 +1398,13 @@ pub(crate) unsafe extern "C" fn PrintTimeOnCard() {
     if minutes > 59 {
         minutes = 59;
     }
-    width = GetStringWidth(FONT_NORMAL, gText_Colon2.as_ptr().cast_mut(), 0);
+    let width: i32 = GetStringWidth(
+        FONT_NORMAL,
+        (*(&raw const crate::data::strings::gText_Colon2).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0,
+    );
     if (*sData).isHoenn == 0 {
         x = 144;
         y = 88;
@@ -1400,7 +1412,7 @@ pub(crate) unsafe extern "C" fn PrintTimeOnCard() {
         x = 128;
         y = 89;
     }
-    totalWidth = width as u32 + 30;
+    let totalWidth: u32 = width as u32 + 30;
     x -= totalWidth;
     FillWindowPixelRect(WIN_CARD_TEXT, 0, x as u16, y as u16, totalWidth as u16, 15);
     ConvertIntToDecimalStringN(
@@ -1426,7 +1438,9 @@ pub(crate) unsafe extern "C" fn PrintTimeOnCard() {
         y as u8,
         sTimeColonTextColors[(*sData).timeColonInvisible],
         TEXT_SKIP_DRAW as i8,
-        gText_Colon2.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Colon2).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     x += width as u32;
     ConvertIntToDecimalStringN(
@@ -1445,7 +1459,7 @@ pub(crate) unsafe extern "C" fn PrintTimeOnCard() {
         gStringVar4.as_mut_ptr(),
     );
 }
-pub(crate) unsafe extern "C" fn PrintProfilePhraseOnCard() {
+unsafe fn PrintProfilePhraseOnCard() {
     if (*sData).isLink != 0 {
         AddTextPrinterParameterized3(
             WIN_CARD_TEXT,
@@ -1485,7 +1499,7 @@ pub(crate) unsafe extern "C" fn PrintProfilePhraseOnCard() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn BufferNameForCardBack() {
+unsafe fn BufferNameForCardBack() {
     StringCopy(
         (*sData).textPlayersCard.as_mut_ptr(),
         (*sData).trainerCard.playerName.as_mut_ptr(),
@@ -1498,11 +1512,13 @@ pub(crate) unsafe extern "C" fn BufferNameForCardBack() {
         );
         StringExpandPlaceholders(
             (*sData).textPlayersCard.as_mut_ptr(),
-            gText_Var1sTrainerCard.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_Var1sTrainerCard).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
     }
 }
-pub(crate) unsafe extern "C" fn PrintNameOnCardBack() {
+unsafe fn PrintNameOnCardBack() {
     if (*sData).isHoenn == 0 {
         AddTextPrinterParameterized3(
             WIN_CARD_TEXT,
@@ -1529,7 +1545,7 @@ pub(crate) unsafe extern "C" fn PrintNameOnCardBack() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn BufferHofDebutTime() {
+unsafe fn BufferHofDebutTime() {
     if (*sData).hasHofResult != 0 {
         ConvertIntToDecimalStringN(
             gStringVar1.as_mut_ptr(),
@@ -1555,12 +1571,7 @@ pub(crate) unsafe extern "C" fn BufferHofDebutTime() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn PrintStatOnBackOfCard(
-    top: u8,
-    statName: *mut u8,
-    stat: *mut u8,
-    color: *mut u8,
-) {
+unsafe fn PrintStatOnBackOfCard(top: u8, statName: *mut u8, stat: *mut u8, color: *mut u8) {
     AddTextPrinterParameterized3(
         WIN_CARD_TEXT,
         FONT_NORMAL,
@@ -1581,17 +1592,19 @@ pub(crate) unsafe extern "C" fn PrintStatOnBackOfCard(
         stat,
     );
 }
-pub(crate) unsafe extern "C" fn PrintHofDebutTimeOnCard() {
+unsafe fn PrintHofDebutTimeOnCard() {
     if (*sData).hasHofResult != 0 {
         PrintStatOnBackOfCard(
             0,
-            gText_HallOfFameDebut.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_HallOfFameDebut).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             (*sData).textHofTime.as_mut_ptr(),
             sTrainerCardStatColors.as_ptr().cast_mut(),
         );
     }
 }
-pub(crate) unsafe extern "C" fn BufferLinkBattleResults() {
+unsafe fn BufferLinkBattleResults() {
     if (*sData).hasLinkResults != 0 {
         StringCopy(
             (*sData).textLinkBattleType.as_mut_ptr(),
@@ -1611,7 +1624,7 @@ pub(crate) unsafe extern "C" fn BufferLinkBattleResults() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn PrintLinkBattleResultsOnCard() {
+unsafe fn PrintLinkBattleResultsOnCard() {
     if (*sData).hasLinkResults != 0 {
         StringCopy(
             gStringVar1.as_mut_ptr(),
@@ -1623,7 +1636,9 @@ pub(crate) unsafe extern "C" fn PrintLinkBattleResultsOnCard() {
         );
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_WinsLosses.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_WinsLosses).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         PrintStatOnBackOfCard(
             1,
@@ -1633,7 +1648,7 @@ pub(crate) unsafe extern "C" fn PrintLinkBattleResultsOnCard() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn BufferNumTrades() {
+unsafe fn BufferNumTrades() {
     if (*sData).hasTrades != 0 {
         ConvertIntToDecimalStringN(
             (*sData).textNumTrades.as_mut_ptr(),
@@ -1643,17 +1658,19 @@ pub(crate) unsafe extern "C" fn BufferNumTrades() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn PrintTradesStringOnCard() {
+unsafe fn PrintTradesStringOnCard() {
     if (*sData).hasTrades != 0 {
         PrintStatOnBackOfCard(
             2,
-            gText_PokemonTrades.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_PokemonTrades).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             (*sData).textNumTrades.as_mut_ptr(),
             sTrainerCardStatColors.as_ptr().cast_mut(),
         );
     }
 }
-pub(crate) unsafe extern "C" fn BufferBerryCrushPoints() {
+unsafe fn BufferBerryCrushPoints() {
     if (*sData).cardType == CARD_TYPE_FRLG && (*sData).trainerCard.linkPoints.berryCrush != 0 {
         ConvertIntToDecimalStringN(
             (*sData).textBerryCrushPts.as_mut_ptr(),
@@ -1663,17 +1680,19 @@ pub(crate) unsafe extern "C" fn BufferBerryCrushPoints() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn PrintBerryCrushStringOnCard() {
+unsafe fn PrintBerryCrushStringOnCard() {
     if (*sData).cardType == CARD_TYPE_FRLG && (*sData).trainerCard.linkPoints.berryCrush != 0 {
         PrintStatOnBackOfCard(
             4,
-            gText_BerryCrush.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_BerryCrush).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             (*sData).textBerryCrushPts.as_mut_ptr(),
             sTrainerCardStatColors.as_ptr().cast_mut(),
         );
     }
 }
-pub(crate) unsafe extern "C" fn BufferUnionRoomStats() {
+unsafe fn BufferUnionRoomStats() {
     if (*sData).cardType == CARD_TYPE_FRLG && (*sData).trainerCard.unionRoomNum != 0 {
         ConvertIntToDecimalStringN(
             (*sData).textUnionRoomStats.as_mut_ptr(),
@@ -1683,17 +1702,20 @@ pub(crate) unsafe extern "C" fn BufferUnionRoomStats() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn PrintUnionStringOnCard() {
+unsafe fn PrintUnionStringOnCard() {
     if (*sData).cardType == CARD_TYPE_FRLG && (*sData).trainerCard.unionRoomNum != 0 {
         PrintStatOnBackOfCard(
             3,
-            gText_UnionTradesAndBattles.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_UnionTradesAndBattles)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
             (*sData).textUnionRoomStats.as_mut_ptr(),
             sTrainerCardStatColors.as_ptr().cast_mut(),
         );
     }
 }
-pub(crate) unsafe extern "C" fn BufferLinkPokeblocksNum() {
+unsafe fn BufferLinkPokeblocksNum() {
     if (*sData).cardType != CARD_TYPE_FRLG && (*sData).trainerCard.pokeblocksWithFriends != 0 {
         ConvertIntToDecimalStringN(
             gStringVar1.as_mut_ptr(),
@@ -1703,21 +1725,26 @@ pub(crate) unsafe extern "C" fn BufferLinkPokeblocksNum() {
         );
         StringExpandPlaceholders(
             (*sData).textNumLinkPokeblocks.as_mut_ptr(),
-            gText_NumPokeblocks.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_NumPokeblocks).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
     }
 }
-pub(crate) unsafe extern "C" fn PrintPokeblockStringOnCard() {
+unsafe fn PrintPokeblockStringOnCard() {
     if (*sData).cardType != CARD_TYPE_FRLG && (*sData).trainerCard.pokeblocksWithFriends != 0 {
         PrintStatOnBackOfCard(
             3,
-            gText_PokeblocksWithFriends.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_PokeblocksWithFriends)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
             (*sData).textNumLinkPokeblocks.as_mut_ptr(),
             sTrainerCardStatColors.as_ptr().cast_mut(),
         );
     }
 }
-pub(crate) unsafe extern "C" fn BufferLinkContestNum() {
+unsafe fn BufferLinkContestNum() {
     if (*sData).cardType != CARD_TYPE_FRLG && (*sData).trainerCard.contestsWithFriends != 0 {
         ConvertIntToDecimalStringN(
             (*sData).textNumLinkContests.as_mut_ptr(),
@@ -1727,17 +1754,19 @@ pub(crate) unsafe extern "C" fn BufferLinkContestNum() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn PrintContestStringOnCard() {
+unsafe fn PrintContestStringOnCard() {
     if (*sData).cardType != CARD_TYPE_FRLG && (*sData).trainerCard.contestsWithFriends != 0 {
         PrintStatOnBackOfCard(
             4,
-            gText_WonContestsWFriends.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_WonContestsWFriends).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             (*sData).textNumLinkContests.as_mut_ptr(),
             sTrainerCardStatColors.as_ptr().cast_mut(),
         );
     }
 }
-pub(crate) unsafe extern "C" fn BufferBattleFacilityStats() {
+unsafe fn BufferBattleFacilityStats() {
     match (*sData).cardType {
         CARD_TYPE_RS => {
             if (*sData).hasBattleTowerWins != 0 {
@@ -1755,7 +1784,10 @@ pub(crate) unsafe extern "C" fn BufferBattleFacilityStats() {
                 );
                 StringExpandPlaceholders(
                     (*sData).textBattleFacilityStat.as_mut_ptr(),
-                    gText_WinsStraight.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_WinsStraight)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
             }
         }
@@ -1769,7 +1801,9 @@ pub(crate) unsafe extern "C" fn BufferBattleFacilityStats() {
                 );
                 StringExpandPlaceholders(
                     (*sData).textBattleFacilityStat.as_mut_ptr(),
-                    gText_NumBP.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_NumBP).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                 );
             }
         }
@@ -1777,13 +1811,15 @@ pub(crate) unsafe extern "C" fn BufferBattleFacilityStats() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn PrintBattleFacilityStringOnCard() {
+unsafe fn PrintBattleFacilityStringOnCard() {
     match (*sData).cardType {
         CARD_TYPE_RS => {
             if (*sData).hasBattleTowerWins != 0 {
                 PrintStatOnBackOfCard(
                     5,
-                    gText_BattleTower.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_BattleTower).cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     (*sData).textBattleFacilityStat.as_mut_ptr(),
                     sTrainerCardTextColors.as_ptr().cast_mut(),
                 );
@@ -1793,7 +1829,10 @@ pub(crate) unsafe extern "C" fn PrintBattleFacilityStringOnCard() {
             if (*sData).trainerCard.frontierBP != 0 {
                 PrintStatOnBackOfCard(
                     5,
-                    gText_BattlePtsWon.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_BattlePtsWon)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     (*sData).textBattleFacilityStat.as_mut_ptr(),
                     sTrainerCardStatColors.as_ptr().cast_mut(),
                 );
@@ -1803,15 +1842,13 @@ pub(crate) unsafe extern "C" fn PrintBattleFacilityStringOnCard() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn PrintPokemonIconsOnCard() {
-    let mut i: u8 = 0;
-    let mut paletteSlots: CArray<u8, 6> = CArray([5, 6, 7, 8, 9, 10]);
-    let mut xOffsets: CArray<u8, 6> = CArray([0, 4, 8, 12, 16, 20]);
+unsafe fn PrintPokemonIconsOnCard() {
+    let paletteSlots: CArray<u8, 6> = CArray([5, 6, 7, 8, 9, 10]);
+    let xOffsets: CArray<u8, 6> = CArray([0, 4, 8, 12, 16, 20]);
     if (*sData).cardType == CARD_TYPE_FRLG {
-        i = 0;
-        while i < PARTY_SIZE as u8 {
+        for i in 0..(PARTY_SIZE as u8) {
             if (*sData).trainerCard.monSpecies[i] != 0 {
-                let mut monSpecies: u8 =
+                let monSpecies: u8 =
                     GetMonIconPaletteIndexFromSpecies((*sData).trainerCard.monSpecies[i]);
                 WriteSequenceToBgTilemapBuffer(
                     3,
@@ -1824,14 +1861,14 @@ pub(crate) unsafe extern "C" fn PrintPokemonIconsOnCard() {
                     1,
                 );
             }
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn LoadMonIconGfx() {
-    let mut i: u8 = 0;
+unsafe fn LoadMonIconGfx() {
     CpuSet(
-        gMonIconPalettes.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gMonIconPalettes).cast::<CArray<CArray<u16, 16>, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         (*sData).monIconPal.as_mut_ptr() as *mut c_void,
         0x60,
     );
@@ -1849,8 +1886,7 @@ pub(crate) unsafe extern "C" fn LoadMonIconGfx() {
         _ => {}
     }
     LoadPalette((*sData).monIconPal.as_mut_ptr() as *mut c_void, 80, 192);
-    i = 0;
-    while i < PARTY_SIZE as u8 {
+    for i in 0..(PARTY_SIZE as u8) {
         if (*sData).trainerCard.monSpecies[i] != 0 {
             LoadBgTiles(
                 3,
@@ -1859,16 +1895,13 @@ pub(crate) unsafe extern "C" fn LoadMonIconGfx() {
                 16 * i as u16 + 32,
             );
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn PrintStickersOnCard() {
-    let mut i: u8 = 0;
-    let mut paletteSlots: CArray<u8, 4> = CArray([11, 12, 13, 14]);
+unsafe fn PrintStickersOnCard() {
+    let paletteSlots: CArray<u8, 4> = CArray([11, 12, 13, 14]);
     if (*sData).cardType == CARD_TYPE_FRLG && (*sData).trainerCard.shouldDrawStickers == TRUE {
-        i = 0;
-        while i < TRAINER_CARD_STICKER_TYPES {
-            let mut sticker: u8 = (*sData).trainerCard.stickers[i];
+        for i in 0..TRAINER_CARD_STICKER_TYPES {
+            let sticker: u8 = (*sData).trainerCard.stickers[i];
             if (*sData).trainerCard.stickers[i] != 0 {
                 WriteSequenceToBgTilemapBuffer(
                     3,
@@ -1881,11 +1914,10 @@ pub(crate) unsafe extern "C" fn PrintStickersOnCard() {
                     1,
                 );
             }
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn LoadStickerGfx() {
+unsafe fn LoadStickerGfx() {
     LoadPalette(
         sTrainerCardSticker1_Pal.as_ptr().cast_mut() as *mut c_void,
         176,
@@ -1913,27 +1945,24 @@ pub(crate) unsafe extern "C" fn LoadStickerGfx() {
         128,
     );
 }
-pub(crate) unsafe extern "C" fn DrawTrainerCardWindow(windowId: u8) {
+unsafe fn DrawTrainerCardWindow(windowId: u8) {
     PutWindowTilemap(windowId);
     CopyWindowToVram(windowId, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn SetCardBgsAndPals() -> u8 {
+unsafe fn SetCardBgsAndPals() -> u8 {
     'l1: {
         let sw1: u8 = (*sData).bgPalLoadState;
         let matched = sw1 == 0 || sw1 == 1 || sw1 == 2 || sw1 == 3 || sw1 == 4;
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             LoadBgTiles(3, (*sData).badgeTiles.as_mut_ptr() as *mut c_void, 1024, 0);
             break 'l1;
         }
         if sw1 == 1 {
-            fall = true;
             LoadBgTiles(0, (*sData).cardTiles.as_mut_ptr() as *mut c_void, 0x1800, 0);
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             if (*sData).cardType != CARD_TYPE_FRLG {
                 LoadPalette(
                     sHoennTrainerCardPals[(*sData).trainerCard.stars] as *mut c_void,
@@ -1979,7 +2008,6 @@ pub(crate) unsafe extern "C" fn SetCardBgsAndPals() -> u8 {
             break 'l1;
         }
         if sw1 == 3 {
-            fall = true;
             SetBgTilemapBuffer(0, (*sData).cardTilemapBuffer.as_mut_ptr() as *mut c_void);
             SetBgTilemapBuffer(2, (*sData).bgTilemapBuffer.as_mut_ptr() as *mut c_void);
             break 'l1;
@@ -1991,56 +2019,43 @@ pub(crate) unsafe extern "C" fn SetCardBgsAndPals() -> u8 {
             FillBgTilemapBufferRect_Palette0(3, 0, 0, 0, 32, 32);
         }
         if fall || !matched {
-            fall = true;
             return 1;
         }
     }
     (*sData).bgPalLoadState += 1;
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn DrawCardScreenBackground(ptr: *mut u16) {
-    let mut i: i16 = 0;
-    let mut j: i16 = 0;
-    let mut dst: *mut u16 = (*sData).bgTilemapBuffer.as_mut_ptr();
-    i = 0;
-    while i < 20 {
-        j = 0;
-        while j < 32 {
+unsafe fn DrawCardScreenBackground(ptr: *mut u16) {
+    let dst: *mut u16 = (*sData).bgTilemapBuffer.as_mut_ptr();
+    for i in 0..20i16 {
+        for j in 0..32i16 {
             if j < 30 {
                 *dst.at(32 * i as i32 + j as i32) = *ptr.at(30 * i as i32 + j as i32);
             } else {
                 *dst.at(32 * i as i32 + j as i32) = *ptr;
             }
-            j += 1;
         }
-        i += 1;
     }
     CopyBgTilemapBufferToVram(2);
 }
-pub(crate) unsafe extern "C" fn DrawCardFrontOrBack(ptr: *mut u16) {
-    let mut i: i16 = 0;
-    let mut j: i16 = 0;
-    let mut dst: *mut u16 = (*sData).cardTilemapBuffer.as_mut_ptr();
-    i = 0;
-    while i < 20 {
-        j = 0;
-        while j < 32 {
+unsafe fn DrawCardFrontOrBack(ptr: *mut u16) {
+    let dst: *mut u16 = (*sData).cardTilemapBuffer.as_mut_ptr();
+    for i in 0..20i16 {
+        for j in 0..32i16 {
             if j < 30 {
                 *dst.at(32 * i as i32 + j as i32) = *ptr.at(30 * i as i32 + j as i32);
             } else {
                 *dst.at(32 * i as i32 + j as i32) = *ptr;
             }
-            j += 1;
         }
-        i += 1;
     }
     CopyBgTilemapBufferToVram(0);
 }
-pub(crate) unsafe extern "C" fn DrawStarsAndBadgesOnCard() {
+unsafe fn DrawStarsAndBadgesOnCard() {
     let mut i: i16 = 0;
     let mut x: i16 = 0;
     let mut tileNum: u16 = 192;
-    let mut palNum: u8 = 3;
+    let palNum: u8 = 3;
     FillBgTilemapBufferRect(
         3,
         143,
@@ -2067,7 +2082,7 @@ pub(crate) unsafe extern "C" fn DrawStarsAndBadgesOnCard() {
     }
     CopyBgTilemapBufferToVram(3);
 }
-pub(crate) unsafe extern "C" fn DrawCardBackStats() {
+unsafe fn DrawCardBackStats() {
     if (*sData).cardType == CARD_TYPE_FRLG {
         if (*sData).hasTrades != 0 {
             FillBgTilemapBufferRect(3, 141, 27, 9, 1, 1, 1);
@@ -2099,7 +2114,7 @@ pub(crate) unsafe extern "C" fn DrawCardBackStats() {
     }
     CopyBgTilemapBufferToVram(3);
 }
-pub(crate) unsafe extern "C" fn BlinkTimeColon() {
+unsafe fn BlinkTimeColon() {
     if ({
         (*sData).timeColonBlinkTimer += 1;
         (*sData).timeColonBlinkTimer
@@ -2110,17 +2125,16 @@ pub(crate) unsafe extern "C" fn BlinkTimeColon() {
         (*sData).timeColonNeedDraw = TRUE;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetTrainerCardStars(cardId: u8) -> u8 {
-    let mut trainerCards: *mut TrainerCard = gTrainerCards.as_mut_ptr();
-    return (*trainerCards.at(cardId)).stars;
+pub unsafe fn GetTrainerCardStars(cardId: u8) -> u8 {
+    let trainerCards: *mut TrainerCard = gTrainerCards.as_mut_ptr();
+    (*trainerCards.at(cardId)).stars
 }
-pub(crate) unsafe extern "C" fn FlipTrainerCard() {
-    let mut taskId: u8 = CreateTask(Some(Task_DoCardFlipTask), 0);
+unsafe fn FlipTrainerCard() {
+    let taskId: u8 = CreateTask(Some(Task_DoCardFlipTask), 0);
     Task_DoCardFlipTask(taskId);
     SetHBlankCallback(Some(HblankCb_TrainerCard));
 }
-pub(crate) unsafe extern "C" fn IsCardFlipTaskActive() -> u8 {
+unsafe fn IsCardFlipTaskActive() -> u8 {
     if FindTaskIdByFunc(Some(Task_DoCardFlipTask)) == TASK_NONE {
         return TRUE;
     } else {
@@ -2128,80 +2142,79 @@ pub(crate) unsafe extern "C" fn IsCardFlipTaskActive() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn Task_DoCardFlipTask(taskId: u8) {
-    while sTrainerCardFlipTasks[gTasks[taskId].data[0]].unwrap_unchecked()(&raw mut gTasks[taskId])
-        != 0
+pub(crate) unsafe fn Task_DoCardFlipTask(taskId: u8) {
+    while sTrainerCardFlipTasks[task_get(taskId, tFlipState)].unwrap_unchecked()(
+        &raw mut (*gTasks.as_ptr())[taskId],
+    ) != 0
     {}
 }
-pub(crate) unsafe extern "C" fn Task_BeginCardFlip(task: *mut Task) -> u8 {
-    let mut i: u32 = 0;
+pub(crate) unsafe fn Task_BeginCardFlip(task: *mut Task) -> u8 {
     HideBg(1);
     HideBg(3);
     ScanlineEffect_Stop();
     ScanlineEffect_Clear();
-    i = 0;
-    while i < DISPLAY_HEIGHT as u32 {
-        gScanlineEffectRegBuffers[1][i] = 0;
-        i += 1;
+    for i in 0..(DISPLAY_HEIGHT as u32) {
+        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[1][i] = 0;
     }
-    (*task).data[0] += 1;
-    return FALSE;
+    (*task).data[tFlipState] += 1;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Task_AnimateCardFlipDown(task: *mut Task) -> u8 {
-    let mut cardHeight: u32 = 0;
-    let mut r5: u32 = 0;
-    let mut r10: u32 = 0;
+pub(crate) unsafe fn Task_AnimateCardFlipDown(task: *mut Task) -> u8 {
     let mut cardTop: u32 = 0;
-    let mut r6: u32 = 0;
-    let mut var_24: u32 = 0;
-    let mut cardBottom: u32 = 0;
     let mut var: u32 = 0;
-    let mut i: i16 = 0;
     (*sData).allowDMACopy = FALSE;
-    if (*task).data[1] >= CARD_FLIP_Y {
-        (*task).data[1] = CARD_FLIP_Y;
+    if (*task).data[tCardTop] >= CARD_FLIP_Y {
+        (*task).data[tCardTop] = CARD_FLIP_Y;
     } else {
-        (*task).data[1] += 7;
+        (*task).data[tCardTop] += 7;
     }
-    (*sData).cardTop = (*task).data[1] as u16;
-    UpdateCardFlipRegs((*task).data[1] as u16);
-    cardTop = (*task).data[1] as u32;
-    cardBottom = DISPLAY_HEIGHT as u32 - cardTop;
-    cardHeight = cardBottom - cardTop;
-    r6 = cardTop.wrapping_neg() << 16;
-    r5 = div_u32(0xa00000, cardHeight);
+    (*sData).cardTop = (*task).data[tCardTop] as u16;
+    UpdateCardFlipRegs((*task).data[tCardTop] as u16);
+    cardTop = (*task).data[tCardTop] as u32;
+    let cardBottom: u32 = DISPLAY_HEIGHT as u32 - cardTop;
+    let cardHeight: u32 = cardBottom - cardTop;
+    let mut r6: u32 = cardTop.wrapping_neg() << 16;
+    let mut r5: u32 = div_u32(0xa00000, cardHeight);
     r5 -= 0x10000;
-    var_24 = r6;
+    let mut var_24: u32 = r6;
     var_24 += r5 * cardHeight;
-    r10 = div_u32(r5, cardHeight);
+    let r10: u32 = div_u32(r5, cardHeight);
     r5 *= 2;
-    i = 0;
+    let mut i: i16 = 0;
     while (i as u32) < cardTop {
-        gScanlineEffectRegBuffers[0][i] = (i as u16).wrapping_neg();
+        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][i] = (i as u16).wrapping_neg();
         i += 1;
     }
     while i < cardBottom as i16 {
         var = r6 >> 16;
         r6 += r5;
         r5 -= r10;
-        gScanlineEffectRegBuffers[0][i] = var as u16;
+        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][i] = var as u16;
         i += 1;
     }
     var = var_24 >> 16;
     while i < DISPLAY_HEIGHT as i16 {
-        gScanlineEffectRegBuffers[0][i] = var as u16;
+        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][i] = var as u16;
         i += 1;
     }
     (*sData).allowDMACopy = TRUE;
-    if (*task).data[1] >= CARD_FLIP_Y {
-        (*task).data[0] += 1;
+    if (*task).data[tCardTop] >= CARD_FLIP_Y {
+        (*task).data[tFlipState] += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Task_DrawFlippedCardSide(task: *mut Task) -> u8 {
+pub(crate) unsafe fn Task_DrawFlippedCardSide(task: *mut Task) -> u8 {
     (*sData).allowDMACopy = FALSE;
     if Overworld_IsRecvQueueAtMax() == TRUE as u32 {
         return FALSE;
@@ -2243,7 +2256,7 @@ pub(crate) unsafe extern "C" fn Task_DrawFlippedCardSide(task: *mut Task) -> u8 
                 }
             }
             _ => {
-                (*task).data[0] += 1;
+                (*task).data[tFlipState] += 1;
                 (*sData).allowDMACopy = TRUE;
                 (*sData).flipDrawState = 0;
                 return FALSE;
@@ -2254,9 +2267,9 @@ pub(crate) unsafe extern "C" fn Task_DrawFlippedCardSide(task: *mut Task) -> u8 
             break;
         }
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Task_SetCardFlipped(task: *mut Task) -> u8 {
+pub(crate) unsafe fn Task_SetCardFlipped(task: *mut Task) -> u8 {
     (*sData).allowDMACopy = FALSE;
     if (*sData).onBack != 0 {
         DrawTrainerCardWindow(WIN_TRAINER_PIC);
@@ -2266,74 +2279,72 @@ pub(crate) unsafe extern "C" fn Task_SetCardFlipped(task: *mut Task) -> u8 {
     }
     DrawTrainerCardWindow(WIN_CARD_TEXT);
     (*sData).onBack ^= 1;
-    (*task).data[0] += 1;
+    (*task).data[tFlipState] += 1;
     (*sData).allowDMACopy = TRUE;
     PlaySE(SE_RG_CARD_FLIPPING);
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Task_AnimateCardFlipUp(task: *mut Task) -> u8 {
-    let mut cardHeight: u32 = 0;
-    let mut r5: u32 = 0;
-    let mut r10: u32 = 0;
+pub(crate) unsafe fn Task_AnimateCardFlipUp(task: *mut Task) -> u8 {
     let mut cardTop: u32 = 0;
-    let mut r6: u32 = 0;
-    let mut var_24: u32 = 0;
-    let mut cardBottom: u32 = 0;
     let mut var: u32 = 0;
-    let mut i: i16 = 0;
     (*sData).allowDMACopy = FALSE;
-    if (*task).data[1] <= 5 {
-        (*task).data[1] = 0;
+    if (*task).data[tCardTop] <= 5 {
+        (*task).data[tCardTop] = 0;
     } else {
-        (*task).data[1] -= 5;
+        (*task).data[tCardTop] -= 5;
     }
-    (*sData).cardTop = (*task).data[1] as u16;
-    UpdateCardFlipRegs((*task).data[1] as u16);
-    cardTop = (*task).data[1] as u32;
-    cardBottom = DISPLAY_HEIGHT as u32 - cardTop;
-    cardHeight = cardBottom - cardTop;
-    r6 = cardTop.wrapping_neg() << 16;
-    r5 = div_u32(0xa00000, cardHeight);
+    (*sData).cardTop = (*task).data[tCardTop] as u16;
+    UpdateCardFlipRegs((*task).data[tCardTop] as u16);
+    cardTop = (*task).data[tCardTop] as u32;
+    let cardBottom: u32 = DISPLAY_HEIGHT as u32 - cardTop;
+    let cardHeight: u32 = cardBottom - cardTop;
+    let mut r6: u32 = cardTop.wrapping_neg() << 16;
+    let mut r5: u32 = div_u32(0xa00000, cardHeight);
     r5 -= 0x10000;
-    var_24 = r6;
+    let mut var_24: u32 = r6;
     var_24 += r5 * cardHeight;
-    r10 = div_u32(r5, cardHeight);
-    r5 = r5 / 2;
-    i = 0;
+    let r10: u32 = div_u32(r5, cardHeight);
+    r5 /= 2;
+    let mut i: i16 = 0;
     while (i as u32) < cardTop {
-        gScanlineEffectRegBuffers[0][i] = (i as u16).wrapping_neg();
+        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][i] = (i as u16).wrapping_neg();
         i += 1;
     }
     while i < cardBottom as i16 {
         var = r6 >> 16;
         r6 += r5;
         r5 += r10;
-        gScanlineEffectRegBuffers[0][i] = var as u16;
+        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][i] = var as u16;
         i += 1;
     }
     var = var_24 >> 16;
     while i < DISPLAY_HEIGHT as i16 {
-        gScanlineEffectRegBuffers[0][i] = var as u16;
+        (*(&raw const crate::scanline_effect::gScanlineEffectRegBuffers)
+            .cast::<CArray<CArray<u16, 960>, 2>>()
+            .cast_mut())[0][i] = var as u16;
         i += 1;
     }
     (*sData).allowDMACopy = TRUE;
-    if (*task).data[1] <= 0 {
-        (*task).data[0] += 1;
+    if (*task).data[tCardTop] <= 0 {
+        (*task).data[tFlipState] += 1;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Task_EndCardFlip(task: *mut Task) -> u8 {
+pub(crate) unsafe fn Task_EndCardFlip(task: *mut Task) -> u8 {
     ShowBg(1);
     ShowBg(3);
     SetHBlankCallback(None);
     DestroyTask(FindTaskIdByFunc(Some(Task_DoCardFlipTask)));
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowPlayerTrainerCard(callback: Option<unsafe extern "C" fn()>) {
+pub unsafe fn ShowPlayerTrainerCard(callback: Option<unsafe fn()>) {
     sData = AllocZeroed(31916) as *mut TrainerCardData;
     (*sData).callback2 = callback;
-    if callback == Some(CB2_ReshowFrontierPass as unsafe extern "C" fn()) {
+    if callback == Some(CB2_ReshowFrontierPass as unsafe fn()) {
         (*sData).blendColor = 32767;
     } else {
         (*sData).blendColor = 0;
@@ -2347,11 +2358,7 @@ pub unsafe extern "C" fn ShowPlayerTrainerCard(callback: Option<unsafe extern "C
     TrainerCard_GenerateCardForPlayer(&raw mut (*sData).trainerCard);
     SetMainCallback2(Some(CB2_InitTrainerCard));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowTrainerCardInLink(
-    cardId: u8,
-    callback: Option<unsafe extern "C" fn()>,
-) {
+pub unsafe fn ShowTrainerCardInLink(cardId: u8, callback: Option<unsafe fn()>) {
     sData = AllocZeroed(31916) as *mut TrainerCardData;
     (*sData).callback2 = callback;
     (*sData).isLink = TRUE;
@@ -2359,24 +2366,21 @@ pub unsafe extern "C" fn ShowTrainerCardInLink(
     (*sData).language = gLinkPlayers[cardId].language as u8;
     SetMainCallback2(Some(CB2_InitTrainerCard));
 }
-pub(crate) unsafe extern "C" fn InitTrainerCardData() {
-    let mut i: u8 = 0;
+unsafe fn InitTrainerCardData() {
     (*sData).mainState = 0;
     (*sData).timeColonBlinkTimer = (*gSaveBlock2Ptr).playTimeVBlanks;
     (*sData).timeColonInvisible = FALSE;
     (*sData).onBack = FALSE;
     (*sData).flipBlendY = 0;
     (*sData).cardType = GetSetCardType();
-    i = 0;
-    while i < TRAINER_CARD_PROFILE_LENGTH {
+    for i in 0..TRAINER_CARD_PROFILE_LENGTH {
         CopyEasyChatWord(
             (*sData).easyChatProfile[i].as_mut_ptr(),
             (*sData).trainerCard.easyChatProfile[i],
         );
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn GetSetCardType() -> u8 {
+unsafe fn GetSetCardType() -> u8 {
     if sData.is_null() {
         if gGameVersion == VERSION_FIRE_RED as u8 || gGameVersion == VERSION_LEAF_GREEN as u8 {
             return CARD_TYPE_FRLG;
@@ -2401,10 +2405,10 @@ pub(crate) unsafe extern "C" fn GetSetCardType() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn VersionToCardType(version: u8) -> u8 {
+fn VersionToCardType(version: u8) -> u8 {
     if version == VERSION_FIRE_RED as u8 || version == VERSION_LEAF_GREEN as u8 {
         return CARD_TYPE_FRLG;
     } else if version == VERSION_EMERALD {
@@ -2414,10 +2418,10 @@ pub(crate) unsafe extern "C" fn VersionToCardType(version: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn CreateTrainerCardTrainerPic() {
+unsafe fn CreateTrainerCardTrainerPic() {
     if InUnionRoom() == 1 && gReceivedRemoteLinkPlayers == 1 {
         CreateTrainerCardTrainerPicSprite(
             FacilityClassToPicIndex((*sData).trainerCard.unionRoomClass as u16),

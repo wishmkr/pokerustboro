@@ -3,31 +3,66 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::eq_op,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::battle_ai_script_commands::{RecordAbilityBattle, RecordItemEffectBattle};
+use crate::battle_anim_mons::{GetBattlerAtPosition, GetBattlerPosition, GetBattlerSide};
+use crate::battle_arena::BattleArena_AddMindPoints;
+use crate::battle_controllers::{BtlController_EmitPrintString, BtlController_EmitSetMonData};
+use crate::battle_main::{
+    BattleTurnPassed, GetWhoStrikesFirst, RunBattleScriptCommands,
+    RunBattleScriptCommands_PopCallbacksStack, SpecialStatusesClear, SwapTurnOrder,
+    gAbsentBattlerFlags, gActiveBattler, gBattle_BG0_X, gBattle_BG0_Y, gBattleControllerExecFlags,
+    gBattleMainFunc, gBattleMons, gBattleMoveDamage, gBattleOutcome, gBattleResources,
+    gBattleResults, gBattleScripting, gBattleStruct, gBattleTypeFlags, gBattleWeather,
+    gBattlerAttacker, gBattlerFainted, gBattlerTarget, gBattlersCount, gBattlescriptCurrInstr,
+    gBideDmg, gCalledMove, gChosenMove, gChosenMovePos, gCritMultiplier, gCurrMovePos,
+    gCurrentActionFuncId, gCurrentMove, gCurrentTurnActionNumber, gDisableStructs,
+    gDynamicBasePower, gEffectBattler, gEnigmaBerries, gHitMarker, gLastUsedAbility, gLastUsedItem,
+    gMoveResultFlags, gMultiHitCounter, gPalaceSelectionBattleScripts, gPotentialItemEffectBattler,
+    gProtectStructs, gSelectionBattleScripts, gSideTimers, gSpecialStatuses, gStatuses3,
+    gWishFutureKnock,
+};
+use crate::battle_main::{
+    gActionSelectionCursor, gActionsByTurnOrder, gBattleBufferB, gBattleCommunication,
+    gBattleTextBuff1, gBattleTextBuff2, gBattlerByTurnOrder, gBattlerPartyIndexes, gBideTarget,
+    gChosenActionByBattler, gChosenMoveByBattler, gLastHitByType, gLastLandedMoves, gLastMoves,
+    gLockedMoves, gMoveSelectionCursor, gSentPokesToOpponent, gSideStatuses,
+};
+use crate::battle_pyramid::{CurrentBattlePyramidLocation, GetPyramidRunMultiplier};
+use crate::battle_script_commands::{GetBattlerTurnOrderNum, SetMoveEffect, UproarWakeUpCheck};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::FlagGet;
+use crate::field_weather::GetCurrentWeather;
+use crate::item::{GetItemHoldEffect, GetItemHoldEffectParam};
+use crate::link::GetLinkPlayerCount;
+use crate::load_save::gSaveBlock2Ptr;
+use crate::pokemon::{
+    CalculateBaseDamage, CalculatePPWithBonus, GetBattlerMultiplayerId,
+    GetFlavorRelationByPersonality, GetGenderFromSpeciesAndPersonality, GetLinkTrainerFlankId,
+    GetMonData2, GetMonData3, IsOtherTrainer, gEnemyParty, gPlayerParty,
+};
+use crate::random::Random;
+use crate::safari_zone::gNumSafariBalls;
+use crate::sound::PlaySE;
+use crate::string_util::StringCopy;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::util::CountTrailingZeroBits;
+use crate::util::gBitTable;
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
@@ -100,254 +135,13 @@ static sPkblToEscapeFactor: Table<CArray<CArray<u8, 3>, 5>> =
 static sSoundMovesTable: Table<CArray<u16, 11>> =
     Table((&raw const crate::data::battle_util::sSoundMovesTable).cast());
 
-unsafe extern "C" {
-    static BattleScript_AbilityCuredStatus: CArray<u8, 0>;
-    static BattleScript_ActionSwitch: CArray<u8, 0>;
-    static BattleScript_ApplySecondaryEffect: CArray<u8, 0>;
-    static BattleScript_ArenaDoJudgment: CArray<u8, 0>;
-    static BattleScript_BerryConfuseHealEnd2: CArray<u8, 0>;
-    static BattleScript_BerryCureBrnEnd2: CArray<u8, 0>;
-    static BattleScript_BerryCureBrnRet: CArray<u8, 0>;
-    static BattleScript_BerryCureChosenStatusEnd2: CArray<u8, 0>;
-    static BattleScript_BerryCureChosenStatusRet: CArray<u8, 0>;
-    static BattleScript_BerryCureConfusionEnd2: CArray<u8, 0>;
-    static BattleScript_BerryCureConfusionRet: CArray<u8, 0>;
-    static BattleScript_BerryCureFrzEnd2: CArray<u8, 0>;
-    static BattleScript_BerryCureFrzRet: CArray<u8, 0>;
-    static BattleScript_BerryCureParRet: CArray<u8, 0>;
-    static BattleScript_BerryCurePrlzEnd2: CArray<u8, 0>;
-    static BattleScript_BerryCurePsnEnd2: CArray<u8, 0>;
-    static BattleScript_BerryCurePsnRet: CArray<u8, 0>;
-    static BattleScript_BerryCureSlpEnd2: CArray<u8, 0>;
-    static BattleScript_BerryCureSlpRet: CArray<u8, 0>;
-    static BattleScript_BerryFocusEnergyEnd2: CArray<u8, 0>;
-    static BattleScript_BerryPPHealEnd2: CArray<u8, 0>;
-    static BattleScript_BerryStatRaiseEnd2: CArray<u8, 0>;
-    static BattleScript_BideAttack: CArray<u8, 0>;
-    static BattleScript_BideNoEnergyToAttack: CArray<u8, 0>;
-    static BattleScript_BideStoringEnergy: CArray<u8, 0>;
-    static BattleScript_BurnTurnDmg: CArray<u8, 0>;
-    static BattleScript_CastformChange: CArray<u8, 0>;
-    static BattleScript_ColorChangeActivates: CArray<u8, 0>;
-    static BattleScript_CurseTurnDmg: CArray<u8, 0>;
-    static BattleScript_CuteCharmActivates: CArray<u8, 0>;
-    static BattleScript_DamagingWeatherContinues: CArray<u8, 0>;
-    static BattleScript_DisabledNoMore: CArray<u8, 0>;
-    static BattleScript_DrizzleActivates: CArray<u8, 0>;
-    static BattleScript_DroughtActivates: CArray<u8, 0>;
-    static BattleScript_EncoredNoMore: CArray<u8, 0>;
-    static BattleScript_FlashFireBoost: CArray<u8, 0>;
-    static BattleScript_FlashFireBoost_PPLoss: CArray<u8, 0>;
-    static BattleScript_GiveExp: CArray<u8, 0>;
-    static BattleScript_HandleFaintedMon: CArray<u8, 0>;
-    static BattleScript_IgnoresAndFallsAsleep: CArray<u8, 0>;
-    static BattleScript_IgnoresAndHitsItself: CArray<u8, 0>;
-    static BattleScript_IgnoresAndUsesRandomMove: CArray<u8, 0>;
-    static BattleScript_IgnoresWhileAsleep: CArray<u8, 0>;
-    static BattleScript_IngrainTurnHeal: CArray<u8, 0>;
-    static BattleScript_IntimidateActivates: CArray<u8, 0>;
-    static BattleScript_IntimidateActivatesEnd3: CArray<u8, 0>;
-    static BattleScript_ItemHealHP_End2: CArray<u8, 0>;
-    static BattleScript_ItemHealHP_RemoveItem: CArray<u8, 0>;
-    static BattleScript_ItemHealHP_Ret: CArray<u8, 0>;
-    static BattleScript_LeechSeedTurnDrain: CArray<u8, 0>;
-    static BattleScript_MonMadeMoveUseless: CArray<u8, 0>;
-    static BattleScript_MonMadeMoveUseless_PPLoss: CArray<u8, 0>;
-    static BattleScript_MonTookFutureAttack: CArray<u8, 0>;
-    static BattleScript_MonWokeUpInUproar: CArray<u8, 0>;
-    static BattleScript_MoveHPDrain: CArray<u8, 0>;
-    static BattleScript_MoveHPDrain_PPLoss: CArray<u8, 0>;
-    static BattleScript_MoveUsedFlinched: CArray<u8, 0>;
-    static BattleScript_MoveUsedIsAsleep: CArray<u8, 0>;
-    static BattleScript_MoveUsedIsConfused: CArray<u8, 0>;
-    static BattleScript_MoveUsedIsConfusedNoMore: CArray<u8, 0>;
-    static BattleScript_MoveUsedIsDisabled: CArray<u8, 0>;
-    static BattleScript_MoveUsedIsFrozen: CArray<u8, 0>;
-    static BattleScript_MoveUsedIsImprisoned: CArray<u8, 0>;
-    static BattleScript_MoveUsedIsInLove: CArray<u8, 0>;
-    static BattleScript_MoveUsedIsInLoveCantAttack: CArray<u8, 0>;
-    static BattleScript_MoveUsedIsParalyzed: CArray<u8, 0>;
-    static BattleScript_MoveUsedIsTaunted: CArray<u8, 0>;
-    static BattleScript_MoveUsedLoafingAround: CArray<u8, 0>;
-    static BattleScript_MoveUsedMustRecharge: CArray<u8, 0>;
-    static BattleScript_MoveUsedUnfroze: CArray<u8, 0>;
-    static BattleScript_MoveUsedWokeUp: CArray<u8, 0>;
-    static BattleScript_NightmareTurnDmg: CArray<u8, 0>;
-    static BattleScript_NoMovesLeft: CArray<u8, 0>;
-    static BattleScript_OverworldWeatherStarts: CArray<u8, 0>;
-    static BattleScript_PerishSongCountGoesDown: CArray<u8, 0>;
-    static BattleScript_PerishSongTakesLife: CArray<u8, 0>;
-    static BattleScript_PoisonTurnDmg: CArray<u8, 0>;
-    static BattleScript_PrintFailedToRunString: CArray<u8, 0>;
-    static BattleScript_PrintUproarOverTurns: CArray<u8, 0>;
-    static BattleScript_RainContinuesOrEnds: CArray<u8, 0>;
-    static BattleScript_RainDishActivates: CArray<u8, 0>;
-    static BattleScript_RoughSkinActivates: CArray<u8, 0>;
-    static BattleScript_SafeguardEnds: CArray<u8, 0>;
-    static BattleScript_SandStormHailEnds: CArray<u8, 0>;
-    static BattleScript_SandstreamActivates: CArray<u8, 0>;
-    static BattleScript_SelectingDisabledMove: CArray<u8, 0>;
-    static BattleScript_SelectingDisabledMoveInPalace: CArray<u8, 0>;
-    static BattleScript_SelectingImprisonedMove: CArray<u8, 0>;
-    static BattleScript_SelectingImprisonedMoveInPalace: CArray<u8, 0>;
-    static BattleScript_SelectingMoveWithNoPP: CArray<u8, 0>;
-    static BattleScript_SelectingNotAllowedMoveChoiceItem: CArray<u8, 0>;
-    static BattleScript_SelectingNotAllowedMoveTaunt: CArray<u8, 0>;
-    static BattleScript_SelectingNotAllowedMoveTauntInPalace: CArray<u8, 0>;
-    static BattleScript_SelectingTormentedMove: CArray<u8, 0>;
-    static BattleScript_SelectingTormentedMoveInPalace: CArray<u8, 0>;
-    static BattleScript_ShedSkinActivates: CArray<u8, 0>;
-    static BattleScript_SideStatusWoreOff: CArray<u8, 0>;
-    static BattleScript_SoundproofProtected: CArray<u8, 0>;
-    static BattleScript_SpeedBoostActivates: CArray<u8, 0>;
-    static BattleScript_SunlightContinues: CArray<u8, 0>;
-    static BattleScript_SunlightFaded: CArray<u8, 0>;
-    static BattleScript_SynchronizeActivates: CArray<u8, 0>;
-    static BattleScript_ThrashConfuses: CArray<u8, 0>;
-    static BattleScript_TraceActivates: CArray<u8, 0>;
-    static BattleScript_WhiteHerbEnd2: CArray<u8, 0>;
-    static BattleScript_WhiteHerbRet: CArray<u8, 0>;
-    static BattleScript_WishComesTrue: CArray<u8, 0>;
-    static BattleScript_WrapEnds: CArray<u8, 0>;
-    static BattleScript_WrapTurnDmg: CArray<u8, 0>;
-    static BattleScript_YawnMakesAsleep: CArray<u8, 0>;
-    static mut gAbsentBattlerFlags: u8;
-    static mut gActionSelectionCursor: CArray<u8, 4>;
-    static mut gActionsByTurnOrder: CArray<u8, 4>;
-    static mut gActiveBattler: u8;
-    static mut gBattleBufferB: CArray<CArray<u8, 512>, 4>;
-    static mut gBattleCommunication: CArray<u8, 8>;
-    static mut gBattleControllerExecFlags: u32;
-    static mut gBattleMainFunc: Option<unsafe extern "C" fn()>;
-    static mut gBattleMons: CArray<BattlePokemon, 4>;
-    static mut gBattleMoveDamage: i32;
-    static gBattleMoves: CArray<BattleMove, 0>;
-    static mut gBattleOutcome: u8;
-    static mut gBattleResources: *mut BattleResources;
-    static mut gBattleResults: BattleResults;
-    static mut gBattleScripting: BattleScripting;
-    static gBattleScriptingCommandsTable: CArray<Option<unsafe extern "C" fn()>, 0>;
-    static gBattleScriptsForMoveEffects: CArray<*mut u8, 0>;
-    static mut gBattleStruct: *mut BattleStruct;
-    static mut gBattleTextBuff1: CArray<u8, 16>;
-    static mut gBattleTextBuff2: CArray<u8, 16>;
-    static mut gBattleTypeFlags: u32;
-    static mut gBattleWeather: u16;
-    static mut gBattle_BG0_X: u16;
-    static mut gBattle_BG0_Y: u16;
-    static mut gBattlerAttacker: u8;
-    static mut gBattlerByTurnOrder: CArray<u8, 4>;
-    static mut gBattlerFainted: u8;
-    static mut gBattlerPartyIndexes: CArray<u16, 4>;
-    static mut gBattlerTarget: u8;
-    static mut gBattlersCount: u8;
-    static mut gBattlescriptCurrInstr: *mut u8;
-    static gBattlescriptsForBallThrow: CArray<*mut u8, 0>;
-    static gBattlescriptsForRunningByItem: CArray<*mut u8, 0>;
-    static gBattlescriptsForSafariActions: CArray<*mut u8, 0>;
-    static gBattlescriptsForUsingItem: CArray<*mut u8, 0>;
-    static mut gBideDmg: CArray<i32, 4>;
-    static mut gBideTarget: CArray<u8, 4>;
-    static gBitTable: CArray<u32, 0>;
-    static mut gCalledMove: u16;
-    static mut gChosenActionByBattler: CArray<u8, 4>;
-    static mut gChosenMove: u16;
-    static mut gChosenMoveByBattler: CArray<u16, 4>;
-    static mut gChosenMovePos: u8;
-    static mut gCritMultiplier: u8;
-    static mut gCurrMovePos: u8;
-    static mut gCurrentActionFuncId: u8;
-    static mut gCurrentMove: u16;
-    static mut gCurrentTurnActionNumber: u8;
-    static mut gDisableStructs: CArray<DisableStruct, 4>;
-    static mut gDynamicBasePower: u16;
-    static mut gEffectBattler: u8;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static mut gEnigmaBerries: CArray<BattleEnigmaBerry, 4>;
-    static mut gHitMarker: u32;
-    static mut gLastHitByType: CArray<u16, 4>;
-    static mut gLastLandedMoves: CArray<u16, 4>;
-    static mut gLastMoves: CArray<u16, 4>;
-    static mut gLastUsedAbility: u8;
-    static mut gLastUsedItem: u16;
-    static mut gLockedMoves: CArray<u16, 4>;
-    static mut gMoveResultFlags: u8;
-    static mut gMoveSelectionCursor: CArray<u8, 4>;
-    static mut gMultiHitCounter: u8;
-    static mut gNumSafariBalls: u8;
-    static mut gPalaceSelectionBattleScripts: CArray<*mut u8, 4>;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gPotentialItemEffectBattler: u8;
-    static mut gProtectStructs: CArray<ProtectStruct, 4>;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSelectionBattleScripts: CArray<*mut u8, 4>;
-    static mut gSentPokesToOpponent: CArray<u8, 2>;
-    static mut gSideStatuses: CArray<u16, 2>;
-    static mut gSideTimers: CArray<SideTimer, 2>;
-    static mut gSpecialStatuses: CArray<SpecialStatus, 4>;
-    static gStatusConditionString_BurnJpn: CArray<u8, 8>;
-    static gStatusConditionString_ConfusionJpn: CArray<u8, 8>;
-    static gStatusConditionString_IceJpn: CArray<u8, 8>;
-    static gStatusConditionString_LoveJpn: CArray<u8, 8>;
-    static gStatusConditionString_ParalysisJpn: CArray<u8, 8>;
-    static gStatusConditionString_PoisonJpn: CArray<u8, 8>;
-    static gStatusConditionString_SleepJpn: CArray<u8, 8>;
-    static mut gStatuses3: CArray<u32, 4>;
-    static mut gWishFutureKnock: WishFutureKnock;
-    fn BattleArena_AddMindPoints(a0: u8);
-    fn BattleTurnPassed();
-    fn BtlController_EmitPrintString(a0: u8, a1: u16);
-    fn BtlController_EmitSetMonData(a0: u8, a1: u8, a2: u8, a3: u8, a4: *mut c_void);
-    fn CalculateBaseDamage(
-        a0: *mut BattlePokemon,
-        a1: *mut BattlePokemon,
-        a2: u32,
-        a3: u16,
-        a4: u16,
-        a5: u8,
-        a6: u8,
-        a7: u8,
-    ) -> i32;
-    fn CalculatePPWithBonus(a0: u16, a1: u8, a2: u8) -> u8;
-    fn CountTrailingZeroBits(a0: u32) -> i32;
-    fn CurrentBattlePyramidLocation() -> u8;
-    fn FlagGet(a0: u16) -> u8;
-    fn GetBattlerAtPosition(a0: u8) -> u8;
-    fn GetBattlerMultiplayerId(a0: u16) -> i32;
-    fn GetBattlerPosition(a0: u8) -> u8;
-    fn GetBattlerSide(a0: u8) -> u8;
-    fn GetBattlerTurnOrderNum(a0: u8) -> u8;
-    fn GetCurrentWeather() -> u8;
-    fn GetFlavorRelationByPersonality(a0: u32, a1: u8) -> i8;
-    fn GetGenderFromSpeciesAndPersonality(a0: u16, a1: u32) -> u8;
-    fn GetItemHoldEffect(a0: u16) -> u8;
-    fn GetItemHoldEffectParam(a0: u16) -> u8;
-    fn GetLinkPlayerCount() -> u8;
-    fn GetLinkTrainerFlankId(a0: u8) -> u16;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetPyramidRunMultiplier() -> u8;
-    fn GetWhoStrikesFirst(a0: u8, a1: u8, a2: u8) -> u8;
-    fn IsOtherTrainer(a0: u32, a1: *mut u8) -> u8;
-    fn PlaySE(a0: u16);
-    fn Random() -> u16;
-    fn RecordAbilityBattle(a0: u8, a1: u8);
-    fn RecordItemEffectBattle(a0: u8, a1: u8);
-    fn RunBattleScriptCommands();
-    fn RunBattleScriptCommands_PopCallbacksStack();
-    fn SetMoveEffect(a0: u8, a1: u8);
-    fn SpecialStatusesClear();
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn SwapTurnOrder(a0: u8, a1: u8);
-    fn UproarWakeUpCheck(a0: u8) -> u8;
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleAction_UseMove() {
-    let mut side: u8 = 0;
+pub unsafe fn HandleAction_UseMove() {
     let mut var: u8 = 4;
     gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
-    if *(&raw mut (*gBattleStruct).absentBattlerFlags) as u32 & gBitTable[gBattlerAttacker] != 0 {
+    if (*gBattleStruct).absentBattlerFlags as u32
+        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerAttacker]
+        != 0
+    {
         gCurrentActionFuncId = B_ACTION_FINISHED;
         return;
     }
@@ -441,24 +235,36 @@ pub unsafe extern "C" fn HandleAction_UseMove() {
             gBattleResults.lastUsedMoveOpponent = gCurrentMove;
         }
     }
-    side = GetBattlerSide(gBattlerAttacker) ^ 1;
+    let mut side: u8 = GetBattlerSide(gBattlerAttacker) ^ 1;
     if gSideTimers[side].followmeTimer != 0
-        && gBattleMoves[gCurrentMove].target == MOVE_TARGET_SELECTED
+        && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+            [gCurrentMove]
+            .target
+            == MOVE_TARGET_SELECTED
         && GetBattlerSide(gBattlerAttacker) != GetBattlerSide(gSideTimers[side].followmeTarget)
         && gBattleMons[gSideTimers[side].followmeTarget].hp != 0
     {
         gBattlerTarget = gSideTimers[side].followmeTarget;
     } else if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
         && gSideTimers[side].followmeTimer == 0
-        && (gBattleMoves[gCurrentMove].power != 0
-            || gBattleMoves[gCurrentMove].target != MOVE_TARGET_USER)
+        && ((*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+            [gCurrentMove]
+            .power
+            != 0
+            || (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                [gCurrentMove]
+                .target
+                != MOVE_TARGET_USER)
         && gBattleMons[*(*gBattleStruct)
             .moveTarget
             .as_mut_ptr()
             .at(gBattlerAttacker)]
         .ability
             != ABILITY_LIGHTNING_ROD
-        && gBattleMoves[gCurrentMove].r#type == TYPE_ELECTRIC
+        && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+            [gCurrentMove]
+            .r#type
+            == TYPE_ELECTRIC
     {
         side = GetBattlerSide(gBattlerAttacker);
         gActiveBattler = 0;
@@ -477,7 +283,12 @@ pub unsafe extern "C" fn HandleAction_UseMove() {
             gActiveBattler += 1;
         }
         if var == 4 {
-            if gBattleMoves[gChosenMove].target as i32 & MOVE_TARGET_RANDOM != 0 {
+            if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                [gChosenMove]
+                .target as i32
+                & MOVE_TARGET_RANDOM
+                != 0
+            {
                 if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
                     if Random() as i32 & 1 != 0 {
                         gBattlerTarget = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
@@ -497,12 +308,19 @@ pub unsafe extern "C" fn HandleAction_UseMove() {
                     .as_mut_ptr()
                     .at(gBattlerAttacker);
             }
-            if gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0 {
+            if gAbsentBattlerFlags as u32
+                & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerTarget]
+                != 0
+            {
                 if GetBattlerSide(gBattlerAttacker) != GetBattlerSide(gBattlerTarget) {
                     gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
                 } else {
                     gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) ^ 1);
-                    if gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0 {
+                    if gAbsentBattlerFlags as u32
+                        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                            [gBattlerTarget]
+                        != 0
+                    {
                         gBattlerTarget =
                             GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
                     }
@@ -515,7 +333,11 @@ pub unsafe extern "C" fn HandleAction_UseMove() {
             gBattlerTarget = gActiveBattler;
         }
     } else if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0
-        && gBattleMoves[gChosenMove].target as i32 & MOVE_TARGET_RANDOM != 0
+        && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+            [gChosenMove]
+            .target as i32
+            & MOVE_TARGET_RANDOM
+            != 0
     {
         if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
             if Random() as i32 & 1 != 0 {
@@ -530,7 +352,9 @@ pub unsafe extern "C" fn HandleAction_UseMove() {
                 gBattlerTarget = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
             }
         }
-        if gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0
+        if gAbsentBattlerFlags as u32
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerTarget]
+            != 0
             && GetBattlerSide(gBattlerAttacker) != GetBattlerSide(gBattlerTarget)
         {
             gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
@@ -540,12 +364,19 @@ pub unsafe extern "C" fn HandleAction_UseMove() {
             .moveTarget
             .as_mut_ptr()
             .at(gBattlerAttacker);
-        if gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0 {
+        if gAbsentBattlerFlags as u32
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerTarget]
+            != 0
+        {
             if GetBattlerSide(gBattlerAttacker) != GetBattlerSide(gBattlerTarget) {
                 gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
             } else {
                 gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) ^ 1);
-                if gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0 {
+                if gAbsentBattlerFlags as u32
+                    & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                        [gBattlerTarget]
+                    != 0
+                {
                     gBattlerTarget = GetBattlerAtPosition(GetBattlerPosition(gBattlerTarget) ^ 2);
                 }
             }
@@ -563,18 +394,23 @@ pub unsafe extern "C" fn HandleAction_UseMove() {
             gPalaceSelectionBattleScripts[gBattlerAttacker] = null_mut();
         } else {
             gBattleCommunication[5] = B_MSG_INCAPABLE_OF_POWER;
-            gBattlescriptCurrInstr = BattleScript_MoveUsedLoafingAround.as_ptr().cast_mut();
+            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedLoafingAround
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
         }
     } else {
-        gBattlescriptCurrInstr = gBattleScriptsForMoveEffects[gBattleMoves[gCurrentMove].effect];
+        gBattlescriptCurrInstr = (*crate::asmdata::gBattleScriptsForMoveEffects
+            .cast::<CArray<*mut u8, 0>>())[(*(&raw const crate::data::pokemon::gBattleMoves)
+            .cast::<CArray<BattleMove, 0>>())[gCurrentMove]
+            .effect];
     }
     if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0 {
         BattleArena_AddMindPoints(gBattlerAttacker);
     }
     gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleAction_Switch() {
+pub unsafe fn HandleAction_Switch() {
     gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
     gBattle_BG0_X = 0;
     gBattle_BG0_Y = 0;
@@ -589,14 +425,13 @@ pub unsafe extern "C" fn HandleAction_Switch() {
         .at(gBattlerAttacker);
     gBattleTextBuff1[4] = 0xFF;
     gBattleScripting.battler = gBattlerAttacker;
-    gBattlescriptCurrInstr = BattleScript_ActionSwitch.as_ptr().cast_mut();
+    gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_ActionSwitch.cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
-    if gBattleResults.playerSwitchesCounter < 255 {
-        gBattleResults.playerSwitchesCounter += 1;
-    }
+    gBattleResults.playerSwitchesCounter = gBattleResults.playerSwitchesCounter.saturating_add(1);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleAction_UseItem() {
+pub unsafe fn HandleAction_UseItem() {
     gBattlerAttacker = {
         gBattlerTarget = gBattlerByTurnOrder[gCurrentTurnActionNumber];
         gBattlerTarget
@@ -607,11 +442,14 @@ pub unsafe extern "C" fn HandleAction_UseItem() {
     gLastUsedItem = gBattleBufferB[gBattlerAttacker][1] as u16
         | (gBattleBufferB[gBattlerAttacker][2] as u16) << 8;
     if gLastUsedItem <= ITEM_PREMIER_BALL {
-        gBattlescriptCurrInstr = gBattlescriptsForBallThrow[gLastUsedItem];
+        gBattlescriptCurrInstr = (*crate::asmdata::gBattlescriptsForBallThrow
+            .cast::<CArray<*mut u8, 0>>())[gLastUsedItem];
     } else if gLastUsedItem == ITEM_POKE_DOLL || gLastUsedItem == ITEM_FLUFFY_TAIL {
-        gBattlescriptCurrInstr = gBattlescriptsForRunningByItem[0];
+        gBattlescriptCurrInstr =
+            (*crate::asmdata::gBattlescriptsForRunningByItem.cast::<CArray<*mut u8, 0>>())[0];
     } else if GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER {
-        gBattlescriptCurrInstr = gBattlescriptsForUsingItem[0];
+        gBattlescriptCurrInstr =
+            (*crate::asmdata::gBattlescriptsForUsingItem.cast::<CArray<*mut u8, 0>>())[0];
     } else {
         gBattleScripting.battler = gBattlerAttacker;
         match *(*gBattleStruct)
@@ -696,15 +534,15 @@ pub unsafe extern "C" fn HandleAction_UseItem() {
             }
             _ => {}
         }
-        gBattlescriptCurrInstr = gBattlescriptsForUsingItem[*(*gBattleStruct)
+        gBattlescriptCurrInstr = (*crate::asmdata::gBattlescriptsForUsingItem
+            .cast::<CArray<*mut u8, 0>>())[*(*gBattleStruct)
             .AI_itemType
             .as_mut_ptr()
             .at(gBattlerAttacker as i32 / 2)];
     }
     gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryRunFromBattle(battler: u8) -> u8 {
+pub unsafe fn TryRunFromBattle(battler: u8) -> u8 {
     let mut effect: u8 = FALSE;
     let mut holdEffect: u8 = 0;
     let mut pyramidMultiplier: u8 = 0;
@@ -771,10 +609,9 @@ pub unsafe extern "C" fn TryRunFromBattle(battler: u8) -> u8 {
         gCurrentTurnActionNumber = gBattlersCount;
         gBattleOutcome = B_OUTCOME_RAN;
     }
-    return effect;
+    effect
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleAction_Run() {
+pub unsafe fn HandleAction_Run() {
     gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
     if gBattleTypeFlags & 0x2000002 != 0 {
         gCurrentTurnActionNumber = gBattlersCount;
@@ -798,13 +635,19 @@ pub unsafe extern "C" fn HandleAction_Run() {
             if TryRunFromBattle(gBattlerAttacker) == 0 {
                 ClearFuryCutterDestinyBondGrudge(gBattlerAttacker);
                 gBattleCommunication[5] = B_MSG_CANT_ESCAPE_2;
-                gBattlescriptCurrInstr = BattleScript_PrintFailedToRunString.as_ptr().cast_mut();
+                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_PrintFailedToRunString
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
                 gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
             }
         } else {
             if gBattleMons[gBattlerAttacker].status2 & 0x400e000 != 0 {
                 gBattleCommunication[5] = B_MSG_ATTACKER_CANT_ESCAPE;
-                gBattlescriptCurrInstr = BattleScript_PrintFailedToRunString.as_ptr().cast_mut();
+                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_PrintFailedToRunString
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
                 gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
             } else {
                 gCurrentTurnActionNumber = gBattlersCount;
@@ -813,34 +656,31 @@ pub unsafe extern "C" fn HandleAction_Run() {
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleAction_WatchesCarefully() {
+pub unsafe fn HandleAction_WatchesCarefully() {
     gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
     gBattle_BG0_X = 0;
     gBattle_BG0_Y = 0;
-    gBattlescriptCurrInstr = gBattlescriptsForSafariActions[0];
+    gBattlescriptCurrInstr =
+        (*crate::asmdata::gBattlescriptsForSafariActions.cast::<CArray<*mut u8, 0>>())[0];
     gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleAction_SafariZoneBallThrow() {
+pub unsafe fn HandleAction_SafariZoneBallThrow() {
     gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
     gBattle_BG0_X = 0;
     gBattle_BG0_Y = 0;
     gNumSafariBalls -= 1;
     gLastUsedItem = ITEM_SAFARI_BALL;
-    gBattlescriptCurrInstr = gBattlescriptsForBallThrow[5];
+    gBattlescriptCurrInstr =
+        (*crate::asmdata::gBattlescriptsForBallThrow.cast::<CArray<*mut u8, 0>>())[5];
     gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleAction_ThrowPokeblock() {
+pub unsafe fn HandleAction_ThrowPokeblock() {
     gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
     gBattle_BG0_X = 0;
     gBattle_BG0_Y = 0;
     gBattleCommunication[5] = gBattleBufferB[gBattlerAttacker][1] - 1;
     gLastUsedItem = gBattleBufferB[gBattlerAttacker][2] as u16;
-    if gBattleResults.pokeblockThrows < 255 {
-        gBattleResults.pokeblockThrows += 1;
-    }
+    gBattleResults.pokeblockThrows = gBattleResults.pokeblockThrows.saturating_add(1);
     if (*gBattleStruct).safariPkblThrowCounter < 3 {
         (*gBattleStruct).safariPkblThrowCounter += 1;
     }
@@ -854,11 +694,11 @@ pub unsafe extern "C" fn HandleAction_ThrowPokeblock() {
                 [(*gBattleStruct).safariPkblThrowCounter][gBattleCommunication[5]];
         }
     }
-    gBattlescriptCurrInstr = gBattlescriptsForSafariActions[2];
+    gBattlescriptCurrInstr =
+        (*crate::asmdata::gBattlescriptsForSafariActions.cast::<CArray<*mut u8, 0>>())[2];
     gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleAction_GoNear() {
+pub unsafe fn HandleAction_GoNear() {
     gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
     gBattle_BG0_X = 0;
     gBattle_BG0_Y = 0;
@@ -878,18 +718,17 @@ pub unsafe extern "C" fn HandleAction_GoNear() {
     } else {
         gBattleCommunication[5] = B_MSG_CANT_GET_CLOSER;
     }
-    gBattlescriptCurrInstr = gBattlescriptsForSafariActions[1];
+    gBattlescriptCurrInstr =
+        (*crate::asmdata::gBattlescriptsForSafariActions.cast::<CArray<*mut u8, 0>>())[1];
     gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleAction_SafariZoneRun() {
+pub unsafe fn HandleAction_SafariZoneRun() {
     gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
     PlaySE(SE_FLEE);
     gCurrentTurnActionNumber = gBattlersCount;
     gBattleOutcome = B_OUTCOME_RAN;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleAction_WallyBallThrow() {
+pub unsafe fn HandleAction_WallyBallThrow() {
     gBattlerAttacker = gBattlerByTurnOrder[gCurrentTurnActionNumber];
     gBattle_BG0_X = 0;
     gBattle_BG0_Y = 0;
@@ -898,25 +737,23 @@ pub unsafe extern "C" fn HandleAction_WallyBallThrow() {
     gBattleTextBuff1[2] = gBattlerAttacker;
     gBattleTextBuff1[3] = gBattlerPartyIndexes[gBattlerAttacker] as u8;
     gBattleTextBuff1[4] = 0xFF;
-    gBattlescriptCurrInstr = gBattlescriptsForSafariActions[3];
+    gBattlescriptCurrInstr =
+        (*crate::asmdata::gBattlescriptsForSafariActions.cast::<CArray<*mut u8, 0>>())[3];
     gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
     gActionsByTurnOrder[1] = B_ACTION_FINISHED;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleAction_TryFinish() {
+pub unsafe fn HandleAction_TryFinish() {
     if HandleFaintedMonActions() == 0 {
         (*gBattleStruct).faintedActionsState = 0;
         gCurrentActionFuncId = B_ACTION_FINISHED;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleAction_NothingIsFainted() {
+pub unsafe fn HandleAction_NothingIsFainted() {
     gCurrentTurnActionNumber += 1;
     gCurrentActionFuncId = gActionsByTurnOrder[gCurrentTurnActionNumber];
     gHitMarker &= 0xf1e892af;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleAction_ActionFinished() {
+pub unsafe fn HandleAction_ActionFinished() {
     *(*gBattleStruct)
         .monToSwitchIntoId
         .as_mut_ptr()
@@ -940,8 +777,7 @@ pub unsafe extern "C" fn HandleAction_ActionFinished() {
     gBattleScripting.multihitMoveEffect = 0;
     (*(*gBattleResources).battleScriptsStack).size = 0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBattlerForBattleScript(caseId: u8) -> u8 {
+pub unsafe fn GetBattlerForBattleScript(caseId: u8) -> u8 {
     let mut ret: u8 = 0;
     match caseId {
         BS_TARGET => {
@@ -983,15 +819,13 @@ pub unsafe extern "C" fn GetBattlerForBattleScript(caseId: u8) -> u8 {
         }
         _ => {}
     }
-    return ret;
+    ret
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PressurePPLose(target: u8, attacker: u8, r#move: u16) {
-    let mut moveIndex: i32 = 0;
+pub unsafe fn PressurePPLose(target: u8, attacker: u8, r#move: u16) {
     if gBattleMons[target].ability != ABILITY_PRESSURE {
         return;
     }
-    moveIndex = 0;
+    let mut moveIndex: i32 = 0;
     while moveIndex < MAX_MON_MOVES {
         if gBattleMons[attacker].moves[moveIndex] == r#move {
             break;
@@ -1005,7 +839,9 @@ pub unsafe extern "C" fn PressurePPLose(target: u8, attacker: u8, r#move: u16) {
         gBattleMons[attacker].pp[moveIndex] -= 1;
     }
     if gBattleMons[attacker].status2 & 0x200000 == 0
-        && gDisableStructs[attacker].mimickedMoves() as u32 & gBitTable[moveIndex] == 0
+        && gDisableStructs[attacker].mimickedMoves() as u32
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[moveIndex]
+            == 0
     {
         gActiveBattler = attacker;
         BtlController_EmitSetMonData(
@@ -1018,13 +854,11 @@ pub unsafe extern "C" fn PressurePPLose(target: u8, attacker: u8, r#move: u16) {
         MarkBattlerForControllerExec(gActiveBattler);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PressurePPLoseOnUsingImprison(attacker: u8) {
-    let mut i: i32 = 0;
+pub unsafe fn PressurePPLoseOnUsingImprison(attacker: u8) {
     let mut j: i32 = 0;
     let mut imprisonPos: i32 = MAX_MON_MOVES;
-    let mut atkSide: u8 = GetBattlerSide(attacker);
-    i = 0;
+    let atkSide: u8 = GetBattlerSide(attacker);
+    let mut i: i32 = 0;
     while i < gBattlersCount as i32 {
         if atkSide != GetBattlerSide(i as u8) && gBattleMons[i].ability == ABILITY_PRESSURE {
             j = 0;
@@ -1045,7 +879,9 @@ pub unsafe extern "C" fn PressurePPLoseOnUsingImprison(attacker: u8) {
     }
     if imprisonPos != MAX_MON_MOVES
         && (gBattleMons[attacker].status2 & 0x200000 == 0
-            && gDisableStructs[attacker].mimickedMoves() as u32 & gBitTable[imprisonPos] == 0)
+            && gDisableStructs[attacker].mimickedMoves() as u32
+                & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[imprisonPos]
+                == 0)
     {
         gActiveBattler = attacker;
         BtlController_EmitSetMonData(
@@ -1058,13 +894,10 @@ pub unsafe extern "C" fn PressurePPLoseOnUsingImprison(attacker: u8) {
         MarkBattlerForControllerExec(gActiveBattler);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PressurePPLoseOnUsingPerishSong(attacker: u8) {
-    let mut i: i32 = 0;
+pub unsafe fn PressurePPLoseOnUsingPerishSong(attacker: u8) {
     let mut j: i32 = 0;
     let mut perishSongPos: i32 = MAX_MON_MOVES;
-    i = 0;
-    while i < gBattlersCount as i32 {
+    for i in 0..(gBattlersCount as i32) {
         if gBattleMons[i].ability == ABILITY_PRESSURE && i != attacker as i32 {
             j = 0;
             while j < MAX_MON_MOVES {
@@ -1080,11 +913,12 @@ pub unsafe extern "C" fn PressurePPLoseOnUsingPerishSong(attacker: u8) {
                 }
             }
         }
-        i += 1;
     }
     if perishSongPos != MAX_MON_MOVES
         && (gBattleMons[attacker].status2 & 0x200000 == 0
-            && gDisableStructs[attacker].mimickedMoves() as u32 & gBitTable[perishSongPos] == 0)
+            && gDisableStructs[attacker].mimickedMoves() as u32
+                & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[perishSongPos]
+                == 0)
     {
         gActiveBattler = attacker;
         BtlController_EmitSetMonData(
@@ -1097,42 +931,34 @@ pub unsafe extern "C" fn PressurePPLoseOnUsingPerishSong(attacker: u8) {
         MarkBattlerForControllerExec(gActiveBattler);
     }
 }
-pub(crate) unsafe extern "C" fn MarkAllBattlersForControllerExec() {
-    let mut i: i32 = 0;
+unsafe fn MarkAllBattlersForControllerExec() {
     if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
-        i = 0;
-        while i < gBattlersCount as i32 {
+        for i in 0..(gBattlersCount as i32) {
             gBattleControllerExecFlags |= gBitTable[i] << 28;
-            i += 1;
         }
     } else {
-        i = 0;
-        while i < gBattlersCount as i32 {
+        for i in 0..(gBattlersCount as i32) {
             gBattleControllerExecFlags |= gBitTable[i];
-            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MarkBattlerForControllerExec(battler: u8) {
+pub unsafe fn MarkBattlerForControllerExec(battler: u8) {
     if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
         gBattleControllerExecFlags |= gBitTable[battler] << 28;
     } else {
         gBattleControllerExecFlags |= gBitTable[battler];
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MarkBattlerReceivedLinkData(battler: u8) {
+pub unsafe fn MarkBattlerReceivedLinkData(battler: u8) {
     let mut i: i32 = 0;
-    i = 0;
     while i < GetLinkPlayerCount() as i32 {
         gBattleControllerExecFlags |= shl_u32(gBitTable[battler], (i as u32) << 2);
         i += 1;
     }
     gBattleControllerExecFlags &= !(shl_i32(0x10000000, battler as u32) as u32);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CancelMultiTurnMoves(battler: u8) {
+pub unsafe fn CancelMultiTurnMoves(battler: u8) {
     gBattleMons[battler].status2 &= 0xffffefff;
     gBattleMons[battler].status2 &= 0xfffff3ff;
     gBattleMons[battler].status2 &= 0xffffff8f;
@@ -1141,8 +967,7 @@ pub unsafe extern "C" fn CancelMultiTurnMoves(battler: u8) {
     gDisableStructs[battler].set_rolloutTimer(0);
     gDisableStructs[battler].furyCutterCounter = 0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WasUnableToUseMove(battler: u8) -> u8 {
+pub unsafe fn WasUnableToUseMove(battler: u8) -> u8 {
     if gProtectStructs[battler].prlzImmobility() != 0
         || gProtectStructs[battler].targetNotAffected() != 0
         || gProtectStructs[battler].usedImprisonedMove() != 0
@@ -1159,22 +984,19 @@ pub unsafe extern "C" fn WasUnableToUseMove(battler: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PrepareStringBattle(stringId: u16, battler: u8) {
+pub unsafe fn PrepareStringBattle(stringId: u16, battler: u8) {
     gActiveBattler = battler;
     BtlController_EmitPrintString(B_COMM_TO_CONTROLLER, stringId);
     MarkBattlerForControllerExec(gActiveBattler);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetSentPokesToOpponentValue() {
-    let mut i: i32 = 0;
+pub unsafe fn ResetSentPokesToOpponentValue() {
     let mut bits: u32 = 0;
     gSentPokesToOpponent[0] = 0;
     gSentPokesToOpponent[1] = 0;
-    i = 0;
+    let mut i: i32 = 0;
     while i < gBattlersCount as i32 {
         bits |= gBitTable[gBattlerPartyIndexes[i]];
         i += 2;
@@ -1185,16 +1007,18 @@ pub unsafe extern "C" fn ResetSentPokesToOpponentValue() {
         i += 2;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn OpponentSwitchInResetSentPokesToOpponentValue(battler: u8) {
+pub unsafe fn OpponentSwitchInResetSentPokesToOpponentValue(battler: u8) {
     let mut i: i32 = 0;
     let mut bits: u32 = 0;
     if GetBattlerSide(battler) == B_SIDE_OPPONENT {
-        let mut flank: u8 = ((battler as i32 & BIT_FLANK as i32) >> 1) as u8;
+        let flank: u8 = ((battler as i32 & BIT_FLANK as i32) >> 1) as u8;
         gSentPokesToOpponent[flank] = 0;
         i = 0;
         while i < gBattlersCount as i32 {
-            if gAbsentBattlerFlags as u32 & gBitTable[i] == 0 {
+            if gAbsentBattlerFlags as u32
+                & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[i]
+                == 0
+            {
                 bits |= gBitTable[gBattlerPartyIndexes[i]];
             }
             i += 2;
@@ -1202,22 +1026,17 @@ pub unsafe extern "C" fn OpponentSwitchInResetSentPokesToOpponentValue(battler: 
         gSentPokesToOpponent[flank] = bits as u8;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateSentPokesToOpponentValue(battler: u8) {
+pub unsafe fn UpdateSentPokesToOpponentValue(battler: u8) {
     if GetBattlerSide(battler) == B_SIDE_OPPONENT {
         OpponentSwitchInResetSentPokesToOpponentValue(battler);
     } else {
-        let mut i: i32 = 0;
-        i = 1;
-        while i < gBattlersCount as i32 {
+        for i in 1..(gBattlersCount as i32) {
             gSentPokesToOpponent[(i & BIT_FLANK as i32) >> 1] |=
                 gBitTable[gBattlerPartyIndexes[battler]] as u8;
-            i += 1;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleScriptPush(bsPtr: *mut u8) {
+pub unsafe fn BattleScriptPush(bsPtr: *mut u8) {
     (*(*gBattleResources).battleScriptsStack).ptr[{
         let t1 = (*(*gBattleResources).battleScriptsStack).size;
         (*(*gBattleResources).battleScriptsStack).size += 1;
@@ -1225,38 +1044,39 @@ pub unsafe extern "C" fn BattleScriptPush(bsPtr: *mut u8) {
     }] = bsPtr;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleScriptPushCursor() {
+pub unsafe fn BattleScriptPushCursor() {
     (*(*gBattleResources).battleScriptsStack).ptr[{
         let t1 = (*(*gBattleResources).battleScriptsStack).size;
         (*(*gBattleResources).battleScriptsStack).size += 1;
         t1
     }] = gBattlescriptCurrInstr;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleScriptPop() {
+pub unsafe fn BattleScriptPop() {
     gBattlescriptCurrInstr = (*(*gBattleResources).battleScriptsStack).ptr[{
         (*(*gBattleResources).battleScriptsStack).size -= 1;
         (*(*gBattleResources).battleScriptsStack).size
     }];
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TrySetCantSelectMoveBattleScript() -> u8 {
+pub unsafe fn TrySetCantSelectMoveBattleScript() -> u8 {
     let mut limitations: u8 = 0;
-    let mut r#move: u16 = gBattleMons[gActiveBattler].moves[gBattleBufferB[gActiveBattler][2]];
+    let r#move: u16 = gBattleMons[gActiveBattler].moves[gBattleBufferB[gActiveBattler][2]];
     let mut holdEffect: u8 = 0;
-    let mut choicedMove: *mut u16 = &raw mut (*gBattleStruct).choicedMove[gActiveBattler];
+    let choicedMove: *mut u16 = &raw mut (*gBattleStruct).choicedMove[gActiveBattler];
     if gDisableStructs[gActiveBattler].disabledMove == r#move && r#move != MOVE_NONE {
         gBattleScripting.battler = gActiveBattler;
         gCurrentMove = r#move;
         if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
             gPalaceSelectionBattleScripts[gActiveBattler] =
-                BattleScript_SelectingDisabledMoveInPalace
-                    .as_ptr()
-                    .cast_mut();
+                (*crate::asmdata::BattleScript_SelectingDisabledMoveInPalace
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
             gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
         } else {
             gSelectionBattleScripts[gActiveBattler] =
-                BattleScript_SelectingDisabledMove.as_ptr().cast_mut();
+                (*crate::asmdata::BattleScript_SelectingDisabledMove.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut();
             limitations = 1;
         }
     }
@@ -1267,26 +1087,37 @@ pub unsafe extern "C" fn TrySetCantSelectMoveBattleScript() -> u8 {
         CancelMultiTurnMoves(gActiveBattler);
         if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
             gPalaceSelectionBattleScripts[gActiveBattler] =
-                BattleScript_SelectingTormentedMoveInPalace
-                    .as_ptr()
-                    .cast_mut();
+                (*crate::asmdata::BattleScript_SelectingTormentedMoveInPalace
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
             gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
         } else {
             gSelectionBattleScripts[gActiveBattler] =
-                BattleScript_SelectingTormentedMove.as_ptr().cast_mut();
+                (*crate::asmdata::BattleScript_SelectingTormentedMove.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut();
             limitations += 1;
         }
     }
-    if gDisableStructs[gActiveBattler].tauntTimer() != 0 && gBattleMoves[r#move].power == 0 {
+    if gDisableStructs[gActiveBattler].tauntTimer() != 0
+        && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+            [r#move]
+            .power
+            == 0
+    {
         gCurrentMove = r#move;
         if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
             gPalaceSelectionBattleScripts[gActiveBattler] =
-                BattleScript_SelectingNotAllowedMoveTauntInPalace
-                    .as_ptr()
-                    .cast_mut();
+                (*crate::asmdata::BattleScript_SelectingNotAllowedMoveTauntInPalace
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
             gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
         } else {
-            gSelectionBattleScripts[gActiveBattler] = BattleScript_SelectingNotAllowedMoveTaunt
+            gSelectionBattleScripts[gActiveBattler] =
+                (*crate::asmdata::BattleScript_SelectingNotAllowedMoveTaunt
+                    .cast::<CArray<u8, 0>>())
                 .as_ptr()
                 .cast_mut();
             limitations += 1;
@@ -1296,13 +1127,16 @@ pub unsafe extern "C" fn TrySetCantSelectMoveBattleScript() -> u8 {
         gCurrentMove = r#move;
         if gBattleTypeFlags & BATTLE_TYPE_PALACE != 0 {
             gPalaceSelectionBattleScripts[gActiveBattler] =
-                BattleScript_SelectingImprisonedMoveInPalace
-                    .as_ptr()
-                    .cast_mut();
+                (*crate::asmdata::BattleScript_SelectingImprisonedMoveInPalace
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
             gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
         } else {
             gSelectionBattleScripts[gActiveBattler] =
-                BattleScript_SelectingImprisonedMove.as_ptr().cast_mut();
+                (*crate::asmdata::BattleScript_SelectingImprisonedMove.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut();
             limitations += 1;
         }
     }
@@ -1323,9 +1157,10 @@ pub unsafe extern "C" fn TrySetCantSelectMoveBattleScript() -> u8 {
             gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
         } else {
             gSelectionBattleScripts[gActiveBattler] =
-                BattleScript_SelectingNotAllowedMoveChoiceItem
-                    .as_ptr()
-                    .cast_mut();
+                (*crate::asmdata::BattleScript_SelectingNotAllowedMoveChoiceItem
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
             limitations += 1;
         }
     }
@@ -1334,25 +1169,24 @@ pub unsafe extern "C" fn TrySetCantSelectMoveBattleScript() -> u8 {
             gProtectStructs[gActiveBattler].set_palaceUnableToUseMove(TRUE as u32);
         } else {
             gSelectionBattleScripts[gActiveBattler] =
-                BattleScript_SelectingMoveWithNoPP.as_ptr().cast_mut();
+                (*crate::asmdata::BattleScript_SelectingMoveWithNoPP.cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut();
             limitations += 1;
         }
     }
-    return limitations;
+    limitations
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckMoveLimitations(battler: u8, mut unusableMoves: u8, check: u8) -> u8 {
+pub unsafe fn CheckMoveLimitations(battler: u8, mut unusableMoves: u8, check: u8) -> u8 {
     let mut holdEffect: u8 = 0;
-    let mut choicedMove: *mut u16 = &raw mut (*gBattleStruct).choicedMove[battler];
-    let mut i: i32 = 0;
+    let choicedMove: *mut u16 = &raw mut (*gBattleStruct).choicedMove[battler];
     if gBattleMons[battler].item == ITEM_ENIGMA_BERRY {
         holdEffect = gEnigmaBerries[battler].holdEffect;
     } else {
         holdEffect = GetItemHoldEffect(gBattleMons[battler].item);
     }
     gPotentialItemEffectBattler = battler;
-    i = 0;
-    while i < MAX_MON_MOVES {
+    for i in 0..MAX_MON_MOVES {
         if gBattleMons[battler].moves[i] == MOVE_NONE
             && check as i32 & MOVE_LIMITATION_ZEROMOVE != 0
         {
@@ -1374,7 +1208,10 @@ pub unsafe extern "C" fn CheckMoveLimitations(battler: u8, mut unusableMoves: u8
         }
         if gDisableStructs[battler].tauntTimer() != 0
             && check as i32 & MOVE_LIMITATION_TAUNT != 0
-            && gBattleMoves[gBattleMons[battler].moves[i]].power == 0
+            && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<BattleMove, 0>>())
+                [gBattleMons[battler].moves[i]]
+                .power
+                == 0
         {
             unusableMoves |= gBitTable[i] as u8;
         }
@@ -1395,32 +1232,30 @@ pub unsafe extern "C" fn CheckMoveLimitations(battler: u8, mut unusableMoves: u8
         {
             unusableMoves |= gBitTable[i] as u8;
         }
-        i += 1;
     }
-    return unusableMoves;
+    unusableMoves
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AreAllMovesUnusable() -> u8 {
-    let mut unusable: u8 = CheckMoveLimitations(gActiveBattler, 0, MOVE_LIMITATIONS_ALL);
+pub unsafe fn AreAllMovesUnusable() -> u8 {
+    let unusable: u8 = CheckMoveLimitations(gActiveBattler, 0, MOVE_LIMITATIONS_ALL);
     if unusable == ALL_MOVES_MASK {
         gProtectStructs[gActiveBattler].set_noValidMoves(TRUE as u32);
-        gSelectionBattleScripts[gActiveBattler] = BattleScript_NoMovesLeft.as_ptr().cast_mut();
+        gSelectionBattleScripts[gActiveBattler] = (*crate::asmdata::BattleScript_NoMovesLeft
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     } else {
         gProtectStructs[gActiveBattler].set_noValidMoves(FALSE as u32);
     }
-    return (unusable == ALL_MOVES_MASK) as u8;
+    (unusable == ALL_MOVES_MASK) as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetImprisonedMovesCount(battler: u8, r#move: u16) -> u8 {
-    let mut i: i32 = 0;
+pub unsafe fn GetImprisonedMovesCount(battler: u8, r#move: u16) -> u8 {
     let mut imprisonedMoves: u8 = 0;
-    let mut battlerSide: u8 = GetBattlerSide(battler);
-    i = 0;
+    let battlerSide: u8 = GetBattlerSide(battler);
+    let mut i: i32 = 0;
     while i < gBattlersCount as i32 {
         if battlerSide != GetBattlerSide(i as u8) && gStatuses3[i] & STATUS3_IMPRISONED_OTHERS != 0
         {
             let mut j: i32 = 0;
-            j = 0;
             while j < MAX_MON_MOVES {
                 if r#move == gBattleMons[i].moves[j] {
                     break;
@@ -1433,21 +1268,24 @@ pub unsafe extern "C" fn GetImprisonedMovesCount(battler: u8, r#move: u16) -> u8
         }
         i += 1;
     }
-    return imprisonedMoves;
+    imprisonedMoves
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
+pub unsafe fn DoFieldEndTurnEffects() -> u8 {
     let mut effect: u8 = 0;
     let mut i: i32 = 0;
     gBattlerAttacker = 0;
     while gBattlerAttacker < gBattlersCount
-        && gAbsentBattlerFlags as u32 & gBitTable[gBattlerAttacker] != 0
+        && gAbsentBattlerFlags as u32
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerAttacker]
+            != 0
     {
         gBattlerAttacker += 1;
     }
     gBattlerTarget = 0;
     while gBattlerTarget < gBattlersCount
-        && gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0
+        && gAbsentBattlerFlags as u32
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gBattlerTarget]
+            != 0
     {
         gBattlerTarget += 1;
     }
@@ -1458,15 +1296,12 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
             let mut fall = false;
             if sw1 == ENDTURN_ORDER {
                 fall = true;
-                i = 0;
-                while i < gBattlersCount as i32 {
+                for i in 0..(gBattlersCount as i32) {
                     gBattlerByTurnOrder[i] = i as u8;
-                    i += 1;
                 }
                 i = 0;
                 while i < gBattlersCount as i32 - 1 {
-                    let mut j: i32 = 0;
-                    j = i + 1;
+                    let mut j: i32 = i + 1;
                     while j < gBattlersCount as i32 {
                         if GetWhoStrikesFirst(gBattlerByTurnOrder[i], gBattlerByTurnOrder[j], FALSE)
                             != 0
@@ -1477,33 +1312,35 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                     }
                     i += 1;
                 }
-                *(&raw mut (*gBattleStruct).turnCountersTracker) =
-                    (*gBattleStruct).turnCountersTracker + 1;
+                (*gBattleStruct).turnCountersTracker += 1;
                 (*gBattleStruct).turnSideTracker = 0;
             }
             if fall || sw1 == ENDTURN_REFLECT {
-                fall = true;
                 while (*gBattleStruct).turnSideTracker < 2 {
                     side = (*gBattleStruct).turnSideTracker;
                     gActiveBattler = {
                         gBattlerAttacker = gSideTimers[side].reflectBattlerId;
                         gBattlerAttacker
                     };
-                    if gSideStatuses[side] as i32 & SIDE_STATUS_REFLECT != 0 {
-                        if ({
+                    if gSideStatuses[side] as i32 & SIDE_STATUS_REFLECT != 0
+                        && ({
                             gSideTimers[side].reflectTimer -= 1;
                             gSideTimers[side].reflectTimer
                         }) == 0
-                        {
-                            gSideStatuses[side] &= 65534;
-                            BattleScriptExecute(BattleScript_SideStatusWoreOff.as_ptr().cast_mut());
-                            gBattleTextBuff1[0] = 0xFD;
-                            gBattleTextBuff1[1] = 2;
-                            gBattleTextBuff1[2] = MOVE_REFLECT as u8;
-                            gBattleTextBuff1[3] = 0;
-                            gBattleTextBuff1[4] = 0xFF;
-                            effect += 1;
-                        }
+                    {
+                        gSideStatuses[side] &= 65534;
+                        BattleScriptExecute(
+                            (*crate::asmdata::BattleScript_SideStatusWoreOff
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
+                        );
+                        gBattleTextBuff1[0] = 0xFD;
+                        gBattleTextBuff1[1] = 2;
+                        gBattleTextBuff1[2] = MOVE_REFLECT as u8;
+                        gBattleTextBuff1[3] = 0;
+                        gBattleTextBuff1[4] = 0xFF;
+                        effect += 1;
                     }
                     (*gBattleStruct).turnSideTracker += 1;
                     if effect != 0 {
@@ -1517,29 +1354,32 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                 break 'l4;
             }
             if sw1 == ENDTURN_LIGHT_SCREEN {
-                fall = true;
                 while (*gBattleStruct).turnSideTracker < 2 {
                     side = (*gBattleStruct).turnSideTracker;
                     gActiveBattler = {
                         gBattlerAttacker = gSideTimers[side].lightscreenBattlerId;
                         gBattlerAttacker
                     };
-                    if gSideStatuses[side] as i32 & SIDE_STATUS_LIGHTSCREEN != 0 {
-                        if ({
+                    if gSideStatuses[side] as i32 & SIDE_STATUS_LIGHTSCREEN != 0
+                        && ({
                             gSideTimers[side].lightscreenTimer -= 1;
                             gSideTimers[side].lightscreenTimer
                         }) == 0
-                        {
-                            gSideStatuses[side] &= 65533;
-                            BattleScriptExecute(BattleScript_SideStatusWoreOff.as_ptr().cast_mut());
-                            gBattleCommunication[5] = side;
-                            gBattleTextBuff1[0] = 0xFD;
-                            gBattleTextBuff1[1] = 2;
-                            gBattleTextBuff1[2] = MOVE_LIGHT_SCREEN as u8;
-                            gBattleTextBuff1[3] = 0;
-                            gBattleTextBuff1[4] = 0xFF;
-                            effect += 1;
-                        }
+                    {
+                        gSideStatuses[side] &= 65533;
+                        BattleScriptExecute(
+                            (*crate::asmdata::BattleScript_SideStatusWoreOff
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
+                        );
+                        gBattleCommunication[5] = side;
+                        gBattleTextBuff1[0] = 0xFD;
+                        gBattleTextBuff1[1] = 2;
+                        gBattleTextBuff1[2] = MOVE_LIGHT_SCREEN as u8;
+                        gBattleTextBuff1[3] = 0;
+                        gBattleTextBuff1[4] = 0xFF;
+                        effect += 1;
                     }
                     (*gBattleStruct).turnSideTracker += 1;
                     if effect != 0 {
@@ -1553,7 +1393,6 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                 break 'l4;
             }
             if sw1 == ENDTURN_MIST {
-                fall = true;
                 while (*gBattleStruct).turnSideTracker < 2 {
                     side = (*gBattleStruct).turnSideTracker;
                     gActiveBattler = {
@@ -1567,7 +1406,12 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                         }) == 0
                     {
                         gSideStatuses[side] &= 65279;
-                        BattleScriptExecute(BattleScript_SideStatusWoreOff.as_ptr().cast_mut());
+                        BattleScriptExecute(
+                            (*crate::asmdata::BattleScript_SideStatusWoreOff
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
+                        );
                         gBattleCommunication[5] = side;
                         gBattleTextBuff1[0] = 0xFD;
                         gBattleTextBuff1[1] = 2;
@@ -1588,23 +1432,25 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                 break 'l4;
             }
             if sw1 == ENDTURN_SAFEGUARD {
-                fall = true;
                 while (*gBattleStruct).turnSideTracker < 2 {
                     side = (*gBattleStruct).turnSideTracker;
                     gActiveBattler = {
                         gBattlerAttacker = gSideTimers[side].safeguardBattlerId;
                         gBattlerAttacker
                     };
-                    if gSideStatuses[side] as i32 & SIDE_STATUS_SAFEGUARD != 0 {
-                        if ({
+                    if gSideStatuses[side] as i32 & SIDE_STATUS_SAFEGUARD != 0
+                        && ({
                             gSideTimers[side].safeguardTimer -= 1;
                             gSideTimers[side].safeguardTimer
                         }) == 0
-                        {
-                            gSideStatuses[side] &= 65503;
-                            BattleScriptExecute(BattleScript_SafeguardEnds.as_ptr().cast_mut());
-                            effect += 1;
-                        }
+                    {
+                        gSideStatuses[side] &= 65503;
+                        BattleScriptExecute(
+                            (*crate::asmdata::BattleScript_SafeguardEnds.cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
+                        );
+                        effect += 1;
                     }
                     (*gBattleStruct).turnSideTracker += 1;
                     if effect != 0 {
@@ -1618,7 +1464,6 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                 break 'l4;
             }
             if sw1 == ENDTURN_WISH {
-                fall = true;
                 while (*gBattleStruct).turnSideTracker < gBattlersCount {
                     gActiveBattler = gBattlerByTurnOrder[(*gBattleStruct).turnSideTracker];
                     if gWishFutureKnock.wishCounter[gActiveBattler] != 0
@@ -1629,7 +1474,11 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                         && gBattleMons[gActiveBattler].hp != 0
                     {
                         gBattlerTarget = gActiveBattler;
-                        BattleScriptExecute(BattleScript_WishComesTrue.as_ptr().cast_mut());
+                        BattleScriptExecute(
+                            (*crate::asmdata::BattleScript_WishComesTrue.cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
+                        );
                         effect += 1;
                     }
                     (*gBattleStruct).turnSideTracker += 1;
@@ -1643,7 +1492,6 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                 break 'l4;
             }
             if sw1 == ENDTURN_RAIN {
-                fall = true;
                 if gBattleWeather as i32 & B_WEATHER_RAIN != 0 {
                     if gBattleWeather as i32 & B_WEATHER_RAIN_PERMANENT == 0 {
                         if ({
@@ -1664,14 +1512,17 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                     } else {
                         gBattleCommunication[5] = B_MSG_RAIN_CONTINUES;
                     }
-                    BattleScriptExecute(BattleScript_RainContinuesOrEnds.as_ptr().cast_mut());
+                    BattleScriptExecute(
+                        (*crate::asmdata::BattleScript_RainContinuesOrEnds.cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
+                    );
                     effect += 1;
                 }
                 (*gBattleStruct).turnCountersTracker += 1;
                 break 'l4;
             }
             if sw1 == ENDTURN_SANDSTORM {
-                fall = true;
                 if gBattleWeather as i32 & B_WEATHER_SANDSTORM != 0 {
                     if gBattleWeather as i32 & B_WEATHER_SANDSTORM_PERMANENT == 0
                         && ({
@@ -1680,10 +1531,16 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                         }) == 0
                     {
                         gBattleWeather &= 65527;
-                        gBattlescriptCurrInstr = BattleScript_SandStormHailEnds.as_ptr().cast_mut();
+                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_SandStormHailEnds
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut();
                     } else {
                         gBattlescriptCurrInstr =
-                            BattleScript_DamagingWeatherContinues.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_DamagingWeatherContinues
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                     }
                     gBattleScripting.animArg1 = B_ANIM_SANDSTORM_CONTINUES;
                     gBattleCommunication[5] = B_MSG_SANDSTORM;
@@ -1694,7 +1551,6 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                 break 'l4;
             }
             if sw1 == ENDTURN_SUN {
-                fall = true;
                 if gBattleWeather as i32 & B_WEATHER_SUN != 0 {
                     if gBattleWeather as i32 & B_WEATHER_SUN_PERMANENT == 0
                         && ({
@@ -1703,9 +1559,15 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                         }) == 0
                     {
                         gBattleWeather &= 65503;
-                        gBattlescriptCurrInstr = BattleScript_SunlightFaded.as_ptr().cast_mut();
+                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_SunlightFaded
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut();
                     } else {
-                        gBattlescriptCurrInstr = BattleScript_SunlightContinues.as_ptr().cast_mut();
+                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_SunlightContinues
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut();
                     }
                     BattleScriptExecute(gBattlescriptCurrInstr);
                     effect += 1;
@@ -1714,7 +1576,6 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                 break 'l4;
             }
             if sw1 == ENDTURN_HAIL {
-                fall = true;
                 if gBattleWeather as i32 & B_WEATHER_HAIL != 0 {
                     if ({
                         gWishFutureKnock.weatherDuration -= 1;
@@ -1722,10 +1583,16 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                     }) == 0
                     {
                         gBattleWeather &= 65407;
-                        gBattlescriptCurrInstr = BattleScript_SandStormHailEnds.as_ptr().cast_mut();
+                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_SandStormHailEnds
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut();
                     } else {
                         gBattlescriptCurrInstr =
-                            BattleScript_DamagingWeatherContinues.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_DamagingWeatherContinues
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                     }
                     gBattleScripting.animArg1 = B_ANIM_HAIL_CONTINUES;
                     gBattleCommunication[5] = B_MSG_HAIL;
@@ -1736,7 +1603,6 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
                 break 'l4;
             }
             if sw1 == ENDTURN_FIELD_COUNT {
-                fall = true;
                 effect += 1;
                 break 'l4;
             }
@@ -1745,10 +1611,9 @@ pub unsafe extern "C" fn DoFieldEndTurnEffects() -> u8 {
             break;
         }
     }
-    return (gBattleMainFunc != Some(BattleTurnPassed as unsafe extern "C" fn())) as u8;
+    (gBattleMainFunc != Some(BattleTurnPassed as unsafe fn())) as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
+pub unsafe fn DoBattlerEndTurnEffects() -> u8 {
     let mut effect: u8 = 0;
     gHitMarker |= 0x1000020;
     while (*gBattleStruct).turnEffectsBattlerId < gBattlersCount
@@ -1758,7 +1623,10 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
             gBattlerAttacker = gBattlerByTurnOrder[(*gBattleStruct).turnEffectsBattlerId];
             gBattlerAttacker
         };
-        if gAbsentBattlerFlags as u32 & gBitTable[gActiveBattler] != 0 {
+        if gAbsentBattlerFlags as u32
+            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[gActiveBattler]
+            != 0
+        {
             (*gBattleStruct).turnEffectsBattlerId += 1;
         } else {
             'l2: {
@@ -1773,7 +1641,12 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                                 gBattleMoveDamage = 1;
                             }
                             gBattleMoveDamage *= -1;
-                            BattleScriptExecute(BattleScript_IngrainTurnHeal.as_ptr().cast_mut());
+                            BattleScriptExecute(
+                                (*crate::asmdata::BattleScript_IngrainTurnHeal
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
+                            );
                             effect += 1;
                         }
                         (*gBattleStruct).turnEffectsTracker += 1;
@@ -1813,7 +1686,10 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                             gBattleScripting.animArg1 = gBattlerTarget;
                             gBattleScripting.animArg2 = gBattlerAttacker;
                             BattleScriptExecute(
-                                BattleScript_LeechSeedTurnDrain.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_LeechSeedTurnDrain
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             effect += 1;
                         }
@@ -1827,7 +1703,12 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                             if gBattleMoveDamage == 0 {
                                 gBattleMoveDamage = 1;
                             }
-                            BattleScriptExecute(BattleScript_PoisonTurnDmg.as_ptr().cast_mut());
+                            BattleScriptExecute(
+                                (*crate::asmdata::BattleScript_PoisonTurnDmg
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
+                            );
                             effect += 1;
                         }
                         (*gBattleStruct).turnEffectsTracker += 1;
@@ -1848,7 +1729,12 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                             gBattleMoveDamage *= ((gBattleMons[gActiveBattler].status1
                                 & STATUS1_TOXIC_COUNTER)
                                 >> 8) as i32;
-                            BattleScriptExecute(BattleScript_PoisonTurnDmg.as_ptr().cast_mut());
+                            BattleScriptExecute(
+                                (*crate::asmdata::BattleScript_PoisonTurnDmg
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
+                            );
                             effect += 1;
                         }
                         (*gBattleStruct).turnEffectsTracker += 1;
@@ -1861,7 +1747,11 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                             if gBattleMoveDamage == 0 {
                                 gBattleMoveDamage = 1;
                             }
-                            BattleScriptExecute(BattleScript_BurnTurnDmg.as_ptr().cast_mut());
+                            BattleScriptExecute(
+                                (*crate::asmdata::BattleScript_BurnTurnDmg.cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
+                            );
                             effect += 1;
                         }
                         (*gBattleStruct).turnEffectsTracker += 1;
@@ -1876,7 +1766,10 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                                     gBattleMoveDamage = 1;
                                 }
                                 BattleScriptExecute(
-                                    BattleScript_NightmareTurnDmg.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_NightmareTurnDmg
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                                 effect += 1;
                             } else {
@@ -1893,7 +1786,12 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                             if gBattleMoveDamage == 0 {
                                 gBattleMoveDamage = 1;
                             }
-                            BattleScriptExecute(BattleScript_CurseTurnDmg.as_ptr().cast_mut());
+                            BattleScriptExecute(
+                                (*crate::asmdata::BattleScript_CurseTurnDmg
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
+                            );
                             effect += 1;
                         }
                         (*gBattleStruct).turnEffectsTracker += 1;
@@ -1926,7 +1824,10 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                                     .at(1);
                                 gBattleTextBuff1[4] = EOS;
                                 gBattlescriptCurrInstr =
-                                    BattleScript_WrapTurnDmg.as_ptr().cast_mut();
+                                    (*crate::asmdata::BattleScript_WrapTurnDmg
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut();
                                 gBattleMoveDamage = gBattleMons[gActiveBattler].maxHP as i32 / 16;
                                 if gBattleMoveDamage == 0 {
                                     gBattleMoveDamage = 1;
@@ -1944,7 +1845,10 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                                     .at(gActiveBattler as i32 * 2)
                                     .at(1);
                                 gBattleTextBuff1[4] = EOS;
-                                gBattlescriptCurrInstr = BattleScript_WrapEnds.as_ptr().cast_mut();
+                                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_WrapEnds
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                             }
                             BattleScriptExecute(gBattlescriptCurrInstr);
                             effect += 1;
@@ -1962,7 +1866,10 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                                     gBattleMons[gBattlerAttacker].status2 &= 0xf7ffffff;
                                     gBattleCommunication[5] = 1;
                                     BattleScriptExecute(
-                                        BattleScript_MonWokeUpInUproar.as_ptr().cast_mut(),
+                                        (*crate::asmdata::BattleScript_MonWokeUpInUproar
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut(),
                                     );
                                     gActiveBattler = gBattlerAttacker;
                                     BtlController_EmitSetMonData(
@@ -1995,7 +1902,10 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                                     CancelMultiTurnMoves(gActiveBattler);
                                 }
                                 BattleScriptExecute(
-                                    BattleScript_PrintUproarOverTurns.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_PrintUproarOverTurns
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                                 effect = 1;
                             }
@@ -2020,7 +1930,10 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                                     if gBattleMons[gActiveBattler].status2 & STATUS2_CONFUSION != 0
                                     {
                                         BattleScriptExecute(
-                                            BattleScript_ThrashConfuses.as_ptr().cast_mut(),
+                                            (*crate::asmdata::BattleScript_ThrashConfuses
+                                                .cast::<CArray<u8, 0>>())
+                                            .as_ptr()
+                                            .cast_mut(),
                                         );
                                     }
                                     effect += 1;
@@ -2032,7 +1945,6 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                     ENDTURN_DISABLE => {
                         if gDisableStructs[gActiveBattler].disableTimer() != 0 {
                             let mut i: i32 = 0;
-                            i = 0;
                             while i < MAX_MON_MOVES {
                                 if gDisableStructs[gActiveBattler].disabledMove
                                     == gBattleMons[gActiveBattler].moves[i]
@@ -2053,7 +1965,10 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                             {
                                 gDisableStructs[gActiveBattler].disabledMove = MOVE_NONE;
                                 BattleScriptExecute(
-                                    BattleScript_DisabledNoMore.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_DisabledNoMore
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                                 effect += 1;
                             }
@@ -2080,7 +1995,12 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                             {
                                 gDisableStructs[gActiveBattler].encoredMove = MOVE_NONE;
                                 gDisableStructs[gActiveBattler].set_encoreTimer(0);
-                                BattleScriptExecute(BattleScript_EncoredNoMore.as_ptr().cast_mut());
+                                BattleScriptExecute(
+                                    (*crate::asmdata::BattleScript_EncoredNoMore
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
+                                );
                                 effect += 1;
                             }
                         }
@@ -2122,8 +2042,7 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                                 && UproarWakeUpCheck(gActiveBattler) == 0
                             {
                                 CancelMultiTurnMoves(gActiveBattler);
-                                gBattleMons[gActiveBattler].status1 |=
-                                    (Random() as u32 & 3) + 2 << 0;
+                                gBattleMons[gActiveBattler].status1 |= (Random() as u32 & 3) + 2;
                                 BtlController_EmitSetMonData(
                                     B_COMM_TO_CONTROLLER,
                                     REQUEST_STATUS_BATTLE,
@@ -2134,7 +2053,10 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
                                 MarkBattlerForControllerExec(gActiveBattler);
                                 gEffectBattler = gActiveBattler;
                                 BattleScriptExecute(
-                                    BattleScript_YawnMakesAsleep.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_YawnMakesAsleep
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                                 effect += 1;
                             }
@@ -2154,10 +2076,9 @@ pub unsafe extern "C" fn DoBattlerEndTurnEffects() -> u8 {
         }
     }
     gHitMarker &= 0xfeffffdf;
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleWishPerishSongOnTurnEnd() -> u8 {
+pub unsafe fn HandleWishPerishSongOnTurnEnd() -> u8 {
     gHitMarker |= 0x1000020;
     'l1: {
         let sw1: u8 = (*gBattleStruct).wishPerishSongState;
@@ -2166,7 +2087,11 @@ pub unsafe extern "C" fn HandleWishPerishSongOnTurnEnd() -> u8 {
             fall = true;
             while (*gBattleStruct).wishPerishSongBattlerId < gBattlersCount {
                 gActiveBattler = (*gBattleStruct).wishPerishSongBattlerId;
-                if gAbsentBattlerFlags as u32 & gBitTable[gActiveBattler] != 0 {
+                if gAbsentBattlerFlags as u32
+                    & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                        [gActiveBattler]
+                    != 0
+                {
                     (*gBattleStruct).wishPerishSongBattlerId += 1;
                     continue;
                 }
@@ -2185,8 +2110,7 @@ pub unsafe extern "C" fn HandleWishPerishSongOnTurnEnd() -> u8 {
                     }
                     gBattleTextBuff1[0] = 0xFD;
                     gBattleTextBuff1[1] = 2;
-                    gBattleTextBuff1[2] =
-                        gWishFutureKnock.futureSightMove[gActiveBattler] as u8 & 0xFF;
+                    gBattleTextBuff1[2] = gWishFutureKnock.futureSightMove[gActiveBattler] as u8;
                     gBattleTextBuff1[3] =
                         ((gWishFutureKnock.futureSightMove[gActiveBattler] as i32 & 0xFF00) >> 8)
                             as u8;
@@ -2195,7 +2119,11 @@ pub unsafe extern "C" fn HandleWishPerishSongOnTurnEnd() -> u8 {
                     gBattlerAttacker = gWishFutureKnock.futureSightAttacker[gActiveBattler];
                     gBattleMoveDamage = gWishFutureKnock.futureSightDmg[gActiveBattler];
                     gSpecialStatuses[gBattlerTarget].shellBellDmg = IGNORE_SHELL_BELL;
-                    BattleScriptExecute(BattleScript_MonTookFutureAttack.as_ptr().cast_mut());
+                    BattleScriptExecute(
+                        (*crate::asmdata::BattleScript_MonTookFutureAttack.cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
+                    );
                     if gWishFutureKnock.futureSightCounter[gActiveBattler] == 0
                         && gWishFutureKnock.futureSightCounter[gActiveBattler as i32 ^ 2] == 0
                     {
@@ -2204,7 +2132,7 @@ pub unsafe extern "C" fn HandleWishPerishSongOnTurnEnd() -> u8 {
                     return TRUE;
                 }
             }
-            *(&raw mut (*gBattleStruct).wishPerishSongState) = 1;
+            (*gBattleStruct).wishPerishSongState = 1;
             (*gBattleStruct).wishPerishSongBattlerId = 0;
         }
         if fall || sw1 == 1 {
@@ -2215,7 +2143,11 @@ pub unsafe extern "C" fn HandleWishPerishSongOnTurnEnd() -> u8 {
                         gBattlerByTurnOrder[(*gBattleStruct).wishPerishSongBattlerId];
                     gBattlerAttacker
                 };
-                if gAbsentBattlerFlags as u32 & gBitTable[gActiveBattler] != 0 {
+                if gAbsentBattlerFlags as u32
+                    & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                        [gActiveBattler]
+                    != 0
+                {
                     (*gBattleStruct).wishPerishSongBattlerId += 1;
                     continue;
                 }
@@ -2231,36 +2163,45 @@ pub unsafe extern "C" fn HandleWishPerishSongOnTurnEnd() -> u8 {
                         gStatuses3[gActiveBattler] &= 0xffffffdf;
                         gBattleMoveDamage = gBattleMons[gActiveBattler].hp as i32;
                         gBattlescriptCurrInstr =
-                            BattleScript_PerishSongTakesLife.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_PerishSongTakesLife
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                     } else {
                         gDisableStructs[gActiveBattler].set_perishSongTimer(
                             gDisableStructs[gActiveBattler].perishSongTimer() - 1,
                         );
                         gBattlescriptCurrInstr =
-                            BattleScript_PerishSongCountGoesDown.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_PerishSongCountGoesDown
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                     }
                     BattleScriptExecute(gBattlescriptCurrInstr);
                     return TRUE;
                 }
             }
-            *(&raw mut (*gBattleStruct).wishPerishSongState) = 2;
+            (*gBattleStruct).wishPerishSongState = 2;
             (*gBattleStruct).wishPerishSongBattlerId = 0;
         }
         if fall || sw1 == 2 {
-            fall = true;
             if gBattleTypeFlags & BATTLE_TYPE_ARENA != 0
                 && (*gBattleStruct).arenaTurnCounter == 2
                 && gBattleMons[0].hp != 0
                 && gBattleMons[1].hp != 0
             {
-                let mut i: i32 = 0;
-                i = 0;
-                while i < 2 {
+                for i in 0..2i32 {
                     CancelMultiTurnMoves(i as u8);
-                    i += 1;
                 }
-                gBattlescriptCurrInstr = BattleScript_ArenaDoJudgment.as_ptr().cast_mut();
-                BattleScriptExecute(BattleScript_ArenaDoJudgment.as_ptr().cast_mut());
+                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_ArenaDoJudgment
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
+                BattleScriptExecute(
+                    (*crate::asmdata::BattleScript_ArenaDoJudgment.cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
+                );
                 (*gBattleStruct).wishPerishSongState += 1;
                 return TRUE;
             }
@@ -2268,10 +2209,9 @@ pub unsafe extern "C" fn HandleWishPerishSongOnTurnEnd() -> u8 {
         }
     }
     gHitMarker &= 0xfeffffdf;
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleFaintedMonActions() -> u8 {
+pub unsafe fn HandleFaintedMonActions() -> u8 {
     if gBattleTypeFlags & BATTLE_TYPE_SAFARI != 0 {
         return FALSE;
     }
@@ -2286,7 +2226,9 @@ pub unsafe extern "C" fn HandleFaintedMonActions() -> u8 {
                 (*gBattleStruct).faintedActionsState += 1;
                 i = 0;
                 while i < gBattlersCount as i32 {
-                    if gAbsentBattlerFlags as u32 & gBitTable[i] != 0
+                    if gAbsentBattlerFlags as u32
+                        & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[i]
+                        != 0
                         && HasNoMonsToSwitch(i as u8, PARTY_SIZE as u8, PARTY_SIZE as u8) == 0
                     {
                         gAbsentBattlerFlags &= !(gBitTable[i] as u8);
@@ -2295,7 +2237,6 @@ pub unsafe extern "C" fn HandleFaintedMonActions() -> u8 {
                 }
             }
             if fall || sw1 == 1 {
-                fall = true;
                 loop {
                     gBattlerFainted = {
                         gBattlerTarget = (*gBattleStruct).faintedActionsBattlerId;
@@ -2303,14 +2244,19 @@ pub unsafe extern "C" fn HandleFaintedMonActions() -> u8 {
                     };
                     if gBattleMons[(*gBattleStruct).faintedActionsBattlerId].hp == 0
                         && (*gBattleStruct).givenExpMons as u32
-                            & gBitTable
+                            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
                                 [gBattlerPartyIndexes[(*gBattleStruct).faintedActionsBattlerId]]
                             == 0
                         && gAbsentBattlerFlags as u32
-                            & gBitTable[(*gBattleStruct).faintedActionsBattlerId]
+                            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                                [(*gBattleStruct).faintedActionsBattlerId]
                             == 0
                     {
-                        BattleScriptExecute(BattleScript_GiveExp.as_ptr().cast_mut());
+                        BattleScriptExecute(
+                            (*crate::asmdata::BattleScript_GiveExp.cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
+                        );
                         (*gBattleStruct).faintedActionsState = 2;
                         return TRUE;
                     }
@@ -2326,7 +2272,6 @@ pub unsafe extern "C" fn HandleFaintedMonActions() -> u8 {
                 break 'l2;
             }
             if sw1 == 2 {
-                fall = true;
                 OpponentSwitchInResetSentPokesToOpponentValue(gBattlerFainted);
                 if ({
                     (*gBattleStruct).faintedActionsBattlerId += 1;
@@ -2345,7 +2290,6 @@ pub unsafe extern "C" fn HandleFaintedMonActions() -> u8 {
                 (*gBattleStruct).faintedActionsState += 1;
             }
             if fall || sw1 == 4 {
-                fall = true;
                 loop {
                     gBattlerFainted = {
                         gBattlerTarget = (*gBattleStruct).faintedActionsBattlerId;
@@ -2353,10 +2297,16 @@ pub unsafe extern "C" fn HandleFaintedMonActions() -> u8 {
                     };
                     if gBattleMons[(*gBattleStruct).faintedActionsBattlerId].hp == 0
                         && gAbsentBattlerFlags as u32
-                            & gBitTable[(*gBattleStruct).faintedActionsBattlerId]
+                            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                                [(*gBattleStruct).faintedActionsBattlerId]
                             == 0
                     {
-                        BattleScriptExecute(BattleScript_HandleFaintedMon.as_ptr().cast_mut());
+                        BattleScriptExecute(
+                            (*crate::asmdata::BattleScript_HandleFaintedMon
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
+                        );
                         (*gBattleStruct).faintedActionsState = 5;
                         return TRUE;
                     }
@@ -2372,7 +2322,6 @@ pub unsafe extern "C" fn HandleFaintedMonActions() -> u8 {
                 break 'l2;
             }
             if sw1 == 5 {
-                fall = true;
                 if ({
                     (*gBattleStruct).faintedActionsBattlerId += 1;
                     (*gBattleStruct).faintedActionsBattlerId
@@ -2385,7 +2334,6 @@ pub unsafe extern "C" fn HandleFaintedMonActions() -> u8 {
                 break 'l2;
             }
             if sw1 == 6 {
-                fall = true;
                 if AbilityBattleEffects(ABILITYEFFECT_INTIMIDATE1, 0, 0, 0, 0) != 0
                     || AbilityBattleEffects(ABILITYEFFECT_TRACE, 0, 0, 0, 0) != 0
                     || ItemBattleEffects(1, 0, 1) != 0
@@ -2397,7 +2345,6 @@ pub unsafe extern "C" fn HandleFaintedMonActions() -> u8 {
                 break 'l2;
             }
             if sw1 == FAINTED_ACTIONS_MAX_CASE {
-                fall = true;
                 break 'l2;
             }
         }
@@ -2405,23 +2352,18 @@ pub unsafe extern "C" fn HandleFaintedMonActions() -> u8 {
             break;
         }
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryClearRageStatuses() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < gBattlersCount as i32 {
+pub unsafe fn TryClearRageStatuses() {
+    for i in 0..(gBattlersCount as i32) {
         if gBattleMons[i].status2 & STATUS2_RAGE != 0 && gChosenMoveByBattler[i] != MOVE_RAGE {
             gBattleMons[i].status2 &= 0xff7fffff;
         }
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
+pub unsafe fn AtkCanceler_UnableToUseMove() -> u8 {
     let mut effect: u8 = 0;
-    let mut bideDmg: *mut i32 = &raw mut gBattleScripting.bideDmg;
+    let bideDmg: *mut i32 = &raw mut gBattleScripting.bideDmg;
     loop {
         'l2: {
             match (*gBattleStruct).atkCancelerTracker {
@@ -2437,8 +2379,10 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                             gBattleMons[gBattlerAttacker].status2 &= 0xf7ffffff;
                             BattleScriptPushCursor();
                             gBattleCommunication[5] = B_MSG_WOKE_UP_UPROAR;
-                            gBattlescriptCurrInstr =
-                                BattleScript_MoveUsedWokeUp.as_ptr().cast_mut();
+                            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedWokeUp
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                             effect = 2;
                         } else {
                             let mut toSub: u8 = 0;
@@ -2456,7 +2400,10 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                             if gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP != 0 {
                                 if gCurrentMove != MOVE_SNORE && gCurrentMove != MOVE_SLEEP_TALK {
                                     gBattlescriptCurrInstr =
-                                        BattleScript_MoveUsedIsAsleep.as_ptr().cast_mut();
+                                        (*crate::asmdata::BattleScript_MoveUsedIsAsleep
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut();
                                     gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
                                     effect = 2;
                                 }
@@ -2465,7 +2412,10 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                                 BattleScriptPushCursor();
                                 gBattleCommunication[5] = B_MSG_WOKE_UP;
                                 gBattlescriptCurrInstr =
-                                    BattleScript_MoveUsedWokeUp.as_ptr().cast_mut();
+                                    (*crate::asmdata::BattleScript_MoveUsedWokeUp
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut();
                                 effect = 2;
                             }
                         }
@@ -2475,9 +2425,19 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                 CANCELER_FROZEN => {
                     if gBattleMons[gBattlerAttacker].status1 & STATUS1_FREEZE != 0 {
                         if Random() as i32 % 5 != 0 {
-                            if gBattleMoves[gCurrentMove].effect != EFFECT_THAW_HIT {
+                            if (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<
+                                BattleMove,
+                                0,
+                            >>(
+                            ))[gCurrentMove]
+                                .effect
+                                != EFFECT_THAW_HIT
+                            {
                                 gBattlescriptCurrInstr =
-                                    BattleScript_MoveUsedIsFrozen.as_ptr().cast_mut();
+                                    (*crate::asmdata::BattleScript_MoveUsedIsFrozen
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut();
                                 gHitMarker |= HITMARKER_NO_ATTACKSTRING;
                             } else {
                                 (*gBattleStruct).atkCancelerTracker += 1;
@@ -2487,7 +2447,10 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                             gBattleMons[gBattlerAttacker].status1 &= 0xffffffdf;
                             BattleScriptPushCursor();
                             gBattlescriptCurrInstr =
-                                BattleScript_MoveUsedUnfroze.as_ptr().cast_mut();
+                                (*crate::asmdata::BattleScript_MoveUsedUnfroze
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                             gBattleCommunication[5] = B_MSG_DEFROSTED;
                         }
                         effect = 2;
@@ -2502,7 +2465,10 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                         gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
                         gBattleCommunication[5] = B_MSG_LOAFING;
                         gBattlescriptCurrInstr =
-                            BattleScript_MoveUsedLoafingAround.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_MoveUsedLoafingAround
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                         gMoveResultFlags |= MOVE_RESULT_MISSED;
                         effect = 1;
                     }
@@ -2514,7 +2480,10 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                         gDisableStructs[gBattlerAttacker].rechargeTimer = 0;
                         CancelMultiTurnMoves(gBattlerAttacker);
                         gBattlescriptCurrInstr =
-                            BattleScript_MoveUsedMustRecharge.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_MoveUsedMustRecharge
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                         gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
                         effect = 1;
                     }
@@ -2525,7 +2494,10 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                         gBattleMons[gBattlerAttacker].status2 &= 0xfffffff7;
                         gProtectStructs[gBattlerAttacker].set_flinchImmobility(1);
                         CancelMultiTurnMoves(gBattlerAttacker);
-                        gBattlescriptCurrInstr = BattleScript_MoveUsedFlinched.as_ptr().cast_mut();
+                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedFlinched
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut();
                         gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
                         effect = 1;
                     }
@@ -2538,8 +2510,10 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                         gProtectStructs[gBattlerAttacker].set_usedDisabledMove(1);
                         gBattleScripting.battler = gBattlerAttacker;
                         CancelMultiTurnMoves(gBattlerAttacker);
-                        gBattlescriptCurrInstr =
-                            BattleScript_MoveUsedIsDisabled.as_ptr().cast_mut();
+                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedIsDisabled
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut();
                         gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
                         effect = 1;
                     }
@@ -2547,11 +2521,17 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                 }
                 CANCELER_TAUNTED => {
                     if gDisableStructs[gBattlerAttacker].tauntTimer() != 0
-                        && gBattleMoves[gCurrentMove].power == 0
+                        && (*(&raw const crate::data::pokemon::gBattleMoves)
+                            .cast::<CArray<BattleMove, 0>>())[gCurrentMove]
+                            .power
+                            == 0
                     {
                         gProtectStructs[gBattlerAttacker].set_usedTauntedMove(1);
                         CancelMultiTurnMoves(gBattlerAttacker);
-                        gBattlescriptCurrInstr = BattleScript_MoveUsedIsTaunted.as_ptr().cast_mut();
+                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedIsTaunted
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut();
                         gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
                         effect = 1;
                     }
@@ -2562,7 +2542,10 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                         gProtectStructs[gBattlerAttacker].set_usedImprisonedMove(1);
                         CancelMultiTurnMoves(gBattlerAttacker);
                         gBattlescriptCurrInstr =
-                            BattleScript_MoveUsedIsImprisoned.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_MoveUsedIsImprisoned
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                         gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
                         effect = 1;
                     }
@@ -2592,11 +2575,17 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                                 gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
                             }
                             gBattlescriptCurrInstr =
-                                BattleScript_MoveUsedIsConfused.as_ptr().cast_mut();
+                                (*crate::asmdata::BattleScript_MoveUsedIsConfused
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                         } else {
                             BattleScriptPushCursor();
                             gBattlescriptCurrInstr =
-                                BattleScript_MoveUsedIsConfusedNoMore.as_ptr().cast_mut();
+                                (*crate::asmdata::BattleScript_MoveUsedIsConfusedNoMore
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                         }
                         effect = 1;
                     }
@@ -2608,7 +2597,10 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                     {
                         gProtectStructs[gBattlerAttacker].set_prlzImmobility(1);
                         gBattlescriptCurrInstr =
-                            BattleScript_MoveUsedIsParalyzed.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_MoveUsedIsParalyzed
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                         gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
                         effect = 1;
                     }
@@ -2623,13 +2615,19 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                             BattleScriptPushCursor();
                         } else {
                             BattleScriptPush(
-                                BattleScript_MoveUsedIsInLoveCantAttack.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_MoveUsedIsInLoveCantAttack
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
                             gProtectStructs[gBattlerAttacker].set_loveImmobility(1);
                             CancelMultiTurnMoves(gBattlerAttacker);
                         }
-                        gBattlescriptCurrInstr = BattleScript_MoveUsedIsInLove.as_ptr().cast_mut();
+                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedIsInLove
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut();
                         effect = 1;
                     }
                     (*gBattleStruct).atkCancelerTracker += 1;
@@ -2639,20 +2637,32 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                         gBattleMons[gBattlerAttacker].status2 -= 256;
                         if gBattleMons[gBattlerAttacker].status2 & STATUS2_BIDE != 0 {
                             gBattlescriptCurrInstr =
-                                BattleScript_BideStoringEnergy.as_ptr().cast_mut();
+                                (*crate::asmdata::BattleScript_BideStoringEnergy
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                         } else {
                             if gBideDmg[gBattlerAttacker] != 0 {
                                 gCurrentMove = MOVE_BIDE;
                                 *bideDmg = gBideDmg[gBattlerAttacker] * 2;
                                 gBattlerTarget = gBideTarget[gBattlerAttacker];
-                                if gAbsentBattlerFlags as u32 & gBitTable[gBattlerTarget] != 0 {
+                                if gAbsentBattlerFlags as u32
+                                    & (*(&raw const crate::util::gBitTable)
+                                        .cast::<CArray<u32, 0>>())[gBattlerTarget]
+                                    != 0
+                                {
                                     gBattlerTarget = GetMoveTarget(MOVE_BIDE, 1);
                                 }
-                                gBattlescriptCurrInstr =
-                                    BattleScript_BideAttack.as_ptr().cast_mut();
+                                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_BideAttack
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                             } else {
                                 gBattlescriptCurrInstr =
-                                    BattleScript_BideNoEnergyToAttack.as_ptr().cast_mut();
+                                    (*crate::asmdata::BattleScript_BideNoEnergyToAttack
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut();
                             }
                         }
                         effect = 1;
@@ -2661,11 +2671,18 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
                 }
                 CANCELER_THAW => {
                     if gBattleMons[gBattlerAttacker].status1 & STATUS1_FREEZE != 0 {
-                        if gBattleMoves[gCurrentMove].effect == EFFECT_THAW_HIT {
+                        if (*(&raw const crate::data::pokemon::gBattleMoves)
+                            .cast::<CArray<BattleMove, 0>>())[gCurrentMove]
+                            .effect
+                            == EFFECT_THAW_HIT
+                        {
                             gBattleMons[gBattlerAttacker].status1 &= 0xffffffdf;
                             BattleScriptPushCursor();
                             gBattlescriptCurrInstr =
-                                BattleScript_MoveUsedUnfroze.as_ptr().cast_mut();
+                                (*crate::asmdata::BattleScript_MoveUsedUnfroze
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                             gBattleCommunication[5] = B_MSG_DEFROSTED_BY_MOVE;
                         }
                         effect = 2;
@@ -2691,10 +2708,9 @@ pub unsafe extern "C" fn AtkCanceler_UnableToUseMove() -> u8 {
         );
         MarkBattlerForControllerExec(gActiveBattler);
     }
-    return effect;
+    effect
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HasNoMonsToSwitch(
+pub unsafe fn HasNoMonsToSwitch(
     battler: u8,
     mut partyIdBattlerOn1: u8,
     mut partyIdBattlerOn2: u8,
@@ -2812,11 +2828,10 @@ pub unsafe extern "C" fn HasNoMonsToSwitch(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CastformDataTypeChange(battler: u8) -> u8 {
+pub unsafe fn CastformDataTypeChange(battler: u8) -> u8 {
     let mut formChange: u8 = 0;
     if gBattleMons[battler].species != SPECIES_CASTFORM
         || gBattleMons[battler].ability != ABILITY_FORECAST
@@ -2867,10 +2882,9 @@ pub unsafe extern "C" fn CastformDataTypeChange(battler: u8) -> u8 {
         gBattleMons[battler].types[1] = TYPE_ICE;
         formChange = 4;
     }
-    return formChange;
+    formChange
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AbilityBattleEffects(
+pub unsafe fn AbilityBattleEffects(
     caseID: u8,
     mut battler: u8,
     ability: u8,
@@ -2880,10 +2894,6 @@ pub unsafe extern "C" fn AbilityBattleEffects(
     let mut effect: u8 = 0;
     let mut pokeAtk: *mut Pokemon = null_mut();
     let mut pokeDef: *mut Pokemon = null_mut();
-    let mut speciesAtk: u16 = 0;
-    let mut speciesDef: u16 = 0;
-    let mut pidAtk: u32 = 0;
-    let mut pidDef: u32 = 0;
     if gBattlerAttacker >= gBattlersCount {
         gBattlerAttacker = battler;
     }
@@ -2900,10 +2910,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
     } else {
         pokeDef = &raw mut gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]];
     }
-    speciesAtk = GetMonData2(pokeAtk, MON_DATA_SPECIES) as u16;
-    pidAtk = GetMonData2(pokeAtk, MON_DATA_PERSONALITY);
-    speciesDef = GetMonData2(pokeDef, MON_DATA_SPECIES) as u16;
-    pidDef = GetMonData2(pokeDef, MON_DATA_PERSONALITY);
+    let speciesAtk: u16 = GetMonData2(pokeAtk, MON_DATA_SPECIES) as u16;
+    let pidAtk: u32 = GetMonData2(pokeAtk, MON_DATA_PERSONALITY);
+    let speciesDef: u16 = GetMonData2(pokeDef, MON_DATA_SPECIES) as u16;
+    let pidDef: u32 = GetMonData2(pokeDef, MON_DATA_PERSONALITY);
     if gBattleTypeFlags & BATTLE_TYPE_SAFARI == 0 {
         let mut moveType: u8 = 0;
         let mut i: i32 = 0;
@@ -2923,7 +2933,9 @@ pub unsafe extern "C" fn AbilityBattleEffects(
         if (*gBattleStruct).dynamicMoveType != 0 {
             moveType = (*gBattleStruct).dynamicMoveType & 63;
         } else {
-            moveType = gBattleMoves[r#move].r#type;
+            moveType = (*(&raw const crate::data::pokemon::gBattleMoves)
+                .cast::<CArray<BattleMove, 0>>())[r#move]
+                .r#type;
         }
         match caseID {
             0 => {
@@ -2950,13 +2962,11 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                                         effect += 1;
                                     }
                                 }
-                                WEATHER_DROUGHT => {
-                                    if gBattleWeather as i32 & B_WEATHER_SUN == 0 {
-                                        gBattleWeather = B_WEATHER_SUN as u16;
-                                        gBattleScripting.animArg1 = B_ANIM_SUN_CONTINUES;
-                                        gBattleScripting.battler = battler;
-                                        effect += 1;
-                                    }
+                                WEATHER_DROUGHT if gBattleWeather as i32 & B_WEATHER_SUN == 0 => {
+                                    gBattleWeather = B_WEATHER_SUN as u16;
+                                    gBattleScripting.animArg1 = B_ANIM_SUN_CONTINUES;
+                                    gBattleScripting.battler = battler;
+                                    effect += 1;
                                 }
                                 _ => {}
                             }
@@ -2964,7 +2974,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         if effect != 0 {
                             gBattleCommunication[5] = GetCurrentWeather();
                             BattleScriptPushCursorAndCallback(
-                                BattleScript_OverworldWeatherStarts.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_OverworldWeatherStarts
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                         }
                     }
@@ -2972,7 +2985,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         if gBattleWeather as i32 & B_WEATHER_RAIN_PERMANENT == 0 {
                             gBattleWeather = 5;
                             BattleScriptPushCursorAndCallback(
-                                BattleScript_DrizzleActivates.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_DrizzleActivates
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             gBattleScripting.battler = battler;
                             effect += 1;
@@ -2982,7 +2998,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         if gBattleWeather as i32 & B_WEATHER_SANDSTORM_PERMANENT == 0 {
                             gBattleWeather = B_WEATHER_SANDSTORM as u16;
                             BattleScriptPushCursorAndCallback(
-                                BattleScript_SandstreamActivates.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_SandstreamActivates
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             gBattleScripting.battler = battler;
                             effect += 1;
@@ -2992,7 +3011,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         if gBattleWeather as i32 & B_WEATHER_SUN_PERMANENT == 0 {
                             gBattleWeather = B_WEATHER_SUN as u16;
                             BattleScriptPushCursorAndCallback(
-                                BattleScript_DroughtActivates.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_DroughtActivates
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             gBattleScripting.battler = battler;
                             effect += 1;
@@ -3008,10 +3030,13 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         effect = CastformDataTypeChange(battler);
                         if effect != 0 {
                             BattleScriptPushCursorAndCallback(
-                                BattleScript_CastformChange.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_CastformChange
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             gBattleScripting.battler = battler;
-                            *(&raw mut (*gBattleStruct).formToChangeInto) = effect - 1;
+                            (*gBattleStruct).formToChangeInto = effect - 1;
                         }
                     }
                     ABILITY_TRACE => {
@@ -3026,10 +3051,13 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                             effect = CastformDataTypeChange(target1);
                             if effect != 0 {
                                 BattleScriptPushCursorAndCallback(
-                                    BattleScript_CastformChange.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_CastformChange
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                                 gBattleScripting.battler = target1;
-                                *(&raw mut (*gBattleStruct).formToChangeInto) = effect - 1;
+                                (*gBattleStruct).formToChangeInto = effect - 1;
                                 break;
                             }
                             target1 += 1;
@@ -3050,7 +3078,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                             {
                                 gLastUsedAbility = ABILITY_RAIN_DISH;
                                 BattleScriptPushCursorAndCallback(
-                                    BattleScript_RainDishActivates.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_RainDishActivates
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                                 gBattleMoveDamage = gBattleMons[battler].maxHP as i32 / 16;
                                 if gBattleMoveDamage == 0 {
@@ -3067,31 +3098,31 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                                 if gBattleMons[battler].status1 & 136 != 0 {
                                     StringCopy(
                                         gBattleTextBuff1.as_mut_ptr(),
-                                        gStatusConditionString_PoisonJpn.as_ptr().cast_mut(),
+                                        (*(&raw const crate::data::battle_main::gStatusConditionString_PoisonJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                     );
                                 }
                                 if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
                                     StringCopy(
                                         gBattleTextBuff1.as_mut_ptr(),
-                                        gStatusConditionString_SleepJpn.as_ptr().cast_mut(),
+                                        (*(&raw const crate::data::battle_main::gStatusConditionString_SleepJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                     );
                                 }
                                 if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
                                     StringCopy(
                                         gBattleTextBuff1.as_mut_ptr(),
-                                        gStatusConditionString_ParalysisJpn.as_ptr().cast_mut(),
+                                        (*(&raw const crate::data::battle_main::gStatusConditionString_ParalysisJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                     );
                                 }
                                 if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
                                     StringCopy(
                                         gBattleTextBuff1.as_mut_ptr(),
-                                        gStatusConditionString_BurnJpn.as_ptr().cast_mut(),
+                                        (*(&raw const crate::data::battle_main::gStatusConditionString_BurnJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                     );
                                 }
                                 if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
                                     StringCopy(
                                         gBattleTextBuff1.as_mut_ptr(),
-                                        gStatusConditionString_IceJpn.as_ptr().cast_mut(),
+                                        (*(&raw const crate::data::battle_main::gStatusConditionString_IceJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                     );
                                 }
                                 gBattleMons[battler].status1 = 0;
@@ -3101,7 +3132,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                                     gActiveBattler
                                 };
                                 BattleScriptPushCursorAndCallback(
-                                    BattleScript_ShedSkinActivates.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_ShedSkinActivates
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                                 BtlController_EmitSetMonData(
                                     B_COMM_TO_CONTROLLER,
@@ -3122,7 +3156,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                                 gBattleScripting.animArg1 = 17;
                                 gBattleScripting.animArg2 = 0;
                                 BattleScriptPushCursorAndCallback(
-                                    BattleScript_SpeedBoostActivates.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_SpeedBoostActivates
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                                 gBattleScripting.battler = battler;
                                 effect += 1;
@@ -3151,7 +3188,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                             gHitMarker |= HITMARKER_NO_PPDEDUCT;
                         }
                         gBattlescriptCurrInstr =
-                            BattleScript_SoundproofProtected.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_SoundproofProtected
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                         effect = 1;
                     }
                 }
@@ -3160,59 +3200,98 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                 if r#move != 0 {
                     match gLastUsedAbility {
                         ABILITY_VOLT_ABSORB => {
-                            if moveType == TYPE_ELECTRIC && gBattleMoves[r#move].power != 0 {
+                            if moveType == TYPE_ELECTRIC
+                                && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<
+                                    BattleMove,
+                                    0,
+                                >>(
+                                ))[r#move]
+                                    .power
+                                    != 0
+                            {
                                 if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
                                     gBattlescriptCurrInstr =
-                                        BattleScript_MoveHPDrain.as_ptr().cast_mut();
+                                        (*crate::asmdata::BattleScript_MoveHPDrain
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut();
                                 } else {
                                     gBattlescriptCurrInstr =
-                                        BattleScript_MoveHPDrain_PPLoss.as_ptr().cast_mut();
+                                        (*crate::asmdata::BattleScript_MoveHPDrain_PPLoss
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut();
                                 }
                                 effect = 1;
                             }
                         }
                         ABILITY_WATER_ABSORB => {
-                            if moveType == TYPE_WATER && gBattleMoves[r#move].power != 0 {
+                            if moveType == TYPE_WATER
+                                && (*(&raw const crate::data::pokemon::gBattleMoves).cast::<CArray<
+                                    BattleMove,
+                                    0,
+                                >>(
+                                ))[r#move]
+                                    .power
+                                    != 0
+                            {
                                 if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
                                     gBattlescriptCurrInstr =
-                                        BattleScript_MoveHPDrain.as_ptr().cast_mut();
+                                        (*crate::asmdata::BattleScript_MoveHPDrain
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut();
                                 } else {
                                     gBattlescriptCurrInstr =
-                                        BattleScript_MoveHPDrain_PPLoss.as_ptr().cast_mut();
+                                        (*crate::asmdata::BattleScript_MoveHPDrain_PPLoss
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut();
                                 }
                                 effect = 1;
                             }
                         }
-                        ABILITY_FLASH_FIRE => {
+                        ABILITY_FLASH_FIRE
                             if moveType == TYPE_FIRE
-                                && gBattleMons[battler].status1 & STATUS1_FREEZE == 0
+                                && gBattleMons[battler].status1 & STATUS1_FREEZE == 0 =>
+                        {
+                            if (*(*gBattleResources).flags).flags[battler]
+                                & RESOURCE_FLAG_FLASH_FIRE
+                                == 0
                             {
-                                if (*(*gBattleResources).flags).flags[battler]
-                                    & RESOURCE_FLAG_FLASH_FIRE
-                                    == 0
-                                {
-                                    gBattleCommunication[5] = B_MSG_FLASH_FIRE_BOOST;
-                                    if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
-                                        gBattlescriptCurrInstr =
-                                            BattleScript_FlashFireBoost.as_ptr().cast_mut();
-                                    } else {
-                                        gBattlescriptCurrInstr =
-                                            BattleScript_FlashFireBoost_PPLoss.as_ptr().cast_mut();
-                                    }
-                                    (*(*gBattleResources).flags).flags[battler] |=
-                                        RESOURCE_FLAG_FLASH_FIRE;
-                                    effect = 2;
+                                gBattleCommunication[5] = B_MSG_FLASH_FIRE_BOOST;
+                                if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
+                                    gBattlescriptCurrInstr =
+                                        (*crate::asmdata::BattleScript_FlashFireBoost
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut();
                                 } else {
-                                    gBattleCommunication[5] = B_MSG_FLASH_FIRE_NO_BOOST;
-                                    if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
-                                        gBattlescriptCurrInstr =
-                                            BattleScript_FlashFireBoost.as_ptr().cast_mut();
-                                    } else {
-                                        gBattlescriptCurrInstr =
-                                            BattleScript_FlashFireBoost_PPLoss.as_ptr().cast_mut();
-                                    }
-                                    effect = 2;
+                                    gBattlescriptCurrInstr =
+                                        (*crate::asmdata::BattleScript_FlashFireBoost_PPLoss
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut();
                                 }
+                                (*(*gBattleResources).flags).flags[battler] |=
+                                    RESOURCE_FLAG_FLASH_FIRE;
+                                effect = 2;
+                            } else {
+                                gBattleCommunication[5] = B_MSG_FLASH_FIRE_NO_BOOST;
+                                if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
+                                    gBattlescriptCurrInstr =
+                                        (*crate::asmdata::BattleScript_FlashFireBoost
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut();
+                                } else {
+                                    gBattlescriptCurrInstr =
+                                        (*crate::asmdata::BattleScript_FlashFireBoost_PPLoss
+                                            .cast::<CArray<u8, 0>>())
+                                        .as_ptr()
+                                        .cast_mut();
+                                }
+                                effect = 2;
                             }
                         }
                         _ => {}
@@ -3221,10 +3300,16 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         if gBattleMons[battler].maxHP == gBattleMons[battler].hp {
                             if gProtectStructs[gBattlerAttacker].notFirstStrike() != 0 {
                                 gBattlescriptCurrInstr =
-                                    BattleScript_MonMadeMoveUseless.as_ptr().cast_mut();
+                                    (*crate::asmdata::BattleScript_MonMadeMoveUseless
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut();
                             } else {
                                 gBattlescriptCurrInstr =
-                                    BattleScript_MonMadeMoveUseless_PPLoss.as_ptr().cast_mut();
+                                    (*crate::asmdata::BattleScript_MonMadeMoveUseless_PPLoss
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut();
                             }
                         } else {
                             gBattleMoveDamage = gBattleMons[battler].maxHP as i32 / 4;
@@ -3240,7 +3325,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                 ABILITY_COLOR_CHANGE => {
                     if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
                         && r#move != MOVE_STRUGGLE
-                        && gBattleMoves[r#move].power != 0
+                        && (*(&raw const crate::data::pokemon::gBattleMoves)
+                            .cast::<CArray<BattleMove, 0>>())[r#move]
+                            .power
+                            != 0
                         && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
                             || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
                         && !(gBattleMons[battler].types[0] == moveType
@@ -3255,7 +3343,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         gBattleTextBuff1[3] = 0xFF;
                         BattleScriptPushCursor();
                         gBattlescriptCurrInstr =
-                            BattleScript_ColorChangeActivates.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_ColorChangeActivates
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                         effect += 1;
                     }
                 }
@@ -3265,15 +3356,21 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
                         && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
                             || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
-                        && gBattleMoves[r#move].flags as i32 & FLAG_MAKES_CONTACT != 0
+                        && (*(&raw const crate::data::pokemon::gBattleMoves)
+                            .cast::<CArray<BattleMove, 0>>())[r#move]
+                            .flags as i32
+                            & FLAG_MAKES_CONTACT
+                            != 0
                     {
                         gBattleMoveDamage = gBattleMons[gBattlerAttacker].maxHP as i32 / 16;
                         if gBattleMoveDamage == 0 {
                             gBattleMoveDamage = 1;
                         }
                         BattleScriptPushCursor();
-                        gBattlescriptCurrInstr =
-                            BattleScript_RoughSkinActivates.as_ptr().cast_mut();
+                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_RoughSkinActivates
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut();
                         effect += 1;
                     }
                 }
@@ -3283,7 +3380,11 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
                         && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
                             || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
-                        && gBattleMoves[r#move].flags as i32 & FLAG_MAKES_CONTACT != 0
+                        && (*(&raw const crate::data::pokemon::gBattleMoves)
+                            .cast::<CArray<BattleMove, 0>>())[r#move]
+                            .flags as i32
+                            & FLAG_MAKES_CONTACT
+                            != 0
                         && Random() as i32 % 10 == 0
                     {
                         loop {
@@ -3298,7 +3399,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         gBattleCommunication[3] += MOVE_EFFECT_AFFECTS_USER;
                         BattleScriptPushCursor();
                         gBattlescriptCurrInstr =
-                            BattleScript_ApplySecondaryEffect.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_ApplySecondaryEffect
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                         gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
                         effect += 1;
                     }
@@ -3309,13 +3413,20 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
                         && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
                             || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
-                        && gBattleMoves[r#move].flags as i32 & FLAG_MAKES_CONTACT != 0
+                        && (*(&raw const crate::data::pokemon::gBattleMoves)
+                            .cast::<CArray<BattleMove, 0>>())[r#move]
+                            .flags as i32
+                            & FLAG_MAKES_CONTACT
+                            != 0
                         && Random() as i32 % 3 == 0
                     {
                         gBattleCommunication[3] = 66;
                         BattleScriptPushCursor();
                         gBattlescriptCurrInstr =
-                            BattleScript_ApplySecondaryEffect.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_ApplySecondaryEffect
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                         gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
                         effect += 1;
                     }
@@ -3326,13 +3437,20 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
                         && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
                             || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
-                        && gBattleMoves[r#move].flags as i32 & FLAG_MAKES_CONTACT != 0
+                        && (*(&raw const crate::data::pokemon::gBattleMoves)
+                            .cast::<CArray<BattleMove, 0>>())[r#move]
+                            .flags as i32
+                            & FLAG_MAKES_CONTACT
+                            != 0
                         && Random() as i32 % 3 == 0
                     {
                         gBattleCommunication[3] = 69;
                         BattleScriptPushCursor();
                         gBattlescriptCurrInstr =
-                            BattleScript_ApplySecondaryEffect.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_ApplySecondaryEffect
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                         gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
                         effect += 1;
                     }
@@ -3341,7 +3459,11 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                     if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
                         && gBattleMons[gBattlerAttacker].hp != 0
                         && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
-                        && gBattleMoves[r#move].flags as i32 & FLAG_MAKES_CONTACT != 0
+                        && (*(&raw const crate::data::pokemon::gBattleMoves)
+                            .cast::<CArray<BattleMove, 0>>())[r#move]
+                            .flags as i32
+                            & FLAG_MAKES_CONTACT
+                            != 0
                         && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
                             || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
                         && Random() as i32 % 3 == 0
@@ -3349,16 +3471,23 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         gBattleCommunication[3] = 67;
                         BattleScriptPushCursor();
                         gBattlescriptCurrInstr =
-                            BattleScript_ApplySecondaryEffect.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_ApplySecondaryEffect
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                         gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
                         effect += 1;
                     }
                 }
-                ABILITY_CUTE_CHARM => {
+                ABILITY_CUTE_CHARM
                     if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
                         && gBattleMons[gBattlerAttacker].hp != 0
                         && gProtectStructs[gBattlerAttacker].confusionSelfDmg() == 0
-                        && gBattleMoves[r#move].flags as i32 & FLAG_MAKES_CONTACT != 0
+                        && (*(&raw const crate::data::pokemon::gBattleMoves)
+                            .cast::<CArray<BattleMove, 0>>())[r#move]
+                            .flags as i32
+                            & FLAG_MAKES_CONTACT
+                            != 0
                         && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
                             || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
                         && gBattleMons[gBattlerTarget].hp != 0
@@ -3367,15 +3496,18 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         && GetGenderFromSpeciesAndPersonality(speciesAtk, pidAtk)
                             != GetGenderFromSpeciesAndPersonality(speciesDef, pidDef)
                         && gBattleMons[gBattlerAttacker].status2 & STATUS2_INFATUATION == 0
-                        && GetGenderFromSpeciesAndPersonality(speciesAtk, pidAtk) != MON_GENDERLESS
-                        && GetGenderFromSpeciesAndPersonality(speciesDef, pidDef) != MON_GENDERLESS
-                    {
-                        gBattleMons[gBattlerAttacker].status2 |= gBitTable[gBattlerTarget] << 16;
-                        BattleScriptPushCursor();
-                        gBattlescriptCurrInstr =
-                            BattleScript_CuteCharmActivates.as_ptr().cast_mut();
-                        effect += 1;
-                    }
+                        && GetGenderFromSpeciesAndPersonality(speciesAtk, pidAtk)
+                            != MON_GENDERLESS
+                        && GetGenderFromSpeciesAndPersonality(speciesDef, pidDef)
+                            != MON_GENDERLESS =>
+                {
+                    gBattleMons[gBattlerAttacker].status2 |= gBitTable[gBattlerTarget] << 16;
+                    BattleScriptPushCursor();
+                    gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_CuteCharmActivates
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut();
+                    effect += 1;
                 }
                 _ => {}
             },
@@ -3387,7 +3519,7 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                             if gBattleMons[battler].status1 & 3976 != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_PoisonJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_PoisonJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 effect = 1;
                             }
@@ -3396,7 +3528,7 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                             if gBattleMons[battler].status2 & STATUS2_CONFUSION != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_ConfusionJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_ConfusionJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 effect = 2;
                             }
@@ -3405,7 +3537,7 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                             if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_ParalysisJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_ParalysisJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 effect = 1;
                             }
@@ -3415,7 +3547,7 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                                 gBattleMons[battler].status2 &= 0xf7ffffff;
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_SleepJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_SleepJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 effect = 1;
                             }
@@ -3424,7 +3556,7 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                             if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_BurnJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_BurnJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 effect = 1;
                             }
@@ -3433,19 +3565,19 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                             if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_IceJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_IceJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 effect = 1;
                             }
                         }
-                        ABILITY_OBLIVIOUS => {
-                            if gBattleMons[battler].status2 & STATUS2_INFATUATION != 0 {
-                                StringCopy(
-                                    gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_LoveJpn.as_ptr().cast_mut(),
-                                );
-                                effect = 3;
-                            }
+                        ABILITY_OBLIVIOUS
+                            if gBattleMons[battler].status2 & STATUS2_INFATUATION != 0 =>
+                        {
+                            StringCopy(
+                                gBattleTextBuff1.as_mut_ptr(),
+                                (*(&raw const crate::data::battle_main::gStatusConditionString_LoveJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
+                            );
+                            effect = 3;
                         }
                         _ => {}
                     }
@@ -3463,8 +3595,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                             _ => {}
                         }
                         BattleScriptPushCursor();
-                        gBattlescriptCurrInstr =
-                            BattleScript_AbilityCuredStatus.as_ptr().cast_mut();
+                        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_AbilityCuredStatus
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut();
                         gBattleScripting.battler = battler;
                         gActiveBattler = battler;
                         BtlController_EmitSetMonData(
@@ -3487,10 +3621,13 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         effect = CastformDataTypeChange(battler);
                         if effect != 0 {
                             BattleScriptPushCursorAndCallback(
-                                BattleScript_CastformChange.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_CastformChange
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             gBattleScripting.battler = battler;
-                            *(&raw mut (*gBattleStruct).formToChangeInto) = effect - 1;
+                            (*gBattleStruct).formToChangeInto = effect - 1;
                             return effect;
                         }
                     }
@@ -3510,7 +3647,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         (*gBattleStruct).synchronizeMoveEffect + MOVE_EFFECT_AFFECTS_USER;
                     gBattleScripting.battler = gBattlerTarget;
                     BattleScriptPushCursor();
-                    gBattlescriptCurrInstr = BattleScript_SynchronizeActivates.as_ptr().cast_mut();
+                    gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_SynchronizeActivates
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut();
                     gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
                     effect += 1;
                 }
@@ -3527,7 +3667,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                     gBattleCommunication[3] = (*gBattleStruct).synchronizeMoveEffect;
                     gBattleScripting.battler = gBattlerAttacker;
                     BattleScriptPushCursor();
-                    gBattlescriptCurrInstr = BattleScript_SynchronizeActivates.as_ptr().cast_mut();
+                    gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_SynchronizeActivates
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut();
                     gHitMarker |= HITMARKER_STATUS_ABILITY_EFFECT;
                     effect += 1;
                 }
@@ -3541,7 +3684,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         gLastUsedAbility = ABILITY_INTIMIDATE;
                         gStatuses3[i] &= 0xfff7ffff;
                         BattleScriptPushCursorAndCallback(
-                            BattleScript_IntimidateActivatesEnd3.as_ptr().cast_mut(),
+                            (*crate::asmdata::BattleScript_IntimidateActivatesEnd3
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
                         );
                         (*gBattleStruct).intimidateBattler = i as u8;
                         effect += 1;
@@ -3555,10 +3701,9 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                 while i < gBattlersCount as i32 {
                     if gBattleMons[i].ability == ABILITY_TRACE && gStatuses3[i] & STATUS3_TRACE != 0
                     {
-                        let mut target2: u8 = 0;
                         side = (GetBattlerPosition(i as u8) ^ BIT_SIDE) & BIT_SIDE;
                         target1 = GetBattlerAtPosition(side);
-                        target2 = GetBattlerAtPosition(side + BIT_FLANK);
+                        let target2: u8 = GetBattlerAtPosition(side + BIT_FLANK);
                         if gBattleTypeFlags & BATTLE_TYPE_DOUBLE != 0 {
                             if gBattleMons[target1].ability != 0
                                 && gBattleMons[target1].hp != 0
@@ -3566,7 +3711,7 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                                 && gBattleMons[target2].hp != 0
                             {
                                 gActiveBattler =
-                                    GetBattlerAtPosition((Random() as u8 & 1) * 2 | side);
+                                    GetBattlerAtPosition(((Random() as u8 & 1) * 2) | side);
                                 gBattleMons[i].ability = gBattleMons[gActiveBattler].ability;
                                 gLastUsedAbility = gBattleMons[gActiveBattler].ability;
                                 effect += 1;
@@ -3595,7 +3740,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         }
                         if effect != 0 {
                             BattleScriptPushCursorAndCallback(
-                                BattleScript_TraceActivates.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_TraceActivates
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             gStatuses3[i] &= 0xffefffff;
                             gBattleScripting.battler = i as u8;
@@ -3624,7 +3772,10 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                         gStatuses3[i] &= 0xfff7ffff;
                         BattleScriptPushCursor();
                         gBattlescriptCurrInstr =
-                            BattleScript_IntimidateActivates.as_ptr().cast_mut();
+                            (*crate::asmdata::BattleScript_IntimidateActivates
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                         (*gBattleStruct).intimidateBattler = i as u8;
                         effect += 1;
                         break;
@@ -3656,52 +3807,42 @@ pub unsafe extern "C" fn AbilityBattleEffects(
             }
             14 => match gLastUsedAbility {
                 ABILITYEFFECT_MUD_SPORT => {
-                    i = 0;
-                    while i < gBattlersCount as i32 {
+                    for i in 0..(gBattlersCount as i32) {
                         if gStatuses3[i] & STATUS3_MUDSPORT != 0 {
                             effect = i as u8 + 1;
                         }
-                        i += 1;
                     }
                 }
                 ABILITYEFFECT_WATER_SPORT => {
-                    i = 0;
-                    while i < gBattlersCount as i32 {
+                    for i in 0..(gBattlersCount as i32) {
                         if gStatuses3[i] & STATUS3_WATERSPORT != 0 {
                             effect = i as u8 + 1;
                         }
-                        i += 1;
                     }
                 }
                 _ => {
-                    i = 0;
-                    while i < gBattlersCount as i32 {
+                    for i in 0..(gBattlersCount as i32) {
                         if gBattleMons[i].ability == ability {
                             gLastUsedAbility = ability;
                             effect = i as u8 + 1;
                         }
-                        i += 1;
                     }
                 }
             },
             19 => {
-                i = 0;
-                while i < gBattlersCount as i32 {
+                for i in 0..(gBattlersCount as i32) {
                     if gBattleMons[i].ability == ability && gBattleMons[i].hp != 0 {
                         gLastUsedAbility = ability;
                         effect = i as u8 + 1;
                     }
-                    i += 1;
                 }
             }
             15 => {
-                i = 0;
-                while i < gBattlersCount as i32 {
+                for i in 0..(gBattlersCount as i32) {
                     if gBattleMons[i].ability == ability && i != battler as i32 {
                         gLastUsedAbility = ability;
                         effect = i as u8 + 1;
                     }
-                    i += 1;
                 }
             }
             16 => {
@@ -3727,13 +3868,11 @@ pub unsafe extern "C" fn AbilityBattleEffects(
                 }
             }
             18 => {
-                i = 0;
-                while i < gBattlersCount as i32 {
+                for i in 0..(gBattlersCount as i32) {
                     if gBattleMons[i].ability == ability && i != battler as i32 {
                         gLastUsedAbility = ability;
                         effect += 1;
                     }
-                    i += 1;
                 }
             }
             _ => {}
@@ -3742,10 +3881,9 @@ pub unsafe extern "C" fn AbilityBattleEffects(
             RecordAbilityBattle(battler, gLastUsedAbility);
         }
     }
-    return effect;
+    effect
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleScriptExecute(BS_ptr: *mut u8) {
+pub unsafe fn BattleScriptExecute(BS_ptr: *mut u8) {
     gBattlescriptCurrInstr = BS_ptr;
     (*(*gBattleResources).battleCallbackStack).function[{
         let t1 = (*(*gBattleResources).battleCallbackStack).size;
@@ -3755,8 +3893,7 @@ pub unsafe extern "C" fn BattleScriptExecute(BS_ptr: *mut u8) {
     gBattleMainFunc = Some(RunBattleScriptCommands_PopCallbacksStack);
     gCurrentActionFuncId = 0;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BattleScriptPushCursorAndCallback(BS_ptr: *mut u8) {
+pub unsafe fn BattleScriptPushCursorAndCallback(BS_ptr: *mut u8) {
     BattleScriptPushCursor();
     gBattlescriptCurrInstr = BS_ptr;
     (*(*gBattleResources).battleCallbackStack).function[{
@@ -3766,8 +3903,7 @@ pub unsafe extern "C" fn BattleScriptPushCursorAndCallback(BS_ptr: *mut u8) {
     }] = gBattleMainFunc;
     gBattleMainFunc = Some(RunBattleScriptCommands);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8 {
+pub unsafe fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn: u8) -> u8 {
     let mut i: i32 = 0;
     let mut effect: u8 = ITEM_NO_EFFECT;
     let mut changedPP: u8 = 0;
@@ -3777,8 +3913,6 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
     let mut battlerHoldEffectParam: u8 = 0;
     let mut atkHoldEffectParam: u8 = 0;
     let mut defHoldEffectParam: u8 = 0;
-    let mut atkItem: u16 = 0;
-    let mut defItem: u16 = 0;
     gLastUsedItem = gBattleMons[battler].item;
     if gLastUsedItem == ITEM_ENIGMA_BERRY {
         battlerHoldEffect = gEnigmaBerries[battler].holdEffect;
@@ -3787,7 +3921,7 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
         battlerHoldEffect = GetItemHoldEffect(gLastUsedItem);
         battlerHoldEffectParam = GetItemHoldEffectParam(gLastUsedItem);
     }
-    atkItem = gBattleMons[gBattlerAttacker].item;
+    let atkItem: u16 = gBattleMons[gBattlerAttacker].item;
     if atkItem == ITEM_ENIGMA_BERRY {
         atkHoldEffect = gEnigmaBerries[gBattlerAttacker].holdEffect;
         atkHoldEffectParam = gEnigmaBerries[gBattlerAttacker].holdEffectParam;
@@ -3795,7 +3929,7 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
         atkHoldEffect = GetItemHoldEffect(atkItem);
         atkHoldEffectParam = GetItemHoldEffectParam(atkItem);
     }
-    defItem = gBattleMons[gBattlerTarget].item;
+    let defItem: u16 = gBattleMons[gBattlerTarget].item;
     if defItem == ITEM_ENIGMA_BERRY {
         defHoldEffect = gEnigmaBerries[gBattlerTarget].holdEffect;
         defHoldEffectParam = gEnigmaBerries[gBattlerTarget].holdEffectParam;
@@ -3811,13 +3945,11 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                 }
             }
             HOLD_EFFECT_RESTORE_STATS => {
-                i = 0;
-                while i < NUM_BATTLE_STATS {
+                for i in 0..NUM_BATTLE_STATS {
                     if gBattleMons[battler].statStages[i] < DEFAULT_STAT_STAGE {
                         gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE;
                         effect = ITEM_STATS_CHANGE;
                     }
-                    i += 1;
                 }
                 if effect != 0 {
                     gBattleScripting.battler = battler;
@@ -3826,7 +3958,11 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                         gBattlerAttacker = battler;
                         gBattlerAttacker
                     };
-                    BattleScriptExecute(BattleScript_WhiteHerbEnd2.as_ptr().cast_mut());
+                    BattleScriptExecute(
+                        (*crate::asmdata::BattleScript_WhiteHerbEnd2.cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
+                    );
                 }
             }
             _ => {}
@@ -3847,7 +3983,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             }
                             gBattleMoveDamage *= -1;
                             BattleScriptExecute(
-                                BattleScript_ItemHealHP_RemoveItem.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_ItemHealHP_RemoveItem
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             effect = ITEM_HP_CHANGE;
                         }
@@ -3873,20 +4012,22 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                                 i += 1;
                             }
                             if i != MAX_MON_MOVES {
-                                let mut maxPP: u8 =
-                                    CalculatePPWithBonus(r#move, ppBonuses, i as u8);
+                                let maxPP: u8 = CalculatePPWithBonus(r#move, ppBonuses, i as u8);
                                 if changedPP as i32 + battlerHoldEffectParam as i32 > maxPP as i32 {
                                     changedPP = maxPP;
                                 } else {
-                                    changedPP = changedPP + battlerHoldEffectParam;
+                                    changedPP += battlerHoldEffectParam;
                                 }
                                 gBattleTextBuff1[0] = 0xFD;
                                 gBattleTextBuff1[1] = 2;
-                                gBattleTextBuff1[2] = r#move as u8 & 0xFF;
+                                gBattleTextBuff1[2] = r#move as u8;
                                 gBattleTextBuff1[3] = ((r#move as i32 & 0xFF00) >> 8) as u8;
                                 gBattleTextBuff1[4] = 0xFF;
                                 BattleScriptExecute(
-                                    BattleScript_BerryPPHealEnd2.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_BerryPPHealEnd2
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                                 BtlController_EmitSetMonData(
                                     B_COMM_TO_CONTROLLER,
@@ -3901,13 +4042,11 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                         }
                     }
                     HOLD_EFFECT_RESTORE_STATS => {
-                        i = 0;
-                        while i < NUM_BATTLE_STATS {
+                        for i in 0..NUM_BATTLE_STATS {
                             if gBattleMons[battler].statStages[i] < DEFAULT_STAT_STAGE {
                                 gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE;
                                 effect = ITEM_STATS_CHANGE;
                             }
-                            i += 1;
                         }
                         if effect != 0 {
                             gBattleScripting.battler = battler;
@@ -3916,7 +4055,12 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                                 gBattlerAttacker = battler;
                                 gBattlerAttacker
                             };
-                            BattleScriptExecute(BattleScript_WhiteHerbEnd2.as_ptr().cast_mut());
+                            BattleScriptExecute(
+                                (*crate::asmdata::BattleScript_WhiteHerbEnd2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
+                            );
                         }
                     }
                     HOLD_EFFECT_LEFTOVERS => {
@@ -3932,7 +4076,12 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                                     - gBattleMons[battler].hp as i32;
                             }
                             gBattleMoveDamage *= -1;
-                            BattleScriptExecute(BattleScript_ItemHealHP_End2.as_ptr().cast_mut());
+                            BattleScriptExecute(
+                                (*crate::asmdata::BattleScript_ItemHealHP_End2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
+                            );
                             effect = ITEM_HP_CHANGE;
                             RecordItemEffectBattle(battler, battlerHoldEffect);
                         }
@@ -3965,11 +4114,17 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             ) < FLAVOR_SPICY as i8
                             {
                                 BattleScriptExecute(
-                                    BattleScript_BerryConfuseHealEnd2.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_BerryConfuseHealEnd2
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                             } else {
                                 BattleScriptExecute(
-                                    BattleScript_ItemHealHP_RemoveItem.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_ItemHealHP_RemoveItem
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                             }
                             effect = ITEM_HP_CHANGE;
@@ -4003,11 +4158,17 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             ) < 0
                             {
                                 BattleScriptExecute(
-                                    BattleScript_BerryConfuseHealEnd2.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_BerryConfuseHealEnd2
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                             } else {
                                 BattleScriptExecute(
-                                    BattleScript_ItemHealHP_RemoveItem.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_ItemHealHP_RemoveItem
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                             }
                             effect = ITEM_HP_CHANGE;
@@ -4041,11 +4202,17 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             ) < 0
                             {
                                 BattleScriptExecute(
-                                    BattleScript_BerryConfuseHealEnd2.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_BerryConfuseHealEnd2
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                             } else {
                                 BattleScriptExecute(
-                                    BattleScript_ItemHealHP_RemoveItem.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_ItemHealHP_RemoveItem
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                             }
                             effect = ITEM_HP_CHANGE;
@@ -4079,11 +4246,17 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             ) < 0
                             {
                                 BattleScriptExecute(
-                                    BattleScript_BerryConfuseHealEnd2.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_BerryConfuseHealEnd2
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                             } else {
                                 BattleScriptExecute(
-                                    BattleScript_ItemHealHP_RemoveItem.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_ItemHealHP_RemoveItem
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                             }
                             effect = ITEM_HP_CHANGE;
@@ -4117,11 +4290,17 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             ) < 0
                             {
                                 BattleScriptExecute(
-                                    BattleScript_BerryConfuseHealEnd2.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_BerryConfuseHealEnd2
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                             } else {
                                 BattleScriptExecute(
-                                    BattleScript_ItemHealHP_RemoveItem.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_ItemHealHP_RemoveItem
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                             }
                             effect = ITEM_HP_CHANGE;
@@ -4150,7 +4329,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             gBattleScripting.animArg1 = 15;
                             gBattleScripting.animArg2 = 0;
                             BattleScriptExecute(
-                                BattleScript_BerryStatRaiseEnd2.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_BerryStatRaiseEnd2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             effect = ITEM_STATS_CHANGE;
                         }
@@ -4173,7 +4355,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             gBattleScripting.animArg1 = 16;
                             gBattleScripting.animArg2 = 0;
                             BattleScriptExecute(
-                                BattleScript_BerryStatRaiseEnd2.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_BerryStatRaiseEnd2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             effect = ITEM_STATS_CHANGE;
                         }
@@ -4196,7 +4381,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             gBattleScripting.animArg1 = 17;
                             gBattleScripting.animArg2 = 0;
                             BattleScriptExecute(
-                                BattleScript_BerryStatRaiseEnd2.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_BerryStatRaiseEnd2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             effect = ITEM_STATS_CHANGE;
                         }
@@ -4219,7 +4407,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             gBattleScripting.animArg1 = 18;
                             gBattleScripting.animArg2 = 0;
                             BattleScriptExecute(
-                                BattleScript_BerryStatRaiseEnd2.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_BerryStatRaiseEnd2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             effect = ITEM_STATS_CHANGE;
                         }
@@ -4242,7 +4433,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             gBattleScripting.animArg1 = 19;
                             gBattleScripting.animArg2 = 0;
                             BattleScriptExecute(
-                                BattleScript_BerryStatRaiseEnd2.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_BerryStatRaiseEnd2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             effect = ITEM_STATS_CHANGE;
                         }
@@ -4258,7 +4452,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                         {
                             gBattleMons[battler].status2 |= STATUS2_FOCUS_ENERGY;
                             BattleScriptExecute(
-                                BattleScript_BerryFocusEnergyEnd2.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_BerryFocusEnergyEnd2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             effect = ITEM_EFFECT_OTHER;
                         }
@@ -4306,7 +4503,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                                 gBattleScripting.animArg1 = STAT_ANIM_PLUS2 as u8 + (i as u8 + 1);
                                 gBattleScripting.animArg2 = 0;
                                 BattleScriptExecute(
-                                    BattleScript_BerryStatRaiseEnd2.as_ptr().cast_mut(),
+                                    (*crate::asmdata::BattleScript_BerryStatRaiseEnd2
+                                        .cast::<CArray<u8, 0>>())
+                                    .as_ptr()
+                                    .cast_mut(),
                                 );
                                 effect = ITEM_STATS_CHANGE;
                             }
@@ -4315,28 +4515,48 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                     HOLD_EFFECT_CURE_PAR => {
                         if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
                             gBattleMons[battler].status1 &= 0xffffffbf;
-                            BattleScriptExecute(BattleScript_BerryCurePrlzEnd2.as_ptr().cast_mut());
+                            BattleScriptExecute(
+                                (*crate::asmdata::BattleScript_BerryCurePrlzEnd2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
+                            );
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
                     HOLD_EFFECT_CURE_PSN => {
                         if gBattleMons[battler].status1 & STATUS1_PSN_ANY != 0 {
                             gBattleMons[battler].status1 &= 0xfffff077;
-                            BattleScriptExecute(BattleScript_BerryCurePsnEnd2.as_ptr().cast_mut());
+                            BattleScriptExecute(
+                                (*crate::asmdata::BattleScript_BerryCurePsnEnd2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
+                            );
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
                     HOLD_EFFECT_CURE_BRN => {
                         if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
                             gBattleMons[battler].status1 &= 0xffffffef;
-                            BattleScriptExecute(BattleScript_BerryCureBrnEnd2.as_ptr().cast_mut());
+                            BattleScriptExecute(
+                                (*crate::asmdata::BattleScript_BerryCureBrnEnd2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
+                            );
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
                     HOLD_EFFECT_CURE_FRZ => {
                         if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
                             gBattleMons[battler].status1 &= 0xffffffdf;
-                            BattleScriptExecute(BattleScript_BerryCureFrzEnd2.as_ptr().cast_mut());
+                            BattleScriptExecute(
+                                (*crate::asmdata::BattleScript_BerryCureFrzEnd2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
+                            );
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
@@ -4344,7 +4564,12 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                         if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
                             gBattleMons[battler].status1 &= 0xfffffff8;
                             gBattleMons[battler].status2 &= 0xf7ffffff;
-                            BattleScriptExecute(BattleScript_BerryCureSlpEnd2.as_ptr().cast_mut());
+                            BattleScriptExecute(
+                                (*crate::asmdata::BattleScript_BerryCureSlpEnd2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
+                            );
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
@@ -4352,7 +4577,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                         if gBattleMons[battler].status2 & STATUS2_CONFUSION != 0 {
                             gBattleMons[battler].status2 &= 0xfffffff8;
                             BattleScriptExecute(
-                                BattleScript_BerryCureConfusionEnd2.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_BerryCureConfusionEnd2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             effect = ITEM_EFFECT_OTHER;
                         }
@@ -4365,7 +4593,7 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             if gBattleMons[battler].status1 & STATUS1_PSN_ANY != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_PoisonJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_PoisonJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 i += 1;
                             }
@@ -4373,35 +4601,35 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                                 gBattleMons[battler].status2 &= 0xf7ffffff;
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_SleepJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_SleepJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 i += 1;
                             }
                             if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_ParalysisJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_ParalysisJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 i += 1;
                             }
                             if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_BurnJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_BurnJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 i += 1;
                             }
                             if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_IceJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_IceJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 i += 1;
                             }
                             if gBattleMons[battler].status2 & STATUS2_CONFUSION != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_ConfusionJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_ConfusionJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                                 i += 1;
                             }
@@ -4413,24 +4641,30 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             gBattleMons[battler].status1 = 0;
                             gBattleMons[battler].status2 &= 0xfffffff8;
                             BattleScriptExecute(
-                                BattleScript_BerryCureChosenStatusEnd2.as_ptr().cast_mut(),
+                                (*crate::asmdata::BattleScript_BerryCureChosenStatusEnd2
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
-                    HOLD_EFFECT_CURE_ATTRACT => {
-                        if gBattleMons[battler].status2 & STATUS2_INFATUATION != 0 {
-                            gBattleMons[battler].status2 &= 0xfff0ffff;
-                            StringCopy(
-                                gBattleTextBuff1.as_mut_ptr(),
-                                gStatusConditionString_LoveJpn.as_ptr().cast_mut(),
-                            );
-                            BattleScriptExecute(
-                                BattleScript_BerryCureChosenStatusEnd2.as_ptr().cast_mut(),
-                            );
-                            gBattleCommunication[5] = B_MSG_CURED_PROBLEM;
-                            effect = ITEM_EFFECT_OTHER;
-                        }
+                    HOLD_EFFECT_CURE_ATTRACT
+                        if gBattleMons[battler].status2 & STATUS2_INFATUATION != 0 =>
+                    {
+                        gBattleMons[battler].status2 &= 0xfff0ffff;
+                        StringCopy(
+                            gBattleTextBuff1.as_mut_ptr(),
+                            (*(&raw const crate::data::battle_main::gStatusConditionString_LoveJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
+                        );
+                        BattleScriptExecute(
+                            (*crate::asmdata::BattleScript_BerryCureChosenStatusEnd2
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut(),
+                        );
+                        gBattleCommunication[5] = B_MSG_CURED_PROBLEM;
+                        effect = ITEM_EFFECT_OTHER;
                     }
                     _ => {}
                 }
@@ -4452,13 +4686,14 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             );
                             MarkBattlerForControllerExec(gActiveBattler);
                         }
-                        ITEM_PP_CHANGE => {
+                        ITEM_PP_CHANGE
                             if gBattleMons[battler].status2 & 0x200000 == 0
-                                && gDisableStructs[battler].mimickedMoves() as u32 & gBitTable[i]
-                                    == 0
-                            {
-                                gBattleMons[battler].pp[i] = changedPP;
-                            }
+                                && gDisableStructs[battler].mimickedMoves() as u32
+                                    & (*(&raw const crate::util::gBitTable)
+                                        .cast::<CArray<u32, 0>>())[i]
+                                    == 0 =>
+                        {
+                            gBattleMons[battler].pp[i] = changedPP;
                         }
                         _ => {}
                     }
@@ -4483,7 +4718,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             gBattleMons[battler].status1 &= 0xffffffbf;
                             BattleScriptPushCursor();
                             gBattlescriptCurrInstr =
-                                BattleScript_BerryCureParRet.as_ptr().cast_mut();
+                                (*crate::asmdata::BattleScript_BerryCureParRet
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
@@ -4492,7 +4730,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             gBattleMons[battler].status1 &= 0xfffff077;
                             BattleScriptPushCursor();
                             gBattlescriptCurrInstr =
-                                BattleScript_BerryCurePsnRet.as_ptr().cast_mut();
+                                (*crate::asmdata::BattleScript_BerryCurePsnRet
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
@@ -4501,7 +4742,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             gBattleMons[battler].status1 &= 0xffffffef;
                             BattleScriptPushCursor();
                             gBattlescriptCurrInstr =
-                                BattleScript_BerryCureBrnRet.as_ptr().cast_mut();
+                                (*crate::asmdata::BattleScript_BerryCureBrnRet
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
@@ -4510,7 +4754,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             gBattleMons[battler].status1 &= 0xffffffdf;
                             BattleScriptPushCursor();
                             gBattlescriptCurrInstr =
-                                BattleScript_BerryCureFrzRet.as_ptr().cast_mut();
+                                (*crate::asmdata::BattleScript_BerryCureFrzRet
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
@@ -4520,7 +4767,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             gBattleMons[battler].status2 &= 0xf7ffffff;
                             BattleScriptPushCursor();
                             gBattlescriptCurrInstr =
-                                BattleScript_BerryCureSlpRet.as_ptr().cast_mut();
+                                (*crate::asmdata::BattleScript_BerryCureSlpRet
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
@@ -4529,7 +4779,10 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             gBattleMons[battler].status2 &= 0xfffffff8;
                             BattleScriptPushCursor();
                             gBattlescriptCurrInstr =
-                                BattleScript_BerryCureConfusionRet.as_ptr().cast_mut();
+                                (*crate::asmdata::BattleScript_BerryCureConfusionRet
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                             effect = ITEM_EFFECT_OTHER;
                         }
                     }
@@ -4538,12 +4791,15 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             gBattleMons[battler].status2 &= 0xfff0ffff;
                             StringCopy(
                                 gBattleTextBuff1.as_mut_ptr(),
-                                gStatusConditionString_LoveJpn.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::battle_main::gStatusConditionString_LoveJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                             );
                             BattleScriptPushCursor();
                             gBattleCommunication[5] = B_MSG_CURED_PROBLEM;
                             gBattlescriptCurrInstr =
-                                BattleScript_BerryCureChosenStatusRet.as_ptr().cast_mut();
+                                (*crate::asmdata::BattleScript_BerryCureChosenStatusRet
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                             effect = ITEM_EFFECT_OTHER;
                         }
                     }
@@ -4554,38 +4810,38 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             if gBattleMons[battler].status1 & STATUS1_PSN_ANY != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_PoisonJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_PoisonJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                             }
                             if gBattleMons[battler].status1 & STATUS1_SLEEP != 0 {
                                 gBattleMons[battler].status2 &= 0xf7ffffff;
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_SleepJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_SleepJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                             }
                             if gBattleMons[battler].status1 & STATUS1_PARALYSIS != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_ParalysisJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_ParalysisJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                             }
                             if gBattleMons[battler].status1 & STATUS1_BURN != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_BurnJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_BurnJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                             }
                             if gBattleMons[battler].status1 & STATUS1_FREEZE != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_IceJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_IceJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                             }
                             if gBattleMons[battler].status2 & STATUS2_CONFUSION != 0 {
                                 StringCopy(
                                     gBattleTextBuff1.as_mut_ptr(),
-                                    gStatusConditionString_ConfusionJpn.as_ptr().cast_mut(),
+                                    (*(&raw const crate::data::battle_main::gStatusConditionString_ConfusionJpn).cast::<CArray<u8, 8>>()).as_ptr().cast_mut(),
                                 );
                             }
                             gBattleMons[battler].status1 = 0;
@@ -4593,24 +4849,28 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                             BattleScriptPushCursor();
                             gBattleCommunication[5] = B_MSG_CURED_PROBLEM;
                             gBattlescriptCurrInstr =
-                                BattleScript_BerryCureChosenStatusRet.as_ptr().cast_mut();
+                                (*crate::asmdata::BattleScript_BerryCureChosenStatusRet
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut();
                             effect = ITEM_STATUS_CHANGE;
                         }
                     }
                     HOLD_EFFECT_RESTORE_STATS => {
-                        i = 0;
-                        while i < NUM_BATTLE_STATS {
+                        for i in 0..NUM_BATTLE_STATS {
                             if gBattleMons[battler].statStages[i] < DEFAULT_STAT_STAGE {
                                 gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE;
                                 effect = ITEM_STATS_CHANGE;
                             }
-                            i += 1;
                         }
                         if effect != 0 {
                             gBattleScripting.battler = battler;
                             gPotentialItemEffectBattler = battler;
                             BattleScriptPushCursor();
-                            gBattlescriptCurrInstr = BattleScript_WhiteHerbRet.as_ptr().cast_mut();
+                            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_WhiteHerbRet
+                                .cast::<CArray<u8, 0>>())
+                            .as_ptr()
+                            .cast_mut();
                             return effect;
                         }
                     }
@@ -4633,79 +4893,79 @@ pub unsafe extern "C" fn ItemBattleEffects(caseID: u8, mut battler: u8, moveTurn
                 battler += 1;
             }
         }
-        ITEMEFFECT_KINGSROCK_SHELLBELL => {
-            if gBattleMoveDamage != 0 {
-                match atkHoldEffect {
-                    HOLD_EFFECT_FLINCH => {
-                        if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
-                            && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
-                                || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
-                            && Random() as i32 % 100 < atkHoldEffectParam as i32
-                            && gBattleMoves[gCurrentMove].flags as i32 & FLAG_KINGS_ROCK_AFFECTED
-                                != 0
-                            && gBattleMons[gBattlerTarget].hp != 0
-                        {
-                            gBattleCommunication[3] = MOVE_EFFECT_FLINCH;
-                            BattleScriptPushCursor();
-                            SetMoveEffect(0, 0);
-                            BattleScriptPop();
-                        }
-                    }
-                    HOLD_EFFECT_SHELL_BELL => {
-                        if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
-                            && gSpecialStatuses[gBattlerTarget].shellBellDmg != 0
-                            && gSpecialStatuses[gBattlerTarget].shellBellDmg != IGNORE_SHELL_BELL
-                            && gBattlerAttacker != gBattlerTarget
-                            && gBattleMons[gBattlerAttacker].hp
-                                != gBattleMons[gBattlerAttacker].maxHP
-                            && gBattleMons[gBattlerAttacker].hp != 0
-                        {
-                            gLastUsedItem = atkItem;
-                            gPotentialItemEffectBattler = gBattlerAttacker;
-                            gBattleScripting.battler = gBattlerAttacker;
-                            gBattleMoveDamage = div_i32(
-                                gSpecialStatuses[gBattlerTarget].shellBellDmg,
-                                atkHoldEffectParam as i32,
-                            ) * -1;
-                            if gBattleMoveDamage == 0 {
-                                gBattleMoveDamage = -1;
-                            }
-                            gSpecialStatuses[gBattlerTarget].shellBellDmg = 0;
-                            BattleScriptPushCursor();
-                            gBattlescriptCurrInstr =
-                                BattleScript_ItemHealHP_Ret.as_ptr().cast_mut();
-                            effect += 1;
-                        }
-                    }
-                    _ => {}
+        ITEMEFFECT_KINGSROCK_SHELLBELL if gBattleMoveDamage != 0 => match atkHoldEffect {
+            HOLD_EFFECT_FLINCH => {
+                if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
+                    && (gSpecialStatuses[gBattlerTarget].physicalDmg != 0
+                        || gSpecialStatuses[gBattlerTarget].specialDmg != 0)
+                    && Random() as i32 % 100 < atkHoldEffectParam as i32
+                    && (*(&raw const crate::data::pokemon::gBattleMoves)
+                        .cast::<CArray<BattleMove, 0>>())[gCurrentMove]
+                        .flags as i32
+                        & FLAG_KINGS_ROCK_AFFECTED
+                        != 0
+                    && gBattleMons[gBattlerTarget].hp != 0
+                {
+                    gBattleCommunication[3] = MOVE_EFFECT_FLINCH;
+                    BattleScriptPushCursor();
+                    SetMoveEffect(0, 0);
+                    BattleScriptPop();
                 }
             }
-        }
+            HOLD_EFFECT_SHELL_BELL
+                if gMoveResultFlags as i32 & MOVE_RESULT_NO_EFFECT == 0
+                    && gSpecialStatuses[gBattlerTarget].shellBellDmg != 0
+                    && gSpecialStatuses[gBattlerTarget].shellBellDmg != IGNORE_SHELL_BELL
+                    && gBattlerAttacker != gBattlerTarget
+                    && gBattleMons[gBattlerAttacker].hp != gBattleMons[gBattlerAttacker].maxHP
+                    && gBattleMons[gBattlerAttacker].hp != 0 =>
+            {
+                gLastUsedItem = atkItem;
+                gPotentialItemEffectBattler = gBattlerAttacker;
+                gBattleScripting.battler = gBattlerAttacker;
+                gBattleMoveDamage = -div_i32(
+                    gSpecialStatuses[gBattlerTarget].shellBellDmg,
+                    atkHoldEffectParam as i32,
+                );
+                if gBattleMoveDamage == 0 {
+                    gBattleMoveDamage = -1;
+                }
+                gSpecialStatuses[gBattlerTarget].shellBellDmg = 0;
+                BattleScriptPushCursor();
+                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_ItemHealHP_Ret
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
+                effect += 1;
+            }
+            _ => {}
+        },
         _ => {}
     }
-    return effect;
+    effect
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearFuryCutterDestinyBondGrudge(battler: u8) {
+pub unsafe fn ClearFuryCutterDestinyBondGrudge(battler: u8) {
     gDisableStructs[battler].furyCutterCounter = 0;
     gBattleMons[battler].status2 &= 0xfdffffff;
     gStatuses3[battler] &= 0xffffbfff;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HandleAction_RunBattleScript() {
+pub unsafe fn HandleAction_RunBattleScript() {
     if gBattleControllerExecFlags == 0 {
-        gBattleScriptingCommandsTable[*gBattlescriptCurrInstr].unwrap_unchecked()();
+        (*(&raw const crate::data::battle_script_commands::gBattleScriptingCommandsTable)
+            .cast::<CArray<Option<unsafe fn()>, 0>>())[*gBattlescriptCurrInstr]
+            .unwrap_unchecked()();
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMoveTarget(r#move: u16, setTarget: u8) -> u8 {
+pub unsafe fn GetMoveTarget(r#move: u16, setTarget: u8) -> u8 {
     let mut targetBattler: u8 = 0;
     let mut moveTarget: u8 = 0;
     let mut side: u8 = 0;
     if setTarget != NO_TARGET_OVERRIDE {
         moveTarget = setTarget - 1;
     } else {
-        moveTarget = gBattleMoves[r#move].target;
+        moveTarget = (*(&raw const crate::data::pokemon::gBattleMoves)
+            .cast::<CArray<BattleMove, 0>>())[r#move]
+            .target;
     }
     match moveTarget {
         MOVE_TARGET_SELECTED => {
@@ -4720,12 +4980,18 @@ pub unsafe extern "C" fn GetMoveTarget(r#move: u16, setTarget: u8) -> u8 {
                     targetBattler = rem_i32(Random() as i32, gBattlersCount as i32) as u8;
                     if !(targetBattler == gBattlerAttacker
                         || side == GetBattlerSide(targetBattler)
-                        || gAbsentBattlerFlags as u32 & gBitTable[targetBattler] != 0)
+                        || gAbsentBattlerFlags as u32
+                            & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                                [targetBattler]
+                            != 0)
                     {
                         break;
                     }
                 }
-                if gBattleMoves[r#move].r#type == TYPE_ELECTRIC
+                if (*(&raw const crate::data::pokemon::gBattleMoves)
+                    .cast::<CArray<BattleMove, 0>>())[r#move]
+                    .r#type
+                    == TYPE_ELECTRIC
                     && AbilityBattleEffects(
                         ABILITYEFFECT_COUNT_OTHER_SIDE,
                         gBattlerAttacker,
@@ -4746,7 +5012,10 @@ pub unsafe extern "C" fn GetMoveTarget(r#move: u16, setTarget: u8) -> u8 {
         | MOVE_TARGET_FOES_AND_ALLY
         | MOVE_TARGET_OPPONENTS_FIELD => {
             targetBattler = GetBattlerAtPosition(GetBattlerPosition(gBattlerAttacker) & 1 ^ 1);
-            if gAbsentBattlerFlags as u32 & gBitTable[targetBattler] != 0 {
+            if gAbsentBattlerFlags as u32
+                & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[targetBattler]
+                != 0
+            {
                 targetBattler ^= BIT_FLANK;
             }
         }
@@ -4772,7 +5041,10 @@ pub unsafe extern "C" fn GetMoveTarget(r#move: u16, setTarget: u8) -> u8 {
                         targetBattler = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
                     }
                 }
-                if gAbsentBattlerFlags as u32 & gBitTable[targetBattler] != 0 {
+                if gAbsentBattlerFlags as u32
+                    & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())[targetBattler]
+                    != 0
+                {
                     targetBattler ^= BIT_FLANK;
                 }
             } else {
@@ -4788,9 +5060,9 @@ pub unsafe extern "C" fn GetMoveTarget(r#move: u16, setTarget: u8) -> u8 {
         .moveTarget
         .as_mut_ptr()
         .at(gBattlerAttacker) = targetBattler;
-    return targetBattler;
+    targetBattler
 }
-pub(crate) unsafe extern "C" fn IsBattlerModernFatefulEncounter(battler: u8) -> u32 {
+unsafe fn IsBattlerModernFatefulEncounter(battler: u8) -> u32 {
     if GetBattlerSide(battler) == B_SIDE_OPPONENT {
         return TRUE as u32;
     }
@@ -4807,16 +5079,13 @@ pub(crate) unsafe extern "C" fn IsBattlerModernFatefulEncounter(battler: u8) -> 
     {
         return TRUE as u32;
     }
-    return GetMonData3(
+    GetMonData3(
         &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
         MON_DATA_MODERN_FATEFUL_ENCOUNTER,
         null_mut(),
-    );
+    )
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsMonDisobedient() -> u8 {
-    let mut rnd: i32 = 0;
-    let mut calc: i32 = 0;
+pub unsafe fn IsMonDisobedient() -> u8 {
     let mut obedienceLevel: u8 = 0;
     if gBattleTypeFlags & 0x2000002 != 0 {
         return DISOBEDIENCE_OBEDIENT;
@@ -4860,8 +5129,9 @@ pub unsafe extern "C" fn IsMonDisobedient() -> u8 {
     if gBattleMons[gBattlerAttacker].level <= obedienceLevel {
         return DISOBEDIENCE_OBEDIENT;
     }
-    rnd = Random() as i32 & 255;
-    calc = (gBattleMons[gBattlerAttacker].level as i32 + obedienceLevel as i32) * rnd >> 8;
+    let mut rnd: i32 = Random() as i32 & 255;
+    let mut calc: i32 =
+        ((gBattleMons[gBattlerAttacker].level as i32 + obedienceLevel as i32) * rnd) >> 8;
     if calc < obedienceLevel as i32 {
         return DISOBEDIENCE_OBEDIENT;
     }
@@ -4871,11 +5141,14 @@ pub unsafe extern "C" fn IsMonDisobedient() -> u8 {
     if gBattleMons[gBattlerAttacker].status1 & STATUS1_SLEEP != 0
         && (gCurrentMove == MOVE_SNORE || gCurrentMove == MOVE_SLEEP_TALK)
     {
-        gBattlescriptCurrInstr = BattleScript_IgnoresWhileAsleep.as_ptr().cast_mut();
+        gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_IgnoresWhileAsleep
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
         return DISOBEDIENCE_IGNORED;
     }
     rnd = Random() as i32 & 255;
-    calc = (gBattleMons[gBattlerAttacker].level as i32 + obedienceLevel as i32) * rnd >> 8;
+    calc = ((gBattleMons[gBattlerAttacker].level as i32 + obedienceLevel as i32) * rnd) >> 8;
     if calc < obedienceLevel as i32 {
         calc = CheckMoveLimitations(
             gBattlerAttacker,
@@ -4888,7 +5161,10 @@ pub unsafe extern "C" fn IsMonDisobedient() -> u8 {
             } else {
                 Random() as i32 & 3
             }) as u8;
-            gBattlescriptCurrInstr = BattleScript_MoveUsedLoafingAround.as_ptr().cast_mut();
+            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedLoafingAround
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
             return DISOBEDIENCE_IGNORED;
         } else {
             loop {
@@ -4905,7 +5181,10 @@ pub unsafe extern "C" fn IsMonDisobedient() -> u8 {
                 }
             }
             gCalledMove = gBattleMons[gBattlerAttacker].moves[gCurrMovePos];
-            gBattlescriptCurrInstr = BattleScript_IgnoresAndUsesRandomMove.as_ptr().cast_mut();
+            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_IgnoresAndUsesRandomMove
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
             gBattlerTarget = GetMoveTarget(gCalledMove, NO_TARGET_OVERRIDE);
             gHitMarker |= HITMARKER_DISOBEDIENT_MOVE;
             return DISOBEDIENCE_OTHER;
@@ -4919,7 +5198,6 @@ pub unsafe extern "C" fn IsMonDisobedient() -> u8 {
             && gBattleMons[gBattlerAttacker].ability != ABILITY_INSOMNIA
         {
             let mut i: i32 = 0;
-            i = 0;
             while i < gBattlersCount as i32 {
                 if gBattleMons[i].status2 & STATUS2_UPROAR != 0 {
                     break;
@@ -4927,7 +5205,10 @@ pub unsafe extern "C" fn IsMonDisobedient() -> u8 {
                 i += 1;
             }
             if i == gBattlersCount as i32 {
-                gBattlescriptCurrInstr = BattleScript_IgnoresAndFallsAsleep.as_ptr().cast_mut();
+                gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_IgnoresAndFallsAsleep
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut();
                 return DISOBEDIENCE_IGNORED;
             }
         }
@@ -4944,7 +5225,10 @@ pub unsafe extern "C" fn IsMonDisobedient() -> u8 {
                 gBattlerAttacker,
             );
             gBattlerTarget = gBattlerAttacker;
-            gBattlescriptCurrInstr = BattleScript_IgnoresAndHitsItself.as_ptr().cast_mut();
+            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_IgnoresAndHitsItself
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
             gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
             return DISOBEDIENCE_OTHER;
         } else {
@@ -4953,12 +5237,15 @@ pub unsafe extern "C" fn IsMonDisobedient() -> u8 {
             } else {
                 Random() as i32 & 3
             }) as u8;
-            gBattlescriptCurrInstr = BattleScript_MoveUsedLoafingAround.as_ptr().cast_mut();
+            gBattlescriptCurrInstr = (*crate::asmdata::BattleScript_MoveUsedLoafingAround
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut();
             return DISOBEDIENCE_IGNORED;
         }
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }

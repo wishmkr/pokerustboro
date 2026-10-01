@@ -37,8 +37,8 @@ static mut REQUESTS: [Dma3Request; MAX_DMA_REQUESTS] = [const {
     }
 }; MAX_DMA_REQUESTS];
 
-static mut MANAGER_LOCKED: bool = false;
-static mut REQUEST_CURSOR: u8 = 0;
+static MANAGER_LOCKED: crate::global::Global<bool> = crate::global::Global::new(false);
+static REQUEST_CURSOR: crate::global::Global<u8> = crate::global::Global::new(0);
 
 #[inline]
 unsafe fn request(index: usize) -> *mut Dma3Request {
@@ -52,7 +52,7 @@ unsafe fn size_of_request(index: usize) -> u16 {
 
 #[inline]
 unsafe fn set_locked(locked: bool) {
-    unsafe { (&raw mut MANAGER_LOCKED).write_volatile(locked) };
+    unsafe { (MANAGER_LOCKED.as_ptr()).write_volatile(locked) };
 }
 
 #[inline]
@@ -61,9 +61,9 @@ unsafe fn vcount() -> u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearDma3Requests() {
+pub unsafe fn ClearDma3Requests() {
     unsafe { set_locked(true) };
-    unsafe { (&raw mut REQUEST_CURSOR).write_volatile(0) };
+    unsafe { (REQUEST_CURSOR.as_ptr()).write_volatile(0) };
 
     let mut i = 0usize;
     while i < MAX_DMA_REQUESTS {
@@ -78,15 +78,18 @@ pub unsafe extern "C" fn ClearDma3Requests() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ProcessDma3Requests() {
-    if unsafe { (&raw const MANAGER_LOCKED).read_volatile() } {
+pub unsafe fn ProcessDma3Requests() {
+    if unsafe { (MANAGER_LOCKED.as_ptr().cast_const()).read_volatile() } {
         return;
     }
 
     let mut bytes_transferred = 0u16;
 
-    while unsafe { size_of_request((&raw const REQUEST_CURSOR).read_volatile() as usize) } != 0 {
-        let cursor = unsafe { (&raw const REQUEST_CURSOR).read_volatile() } as usize;
+    while unsafe {
+        size_of_request((REQUEST_CURSOR.as_ptr().cast_const()).read_volatile() as usize)
+    } != 0
+    {
+        let cursor = unsafe { (REQUEST_CURSOR.as_ptr().cast_const()).read_volatile() } as usize;
         let slot = unsafe { request(cursor) };
         let size = unsafe { (&raw const (*slot).size).read_volatile() };
 
@@ -117,14 +120,14 @@ pub unsafe extern "C" fn ProcessDma3Requests() {
 
         let next = cursor + 1;
         let next = if next >= MAX_DMA_REQUESTS { 0 } else { next };
-        unsafe { (&raw mut REQUEST_CURSOR).write_volatile(next as u8) };
+        unsafe { (REQUEST_CURSOR.as_ptr()).write_volatile(next as u8) };
     }
 }
 
 /// Finds a free slot starting at the drain cursor. Returns its index, or -1
 /// when the ring is full.
 unsafe fn claim_slot() -> i32 {
-    let mut cursor = unsafe { (&raw const REQUEST_CURSOR).read_volatile() } as usize;
+    let mut cursor = unsafe { (REQUEST_CURSOR.as_ptr().cast_const()).read_volatile() } as usize;
     let mut i = 0usize;
     while i < MAX_DMA_REQUESTS {
         if unsafe { size_of_request(cursor) } == 0 {
@@ -140,12 +143,7 @@ unsafe fn claim_slot() -> i32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RequestDma3Copy(
-    src: *const u8,
-    dest: *mut u8,
-    size: u16,
-    mode: u8,
-) -> i16 {
+pub unsafe fn RequestDma3Copy(src: *const u8, dest: *mut u8, size: u16, mode: u8) -> i16 {
     unsafe { set_locked(true) };
     let cursor = unsafe { claim_slot() };
     if cursor < 0 {
@@ -170,7 +168,7 @@ pub unsafe extern "C" fn RequestDma3Copy(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RequestDma3Fill(value: i32, dest: *mut u8, size: u16, mode: u8) -> i16 {
+pub unsafe fn RequestDma3Fill(value: i32, dest: *mut u8, size: u16, mode: u8) -> i16 {
     unsafe { set_locked(true) };
     let cursor = unsafe { claim_slot() };
     if cursor < 0 {
@@ -198,7 +196,7 @@ pub unsafe extern "C" fn RequestDma3Fill(value: i32, dest: *mut u8, size: u16, m
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckForSpaceForDma3Request(index: i16) -> i16 {
+pub unsafe fn CheckForSpaceForDma3Request(index: i16) -> i16 {
     if index == -1 {
         // Check whether every request is free.
         let mut i = 0usize;

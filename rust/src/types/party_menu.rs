@@ -9,8 +9,8 @@ use core::mem::{offset_of, size_of};
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PartyMenu {
-    pub exitCallback: Option<unsafe extern "C" fn()>,
-    pub task: Option<unsafe extern "C" fn(u8)>,
+    pub exitCallback: Option<unsafe fn()>,
+    pub task: Option<unsafe fn(u8)>,
     bits_8: u8,
     pub slotId: i8,
     pub slotId2: i8,

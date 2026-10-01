@@ -3,44 +3,181 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    clippy::unnecessary_cast,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gMain;
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect_Palette0,
+    IsDma3ManagerBusyWithBgCopy, ShowBg,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::dma3_manager::CheckForSpaceForDma3Request;
+use crate::match_call::{DrawMatchCallTextBoxBorder, LoadMatchCallWindowGfx};
+use crate::menu::{
+    BgDmaFill, DecompressAndCopyTileDataToVram, FreeTempTileDataBuffersIfPossible,
+    GetPlayerTextSpeedDelay,
+};
+use crate::overworld::GetGameStat;
+use crate::palette::{LoadPalette, gPaletteFade};
+use crate::pokenav::{AllocSubstruct, FreePokenavSubstruct, GetSubstructPtr, IsLoopedTaskActive};
+use crate::pokenav_list::{
+    CreatePokenavList, DestroyPokenavList, IsCreatePokenavListTaskActive,
+    PokenavList_DrawCurrentItemIcon, PokenavList_EraseListForCheckPage,
+    PokenavList_GetSelectedIndex, PokenavList_GetTopIndex, PokenavList_IsMoveWindowTaskActive,
+    PokenavList_IsTaskActive, PokenavList_MoveCursorDown, PokenavList_MoveCursorUp,
+    PokenavList_PageDown, PokenavList_PageUp, PokenavList_ReshowListFromCheckPage,
+    PokenavList_ToggleVerticalArrows, PrintCheckPageInfo,
+};
+use crate::pokenav_main_menu::{
+    AreLeftHeaderSpritesMoving, CopyPaletteIntoBufferUnfaded, FadeToBlackExceptPrimary,
+    GetSpinningPokenavSprite, HideSpinningPokenavSprite, InitBgTemplates, IsPaletteFadeActive,
+    LoadLeftHeaderGfxForIndex, MainMenuLoopedTaskIsBusy, Pokenav_AllocAndLoadPalettes,
+    PokenavCopyPalette, PokenavFadeScreen, PrintHelpBarText, SetLeftHeaderSpritesInvisibility,
+    ShowLeftHeaderGfx, SlideMenuHeaderDown, WaitForHelpBar,
+};
+use crate::pokenav_match_call_list::{
+    BufferMatchCallNameAndDesc, GetIndexDeltaOfNextCheckPageDown, GetIndexDeltaOfNextCheckPageUp,
+    GetMatchCallList, GetMatchCallMapSec, GetMatchCallMessageText, GetMatchCallOptionCursorPos,
+    GetMatchCallOptionId, GetMatchCallTrainerPic, GetNumberRegistered, IsMatchCallListInitFinished,
+    ShouldDrawRematchPokeballIcon,
+};
+use crate::region_map::GetMapName;
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::sprite::{AllocSpritePalette, FreeSpritePaletteByTag, FreeSpriteTilesByTag};
+use crate::task::DestroyTask;
+use crate::task::{gTasks, task_set};
+use crate::text::{IsTextPrinterActive, RunTextPrinters};
+use crate::text_window::{DrawTextBorderOuter, LoadUserWindowBorderGfx};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    CopyWindowToVram, FillWindowPixelBuffer, GetWindowAttribute, PutWindowTilemap, RemoveWindow,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `CopyToBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBuffer(a0, a1 as _, a2, a3);
+    }
+}
+/// `CreateLoopedTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateLoopedTask(a0: Option<unsafe fn(i32) -> u32>, a1: u32) -> u32 {
+    unsafe { crate::pokenav::CreateLoopedTask(a0, a1) }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DecompressPicFromTable` with this module's view of its types.
+#[inline]
+unsafe fn DecompressPicFromTable(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32) {
+    unsafe {
+        crate::decompress::DecompressPicFromTable(a0 as _, a1 as _, a2);
+    }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+unsafe fn FindTaskIdByFunc(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
+/// `GetStringCenterAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringCenterAlignXOffset(a0, a1 as _, a2) }
+}
+/// `GetStringRightAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringRightAlignXOffset(a0, a1 as _, a2) }
+}
+/// `LoadCompressedSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16 {
+    unsafe { crate::decompress::LoadCompressedSpriteSheet(a0 as _) }
+}
+/// `LoadSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
+    unsafe { crate::sprite::LoadSpriteSheet(a0 as _) }
+}
+/// `RequestDma3Copy` with this module's view of its types.
+#[inline]
+unsafe fn RequestDma3Copy(a0: *mut c_void, a1: *mut c_void, a2: u16, a3: u8) -> i16 {
+    unsafe { crate::dma3_manager::RequestDma3Copy(a0 as _, a1 as _, a2, a3) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const tActive: usize = 15;
 // Data tables (translate with cdata.py): sMatchCallUI_Pal sMatchCallUI_Gfx sMatchCallUI_Tilemap sOptionsCursor_Pal sOptionsCursor_Gfx sCallWindow_Pal sListWindow_Pal sPokeball_Pal sPokeball_Gfx sMatchCallBgTemplates sMatchCallLoopTaskFuncs sMatchCallLocationWindowTemplate sMatchCallInfoBoxWindowTemplate sMatchCallOptionTexts sText_CallingDots sCallMsgBoxWindowTemplate sOptionsCursorSpriteSheets sOptionsCursorSpritePalettes sOptionsCursorOamData sOptionsCursorSpriteTemplate sTrainerPicOamData sTrainerPicSpriteTemplate
 
 /// `struct Pokenav_MatchCallGfx`
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Pokenav_MatchCallGfx {
-    pub isTaskActiveCB: Option<unsafe extern "C" fn() -> u32>,
+    pub isTaskActiveCB: Option<unsafe fn() -> u32>,
     pub loopTaskId: u32,
     pub filler8: CArray<u8, 6>,
     pub skipHangUpSE: u8,
@@ -112,7 +249,7 @@ static sMatchCallInfoBoxWindowTemplate: Table<WindowTemplate> =
 static sMatchCallLocationWindowTemplate: Table<WindowTemplate> = Table(
     (&raw const crate::data::pokenav_match_call_gfx::sMatchCallLocationWindowTemplate).cast(),
 );
-static sMatchCallLoopTaskFuncs: Table<CArray<Option<unsafe extern "C" fn(i32) -> u32>, 16>> =
+static sMatchCallLoopTaskFuncs: Table<CArray<Option<unsafe fn(i32) -> u32>, 16>> =
     Table((&raw const crate::data::pokenav_match_call_gfx::sMatchCallLoopTaskFuncs).cast());
 static sMatchCallOptionTexts: Table<CArray<*mut u8, 3>> =
     Table((&raw const crate::data::pokenav_match_call_gfx::sMatchCallOptionTexts).cast());
@@ -137,140 +274,51 @@ static sText_CallingDots: Table<CArray<u8, 19>> =
 static sTrainerPicSpriteTemplate: Table<SpriteTemplate> =
     Table((&raw const crate::data::pokenav_match_call_gfx::sTrainerPicSpriteTemplate).cast());
 
-unsafe extern "C" {
-    static mut gMain: Main;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlttBufferFaded: CArray<u16, 512>;
-    static mut gPlttBufferUnfaded: CArray<u16, 512>;
-    static gSineTable: CArray<i16, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTasks: CArray<Task, 0>;
-    static mut gTextFlags: TextFlags;
-    static gText_NumberOfBattles: CArray<u8, 0>;
-    static gText_NumberRegistered: CArray<u8, 0>;
-    static gText_TrainerCloseBy: CArray<u8, 0>;
-    static gText_Unknown: CArray<u8, 0>;
-    static gTrainerFrontPicPaletteTable: CArray<CompressedSpritePalette, 0>;
-    static gTrainerFrontPicTable: CArray<CompressedSpriteSheet, 0>;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AllocSpritePalette(a0: u16) -> u8;
-    fn AllocSubstruct(a0: u32, a1: u32) -> *mut c_void;
-    fn AreLeftHeaderSpritesMoving() -> u32;
-    fn BgDmaFill(a0: u32, a1: u8, a2: i32, a3: i32);
-    fn BufferMatchCallNameAndDesc(a0: *mut PokenavMatchCallEntry, a1: *mut u8);
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CheckForSpaceForDma3Request(a0: i16) -> i16;
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyPaletteIntoBufferUnfaded(a0: *mut u16, a1: u32, a2: u32);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateLoopedTask(a0: Option<unsafe extern "C" fn(i32) -> u32>, a1: u32) -> u32;
-    fn CreatePokenavList(a0: *mut BgTemplate, a1: *mut PokenavListTemplate, a2: u32) -> u32;
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DecompressPicFromTable(a0: *mut CompressedSpriteSheet, a1: *mut c_void, a2: i32);
-    fn DestroyPokenavList();
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DrawMatchCallTextBoxBorder(a0: u32, a1: u32, a2: u32);
-    fn DrawTextBorderOuter(a0: u8, a1: u16, a2: u8);
-    fn FadeToBlackExceptPrimary();
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn FreePokenavSubstruct(a0: u32);
-    fn FreeSpritePaletteByTag(a0: u16);
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
-    fn GetGameStat(a0: u8) -> u32;
-    fn GetIndexDeltaOfNextCheckPageDown(a0: i32) -> i32;
-    fn GetIndexDeltaOfNextCheckPageUp(a0: i32) -> i32;
-    fn GetMapName(a0: *mut u8, a1: u16, a2: u16) -> *mut u8;
-    fn GetMatchCallList() -> *mut PokenavMatchCallEntry;
-    fn GetMatchCallMapSec(a0: i32) -> u16;
-    fn GetMatchCallMessageText(a0: i32, a1: *mut u8) -> *mut u8;
-    fn GetMatchCallOptionCursorPos() -> u16;
-    fn GetMatchCallOptionId(a0: i32) -> u16;
-    fn GetMatchCallTrainerPic(a0: i32) -> i32;
-    fn GetNumberRegistered() -> i32;
-    fn GetPlayerTextSpeedDelay() -> u8;
-    fn GetSpinningPokenavSprite() -> *mut Sprite;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetSubstructPtr(a0: u32) -> *mut c_void;
-    fn GetWindowAttribute(a0: u8, a1: u8) -> u32;
-    fn HideSpinningPokenavSprite();
-    fn InitBgTemplates(a0: *mut BgTemplate, a1: i32);
-    fn IsCreatePokenavListTaskActive() -> u32;
-    fn IsDma3ManagerBusyWithBgCopy() -> u8;
-    fn IsLoopedTaskActive(a0: u32) -> u32;
-    fn IsMatchCallListInitFinished() -> i32;
-    fn IsPaletteFadeActive() -> u32;
-    fn IsTextPrinterActive(a0: u8) -> u16;
-    fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void);
-    fn LoadCompressedSpriteSheet(a0: *mut CompressedSpriteSheet) -> u16;
-    fn LoadLeftHeaderGfxForIndex(a0: u32);
-    fn LoadMatchCallWindowGfx(a0: u32, a1: u32, a2: u32);
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn MainMenuLoopedTaskIsBusy() -> u32;
-    fn PlaySE(a0: u16);
-    fn PokenavCopyPalette(a0: *mut u16, a1: *mut u16, a2: i32, a3: i32, a4: i32, a5: *mut u16);
-    fn PokenavFadeScreen(a0: i32);
-    fn PokenavList_DrawCurrentItemIcon();
-    fn PokenavList_EraseListForCheckPage();
-    fn PokenavList_GetSelectedIndex() -> u32;
-    fn PokenavList_GetTopIndex() -> u32;
-    fn PokenavList_IsMoveWindowTaskActive() -> u32;
-    fn PokenavList_IsTaskActive() -> u32;
-    fn PokenavList_MoveCursorDown() -> i32;
-    fn PokenavList_MoveCursorUp() -> i32;
-    fn PokenavList_PageDown() -> i32;
-    fn PokenavList_PageUp() -> i32;
-    fn PokenavList_ReshowListFromCheckPage();
-    fn PokenavList_ToggleVerticalArrows(a0: u32);
-    fn Pokenav_AllocAndLoadPalettes(a0: *mut SpritePalette);
-    fn PrintCheckPageInfo(a0: i16);
-    fn PrintHelpBarText(a0: u32);
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveWindow(a0: u8);
-    fn RequestDma3Copy(a0: *mut c_void, a1: *mut c_void, a2: u16, a3: u8) -> i16;
-    fn RunTextPrinters();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetLeftHeaderSpritesInvisibility();
-    fn ShouldDrawRematchPokeballIcon(a0: i32) -> u32;
-    fn ShowBg(a0: u8);
-    fn ShowLeftHeaderGfx(a0: u32, a1: u32, a2: u32);
-    fn SlideMenuHeaderDown();
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn WaitForHelpBar() -> u32;
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `GetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
+    unsafe { crate::bg::GetBgTilemapBuffer(a0) as *mut c_void }
+}
+/// `LZ77UnCompWram` with this module's view of its types.
+#[inline]
+unsafe fn LZ77UnCompWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::syscall::LZ77UnCompWram(a0 as _, a1 as _);
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn OpenMatchCall() -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub unsafe fn OpenMatchCall() -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         AllocSubstruct(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN, 8264) as *mut Pokenav_MatchCallGfx;
     if gfx.is_null() {
         return FALSE as u32;
@@ -278,24 +326,21 @@ pub unsafe extern "C" fn OpenMatchCall() -> u32 {
     (*gfx).unused19 = 0;
     (*gfx).loopTaskId = CreateLoopedTask(Some(LoopedTask_OpenMatchCall), 1);
     (*gfx).isTaskActiveCB = Some(GetCurrentLoopedTaskActive);
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateMatchCallLoopedTask(index: i32) {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub unsafe fn CreateMatchCallLoopedTask(index: i32) {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     (*gfx).loopTaskId = CreateLoopedTask(sMatchCallLoopTaskFuncs[index], 1);
     (*gfx).isTaskActiveCB = Some(GetCurrentLoopedTaskActive);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsMatchCallLoopedTaskActive() -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub unsafe fn IsMatchCallLoopedTaskActive() -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
-    return (*gfx).isTaskActiveCB.unwrap_unchecked()();
+    (*gfx).isTaskActiveCB.unwrap_unchecked()()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FreeMatchCallSubstruct2() {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub unsafe fn FreeMatchCallSubstruct2() {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     FreeMatchCallSprites();
     DestroyMatchCallList();
@@ -304,13 +349,13 @@ pub unsafe extern "C" fn FreeMatchCallSubstruct2() {
     RemoveWindow((*gfx).msgBoxWindowId as u8);
     FreePokenavSubstruct(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN);
 }
-pub(crate) unsafe extern "C" fn GetCurrentLoopedTaskActive() -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub(crate) unsafe fn GetCurrentLoopedTaskActive() -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
-    return IsLoopedTaskActive((*gfx).loopTaskId);
+    IsLoopedTaskActive((*gfx).loopTaskId)
 }
-pub(crate) unsafe extern "C" fn LoopedTask_OpenMatchCall(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub(crate) unsafe fn LoopedTask_OpenMatchCall(state: i32) -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     match state {
         0 => {
@@ -407,11 +452,11 @@ pub(crate) unsafe extern "C" fn LoopedTask_OpenMatchCall(state: i32) -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn MatchCallListCursorDown(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub(crate) unsafe fn MatchCallListCursorDown(state: i32) -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     match state {
         0 => 'l2: {
@@ -419,11 +464,9 @@ pub(crate) unsafe extern "C" fn MatchCallListCursorDown(state: i32) -> u32 {
             let matched = sw1 == 0 || sw1 == 1 || sw1 == 2;
             let mut fall = false;
             if sw1 == 0 {
-                fall = true;
                 break 'l2;
             }
             if sw1 == 1 {
-                fall = true;
                 PlaySE(SE_SELECT);
                 return 7;
             }
@@ -432,7 +475,6 @@ pub(crate) unsafe extern "C" fn MatchCallListCursorDown(state: i32) -> u32 {
                 PlaySE(SE_SELECT);
             }
             if fall || !matched {
-                fall = true;
                 return LT_INC_AND_PAUSE;
             }
         }
@@ -447,17 +489,15 @@ pub(crate) unsafe extern "C" fn MatchCallListCursorDown(state: i32) -> u32 {
             PrintMatchCallLocation(gfx, 0);
             return LT_INC_AND_PAUSE;
         }
-        3 => {
-            if IsDma3ManagerBusyWithBgCopy() != 0 {
-                return LT_PAUSE;
-            }
+        3 if IsDma3ManagerBusyWithBgCopy() != 0 => {
+            return LT_PAUSE;
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn MatchCallListCursorUp(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub(crate) unsafe fn MatchCallListCursorUp(state: i32) -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     match state {
         0 => 'l2: {
@@ -465,11 +505,9 @@ pub(crate) unsafe extern "C" fn MatchCallListCursorUp(state: i32) -> u32 {
             let matched = sw1 == 0 || sw1 == 1 || sw1 == 2;
             let mut fall = false;
             if sw1 == 0 {
-                fall = true;
                 break 'l2;
             }
             if sw1 == 1 {
-                fall = true;
                 PlaySE(SE_SELECT);
                 return 7;
             }
@@ -478,7 +516,6 @@ pub(crate) unsafe extern "C" fn MatchCallListCursorUp(state: i32) -> u32 {
                 PlaySE(SE_SELECT);
             }
             if fall || !matched {
-                fall = true;
                 return LT_INC_AND_PAUSE;
             }
         }
@@ -493,17 +530,15 @@ pub(crate) unsafe extern "C" fn MatchCallListCursorUp(state: i32) -> u32 {
             PrintMatchCallLocation(gfx, 0);
             return LT_INC_AND_PAUSE;
         }
-        3 => {
-            if IsDma3ManagerBusyWithBgCopy() != 0 {
-                return LT_PAUSE;
-            }
+        3 if IsDma3ManagerBusyWithBgCopy() != 0 => {
+            return LT_PAUSE;
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn MatchCallListPageDown(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub(crate) unsafe fn MatchCallListPageDown(state: i32) -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     match state {
         0 => 'l2: {
@@ -511,11 +546,9 @@ pub(crate) unsafe extern "C" fn MatchCallListPageDown(state: i32) -> u32 {
             let matched = sw1 == 0 || sw1 == 1 || sw1 == 2;
             let mut fall = false;
             if sw1 == 0 {
-                fall = true;
                 break 'l2;
             }
             if sw1 == 1 {
-                fall = true;
                 PlaySE(SE_SELECT);
                 return 7;
             }
@@ -524,7 +557,6 @@ pub(crate) unsafe extern "C" fn MatchCallListPageDown(state: i32) -> u32 {
                 PlaySE(SE_SELECT);
             }
             if fall || !matched {
-                fall = true;
                 return LT_INC_AND_PAUSE;
             }
         }
@@ -539,17 +571,15 @@ pub(crate) unsafe extern "C" fn MatchCallListPageDown(state: i32) -> u32 {
             PrintMatchCallLocation(gfx, 0);
             return LT_INC_AND_PAUSE;
         }
-        3 => {
-            if IsDma3ManagerBusyWithBgCopy() != 0 {
-                return LT_PAUSE;
-            }
+        3 if IsDma3ManagerBusyWithBgCopy() != 0 => {
+            return LT_PAUSE;
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn MatchCallListPageUp(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub(crate) unsafe fn MatchCallListPageUp(state: i32) -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     match state {
         0 => 'l2: {
@@ -557,11 +587,9 @@ pub(crate) unsafe extern "C" fn MatchCallListPageUp(state: i32) -> u32 {
             let matched = sw1 == 0 || sw1 == 1 || sw1 == 2;
             let mut fall = false;
             if sw1 == 0 {
-                fall = true;
                 break 'l2;
             }
             if sw1 == 1 {
-                fall = true;
                 PlaySE(SE_SELECT);
                 return 7;
             }
@@ -570,7 +598,6 @@ pub(crate) unsafe extern "C" fn MatchCallListPageUp(state: i32) -> u32 {
                 PlaySE(SE_SELECT);
             }
             if fall || !matched {
-                fall = true;
                 return LT_INC_AND_PAUSE;
             }
         }
@@ -585,17 +612,15 @@ pub(crate) unsafe extern "C" fn MatchCallListPageUp(state: i32) -> u32 {
             PrintMatchCallLocation(gfx, 0);
             return LT_INC_AND_PAUSE;
         }
-        3 => {
-            if IsDma3ManagerBusyWithBgCopy() != 0 {
-                return LT_PAUSE;
-            }
+        3 if IsDma3ManagerBusyWithBgCopy() != 0 => {
+            return LT_PAUSE;
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn SelectMatchCallEntry(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub(crate) unsafe fn SelectMatchCallEntry(state: i32) -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     match state {
         0 => {
@@ -604,26 +629,23 @@ pub(crate) unsafe extern "C" fn SelectMatchCallEntry(state: i32) -> u32 {
             PrintHelpBarText(HELPBAR_MC_CALL_MENU);
             return LT_INC_AND_PAUSE;
         }
-        1 => {
-            if ShowOptionsCursor(gfx) != 0 {
-                return LT_PAUSE;
-            }
+        1 if ShowOptionsCursor(gfx) != 0 => {
+            return LT_PAUSE;
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn MoveMatchCallOptionsCursor(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx = null_mut();
-    let mut cursorPos: u16 = 0;
+pub(crate) unsafe fn MoveMatchCallOptionsCursor(state: i32) -> u32 {
     PlaySE(SE_SELECT);
-    gfx = GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
-    cursorPos = GetMatchCallOptionCursorPos();
+    let gfx: *mut Pokenav_MatchCallGfx =
+        GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
+    let cursorPos: u16 = GetMatchCallOptionCursorPos();
     UpdateCursorGfxPos(gfx, cursorPos as i32);
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn CancelMatchCallSelection(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub(crate) unsafe fn CancelMatchCallSelection(state: i32) -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     match state {
         0 => {
@@ -632,17 +654,15 @@ pub(crate) unsafe extern "C" fn CancelMatchCallSelection(state: i32) -> u32 {
             PrintHelpBarText(HELPBAR_MC_TRAINER_LIST);
             return LT_INC_AND_PAUSE;
         }
-        1 => {
-            if IsDma3ManagerBusyWithBgCopy1(gfx) != 0 {
-                return LT_PAUSE;
-            }
+        1 if IsDma3ManagerBusyWithBgCopy1(gfx) != 0 => {
+            return LT_PAUSE;
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn DoMatchCallMessage(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub(crate) unsafe fn DoMatchCallMessage(state: i32) -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     match state {
         0 => {
@@ -666,17 +686,15 @@ pub(crate) unsafe extern "C" fn DoMatchCallMessage(state: i32) -> u32 {
             PrintMatchCallMessage(gfx);
             return LT_INC_AND_PAUSE;
         }
-        3 => {
-            if WaitForMatchCallMessageText(gfx) != 0 {
-                return LT_PAUSE;
-            }
+        3 if WaitForMatchCallMessageText(gfx) != 0 => {
+            return LT_PAUSE;
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn DoTrainerCloseByMessage(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub(crate) unsafe fn DoTrainerCloseByMessage(state: i32) -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     match state {
         0 => {
@@ -693,17 +711,15 @@ pub(crate) unsafe extern "C" fn DoTrainerCloseByMessage(state: i32) -> u32 {
             PrintTrainerIsCloseBy(gfx);
             return LT_INC_AND_PAUSE;
         }
-        2 => {
-            if WaitForTrainerIsCloseByText(gfx) != 0 {
-                return LT_PAUSE;
-            }
+        2 if WaitForTrainerIsCloseByText(gfx) != 0 => {
+            return LT_PAUSE;
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn CloseMatchCallMessage(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub(crate) unsafe fn CloseMatchCallMessage(state: i32) -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     let mut result: u32 = LT_INC_AND_PAUSE;
     match state {
@@ -753,10 +769,10 @@ pub(crate) unsafe extern "C" fn CloseMatchCallMessage(state: i32) -> u32 {
         }
         _ => {}
     }
-    return result;
+    result
 }
-pub(crate) unsafe extern "C" fn ShowCheckPage(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub(crate) unsafe fn ShowCheckPage(state: i32) -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     match state {
         0 => {
@@ -777,22 +793,20 @@ pub(crate) unsafe extern "C" fn ShowCheckPage(state: i32) -> u32 {
             LoadCheckPageTrainerPic(gfx);
             return LT_INC_AND_PAUSE;
         }
-        3 => {
-            if PokenavList_IsTaskActive() != 0
-                || WaitForTrainerPic(gfx) != 0
-                || WaitForHelpBar() != 0
-            {
-                return LT_PAUSE;
-            }
+        3 if (PokenavList_IsTaskActive() != 0
+            || WaitForTrainerPic(gfx) != 0
+            || WaitForHelpBar() != 0) =>
+        {
+            return LT_PAUSE;
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn ShowCheckPageDown(state: i32) -> u32 {
+pub(crate) unsafe fn ShowCheckPageDown(state: i32) -> u32 {
     let mut topId: i32 = 0;
     let mut delta: i32 = 0;
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     match state {
         0 => {
@@ -820,17 +834,15 @@ pub(crate) unsafe extern "C" fn ShowCheckPageDown(state: i32) -> u32 {
             LoadCheckPageTrainerPic(gfx);
             return LT_INC_AND_PAUSE;
         }
-        4 => {
-            if PokenavList_IsTaskActive() != 0 || WaitForTrainerPic(gfx) != 0 {
-                return LT_PAUSE;
-            }
+        4 if (PokenavList_IsTaskActive() != 0 || WaitForTrainerPic(gfx) != 0) => {
+            return LT_PAUSE;
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn ExitCheckPage(state: i32) -> u32 {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+pub(crate) unsafe fn ExitCheckPage(state: i32) -> u32 {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     match state {
         0 => {
@@ -847,19 +859,17 @@ pub(crate) unsafe extern "C" fn ExitCheckPage(state: i32) -> u32 {
             UpdateMatchCallInfoBox(gfx);
             return LT_INC_AND_PAUSE;
         }
-        2 => {
-            if IsDma3ManagerBusyWithBgCopy() != 0 {
-                return LT_PAUSE;
-            }
+        2 if IsDma3ManagerBusyWithBgCopy() != 0 => {
+            return LT_PAUSE;
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn ShowCheckPageUp(state: i32) -> u32 {
+pub(crate) unsafe fn ShowCheckPageUp(state: i32) -> u32 {
     let mut topId: i32 = 0;
     let mut delta: i32 = 0;
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     match state {
         0 => {
@@ -887,16 +897,14 @@ pub(crate) unsafe extern "C" fn ShowCheckPageUp(state: i32) -> u32 {
             LoadCheckPageTrainerPic(gfx);
             return LT_INC_AND_PAUSE;
         }
-        4 => {
-            if PokenavList_IsTaskActive() != 0 || WaitForTrainerPic(gfx) != 0 {
-                return LT_PAUSE;
-            }
+        4 if (PokenavList_IsTaskActive() != 0 || WaitForTrainerPic(gfx) != 0) => {
+            return LT_PAUSE;
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn ExitMatchCall(state: i32) -> u32 {
+pub(crate) unsafe fn ExitMatchCall(state: i32) -> u32 {
     match state {
         0 => {
             PlaySE(SE_SELECT);
@@ -913,9 +921,9 @@ pub(crate) unsafe extern "C" fn ExitMatchCall(state: i32) -> u32 {
         }
         _ => {}
     }
-    return LT_FINISH;
+    LT_FINISH
 }
-pub(crate) unsafe extern "C" fn CreateMatchCallList() {
+unsafe fn CreateMatchCallList() {
     let mut template: PokenavListTemplate = zeroed();
     template.list = GetMatchCallList() as *mut PokenavListItem;
     template.count = GetNumberRegistered() as u16;
@@ -928,8 +936,8 @@ pub(crate) unsafe extern "C" fn CreateMatchCallList() {
     template.fillValue = 3;
     template.fontId = FONT_NARROW;
     template.bufferItemFunc = core::mem::transmute::<
-        Option<unsafe extern "C" fn(*mut PokenavMatchCallEntry, *mut u8)>,
-        Option<unsafe extern "C" fn(*mut PokenavListItem, *mut u8)>,
+        Option<unsafe fn(*mut PokenavMatchCallEntry, *mut u8)>,
+        Option<unsafe fn(*mut PokenavListItem, *mut u8)>,
     >(Some(BufferMatchCallNameAndDesc));
     template.iconDrawFunc = Some(TryDrawRematchPokeballIcon);
     CreatePokenavList(
@@ -939,45 +947,47 @@ pub(crate) unsafe extern "C" fn CreateMatchCallList() {
     );
     CreateTask(Some(Task_FlashPokeballIcons), 7);
 }
-pub(crate) unsafe extern "C" fn DestroyMatchCallList() {
+unsafe fn DestroyMatchCallList() {
     DestroyPokenavList();
     DestroyTask(FindTaskIdByFunc(Some(Task_FlashPokeballIcons)));
 }
-pub(crate) unsafe extern "C" fn SetPokeballIconsFlashing(active: u32) {
-    let mut taskId: u8 = FindTaskIdByFunc(Some(Task_FlashPokeballIcons));
+unsafe fn SetPokeballIconsFlashing(active: u32) {
+    let taskId: u8 = FindTaskIdByFunc(Some(Task_FlashPokeballIcons));
     if taskId != TASK_NONE {
-        gTasks[taskId].data[15] = active as i16;
+        task_set(taskId, tActive, active as i16);
     }
 }
-pub(crate) unsafe extern "C" fn Task_FlashPokeballIcons(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_FlashPokeballIcons(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if *data.at(15) != 0 {
         *data += 4;
         *data &= 0x7F;
-        *data.at(1) = gSineTable[*data] >> 4;
+        *data.at(1) = (*(&raw const crate::trig::gSineTable).cast::<CArray<i16, 0>>())[*data] >> 4;
         PokenavCopyPalette(
             sPokeball_Pal.as_ptr().cast_mut(),
             (&raw const sPokeball_Pal[16]).cast_mut(),
             0x10,
             0x10,
             *data.at(1) as i32,
-            &raw mut gPlttBufferUnfaded[80],
+            &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                .cast::<CArray<u16, 512>>()
+                .cast_mut())[80],
         );
         if gPaletteFade.active() == 0 {
             CpuSet(
-                &raw mut gPlttBufferUnfaded[80] as *mut c_void,
-                &raw mut gPlttBufferFaded[80] as *mut c_void,
+                &raw mut (*(&raw const crate::palette::gPlttBufferUnfaded)
+                    .cast::<CArray<u16, 512>>()
+                    .cast_mut())[80] as *mut c_void,
+                &raw mut (*(&raw const crate::palette::gPlttBufferFaded)
+                    .cast::<CArray<u16, 512>>()
+                    .cast_mut())[80] as *mut c_void,
                 0x4000008,
             );
         }
     }
 }
-pub(crate) unsafe extern "C" fn TryDrawRematchPokeballIcon(
-    windowId: u16,
-    rematchId: u32,
-    tileOffset: u32,
-) {
-    let mut bg: u8 = GetWindowAttribute(windowId as u8, WINDOW_BG) as u8;
+pub(crate) unsafe fn TryDrawRematchPokeballIcon(windowId: u16, rematchId: u32, tileOffset: u32) {
+    let bg: u8 = GetWindowAttribute(windowId as u8, WINDOW_BG) as u8;
     let mut tilemap: *mut u16 = GetBgTilemapBuffer(bg) as *mut u16;
     tilemap = tilemap.at(tileOffset * 64 + 0x1D);
     if ShouldDrawRematchPokeballIcon(rematchId as i32) != 0 {
@@ -988,15 +998,14 @@ pub(crate) unsafe extern "C" fn TryDrawRematchPokeballIcon(
         *tilemap.at(32) = POKEBALL_ICON_EMPTY;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearRematchPokeballIcon(windowId: u16, tileOffset: u32) {
-    let mut bg: u8 = GetWindowAttribute(windowId as u8, WINDOW_BG) as u8;
+pub unsafe fn ClearRematchPokeballIcon(windowId: u16, tileOffset: u32) {
+    let bg: u8 = GetWindowAttribute(windowId as u8, WINDOW_BG) as u8;
     let mut tilemap: *mut u16 = GetBgTilemapBuffer(bg) as *mut u16;
     tilemap = tilemap.at(tileOffset * 64 + 0x1D);
     *tilemap = POKEBALL_ICON_EMPTY;
     *tilemap.at(32) = POKEBALL_ICON_EMPTY;
 }
-pub(crate) unsafe extern "C" fn DrawMatchCallLeftColumnWindows(gfx: *mut Pokenav_MatchCallGfx) {
+unsafe fn DrawMatchCallLeftColumnWindows(gfx: *mut Pokenav_MatchCallGfx) {
     (*gfx).locWindowId = AddWindow((&raw const *sMatchCallLocationWindowTemplate).cast_mut());
     (*gfx).infoBoxWindowId = AddWindow((&raw const *sMatchCallInfoBoxWindowTemplate).cast_mut());
     FillWindowPixelBuffer((*gfx).locWindowId as u8, 17);
@@ -1005,7 +1014,7 @@ pub(crate) unsafe extern "C" fn DrawMatchCallLeftColumnWindows(gfx: *mut Pokenav
     PutWindowTilemap((*gfx).infoBoxWindowId as u8);
     CopyWindowToVram((*gfx).locWindowId as u8, COPYWIN_MAP);
 }
-pub(crate) unsafe extern "C" fn UpdateMatchCallInfoBox(gfx: *mut Pokenav_MatchCallGfx) {
+unsafe fn UpdateMatchCallInfoBox(gfx: *mut Pokenav_MatchCallGfx) {
     FillWindowPixelBuffer((*gfx).infoBoxWindowId as u8, 17);
     PrintNumberRegisteredLabel((*gfx).infoBoxWindowId);
     PrintNumberRegistered((*gfx).infoBoxWindowId);
@@ -1013,10 +1022,16 @@ pub(crate) unsafe extern "C" fn UpdateMatchCallInfoBox(gfx: *mut Pokenav_MatchCa
     PrintNumberOfBattles((*gfx).infoBoxWindowId);
     CopyWindowToVram((*gfx).infoBoxWindowId as u8, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn PrintNumberRegisteredLabel(windowId: u16) {
-    PrintMatchCallInfoLabel(windowId, gText_NumberRegistered.as_ptr().cast_mut(), 0);
+unsafe fn PrintNumberRegisteredLabel(windowId: u16) {
+    PrintMatchCallInfoLabel(
+        windowId,
+        (*(&raw const crate::data::strings::gText_NumberRegistered).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        0,
+    );
 }
-pub(crate) unsafe extern "C" fn PrintNumberRegistered(windowId: u16) {
+unsafe fn PrintNumberRegistered(windowId: u16) {
     let mut str: CArray<u8, 3> = zeroed();
     ConvertIntToDecimalStringN(
         str.as_mut_ptr(),
@@ -1026,10 +1041,16 @@ pub(crate) unsafe extern "C" fn PrintNumberRegistered(windowId: u16) {
     );
     PrintMatchCallInfoNumber(windowId, str.as_mut_ptr(), 1);
 }
-pub(crate) unsafe extern "C" fn PrintNumberOfBattlesLabel(windowId: u16) {
-    PrintMatchCallInfoLabel(windowId, gText_NumberOfBattles.as_ptr().cast_mut(), 2);
+unsafe fn PrintNumberOfBattlesLabel(windowId: u16) {
+    PrintMatchCallInfoLabel(
+        windowId,
+        (*(&raw const crate::data::strings::gText_NumberOfBattles).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        2,
+    );
 }
-pub(crate) unsafe extern "C" fn PrintNumberOfBattles(windowId: u16) {
+unsafe fn PrintNumberOfBattles(windowId: u16) {
     let mut str: CArray<u8, 5> = zeroed();
     let mut numTrainerBattles: i32 = GetGameStat(GAME_STAT_TRAINER_BATTLES) as i32;
     if numTrainerBattles > 99999 {
@@ -1043,8 +1064,8 @@ pub(crate) unsafe extern "C" fn PrintNumberOfBattles(windowId: u16) {
     );
     PrintMatchCallInfoNumber(windowId, str.as_mut_ptr(), 3);
 }
-pub(crate) unsafe extern "C" fn PrintMatchCallInfoLabel(windowId: u16, str: *mut u8, top: i32) {
-    let mut y: i32 = top * 16 + 1;
+unsafe fn PrintMatchCallInfoLabel(windowId: u16, str: *mut u8, top: i32) {
+    let y: i32 = top * 16 + 1;
     AddTextPrinterParameterized(
         windowId as u8,
         FONT_NARROW,
@@ -1055,9 +1076,9 @@ pub(crate) unsafe extern "C" fn PrintMatchCallInfoLabel(windowId: u16, str: *mut
         None,
     );
 }
-pub(crate) unsafe extern "C" fn PrintMatchCallInfoNumber(windowId: u16, str: *mut u8, top: i32) {
-    let mut x: i32 = GetStringRightAlignXOffset(FONT_NARROW as i32, str, 86);
-    let mut y: i32 = top * 16 + 1;
+unsafe fn PrintMatchCallInfoNumber(windowId: u16, str: *mut u8, top: i32) {
+    let x: i32 = GetStringRightAlignXOffset(FONT_NARROW as i32, str, 86);
+    let y: i32 = top * 16 + 1;
     AddTextPrinterParameterized(
         windowId as u8,
         FONT_NARROW,
@@ -1068,17 +1089,21 @@ pub(crate) unsafe extern "C" fn PrintMatchCallInfoNumber(windowId: u16, str: *mu
         None,
     );
 }
-pub(crate) unsafe extern "C" fn PrintMatchCallLocation(gfx: *mut Pokenav_MatchCallGfx, delta: i32) {
+unsafe fn PrintMatchCallLocation(gfx: *mut Pokenav_MatchCallGfx, delta: i32) {
     let mut mapName: CArray<u8, 32> = zeroed();
-    let mut x: i32 = 0;
-    let mut index: i32 = PokenavList_GetSelectedIndex() as i32 + delta;
-    let mut mapSec: i32 = GetMatchCallMapSec(index) as i32;
+    let index: i32 = PokenavList_GetSelectedIndex() as i32 + delta;
+    let mapSec: i32 = GetMatchCallMapSec(index) as i32;
     if mapSec != MAPSEC_NONE as i32 {
         GetMapName(mapName.as_mut_ptr(), mapSec as u16, 0);
     } else {
-        StringCopy(mapName.as_mut_ptr(), gText_Unknown.as_ptr().cast_mut());
+        StringCopy(
+            mapName.as_mut_ptr(),
+            (*(&raw const crate::data::strings::gText_Unknown).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+        );
     }
-    x = GetStringCenterAlignXOffset(FONT_NARROW as i32, mapName.as_mut_ptr(), 88);
+    let x: i32 = GetStringCenterAlignXOffset(FONT_NARROW as i32, mapName.as_mut_ptr(), 88);
     FillWindowPixelBuffer((*gfx).locWindowId as u8, 17);
     AddTextPrinterParameterized(
         (*gfx).locWindowId as u8,
@@ -1090,12 +1115,10 @@ pub(crate) unsafe extern "C" fn PrintMatchCallLocation(gfx: *mut Pokenav_MatchCa
         None,
     );
 }
-pub(crate) unsafe extern "C" fn PrintMatchCallSelectionOptions(gfx: *mut Pokenav_MatchCallGfx) {
-    let mut i: u32 = 0;
+unsafe fn PrintMatchCallSelectionOptions(gfx: *mut Pokenav_MatchCallGfx) {
     FillWindowPixelBuffer((*gfx).infoBoxWindowId as u8, 17);
-    i = 0;
-    while i < MATCH_CALL_OPTION_COUNT {
-        let mut optionText: i32 = GetMatchCallOptionId(i as i32) as i32;
+    for i in 0..MATCH_CALL_OPTION_COUNT {
+        let optionText: i32 = GetMatchCallOptionId(i as i32) as i32;
         if optionText == MATCH_CALL_OPTION_COUNT as i32 {
             break;
         }
@@ -1108,61 +1131,55 @@ pub(crate) unsafe extern "C" fn PrintMatchCallSelectionOptions(gfx: *mut Pokenav
             TEXT_SKIP_DRAW,
             None,
         );
-        i += 1;
     }
     CopyWindowToVram((*gfx).infoBoxWindowId as u8, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn ShowOptionsCursor(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
+unsafe fn ShowOptionsCursor(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
     if IsDma3ManagerBusyWithBgCopy() == 0 {
         CreateOptionsCursorSprite(gfx, GetMatchCallOptionCursorPos() as i32);
         return FALSE as u32;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn UpdateWindowsReturnToTrainerList(gfx: *mut Pokenav_MatchCallGfx) {
+unsafe fn UpdateWindowsReturnToTrainerList(gfx: *mut Pokenav_MatchCallGfx) {
     CloseMatchCallSelectOptionsWindow(gfx);
     UpdateMatchCallInfoBox(gfx);
 }
-pub(crate) unsafe extern "C" fn IsDma3ManagerBusyWithBgCopy1(
-    gfx: *mut Pokenav_MatchCallGfx,
-) -> u32 {
-    return IsDma3ManagerBusyWithBgCopy() as u32;
+unsafe fn IsDma3ManagerBusyWithBgCopy1(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
+    IsDma3ManagerBusyWithBgCopy() as u32
 }
-pub(crate) unsafe extern "C" fn UpdateWindowsToShowCheckPage(gfx: *mut Pokenav_MatchCallGfx) {
+unsafe fn UpdateWindowsToShowCheckPage(gfx: *mut Pokenav_MatchCallGfx) {
     CloseMatchCallSelectOptionsWindow(gfx);
     FillWindowPixelBuffer((*gfx).infoBoxWindowId as u8, 17);
     CopyWindowToVram((*gfx).infoBoxWindowId as u8, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn LoadCallWindowAndFade(gfx: *mut Pokenav_MatchCallGfx) {
+unsafe fn LoadCallWindowAndFade(gfx: *mut Pokenav_MatchCallGfx) {
     (*gfx).msgBoxWindowId = AddWindow((&raw const *sCallMsgBoxWindowTemplate).cast_mut());
     LoadMatchCallWindowGfx((*gfx).msgBoxWindowId as u32, 1, 4);
     FadeToBlackExceptPrimary();
 }
-pub(crate) unsafe extern "C" fn DrawMsgBoxForMatchCallMsg(gfx: *mut Pokenav_MatchCallGfx) {
-    let mut sprite: *mut Sprite = null_mut();
+unsafe fn DrawMsgBoxForMatchCallMsg(gfx: *mut Pokenav_MatchCallGfx) {
     LoadMatchCallWindowGfx((*gfx).msgBoxWindowId as u32, 1, 4);
     DrawMatchCallTextBoxBorder((*gfx).msgBoxWindowId as u32, 1, 4);
     FillWindowPixelBuffer((*gfx).msgBoxWindowId as u8, 17);
     PutWindowTilemap((*gfx).msgBoxWindowId as u8);
     CopyWindowToVram((*gfx).msgBoxWindowId as u8, COPYWIN_FULL);
-    sprite = GetSpinningPokenavSprite();
+    let sprite: *mut Sprite = GetSpinningPokenavSprite();
     (*sprite).x = 24;
     (*sprite).y = 112;
     (*sprite).y2 = 0;
 }
-pub(crate) unsafe extern "C" fn DrawMsgBoxForCloseByMsg(gfx: *mut Pokenav_MatchCallGfx) {
+unsafe fn DrawMsgBoxForCloseByMsg(gfx: *mut Pokenav_MatchCallGfx) {
     LoadUserWindowBorderGfx((*gfx).msgBoxWindowId as u8, 1, 64);
     DrawTextBorderOuter((*gfx).msgBoxWindowId as u8, 1, 4);
     FillWindowPixelBuffer((*gfx).msgBoxWindowId as u8, 17);
     PutWindowTilemap((*gfx).msgBoxWindowId as u8);
     CopyWindowToVram((*gfx).msgBoxWindowId as u8, COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn IsDma3ManagerBusyWithBgCopy2(
-    gfx: *mut Pokenav_MatchCallGfx,
-) -> u32 {
-    return IsDma3ManagerBusyWithBgCopy() as u32;
+unsafe fn IsDma3ManagerBusyWithBgCopy2(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
+    IsDma3ManagerBusyWithBgCopy() as u32
 }
-pub(crate) unsafe extern "C" fn PrintCallingDots(gfx: *mut Pokenav_MatchCallGfx) {
+unsafe fn PrintCallingDots(gfx: *mut Pokenav_MatchCallGfx) {
     AddTextPrinterParameterized(
         (*gfx).msgBoxWindowId as u8,
         FONT_NORMAL,
@@ -1173,29 +1190,31 @@ pub(crate) unsafe extern "C" fn PrintCallingDots(gfx: *mut Pokenav_MatchCallGfx)
         None,
     );
 }
-pub(crate) unsafe extern "C" fn WaitForCallingDotsText(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
+unsafe fn WaitForCallingDotsText(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
     RunTextPrinters();
-    return IsTextPrinterActive((*gfx).msgBoxWindowId as u8) as u32;
+    IsTextPrinterActive((*gfx).msgBoxWindowId as u8) as u32
 }
-pub(crate) unsafe extern "C" fn PrintTrainerIsCloseBy(gfx: *mut Pokenav_MatchCallGfx) {
+unsafe fn PrintTrainerIsCloseBy(gfx: *mut Pokenav_MatchCallGfx) {
     AddTextPrinterParameterized(
         (*gfx).msgBoxWindowId as u8,
         FONT_NORMAL,
-        gText_TrainerCloseBy.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_TrainerCloseBy).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         1,
         1,
         None,
     );
 }
-pub(crate) unsafe extern "C" fn WaitForTrainerIsCloseByText(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
+unsafe fn WaitForTrainerIsCloseByText(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
     RunTextPrinters();
-    return IsTextPrinterActive((*gfx).msgBoxWindowId as u8) as u32;
+    IsTextPrinterActive((*gfx).msgBoxWindowId as u8) as u32
 }
-pub(crate) unsafe extern "C" fn PrintMatchCallMessage(gfx: *mut Pokenav_MatchCallGfx) {
-    let mut index: i32 = PokenavList_GetSelectedIndex() as i32;
-    let mut str: *mut u8 = GetMatchCallMessageText(index, &raw mut (*gfx).newRematchRequest);
-    let mut speed: u8 = GetPlayerTextSpeedDelay();
+unsafe fn PrintMatchCallMessage(gfx: *mut Pokenav_MatchCallGfx) {
+    let index: i32 = PokenavList_GetSelectedIndex() as i32;
+    let str: *mut u8 = GetMatchCallMessageText(index, &raw mut (*gfx).newRematchRequest);
+    let speed: u8 = GetPlayerTextSpeedDelay();
     AddTextPrinterParameterized(
         (*gfx).msgBoxWindowId as u8,
         FONT_NORMAL,
@@ -1206,33 +1225,35 @@ pub(crate) unsafe extern "C" fn PrintMatchCallMessage(gfx: *mut Pokenav_MatchCal
         None,
     );
 }
-pub(crate) unsafe extern "C" fn WaitForMatchCallMessageText(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
+unsafe fn WaitForMatchCallMessageText(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
     if gMain.heldKeys as i32 & A_BUTTON != 0 {
-        gTextFlags.set_canABSpeedUpPrint(TRUE);
+        (*(&raw const crate::text::gTextFlags)
+            .cast::<TextFlags>()
+            .cast_mut())
+        .set_canABSpeedUpPrint(TRUE);
     } else {
-        gTextFlags.set_canABSpeedUpPrint(FALSE);
+        (*(&raw const crate::text::gTextFlags)
+            .cast::<TextFlags>()
+            .cast_mut())
+        .set_canABSpeedUpPrint(FALSE);
     }
     RunTextPrinters();
-    return IsTextPrinterActive((*gfx).msgBoxWindowId as u8) as u32;
+    IsTextPrinterActive((*gfx).msgBoxWindowId as u8) as u32
 }
-pub(crate) unsafe extern "C" fn EraseCallMessageBox(gfx: *mut Pokenav_MatchCallGfx) {
+unsafe fn EraseCallMessageBox(gfx: *mut Pokenav_MatchCallGfx) {
     HideSpinningPokenavSprite();
     FillBgTilemapBufferRect_Palette0(1, 0, 0, 0, 32, 20);
     CopyBgTilemapBufferToVram(1);
 }
-pub(crate) unsafe extern "C" fn WaitForCallMessageBoxErase(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
-    return IsDma3ManagerBusyWithBgCopy() as u32;
+unsafe fn WaitForCallMessageBoxErase(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
+    IsDma3ManagerBusyWithBgCopy() as u32
 }
-pub(crate) unsafe extern "C" fn AllocMatchCallSprites() {
-    let mut i: i32 = 0;
-    let mut paletteNum: u8 = 0;
+unsafe fn AllocMatchCallSprites() {
     let mut spriteSheet: SpriteSheet = zeroed();
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
-    i = 0;
-    while i < 1 {
+    for i in 0..1i32 {
         LoadCompressedSpriteSheet((&raw const sOptionsCursorSpriteSheets[i]).cast_mut());
-        i += 1;
     }
     Pokenav_AllocAndLoadPalettes(sOptionsCursorSpritePalettes.as_ptr().cast_mut());
     (*gfx).optionsCursorSprite = null_mut();
@@ -1241,13 +1262,13 @@ pub(crate) unsafe extern "C" fn AllocMatchCallSprites() {
     spriteSheet.tag = GFXTAG_TRAINER_PIC;
     (*gfx).trainerPicGfxPtr =
         (OBJ_VRAM0 as usize as *mut u8).at(LoadSpriteSheet(&raw mut spriteSheet) as i32 * 0x20);
-    paletteNum = AllocSpritePalette(PALTAG_TRAINER_PIC);
+    let paletteNum: u8 = AllocSpritePalette(PALTAG_TRAINER_PIC);
     (*gfx).trainerPicPalOffset = 0x100 + paletteNum as u16 * 16;
     (*gfx).trainerPicSprite = CreateTrainerPicSprite();
     (*(*gfx).trainerPicSprite).set_invisible(TRUE as u16);
 }
-pub(crate) unsafe extern "C" fn FreeMatchCallSprites() {
-    let mut gfx: *mut Pokenav_MatchCallGfx =
+unsafe fn FreeMatchCallSprites() {
+    let gfx: *mut Pokenav_MatchCallGfx =
         GetSubstructPtr(POKENAV_SUBSTRUCT_MATCH_CALL_OPEN) as *mut Pokenav_MatchCallGfx;
     if !(*gfx).optionsCursorSprite.is_null() {
         DestroySprite((*gfx).optionsCursorSprite);
@@ -1260,12 +1281,9 @@ pub(crate) unsafe extern "C" fn FreeMatchCallSprites() {
     FreeSpritePaletteByTag(PALTAG_CURSOR);
     FreeSpritePaletteByTag(PALTAG_TRAINER_PIC);
 }
-pub(crate) unsafe extern "C" fn CreateOptionsCursorSprite(
-    gfx: *mut Pokenav_MatchCallGfx,
-    top: i32,
-) {
+unsafe fn CreateOptionsCursorSprite(gfx: *mut Pokenav_MatchCallGfx, top: i32) {
     if (*gfx).optionsCursorSprite.is_null() {
-        let mut spriteId: u8 = CreateSprite(
+        let spriteId: u8 = CreateSprite(
             (&raw const *sOptionsCursorSpriteTemplate).cast_mut(),
             4,
             80,
@@ -1275,43 +1293,47 @@ pub(crate) unsafe extern "C" fn CreateOptionsCursorSprite(
         UpdateCursorGfxPos(gfx, top);
     }
 }
-pub(crate) unsafe extern "C" fn CloseMatchCallSelectOptionsWindow(gfx: *mut Pokenav_MatchCallGfx) {
+unsafe fn CloseMatchCallSelectOptionsWindow(gfx: *mut Pokenav_MatchCallGfx) {
     DestroySprite((*gfx).optionsCursorSprite);
     (*gfx).optionsCursorSprite = null_mut();
 }
-pub(crate) unsafe extern "C" fn UpdateCursorGfxPos(gfx: *mut Pokenav_MatchCallGfx, top: i32) {
+unsafe fn UpdateCursorGfxPos(gfx: *mut Pokenav_MatchCallGfx, top: i32) {
     (*(*gfx).optionsCursorSprite).y2 = top as i16 * 16;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_OptionsCursor(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_OptionsCursor(sprite: *mut Sprite) {
     if ({
         (*sprite).data[0] += 1;
         (*sprite).data[0]
     }) > 3
     {
         (*sprite).data[0] = 0;
-        (*sprite).x2 = (*sprite).x2 + 1 & 7;
+        (*sprite).x2 = ((*sprite).x2 + 1) & 7;
     }
 }
-pub(crate) unsafe extern "C" fn CreateTrainerPicSprite() -> *mut Sprite {
-    let mut spriteId: u8 = CreateSprite(
+pub(crate) unsafe fn CreateTrainerPicSprite() -> *mut Sprite {
+    let spriteId: u8 = CreateSprite(
         (&raw const *sTrainerPicSpriteTemplate).cast_mut(),
         44,
         104,
         6,
     );
-    return &raw mut gSprites[spriteId];
+    &raw mut gSprites[spriteId]
 }
-pub(crate) unsafe extern "C" fn LoadCheckPageTrainerPic(gfx: *mut Pokenav_MatchCallGfx) {
+unsafe fn LoadCheckPageTrainerPic(gfx: *mut Pokenav_MatchCallGfx) {
     let mut cursor: u16 = 0;
-    let mut trainerPic: i32 = GetMatchCallTrainerPic(PokenavList_GetSelectedIndex() as i32);
+    let trainerPic: i32 = GetMatchCallTrainerPic(PokenavList_GetSelectedIndex() as i32);
     if trainerPic >= 0 {
         DecompressPicFromTable(
-            (&raw const gTrainerFrontPicTable[trainerPic]).cast_mut(),
+            (&raw const (*(&raw const crate::data::data_tables::gTrainerFrontPicTable)
+                .cast::<CArray<CompressedSpriteSheet, 0>>())[trainerPic])
+                .cast_mut(),
             (*gfx).trainerPicGfx.as_mut_ptr() as *mut c_void,
             SPECIES_NONE as i32,
         );
         LZ77UnCompWram(
-            gTrainerFrontPicPaletteTable[trainerPic].data,
+            (*(&raw const crate::data::data_tables::gTrainerFrontPicPaletteTable)
+                .cast::<CArray<CompressedSpritePalette, 0>>())[trainerPic]
+                .data,
             (*gfx).trainerPicPal.as_mut_ptr() as *mut c_void,
         );
         cursor = RequestDma3Copy(
@@ -1330,14 +1352,14 @@ pub(crate) unsafe extern "C" fn LoadCheckPageTrainerPic(gfx: *mut Pokenav_MatchC
         (*(*gfx).trainerPicSprite).callback = Some(SpriteCB_TrainerPicSlideOnscreen);
     }
 }
-pub(crate) unsafe extern "C" fn TrainerPicSlideOffscreen(gfx: *mut Pokenav_MatchCallGfx) {
+unsafe fn TrainerPicSlideOffscreen(gfx: *mut Pokenav_MatchCallGfx) {
     (*(*gfx).trainerPicSprite).callback = Some(SpriteCB_TrainerPicSlideOffscreen);
 }
-pub(crate) unsafe extern "C" fn WaitForTrainerPic(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
-    return ((*(*gfx).trainerPicSprite).callback
-        != Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))) as u32;
+unsafe fn WaitForTrainerPic(gfx: *mut Pokenav_MatchCallGfx) -> u32 {
+    ((*(*gfx).trainerPicSprite).callback != Some(SpriteCallbackDummy as unsafe fn(*mut Sprite)))
+        as u32
 }
-pub(crate) unsafe extern "C" fn SpriteCB_TrainerPicSlideOnscreen(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_TrainerPicSlideOnscreen(sprite: *mut Sprite) {
     match (*sprite).data[0] {
         0 => {
             if CheckForSpaceForDma3Request((*sprite).data[7]) != -1 {
@@ -1356,7 +1378,7 @@ pub(crate) unsafe extern "C" fn SpriteCB_TrainerPicSlideOnscreen(sprite: *mut Sp
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_TrainerPicSlideOffscreen(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_TrainerPicSlideOffscreen(sprite: *mut Sprite) {
     (*sprite).x2 -= 8;
     if (*sprite).x2 <= -80 {
         (*sprite).set_invisible(TRUE as u16);

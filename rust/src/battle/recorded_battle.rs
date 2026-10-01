@@ -3,37 +3,71 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::gGameLanguage;
+use crate::agb_main::gMain;
+use crate::battle_anim_mons::GetBattlerSide;
+use crate::battle_main::{
+    CB2_InitBattle, CB2_QuitRecordedBattle, gActiveBattler, gBattleMons, gBattleOutcome,
+    gBattleResources, gBattleStruct, gBattleTypeFlags, gBattlersCount, gDisableStructs,
+};
+use crate::battle_main::{gBattlerPartyIndexes, gChosenMoveByBattler};
+use crate::battle_setup::{gPartnerTrainerId, gTrainerBattleOpponent_A, gTrainerBattleOpponent_B};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::VarGet;
+use crate::ffi::gSpecialVar_Result;
+use crate::frontier_util::GetFronterBrainSymbol;
+use crate::link::{GetLinkPlayerCount, GetMultiplayerId, gLinkPlayers};
+use crate::load_save::gSaveBlock2Ptr;
+use crate::palette::{BeginNormalPaletteFade, ResetPaletteFadeControl};
+use crate::pokemon::{
+    GetMonData3, PlayMapChosenOrBattleBGM, SetMonData, ZeroEnemyPartyMons, ZeroPlayerPartyMons,
+    gEnemyParty, gPlayerParty,
+};
+use crate::save::{TryReadSpecialSaveSector, TryWriteSpecialSaveSector};
+use crate::sprite::{AnimateSprites, BuildOamBuffer};
+use crate::string_util::StringCopy;
+use crate::string_util::{ConvertInternationalString, StripExtCtrlCodes};
+use crate::task::{DestroyTask, RunTasks};
+use crate::task::{task_get, task_set};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::util::CalcByteArraySum;
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+// The C's names for task and sprite data slots.
+const tFramesToWait: usize = 0;
 
 /// `struct PlayerInfo`
 #[repr(C)]
@@ -83,11 +117,11 @@ pub struct RecordedBattleSave {
 impl RecordedBattleSave {
     #[inline(always)]
     pub fn battleScene(&self) -> u8 {
-        ((self.bits_1279 as u32 >> 0) & 0x1) as u8
+        ((self.bits_1279 as u32) & 0x1) as u8
     }
     #[inline(always)]
     pub fn set_battleScene(&mut self, v: u8) {
-        self.bits_1279 = (self.bits_1279 & !(0x1 << 0)) | ((v as u8 & 0x1) << 0);
+        self.bits_1279 = (self.bits_1279 & !(0x1 << 0)) | (v & 0x1);
     }
     #[inline(always)]
     pub fn textSpeed(&self) -> u8 {
@@ -95,7 +129,7 @@ impl RecordedBattleSave {
     }
     #[inline(always)]
     pub fn set_textSpeed(&mut self, v: u8) {
-        self.bits_1279 = (self.bits_1279 & !(0x7 << 1)) | ((v as u8 & 0x7) << 1);
+        self.bits_1279 = (self.bits_1279 & !(0x7 << 1)) | ((v & 0x7) << 1);
     }
 }
 
@@ -143,10 +177,8 @@ const _: () = {
 const ACTION_MOVE_CHANGE: u8 = 6;
 const BATTLER_RECORD_SIZE: i32 = 664;
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gRecordedBattleRngSeed: u32 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
 pub static mut gBattlePalaceMoveSelectionRngValue: u32 = 0;
 #[unsafe(link_section = "ewram_data")]
@@ -161,28 +193,27 @@ pub(crate) static mut sBattlerPrevRecordSizes: Aligned<CArray<u16, 4>> =
 pub(crate) static mut sBattlerSavedRecordSizes: Aligned<CArray<u16, 4>> =
     Aligned(unsafe { zeroed() });
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sRecordMode: u8 = 0;
+pub(crate) static sRecordMode: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sLvlMode: u8 = 0;
+pub(crate) static sLvlMode: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sFrontierFacility: u8 = 0;
+pub(crate) static sFrontierFacility: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sFrontierBrainSymbol: u8 = 0;
+pub(crate) static sFrontierBrainSymbol: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sCallback2_AfterRecordedBattle: Option<unsafe extern "C" fn()> = None;
-#[unsafe(no_mangle)]
+pub(crate) static mut sCallback2_AfterRecordedBattle: Option<unsafe fn()> = None;
 #[unsafe(link_section = "ewram_data")]
 pub static mut gRecordedBattleMultiplayerId: u8 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sFrontierPassFlag: u8 = 0;
+pub(crate) static sFrontierPassFlag: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sBattleScene: u8 = 0;
+pub(crate) static sBattleScene: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sTextSpeed: u8 = 0;
+pub(crate) static sTextSpeed: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sBattleFlags: u32 = 0;
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sAI_Scripts: u32 = 0;
+pub(crate) static sAI_Scripts: crate::global::Global<u32> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sSavedPlayerParty: CArray<Pokemon, 6> = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
@@ -193,115 +224,63 @@ pub(crate) static mut sPlayerMonMoves: Aligned<CArray<CArray<u16, 4>, 2>> =
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sPlayers: CArray<PlayerInfo, 4> = unsafe { zeroed() };
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sIsPlaybackFinished: u8 = 0;
+pub(crate) static sIsPlaybackFinished: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sRecordMixFriendName: Aligned<CArray<u8, 8>> = Aligned(unsafe { zeroed() });
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sRecordMixFriendClass: u8 = 0;
+pub(crate) static sRecordMixFriendClass: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sApprenticeId: u8 = 0;
+pub(crate) static sApprenticeId: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sEasyChatSpeech: Aligned<CArray<u16, 6>> = Aligned(unsafe { zeroed() });
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sBattleOutcome: u8 = 0;
-pub(crate) static mut sRecordMixFriendLanguage: u8 = 0;
-pub(crate) static mut sApprenticeLanguage: u8 = 0;
+pub(crate) static sRecordMixFriendLanguage: crate::global::Global<u8> =
+    crate::global::Global::new(0);
+pub(crate) static sApprenticeLanguage: crate::global::Global<u8> = crate::global::Global::new(0);
 
-unsafe extern "C" {
-    static mut gActiveBattler: u8;
-    static mut gBattleMons: CArray<BattlePokemon, 4>;
-    static mut gBattleOutcome: u8;
-    static mut gBattleResources: *mut BattleResources;
-    static mut gBattleStruct: *mut BattleStruct;
-    static mut gBattleTypeFlags: u32;
-    static mut gBattlerPartyIndexes: CArray<u16, 4>;
-    static mut gBattlersCount: u8;
-    static gBitTable: CArray<u32, 0>;
-    static mut gChosenMoveByBattler: CArray<u16, 4>;
-    static mut gDisableStructs: CArray<DisableStruct, 4>;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static gGameLanguage: u8;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gMain: Main;
-    static mut gPartnerTrainerId: u16;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gRngValue: u32;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSpecialVar_Result: u16;
-    static mut gTasks: CArray<Task, 0>;
-    static mut gTrainerBattleOpponent_A: u16;
-    static mut gTrainerBattleOpponent_B: u16;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BuildOamBuffer();
-    fn CB2_InitBattle();
-    fn CB2_QuitRecordedBattle();
-    fn CalcByteArraySum(a0: *mut u8, a1: u32) -> u32;
-    fn ConvertInternationalString(a0: *mut u8, a1: u8);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DestroyTask(a0: u8);
-    fn Free(a0: *mut c_void);
-    fn GetBattlerSide(a0: u8) -> u8;
-    fn GetFronterBrainSymbol() -> i32;
-    fn GetLinkPlayerCount() -> u8;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetMultiplayerId() -> u8;
-    fn PlayMapChosenOrBattleBGM(a0: u16);
-    fn ResetPaletteFadeControl();
-    fn RunTasks();
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StripExtCtrlCodes(a0: *mut u8);
-    fn TryReadSpecialSaveSector(a0: u8, a1: *mut u8) -> u32;
-    fn TryWriteSpecialSaveSector(a0: u8, a1: *mut u8) -> u32;
-    fn VarGet(a0: u16) -> u16;
-    fn ZeroEnemyPartyMons();
-    fn ZeroPlayerPartyMons();
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_Init(mode: u8) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    sRecordMode = mode;
-    sIsPlaybackFinished = FALSE;
-    i = 0;
-    while i < MAX_BATTLERS_COUNT as i32 {
+pub unsafe fn RecordedBattle_Init(mode: u8) {
+    sRecordMode.set(mode);
+    sIsPlaybackFinished.set(FALSE);
+    for i in 0..(MAX_BATTLERS_COUNT as i32) {
         sBattlerRecordSizes[i] = 0;
         sBattlerPrevRecordSizes[i] = 0;
         sBattlerSavedRecordSizes[i] = 0;
         if mode == B_RECORD_MODE_RECORDING {
-            j = 0;
-            while j < BATTLER_RECORD_SIZE {
+            for j in 0..BATTLER_RECORD_SIZE {
                 sBattleRecords[i][j] = 0xFF;
-                j += 1;
             }
             sBattleFlags = gBattleTypeFlags;
-            sAI_Scripts = (*(*gBattleResources).ai).aiFlags;
+            sAI_Scripts.set((*(*gBattleResources).ai).aiFlags);
         }
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_SetTrainerInfo() {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    if sRecordMode == B_RECORD_MODE_RECORDING {
-        gRecordedBattleRngSeed = gRngValue;
-        sFrontierFacility = VarGet(VAR_FRONTIER_FACILITY) as u8;
-        sFrontierBrainSymbol = GetFronterBrainSymbol() as u8;
-    } else if sRecordMode == B_RECORD_MODE_PLAYBACK {
-        gRngValue = gRecordedBattleRngSeed;
+pub unsafe fn RecordedBattle_SetTrainerInfo() {
+    if sRecordMode.get() == B_RECORD_MODE_RECORDING {
+        gRecordedBattleRngSeed = *crate::random::gRngValue.as_ptr().cast::<u32>();
+        sFrontierFacility.set(VarGet(VAR_FRONTIER_FACILITY) as u8);
+        sFrontierBrainSymbol.set(GetFronterBrainSymbol() as u8);
+    } else if sRecordMode.get() == B_RECORD_MODE_PLAYBACK {
+        (*crate::random::gRngValue.as_ptr().cast::<u32>()) = gRecordedBattleRngSeed;
     }
     if gBattleTypeFlags & BATTLE_TYPE_LINK != 0 {
-        let mut linkPlayersCount: u8 = 0;
         let mut text: CArray<u8, 30> = zeroed();
         gRecordedBattleMultiplayerId = GetMultiplayerId();
-        linkPlayersCount = GetLinkPlayerCount();
-        i = 0;
-        while i < MAX_LINK_PLAYERS {
+        let linkPlayersCount: u8 = GetLinkPlayerCount();
+        for i in 0..MAX_LINK_PLAYERS {
             sPlayers[i].trainerId = gLinkPlayers[i].trainerId;
             sPlayers[i].gender = gLinkPlayers[i].gender;
             sPlayers[i].battler = gLinkPlayers[i].id;
@@ -311,13 +290,10 @@ pub unsafe extern "C" fn RecordedBattle_SetTrainerInfo() {
                 StripExtCtrlCodes(text.as_mut_ptr());
                 StringCopy(sPlayers[i].name.as_mut_ptr(), text.as_mut_ptr());
             } else {
-                j = 0;
-                while j < 8 {
+                for j in 0..8i32 {
                     sPlayers[i].name[j] = gLinkPlayers[i].name[j];
-                    j += 1;
                 }
             }
-            i += 1;
         }
     } else {
         sPlayers[0].trainerId = (*gSaveBlock2Ptr).playerTrainerId[0] as u32
@@ -327,17 +303,14 @@ pub unsafe extern "C" fn RecordedBattle_SetTrainerInfo() {
         sPlayers[0].gender = (*gSaveBlock2Ptr).playerGender;
         sPlayers[0].battler = 0;
         sPlayers[0].language = gGameLanguage as u16;
-        i = 0;
-        while i < 8 {
+        for i in 0..8i32 {
             sPlayers[0].name[i] = (*gSaveBlock2Ptr).playerName[i];
-            i += 1;
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_SetBattlerAction(battler: u8, action: u8) {
+pub unsafe fn RecordedBattle_SetBattlerAction(battler: u8, action: u8) {
     if sBattlerRecordSizes[battler] < BATTLER_RECORD_SIZE as u16
-        && sRecordMode != B_RECORD_MODE_PLAYBACK
+        && sRecordMode.get() != B_RECORD_MODE_PLAYBACK
     {
         sBattleRecords[battler][{
             let t1 = sBattlerRecordSizes[battler];
@@ -346,21 +319,16 @@ pub unsafe extern "C" fn RecordedBattle_SetBattlerAction(battler: u8, action: u8
         }] = action;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_ClearBattlerAction(battler: u8, bytesToClear: u8) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < bytesToClear as i32 {
+pub unsafe fn RecordedBattle_ClearBattlerAction(battler: u8, bytesToClear: u8) {
+    for i in 0..(bytesToClear as i32) {
         sBattlerRecordSizes[battler] -= 1;
         sBattleRecords[battler][sBattlerRecordSizes[battler]] = 0xFF;
         if sBattlerRecordSizes[battler] == 0 {
             break;
         }
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_GetBattlerAction(battler: u8) -> u8 {
+pub unsafe fn RecordedBattle_GetBattlerAction(battler: u8) -> u8 {
     if sBattlerRecordSizes[battler] >= BATTLER_RECORD_SIZE as u16
         || sBattleRecords[battler][sBattlerRecordSizes[battler]] == 0xFF
     {
@@ -381,19 +349,16 @@ pub unsafe extern "C" fn RecordedBattle_GetBattlerAction(battler: u8) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn GetRecordedBattleMode() -> u8 {
-    return sRecordMode;
+fn GetRecordedBattleMode() -> u8 {
+    sRecordMode.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_BufferNewBattlerData(mut dst: *mut u8) -> u8 {
-    let mut i: u8 = 0;
+pub unsafe fn RecordedBattle_BufferNewBattlerData(dst: *mut u8) -> u8 {
     let mut j: u8 = 0;
     let mut idx: u8 = 0;
-    i = 0;
-    while i < MAX_BATTLERS_COUNT {
+    for i in 0..MAX_BATTLERS_COUNT {
         if sBattlerRecordSizes[i] != sBattlerPrevRecordSizes[i] {
             *dst.at({
                 let t1 = idx;
@@ -416,19 +381,16 @@ pub unsafe extern "C" fn RecordedBattle_BufferNewBattlerData(mut dst: *mut u8) -
             }
             sBattlerPrevRecordSizes[i] = sBattlerRecordSizes[i];
         }
-        i += 1;
     }
-    return idx;
+    idx
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_RecordAllBattlerData(src: *mut u8) {
-    let mut i: i32 = 0;
+pub unsafe fn RecordedBattle_RecordAllBattlerData(src: *mut u8) {
     let mut idx: u8 = 2;
     let mut size: u8 = 0;
     if gBattleTypeFlags & BATTLE_TYPE_LINK == 0 {
         return;
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i < GetLinkPlayerCount() as i32 {
         if gLinkPlayers[i].version as i32 & 0xFF != VERSION_EMERALD as i32 {
             return;
@@ -438,40 +400,33 @@ pub unsafe extern "C" fn RecordedBattle_RecordAllBattlerData(src: *mut u8) {
     if gBattleTypeFlags & BATTLE_TYPE_IS_MASTER == 0 {
         size = *src;
         while size != 0 {
-            let mut battler: u8 = GetNextRecordedDataByte(src, &raw mut idx, &raw mut size);
-            let mut numActions: u8 = GetNextRecordedDataByte(src, &raw mut idx, &raw mut size);
-            i = 0;
-            while i < numActions as i32 {
+            let battler: u8 = GetNextRecordedDataByte(src, &raw mut idx, &raw mut size);
+            let numActions: u8 = GetNextRecordedDataByte(src, &raw mut idx, &raw mut size);
+            for i in 0..(numActions as i32) {
                 sBattleRecords[battler][{
                     let t1 = sBattlerSavedRecordSizes[battler];
                     sBattlerSavedRecordSizes[battler] += 1;
                     t1
                 }] = GetNextRecordedDataByte(src, &raw mut idx, &raw mut size);
-                i += 1;
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn GetNextRecordedDataByte(
-    data: *mut u8,
-    idx: *mut u8,
-    size: *mut u8,
-) -> u8 {
+unsafe fn GetNextRecordedDataByte(data: *mut u8, idx: *mut u8, size: *mut u8) -> u8 {
     *size -= 1;
-    return *data.at({
+    *data.at({
         let t1 = *idx;
         *idx += 1;
         t1
-    });
+    })
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CanCopyRecordedBattleSaveData() -> u32 {
-    let mut dst: *mut RecordedBattleSave = AllocZeroed(3968) as *mut RecordedBattleSave;
-    let mut ret: u32 = CopyRecordedBattleFromSave(dst);
+pub unsafe fn CanCopyRecordedBattleSaveData() -> u32 {
+    let dst: *mut RecordedBattleSave = AllocZeroed(3968) as *mut RecordedBattleSave;
+    let ret: u32 = CopyRecordedBattleFromSave(dst);
     Free(dst as *mut c_void);
-    return ret;
+    ret
 }
-pub(crate) unsafe extern "C" fn IsRecordedBattleSaveValid(save: *mut RecordedBattleSave) -> u32 {
+unsafe fn IsRecordedBattleSaveValid(save: *mut RecordedBattleSave) -> u32 {
     if (*save).battleFlags == 0 {
         return FALSE as u32;
     }
@@ -481,9 +436,9 @@ pub(crate) unsafe extern "C" fn IsRecordedBattleSaveValid(save: *mut RecordedBat
     if CalcByteArraySum(save as *mut c_void as *mut u8, 3964) != (*save).checksum {
         return FALSE as u32;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn RecordedBattleToSave(
+unsafe fn RecordedBattleToSave(
     battleSave: *mut RecordedBattleSave,
     saveSector: *mut RecordedBattleSave,
 ) -> u32 {
@@ -501,32 +456,22 @@ pub(crate) unsafe extern "C" fn RecordedBattleToSave(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MoveRecordedBattleToSaveData() -> u32 {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+pub unsafe fn MoveRecordedBattleToSaveData() -> u32 {
     let mut ret: u32 = 0;
-    let mut battleSave: *mut RecordedBattleSave = null_mut();
-    let mut savSection: *mut RecordedBattleSave = null_mut();
     let mut saveAttempts: u8 = 0;
-    saveAttempts = 0;
-    battleSave = AllocZeroed(3968) as *mut RecordedBattleSave;
-    savSection = AllocZeroed(SECTOR_SIZE) as *mut RecordedBattleSave;
-    i = 0;
-    while i < PARTY_SIZE {
+    let battleSave: *mut RecordedBattleSave = AllocZeroed(3968) as *mut RecordedBattleSave;
+    let savSection: *mut RecordedBattleSave = AllocZeroed(SECTOR_SIZE) as *mut RecordedBattleSave;
+    for i in 0..PARTY_SIZE {
         (*battleSave).playerParty[i] = sSavedPlayerParty[i];
         (*battleSave).opponentParty[i] = sSavedOpponentParty[i];
-        i += 1;
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i < MAX_LINK_PLAYERS {
-        j = 0;
-        while j < 8 {
+        for j in 0..8i32 {
             (*battleSave).playersName[i][j] = sPlayers[i].name[j];
-            j += 1;
         }
         (*battleSave).playersGender[i] = sPlayers[i].gender;
         (*battleSave).playersLanguage[i] = sPlayers[i].language as u8;
@@ -546,10 +491,8 @@ pub unsafe extern "C" fn MoveRecordedBattleToSaveData() -> u32 {
                         (*battleSave).battleFlags |= 0x80000000;
                     }
                 }
-                1 | 3 => {
-                    if sPlayers[gRecordedBattleMultiplayerId].battler as i32 & 1 != 0 {
-                        (*battleSave).battleFlags |= 0x80000000;
-                    }
+                1 | 3 if sPlayers[gRecordedBattleMultiplayerId].battler as i32 & 1 != 0 => {
+                    (*battleSave).battleFlags |= 0x80000000;
                 }
                 _ => {}
             }
@@ -562,11 +505,11 @@ pub unsafe extern "C" fn MoveRecordedBattleToSaveData() -> u32 {
     (*battleSave).partnerId = gPartnerTrainerId;
     (*battleSave).multiplayerId = gRecordedBattleMultiplayerId as u16;
     (*battleSave).lvlMode = (*gSaveBlock2Ptr).frontier.lvlMode();
-    (*battleSave).frontierFacility = sFrontierFacility;
-    (*battleSave).frontierBrainSymbol = sFrontierBrainSymbol;
+    (*battleSave).frontierFacility = sFrontierFacility.get();
+    (*battleSave).frontierBrainSymbol = sFrontierBrainSymbol.get();
     (*battleSave).set_battleScene((*gSaveBlock2Ptr).optionsBattleSceneOff() as u8);
     (*battleSave).set_textSpeed((*gSaveBlock2Ptr).optionsTextSpeed() as u8);
-    (*battleSave).AI_scripts = sAI_Scripts;
+    (*battleSave).AI_scripts = sAI_Scripts.get();
     if gTrainerBattleOpponent_A >= TRAINER_RECORD_MIXING_FRIEND as u16
         && gTrainerBattleOpponent_A < TRAINER_RECORD_MIXING_APPRENTICE as u16
     {
@@ -581,20 +524,16 @@ pub unsafe extern "C" fn MoveRecordedBattleToSaveData() -> u32 {
             [gTrainerBattleOpponent_A as i32 - TRAINER_RECORD_MIXING_FRIEND]
             .facilityClass;
         if sBattleOutcome == B_OUTCOME_WON {
-            i = 0;
-            while i < EASY_CHAT_BATTLE_WORDS_COUNT {
+            for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
                 (*battleSave).easyChatSpeech[i] = (*gSaveBlock2Ptr).frontier.towerRecords
                     [gTrainerBattleOpponent_A as i32 - TRAINER_RECORD_MIXING_FRIEND]
                     .speechLost[i];
-                i += 1;
             }
         } else {
-            i = 0;
-            while i < EASY_CHAT_BATTLE_WORDS_COUNT {
+            for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
                 (*battleSave).easyChatSpeech[i] = (*gSaveBlock2Ptr).frontier.towerRecords
                     [gTrainerBattleOpponent_A as i32 - TRAINER_RECORD_MIXING_FRIEND]
                     .speechWon[i];
-                i += 1;
             }
         }
         (*battleSave).recordMixFriendLanguage = (*gSaveBlock2Ptr).frontier.towerRecords
@@ -614,20 +553,16 @@ pub unsafe extern "C" fn MoveRecordedBattleToSaveData() -> u32 {
             [gTrainerBattleOpponent_B as i32 - TRAINER_RECORD_MIXING_FRIEND]
             .facilityClass;
         if sBattleOutcome == B_OUTCOME_WON {
-            i = 0;
-            while i < EASY_CHAT_BATTLE_WORDS_COUNT {
+            for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
                 (*battleSave).easyChatSpeech[i] = (*gSaveBlock2Ptr).frontier.towerRecords
                     [gTrainerBattleOpponent_B as i32 - TRAINER_RECORD_MIXING_FRIEND]
                     .speechLost[i];
-                i += 1;
             }
         } else {
-            i = 0;
-            while i < EASY_CHAT_BATTLE_WORDS_COUNT {
+            for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
                 (*battleSave).easyChatSpeech[i] = (*gSaveBlock2Ptr).frontier.towerRecords
                     [gTrainerBattleOpponent_B as i32 - TRAINER_RECORD_MIXING_FRIEND]
                     .speechWon[i];
-                i += 1;
             }
         }
         (*battleSave).recordMixFriendLanguage = (*gSaveBlock2Ptr).frontier.towerRecords
@@ -636,12 +571,10 @@ pub unsafe extern "C" fn MoveRecordedBattleToSaveData() -> u32 {
     } else if gPartnerTrainerId >= TRAINER_RECORD_MIXING_FRIEND as u16
         && gPartnerTrainerId < TRAINER_RECORD_MIXING_APPRENTICE as u16
     {
-        i = 0;
-        while i < 8 {
+        for i in 0..8i32 {
             (*battleSave).recordMixFriendName[i] = (*gSaveBlock2Ptr).frontier.towerRecords
                 [gPartnerTrainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
                 .name[i];
-            i += 1;
         }
         (*battleSave).recordMixFriendClass = (*gSaveBlock2Ptr).frontier.towerRecords
             [gPartnerTrainerId as i32 - TRAINER_RECORD_MIXING_FRIEND]
@@ -654,12 +587,10 @@ pub unsafe extern "C" fn MoveRecordedBattleToSaveData() -> u32 {
         (*battleSave).apprenticeId = (*gSaveBlock2Ptr).apprentices
             [gTrainerBattleOpponent_A as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
             .id();
-        i = 0;
-        while i < EASY_CHAT_BATTLE_WORDS_COUNT {
+        for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
             (*battleSave).easyChatSpeech[i] = (*gSaveBlock2Ptr).apprentices
                 [gTrainerBattleOpponent_A as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
                 .speechWon[i];
-            i += 1;
         }
         (*battleSave).apprenticeLanguage = (*gSaveBlock2Ptr).apprentices
             [gTrainerBattleOpponent_A as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
@@ -668,12 +599,10 @@ pub unsafe extern "C" fn MoveRecordedBattleToSaveData() -> u32 {
         (*battleSave).apprenticeId = (*gSaveBlock2Ptr).apprentices
             [gTrainerBattleOpponent_B as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
             .id();
-        i = 0;
-        while i < EASY_CHAT_BATTLE_WORDS_COUNT {
+        for i in 0..EASY_CHAT_BATTLE_WORDS_COUNT {
             (*battleSave).easyChatSpeech[i] = (*gSaveBlock2Ptr).apprentices
                 [gTrainerBattleOpponent_B as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
                 .speechWon[i];
-            i += 1;
         }
         (*battleSave).apprenticeLanguage = (*gSaveBlock2Ptr).apprentices
             [gTrainerBattleOpponent_B as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
@@ -686,14 +615,10 @@ pub unsafe extern "C" fn MoveRecordedBattleToSaveData() -> u32 {
             [gPartnerTrainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
             .language;
     }
-    i = 0;
-    while i < MAX_BATTLERS_COUNT as i32 {
-        j = 0;
-        while j < BATTLER_RECORD_SIZE {
+    for i in 0..(MAX_BATTLERS_COUNT as i32) {
+        for j in 0..BATTLER_RECORD_SIZE {
             (*battleSave).battleRecord[i][j] = sBattleRecords[i][j];
-            j += 1;
         }
-        i += 1;
     }
     loop {
         ret = RecordedBattleToSave(battleSave, savSection);
@@ -707,9 +632,9 @@ pub unsafe extern "C" fn MoveRecordedBattleToSaveData() -> u32 {
     }
     Free(battleSave as *mut c_void);
     Free(savSection as *mut c_void);
-    return ret;
+    ret
 }
-pub(crate) unsafe extern "C" fn TryCopyRecordedBattleSaveData(
+unsafe fn TryCopyRecordedBattleSaveData(
     dst: *mut RecordedBattleSave,
     saveBuffer: *mut SaveSector,
 ) -> u32 {
@@ -724,16 +649,16 @@ pub(crate) unsafe extern "C" fn TryCopyRecordedBattleSaveData(
     if IsRecordedBattleSaveValid(dst) == 0 {
         return FALSE as u32;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn CopyRecordedBattleFromSave(dst: *mut RecordedBattleSave) -> u32 {
-    let mut savBuffer: *mut SaveSector = AllocZeroed(SECTOR_SIZE) as *mut SaveSector;
-    let mut ret: u32 = TryCopyRecordedBattleSaveData(dst, savBuffer);
+unsafe fn CopyRecordedBattleFromSave(dst: *mut RecordedBattleSave) -> u32 {
+    let savBuffer: *mut SaveSector = AllocZeroed(SECTOR_SIZE) as *mut SaveSector;
+    let ret: u32 = TryCopyRecordedBattleSaveData(dst, savBuffer);
     Free(savBuffer as *mut c_void);
-    return ret;
+    ret
 }
-pub(crate) unsafe extern "C" fn CB2_RecordedBattleEnd() {
-    (*gSaveBlock2Ptr).frontier.set_lvlMode(sLvlMode);
+pub(crate) unsafe fn CB2_RecordedBattleEnd() {
+    (*gSaveBlock2Ptr).frontier.set_lvlMode(sLvlMode.get());
     gBattleOutcome = 0;
     gBattleTypeFlags = 0;
     gTrainerBattleOpponent_A = 0;
@@ -742,10 +667,10 @@ pub(crate) unsafe extern "C" fn CB2_RecordedBattleEnd() {
     RecordedBattle_RestoreSavedParties();
     SetMainCallback2(sCallback2_AfterRecordedBattle);
 }
-pub(crate) unsafe extern "C" fn Task_StartAfterCountdown(taskId: u8) {
+pub(crate) unsafe fn Task_StartAfterCountdown(taskId: u8) {
     if ({
-        gTasks[taskId].data[0] -= 1;
-        gTasks[taskId].data[0]
+        task_set(taskId, tFramesToWait, task_get(taskId, tFramesToWait) - 1);
+        task_get(taskId, tFramesToWait)
     }) == 0
     {
         gMain.savedCallback = Some(CB2_RecordedBattleEnd);
@@ -753,28 +678,22 @@ pub(crate) unsafe extern "C" fn Task_StartAfterCountdown(taskId: u8) {
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn SetVariablesForRecordedBattle(src: *mut RecordedBattleSave) {
+unsafe fn SetVariablesForRecordedBattle(src: *mut RecordedBattleSave) {
     let mut var: u8 = 0;
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
     ZeroPlayerPartyMons();
     ZeroEnemyPartyMons();
-    i = 0;
-    while i < PARTY_SIZE {
+    for i in 0..PARTY_SIZE {
         gPlayerParty[i] = (*src).playerParty[i];
         gEnemyParty[i] = (*src).opponentParty[i];
-        i += 1;
     }
-    i = 0;
+    let mut i: i32 = 0;
     while i < MAX_LINK_PLAYERS {
         var = 0;
-        j = 0;
-        while j < 8 {
+        for j in 0..8i32 {
             gLinkPlayers[i].name[j] = (*src).playersName[i][j];
             if (*src).playersName[i][j] == EOS {
                 var = TRUE;
             }
-            j += 1;
         }
         gLinkPlayers[i].gender = (*src).playersGender[i];
         gLinkPlayers[i].language = (*src).playersLanguage[i] as u16;
@@ -794,88 +713,69 @@ pub(crate) unsafe extern "C" fn SetVariablesForRecordedBattle(src: *mut Recorded
     gTrainerBattleOpponent_B = (*src).opponentB;
     gPartnerTrainerId = (*src).partnerId;
     gRecordedBattleMultiplayerId = (*src).multiplayerId as u8;
-    sLvlMode = (*gSaveBlock2Ptr).frontier.lvlMode();
-    sFrontierFacility = (*src).frontierFacility;
-    sFrontierBrainSymbol = (*src).frontierBrainSymbol;
-    sBattleScene = (*src).battleScene();
-    sTextSpeed = (*src).textSpeed();
-    sAI_Scripts = (*src).AI_scripts;
-    i = 0;
-    while i < 8 {
+    sLvlMode.set((*gSaveBlock2Ptr).frontier.lvlMode());
+    sFrontierFacility.set((*src).frontierFacility);
+    sFrontierBrainSymbol.set((*src).frontierBrainSymbol);
+    sBattleScene.set((*src).battleScene());
+    sTextSpeed.set((*src).textSpeed());
+    sAI_Scripts.set((*src).AI_scripts);
+    for i in 0..8i32 {
         sRecordMixFriendName[i] = (*src).recordMixFriendName[i];
-        i += 1;
     }
-    sRecordMixFriendClass = (*src).recordMixFriendClass;
-    sApprenticeId = (*src).apprenticeId;
-    sRecordMixFriendLanguage = (*src).recordMixFriendLanguage;
-    sApprenticeLanguage = (*src).apprenticeLanguage;
+    sRecordMixFriendClass.set((*src).recordMixFriendClass);
+    sApprenticeId.set((*src).apprenticeId);
+    sRecordMixFriendLanguage.set((*src).recordMixFriendLanguage);
+    sApprenticeLanguage.set((*src).apprenticeLanguage);
     i = 0;
     while i < EASY_CHAT_BATTLE_WORDS_COUNT {
         sEasyChatSpeech[i] = (*src).easyChatSpeech[i];
         i += 1;
     }
     (*gSaveBlock2Ptr).frontier.set_lvlMode((*src).lvlMode);
-    i = 0;
-    while i < MAX_BATTLERS_COUNT as i32 {
-        j = 0;
-        while j < BATTLER_RECORD_SIZE {
+    for i in 0..(MAX_BATTLERS_COUNT as i32) {
+        for j in 0..BATTLER_RECORD_SIZE {
             sBattleRecords[i][j] = (*src).battleRecord[i][j];
-            j += 1;
         }
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn PlayRecordedBattle(CB2_After: Option<unsafe extern "C" fn()>) {
-    let mut battleSave: *mut RecordedBattleSave = AllocZeroed(3968) as *mut RecordedBattleSave;
+pub unsafe fn PlayRecordedBattle(CB2_After: Option<unsafe fn()>) {
+    let battleSave: *mut RecordedBattleSave = AllocZeroed(3968) as *mut RecordedBattleSave;
     if CopyRecordedBattleFromSave(battleSave) == TRUE as u32 {
-        let mut taskId: u8 = 0;
         RecordedBattle_SaveParties();
         SetVariablesForRecordedBattle(battleSave);
-        taskId = CreateTask(Some(Task_StartAfterCountdown), 1);
-        gTasks[taskId].data[0] = 128;
+        let taskId: u8 = CreateTask(Some(Task_StartAfterCountdown), 1);
+        task_set(taskId, tFramesToWait, 128);
         sCallback2_AfterRecordedBattle = CB2_After;
         PlayMapChosenOrBattleBGM(FALSE as u16);
         SetMainCallback2(Some(CB2_RecordedBattle));
     }
     Free(battleSave as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn CB2_RecordedBattle() {
+pub(crate) unsafe fn CB2_RecordedBattle() {
     AnimateSprites();
     BuildOamBuffer();
     RunTasks();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRecordedBattleFrontierFacility() -> u8 {
-    return sFrontierFacility;
+pub fn GetRecordedBattleFrontierFacility() -> u8 {
+    sFrontierFacility.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRecordedBattleFronterBrainSymbol() -> u8 {
-    return sFrontierBrainSymbol;
+pub fn GetRecordedBattleFronterBrainSymbol() -> u8 {
+    sFrontierBrainSymbol.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_SaveParties() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < PARTY_SIZE {
+pub unsafe fn RecordedBattle_SaveParties() {
+    for i in 0..PARTY_SIZE {
         sSavedPlayerParty[i] = gPlayerParty[i];
         sSavedOpponentParty[i] = gEnemyParty[i];
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn RecordedBattle_RestoreSavedParties() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < PARTY_SIZE {
+unsafe fn RecordedBattle_RestoreSavedParties() {
+    for i in 0..PARTY_SIZE {
         gPlayerParty[i] = sSavedPlayerParty[i];
         gEnemyParty[i] = sSavedOpponentParty[i];
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetActiveBattlerLinkPlayerGender() -> u8 {
+pub unsafe fn GetActiveBattlerLinkPlayerGender() -> u8 {
     let mut i: i32 = 0;
-    i = 0;
     while i < MAX_LINK_PLAYERS {
         if gLinkPlayers[i].id == gActiveBattler as u16 {
             break;
@@ -885,55 +785,43 @@ pub unsafe extern "C" fn GetActiveBattlerLinkPlayerGender() -> u8 {
     if i != MAX_LINK_PLAYERS {
         return gLinkPlayers[i].gender;
     }
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_ClearFrontierPassFlag() {
-    sFrontierPassFlag = 0;
+pub fn RecordedBattle_ClearFrontierPassFlag() {
+    sFrontierPassFlag.set(0);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_SetFrontierPassFlagFromHword(flags: u16) {
-    sFrontierPassFlag |= ((flags as i32 & 32768) >> 15) as u8;
+pub unsafe fn RecordedBattle_SetFrontierPassFlagFromHword(flags: u16) {
+    sFrontierPassFlag.set(sFrontierPassFlag.get() | (((flags as i32 & 32768) >> 15) as u8));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_GetFrontierPassFlag() -> u8 {
-    return sFrontierPassFlag;
+pub unsafe fn RecordedBattle_GetFrontierPassFlag() -> u8 {
+    sFrontierPassFlag.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBattleSceneInRecordedBattle() -> u8 {
-    return sBattleScene;
+pub unsafe fn GetBattleSceneInRecordedBattle() -> u8 {
+    sBattleScene.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetTextSpeedInRecordedBattle() -> u8 {
-    return sTextSpeed;
+pub fn GetTextSpeedInRecordedBattle() -> u8 {
+    sTextSpeed.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_CopyBattlerMoves() {
-    let mut i: i32 = 0;
+pub unsafe fn RecordedBattle_CopyBattlerMoves() {
     if GetBattlerSide(gActiveBattler) == B_SIDE_OPPONENT {
         return;
     }
     if gBattleTypeFlags & 0x2000002 != 0 {
         return;
     }
-    if sRecordMode == B_RECORD_MODE_PLAYBACK {
+    if sRecordMode.get() == B_RECORD_MODE_PLAYBACK {
         return;
     }
-    i = 0;
-    while i < MAX_MON_MOVES {
+    for i in 0..MAX_MON_MOVES {
         sPlayerMonMoves[gActiveBattler as i32 / 2][i] = gBattleMons[gActiveBattler].moves[i];
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_CheckMovesetChanges(mode: u8) {
-    let mut battler: i32 = 0;
+pub unsafe fn RecordedBattle_CheckMovesetChanges(mode: u8) {
     let mut j: i32 = 0;
-    let mut k: i32 = 0;
     if gBattleTypeFlags & 0x2000002 != 0 {
         return;
     }
-    battler = 0;
+    let mut battler: i32 = 0;
     while battler < gBattlersCount as i32 {
         if GetBattlerSide(battler as u8) != B_SIDE_OPPONENT {
             if mode == B_RECORD_MODE_RECORDING {
@@ -946,17 +834,13 @@ pub unsafe extern "C" fn RecordedBattle_CheckMovesetChanges(mode: u8) {
                 }
                 if j != MAX_MON_MOVES {
                     RecordedBattle_SetBattlerAction(battler as u8, ACTION_MOVE_CHANGE);
-                    j = 0;
-                    while j < MAX_MON_MOVES {
-                        k = 0;
-                        while k < MAX_MON_MOVES {
+                    for j in 0..MAX_MON_MOVES {
+                        for k in 0..MAX_MON_MOVES {
                             if gBattleMons[battler].moves[j] == sPlayerMonMoves[battler / 2][k] {
                                 RecordedBattle_SetBattlerAction(battler as u8, k as u8);
                                 break;
                             }
-                            k += 1;
                         }
-                        j += 1;
                     }
                 }
             } else {
@@ -967,31 +851,27 @@ pub unsafe extern "C" fn RecordedBattle_CheckMovesetChanges(mode: u8) {
                     let mut movePP: ChooseMoveStruct = zeroed();
                     let mut ppBonusSet: u8 = 0;
                     RecordedBattle_GetBattlerAction(battler as u8);
-                    j = 0;
-                    while j < MAX_MON_MOVES {
+                    for j in 0..MAX_MON_MOVES {
                         ppBonuses[j] = shr_i32(
                             gBattleMons[battler].ppBonuses as i32 & shl_i32(3, (j as u32) << 1),
                             (j as u32) << 1,
                         ) as u8;
-                        j += 1;
                     }
-                    j = 0;
-                    while j < MAX_MON_MOVES {
+                    for j in 0..MAX_MON_MOVES {
                         moveSlots[j] = RecordedBattle_GetBattlerAction(battler as u8);
                         movePP.moves[j] = gBattleMons[battler].moves[moveSlots[j]];
                         movePP.currentPP[j] = gBattleMons[battler].pp[moveSlots[j]];
                         movePP.maxPP[j] = ppBonuses[moveSlots[j]];
                         mimickedMoveSlots[j] = shr_u32(
-                            gDisableStructs[battler].mimickedMoves() as u32 & gBitTable[j],
+                            gDisableStructs[battler].mimickedMoves() as u32
+                                & (*(&raw const crate::util::gBitTable).cast::<CArray<u32, 0>>())
+                                    [j],
                             j as u32,
                         ) as u8;
-                        j += 1;
                     }
-                    j = 0;
-                    while j < MAX_MON_MOVES {
+                    for j in 0..MAX_MON_MOVES {
                         gBattleMons[battler].moves[j] = movePP.moves[j];
                         gBattleMons[battler].pp[j] = movePP.currentPP[j];
-                        j += 1;
                     }
                     gBattleMons[battler].ppBonuses = 0;
                     gDisableStructs[battler].set_mimickedMoves(0);
@@ -1006,8 +886,7 @@ pub unsafe extern "C" fn RecordedBattle_CheckMovesetChanges(mode: u8) {
                         j += 1;
                     }
                     if gBattleMons[battler].status2 & STATUS2_TRANSFORMED == 0 {
-                        j = 0;
-                        while j < MAX_MON_MOVES {
+                        for j in 0..MAX_MON_MOVES {
                             ppBonuses[j] = shr_u32(
                                 GetMonData3(
                                     &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
@@ -1016,10 +895,8 @@ pub unsafe extern "C" fn RecordedBattle_CheckMovesetChanges(mode: u8) {
                                 ) & shl_i32(3, (j as u32) << 1) as u32,
                                 (j as u32) << 1,
                             ) as u8;
-                            j += 1;
                         }
-                        j = 0;
-                        while j < MAX_MON_MOVES {
+                        for j in 0..MAX_MON_MOVES {
                             movePP.moves[j] = GetMonData3(
                                 &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
                                 MON_DATA_MOVE1 + moveSlots[j] as i32,
@@ -1031,7 +908,6 @@ pub unsafe extern "C" fn RecordedBattle_CheckMovesetChanges(mode: u8) {
                                 null_mut(),
                             ) as u8;
                             movePP.maxPP[j] = ppBonuses[moveSlots[j]];
-                            j += 1;
                         }
                         j = 0;
                         while j < MAX_MON_MOVES {
@@ -1048,10 +924,8 @@ pub unsafe extern "C" fn RecordedBattle_CheckMovesetChanges(mode: u8) {
                             j += 1;
                         }
                         ppBonusSet = 0;
-                        j = 0;
-                        while j < MAX_MON_MOVES {
+                        for j in 0..MAX_MON_MOVES {
                             ppBonusSet |= shl_i32(movePP.maxPP[j] as i32, (j as u32) << 1) as u8;
-                            j += 1;
                         }
                         SetMonData(
                             &raw mut gPlayerParty[gBattlerPartyIndexes[battler]],
@@ -1069,50 +943,37 @@ pub unsafe extern "C" fn RecordedBattle_CheckMovesetChanges(mode: u8) {
         battler += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetAiScriptsInRecordedBattle() -> u32 {
-    return sAI_Scripts;
+pub unsafe fn GetAiScriptsInRecordedBattle() -> u32 {
+    sAI_Scripts.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_SetPlaybackFinished() {
-    sIsPlaybackFinished = TRUE;
+pub fn RecordedBattle_SetPlaybackFinished() {
+    sIsPlaybackFinished.set(TRUE);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_CanStopPlayback() -> u8 {
-    return (sIsPlaybackFinished == FALSE) as u8;
+pub fn RecordedBattle_CanStopPlayback() -> u8 {
+    (sIsPlaybackFinished.get() == FALSE) as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRecordedBattleRecordMixFriendName(mut dst: *mut u8) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 8 {
+pub unsafe fn GetRecordedBattleRecordMixFriendName(dst: *mut u8) {
+    for i in 0..8i32 {
         *dst.at(i) = sRecordMixFriendName[i];
-        i += 1;
     }
     *dst.at(7) = EOS;
-    ConvertInternationalString(dst, sRecordMixFriendLanguage);
+    ConvertInternationalString(dst, sRecordMixFriendLanguage.get());
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRecordedBattleRecordMixFriendClass() -> u8 {
-    return sRecordMixFriendClass;
+pub unsafe fn GetRecordedBattleRecordMixFriendClass() -> u8 {
+    sRecordMixFriendClass.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRecordedBattleApprenticeId() -> u8 {
-    return sApprenticeId;
+pub unsafe fn GetRecordedBattleApprenticeId() -> u8 {
+    sApprenticeId.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRecordedBattleRecordMixFriendLanguage() -> u8 {
-    return sRecordMixFriendLanguage;
+pub unsafe fn GetRecordedBattleRecordMixFriendLanguage() -> u8 {
+    sRecordMixFriendLanguage.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRecordedBattleApprenticeLanguage() -> u8 {
-    return sApprenticeLanguage;
+pub unsafe fn GetRecordedBattleApprenticeLanguage() -> u8 {
+    sApprenticeLanguage.get()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RecordedBattle_SaveBattleOutcome() {
+pub unsafe fn RecordedBattle_SaveBattleOutcome() {
     sBattleOutcome = gBattleOutcome;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRecordedBattleEasyChatSpeech() -> *mut u16 {
-    return sEasyChatSpeech.as_mut_ptr();
+pub unsafe fn GetRecordedBattleEasyChatSpeech() -> *mut u16 {
+    sEasyChatSpeech.as_mut_ptr()
 }

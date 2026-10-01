@@ -4,138 +4,29 @@
 
 use crate::ffi::{RomBytes, RomPtr};
 
-unsafe extern "C" {
-    static MatchCall_Text_Brawly_PostRematch: u8;
-    static MatchCall_Text_Brawly_Preparing: u8;
-    static MatchCall_Text_Brawly_PreparingPostGame: u8;
-    static MatchCall_Text_Brawly_RematchReady: u8;
-    static MatchCall_Text_Brendan1: u8;
-    static MatchCall_Text_Brendan10: u8;
-    static MatchCall_Text_Brendan11: u8;
-    static MatchCall_Text_Brendan12: u8;
-    static MatchCall_Text_Brendan13: u8;
-    static MatchCall_Text_Brendan14: u8;
-    static MatchCall_Text_Brendan15: u8;
-    static MatchCall_Text_Brendan2: u8;
-    static MatchCall_Text_Brendan3: u8;
-    static MatchCall_Text_Brendan4: u8;
-    static MatchCall_Text_Brendan5: u8;
-    static MatchCall_Text_Brendan6: u8;
-    static MatchCall_Text_Brendan7: u8;
-    static MatchCall_Text_Brendan8: u8;
-    static MatchCall_Text_Brendan9: u8;
-    static MatchCall_Text_Drake: u8;
-    static MatchCall_Text_Flannery_PostRematch: u8;
-    static MatchCall_Text_Flannery_Preparing: u8;
-    static MatchCall_Text_Flannery_PreparingPostGame: u8;
-    static MatchCall_Text_Flannery_RematchReady: u8;
-    static MatchCall_Text_Glacia: u8;
-    static MatchCall_Text_Juan_PostRematch: u8;
-    static MatchCall_Text_Juan_Preparing: u8;
-    static MatchCall_Text_Juan_PreparingPostGame: u8;
-    static MatchCall_Text_Juan_RematchReady: u8;
-    static MatchCall_Text_May1: u8;
-    static MatchCall_Text_May10: u8;
-    static MatchCall_Text_May11: u8;
-    static MatchCall_Text_May12: u8;
-    static MatchCall_Text_May13: u8;
-    static MatchCall_Text_May14: u8;
-    static MatchCall_Text_May15: u8;
-    static MatchCall_Text_May2: u8;
-    static MatchCall_Text_May3: u8;
-    static MatchCall_Text_May4: u8;
-    static MatchCall_Text_May5: u8;
-    static MatchCall_Text_May6: u8;
-    static MatchCall_Text_May7: u8;
-    static MatchCall_Text_May8: u8;
-    static MatchCall_Text_May9: u8;
-    static MatchCall_Text_Mom1: u8;
-    static MatchCall_Text_Mom2: u8;
-    static MatchCall_Text_Mom3: u8;
-    static MatchCall_Text_MrStone1: u8;
-    static MatchCall_Text_MrStone10: u8;
-    static MatchCall_Text_MrStone11: u8;
-    static MatchCall_Text_MrStone2: u8;
-    static MatchCall_Text_MrStone3: u8;
-    static MatchCall_Text_MrStone4: u8;
-    static MatchCall_Text_MrStone5: u8;
-    static MatchCall_Text_MrStone6: u8;
-    static MatchCall_Text_MrStone7: u8;
-    static MatchCall_Text_MrStone8: u8;
-    static MatchCall_Text_MrStone9: u8;
-    static MatchCall_Text_Norman1: u8;
-    static MatchCall_Text_Norman2: u8;
-    static MatchCall_Text_Norman3: u8;
-    static MatchCall_Text_Norman4: u8;
-    static MatchCall_Text_Norman5: u8;
-    static MatchCall_Text_Norman_PostRematch: u8;
-    static MatchCall_Text_Norman_Preparing: u8;
-    static MatchCall_Text_Norman_PreparingPostGame: u8;
-    static MatchCall_Text_Norman_RematchReady: u8;
-    static MatchCall_Text_Phoebe: u8;
-    static MatchCall_Text_Roxanne_PostRematch: u8;
-    static MatchCall_Text_Roxanne_Preparing: u8;
-    static MatchCall_Text_Roxanne_PreparingPostGame: u8;
-    static MatchCall_Text_Roxanne_RematchReady: u8;
-    static MatchCall_Text_Scott1: u8;
-    static MatchCall_Text_Scott2: u8;
-    static MatchCall_Text_Scott3: u8;
-    static MatchCall_Text_Scott4: u8;
-    static MatchCall_Text_Scott5: u8;
-    static MatchCall_Text_Scott6: u8;
-    static MatchCall_Text_Scott7: u8;
-    static MatchCall_Text_Sidney: u8;
-    static MatchCall_Text_Steven1: u8;
-    static MatchCall_Text_Steven2: u8;
-    static MatchCall_Text_Steven3: u8;
-    static MatchCall_Text_Steven4: u8;
-    static MatchCall_Text_Steven5: u8;
-    static MatchCall_Text_Steven6: u8;
-    static MatchCall_Text_Steven7: u8;
-    static MatchCall_Text_TateLiza_PostRematch: u8;
-    static MatchCall_Text_TateLiza_Preparing: u8;
-    static MatchCall_Text_TateLiza_PreparingPostGame: u8;
-    static MatchCall_Text_TateLiza_RematchReady: u8;
-    static MatchCall_Text_Wallace: u8;
-    static MatchCall_Text_Wally1: u8;
-    static MatchCall_Text_Wally2: u8;
-    static MatchCall_Text_Wally3: u8;
-    static MatchCall_Text_Wally4: u8;
-    static MatchCall_Text_Wally5: u8;
-    static MatchCall_Text_Wally6: u8;
-    static MatchCall_Text_Wally7: u8;
-    static MatchCall_Text_Wattson_PostRematch: u8;
-    static MatchCall_Text_Wattson_Preparing: u8;
-    static MatchCall_Text_Wattson_PreparingPostGame: u8;
-    static MatchCall_Text_Wattson_RematchReady: u8;
-    static MatchCall_Text_Winona_PostRematch: u8;
-    static MatchCall_Text_Winona_Preparing: u8;
-    static MatchCall_Text_Winona_PreparingPostGame: u8;
-    static MatchCall_Text_Winona_RematchReady: u8;
-}
 
 pub(crate) static sMrStoneTextScripts: [RomPtr<u8>; 24] = [
-    RomPtr((&raw const MatchCall_Text_MrStone1)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_MrStone1.cast::<u8>()))),
     RomPtr(0x158ffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_MrStone2)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_MrStone2.cast::<u8>()))),
     RomPtr(0xffff0158 as *const u8),
-    RomPtr((&raw const MatchCall_Text_MrStone3)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_MrStone3.cast::<u8>()))),
     RomPtr(0xffff00bd as *const u8),
-    RomPtr((&raw const MatchCall_Text_MrStone4)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_MrStone4.cast::<u8>()))),
     RomPtr(0xffff0110 as *const u8),
-    RomPtr((&raw const MatchCall_Text_MrStone5)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_MrStone5.cast::<u8>()))),
     RomPtr(0xffff006a as *const u8),
-    RomPtr((&raw const MatchCall_Text_MrStone6)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_MrStone6.cast::<u8>()))),
     RomPtr(0xffff04f4 as *const u8),
-    RomPtr((&raw const MatchCall_Text_MrStone7)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_MrStone7.cast::<u8>()))),
     RomPtr(0xffff0097 as *const u8),
-    RomPtr((&raw const MatchCall_Text_MrStone8)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_MrStone8.cast::<u8>()))),
     RomPtr(0xffff006f as *const u8),
-    RomPtr((&raw const MatchCall_Text_MrStone9)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_MrStone9.cast::<u8>()))),
     RomPtr(0xffff0070 as *const u8),
-    RomPtr((&raw const MatchCall_Text_MrStone10)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_MrStone10.cast::<u8>()))),
     RomPtr(0xffff04f7 as *const u8),
-    RomPtr((&raw const MatchCall_Text_MrStone11)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_MrStone11.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -149,23 +40,23 @@ pub(crate) static sMrStoneMatchCallHeader: [RomPtr<u8>; 4] = [
 ];
 
 pub(crate) static sNormanTextScripts: [RomPtr<u8>; 20] = [
-    RomPtr((&raw const MatchCall_Text_Norman1)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Norman1.cast::<u8>()))),
     RomPtr(0xffff0132 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Norman2)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Norman2.cast::<u8>()))),
     RomPtr(0xffff04f1 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Norman3)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Norman3.cast::<u8>()))),
     RomPtr(0xffff04f3 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Norman4)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Norman4.cast::<u8>()))),
     RomPtr(0xffff04f4 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Norman5)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Norman5.cast::<u8>()))),
     RomPtr(0xffff00d4 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Norman_Preparing)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Norman_Preparing.cast::<u8>()))),
     RomPtr(0xfffffffe as *const u8),
-    RomPtr((&raw const MatchCall_Text_Norman_PreparingPostGame)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Norman_PreparingPostGame.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Norman_RematchReady)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Norman_RematchReady.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Norman_PostRematch)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Norman_PostRematch.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -186,11 +77,11 @@ pub(crate) static sProfBirchMatchCallHeader: [RomPtr<u8>; 3] = [
 ];
 
 pub(crate) static sMomTextScripts: [RomPtr<u8>; 8] = [
-    RomPtr((&raw const MatchCall_Text_Mom1)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Mom1.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Mom2)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Mom2.cast::<u8>()))),
     RomPtr(0xffff04f4 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Mom3)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Mom3.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -204,19 +95,19 @@ pub(crate) static sMomMatchCallHeader: [RomPtr<u8>; 4] = [
 ];
 
 pub(crate) static sStevenTextScripts: [RomPtr<u8>; 16] = [
-    RomPtr((&raw const MatchCall_Text_Steven1)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Steven1.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Steven2)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Steven2.cast::<u8>()))),
     RomPtr(0xffff00c7 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Steven3)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Steven3.cast::<u8>()))),
     RomPtr(0xffff00d4 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Steven4)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Steven4.cast::<u8>()))),
     RomPtr(0xffff0070 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Steven5)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Steven5.cast::<u8>()))),
     RomPtr(0xffff04f6 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Steven6)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Steven6.cast::<u8>()))),
     RomPtr(0xffff0081 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Steven7)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Steven7.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -230,35 +121,35 @@ pub(crate) static sStevenMatchCallHeader: [RomPtr<u8>; 4] = [
 ];
 
 pub(crate) static sMayTextScripts: [RomPtr<u8>; 32] = [
-    RomPtr((&raw const MatchCall_Text_May1)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May1.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_May2)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May2.cast::<u8>()))),
     RomPtr(0xffff04f1 as *const u8),
-    RomPtr((&raw const MatchCall_Text_May3)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May3.cast::<u8>()))),
     RomPtr(0xffff0095 as *const u8),
-    RomPtr((&raw const MatchCall_Text_May4)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May4.cast::<u8>()))),
     RomPtr(0xffff0324 as *const u8),
-    RomPtr((&raw const MatchCall_Text_May5)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May5.cast::<u8>()))),
     RomPtr(0xffff006a as *const u8),
-    RomPtr((&raw const MatchCall_Text_May6)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May6.cast::<u8>()))),
     RomPtr(0xffff04f3 as *const u8),
-    RomPtr((&raw const MatchCall_Text_May7)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May7.cast::<u8>()))),
     RomPtr(0xffff04f4 as *const u8),
-    RomPtr((&raw const MatchCall_Text_May8)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May8.cast::<u8>()))),
     RomPtr(0xffff0097 as *const u8),
-    RomPtr((&raw const MatchCall_Text_May9)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May9.cast::<u8>()))),
     RomPtr(0xffff00d4 as *const u8),
-    RomPtr((&raw const MatchCall_Text_May10)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May10.cast::<u8>()))),
     RomPtr(0xffff006f as *const u8),
-    RomPtr((&raw const MatchCall_Text_May11)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May11.cast::<u8>()))),
     RomPtr(0xffff0061 as *const u8),
-    RomPtr((&raw const MatchCall_Text_May12)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May12.cast::<u8>()))),
     RomPtr(0xffff0070 as *const u8),
-    RomPtr((&raw const MatchCall_Text_May13)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May13.cast::<u8>()))),
     RomPtr(0xffff0081 as *const u8),
-    RomPtr((&raw const MatchCall_Text_May14)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May14.cast::<u8>()))),
     RomPtr(0xffff04f7 as *const u8),
-    RomPtr((&raw const MatchCall_Text_May15)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_May15.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -272,35 +163,35 @@ pub(crate) static sMayMatchCallHeader: [RomPtr<u8>; 4] = [
 ];
 
 pub(crate) static sBrendanTextScripts: [RomPtr<u8>; 32] = [
-    RomPtr((&raw const MatchCall_Text_Brendan1)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan1.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brendan2)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan2.cast::<u8>()))),
     RomPtr(0xffff04f1 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brendan3)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan3.cast::<u8>()))),
     RomPtr(0xffff0095 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brendan4)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan4.cast::<u8>()))),
     RomPtr(0xffff0324 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brendan5)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan5.cast::<u8>()))),
     RomPtr(0xffff006a as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brendan6)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan6.cast::<u8>()))),
     RomPtr(0xffff04f3 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brendan7)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan7.cast::<u8>()))),
     RomPtr(0xffff04f4 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brendan8)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan8.cast::<u8>()))),
     RomPtr(0xffff0097 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brendan9)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan9.cast::<u8>()))),
     RomPtr(0xffff00d4 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brendan10)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan10.cast::<u8>()))),
     RomPtr(0xffff006f as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brendan11)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan11.cast::<u8>()))),
     RomPtr(0xffff0061 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brendan12)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan12.cast::<u8>()))),
     RomPtr(0xffff0070 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brendan13)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan13.cast::<u8>()))),
     RomPtr(0xffff0081 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brendan14)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan14.cast::<u8>()))),
     RomPtr(0xffff04f7 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brendan15)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brendan15.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -314,19 +205,19 @@ pub(crate) static sBrendanMatchCallHeader: [RomPtr<u8>; 4] = [
 ];
 
 pub(crate) static sWallyTextScripts: [RomPtr<u8>; 16] = [
-    RomPtr((&raw const MatchCall_Text_Wally1)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Wally1.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Wally2)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Wally2.cast::<u8>()))),
     RomPtr(0xffff00c7 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Wally3)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Wally3.cast::<u8>()))),
     RomPtr(0xffff04f3 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Wally4)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Wally4.cast::<u8>()))),
     RomPtr(0xffff0097 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Wally5)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Wally5.cast::<u8>()))),
     RomPtr(0xffff006f as *const u8),
-    RomPtr((&raw const MatchCall_Text_Wally6)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Wally6.cast::<u8>()))),
     RomPtr(0xffff0081 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Wally7)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Wally7.cast::<u8>()))),
     RomPtr(0xffff007e as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -343,19 +234,19 @@ pub(crate) static sWallyMatchCallHeader: [RomPtr<u8>; 5] = [
 ];
 
 pub(crate) static sScottTextScripts: [RomPtr<u8>; 16] = [
-    RomPtr((&raw const MatchCall_Text_Scott1)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Scott1.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Scott2)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Scott2.cast::<u8>()))),
     RomPtr(0xffff008b as *const u8),
-    RomPtr((&raw const MatchCall_Text_Scott3)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Scott3.cast::<u8>()))),
     RomPtr(0xffff0097 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Scott4)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Scott4.cast::<u8>()))),
     RomPtr(0xffff00d4 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Scott5)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Scott5.cast::<u8>()))),
     RomPtr(0xffff0070 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Scott6)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Scott6.cast::<u8>()))),
     RomPtr(0xffff04f7 as *const u8),
-    RomPtr((&raw const MatchCall_Text_Scott7)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Scott7.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -369,13 +260,13 @@ pub(crate) static sScottMatchCallHeader: [RomPtr<u8>; 4] = [
 ];
 
 pub(crate) static sRoxanneTextScripts: [RomPtr<u8>; 10] = [
-    RomPtr((&raw const MatchCall_Text_Roxanne_Preparing)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Roxanne_Preparing.cast::<u8>()))),
     RomPtr(0xfffffffe as *const u8),
-    RomPtr((&raw const MatchCall_Text_Roxanne_PreparingPostGame)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Roxanne_PreparingPostGame.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Roxanne_RematchReady)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Roxanne_RematchReady.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Roxanne_PostRematch)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Roxanne_PostRematch.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -390,13 +281,13 @@ pub(crate) static sRoxanneMatchCallHeader: [RomPtr<u8>; 5] = [
 ];
 
 pub(crate) static sBrawlyTextScripts: [RomPtr<u8>; 10] = [
-    RomPtr((&raw const MatchCall_Text_Brawly_Preparing)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brawly_Preparing.cast::<u8>()))),
     RomPtr(0xfffffffe as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brawly_PreparingPostGame)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brawly_PreparingPostGame.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brawly_RematchReady)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brawly_RematchReady.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Brawly_PostRematch)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Brawly_PostRematch.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -411,13 +302,13 @@ pub(crate) static sBrawlyMatchCallHeader: [RomPtr<u8>; 5] = [
 ];
 
 pub(crate) static sWattsonTextScripts: [RomPtr<u8>; 10] = [
-    RomPtr((&raw const MatchCall_Text_Wattson_Preparing)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Wattson_Preparing.cast::<u8>()))),
     RomPtr(0xfffffffe as *const u8),
-    RomPtr((&raw const MatchCall_Text_Wattson_PreparingPostGame)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Wattson_PreparingPostGame.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Wattson_RematchReady)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Wattson_RematchReady.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Wattson_PostRematch)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Wattson_PostRematch.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -432,13 +323,13 @@ pub(crate) static sWattsonMatchCallHeader: [RomPtr<u8>; 5] = [
 ];
 
 pub(crate) static sFlanneryTextScripts: [RomPtr<u8>; 10] = [
-    RomPtr((&raw const MatchCall_Text_Flannery_Preparing)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Flannery_Preparing.cast::<u8>()))),
     RomPtr(0xfffffffe as *const u8),
-    RomPtr((&raw const MatchCall_Text_Flannery_PreparingPostGame)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Flannery_PreparingPostGame.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Flannery_RematchReady)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Flannery_RematchReady.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Flannery_PostRematch)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Flannery_PostRematch.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -453,13 +344,13 @@ pub(crate) static sFlanneryMatchCallHeader: [RomPtr<u8>; 5] = [
 ];
 
 pub(crate) static sWinonaTextScripts: [RomPtr<u8>; 10] = [
-    RomPtr((&raw const MatchCall_Text_Winona_Preparing)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Winona_Preparing.cast::<u8>()))),
     RomPtr(0xfffffffe as *const u8),
-    RomPtr((&raw const MatchCall_Text_Winona_PreparingPostGame)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Winona_PreparingPostGame.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Winona_RematchReady)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Winona_RematchReady.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Winona_PostRematch)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Winona_PostRematch.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -474,13 +365,13 @@ pub(crate) static sWinonaMatchCallHeader: [RomPtr<u8>; 5] = [
 ];
 
 pub(crate) static sTateLizaTextScripts: [RomPtr<u8>; 10] = [
-    RomPtr((&raw const MatchCall_Text_TateLiza_Preparing)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_TateLiza_Preparing.cast::<u8>()))),
     RomPtr(0xfffffffe as *const u8),
-    RomPtr((&raw const MatchCall_Text_TateLiza_PreparingPostGame)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_TateLiza_PreparingPostGame.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_TateLiza_RematchReady)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_TateLiza_RematchReady.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_TateLiza_PostRematch)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_TateLiza_PostRematch.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -495,13 +386,13 @@ pub(crate) static sTateLizaMatchCallHeader: [RomPtr<u8>; 5] = [
 ];
 
 pub(crate) static sJuanTextScripts: [RomPtr<u8>; 10] = [
-    RomPtr((&raw const MatchCall_Text_Juan_Preparing)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Juan_Preparing.cast::<u8>()))),
     RomPtr(0xfffffffe as *const u8),
-    RomPtr((&raw const MatchCall_Text_Juan_PreparingPostGame)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Juan_PreparingPostGame.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Juan_RematchReady)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Juan_RematchReady.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
-    RomPtr((&raw const MatchCall_Text_Juan_PostRematch)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Juan_PostRematch.cast::<u8>()))),
     RomPtr(0xffff0864 as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -516,7 +407,7 @@ pub(crate) static sJuanMatchCallHeader: [RomPtr<u8>; 5] = [
 ];
 
 pub(crate) static sSidneyTextScripts: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const MatchCall_Text_Sidney)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Sidney.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -531,7 +422,7 @@ pub(crate) static sSidneyMatchCallHeader: [RomPtr<u8>; 5] = [
 ];
 
 pub(crate) static sPhoebeTextScripts: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const MatchCall_Text_Phoebe)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Phoebe.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -546,7 +437,7 @@ pub(crate) static sPhoebeMatchCallHeader: [RomPtr<u8>; 5] = [
 ];
 
 pub(crate) static sGlaciaTextScripts: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const MatchCall_Text_Glacia)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Glacia.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -561,7 +452,7 @@ pub(crate) static sGlaciaMatchCallHeader: [RomPtr<u8>; 5] = [
 ];
 
 pub(crate) static sDrakeTextScripts: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const MatchCall_Text_Drake)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Drake.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),
@@ -576,7 +467,7 @@ pub(crate) static sDrakeMatchCallHeader: [RomPtr<u8>; 5] = [
 ];
 
 pub(crate) static sWallaceTextScripts: [RomPtr<u8>; 4] = [
-    RomPtr((&raw const MatchCall_Text_Wallace)),
+    RomPtr((&raw const (*crate::asmdata::MatchCall_Text_Wallace.cast::<u8>()))),
     RomPtr(0xffffffff as *const u8),
     RomPtr(0x0 as *const u8),
     RomPtr(0xffffffff as *const u8),

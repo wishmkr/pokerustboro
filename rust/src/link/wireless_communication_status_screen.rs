@@ -3,37 +3,97 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::bg::CopyToBgTilemapBuffer;
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, FillBgTilemapBufferRect,
+    IsDma3ManagerBusyWithBgCopy, ResetBgsAndClearDma3BusyFlags, ShowBg,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::dynamic_placeholder_text_util::DynamicPlaceholderTextUtil_Reset;
+use crate::gpu_regs::SetGpuReg;
+use crate::international_string_util::GetStringCenterAlignXOffset;
+use crate::m4a::m4aSoundVSyncOn;
+use crate::menu::{
+    AddTextPrinterParameterized4, DecompressAndLoadBgGfxUsingHeap, Menu_LoadStdPalAt,
+};
+use crate::overworld::CB2_ReturnToFieldContinueScriptPlayMapMusic;
+use crate::palette::{
+    BeginNormalPaletteFade, LoadPalette, ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade,
+    gPaletteFade,
+};
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::sound::PlaySE;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData,
+};
+use crate::string_util::ConvertIntToDecimalStringN;
+use crate::string_util::gStringVar4;
+use crate::task::gTasks;
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::task::{task_data_ptr, task_get, task_set};
+use crate::text::{DeactivateAllTextPrinters, RunTextPrinters};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::union_room::CreateTask_ListenToWireless;
+use crate::window::{
+    CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers, PutWindowTilemap,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+// The C's names for task and sprite data slots.
+const tState: usize = 0;
 // Data tables (translate with cdata.py): sPalettes sBgTiles_Gfx sBgTiles_Tilemap sBgTemplates sWindowTemplates sHeaderTexts sActivityGroupInfo
 
 /// `struct WirelessCommunicationStatusScreen`
@@ -96,73 +156,30 @@ static sWindowTemplates: Table<CArray<WindowTemplate, 4>> =
 
 pub(crate) static mut sStatusScreen: *mut WirelessCommunicationStatusScreen = null_mut();
 
-unsafe extern "C" {
-    static mut gMain: Main;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    fn AddTextPrinterParameterized4(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: i8,
-        a8: *mut u8,
-    );
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BuildOamBuffer();
-    fn CB2_ReturnToFieldContinueScriptPlayMapMusic();
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateTask_ListenToWireless() -> u8;
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut c_void, a2: u32, a3: u16, a4: u8);
-    fn DestroyTask(a0: u8);
-    fn DynamicPlaceholderTextUtil_Reset();
-    fn FillBgTilemapBufferRect(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8, a6: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut c_void);
-    fn FreeAllWindowBuffers();
-    fn GetBgTilemapBuffer(a0: u8) -> *mut c_void;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsDma3ManagerBusyWithBgCopy() -> u8;
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn Menu_LoadStdPalAt(a0: u16);
-    fn PlaySE(a0: u16);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn RunTasks();
-    fn RunTextPrinters();
-    fn ScanlineEffect_Stop();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
-    fn m4aSoundVSyncOn();
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `GetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn GetBgTilemapBuffer(a0: u8) -> *mut c_void {
+    unsafe { crate::bg::GetBgTilemapBuffer(a0) as *mut c_void }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn CB2_RunWirelessCommunicationScreen() {
+pub(crate) unsafe fn CB2_RunWirelessCommunicationScreen() {
     if IsDma3ManagerBusyWithBgCopy() == 0 {
         RunTasks();
         RunTextPrinters();
@@ -171,16 +188,16 @@ pub(crate) unsafe extern "C" fn CB2_RunWirelessCommunicationScreen() {
         UpdatePaletteFade();
     }
 }
-pub(crate) unsafe extern "C" fn VBlankCB_WirelessCommunicationScreen() {
+pub(crate) unsafe fn VBlankCB_WirelessCommunicationScreen() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowWirelessCommunicationScreen() {
+pub unsafe fn ShowWirelessCommunicationScreen() {
     SetMainCallback2(Some(CB2_InitWirelessCommunicationScreen));
 }
-pub(crate) unsafe extern "C" fn CB2_InitWirelessCommunicationScreen() {
+pub(crate) unsafe fn CB2_InitWirelessCommunicationScreen() {
     SetGpuReg(0x0, 0);
     sStatusScreen = AllocZeroed(108) as *mut WirelessCommunicationStatusScreen;
     SetVBlankCallback(None);
@@ -217,19 +234,15 @@ pub(crate) unsafe extern "C" fn CB2_InitWirelessCommunicationScreen() {
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn CB2_ExitWirelessCommunicationStatusScreen() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn CB2_ExitWirelessCommunicationStatusScreen() {
     FreeAllWindowBuffers();
-    i = 0;
-    while i < 2 {
+    for i in 0..2i32 {
         Free(GetBgTilemapBuffer(i as u8));
-        i += 1;
     }
     Free(sStatusScreen as *mut c_void);
     SetMainCallback2(Some(CB2_ReturnToFieldContinueScriptPlayMapMusic));
 }
-pub(crate) unsafe extern "C" fn CyclePalette(counter: *mut i16, palIdx: *mut i16) {
-    let mut idx: i32 = 0;
+unsafe fn CyclePalette(counter: *mut i16, palIdx: *mut i16) {
     if ({
         *counter += 1;
         *counter
@@ -244,11 +257,10 @@ pub(crate) unsafe extern "C" fn CyclePalette(counter: *mut i16, palIdx: *mut i16
         }
         *counter = 0;
     }
-    idx = *palIdx as i32 + 2;
+    let idx: i32 = *palIdx as i32 + 2;
     LoadPalette(sPalettes[idx].as_ptr().cast_mut() as *mut c_void, 0, 16);
 }
-pub(crate) unsafe extern "C" fn PrintHeaderTexts() {
-    let mut i: i32 = 0;
+unsafe fn PrintHeaderTexts() {
     FillWindowPixelBuffer(WIN_TITLE, 0);
     FillWindowPixelBuffer(WIN_GROUP_NAMES, 0);
     FillWindowPixelBuffer(WIN_GROUP_COUNTS, 0);
@@ -260,7 +272,7 @@ pub(crate) unsafe extern "C" fn PrintHeaderTexts() {
         6,
         COLORMODE_GREEN,
     );
-    i = 0;
+    let mut i: i32 = 0;
     while i < 3 {
         WCSS_AddTextPrinterParameterized(
             WIN_GROUP_NAMES,
@@ -285,23 +297,22 @@ pub(crate) unsafe extern "C" fn PrintHeaderTexts() {
     PutWindowTilemap(WIN_GROUP_NAMES);
     CopyWindowToVram(WIN_GROUP_NAMES, COPYWIN_GFX);
 }
-pub(crate) unsafe extern "C" fn Task_WirelessCommunicationScreen(taskId: u8) {
-    let mut i: i32 = 0;
-    match gTasks[taskId].data[0] {
+pub(crate) unsafe fn Task_WirelessCommunicationScreen(taskId: u8) {
+    match task_get(taskId, tState) {
         0 => {
             PrintHeaderTexts();
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         1 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
             ShowBg(1);
             CopyBgTilemapBufferToVram(0);
             ShowBg(0);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         2 => {
             if gPaletteFade.active() == 0 {
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
         3 => {
@@ -313,8 +324,7 @@ pub(crate) unsafe extern "C" fn Task_WirelessCommunicationScreen(taskId: u8) {
             ) != 0
             {
                 FillWindowPixelBuffer(WIN_GROUP_COUNTS, 0);
-                i = 0;
-                while i < NUM_GROUPTYPES {
+                for i in 0..NUM_GROUPTYPES {
                     ConvertIntToDecimalStringN(
                         gStringVar4.as_mut_ptr(),
                         (*sStatusScreen).groupCounts[i] as i32,
@@ -340,35 +350,29 @@ pub(crate) unsafe extern "C" fn Task_WirelessCommunicationScreen(taskId: u8) {
                             COLORMODE_RED,
                         );
                     }
-                    i += 1;
                 }
                 PutWindowTilemap(WIN_GROUP_COUNTS);
                 CopyWindowToVram(WIN_GROUP_COUNTS, COPYWIN_FULL);
             }
             if gMain.newKeys as i32 & A_BUTTON != 0 || gMain.newKeys as i32 & B_BUTTON != 0 {
                 PlaySE(SE_SELECT);
-                gTasks[(*sStatusScreen).rfuTaskId].data[15] = 0xFF;
-                gTasks[taskId].data[0] += 1;
+                task_set((*sStatusScreen).rfuTaskId, 15, 0xFF);
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
-            CyclePalette(
-                &raw mut gTasks[taskId].data[7],
-                &raw mut gTasks[taskId].data[8],
-            );
+            CyclePalette(task_data_ptr(taskId, 7), task_data_ptr(taskId, 8));
         }
         4 => {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
-        5 => {
-            if gPaletteFade.active() == 0 {
-                SetMainCallback2(Some(CB2_ExitWirelessCommunicationStatusScreen));
-                DestroyTask(taskId);
-            }
+        5 if gPaletteFade.active() == 0 => {
+            SetMainCallback2(Some(CB2_ExitWirelessCommunicationStatusScreen));
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn WCSS_AddTextPrinterParameterized(
+unsafe fn WCSS_AddTextPrinterParameterized(
     windowId: u8,
     fontId: u8,
     str: *mut u8,
@@ -417,16 +421,10 @@ pub(crate) unsafe extern "C" fn WCSS_AddTextPrinterParameterized(
         str,
     );
 }
-pub(crate) unsafe extern "C" fn CountPlayersInGroupAndGetActivity(
-    player: *mut RfuPlayer,
-    mut groupCounts: *mut u32,
-) -> u32 {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+unsafe fn CountPlayersInGroupAndGetActivity(player: *mut RfuPlayer, groupCounts: *mut u32) -> u32 {
     let mut k: i32 = 0;
-    let mut activity: u32 = (*player).rfu.data.activity() as u32;
-    i = 0;
-    while i < 31 {
+    let activity: u32 = (*player).rfu.data.activity() as u32;
+    for i in 0..31i32 {
         'l1: {
             if sActivityGroupInfo[i][1] == GROUPTYPE_NONE {
                 break 'l1;
@@ -436,12 +434,10 @@ pub(crate) unsafe extern "C" fn CountPlayersInGroupAndGetActivity(
             {
                 if sActivityGroupInfo[i][2] == 0 {
                     k = 0;
-                    j = 0;
-                    while j < RFU_CHILD_MAX as i32 {
+                    for j in 0..(RFU_CHILD_MAX as i32) {
                         if (*player).rfu.data.partnerInfo[j] != 0 {
                             k += 1;
                         }
-                        j += 1;
                     }
                     k += 1;
                     *groupCounts.at(sActivityGroupInfo[i][1]) += k as u32;
@@ -450,44 +446,34 @@ pub(crate) unsafe extern "C" fn CountPlayersInGroupAndGetActivity(
                 }
             }
         }
-        i += 1;
     }
-    return activity;
+    activity
 }
-pub(crate) unsafe extern "C" fn HaveCountsChanged(
-    currCounts: *mut u32,
-    prevCounts: *mut u32,
-) -> u32 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < NUM_GROUPTYPES {
+unsafe fn HaveCountsChanged(currCounts: *mut u32, prevCounts: *mut u32) -> u32 {
+    for i in 0..NUM_GROUPTYPES {
         if *currCounts.at(i) != *prevCounts.at(i) {
             return TRUE as u32;
         }
-        i += 1;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn UpdateCommunicationCounts(
-    mut groupCounts: *mut u32,
+unsafe fn UpdateCommunicationCounts(
+    groupCounts: *mut u32,
     prevGroupCounts: *mut u32,
-    mut activities: *mut u32,
+    activities: *mut u32,
     taskId: u8,
 ) -> u32 {
     let mut activitiesChanged: u32 = FALSE as u32;
     let mut groupCountBuffer: CArray<u32, 4> = CArray([0, 0, 0, 0]);
-    let mut players: *mut *mut RfuPlayer =
-        gTasks[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuPlayer;
-    let mut i: i32 = 0;
-    i = 0;
-    while i < NUM_TASK_DATA as i32 {
-        let mut activity: u32 =
+    let players: *mut *mut RfuPlayer =
+        (*gTasks.as_ptr())[taskId].data.as_mut_ptr() as *mut c_void as *mut *mut RfuPlayer;
+    for i in 0..(NUM_TASK_DATA as i32) {
+        let activity: u32 =
             CountPlayersInGroupAndGetActivity((*players).at(i), groupCountBuffer.as_mut_ptr());
         if activity != *activities.at(i) {
             *activities.at(i) = activity;
             activitiesChanged = TRUE as u32;
         }
-        i += 1;
     }
     if HaveCountsChanged(groupCountBuffer.as_mut_ptr(), prevGroupCounts) == 0 {
         if activitiesChanged == TRUE as u32 {
@@ -512,6 +498,6 @@ pub(crate) unsafe extern "C" fn UpdateCommunicationCounts(
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }

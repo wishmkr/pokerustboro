@@ -27,7 +27,7 @@ const L_SEND_BUFFER: usize = 0x1c;
 const L_RECV_FUNC: usize = 0x20;
 const L_SEND_FUNC: usize = 0x24;
 
-type LinkFunc = unsafe extern "C" fn(*mut u8) -> u32;
+type LinkFunc = unsafe fn(*mut u8) -> u32;
 
 /// `struct SendRecvHeader { u16 ident, crc, size; }`. Six used bytes, but
 /// APCS rounds it to eight and `sizeof` is what goes over the link.
@@ -40,14 +40,34 @@ struct SendRecvHeader {
 }
 const HEADER_SIZE: u16 = 8;
 
-unsafe extern "C" {
-    static mut gBlockRecvBuffer: u8;
-
-    fn GetBlockReceivedStatus() -> u8;
-    fn ResetBlockReceivedFlag(who: u8);
-    fn SendBlock(unused: u8, src: *const u8, size: u16) -> u8;
-    fn IsLinkTaskFinished() -> u8;
-    fn LinkRfu_FatalError();
+/// `GetBlockReceivedStatus` with this module's view of its types.
+#[inline]
+unsafe fn GetBlockReceivedStatus() -> u8 {
+    unsafe { crate::link::GetBlockReceivedStatus() }
+}
+/// `ResetBlockReceivedFlag` with this module's view of its types.
+#[inline]
+unsafe fn ResetBlockReceivedFlag(a0: u8) {
+    unsafe {
+        crate::link::ResetBlockReceivedFlag(a0);
+    }
+}
+/// `SendBlock` with this module's view of its types.
+#[inline]
+unsafe fn SendBlock(a0: u8, a1: *const u8, a2: u16) -> u8 {
+    unsafe { crate::link::SendBlock(a0, a1 as _, a2) }
+}
+/// `IsLinkTaskFinished` with this module's view of its types.
+#[inline]
+unsafe fn IsLinkTaskFinished() -> u8 {
+    unsafe { crate::link::IsLinkTaskFinished() }
+}
+/// `LinkRfu_FatalError` with this module's view of its types.
+#[inline]
+unsafe fn LinkRfu_FatalError() {
+    unsafe {
+        crate::link_rfu_2::LinkRfu_FatalError();
+    }
 }
 
 #[inline]
@@ -81,23 +101,19 @@ unsafe fn ptr_at(link: *mut u8, offset: usize) -> *mut u8 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MysteryGiftLink_Recv(link: *mut u8) -> u32 {
+pub unsafe fn MysteryGiftLink_Recv(link: *mut u8) -> u32 {
     let func = unsafe { link.add(L_RECV_FUNC).cast::<LinkFunc>().read() };
     unsafe { func(link) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MysteryGiftLink_Send(link: *mut u8) -> u32 {
+pub unsafe fn MysteryGiftLink_Send(link: *mut u8) -> u32 {
     let func = unsafe { link.add(L_SEND_FUNC).cast::<LinkFunc>().read() };
     unsafe { func(link) }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MysteryGiftLink_Init(
-    link: *mut u8,
-    send_player_id: u32,
-    recv_player_id: u32,
-) {
+pub unsafe fn MysteryGiftLink_Init(link: *mut u8, send_player_id: u32, recv_player_id: u32) {
     unsafe {
         link.add(L_SEND_PLAYER_ID)
             .write_volatile(send_player_id as u8)
@@ -132,12 +148,7 @@ pub unsafe extern "C" fn MysteryGiftLink_Init(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MysteryGiftLink_InitSend(
-    link: *mut u8,
-    ident: u32,
-    src: *const u8,
-    size: u32,
-) {
+pub unsafe fn MysteryGiftLink_InitSend(link: *mut u8, ident: u32, src: *const u8, size: u32) {
     unsafe { set_state(link, 0) };
     unsafe { set_u16(link, L_SEND_IDENT, ident as u16) };
     unsafe { set_u16(link, L_SEND_COUNTER, 0) };
@@ -149,7 +160,7 @@ pub unsafe extern "C" fn MysteryGiftLink_InitSend(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn MysteryGiftLink_InitRecv(link: *mut u8, ident: u32, dest: *mut u8) {
+pub unsafe fn MysteryGiftLink_InitRecv(link: *mut u8, ident: u32, dest: *mut u8) {
     unsafe { set_state(link, 0) };
     unsafe { set_u16(link, L_RECV_IDENT, ident as u16) };
     unsafe { set_u16(link, L_RECV_COUNTER, 0) };
@@ -160,7 +171,12 @@ pub unsafe extern "C" fn MysteryGiftLink_InitRecv(link: *mut u8, ident: u32, des
 
 #[inline]
 unsafe fn receive_block(player_id: u8, dest: *mut u8, size: usize) {
-    let src = unsafe { (&raw const gBlockRecvBuffer).add(player_id as usize * BLOCK_BUFFER_SIZE) };
+    let src = unsafe {
+        (&raw const (*(&raw const crate::link::gBlockRecvBuffer)
+            .cast::<u8>()
+            .cast_mut()))
+            .add(player_id as usize * BLOCK_BUFFER_SIZE)
+    };
     unsafe { core::ptr::copy_nonoverlapping(src, dest, size) };
 }
 
@@ -169,7 +185,7 @@ unsafe fn has_received(player_id: u8) -> bool {
     (unsafe { GetBlockReceivedStatus() } >> player_id) & 1 != 0
 }
 
-unsafe extern "C" fn mgl_receive(link: *mut u8) -> u32 {
+unsafe fn mgl_receive(link: *mut u8) -> u32 {
     let player = unsafe { u8_at(link, L_RECV_PLAYER_ID) };
 
     match unsafe { state(link) } {
@@ -229,7 +245,7 @@ unsafe extern "C" fn mgl_receive(link: *mut u8) -> u32 {
     0
 }
 
-unsafe extern "C" fn mgl_send(link: *mut u8) -> u32 {
+unsafe fn mgl_send(link: *mut u8) -> u32 {
     let player = unsafe { u8_at(link, L_SEND_PLAYER_ID) };
     let buffer = unsafe { ptr_at(link, L_SEND_BUFFER) };
     let size = unsafe { u16_at(link, L_SEND_SIZE) };

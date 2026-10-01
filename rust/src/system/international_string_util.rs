@@ -39,13 +39,22 @@ const LIST_MENU_FONT_ID_MASK: u8 = 0x3f;
 /// `CPU_FAST_SET_SRC_FIXED`
 const CPU_FAST_SET_SRC_FIXED: u32 = 0x0100_0000;
 
-unsafe extern "C" {
-    static gPokedexEntries: u8;
-    static gText_Pokemon: u8;
-
-    fn GetStringWidth(font_id: u8, string: *const u8, letter_spacing: i16) -> i32;
-    fn ConvertPixelWidthToTileWidth(width: c_int) -> c_int;
-    fn CpuFastSet(src: *const c_void, dest: *mut c_void, control: u32);
+/// `GetStringWidth` with this module's view of its types.
+#[inline]
+unsafe fn GetStringWidth(a0: u8, a1: *const u8, a2: i16) -> i32 {
+    unsafe { crate::text::GetStringWidth(a0, a1 as _, a2) }
+}
+/// `ConvertPixelWidthToTileWidth` with this module's view of its types.
+#[inline]
+unsafe fn ConvertPixelWidthToTileWidth(a0: c_int) -> c_int {
+    unsafe { crate::script_menu::ConvertPixelWidthToTileWidth(a0) }
+}
+/// `CpuFastSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuFastSet(a0: *const c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuFastSet(a0 as _, a1 as _, a2);
+    }
 }
 
 /// `CpuFastFill8(value, dest, size)`
@@ -61,7 +70,7 @@ unsafe fn cpu_fast_fill8(value: u8, dest: *mut u8, size: usize) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetStringWidthDifference(
+pub unsafe fn GetStringWidthDifference(
     font_id: c_int,
     string: *const u8,
     total_width: c_int,
@@ -76,7 +85,7 @@ pub unsafe extern "C" fn GetStringWidthDifference(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetStringCenterAlignXOffsetWithLetterSpacing(
+pub unsafe fn GetStringCenterAlignXOffsetWithLetterSpacing(
     font_id: c_int,
     string: *const u8,
     total_width: c_int,
@@ -88,7 +97,7 @@ pub unsafe extern "C" fn GetStringCenterAlignXOffsetWithLetterSpacing(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetStringCenterAlignXOffset(
+pub unsafe fn GetStringCenterAlignXOffset(
     font_id: c_int,
     string: *const u8,
     total_width: c_int,
@@ -97,7 +106,7 @@ pub unsafe extern "C" fn GetStringCenterAlignXOffset(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetStringRightAlignXOffset(
+pub unsafe fn GetStringRightAlignXOffset(
     font_id: c_int,
     string: *const u8,
     total_width: c_int,
@@ -106,7 +115,7 @@ pub unsafe extern "C" fn GetStringRightAlignXOffset(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMaxWidthInMenuTable(actions: *const u8, num_actions: c_int) -> c_int {
+pub unsafe fn GetMaxWidthInMenuTable(actions: *const u8, num_actions: c_int) -> c_int {
     let mut max_width = 0i32;
     let mut index = 0isize;
     while index < num_actions as isize {
@@ -127,7 +136,7 @@ pub unsafe extern "C" fn GetMaxWidthInMenuTable(actions: *const u8, num_actions:
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetMaxWidthInSubsetOfMenuTable(
+pub unsafe fn GetMaxWidthInSubsetOfMenuTable(
     actions: *const u8,
     action_ids: *const u8,
     num_actions: c_int,
@@ -153,7 +162,7 @@ pub unsafe extern "C" fn GetMaxWidthInSubsetOfMenuTable(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Intl_GetListMenuWidth(list_menu: *const u8) -> c_int {
+pub unsafe fn Intl_GetListMenuWidth(list_menu: *const u8) -> c_int {
     let items = unsafe { list_menu.add(LIST_MENU_ITEMS).cast::<*const u8>().read() };
     let total_items = unsafe { list_menu.add(LIST_MENU_TOTAL_ITEMS).cast::<u16>().read() };
     let font_id = unsafe { list_menu.add(LIST_MENU_FONT_ID).read() } & LIST_MENU_FONT_ID_MASK;
@@ -180,16 +189,23 @@ pub unsafe extern "C" fn Intl_GetListMenuWidth(list_menu: *const u8) -> c_int {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyMonCategoryText(dex_num: c_int, dest: *mut u8) {
-    let category_name =
-        unsafe { (&raw const gPokedexEntries).add(dex_num as usize * POKEDEX_ENTRY_SIZE) };
+pub unsafe fn CopyMonCategoryText(dex_num: c_int, dest: *mut u8) {
+    let category_name = unsafe {
+        (&raw const (*(&raw const crate::data::pokedex::gPokedexEntries).cast::<u8>()))
+            .add(dex_num as usize * POKEDEX_ENTRY_SIZE)
+    };
     let string = unsafe { StringCopy(dest, category_name) };
     unsafe { string.write(CHAR_SPACE) };
-    let _ = unsafe { StringCopy(string.add(1), &raw const gText_Pokemon) };
+    let _ = unsafe {
+        StringCopy(
+            string.add(1),
+            &raw const (*(&raw const crate::data::strings::gText_Pokemon).cast::<u8>()),
+        )
+    };
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetStringClearToWidth(
+pub unsafe fn GetStringClearToWidth(
     dest: *mut u8,
     font_id: c_int,
     string: *const u8,
@@ -218,7 +234,7 @@ pub unsafe extern "C" fn GetStringClearToWidth(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn PadNameString(dest: *mut u8, pad_char: u8) {
+pub unsafe fn PadNameString(dest: *mut u8, pad_char: u8) {
     unsafe { StripExtCtrlCodes(dest) };
     let mut length = unsafe { StringLength(dest) };
 
@@ -243,7 +259,7 @@ pub unsafe extern "C" fn PadNameString(dest: *mut u8, pad_char: u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConvertInternationalPlayerName(string: *mut u8) {
+pub unsafe fn ConvertInternationalPlayerName(string: *mut u8) {
     if unsafe { StringLength(string) } < PLAYER_NAME_LENGTH - 1 {
         unsafe { ConvertInternationalString(string, LANGUAGE_JAPANESE as u8) };
     } else {
@@ -252,7 +268,7 @@ pub unsafe extern "C" fn ConvertInternationalPlayerName(string: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConvertInternationalPlayerNameStripChar(string: *mut u8, remove_char: u8) {
+pub unsafe fn ConvertInternationalPlayerNameStripChar(string: *mut u8, remove_char: u8) {
     if unsafe { StringLength(string) } < PLAYER_NAME_LENGTH - 1 {
         unsafe { ConvertInternationalString(string, LANGUAGE_JAPANESE as u8) };
     } else if remove_char == EXT_CTRL_CODE_BEGIN {
@@ -271,7 +287,7 @@ pub unsafe extern "C" fn ConvertInternationalPlayerNameStripChar(string: *mut u8
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ConvertInternationalContestantName(string: *mut u8) {
+pub unsafe fn ConvertInternationalContestantName(string: *mut u8) {
     let mut cursor = string;
     let first = unsafe { cursor.read() };
     cursor = unsafe { cursor.add(1) };
@@ -299,11 +315,7 @@ pub unsafe extern "C" fn ConvertInternationalContestantName(string: *mut u8) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn TVShowConvertInternationalString(
-    dest: *mut u8,
-    src: *const u8,
-    language: c_int,
-) {
+pub unsafe fn TVShowConvertInternationalString(dest: *mut u8, src: *const u8, language: c_int) {
     let _ = unsafe { StringCopy(dest, src) };
     unsafe { ConvertInternationalString(dest, language as u8) };
 }
@@ -311,7 +323,7 @@ pub unsafe extern "C" fn TVShowConvertInternationalString(
 /// Latin languages cannot be told apart from a string alone, so this defaults
 /// to English exactly as every release of the game does.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetNicknameLanguage(string: *mut u8) -> c_int {
+pub unsafe fn GetNicknameLanguage(string: *mut u8) -> c_int {
     if unsafe { string.read() } == EXT_CTRL_CODE_BEGIN
         && unsafe { string.add(1).read() } == EXT_CTRL_CODE_JPN
     {
@@ -324,7 +336,7 @@ pub unsafe extern "C" fn GetNicknameLanguage(string: *mut u8) -> c_int {
 /// Used by Pokenav's Match Call to erase the previous trainer's flavor text
 /// when switching between their info pages.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn FillWindowTilesByRow(
+pub unsafe fn FillWindowTilesByRow(
     window_id: c_int,
     column_start: c_int,
     row_start: c_int,

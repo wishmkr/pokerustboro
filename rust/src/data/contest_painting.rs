@@ -4,33 +4,6 @@
 
 use crate::ffi::{RomBytes, RomPtr};
 
-unsafe extern "C" {
-    static gContestBeauty: u8;
-    static gContestCoolness: u8;
-    static gContestCuteness: u8;
-    static gContestLink: u8;
-    static gContestPaintingBeauty1: u8;
-    static gContestPaintingBeauty2: u8;
-    static gContestPaintingBeauty3: u8;
-    static gContestPaintingCool1: u8;
-    static gContestPaintingCool2: u8;
-    static gContestPaintingCool3: u8;
-    static gContestPaintingCute1: u8;
-    static gContestPaintingCute2: u8;
-    static gContestPaintingCute3: u8;
-    static gContestPaintingSmart1: u8;
-    static gContestPaintingSmart2: u8;
-    static gContestPaintingSmart3: u8;
-    static gContestPaintingTough1: u8;
-    static gContestPaintingTough2: u8;
-    static gContestPaintingTough3: u8;
-    static gContestRankHyper: u8;
-    static gContestRankMaster: u8;
-    static gContestRankNormal: u8;
-    static gContestRankSuper: u8;
-    static gContestSmartness: u8;
-    static gContestToughness: u8;
-}
 
 pub(crate) static sPictureFramePalettes: RomBytes<512> = RomBytes(*include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../build/assets/graphics/picture_frame/bg.pal.gbapal")));
 
@@ -59,19 +32,19 @@ pub(crate) static sPictureFrameTilemap_Tough: RomBytes<1292> = RomBytes(*include
 pub(crate) static sPictureFrameTilemap_HallLobby: RomBytes<1296> = RomBytes(*include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../build/assets/graphics/picture_frame/lobby_map.bin.rl")));
 
 pub(crate) static sContestCategoryNames_Unused: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const gContestCoolness)),
-    RomPtr((&raw const gContestBeauty)),
-    RomPtr((&raw const gContestCuteness)),
-    RomPtr((&raw const gContestSmartness)),
-    RomPtr((&raw const gContestToughness)),
+    RomPtr((&raw const (*crate::asmdata::gContestCoolness.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestBeauty.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestCuteness.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestSmartness.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestToughness.cast::<u8>()))),
 ];
 
 pub(crate) static sContestRankNames: [RomPtr<u8>; 5] = [
-    RomPtr((&raw const gContestRankNormal)),
-    RomPtr((&raw const gContestRankSuper)),
-    RomPtr((&raw const gContestRankHyper)),
-    RomPtr((&raw const gContestRankMaster)),
-    RomPtr((&raw const gContestLink)),
+    RomPtr((&raw const (*crate::asmdata::gContestRankNormal.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestRankSuper.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestRankHyper.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestRankMaster.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestLink.cast::<u8>()))),
 ];
 
 pub(crate) static sBgTemplates: RomBytes<4> = RomBytes([165, 16, 0, 0]);
@@ -79,21 +52,21 @@ pub(crate) static sBgTemplates: RomBytes<4> = RomBytes([165, 16, 0, 0]);
 pub(crate) static sWindowTemplate: RomBytes<8> = RomBytes([1, 2, 14, 26, 4, 15, 1, 0]);
 
 pub(crate) static sMuseumCaptions: [RomPtr<u8>; 15] = [
-    RomPtr((&raw const gContestPaintingCool1)),
-    RomPtr((&raw const gContestPaintingCool2)),
-    RomPtr((&raw const gContestPaintingCool3)),
-    RomPtr((&raw const gContestPaintingBeauty1)),
-    RomPtr((&raw const gContestPaintingBeauty2)),
-    RomPtr((&raw const gContestPaintingBeauty3)),
-    RomPtr((&raw const gContestPaintingCute1)),
-    RomPtr((&raw const gContestPaintingCute2)),
-    RomPtr((&raw const gContestPaintingCute3)),
-    RomPtr((&raw const gContestPaintingSmart1)),
-    RomPtr((&raw const gContestPaintingSmart2)),
-    RomPtr((&raw const gContestPaintingSmart3)),
-    RomPtr((&raw const gContestPaintingTough1)),
-    RomPtr((&raw const gContestPaintingTough2)),
-    RomPtr((&raw const gContestPaintingTough3)),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingCool1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingCool2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingCool3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingBeauty1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingBeauty2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingBeauty3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingCute1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingCute2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingCute3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingSmart1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingSmart2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingSmart3.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingTough1.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingTough2.cast::<u8>()))),
+    RomPtr((&raw const (*crate::asmdata::gContestPaintingTough3.cast::<u8>()))),
 ];
 
 pub(crate) static sContestPaintingMonOamData: RomBytes<8> = RomBytes([0, 48, 0, 192, 0, 0, 0, 0]);

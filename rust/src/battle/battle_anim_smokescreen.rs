@@ -33,22 +33,25 @@ pub static gBattlePalaceNatureToMoveTarget: crate::ffi::RomBytes<25> = crate::ff
     STRONGER, STRONGER, WEAKER, WEAKER, STRONGER, // Calm..Quirky
 ]);
 
-unsafe extern "C" {
-    static gSmokescreenImpactTiles: u32;
-    static gSmokescreenImpactPalette: u32;
-    static gEnemyMonShadow_Gfx: u32;
-
-    fn SpriteCB_SetInvisible(sprite: *mut u8);
+/// `SpriteCB_SetInvisible` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCB_SetInvisible(a0: *mut u8) {
+    unsafe {
+        crate::battle_gfx_sfx_util::SpriteCB_SetInvisible(a0 as _);
+    }
 }
 
 static SMOKESCREEN_SHEET: CompressedSpriteSheet = CompressedSpriteSheet {
-    data: (&raw const gSmokescreenImpactTiles).cast(),
+    data: (&raw const (*(&raw const crate::data::graphics::gSmokescreenImpactTiles).cast::<u32>()))
+        .cast(),
     size: 0x180,
     tag: TAG_SMOKESCREEN,
 };
 
 static SMOKESCREEN_PALETTE: CompressedSpritePalette = CompressedSpritePalette {
-    data: (&raw const gSmokescreenImpactPalette).cast(),
+    data: (&raw const (*(&raw const crate::data::graphics::gSmokescreenImpactPalette)
+        .cast::<u32>()))
+        .cast(),
     tag: TAG_SMOKESCREEN,
 };
 
@@ -91,7 +94,8 @@ static SMOKESCREEN_TEMPLATE: SpriteTemplate = SpriteTemplate {
 
 #[unsafe(no_mangle)]
 pub static gSpriteSheet_EnemyShadow: CompressedSpriteSheet = CompressedSpriteSheet {
-    data: (&raw const gEnemyMonShadow_Gfx).cast(),
+    data: (&raw const (*(&raw const crate::data::graphics::gEnemyMonShadow_Gfx).cast::<u32>()))
+        .cast(),
     size: 0x80,
     tag: GFXTAG_SHADOW,
 };
@@ -116,7 +120,7 @@ const S_PERSIST: usize = 1;
 const S_MAIN_SPRITE_ID: usize = 0;
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SmokescreenImpact(x: i16, y: i16, persist: u8) -> u8 {
+pub unsafe fn SmokescreenImpact(x: i16, y: i16, persist: u8) -> u8 {
     if unsafe { GetSpriteTileStartByTag(SMOKESCREEN_SHEET.tag) } == 0xffff {
         unsafe { LoadCompressedSpriteSheetUsingHeap(&raw const SMOKESCREEN_SHEET) };
         unsafe { LoadCompressedSpritePaletteUsingHeap(&raw const SMOKESCREEN_PALETTE) };
@@ -148,7 +152,7 @@ pub unsafe extern "C" fn SmokescreenImpact(x: i16, y: i16, persist: u8) -> u8 {
     main_id
 }
 
-unsafe extern "C" fn sprite_cb_smokescreen_impact_main(main: *mut u8) {
+unsafe fn sprite_cb_smokescreen_impact_main(main: *mut u8) {
     if unsafe { sprite_data(main, S_ACTIVE_SPRITES).read() } == 0 {
         unsafe { FreeSpriteTilesByTag(SMOKESCREEN_SHEET.tag) };
         unsafe { FreeSpritePaletteByTag(SMOKESCREEN_PALETTE.tag) };
@@ -160,7 +164,7 @@ unsafe extern "C" fn sprite_cb_smokescreen_impact_main(main: *mut u8) {
     }
 }
 
-unsafe extern "C" fn sprite_cb_smokescreen_impact(puff: *mut u8) {
+unsafe fn sprite_cb_smokescreen_impact(puff: *mut u8) {
     if unsafe { sprite_anim_ended(puff) } {
         let main_id = unsafe { sprite_data(puff, S_MAIN_SPRITE_ID).read() } as u16;
         let active = unsafe { sprite_data(sprite(usize::from(main_id)), S_ACTIVE_SPRITES) };

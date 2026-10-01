@@ -3,37 +3,223 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::battle_gfx_sfx_util::{AllocateMonSpritesGfx, FreeMonSpritesGfx};
+use crate::battle_main::gMonSpritesGfxPtr;
+use crate::bg::{
+    ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, ResetBgsAndClearDma3BusyFlags, SetBgAttribute,
+    ShowBg, UnsetBgTilemapBuffer,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::daycare::{GetBoxMonNickname, GetMonNickname2};
+use crate::ffi::{gSpecialVar_0x8004, gSpecialVar_0x8005};
+use crate::field_screen_effect::FieldCB_ContinueScriptHandleMusic;
+use crate::field_weather::{FadeScreen, PlayRainStoppingSoundEffect};
+use crate::gpu_regs::SetGpuReg;
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::m4a::m4aSoundVSyncOn;
+use crate::menu::{
+    AddTextPrinterParameterized4, CreateYesNoMenu, DecompressAndLoadBgGfxUsingHeap,
+    Menu_ProcessInputNoWrapClearOnChoose, ResetTempTileDataBuffers,
+};
+use crate::naming_screen::DoNamingScreen;
+use crate::overworld::{
+    CB2_ReturnToField, CleanupOverworldWindowsAndTilemaps, GetCurrentRegionMapSectionId,
+    gFieldCallback,
+};
+use crate::palette::{
+    BeginNormalPaletteFade, LoadCompressedPalette, LoadPalette, ResetPaletteFade,
+    TransferPlttBuffer, UpdatePaletteFade, gPaletteFade,
+};
+use crate::pokedex::GetSetPokedexFlag;
+use crate::pokemon::{
+    CalculateMonStats, CalculatePlayerPartyCount, CreateMon, DoMonFrontSpriteAnimation,
+    GetMonAbility, GetMonData2, GetMonData3, GetMonGender, GetMonSpritePalStruct, GetSpeciesName,
+    MonRestorePP, SetMonData, SetMultiuseSpriteTemplateToPokemon, SpeciesToNationalPokedexNum,
+    gEnemyParty, gMultiuseSpriteTemplate, gPlayerParty,
+};
+use crate::pokemon_storage_system::{CountPartyAliveNonEggMonsExcept, CountStorageNonEggMons};
+use crate::random::Random;
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::script::LockPlayerFieldControls;
+use crate::sound::{
+    GetCurrentMapMusic, IsFanfareTaskInactive, PlayBGM, PlayFanfare, PlaySE, StopMapMusic,
+};
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData,
+};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar3, gStringVar4};
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::task::{task_get, task_set};
+use crate::text::{DeactivateAllTextPrinters, IsTextPrinterActive, RunTextPrinters};
+use crate::text_window::LoadUserWindowBorderGfx;
+use crate::trig::Sin;
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{CopyWindowToVram, FillWindowPixelBuffer, PutWindowTilemap, RemoveWindow};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CopyToBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16) {
+    unsafe {
+        crate::bg::CopyToBgTilemapBuffer(a0, a1 as _, a2, a3);
+    }
+}
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `HandleLoadSpecialPokePic_DontHandleDeoxys` with this module's view of its types.
+#[inline]
+unsafe fn HandleLoadSpecialPokePic_DontHandleDeoxys(
+    a0: *mut CompressedSpriteSheet,
+    a1: *mut c_void,
+    a2: i32,
+    a3: u32,
+) {
+    unsafe {
+        crate::decompress::HandleLoadSpecialPokePic_DontHandleDeoxys(a0 as _, a1 as _, a2, a3);
+    }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LoadBgTiles` with this module's view of its types.
+#[inline]
+unsafe fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16 {
+    unsafe { crate::bg::LoadBgTiles(a0, a1 as _, a2, a3) }
+}
+/// `LoadCompressedSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette) {
+    unsafe {
+        crate::decompress::LoadCompressedSpritePalette(a0 as _);
+    }
+}
+/// `LoadSpritePalette` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpritePalette(a0: *mut SpritePalette) -> u8 {
+    unsafe { crate::sprite::LoadSpritePalette(a0 as _) }
+}
+/// `LoadSpriteSheet` with this module's view of its types.
+#[inline]
+unsafe fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16 {
+    unsafe { crate::sprite::LoadSpriteSheet(a0 as _) }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAffineAnim(a0 as _, a1);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StringCompareWithoutExtCtrlCodes` with this module's view of its types.
+#[inline]
+unsafe fn StringCompareWithoutExtCtrlCodes(a0: *mut u8, a1: *mut u8) -> i32 {
+    unsafe { crate::string_util::StringCompareWithoutExtCtrlCodes(a0 as _, a1 as _) }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringExpandPlaceholders(a0 as _, a1 as _) as *mut u8 }
+}
+/// `TVShowConvertInternationalString` with this module's view of its types.
+#[inline]
+unsafe fn TVShowConvertInternationalString(a0: *mut u8, a1: *mut u8, a2: i32) {
+    unsafe {
+        crate::international_string_util::TVShowConvertInternationalString(a0 as _, a1 as _, a2);
+    }
+}
+// The C's names for task and sprite data slots.
+const sTimer: usize = 0;
+const tTimer: usize = 0;
+const sSinIdx: usize = 1;
+const sVelocX: usize = 1;
+const sDelayTimer: usize = 2;
+const sVelocY: usize = 2;
+const sAccelY: usize = 3;
+const sDeltaX: usize = 4;
+const sDeltaY: usize = 5;
 // Data tables (translate with cdata.py): sEggPalette sEggHatchTiles sEggShardTiles sOamData_Egg sSpriteAnim_Egg_Normal sSpriteAnim_Egg_Cracked1 sSpriteAnim_Egg_Cracked2 sSpriteAnim_Egg_Cracked3 sSpriteAnimTable_Egg sEggHatch_Sheet sEggShards_Sheet sEgg_SpritePalette sSpriteTemplate_Egg sOamData_EggShard sSpriteAnim_EggShard0 sSpriteAnim_EggShard1 sSpriteAnim_EggShard2 sSpriteAnim_EggShard3 sSpriteAnimTable_EggShard sSpriteTemplate_EggShard sBgTemplates_EggHatch sWinTemplates_EggHatch sYesNoWinTemplate sEggShardVelocities
 
 /// `struct EggHatchData`
@@ -105,184 +291,36 @@ static sYesNoWinTemplate: Table<WindowTemplate> =
 
 pub(crate) static mut sEggHatchData: *mut EggHatchData = null_mut();
 
-unsafe extern "C" {
-    static gBattleTextboxPalette: CArray<u32, 0>;
-    static gBattleTextboxTilemap: CArray<u32, 0>;
-    static gBattleTextboxTiles: CArray<u32, 0>;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static mut gFieldCallback: Option<unsafe extern "C" fn()>;
-    static mut gMain: Main;
-    static gMonFrontPicTable: CArray<CompressedSpriteSheet, 0>;
-    static mut gMonSpritesGfxPtr: *mut MonSpritesGfx;
-    static mut gMultiuseSpriteTemplate: SpriteTemplate;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_0x8005: u16;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar3: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_HatchedFromEgg: CArray<u8, 0>;
-    static gText_NicknameHatchPrompt: CArray<u8, 0>;
-    static gTradeGba2_Pal: CArray<u16, 0>;
-    static gTradeGba_Gfx: CArray<u8, 0>;
-    static gTradePlatform_Tilemap: CArray<u16, 0>;
-    fn AddTextPrinterParameterized4(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: i8,
-        a8: *mut u8,
-    );
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AllocateMonSpritesGfx();
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BuildOamBuffer();
-    fn CB2_ReturnToField();
-    fn CalculateMonStats(a0: *mut Pokemon);
-    fn CalculatePlayerPartyCount() -> u8;
-    fn ChangeBgX(a0: u8, a1: i32, a2: u8) -> i32;
-    fn ChangeBgY(a0: u8, a1: i32, a2: u8) -> i32;
-    fn CleanupOverworldWindowsAndTilemaps();
-    fn CopyBgTilemapBufferToVram(a0: u8);
-    fn CopyToBgTilemapBuffer(a0: u8, a1: *mut c_void, a2: u16, a3: u16);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CountPartyAliveNonEggMonsExcept(a0: u8) -> u8;
-    fn CountStorageNonEggMons() -> u32;
-    fn CreateMon(a0: *mut Pokemon, a1: u16, a2: u8, a3: u8, a4: u8, a5: u32, a6: u8, a7: u32);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateYesNoMenu(a0: *mut WindowTemplate, a1: u16, a2: u8, a3: u8);
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndLoadBgGfxUsingHeap(a0: u8, a1: *mut c_void, a2: u32, a3: u16, a4: u8);
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DoMonFrontSpriteAnimation(a0: *mut Sprite, a1: u16, a2: u8, a3: u8);
-    fn DoNamingScreen(
-        a0: u8,
-        a1: *mut u8,
-        a2: u16,
-        a3: u16,
-        a4: u32,
-        a5: Option<unsafe extern "C" fn()>,
-    );
-    fn FadeScreen(a0: u8, a1: i8);
-    fn FieldCB_ContinueScriptHandleMusic();
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeMonSpritesGfx();
-    fn GetBoxMonNickname(a0: *mut BoxPokemon, a1: *mut u8) -> *mut u8;
-    fn GetCurrentMapMusic() -> u16;
-    fn GetCurrentRegionMapSectionId() -> u8;
-    fn GetMonAbility(a0: *mut Pokemon) -> u8;
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetMonGender(a0: *mut Pokemon) -> u8;
-    fn GetMonNickname2(a0: *mut Pokemon, a1: *mut u8) -> *mut u8;
-    fn GetMonSpritePalStruct(a0: *mut Pokemon) -> *mut CompressedSpritePalette;
-    fn GetSetPokedexFlag(a0: u16, a1: u8) -> i8;
-    fn GetSpeciesName(a0: *mut u8, a1: u16);
-    fn HandleLoadSpecialPokePic_DontHandleDeoxys(
-        a0: *mut CompressedSpriteSheet,
-        a1: *mut c_void,
-        a2: i32,
-        a3: u32,
-    );
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsFanfareTaskInactive() -> u8;
-    fn IsTextPrinterActive(a0: u8) -> u16;
-    fn LoadBgTiles(a0: u8, a1: *mut c_void, a2: u16, a3: u16) -> u16;
-    fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadCompressedSpritePalette(a0: *mut CompressedSpritePalette);
-    fn LoadOam();
-    fn LoadPalette(a0: *mut c_void, a1: u16, a2: u16);
-    fn LoadSpritePalette(a0: *mut SpritePalette) -> u8;
-    fn LoadSpriteSheet(a0: *mut SpriteSheet) -> u16;
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn LockPlayerFieldControls();
-    fn Menu_ProcessInputNoWrapClearOnChoose() -> i8;
-    fn MonRestorePP(a0: *mut Pokemon);
-    fn PlayBGM(a0: u16);
-    fn PlayFanfare(a0: u16);
-    fn PlayRainStoppingSoundEffect();
-    fn PlaySE(a0: u16);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn Random() -> u16;
-    fn RemoveWindow(a0: u8);
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn ResetTempTileDataBuffers();
-    fn RunTasks();
-    fn RunTextPrinters();
-    fn ScanlineEffect_Stop();
-    fn SetBgAttribute(a0: u8, a1: u8, a2: u8);
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
-    fn SetMultiuseSpriteTemplateToPokemon(a0: u16, a1: u8);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn ShowBg(a0: u8);
-    fn Sin(a0: i16, a1: i16) -> i16;
-    fn SpeciesToNationalPokedexNum(a0: u16) -> u16;
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StopMapMusic();
-    fn StringCompareWithoutExtCtrlCodes(a0: *mut u8, a1: *mut u8) -> i32;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TVShowConvertInternationalString(a0: *mut u8, a1: *mut u8, a2: i32);
-    fn TransferPlttBuffer();
-    fn UnsetBgTilemapBuffer(a0: u8);
-    fn UpdatePaletteFade() -> u8;
-    fn m4aSoundVSyncOn();
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn CreateHatchedMon(egg: *mut Pokemon, temp: *mut Pokemon) {
-    let mut species: u16 = 0;
-    let mut personality: u32 = 0;
-    let mut pokerus: u32 = 0;
-    let mut i: u8 = 0;
-    let mut friendship: u8 = 0;
-    let mut language: u8 = 0;
-    let mut gameMet: u8 = 0;
-    let mut markings: u8 = 0;
-    let mut isModernFatefulEncounter: u8 = 0;
+unsafe fn CreateHatchedMon(egg: *mut Pokemon, temp: *mut Pokemon) {
     let mut moves: CArray<u16, 4> = zeroed();
     let mut ivs: CArray<u32, 6> = zeroed();
-    species = GetMonData2(egg, MON_DATA_SPECIES) as u16;
-    i = 0;
-    while i < MAX_MON_MOVES as u8 {
+    let species: u16 = GetMonData2(egg, MON_DATA_SPECIES) as u16;
+    for i in 0..(MAX_MON_MOVES as u8) {
         moves[i] = GetMonData2(egg, MON_DATA_MOVE1 + i as i32) as u16;
-        i += 1;
     }
-    personality = GetMonData2(egg, MON_DATA_PERSONALITY);
-    i = 0;
-    while i < NUM_STATS as u8 {
+    let personality: u32 = GetMonData2(egg, MON_DATA_PERSONALITY);
+    for i in 0..(NUM_STATS as u8) {
         ivs[i] = GetMonData2(egg, MON_DATA_HP_IV + i as i32);
-        i += 1;
     }
-    language = GetMonData2(egg, MON_DATA_LANGUAGE) as u8;
-    gameMet = GetMonData2(egg, MON_DATA_MET_GAME) as u8;
-    markings = GetMonData2(egg, MON_DATA_MARKINGS) as u8;
-    pokerus = GetMonData2(egg, MON_DATA_POKERUS);
-    isModernFatefulEncounter = GetMonData2(egg, MON_DATA_MODERN_FATEFUL_ENCOUNTER) as u8;
+    let mut language: u8 = GetMonData2(egg, MON_DATA_LANGUAGE) as u8;
+    let mut gameMet: u8 = GetMonData2(egg, MON_DATA_MET_GAME) as u8;
+    let mut markings: u8 = GetMonData2(egg, MON_DATA_MARKINGS) as u8;
+    let mut pokerus: u32 = GetMonData2(egg, MON_DATA_POKERUS);
+    let mut isModernFatefulEncounter: u8 =
+        GetMonData2(egg, MON_DATA_MODERN_FATEFUL_ENCOUNTER) as u8;
     CreateMon(
         temp,
         species,
@@ -293,7 +331,7 @@ pub(crate) unsafe extern "C" fn CreateHatchedMon(egg: *mut Pokemon, temp: *mut P
         0,
         0,
     );
-    i = 0;
+    let mut i: u8 = 0;
     while i < MAX_MON_MOVES as u8 {
         SetMonData(
             temp,
@@ -302,20 +340,18 @@ pub(crate) unsafe extern "C" fn CreateHatchedMon(egg: *mut Pokemon, temp: *mut P
         );
         i += 1;
     }
-    i = 0;
-    while i < NUM_STATS as u8 {
+    for i in 0..(NUM_STATS as u8) {
         SetMonData(
             temp,
             MON_DATA_HP_IV + i as i32,
             &raw mut ivs[i] as *mut c_void,
         );
-        i += 1;
     }
     language = GAME_LANGUAGE;
     SetMonData(temp, MON_DATA_LANGUAGE, &raw mut language as *mut c_void);
     SetMonData(temp, MON_DATA_MET_GAME, &raw mut gameMet as *mut c_void);
     SetMonData(temp, MON_DATA_MARKINGS, &raw mut markings as *mut c_void);
-    friendship = 120;
+    let mut friendship: u8 = 120;
     SetMonData(
         temp,
         MON_DATA_FRIENDSHIP,
@@ -329,28 +365,24 @@ pub(crate) unsafe extern "C" fn CreateHatchedMon(egg: *mut Pokemon, temp: *mut P
     );
     *egg = *temp;
 }
-pub(crate) unsafe extern "C" fn AddHatchedMonToParty(id: u8) {
+unsafe fn AddHatchedMonToParty(id: u8) {
     let mut isEgg: u8 = 0x46;
-    let mut species: u16 = 0;
     let mut name: CArray<u8, 11> = zeroed();
-    let mut ball: u16 = 0;
-    let mut metLevel: u16 = 0;
-    let mut metLocation: u8 = 0;
-    let mut mon: *mut Pokemon = &raw mut gPlayerParty[id];
+    let mon: *mut Pokemon = &raw mut gPlayerParty[id];
     CreateHatchedMon(mon, &raw mut gEnemyParty[0]);
     SetMonData(mon, MON_DATA_IS_EGG, &raw mut isEgg as *mut c_void);
-    species = GetMonData2(mon, MON_DATA_SPECIES) as u16;
+    let mut species: u16 = GetMonData2(mon, MON_DATA_SPECIES) as u16;
     GetSpeciesName(name.as_mut_ptr(), species);
     SetMonData(mon, MON_DATA_NICKNAME, name.as_mut_ptr() as *mut c_void);
     species = SpeciesToNationalPokedexNum(species);
     GetSetPokedexFlag(species, FLAG_SET_SEEN);
     GetSetPokedexFlag(species, FLAG_SET_CAUGHT);
     GetMonNickname2(mon, gStringVar1.as_mut_ptr());
-    ball = ITEM_POKE_BALL;
+    let mut ball: u16 = ITEM_POKE_BALL;
     SetMonData(mon, MON_DATA_POKEBALL, &raw mut ball as *mut c_void);
-    metLevel = 0;
+    let mut metLevel: u16 = 0;
     SetMonData(mon, MON_DATA_MET_LEVEL, &raw mut metLevel as *mut c_void);
-    metLocation = GetCurrentRegionMapSectionId();
+    let mut metLocation: u8 = GetCurrentRegionMapSectionId();
     SetMonData(
         mon,
         MON_DATA_MET_LOCATION,
@@ -360,15 +392,12 @@ pub(crate) unsafe extern "C" fn AddHatchedMonToParty(id: u8) {
     CalculateMonStats(mon);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScriptHatchMon() {
+pub unsafe fn ScriptHatchMon() {
     AddHatchedMonToParty(gSpecialVar_0x8004 as u8);
 }
-pub(crate) unsafe extern "C" fn _CheckDaycareMonReceivedMail(
-    daycare: *mut DayCare,
-    daycareId: u8,
-) -> u8 {
+unsafe fn _CheckDaycareMonReceivedMail(daycare: *mut DayCare, daycareId: u8) -> u8 {
     let mut nickname: CArray<u8, 32> = zeroed();
-    let mut daycareMon: *mut DaycareMon = &raw mut (*daycare).mons[daycareId];
+    let daycareMon: *mut DaycareMon = &raw mut (*daycare).mons[daycareId];
     GetBoxMonNickname(&raw mut (*daycareMon).mon, nickname.as_mut_ptr());
     if (*daycareMon).mail.message.itemId != ITEM_NONE
         && (StringCompareWithoutExtCtrlCodes(
@@ -393,21 +422,13 @@ pub(crate) unsafe extern "C" fn _CheckDaycareMonReceivedMail(
         );
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckDaycareMonReceivedMail() -> u8 {
-    return _CheckDaycareMonReceivedMail(
-        &raw mut (*gSaveBlock1Ptr).daycare,
-        gSpecialVar_0x8004 as u8,
-    );
+pub unsafe fn CheckDaycareMonReceivedMail() -> u8 {
+    _CheckDaycareMonReceivedMail(&raw mut (*gSaveBlock1Ptr).daycare, gSpecialVar_0x8004 as u8)
 }
-pub(crate) unsafe extern "C" fn EggHatchCreateMonSprite(
-    useAlt: u8,
-    state: u8,
-    partyId: u8,
-    speciesLoc: *mut u16,
-) -> u8 {
+unsafe fn EggHatchCreateMonSprite(useAlt: u8, state: u8, partyId: u8, speciesLoc: *mut u16) -> u8 {
     let mut position: u8 = 0;
     let mut spriteId: u8 = 0;
     let mut mon: *mut Pokemon = null_mut();
@@ -421,10 +442,12 @@ pub(crate) unsafe extern "C" fn EggHatchCreateMonSprite(
     }
     match state {
         0 => {
-            let mut species: u16 = GetMonData2(mon, MON_DATA_SPECIES) as u16;
-            let mut pid: u32 = GetMonData2(mon, MON_DATA_PERSONALITY);
+            let species: u16 = GetMonData2(mon, MON_DATA_SPECIES) as u16;
+            let pid: u32 = GetMonData2(mon, MON_DATA_PERSONALITY);
             HandleLoadSpecialPokePic_DontHandleDeoxys(
-                (&raw const gMonFrontPicTable[species]).cast_mut(),
+                (&raw const (*(&raw const crate::data::data_tables::gMonFrontPicTable)
+                    .cast::<CArray<CompressedSpriteSheet, 0>>())[species])
+                    .cast_mut(),
                 (*gMonSpritesGfxPtr).sprites.ptr
                     [useAlt as i32 * 2 + B_POSITION_OPPONENT_LEFT as i32],
                 species as i32,
@@ -441,20 +464,20 @@ pub(crate) unsafe extern "C" fn EggHatchCreateMonSprite(
         }
         _ => {}
     }
-    return spriteId;
+    spriteId
 }
-pub(crate) unsafe extern "C" fn VBlankCB_EggHatch() {
+pub(crate) unsafe fn VBlankCB_EggHatch() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn EggHatch() {
+pub unsafe fn EggHatch() {
     LockPlayerFieldControls();
     CreateTask(Some(Task_EggHatch), 10);
     FadeScreen(FADE_TO_BLACK, 0);
 }
-pub(crate) unsafe extern "C" fn Task_EggHatch(taskId: u8) {
+pub(crate) unsafe fn Task_EggHatch(taskId: u8) {
     if gPaletteFade.active() == 0 {
         CleanupOverworldWindowsAndTilemaps();
         SetMainCallback2(Some(CB2_LoadEggHatch));
@@ -462,7 +485,7 @@ pub(crate) unsafe extern "C" fn Task_EggHatch(taskId: u8) {
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn CB2_LoadEggHatch() {
+pub(crate) unsafe fn CB2_LoadEggHatch() {
     match gMain.state {
         0 => {
             SetGpuReg(0x0, 0);
@@ -499,18 +522,30 @@ pub(crate) unsafe extern "C" fn CB2_LoadEggHatch() {
         2 => {
             DecompressAndLoadBgGfxUsingHeap(
                 0,
-                gBattleTextboxTiles.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gBattleTextboxTiles).cast::<CArray<u32, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0,
                 0,
                 0,
             );
             CopyToBgTilemapBuffer(
                 0,
-                gBattleTextboxTilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gBattleTextboxTilemap)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut() as *mut c_void,
                 0,
                 0,
             );
-            LoadCompressedPalette(gBattleTextboxPalette.as_ptr().cast_mut(), 0, 32);
+            LoadCompressedPalette(
+                (*(&raw const crate::data::graphics::gBattleTextboxPalette)
+                    .cast::<CArray<u32, 0>>())
+                .as_ptr()
+                .cast_mut(),
+                0,
+                32,
+            );
             gMain.state += 1;
         }
         3 => {
@@ -544,16 +579,26 @@ pub(crate) unsafe extern "C" fn CB2_LoadEggHatch() {
         }
         7 => {
             SetGpuReg(REG_OFFSET_DISPCNT, 4160);
-            LoadPalette(gTradeGba2_Pal.as_ptr().cast_mut() as *mut c_void, 16, 160);
+            LoadPalette(
+                (*(&raw const crate::data::graphics::gTradeGba2_Pal).cast::<CArray<u16, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
+                16,
+                160,
+            );
             LoadBgTiles(
                 1,
-                gTradeGba_Gfx.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::graphics::gTradeGba_Gfx).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0x1420,
                 0,
             );
             CopyToBgTilemapBuffer(
                 1,
-                gTradePlatform_Tilemap.as_ptr().cast_mut() as *mut c_void,
+                (*(&raw const crate::data::trade::gTradePlatform_Tilemap).cast::<CArray<u16, 0>>())
+                    .as_ptr()
+                    .cast_mut() as *mut c_void,
                 0x1000,
                 0,
             );
@@ -572,9 +617,11 @@ pub(crate) unsafe extern "C" fn CB2_LoadEggHatch() {
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn EggHatchSetMonNickname() {
+pub(crate) unsafe fn EggHatchSetMonNickname() {
     SetMonData(
-        &raw mut gPlayerParty[gSpecialVar_0x8004],
+        &raw mut gPlayerParty[*(&raw const crate::ffi::gSpecialVar_0x8004)
+            .cast::<u16>()
+            .cast_mut()],
         MON_DATA_NICKNAME,
         gStringVar3.as_mut_ptr() as *mut c_void,
     );
@@ -582,21 +629,21 @@ pub(crate) unsafe extern "C" fn EggHatchSetMonNickname() {
     Free(sEggHatchData as *mut c_void);
     SetMainCallback2(Some(CB2_ReturnToField));
 }
-pub(crate) unsafe extern "C" fn Task_EggHatchPlayBGM(taskId: u8) {
-    if gTasks[taskId].data[0] == 0 {
+pub(crate) unsafe fn Task_EggHatchPlayBGM(taskId: u8) {
+    if task_get(taskId, tTimer) == 0 {
         StopMapMusic();
         PlayRainStoppingSoundEffect();
     }
-    if gTasks[taskId].data[0] == 1 {
+    if task_get(taskId, tTimer) == 1 {
         PlayBGM(MUS_EVOLUTION_INTRO);
     }
-    if gTasks[taskId].data[0] > 60 {
+    if task_get(taskId, tTimer) > 60 {
         PlayBGM(MUS_EVOLUTION);
         DestroyTask(taskId);
     }
-    gTasks[taskId].data[0] += 1;
+    task_set(taskId, tTimer, task_get(taskId, tTimer) + 1);
 }
-pub(crate) unsafe extern "C" fn CB2_EggHatch() {
+pub(crate) unsafe fn CB2_EggHatch() {
     let mut species: u16 = 0;
     let mut gender: u8 = 0;
     let mut personality: u32 = 0;
@@ -633,7 +680,7 @@ pub(crate) unsafe extern "C" fn CB2_EggHatch() {
         }
         3 => {
             if gSprites[(*sEggHatchData).eggSpriteId].callback
-                == Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
+                == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
             {
                 species = GetMonData2(
                     &raw mut gPlayerParty[(*sEggHatchData).eggPartyId],
@@ -650,7 +697,7 @@ pub(crate) unsafe extern "C" fn CB2_EggHatch() {
         }
         4 => {
             if gSprites[(*sEggHatchData).monSpriteId].callback
-                == Some(SpriteCallbackDummy as unsafe extern "C" fn(*mut Sprite))
+                == Some(SpriteCallbackDummy as unsafe fn(*mut Sprite))
             {
                 (*sEggHatchData).state += 1;
             }
@@ -662,7 +709,9 @@ pub(crate) unsafe extern "C" fn CB2_EggHatch() {
             );
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
-                gText_HatchedFromEgg.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_HatchedFromEgg).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
             );
             EggHatchPrintMessage(
                 (*sEggHatchData).windowId,
@@ -693,7 +742,10 @@ pub(crate) unsafe extern "C" fn CB2_EggHatch() {
             );
             StringExpandPlaceholders(
                 gStringVar4.as_mut_ptr(),
-                gText_NicknameHatchPrompt.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_NicknameHatchPrompt)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             );
             EggHatchPrintMessage((*sEggHatchData).windowId, gStringVar4.as_mut_ptr(), 0, 2, 1);
             (*sEggHatchData).state += 1;
@@ -739,15 +791,13 @@ pub(crate) unsafe extern "C" fn CB2_EggHatch() {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
             (*sEggHatchData).state += 1;
         }
-        12 => {
-            if gPaletteFade.active() == 0 {
-                FreeMonSpritesGfx();
-                RemoveWindow((*sEggHatchData).windowId);
-                UnsetBgTilemapBuffer(0);
-                UnsetBgTilemapBuffer(1);
-                Free(sEggHatchData as *mut c_void);
-                SetMainCallback2(Some(CB2_ReturnToField));
-            }
+        12 if gPaletteFade.active() == 0 => {
+            FreeMonSpritesGfx();
+            RemoveWindow((*sEggHatchData).windowId);
+            UnsetBgTilemapBuffer(0);
+            UnsetBgTilemapBuffer(1);
+            Free(sEggHatchData as *mut c_void);
+            SetMainCallback2(Some(CB2_ReturnToField));
         }
         _ => {}
     }
@@ -757,148 +807,145 @@ pub(crate) unsafe extern "C" fn CB2_EggHatch() {
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Egg_Shake1(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_Egg_Shake1(sprite: *mut Sprite) {
     if ({
-        (*sprite).data[0] += 1;
-        (*sprite).data[0]
+        (*sprite).data[sTimer] += 1;
+        (*sprite).data[sTimer]
     }) > 20
     {
         (*sprite).callback = Some(SpriteCB_Egg_Shake2);
-        (*sprite).data[0] = 0;
+        (*sprite).data[sTimer] = 0;
     } else {
-        (*sprite).data[1] = (*sprite).data[1] + 20 & 0xFF;
-        (*sprite).x2 = Sin((*sprite).data[1], 1);
-        if (*sprite).data[0] == 15 {
+        (*sprite).data[sSinIdx] = ((*sprite).data[sSinIdx] + 20) & 0xFF;
+        (*sprite).x2 = Sin((*sprite).data[sSinIdx], 1);
+        if (*sprite).data[sTimer] == 15 {
             PlaySE(SE_BALL);
             StartSpriteAnim(sprite, EGG_ANIM_CRACKED_1);
             CreateRandomEggShardSprite();
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Egg_Shake2(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_Egg_Shake2(sprite: *mut Sprite) {
     if ({
-        (*sprite).data[2] += 1;
-        (*sprite).data[2]
+        (*sprite).data[sDelayTimer] += 1;
+        (*sprite).data[sDelayTimer]
     }) > 30
     {
         if ({
-            (*sprite).data[0] += 1;
-            (*sprite).data[0]
+            (*sprite).data[sTimer] += 1;
+            (*sprite).data[sTimer]
         }) > 20
         {
             (*sprite).callback = Some(SpriteCB_Egg_Shake3);
-            (*sprite).data[0] = 0;
-            (*sprite).data[2] = 0;
+            (*sprite).data[sTimer] = 0;
+            (*sprite).data[sDelayTimer] = 0;
         } else {
-            (*sprite).data[1] = (*sprite).data[1] + 20 & 0xFF;
-            (*sprite).x2 = Sin((*sprite).data[1], 2);
-            if (*sprite).data[0] == 15 {
+            (*sprite).data[sSinIdx] = ((*sprite).data[sSinIdx] + 20) & 0xFF;
+            (*sprite).x2 = Sin((*sprite).data[sSinIdx], 2);
+            if (*sprite).data[sTimer] == 15 {
                 PlaySE(SE_BALL);
                 StartSpriteAnim(sprite, EGG_ANIM_CRACKED_2);
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Egg_Shake3(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_Egg_Shake3(sprite: *mut Sprite) {
     if ({
-        (*sprite).data[2] += 1;
-        (*sprite).data[2]
+        (*sprite).data[sDelayTimer] += 1;
+        (*sprite).data[sDelayTimer]
     }) > 30
     {
         if ({
-            (*sprite).data[0] += 1;
-            (*sprite).data[0]
+            (*sprite).data[sTimer] += 1;
+            (*sprite).data[sTimer]
         }) > 38
         {
-            let mut species: u16 = 0;
             (*sprite).callback = Some(SpriteCB_Egg_WaitHatch);
-            (*sprite).data[0] = 0;
-            species = GetMonData2(
+            (*sprite).data[sTimer] = 0;
+            let species: u16 = GetMonData2(
                 &raw mut gPlayerParty[(*sEggHatchData).eggPartyId],
                 MON_DATA_SPECIES,
             ) as u16;
             gSprites[(*sEggHatchData).monSpriteId].x2 = 0;
             gSprites[(*sEggHatchData).monSpriteId].y2 = 0;
         } else {
-            (*sprite).data[1] = (*sprite).data[1] + 20 & 0xFF;
-            (*sprite).x2 = Sin((*sprite).data[1], 2);
-            if (*sprite).data[0] == 15 {
+            (*sprite).data[sSinIdx] = ((*sprite).data[sSinIdx] + 20) & 0xFF;
+            (*sprite).x2 = Sin((*sprite).data[sSinIdx], 2);
+            if (*sprite).data[sTimer] == 15 {
                 PlaySE(SE_BALL);
                 StartSpriteAnim(sprite, EGG_ANIM_CRACKED_2);
                 CreateRandomEggShardSprite();
                 CreateRandomEggShardSprite();
             }
-            if (*sprite).data[0] == 30 {
+            if (*sprite).data[sTimer] == 30 {
                 PlaySE(SE_BALL);
             }
         }
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Egg_WaitHatch(sprite: *mut Sprite) {
+pub(crate) unsafe fn SpriteCB_Egg_WaitHatch(sprite: *mut Sprite) {
     if ({
-        (*sprite).data[0] += 1;
-        (*sprite).data[0]
+        (*sprite).data[sTimer] += 1;
+        (*sprite).data[sTimer]
     }) > 50
     {
         (*sprite).callback = Some(SpriteCB_Egg_Hatch);
-        (*sprite).data[0] = 0;
+        (*sprite).data[sTimer] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Egg_Hatch(sprite: *mut Sprite) {
-    let mut i: i16 = 0;
-    if (*sprite).data[0] == 0 {
+pub(crate) unsafe fn SpriteCB_Egg_Hatch(sprite: *mut Sprite) {
+    if (*sprite).data[sTimer] == 0 {
         BeginNormalPaletteFade(PALETTES_ALL, -1, 0, 16, 65535);
     }
-    if ((*sprite).data[0] as u32) < 4 {
-        i = 0;
-        while i < 4 {
+    if ((*sprite).data[sTimer] as u32) < 4 {
+        for i in 0..4i16 {
             CreateRandomEggShardSprite();
-            i += 1;
         }
     }
-    (*sprite).data[0] += 1;
+    (*sprite).data[sTimer] += 1;
     if gPaletteFade.active() == 0 {
         PlaySE(SE_EGG_HATCH);
         (*sprite).set_invisible(TRUE as u16);
         (*sprite).callback = Some(SpriteCB_Egg_Reveal);
-        (*sprite).data[0] = 0;
+        (*sprite).data[sTimer] = 0;
     }
 }
-pub(crate) unsafe extern "C" fn SpriteCB_Egg_Reveal(sprite: *mut Sprite) {
-    if (*sprite).data[0] == 0 {
+pub(crate) unsafe fn SpriteCB_Egg_Reveal(sprite: *mut Sprite) {
+    if (*sprite).data[sTimer] == 0 {
         gSprites[(*sEggHatchData).monSpriteId].set_invisible(FALSE as u16);
         StartSpriteAffineAnim(
             &raw mut gSprites[(*sEggHatchData).monSpriteId],
             BATTLER_AFFINE_EMERGE,
         );
     }
-    if (*sprite).data[0] == 8 {
+    if (*sprite).data[sTimer] == 8 {
         BeginNormalPaletteFade(PALETTES_ALL, -1, 16, 0, 65535);
     }
-    if (*sprite).data[0] <= 9 {
+    if (*sprite).data[sTimer] <= 9 {
         gSprites[(*sEggHatchData).monSpriteId].y -= 1;
     }
-    if (*sprite).data[0] > 40 {
+    if (*sprite).data[sTimer] > 40 {
         (*sprite).callback = Some(SpriteCallbackDummy);
     }
-    (*sprite).data[0] += 1;
+    (*sprite).data[sTimer] += 1;
 }
-pub(crate) unsafe extern "C" fn SpriteCB_EggShard(sprite: *mut Sprite) {
-    (*sprite).data[4] += (*sprite).data[1];
-    (*sprite).data[5] += (*sprite).data[2];
-    (*sprite).x2 = (*sprite).data[4] / 256;
-    (*sprite).y2 = (*sprite).data[5] / 256;
-    (*sprite).data[2] += (*sprite).data[3];
-    if (*sprite).y as i32 + (*sprite).y2 as i32 > (*sprite).y as i32 + 20 && (*sprite).data[2] > 0 {
+pub(crate) unsafe fn SpriteCB_EggShard(sprite: *mut Sprite) {
+    (*sprite).data[sDeltaX] += (*sprite).data[sVelocX];
+    (*sprite).data[sDeltaY] += (*sprite).data[sVelocY];
+    (*sprite).x2 = (*sprite).data[sDeltaX] / 256;
+    (*sprite).y2 = (*sprite).data[sDeltaY] / 256;
+    (*sprite).data[sVelocY] += (*sprite).data[sAccelY];
+    if (*sprite).y as i32 + (*sprite).y2 as i32 > (*sprite).y as i32 + 20
+        && (*sprite).data[sVelocY] > 0
+    {
         DestroySprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn CreateRandomEggShardSprite() {
-    let mut spriteAnimIndex: u16 = 0;
-    let mut velocityX: i16 = sEggShardVelocities[(*sEggHatchData).eggShardVelocityId][0];
-    let mut velocityY: i16 = sEggShardVelocities[(*sEggHatchData).eggShardVelocityId][1];
+unsafe fn CreateRandomEggShardSprite() {
+    let velocityX: i16 = sEggShardVelocities[(*sEggHatchData).eggShardVelocityId][0];
+    let velocityY: i16 = sEggShardVelocities[(*sEggHatchData).eggShardVelocityId][1];
     (*sEggHatchData).eggShardVelocityId += 1;
-    spriteAnimIndex = Random() % 4;
+    let spriteAnimIndex: u16 = Random() % 4;
     CreateEggShardSprite(
         EGG_X as u8,
         60,
@@ -908,7 +955,7 @@ pub(crate) unsafe extern "C" fn CreateRandomEggShardSprite() {
         spriteAnimIndex as u8,
     );
 }
-pub(crate) unsafe extern "C" fn CreateEggShardSprite(
+unsafe fn CreateEggShardSprite(
     x: u8,
     y: u8,
     velocityX: i16,
@@ -916,24 +963,18 @@ pub(crate) unsafe extern "C" fn CreateEggShardSprite(
     acceleration: i16,
     spriteAnimIndex: u8,
 ) {
-    let mut spriteId: u8 = CreateSprite(
+    let spriteId: u8 = CreateSprite(
         (&raw const *sSpriteTemplate_EggShard).cast_mut(),
         x as i16,
         y as i16,
         4,
     );
-    gSprites[spriteId].data[1] = velocityX;
-    gSprites[spriteId].data[2] = velocityY;
-    gSprites[spriteId].data[3] = acceleration;
+    gSprites[spriteId].data[sVelocX] = velocityX;
+    gSprites[spriteId].data[sVelocY] = velocityY;
+    gSprites[spriteId].data[sAccelY] = acceleration;
     StartSpriteAnim(&raw mut gSprites[spriteId], spriteAnimIndex);
 }
-pub(crate) unsafe extern "C" fn EggHatchPrintMessage(
-    windowId: u8,
-    string: *mut u8,
-    x: u8,
-    y: u8,
-    speed: u8,
-) {
+unsafe fn EggHatchPrintMessage(windowId: u8, string: *mut u8, x: u8, y: u8, speed: u8) {
     FillWindowPixelBuffer(windowId, 255);
     (*sEggHatchData).textColor[0] = 0;
     (*sEggHatchData).textColor[1] = 5;
@@ -950,26 +991,21 @@ pub(crate) unsafe extern "C" fn EggHatchPrintMessage(
         string,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetEggCyclesToSubtract() -> u8 {
-    let mut count: u8 = 0;
-    let mut i: u8 = 0;
-    count = CalculatePlayerPartyCount();
-    i = 0;
-    while i < count {
+pub unsafe fn GetEggCyclesToSubtract() -> u8 {
+    let count: u8 = CalculatePlayerPartyCount();
+    for i in 0..count {
         if GetMonData2(&raw mut gPlayerParty[i], MON_DATA_SANITY_IS_EGG) == 0 {
-            let mut ability: u8 = GetMonAbility(&raw mut gPlayerParty[i]);
+            let ability: u8 = GetMonAbility(&raw mut gPlayerParty[i]);
             if ability == ABILITY_MAGMA_ARMOR || ability == ABILITY_FLAME_BODY {
                 return 2;
             }
         }
-        i += 1;
     }
-    return 1;
+    1
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CountPartyAliveNonEggMons() -> u16 {
+pub unsafe fn CountPartyAliveNonEggMons() -> u16 {
     let mut aliveNonEggMonsCount: u16 = CountStorageNonEggMons() as u16;
     aliveNonEggMonsCount += CountPartyAliveNonEggMonsExcept(PARTY_SIZE as u8) as u16;
-    return aliveNonEggMonsCount;
+    aliveNonEggMonsCount
 }

@@ -3,25 +3,20 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    unused_assignments
 )]
 
+use crate::agb_flash::{
+    EraseFlashChip, EraseFlashSector, PollFlashStatus, ProgramFlashByte, ProgramFlashSector,
+    ReadFlashId, StartFlashTimer, StopFlashTimer, WaitForFlashWrite, gFlash, gFlashMaxTime,
+    gFlashTimeoutFlag,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
@@ -39,33 +34,15 @@ use core::ptr::null_mut;
 static sSetupInfos: Table<CArray<*mut FlashSetupInfo, 3>> =
     Table((&raw const crate::data::agb_flash_1m::sSetupInfos).cast());
 
-unsafe extern "C" {
-    static mut EraseFlashChip: Option<unsafe extern "C" fn() -> u16>;
-    static mut EraseFlashSector: Option<unsafe extern "C" fn(u16) -> u16>;
-    static mut PollFlashStatus: Option<unsafe extern "C" fn(*mut u8) -> u8>;
-    static mut ProgramFlashByte: Option<unsafe extern "C" fn(u16, u32, u8) -> u16>;
-    static mut ProgramFlashSector: Option<unsafe extern "C" fn(u16, *mut u8) -> u16>;
-    static mut WaitForFlashWrite: Option<unsafe extern "C" fn(u8, *mut u8, u8) -> u16>;
-    static mut gFlash: *mut FlashType;
-    static mut gFlashMaxTime: *mut u16;
-    static mut gFlashTimeoutFlag: u8;
-    fn ReadFlashId() -> u16;
-    fn StartFlashTimer(a0: u8);
-    fn StopFlashTimer();
-}
-
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IdentifyFlash() -> u16 {
-    let mut result: u16 = 0;
-    let mut flashId: u16 = 0;
-    let mut setupInfo: *mut *mut FlashSetupInfo = null_mut();
+pub unsafe fn IdentifyFlash() -> u16 {
     volatile_write(
-        67109380 as usize as *mut u16,
-        (67109380 as usize as *mut u16).read_volatile() & 65532 | 3,
+        67109380_usize as *mut u16,
+        (67109380_usize as *mut u16).read_volatile() & 65532 | 3,
     );
-    flashId = ReadFlashId();
-    setupInfo = sSetupInfos.as_ptr().cast_mut();
-    result = 1;
+    let flashId: u16 = ReadFlashId();
+    let mut setupInfo: *mut *mut FlashSetupInfo = sSetupInfos.as_ptr().cast_mut();
+    let mut result: u16 = 1;
     loop {
         if (*(*setupInfo)).r#type.ids.separate.makerId == 0 {
             break;
@@ -83,10 +60,9 @@ pub unsafe extern "C" fn IdentifyFlash() -> u16 {
     WaitForFlashWrite = (*(*setupInfo)).WaitForFlashWrite;
     gFlashMaxTime = (*(*setupInfo)).maxTime;
     gFlash = &raw mut (*(*setupInfo)).r#type;
-    return result;
+    result
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WaitForFlashWrite_Common(phase: u8, addr: *mut u8, lastData: u8) -> u16 {
+pub unsafe fn WaitForFlashWrite_Common(phase: u8, addr: *mut u8, lastData: u8) -> u16 {
     let mut result: u16 = 0;
     let mut status: u8 = 0;
     StartFlashTimer(phase);
@@ -99,7 +75,7 @@ pub unsafe extern "C" fn WaitForFlashWrite_Common(phase: u8, addr: *mut u8, last
             if PollFlashStatus.unwrap_unchecked()(addr) == lastData {
                 break;
             }
-            volatile_write((0xE000000 as usize as *mut u8).at(21845), 0xF0);
+            volatile_write((0xE000000_usize as *mut u8).at(21845), 0xF0);
             result = phase as u16 | 0xA000;
             break;
         }
@@ -107,11 +83,11 @@ pub unsafe extern "C" fn WaitForFlashWrite_Common(phase: u8, addr: *mut u8, last
             if PollFlashStatus.unwrap_unchecked()(addr) == lastData {
                 break;
             }
-            volatile_write((0xE000000 as usize as *mut u8).at(21845), 0xF0);
+            volatile_write((0xE000000_usize as *mut u8).at(21845), 0xF0);
             result = phase as u16 | 0xC000;
             break;
         }
     }
     StopFlashTimer();
-    return result;
+    result
 }

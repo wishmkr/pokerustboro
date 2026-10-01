@@ -1,937 +1,1118 @@
-//! Translated from `src/item.c` by tools/rustport/c2rs.py.
-#![allow(
-    non_snake_case,
-    non_upper_case_globals,
-    non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
-    static_mut_refs,
-    unsafe_op_in_unsafe_fn,
-    clippy::all,
-    clashing_extern_declarations,
-    unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
-)]
+//! The bag, the PC's item storage and the item table (was src/item.c).
+//!
+//! The bag has five pockets ([`ITEMS_POCKET`] .. [`KEYITEMS_POCKET`]), each
+//! a list of [`ItemSlot`]s in the save whose quantities are XORed with the
+//! save's encryption key. `gBagPockets` points each pocket at its slots.
+//! Inside the Battle Pyramid the player uses a separate bag, the pyramid
+//! bag, and the bag functions switch to it there.
+//!
+//! The safe API is the [`Pocket`] type and the functions below it
+//! ([`bag_has_item`], [`add_bag_item`], [`item_info`]...). They keep C's
+//! exact results, including its quirks (16-bit counts that wrap, the
+//! "should be return TRUE" breaks), so the game behaves as before. The C
+//! names at the end are thin bridges for code that still calls them.
 
-#[allow(unused_imports)]
-use crate::c::*;
-#[allow(unused_imports)]
-use crate::consts::*;
-#[allow(unused_imports)]
-use crate::types::*;
-#[allow(unused_imports)]
-use core::ffi::c_void;
-#[allow(unused_imports)]
-use core::mem::zeroed;
-#[allow(unused_imports)]
-use core::ptr::null_mut;
-// Data tables (translate with cdata.py): sDummyDesc sMasterBallDesc sUltraBallDesc sGreatBallDesc sPokeBallDesc sSafariBallDesc sNetBallDesc sDiveBallDesc sNestBallDesc sRepeatBallDesc sTimerBallDesc sLuxuryBallDesc sPremierBallDesc sPotionDesc sAntidoteDesc sBurnHealDesc sIceHealDesc sAwakeningDesc sParalyzeHealDesc sFullRestoreDesc sMaxPotionDesc sHyperPotionDesc sSuperPotionDesc sFullHealDesc sReviveDesc sMaxReviveDesc sFreshWaterDesc sSodaPopDesc sLemonadeDesc sMoomooMilkDesc sEnergyPowderDesc sEnergyRootDesc sHealPowderDesc sRevivalHerbDesc sEtherDesc sMaxEtherDesc sElixirDesc sMaxElixirDesc sLavaCookieDesc sBlueFluteDesc sYellowFluteDesc sRedFluteDesc sBlackFluteDesc sWhiteFluteDesc sBerryJuiceDesc sSacredAshDesc sShoalSaltDesc sShoalShellDesc sRedShardDesc sBlueShardDesc sYellowShardDesc sGreenShardDesc sHPUpDesc sProteinDesc sIronDesc sCarbosDesc sCalciumDesc sRareCandyDesc sPPUpDesc sZincDesc sPPMaxDesc sGuardSpecDesc sDireHitDesc sXAttackDesc sXDefendDesc sXSpeedDesc sXAccuracyDesc sXSpecialDesc sPokeDollDesc sFluffyTailDesc sSuperRepelDesc sMaxRepelDesc sEscapeRopeDesc sRepelDesc sSunStoneDesc sMoonStoneDesc sFireStoneDesc sThunderStoneDesc sWaterStoneDesc sLeafStoneDesc sTinyMushroomDesc sBigMushroomDesc sPearlDesc sBigPearlDesc sStardustDesc sStarPieceDesc sNuggetDesc sHeartScaleDesc sOrangeMailDesc sHarborMailDesc sGlitterMailDesc sMechMailDesc sWoodMailDesc sWaveMailDesc sBeadMailDesc sShadowMailDesc sTropicMailDesc sDreamMailDesc sFabMailDesc sRetroMailDesc sCheriBerryDesc sChestoBerryDesc sPechaBerryDesc sRawstBerryDesc sAspearBerryDesc sLeppaBerryDesc sOranBerryDesc sPersimBerryDesc sLumBerryDesc sSitrusBerryDesc sFigyBerryDesc sWikiBerryDesc sMagoBerryDesc sAguavBerryDesc sIapapaBerryDesc sRazzBerryDesc sBlukBerryDesc sNanabBerryDesc sWepearBerryDesc sPinapBerryDesc sPomegBerryDesc sKelpsyBerryDesc sQualotBerryDesc sHondewBerryDesc sGrepaBerryDesc sTamatoBerryDesc sCornnBerryDesc sMagostBerryDesc sRabutaBerryDesc sNomelBerryDesc sSpelonBerryDesc sPamtreBerryDesc sWatmelBerryDesc sDurinBerryDesc sBelueBerryDesc sLiechiBerryDesc sGanlonBerryDesc sSalacBerryDesc sPetayaBerryDesc sApicotBerryDesc sLansatBerryDesc sStarfBerryDesc sEnigmaBerryDesc sBrightPowderDesc sWhiteHerbDesc sMachoBraceDesc sExpShareDesc sQuickClawDesc sSootheBellDesc sMentalHerbDesc sChoiceBandDesc sKingsRockDesc sSilverPowderDesc sAmuletCoinDesc sCleanseTagDesc sSoulDewDesc sDeepSeaToothDesc sDeepSeaScaleDesc sSmokeBallDesc sEverstoneDesc sFocusBandDesc sLuckyEggDesc sScopeLensDesc sMetalCoatDesc sLeftoversDesc sDragonScaleDesc sLightBallDesc sSoftSandDesc sHardStoneDesc sMiracleSeedDesc sBlackGlassesDesc sBlackBeltDesc sMagnetDesc sMysticWaterDesc sSharpBeakDesc sPoisonBarbDesc sNeverMeltIceDesc sSpellTagDesc sTwistedSpoonDesc sCharcoalDesc sDragonFangDesc sSilkScarfDesc sUpGradeDesc sShellBellDesc sSeaIncenseDesc sLaxIncenseDesc sLuckyPunchDesc sMetalPowderDesc sThickClubDesc sStickDesc sRedScarfDesc sBlueScarfDesc sPinkScarfDesc sGreenScarfDesc sYellowScarfDesc sMachBikeDesc sCoinCaseDesc sItemfinderDesc sOldRodDesc sGoodRodDesc sSuperRodDesc sSSTicketDesc sContestPassDesc sWailmerPailDesc sDevonGoodsDesc sSootSackDesc sBasementKeyDesc sAcroBikeDesc sPokeblockCaseDesc sLetterDesc sEonTicketDesc sRedOrbDesc sBlueOrbDesc sScannerDesc sGoGogglesDesc sMeteoriteDesc sRoom1KeyDesc sRoom2KeyDesc sRoom4KeyDesc sRoom6KeyDesc sStorageKeyDesc sRootFossilDesc sClawFossilDesc sDevonScopeDesc sTM01Desc sTM02Desc sTM03Desc sTM04Desc sTM05Desc sTM06Desc sTM07Desc sTM08Desc sTM09Desc sTM10Desc sTM11Desc sTM12Desc sTM13Desc sTM14Desc sTM15Desc sTM16Desc sTM17Desc sTM18Desc sTM19Desc sTM20Desc sTM21Desc sTM22Desc sTM23Desc sTM24Desc sTM25Desc sTM26Desc sTM27Desc sTM28Desc sTM29Desc sTM30Desc sTM31Desc sTM32Desc sTM33Desc sTM34Desc sTM35Desc sTM36Desc sTM37Desc sTM38Desc sTM39Desc sTM40Desc sTM41Desc sTM42Desc sTM43Desc sTM44Desc sTM45Desc sTM46Desc sTM47Desc sTM48Desc sTM49Desc sTM50Desc sHM01Desc sHM02Desc sHM03Desc sHM04Desc sHM05Desc sHM06Desc sHM07Desc sHM08Desc sOaksParcelDesc sPokeFluteDesc sSecretKeyDesc sBikeVoucherDesc sGoldTeethDesc sOldAmberDesc sCardKeyDesc sLiftKeyDesc sHelixFossilDesc sDomeFossilDesc sSilphScopeDesc sBicycleDesc sTownMapDesc sVSSeekerDesc sFameCheckerDesc sTMCaseDesc sBerryPouchDesc sTeachyTVDesc sTriPassDesc sRainbowPassDesc sTeaDesc sMysticTicketDesc sAuroraTicketDesc sPowderJarDesc sRubyDesc sSapphireDesc sMagmaEmblemDesc sOldSeaMapDesc gItems
+// The safe API is ahead of its callers: most still use the C names.
+#![allow(dead_code)]
 
-static gItems: Table<CArray<Item, 377>> = Table((&raw const crate::data::item::gItems).cast());
+use crate::battle_pyramid_bag::gPyramidBagMenuState;
+use crate::c::{CArray, Table};
+use crate::consts::{
+    ITEM_ACRO_BIKE, ITEM_BRIGHT_POWDER, ITEM_CHERI_BERRY, ITEM_ENIGMA_BERRY, ITEM_MACH_BIKE,
+    ITEM_POKE_BALL,
+};
+use crate::event_data::{flag_get, var_get, var_set};
+use crate::ffi::gSpecialVar_Result;
+use crate::save_blocks::{save_block1, save_block2};
+use crate::types::{BagPocket, Berry, Item, ItemSlot};
 
+pub const ITEM_NONE: u16 = 0;
+/// `ITEMS_COUNT`: ids from here on read as `ITEM_NONE`.
+const ITEMS_COUNT: u16 = 377;
+
+/// Pocket indices (a pocket *number*, as `Item::pocket` stores it, is the
+/// index plus one; 0 is "no pocket").
+pub const ITEMS_POCKET: usize = 0;
+pub const BALLS_POCKET: usize = 1;
+pub const TMHM_POCKET: usize = 2;
+pub const BERRIES_POCKET: usize = 3;
+pub const KEYITEMS_POCKET: usize = 4;
+pub const POCKETS_COUNT: usize = 5;
+const POCKET_NONE: u8 = 0;
+
+pub const MAX_BAG_ITEM_CAPACITY: u16 = 99;
+pub const MAX_BERRY_CAPACITY: u16 = 999;
+pub const MAX_PC_ITEM_CAPACITY: u16 = 999;
+const PC_ITEMS_COUNT: usize = 50;
+const PYRAMID_BAG_ITEMS_COUNT: usize = 10;
+
+const FIRST_BERRY_INDEX: u16 = ITEM_CHERI_BERRY;
+const LAST_BERRY_INDEX: u16 = ITEM_ENIGMA_BERRY;
+
+const PYRAMID_LOCATION_NONE: u8 = 0;
+const FLAG_STORING_ITEMS_IN_PYRAMID_BAG: u16 = 0x4004;
+const VAR_SECRET_BASE_LAST_ITEM_USED: u16 = 0x40ed;
+const VAR_SECRET_BASE_LOW_TV_FLAGS: u16 = 0x40ee;
+const SECRET_BASE_USED_BAG: u16 = 0x200;
+const CHAR_SPACE: u8 = 0;
+
+static ITEMS: Table<CArray<Item, { ITEMS_COUNT as usize }>> =
+    Table((&raw const crate::data::item::gItems).cast());
+
+/// The bag's pockets: pointers to their slots in the save, and how many
+/// slots each has. Set by [`set_bag_items_pointers`].
 #[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gBagPockets: CArray<BagPocket, 5> = unsafe { zeroed() };
+pub static mut gBagPockets: CArray<BagPocket, POCKETS_COUNT> = CArray(
+    [BagPocket {
+        itemSlots: core::ptr::null_mut(),
+        capacity: 0,
+    }; POCKETS_COUNT],
+);
 
-unsafe extern "C" {
-    static gBerries: CArray<Berry, 0>;
-    static mut gPyramidBagMenuState: PyramidBagMenuState;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSpecialVar_Result: u16;
-    static gText_Berries: CArray<u8, 0>;
-    static gText_Berry: CArray<u8, 0>;
-    static gText_PokeBalls: CArray<u8, 0>;
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn ApplyNewEncryptionKeyToHword(a0: *mut u16, a1: u32);
-    fn CurMapIsSecretBase() -> u8;
-    fn CurrentBattlePyramidLocation() -> u8;
-    fn FlagGet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn GetItemListPosition(a0: u8) -> u8;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn VarGet(a0: u16) -> u16;
-    fn VarSet(a0: u16, a1: u16) -> u8;
-}
-
-pub(crate) unsafe extern "C" fn GetBagItemQuantity(quantity: *mut u16) -> u16 {
-    return (*gSaveBlock2Ptr).encryptionKey as u16 ^ *quantity;
-}
-pub(crate) unsafe extern "C" fn SetBagItemQuantity(quantity: *mut u16, newValue: u16) {
-    *quantity = newValue ^ (*gSaveBlock2Ptr).encryptionKey as u16;
-}
-pub(crate) unsafe extern "C" fn GetPCItemQuantity(quantity: *mut u16) -> u16 {
-    return *quantity;
-}
-pub(crate) unsafe extern "C" fn SetPCItemQuantity(quantity: *mut u16, newValue: u16) {
-    *quantity = newValue;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ApplyNewEncryptionKeyToBagItems(newKey: u32) {
-    let mut pocket: u32 = 0;
-    let mut item: u32 = 0;
-    pocket = 0;
-    while pocket < POCKETS_COUNT as u32 {
-        item = 0;
-        while item < gBagPockets[pocket].capacity as u32 {
-            ApplyNewEncryptionKeyToHword(
-                &raw mut (*gBagPockets[pocket].itemSlots.at(item)).quantity,
-                newKey,
-            );
-            item += 1;
-        }
-        pocket += 1;
+/// `ApplyNewEncryptionKeyToHword` with this module's view of its types.
+#[inline]
+unsafe fn ApplyNewEncryptionKeyToHword(a0: *mut u16, a1: u32) {
+    unsafe {
+        crate::load_save::ApplyNewEncryptionKeyToHword(a0 as _, a1);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ApplyNewEncryptionKeyToBagItems_(newKey: u32) {
-    ApplyNewEncryptionKeyToBagItems(newKey);
+/// `CurMapIsSecretBase` with this module's view of its types.
+#[inline]
+unsafe fn CurMapIsSecretBase() -> u8 {
+    unsafe { crate::secret_base::CurMapIsSecretBase() }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetBagItemsPointers() {
-    gBagPockets[0].itemSlots = (*gSaveBlock1Ptr).bagPocket_Items.as_mut_ptr();
-    gBagPockets[0].capacity = BAG_ITEMS_COUNT;
-    gBagPockets[4].itemSlots = (*gSaveBlock1Ptr).bagPocket_KeyItems.as_mut_ptr();
-    gBagPockets[4].capacity = BAG_KEYITEMS_COUNT;
-    gBagPockets[1].itemSlots = (*gSaveBlock1Ptr).bagPocket_PokeBalls.as_mut_ptr();
-    gBagPockets[1].capacity = BAG_POKEBALLS_COUNT;
-    gBagPockets[2].itemSlots = (*gSaveBlock1Ptr).bagPocket_TMHM.as_mut_ptr();
-    gBagPockets[2].capacity = BAG_TMHM_COUNT;
-    gBagPockets[3].itemSlots = (*gSaveBlock1Ptr).bagPocket_Berries.as_mut_ptr();
-    gBagPockets[3].capacity = BAG_BERRIES_COUNT;
+/// `CurrentBattlePyramidLocation` with this module's view of its types.
+#[inline]
+unsafe fn CurrentBattlePyramidLocation() -> u8 {
+    unsafe { crate::battle_pyramid::CurrentBattlePyramidLocation() }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyItemName(itemId: u16, dst: *mut u8) {
-    StringCopy(dst, GetItemName(itemId));
+/// `GetItemListPosition` with this module's view of its types.
+#[inline]
+unsafe fn GetItemListPosition(a0: u8) -> u8 {
+    unsafe { crate::item_menu::GetItemListPosition(a0) }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyItemNameHandlePlural(itemId: u16, dst: *mut u8, quantity: u32) {
-    if itemId == ITEM_POKE_BALL {
-        if quantity < 2 {
-            StringCopy(dst, GetItemName(ITEM_POKE_BALL));
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *const u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+
+// --------------------------------------------------------------- item table
+
+/// The item table entry of `item` (`ITEM_NONE`'s for an id past the table).
+pub fn item_info(item: u16) -> &'static Item {
+    let item = if item >= ITEMS_COUNT { ITEM_NONE } else { item };
+    &ITEMS[item]
+}
+
+/// The pocket number of `item` (0 for none).
+pub fn item_pocket(item: u16) -> u8 {
+    item_info(item).pocket
+}
+
+// -------------------------------------------------------------- bag pocket
+
+/// One pocket of the bag.
+pub struct Pocket<'a> {
+    index: usize,
+    slots: &'a mut [ItemSlot],
+    key: u16,
+}
+
+impl<'a> Pocket<'a> {
+    /// Pocket `index` over `slots`, whose quantities are encrypted with `key`
+    /// (only its low 16 bits matter).
+    pub fn new(index: usize, slots: &'a mut [ItemSlot], key: u32) -> Self {
+        Self {
+            index,
+            slots,
+            key: key as u16,
+        }
+    }
+
+    pub fn slots(&self) -> &[ItemSlot] {
+        self.slots
+    }
+
+    /// The quantity in `slot` (0 past the end).
+    pub fn quantity(&self, slot: usize) -> u16 {
+        self.slots.get(slot).map_or(0, |s| s.quantity ^ self.key)
+    }
+
+    /// How many of one item a slot can hold.
+    fn slot_capacity(&self) -> u16 {
+        if self.index == BERRIES_POCKET {
+            MAX_BERRY_CAPACITY
         } else {
-            StringCopy(dst, gText_PokeBalls.as_ptr().cast_mut());
+            MAX_BAG_ITEM_CAPACITY
+        }
+    }
+
+    /// TMs, HMs and berries never take a second slot.
+    fn one_slot_per_item(&self) -> bool {
+        self.index == TMHM_POCKET || self.index == BERRIES_POCKET
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.slots.iter().all(|s| s.itemId == ITEM_NONE)
+    }
+
+    /// Whether the pocket holds `count` of `item`, over all its slots.
+    pub fn has_item(&self, item: u16, mut count: u16) -> bool {
+        for slot in self.slots.iter().filter(|s| s.itemId == item) {
+            let quantity = slot.quantity ^ self.key;
+            if quantity >= count {
+                return true;
+            }
+            count = count.wrapping_sub(quantity);
+            if count == 0 {
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Whether `count` more of `item` fit.
+    pub fn has_space(&self, item: u16, mut count: u16) -> bool {
+        let cap = self.slot_capacity();
+        for slot in self.slots.iter().filter(|s| s.itemId == item) {
+            let owned = slot.quantity ^ self.key;
+            if u32::from(owned) + u32::from(count) <= u32::from(cap) {
+                return true;
+            }
+            if self.one_slot_per_item() {
+                return false;
+            }
+            count = count.wrapping_sub(cap.wrapping_sub(owned));
+            if count == 0 {
+                break; // C breaks here instead of returning
+            }
+        }
+        if count > 0 {
+            for _ in self.slots.iter().filter(|s| s.itemId == ITEM_NONE) {
+                if count > cap {
+                    if self.one_slot_per_item() {
+                        return false;
+                    }
+                    count -= cap;
+                } else {
+                    count = 0;
+                    break;
+                }
+            }
+            if count > 0 {
+                return false; // the pocket is full
+            }
+        }
+        true
+    }
+
+    /// Adds `count` of `item`: first to its slots, then to empty ones. If
+    /// they don't all fit, nothing changes and it returns false.
+    pub fn add(&mut self, item: u16, mut count: u16) -> bool {
+        // work on a copy and keep it only if everything fits
+        const EMPTY: ItemSlot = ItemSlot {
+            itemId: ITEM_NONE,
+            quantity: 0,
+        };
+        let mut buffer = [EMPTY; 64];
+        let Some(copy) = buffer.get_mut(..self.slots.len()) else {
+            return false;
+        };
+        for (dst, src) in copy.iter_mut().zip(self.slots.iter()) {
+            *dst = *src;
+        }
+        let (cap, one_slot, key) = (self.slot_capacity(), self.one_slot_per_item(), self.key);
+
+        let mut done = false;
+        for slot in copy.iter_mut().filter(|s| s.itemId == item) {
+            let owned = slot.quantity ^ key;
+            if u32::from(owned) + u32::from(count) <= u32::from(cap) {
+                slot.quantity = (owned + count) ^ key;
+                done = true;
+                break;
+            }
+            if one_slot {
+                return false;
+            }
+            count = count.wrapping_sub(cap.wrapping_sub(owned));
+            slot.quantity = cap ^ key;
+            if count == 0 {
+                break;
+            }
+        }
+        if !done && count > 0 {
+            for slot in copy.iter_mut().filter(|s| s.itemId == ITEM_NONE) {
+                slot.itemId = item;
+                if count > cap {
+                    if one_slot {
+                        return false;
+                    }
+                    count -= cap;
+                    slot.quantity = cap ^ key;
+                } else {
+                    slot.quantity = count ^ key;
+                    count = 0;
+                    break;
+                }
+            }
+            if count > 0 {
+                return false;
+            }
+        }
+        for (dst, src) in self.slots.iter_mut().zip(copy.iter()) {
+            *dst = *src;
+        }
+        true
+    }
+
+    /// Takes up to `count` of `item` from one slot (emptying it if it runs
+    /// out); returns how many are still to take.
+    fn take_from(slot: &mut ItemSlot, key: u16, item: u16, count: u16) -> u16 {
+        if slot.itemId != item {
+            return count;
+        }
+        let owned = slot.quantity ^ key;
+        let (left, remaining) = if owned >= count {
+            (owned - count, 0)
+        } else {
+            (0, count - owned)
+        };
+        slot.quantity = left ^ key;
+        if left == 0 {
+            slot.itemId = ITEM_NONE;
+        }
+        remaining
+    }
+
+    /// Removes `count` of `item`, starting with slot `first` (where the bag
+    /// menu's cursor is) and then in order. Returns false, changing
+    /// nothing, if the pocket holds fewer.
+    pub fn remove(&mut self, item: u16, mut count: u16, first: usize) -> bool {
+        if self.count(item) < count {
+            return false;
+        }
+        let key = self.key;
+        if let Some(slot) = self.slots.get_mut(first) {
+            if slot.itemId == item {
+                count = Self::take_from(slot, key, item, count);
+                if count == 0 {
+                    return true;
+                }
+            }
+        }
+        for slot in self.slots.iter_mut() {
+            count = Self::take_from(slot, key, item, count);
+            if count == 0 {
+                return true;
+            }
+        }
+        true
+    }
+
+    /// Total quantity of `item` (wraps past 65535, as in C).
+    pub fn count(&self, item: u16) -> u16 {
+        self.slots
+            .iter()
+            .filter(|s| s.itemId == item)
+            .fold(0u16, |sum, s| sum.wrapping_add(s.quantity ^ self.key))
+    }
+
+    /// Empties every slot.
+    pub fn clear(&mut self) {
+        for slot in self.slots.iter_mut() {
+            *slot = ItemSlot {
+                itemId: ITEM_NONE,
+                quantity: self.key,
+            };
+        }
+    }
+
+    /// Moves the slots holding nothing to the end (C's exact swap order).
+    pub fn compact(&mut self) {
+        let key = self.key;
+        swap_pairs(self.slots, |a, _| a.quantity ^ key == 0);
+    }
+
+    /// Sorts by item id, empty slots last (for berries and TMs/HMs).
+    pub fn sort_by_item_id(&mut self) {
+        let key = self.key;
+        swap_pairs(self.slots, |a, b| {
+            a.quantity ^ key == 0 || (b.quantity ^ key != 0 && a.itemId > b.itemId)
+        });
+    }
+}
+
+/// C's sorting loop: for every pair i < j in order, swap them when
+/// `should_swap(slots[i], slots[j])`.
+fn swap_pairs(slots: &mut [ItemSlot], should_swap: impl Fn(&ItemSlot, &ItemSlot) -> bool) {
+    let n = slots.len();
+    for i in 0..n.saturating_sub(1) {
+        for j in i + 1..n {
+            if let Ok([a, b]) = slots.get_disjoint_mut([i, j]) {
+                if should_swap(a, b) {
+                    core::mem::swap(a, b);
+                }
+            }
+        }
+    }
+}
+
+/// Moves the slot at `from` to `to` (as the bag menu's "move item" does:
+/// moving down lands just above `to`).
+pub fn move_item_slot(slots: &mut [ItemSlot], from: usize, to: usize) {
+    let swap_next = |slots: &mut [ItemSlot], i: usize| {
+        if let Ok([a, b]) = slots.get_disjoint_mut([i, i + 1]) {
+            core::mem::swap(a, b);
+        }
+    };
+    if to > from {
+        for i in from..to - 1 {
+            swap_next(slots, i);
         }
     } else {
-        if itemId >= ITEM_CHERI_BERRY && itemId <= ITEM_ENIGMA_BERRY {
+        for i in (to..from).rev() {
+            swap_next(slots, i);
+        }
+    }
+}
+
+// --------------------------------------------------------------------- bag
+
+/// Pocket `index` of the bag.
+///
+/// # Safety
+/// `gBagPockets` must be set up ([`set_bag_items_pointers`]) and the pocket
+/// not in use elsewhere while the result lives.
+unsafe fn bag_pocket<'a>(index: usize) -> Pocket<'a> {
+    unsafe {
+        let pocket = gBagPockets[index];
+        let slots = core::slice::from_raw_parts_mut(pocket.itemSlots, usize::from(pocket.capacity));
+        Pocket::new(index, slots, save_block2().encryptionKey)
+    }
+}
+
+/// Points `gBagPockets` at the pockets in the save.
+pub fn set_bag_items_pointers() {
+    // SAFETY: the save blocks are set up at boot; gBagPockets is only
+    // pointed at them here.
+    unsafe {
+        let save = save_block1();
+        let pockets: [(*mut ItemSlot, usize); POCKETS_COUNT] = [
+            (
+                save.bagPocket_Items.as_mut_ptr(),
+                save.bagPocket_Items.len(),
+            ),
+            (
+                save.bagPocket_PokeBalls.as_mut_ptr(),
+                save.bagPocket_PokeBalls.len(),
+            ),
+            (save.bagPocket_TMHM.as_mut_ptr(), save.bagPocket_TMHM.len()),
+            (
+                save.bagPocket_Berries.as_mut_ptr(),
+                save.bagPocket_Berries.len(),
+            ),
+            (
+                save.bagPocket_KeyItems.as_mut_ptr(),
+                save.bagPocket_KeyItems.len(),
+            ),
+        ];
+        for (i, (slots, capacity)) in pockets.into_iter().enumerate() {
+            gBagPockets[i] = BagPocket {
+                itemSlots: slots,
+                capacity: capacity as u8,
+            };
+        }
+    }
+}
+
+/// Whether the bag in use is the Battle Pyramid's.
+fn in_pyramid_bag() -> bool {
+    // SAFETY: plain C function with no preconditions.
+    let location = unsafe { CurrentBattlePyramidLocation() };
+    location != PYRAMID_LOCATION_NONE || flag_get(FLAG_STORING_ITEMS_IN_PYRAMID_BAG)
+}
+
+/// The pocket index of `item`, if it goes in the bag at all.
+fn pocket_index(item: u16) -> Option<usize> {
+    match item_pocket(item) {
+        POCKET_NONE => None,
+        number => Some(usize::from(number) - 1),
+    }
+}
+
+pub fn bag_has_item(item: u16, count: u16) -> bool {
+    let Some(index) = pocket_index(item) else {
+        return false;
+    };
+    if in_pyramid_bag() {
+        return pyramid_bag_has_item(item, count);
+    }
+    // SAFETY: gBagPockets is set up with the save; the borrow ends here.
+    unsafe { bag_pocket(index) }.has_item(item, count)
+}
+
+pub fn bag_has_space(item: u16, count: u16) -> bool {
+    let Some(index) = pocket_index(item) else {
+        return false;
+    };
+    if in_pyramid_bag() {
+        return pyramid_bag_has_space(item, count);
+    }
+    // SAFETY: as in bag_has_item.
+    unsafe { bag_pocket(index) }.has_space(item, count)
+}
+
+pub fn add_bag_item(item: u16, count: u16) -> bool {
+    let Some(index) = pocket_index(item) else {
+        return false;
+    };
+    if in_pyramid_bag() {
+        return add_pyramid_bag_item(item, count);
+    }
+    // SAFETY: as in bag_has_item.
+    unsafe { bag_pocket(index) }.add(item, count)
+}
+
+pub fn remove_bag_item(item: u16, count: u16) -> bool {
+    let Some(index) = pocket_index(item) else {
+        return false;
+    };
+    if item == ITEM_NONE {
+        return false;
+    }
+    if in_pyramid_bag() {
+        return remove_pyramid_bag_item(item, count);
+    }
+    // SAFETY: as in bag_has_item.
+    let mut pocket = unsafe { bag_pocket(index) };
+    if pocket.count(item) < count {
+        return false;
+    }
+    // SAFETY: plain C functions.
+    if unsafe { CurMapIsSecretBase() } != 0 {
+        var_set(
+            VAR_SECRET_BASE_LOW_TV_FLAGS,
+            var_get(VAR_SECRET_BASE_LOW_TV_FLAGS) | SECRET_BASE_USED_BAG,
+        );
+        var_set(VAR_SECRET_BASE_LAST_ITEM_USED, item);
+    }
+    let first = usize::from(unsafe { GetItemListPosition(index as u8) });
+    pocket.remove(item, count, first)
+}
+
+/// Whether bag pocket `index` is empty (true for an invalid index).
+pub fn bag_pocket_is_empty(index: usize) -> bool {
+    // SAFETY: as in bag_has_item.
+    index >= POCKETS_COUNT || unsafe { bag_pocket(index) }.is_empty()
+}
+
+/// Whether the player has any berry. Also sets `VAR_RESULT`.
+pub fn has_at_least_one_berry() -> bool {
+    let found = (FIRST_BERRY_INDEX..ITEM_BRIGHT_POWDER).any(|item| bag_has_item(item, 1));
+    // SAFETY: a plain global.
+    unsafe { gSpecialVar_Result = found.into() };
+    found
+}
+
+/// Total quantity of `item` in its bag pocket (0 if it has none).
+pub fn count_in_bag(item: u16) -> u16 {
+    // SAFETY: as in bag_has_item.
+    pocket_index(item).map_or(0, |index| unsafe { bag_pocket(index) }.count(item))
+}
+
+pub fn clear_bag() {
+    for index in 0..POCKETS_COUNT {
+        // SAFETY: as in bag_has_item.
+        unsafe { bag_pocket(index) }.clear();
+    }
+}
+
+/// Swaps the registered bike between the Mach Bike and the Acro Bike.
+pub fn swap_registered_bike() {
+    // SAFETY: the save blocks are set up at boot; the borrow ends here.
+    let save = unsafe { save_block1() };
+    save.registeredItem = match save.registeredItem {
+        ITEM_MACH_BIKE => ITEM_ACRO_BIKE,
+        ITEM_ACRO_BIKE => ITEM_MACH_BIKE,
+        other => other,
+    };
+}
+
+// ------------------------------------------------------------------ PC items
+
+/// The PC's items (quantities are not encrypted).
+fn pc_items() -> &'static mut CArray<ItemSlot, PC_ITEMS_COUNT> {
+    // SAFETY: the save blocks are set up at boot; callers keep the borrow short.
+    &mut unsafe { save_block1() }.pcItems
+}
+
+pub fn count_used_pc_item_slots() -> u8 {
+    pc_items()
+        .0
+        .iter()
+        .filter(|s| s.itemId != ITEM_NONE)
+        .count() as u8
+}
+
+pub fn pc_has_item(item: u16, count: u16) -> bool {
+    pc_items()
+        .0
+        .iter()
+        .any(|s| s.itemId == item && s.quantity >= count)
+}
+
+/// Adds `count` of `item` to the PC. Returns false, changing nothing, if
+/// there's no room.
+pub fn add_pc_item(item: u16, mut count: u16) -> bool {
+    let mut items = *pc_items();
+    for slot in items.0.iter_mut() {
+        if slot.itemId == item {
+            if u32::from(slot.quantity) + u32::from(count) <= u32::from(MAX_PC_ITEM_CAPACITY) {
+                slot.quantity += count;
+                *pc_items() = items;
+                return true;
+            }
+            count = count
+                .wrapping_add(slot.quantity)
+                .wrapping_sub(MAX_PC_ITEM_CAPACITY);
+            slot.quantity = MAX_PC_ITEM_CAPACITY;
+            if count == 0 {
+                *pc_items() = items;
+                return true;
+            }
+        }
+    }
+    if count > 0 {
+        // C looks for the free slot in the save, not in its copy
+        let Some(free) = pc_items().0.iter().position(|s| s.itemId == ITEM_NONE) else {
+            return false;
+        };
+        items[free] = ItemSlot {
+            itemId: item,
+            quantity: count,
+        };
+    }
+    *pc_items() = items;
+    true
+}
+
+/// Takes `count` from PC slot `index`; an emptied slot is removed.
+pub fn remove_pc_item(index: u8, count: u16) {
+    let slot = &mut pc_items()[index];
+    slot.quantity = slot.quantity.wrapping_sub(count);
+    if slot.quantity == 0 {
+        slot.itemId = ITEM_NONE;
+        compact_pc_items();
+    }
+}
+
+/// Moves the empty PC slots to the end (C's exact swap order).
+pub fn compact_pc_items() {
+    swap_pairs(&mut pc_items().0, |a, _| a.itemId == ITEM_NONE);
+}
+
+// ------------------------------------------------------ Battle Pyramid bag
+
+/// The pyramid bag for the current level mode: item ids and quantities.
+fn pyramid_bag() -> (
+    &'static mut CArray<u16, PYRAMID_BAG_ITEMS_COUNT>,
+    &'static mut CArray<u8, PYRAMID_BAG_ITEMS_COUNT>,
+) {
+    // SAFETY: the save blocks are set up at boot; callers keep the borrows short.
+    let frontier = &mut unsafe { save_block2() }.frontier;
+    let mode = usize::from(frontier.lvlMode());
+    let bag = &mut frontier.pyramidBag;
+    (&mut bag.itemId[mode], &mut bag.quantity[mode])
+}
+
+fn pyramid_bag_has_item(item: u16, mut count: u16) -> bool {
+    let (items, quantities) = pyramid_bag();
+    for i in 0..PYRAMID_BAG_ITEMS_COUNT {
+        if items[i] == item {
+            let quantity = u16::from(quantities[i]);
+            if quantity >= count {
+                return true;
+            }
+            count = count.wrapping_sub(quantity);
+            if count == 0 {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn pyramid_bag_has_space(item: u16, mut count: u16) -> bool {
+    let (items, quantities) = pyramid_bag();
+    for i in 0..PYRAMID_BAG_ITEMS_COUNT {
+        if items[i] == item || items[i] == ITEM_NONE {
+            let sum = u32::from(quantities[i]) + u32::from(count);
+            if sum <= u32::from(MAX_BAG_ITEM_CAPACITY) {
+                return true;
+            }
+            count = (sum - u32::from(MAX_BAG_ITEM_CAPACITY)) as u16;
+            if count == 0 {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// Fills `quantity` (a u8, as the pyramid bag stores it) with up to 99 of
+/// `count`; returns what's left over.
+fn fill_pyramid_slot(quantity: &mut u8, count: u16) -> u16 {
+    // as in C, the u8 sum wraps before it is compared
+    *quantity = quantity.wrapping_add(count as u8);
+    if u16::from(*quantity) > MAX_BAG_ITEM_CAPACITY {
+        let left = u16::from(*quantity) - MAX_BAG_ITEM_CAPACITY;
+        *quantity = MAX_BAG_ITEM_CAPACITY as u8;
+        left
+    } else {
+        0
+    }
+}
+
+pub fn add_pyramid_bag_item(item: u16, mut count: u16) -> bool {
+    let (items, quantities) = pyramid_bag();
+    let (mut new_items, mut new_quantities) = (*items, *quantities);
+    for i in 0..PYRAMID_BAG_ITEMS_COUNT {
+        if new_items[i] == item && u16::from(new_quantities[i]) < MAX_BAG_ITEM_CAPACITY {
+            count = fill_pyramid_slot(&mut new_quantities[i], count);
+            if count == 0 {
+                break;
+            }
+        }
+    }
+    if count > 0 {
+        for i in 0..PYRAMID_BAG_ITEMS_COUNT {
+            if new_items[i] == ITEM_NONE {
+                new_items[i] = item;
+                new_quantities[i] = 0;
+                count = fill_pyramid_slot(&mut new_quantities[i], count);
+                if count == 0 {
+                    break;
+                }
+            }
+        }
+    }
+    if count != 0 {
+        return false;
+    }
+    let (items, quantities) = pyramid_bag();
+    (*items, *quantities) = (new_items, new_quantities);
+    true
+}
+
+pub fn remove_pyramid_bag_item(item: u16, mut count: u16) -> bool {
+    // SAFETY: a plain global of the pyramid bag menu.
+    let cursor = unsafe {
+        gPyramidBagMenuState
+            .cursorPosition
+            .wrapping_add(gPyramidBagMenuState.scrollPosition)
+    };
+    let (items, quantities) = pyramid_bag();
+    let i = usize::from(cursor);
+    if i < PYRAMID_BAG_ITEMS_COUNT && items[i] == item && u16::from(quantities[i]) >= count {
+        quantities[i] = quantities[i].wrapping_sub(count as u8);
+        if quantities[i] == 0 {
+            items[i] = ITEM_NONE;
+        }
+        return true;
+    }
+    let (mut new_items, mut new_quantities) = (*items, *quantities);
+    for i in 0..PYRAMID_BAG_ITEMS_COUNT {
+        if new_items[i] == item {
+            let quantity = u16::from(new_quantities[i]);
+            if quantity >= count {
+                new_quantities[i] = (quantity - count) as u8;
+                count = 0;
+                if new_quantities[i] == 0 {
+                    new_items[i] = ITEM_NONE;
+                }
+            } else {
+                count -= quantity;
+                new_quantities[i] = 0;
+                new_items[i] = ITEM_NONE;
+            }
+            if count == 0 {
+                break;
+            }
+        }
+    }
+    if count != 0 {
+        return false;
+    }
+    let (items, quantities) = pyramid_bag();
+    (*items, *quantities) = (new_items, new_quantities);
+    true
+}
+
+// ------------------------------------------------------------------ C names
+
+#[unsafe(no_mangle)]
+pub unsafe fn ApplyNewEncryptionKeyToBagItems(new_key: u32) {
+    for index in 0..POCKETS_COUNT {
+        // SAFETY: gBagPockets points into the save.
+        unsafe {
+            let pocket = gBagPockets[index];
+            for slot in 0..usize::from(pocket.capacity) {
+                ApplyNewEncryptionKeyToHword(
+                    &raw mut (*pocket.itemSlots.add(slot)).quantity,
+                    new_key,
+                );
+            }
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn ApplyNewEncryptionKeyToBagItems_(new_key: u32) {
+    unsafe { ApplyNewEncryptionKeyToBagItems(new_key) };
+}
+
+#[unsafe(no_mangle)]
+pub fn SetBagItemsPointers() {
+    set_bag_items_pointers();
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn CopyItemName(item: u16, dst: *mut u8) {
+    unsafe { StringCopy(dst, item_info(item).name.as_ptr()) };
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn CopyItemNameHandlePlural(item: u16, dst: *mut u8, quantity: u32) {
+    unsafe {
+        if item == ITEM_POKE_BALL {
+            if quantity < 2 {
+                StringCopy(dst, item_info(ITEM_POKE_BALL).name.as_ptr());
+            } else {
+                StringCopy(
+                    dst,
+                    &raw const (*(&raw const crate::data::strings::gText_PokeBalls).cast::<u8>()),
+                );
+            }
+        } else if (FIRST_BERRY_INDEX..=LAST_BERRY_INDEX).contains(&item) {
             GetBerryCountString(
                 dst,
-                gBerries[itemId as i32 - ITEM_CHERI_BERRY as i32]
+                (&*(&raw const crate::data::berry::gBerries).cast::<CArray<Berry, 0>>())
+                    [item - FIRST_BERRY_INDEX]
                     .name
-                    .as_ptr()
-                    .cast_mut(),
+                    .as_ptr(),
                 quantity,
             );
         } else {
-            StringCopy(dst, GetItemName(itemId));
+            StringCopy(dst, item_info(item).name.as_ptr());
         }
     }
 }
+
+/// "`berry_name` BERRY" or "... BERRIES".
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetBerryCountString(dst: *mut u8, berryName: *mut u8, quantity: u32) {
-    let mut berryString: *mut u8 = null_mut();
-    let mut txtPtr: *mut u8 = null_mut();
-    if quantity < 2 {
-        berryString = gText_Berry.as_ptr().cast_mut();
+pub unsafe fn GetBerryCountString(dst: *mut u8, berry_name: *const u8, quantity: u32) {
+    let berries: *const u8 = if quantity < 2 {
+        &raw const (*(&raw const crate::data::strings::gText_Berry).cast::<u8>())
     } else {
-        berryString = gText_Berries.as_ptr().cast_mut();
+        &raw const (*(&raw const crate::data::strings::gText_Berries).cast::<u8>())
+    };
+    unsafe {
+        let end = StringCopy(dst, berry_name);
+        *end = CHAR_SPACE;
+        StringCopy(end.add(1), berries);
     }
-    txtPtr = StringCopy(dst, berryName);
-    *txtPtr = CHAR_SPACE;
-    StringCopy(txtPtr.at(1), berryString);
 }
+
+/// (C doesn't check the pocket number: 0 reads before `gBagPockets`.)
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsBagPocketNonEmpty(pocket: u8) -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < gBagPockets[pocket as i32 - 1].capacity {
-        if (*gBagPockets[pocket as i32 - 1].itemSlots.at(i)).itemId != 0 {
-            return TRUE;
-        }
-        i += 1;
-    }
-    return FALSE;
+pub unsafe fn IsBagPocketNonEmpty(pocket_number: u8) -> u8 {
+    let index = usize::from(pocket_number).wrapping_sub(1);
+    (!unsafe { bag_pocket(index) }.is_empty()).into()
 }
+
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckBagHasItem(itemId: u16, mut count: u16) -> u8 {
-    let mut i: u8 = 0;
-    let mut pocket: u8 = 0;
-    if GetItemPocket(itemId) == 0 {
-        return FALSE;
-    }
-    if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE
-        || FlagGet(FLAG_STORING_ITEMS_IN_PYRAMID_BAG) == TRUE
-    {
-        return CheckPyramidBagHasItem(itemId, count);
-    }
-    pocket = GetItemPocket(itemId) - 1;
-    i = 0;
-    while i < gBagPockets[pocket].capacity {
-        if (*gBagPockets[pocket].itemSlots.at(i)).itemId == itemId {
-            let mut quantity: u16 = 0;
-            quantity = GetBagItemQuantity(&raw mut (*gBagPockets[pocket].itemSlots.at(i)).quantity);
-            if quantity >= count {
-                return TRUE;
-            }
-            count -= quantity;
-            if count == 0 {
-                return TRUE;
-            }
-        }
-        i += 1;
-    }
-    return FALSE;
+pub fn CheckBagHasItem(item: u16, count: u16) -> u8 {
+    bag_has_item(item, count).into()
 }
+
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn HasAtLeastOneBerry() -> u8 {
-    let mut i: u16 = 0;
-    i = ITEM_CHERI_BERRY;
-    while i < ITEM_BRIGHT_POWDER {
-        if CheckBagHasItem(i, 1) == 1 {
-            gSpecialVar_Result = TRUE as u16;
-            return TRUE;
-        }
-        i += 1;
-    }
-    gSpecialVar_Result = FALSE as u16;
-    return FALSE;
+pub fn HasAtLeastOneBerry() -> u8 {
+    has_at_least_one_berry().into()
 }
+
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckBagHasSpace(itemId: u16, mut count: u16) -> u8 {
-    let mut i: u8 = 0;
-    let mut pocket: u8 = 0;
-    let mut slotCapacity: u16 = 0;
-    let mut ownedCount: u16 = 0;
-    if GetItemPocket(itemId) == POCKET_NONE {
-        return FALSE;
-    }
-    if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE
-        || FlagGet(FLAG_STORING_ITEMS_IN_PYRAMID_BAG) == TRUE
-    {
-        return CheckPyramidBagHasSpace(itemId, count);
-    }
-    pocket = GetItemPocket(itemId) - 1;
-    if pocket != BERRIES_POCKET {
-        slotCapacity = MAX_BAG_ITEM_CAPACITY;
-    } else {
-        slotCapacity = MAX_BERRY_CAPACITY;
-    }
-    i = 0;
-    while i < gBagPockets[pocket].capacity {
-        if (*gBagPockets[pocket].itemSlots.at(i)).itemId == itemId {
-            ownedCount =
-                GetBagItemQuantity(&raw mut (*gBagPockets[pocket].itemSlots.at(i)).quantity);
-            if ownedCount as i32 + count as i32 <= slotCapacity as i32 {
-                return TRUE;
-            }
-            if pocket == TMHM_POCKET || pocket == BERRIES_POCKET {
-                return FALSE;
-            }
-            count -= slotCapacity - ownedCount;
-            if count == 0 {
-                break;
-            }
-        }
-        i += 1;
-    }
-    if count > 0 {
-        i = 0;
-        while i < gBagPockets[pocket].capacity {
-            if (*gBagPockets[pocket].itemSlots.at(i)).itemId == 0 {
-                if count > slotCapacity {
-                    if pocket == TMHM_POCKET || pocket == BERRIES_POCKET {
-                        return FALSE;
-                    }
-                    count -= slotCapacity;
-                } else {
-                    count = 0;
-                    break;
-                }
-            }
-            i += 1;
-        }
-        if count > 0 {
-            return FALSE;
-        }
-    }
-    return TRUE;
+pub fn CheckBagHasSpace(item: u16, count: u16) -> u8 {
+    bag_has_space(item, count).into()
 }
+
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddBagItem(itemId: u16, mut count: u16) -> u8 {
-    let mut i: u8 = 0;
-    if GetItemPocket(itemId) == POCKET_NONE {
-        return FALSE;
-    }
-    if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE
-        || FlagGet(FLAG_STORING_ITEMS_IN_PYRAMID_BAG) == TRUE
-    {
-        return AddPyramidBagItem(itemId, count);
-    } else {
-        let mut itemPocket: *mut BagPocket = null_mut();
-        let mut newItems: *mut ItemSlot = null_mut();
-        let mut slotCapacity: u16 = 0;
-        let mut ownedCount: u16 = 0;
-        let mut pocket: u8 = GetItemPocket(itemId) - 1;
-        itemPocket = &raw mut gBagPockets[pocket];
-        newItems = AllocZeroed((*itemPocket).capacity as u32 * 4) as *mut ItemSlot;
-        memcpy(
-            newItems as *mut u8,
-            (*itemPocket).itemSlots as *mut u8,
-            (*itemPocket).capacity as u32 * 4,
-        );
-        if pocket != BERRIES_POCKET {
-            slotCapacity = MAX_BAG_ITEM_CAPACITY;
-        } else {
-            slotCapacity = MAX_BERRY_CAPACITY;
-        }
-        i = 0;
-        while i < (*itemPocket).capacity {
-            if (*newItems.at(i)).itemId == itemId {
-                ownedCount = GetBagItemQuantity(&raw mut (*newItems.at(i)).quantity);
-                if ownedCount as i32 + count as i32 <= slotCapacity as i32 {
-                    SetBagItemQuantity(&raw mut (*newItems.at(i)).quantity, ownedCount + count);
-                    memcpy(
-                        (*itemPocket).itemSlots as *mut u8,
-                        newItems as *mut u8,
-                        (*itemPocket).capacity as u32 * 4,
-                    );
-                    Free(newItems as *mut c_void);
-                    return TRUE;
-                } else {
-                    if pocket == TMHM_POCKET || pocket == BERRIES_POCKET {
-                        Free(newItems as *mut c_void);
-                        return FALSE;
-                    } else {
-                        count -= slotCapacity - ownedCount;
-                        SetBagItemQuantity(&raw mut (*newItems.at(i)).quantity, slotCapacity);
-                        if count == 0 {
-                            break;
-                        }
-                    }
-                }
-            }
-            i += 1;
-        }
-        if count > 0 {
-            i = 0;
-            while i < (*itemPocket).capacity {
-                if (*newItems.at(i)).itemId == ITEM_NONE {
-                    (*newItems.at(i)).itemId = itemId;
-                    if count > slotCapacity {
-                        if pocket == TMHM_POCKET || pocket == BERRIES_POCKET {
-                            Free(newItems as *mut c_void);
-                            return FALSE;
-                        }
-                        count -= slotCapacity;
-                        SetBagItemQuantity(&raw mut (*newItems.at(i)).quantity, slotCapacity);
-                    } else {
-                        SetBagItemQuantity(&raw mut (*newItems.at(i)).quantity, count);
-                        count = 0;
-                        break;
-                    }
-                }
-                i += 1;
-            }
-            if count > 0 {
-                Free(newItems as *mut c_void);
-                return FALSE;
-            }
-        }
-        memcpy(
-            (*itemPocket).itemSlots as *mut u8,
-            newItems as *mut u8,
-            (*itemPocket).capacity as u32 * 4,
-        );
-        Free(newItems as *mut c_void);
-        return TRUE;
-    }
-    #[allow(unreachable_code)]
-    {
-        return 0;
-    }
+pub fn AddBagItem(item: u16, count: u16) -> u8 {
+    add_bag_item(item, count).into()
 }
+
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RemoveBagItem(itemId: u16, mut count: u16) -> u8 {
-    let mut i: u8 = 0;
-    let mut totalQuantity: u16 = 0;
-    if GetItemPocket(itemId) == POCKET_NONE || itemId == ITEM_NONE {
-        return FALSE;
-    }
-    if CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE
-        || FlagGet(FLAG_STORING_ITEMS_IN_PYRAMID_BAG) == TRUE
-    {
-        return RemovePyramidBagItem(itemId, count);
-    } else {
-        let mut pocket: u8 = 0;
-        let mut var: u8 = 0;
-        let mut ownedCount: u16 = 0;
-        let mut itemPocket: *mut BagPocket = null_mut();
-        pocket = GetItemPocket(itemId) - 1;
-        itemPocket = &raw mut gBagPockets[pocket];
-        i = 0;
-        while i < (*itemPocket).capacity {
-            if (*(*itemPocket).itemSlots.at(i)).itemId == itemId {
-                totalQuantity +=
-                    GetBagItemQuantity(&raw mut (*(*itemPocket).itemSlots.at(i)).quantity);
-            }
-            i += 1;
-        }
-        if totalQuantity < count {
-            return FALSE;
-        }
-        if CurMapIsSecretBase() == TRUE {
-            VarSet(
-                VAR_SECRET_BASE_LOW_TV_FLAGS,
-                VarGet(VAR_SECRET_BASE_LOW_TV_FLAGS) | SECRET_BASE_USED_BAG,
-            );
-            VarSet(VAR_SECRET_BASE_LAST_ITEM_USED, itemId);
-        }
-        var = GetItemListPosition(pocket);
-        if (*itemPocket).capacity > var && (*(*itemPocket).itemSlots.at(var)).itemId == itemId {
-            ownedCount = GetBagItemQuantity(&raw mut (*(*itemPocket).itemSlots.at(var)).quantity);
-            if ownedCount >= count {
-                SetBagItemQuantity(
-                    &raw mut (*(*itemPocket).itemSlots.at(var)).quantity,
-                    ownedCount - count,
-                );
-                count = 0;
-            } else {
-                count -= ownedCount;
-                SetBagItemQuantity(&raw mut (*(*itemPocket).itemSlots.at(var)).quantity, 0);
-            }
-            if GetBagItemQuantity(&raw mut (*(*itemPocket).itemSlots.at(var)).quantity) == 0 {
-                (*(*itemPocket).itemSlots.at(var)).itemId = ITEM_NONE;
-            }
-            if count == 0 {
-                return TRUE;
-            }
-        }
-        i = 0;
-        while i < (*itemPocket).capacity {
-            if (*(*itemPocket).itemSlots.at(i)).itemId == itemId {
-                ownedCount = GetBagItemQuantity(&raw mut (*(*itemPocket).itemSlots.at(i)).quantity);
-                if ownedCount >= count {
-                    SetBagItemQuantity(
-                        &raw mut (*(*itemPocket).itemSlots.at(i)).quantity,
-                        ownedCount - count,
-                    );
-                    count = 0;
-                } else {
-                    count -= ownedCount;
-                    SetBagItemQuantity(&raw mut (*(*itemPocket).itemSlots.at(i)).quantity, 0);
-                }
-                if GetBagItemQuantity(&raw mut (*(*itemPocket).itemSlots.at(i)).quantity) == 0 {
-                    (*(*itemPocket).itemSlots.at(i)).itemId = ITEM_NONE;
-                }
-                if count == 0 {
-                    return TRUE;
-                }
-            }
-            i += 1;
-        }
-        return TRUE;
-    }
-    #[allow(unreachable_code)]
-    {
-        return 0;
-    }
+pub fn RemoveBagItem(item: u16, count: u16) -> u8 {
+    remove_bag_item(item, count).into()
 }
+
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPocketByItemId(itemId: u16) -> u8 {
-    return GetItemPocket(itemId);
+pub fn GetPocketByItemId(item: u16) -> u8 {
+    item_pocket(item)
 }
+
+/// Empties `count` slots at `slots`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearItemSlots(mut itemSlots: *mut ItemSlot, itemCount: u8) {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < itemCount as u16 {
-        (*itemSlots.at(i)).itemId = ITEM_NONE;
-        SetBagItemQuantity(&raw mut (*itemSlots.at(i)).quantity, 0);
-        i += 1;
+pub unsafe fn ClearItemSlots(slots: *mut ItemSlot, count: u8) {
+    // SAFETY: the caller passes `count` slots; the key is the save's.
+    unsafe {
+        let slots = core::slice::from_raw_parts_mut(slots, usize::from(count));
+        Pocket::new(ITEMS_POCKET, slots, save_block2().encryptionKey).clear();
     }
 }
-pub(crate) unsafe extern "C" fn FindFreePCItemSlot() -> i32 {
-    let mut i: i8 = 0;
-    i = 0;
-    while i < PC_ITEMS_COUNT as i8 {
-        if (*gSaveBlock1Ptr).pcItems[i].itemId == ITEM_NONE {
-            return i as i32;
-        }
-        i += 1;
-    }
-    return -1;
-}
+
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CountUsedPCItemSlots() -> u8 {
-    let mut usedSlots: u8 = 0;
-    let mut i: u8 = 0;
-    i = 0;
-    while i < PC_ITEMS_COUNT {
-        if (*gSaveBlock1Ptr).pcItems[i].itemId != ITEM_NONE {
-            usedSlots += 1;
-        }
-        i += 1;
-    }
-    return usedSlots;
+pub fn CountUsedPCItemSlots() -> u8 {
+    count_used_pc_item_slots()
 }
+
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CheckPCHasItem(itemId: u16, count: u16) -> u8 {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < PC_ITEMS_COUNT {
-        if (*gSaveBlock1Ptr).pcItems[i].itemId == itemId
-            && GetPCItemQuantity(&raw mut (*gSaveBlock1Ptr).pcItems[i].quantity) >= count
-        {
-            return TRUE;
-        }
-        i += 1;
-    }
-    return FALSE;
+pub fn CheckPCHasItem(item: u16, count: u16) -> u8 {
+    pc_has_item(item, count).into()
 }
+
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddPCItem(itemId: u16, mut count: u16) -> u8 {
-    let mut i: u8 = 0;
-    let mut freeSlot: i8 = 0;
-    let mut ownedCount: u16 = 0;
-    let mut newItems: *mut ItemSlot = null_mut();
-    newItems = AllocZeroed(200) as *mut ItemSlot;
-    memcpy(
-        newItems as *mut u8,
-        (*gSaveBlock1Ptr).pcItems.as_mut_ptr() as *mut u8,
-        200,
-    );
-    i = 0;
-    while i < PC_ITEMS_COUNT {
-        if (*newItems.at(i)).itemId == itemId {
-            ownedCount = GetPCItemQuantity(&raw mut (*newItems.at(i)).quantity);
-            if ownedCount as i32 + count as i32 <= MAX_PC_ITEM_CAPACITY as i32 {
-                SetPCItemQuantity(&raw mut (*newItems.at(i)).quantity, ownedCount + count);
-                memcpy(
-                    (*gSaveBlock1Ptr).pcItems.as_mut_ptr() as *mut u8,
-                    newItems as *mut u8,
-                    200,
-                );
-                Free(newItems as *mut c_void);
-                return TRUE;
-            }
-            count += ownedCount - MAX_PC_ITEM_CAPACITY;
-            SetPCItemQuantity(&raw mut (*newItems.at(i)).quantity, MAX_PC_ITEM_CAPACITY);
-            if count == 0 {
-                memcpy(
-                    (*gSaveBlock1Ptr).pcItems.as_mut_ptr() as *mut u8,
-                    newItems as *mut u8,
-                    200,
-                );
-                Free(newItems as *mut c_void);
-                return TRUE;
-            }
-        }
-        i += 1;
-    }
-    if count > 0 {
-        freeSlot = FindFreePCItemSlot() as i8;
-        if freeSlot == -1 {
-            Free(newItems as *mut c_void);
-            return FALSE;
-        } else {
-            (*newItems.at(freeSlot)).itemId = itemId;
-            SetPCItemQuantity(&raw mut (*newItems.at(freeSlot)).quantity, count);
-        }
-    }
-    memcpy(
-        (*gSaveBlock1Ptr).pcItems.as_mut_ptr() as *mut u8,
-        newItems as *mut u8,
-        200,
-    );
-    Free(newItems as *mut c_void);
-    return TRUE;
+pub fn AddPCItem(item: u16, count: u16) -> u8 {
+    add_pc_item(item, count).into()
 }
+
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn RemovePCItem(index: u8, count: u16) {
-    (*gSaveBlock1Ptr).pcItems[index].quantity -= count;
-    if (*gSaveBlock1Ptr).pcItems[index].quantity == 0 {
-        (*gSaveBlock1Ptr).pcItems[index].itemId = ITEM_NONE;
-        CompactPCItems();
+pub fn RemovePCItem(index: u8, count: u16) {
+    remove_pc_item(index, count);
+}
+
+#[unsafe(no_mangle)]
+pub fn CompactPCItems() {
+    compact_pc_items();
+}
+
+#[unsafe(no_mangle)]
+pub fn SwapRegisteredBike() {
+    swap_registered_bike();
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn BagGetItemIdByPocketPosition(pocket_number: u8, position: u16) -> u16 {
+    unsafe {
+        (*gBagPockets[usize::from(pocket_number) - 1]
+            .itemSlots
+            .add(usize::from(position)))
+        .itemId
     }
 }
+
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CompactPCItems() {
-    let mut i: u16 = 0;
-    let mut j: u16 = 0;
-    i = 0;
-    while i < 49 {
-        j = i + 1;
-        while j < PC_ITEMS_COUNT as u16 {
-            if (*gSaveBlock1Ptr).pcItems[i].itemId == 0 {
-                let mut temp: ItemSlot = zeroed();
-                temp = (*gSaveBlock1Ptr).pcItems[i];
-                (*gSaveBlock1Ptr).pcItems[i] = (*gSaveBlock1Ptr).pcItems[j];
-                (*gSaveBlock1Ptr).pcItems[j] = temp;
-            }
-            j += 1;
-        }
-        i += 1;
+pub unsafe fn BagGetQuantityByPocketPosition(pocket_number: u8, position: u16) -> u16 {
+    unsafe { bag_pocket(usize::from(pocket_number) - 1) }.quantity(usize::from(position))
+}
+
+/// Compacts the pocket `bag_pocket` points to.
+#[unsafe(no_mangle)]
+pub unsafe fn CompactItemsInBagPocket(bag_pocket: *mut BagPocket) {
+    unsafe { pocket_at(bag_pocket) }.compact();
+}
+
+#[unsafe(no_mangle)]
+pub unsafe fn SortBerriesOrTMHMs(bag_pocket: *mut BagPocket) {
+    unsafe { pocket_at(bag_pocket) }.sort_by_item_id();
+}
+
+/// A pocket from a `BagPocket` pointer (always one of `gBagPockets`).
+unsafe fn pocket_at<'a>(bag_pocket: *mut BagPocket) -> Pocket<'a> {
+    unsafe {
+        let pocket = *bag_pocket;
+        let slots = core::slice::from_raw_parts_mut(pocket.itemSlots, usize::from(pocket.capacity));
+        Pocket::new(ITEMS_POCKET, slots, save_block2().encryptionKey)
     }
 }
+
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SwapRegisteredBike() {
-    match (*gSaveBlock1Ptr).registeredItem {
-        ITEM_MACH_BIKE => {
-            (*gSaveBlock1Ptr).registeredItem = ITEM_ACRO_BIKE;
-        }
-        ITEM_ACRO_BIKE => {
-            (*gSaveBlock1Ptr).registeredItem = ITEM_MACH_BIKE;
-        }
-        _ => {}
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BagGetItemIdByPocketPosition(pocketId: u8, pocketPos: u16) -> u16 {
-    return (*gBagPockets[pocketId as i32 - 1].itemSlots.at(pocketPos)).itemId;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn BagGetQuantityByPocketPosition(pocketId: u8, pocketPos: u16) -> u16 {
-    return GetBagItemQuantity(
-        &raw mut (*gBagPockets[pocketId as i32 - 1].itemSlots.at(pocketPos)).quantity,
+pub unsafe fn MoveItemSlotInList(slots: *mut ItemSlot, from: u32, to: u32) {
+    let len = from.max(to) as usize + 1;
+    // SAFETY: both positions are within the list the caller passes.
+    move_item_slot(
+        unsafe { core::slice::from_raw_parts_mut(slots, len) },
+        from as usize,
+        to as usize,
     );
 }
-pub(crate) unsafe extern "C" fn SwapItemSlots(a: *mut ItemSlot, b: *mut ItemSlot) {
-    let mut temp: ItemSlot = zeroed();
-    temp = *a;
-    *a = *b;
-    *b = temp;
-}
+
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CompactItemsInBagPocket(bagPocket: *mut BagPocket) {
-    let mut i: u16 = 0;
-    let mut j: u16 = 0;
-    i = 0;
-    while (i as i32) < (*bagPocket).capacity as i32 - 1 {
-        j = i + 1;
-        while j < (*bagPocket).capacity as u16 {
-            if GetBagItemQuantity(&raw mut (*(*bagPocket).itemSlots.at(i)).quantity) == 0 {
-                SwapItemSlots((*bagPocket).itemSlots.at(i), (*bagPocket).itemSlots.at(j));
-            }
-            j += 1;
-        }
-        i += 1;
+pub fn ClearBag() {
+    clear_bag();
+}
+
+/// (C doesn't check the item has a pocket: then it reads before `gBagPockets`.)
+#[unsafe(no_mangle)]
+pub unsafe fn CountTotalItemQuantityInBag(item: u16) -> u16 {
+    let index = usize::from(item_pocket(item)).wrapping_sub(1);
+    unsafe { bag_pocket(index) }.count(item)
+}
+
+#[unsafe(no_mangle)]
+pub fn AddPyramidBagItem(item: u16, count: u16) -> u8 {
+    add_pyramid_bag_item(item, count).into()
+}
+
+#[unsafe(no_mangle)]
+pub fn RemovePyramidBagItem(item: u16, count: u16) -> u8 {
+    remove_pyramid_bag_item(item, count).into()
+}
+
+#[unsafe(no_mangle)]
+pub fn GetItemName(item: u16) -> *const u8 {
+    item_info(item).name.as_ptr()
+}
+
+#[unsafe(no_mangle)]
+pub fn GetItemId(item: u16) -> u16 {
+    item_info(item).itemId
+}
+
+#[unsafe(no_mangle)]
+pub fn GetItemPrice(item: u16) -> u16 {
+    item_info(item).price
+}
+
+#[unsafe(no_mangle)]
+pub fn GetItemHoldEffect(item: u16) -> u8 {
+    item_info(item).holdEffect
+}
+
+#[unsafe(no_mangle)]
+pub fn GetItemHoldEffectParam(item: u16) -> u8 {
+    item_info(item).holdEffectParam
+}
+
+#[unsafe(no_mangle)]
+pub fn GetItemDescription(item: u16) -> *const u8 {
+    item_info(item).description
+}
+
+#[unsafe(no_mangle)]
+pub fn GetItemImportance(item: u16) -> u8 {
+    item_info(item).importance
+}
+
+#[unsafe(no_mangle)]
+pub fn GetItemRegistrability(item: u16) -> u8 {
+    item_info(item).registrability
+}
+
+#[unsafe(no_mangle)]
+pub fn GetItemPocket(item: u16) -> u8 {
+    item_pocket(item)
+}
+
+#[unsafe(no_mangle)]
+pub fn GetItemType(item: u16) -> u8 {
+    item_info(item).r#type
+}
+
+#[unsafe(no_mangle)]
+pub fn GetItemFieldFunc(item: u16) -> Option<unsafe fn(u8)> {
+    item_info(item).fieldUseFunc
+}
+
+#[unsafe(no_mangle)]
+pub fn GetItemBattleUsage(item: u16) -> u8 {
+    item_info(item).battleUsage
+}
+
+#[unsafe(no_mangle)]
+pub fn GetItemBattleFunc(item: u16) -> Option<unsafe fn(u8)> {
+    item_info(item).battleUseFunc
+}
+
+#[unsafe(no_mangle)]
+pub fn GetItemSecondaryId(item: u16) -> u8 {
+    item_info(item).secondaryId
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn slots<const N: usize>(items: [(u16, u16); N], key: u16) -> [ItemSlot; N] {
+        items.map(|(itemId, quantity)| ItemSlot {
+            itemId,
+            quantity: quantity ^ key,
+        })
     }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SortBerriesOrTMHMs(bagPocket: *mut BagPocket) {
-    let mut i: u16 = 0;
-    let mut j: u16 = 0;
-    i = 0;
-    while (i as i32) < (*bagPocket).capacity as i32 - 1 {
-        j = i + 1;
-        while j < (*bagPocket).capacity as u16 {
-            'l2: {
-                if GetBagItemQuantity(&raw mut (*(*bagPocket).itemSlots.at(i)).quantity) != 0 {
-                    if GetBagItemQuantity(&raw mut (*(*bagPocket).itemSlots.at(j)).quantity) == 0 {
-                        break 'l2;
-                    }
-                    if (*(*bagPocket).itemSlots.at(i)).itemId
-                        <= (*(*bagPocket).itemSlots.at(j)).itemId
-                    {
-                        break 'l2;
-                    }
-                }
-                SwapItemSlots((*bagPocket).itemSlots.at(i), (*bagPocket).itemSlots.at(j));
-            }
-            j += 1;
-        }
-        i += 1;
+
+    #[test]
+    fn adding_fills_existing_slots_then_empty_ones() {
+        let mut s = slots([(5, 98), (0, 0), (0, 0)], 0x1234);
+        let mut pocket = Pocket::new(ITEMS_POCKET, &mut s, 0x1234);
+        assert!(pocket.add(5, 3));
+        assert_eq!((pocket.slots()[0].itemId, pocket.quantity(0)), (5, 99));
+        assert_eq!((pocket.slots()[1].itemId, pocket.quantity(1)), (5, 2));
     }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MoveItemSlotInList(mut itemSlots: *mut ItemSlot, from: u32, mut to: u32) {
-    let mut firstSlot: ItemSlot = zeroed();
-    let mut i: i16 = 0;
-    if from == to {
-        return;
+
+    #[test]
+    fn a_failed_add_changes_nothing() {
+        let mut s = slots([(5, 99), (7, 1)], 0);
+        let mut pocket = Pocket::new(ITEMS_POCKET, &mut s, 0);
+        assert!(!pocket.has_space(5, 1));
+        assert!(!pocket.add(5, 1));
+        assert_eq!(pocket.quantity(0), 99);
+        assert_eq!(pocket.slots()[1].itemId, 7);
     }
-    firstSlot = *itemSlots.at(from);
-    if to > from {
-        to -= 1;
-        i = from as i16;
-        while i < to as i16 {
-            *itemSlots.at(i) = *itemSlots.at(i as i32 + 1);
-            i += 1;
-        }
-    } else {
-        i = from as i16;
-        while i > to as i16 {
-            *itemSlots.at(i) = *itemSlots.at(i as i32 - 1);
-            i -= 1;
-        }
+
+    #[test]
+    fn tms_never_take_a_second_slot() {
+        let mut s = slots([(300, 99), (0, 0)], 0);
+        let mut pocket = Pocket::new(TMHM_POCKET, &mut s, 0);
+        assert!(!pocket.add(300, 1));
+        assert_eq!(pocket.slots()[1].itemId, ITEM_NONE);
     }
-    *itemSlots.at(to) = firstSlot;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearBag() {
-    let mut i: u16 = 0;
-    i = 0;
-    while i < POCKETS_COUNT as u16 {
-        ClearItemSlots(gBagPockets[i].itemSlots, gBagPockets[i].capacity);
-        i += 1;
+
+    #[test]
+    fn removing_starts_at_the_cursor_and_frees_empty_slots() {
+        let mut s = slots([(5, 2), (5, 3)], 0x55);
+        let mut pocket = Pocket::new(ITEMS_POCKET, &mut s, 0x55);
+        assert!(!pocket.remove(5, 6, 1));
+        assert!(pocket.remove(5, 4, 1));
+        assert_eq!(pocket.slots()[1].itemId, ITEM_NONE);
+        assert_eq!(pocket.quantity(0), 1);
+        assert_eq!(pocket.count(5), 1);
     }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CountTotalItemQuantityInBag(itemId: u16) -> u16 {
-    let mut i: u16 = 0;
-    let mut ownedCount: u16 = 0;
-    let mut bagPocket: *mut BagPocket = &raw mut gBagPockets[GetItemPocket(itemId) as i32 - 1];
-    i = 0;
-    while i < (*bagPocket).capacity as u16 {
-        if (*(*bagPocket).itemSlots.at(i)).itemId == itemId {
-            ownedCount += GetBagItemQuantity(&raw mut (*(*bagPocket).itemSlots.at(i)).quantity);
-        }
-        i += 1;
+
+    #[test]
+    fn sorting_puts_empty_slots_last() {
+        let mut s = slots([(0, 0), (140, 1), (133, 5)], 0);
+        let mut pocket = Pocket::new(BERRIES_POCKET, &mut s, 0);
+        pocket.sort_by_item_id();
+        let ids: [u16; 3] = core::array::from_fn(|i| pocket.slots()[i].itemId);
+        assert_eq!(ids, [133, 140, 0]);
     }
-    return ownedCount;
-}
-pub(crate) unsafe extern "C" fn CheckPyramidBagHasItem(itemId: u16, mut count: u16) -> u8 {
-    let mut i: u8 = 0;
-    let mut items: *mut u16 = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
-    .as_mut_ptr();
-    let mut quantities: *mut u8 = (*gSaveBlock2Ptr).frontier.pyramidBag.quantity
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
-    .as_mut_ptr();
-    i = 0;
-    while i < PYRAMID_BAG_ITEMS_COUNT as u8 {
-        if *items.at(i) == itemId {
-            if *quantities.at(i) as u16 >= count {
-                return TRUE;
-            }
-            count -= *quantities.at(i) as u16;
-            if count == 0 {
-                return TRUE;
-            }
-        }
-        i += 1;
+
+    #[test]
+    fn moving_a_slot_matches_the_bag_menu() {
+        let mut s = slots([(1, 1), (2, 1), (3, 1), (4, 1)], 0);
+        move_item_slot(&mut s, 0, 3);
+        assert_eq!(s.map(|x| x.itemId), [2, 3, 1, 4]);
+        move_item_slot(&mut s, 2, 0);
+        assert_eq!(s.map(|x| x.itemId), [1, 2, 3, 4]);
     }
-    return FALSE;
-}
-pub(crate) unsafe extern "C" fn CheckPyramidBagHasSpace(itemId: u16, mut count: u16) -> u8 {
-    let mut i: u8 = 0;
-    let mut items: *mut u16 = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
-    .as_mut_ptr();
-    let mut quantities: *mut u8 = (*gSaveBlock2Ptr).frontier.pyramidBag.quantity
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
-    .as_mut_ptr();
-    i = 0;
-    while i < PYRAMID_BAG_ITEMS_COUNT as u8 {
-        if *items.at(i) == itemId || *items.at(i) == ITEM_NONE {
-            if *quantities.at(i) as i32 + count as i32 <= MAX_BAG_ITEM_CAPACITY as i32 {
-                return TRUE;
-            }
-            count = *quantities.at(i) as u16 + count - MAX_BAG_ITEM_CAPACITY;
-            if count == 0 {
-                return TRUE;
-            }
-        }
-        i += 1;
+
+    #[test]
+    fn pyramid_slots_hold_up_to_99() {
+        let mut q = 90u8;
+        assert_eq!(fill_pyramid_slot(&mut q, 5), 0);
+        assert_eq!(q, 95);
+        assert_eq!(fill_pyramid_slot(&mut q, 10), 6);
+        assert_eq!(q, 99);
     }
-    return FALSE;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn AddPyramidBagItem(itemId: u16, mut count: u16) -> u8 {
-    let mut i: u16 = 0;
-    let mut items: *mut u16 = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
-    .as_mut_ptr();
-    let mut quantities: *mut u8 = (*gSaveBlock2Ptr).frontier.pyramidBag.quantity
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
-    .as_mut_ptr();
-    let mut newItems: *mut u16 = Alloc(20) as *mut u16;
-    let mut newQuantities: *mut u8 = Alloc(PYRAMID_BAG_ITEMS_COUNT) as *mut u8;
-    memcpy(newItems as *mut u8, items as *mut u8, 20);
-    memcpy(newQuantities, quantities, PYRAMID_BAG_ITEMS_COUNT);
-    i = 0;
-    while i < PYRAMID_BAG_ITEMS_COUNT as u16 {
-        if *newItems.at(i) == itemId && *newQuantities.at(i) < MAX_BAG_ITEM_CAPACITY as u8 {
-            *newQuantities.at(i) += count as u8;
-            if *newQuantities.at(i) > MAX_BAG_ITEM_CAPACITY as u8 {
-                count = *newQuantities.at(i) as u16 - MAX_BAG_ITEM_CAPACITY;
-                *newQuantities.at(i) = MAX_BAG_ITEM_CAPACITY as u8;
-            } else {
-                count = 0;
-            }
-            if count == 0 {
-                break;
-            }
-        }
-        i += 1;
-    }
-    if count > 0 {
-        i = 0;
-        while i < PYRAMID_BAG_ITEMS_COUNT as u16 {
-            if *newItems.at(i) == ITEM_NONE {
-                *newItems.at(i) = itemId;
-                *newQuantities.at(i) = count as u8;
-                if *newQuantities.at(i) > MAX_BAG_ITEM_CAPACITY as u8 {
-                    count = *newQuantities.at(i) as u16 - MAX_BAG_ITEM_CAPACITY;
-                    *newQuantities.at(i) = MAX_BAG_ITEM_CAPACITY as u8;
-                } else {
-                    count = 0;
-                }
-                if count == 0 {
-                    break;
-                }
-            }
-            i += 1;
-        }
-    }
-    if count == 0 {
-        memcpy(items as *mut u8, newItems as *mut u8, 20);
-        memcpy(quantities, newQuantities, PYRAMID_BAG_ITEMS_COUNT);
-        Free(newItems as *mut c_void);
-        Free(newQuantities as *mut c_void);
-        return TRUE;
-    } else {
-        Free(newItems as *mut c_void);
-        Free(newQuantities as *mut c_void);
-        return FALSE;
-    }
-    #[allow(unreachable_code)]
-    {
-        return 0;
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RemovePyramidBagItem(itemId: u16, mut count: u16) -> u8 {
-    let mut i: u16 = 0;
-    let mut items: *mut u16 = (*gSaveBlock2Ptr).frontier.pyramidBag.itemId
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
-    .as_mut_ptr();
-    let mut quantities: *mut u8 = (*gSaveBlock2Ptr).frontier.pyramidBag.quantity
-        [(*gSaveBlock2Ptr).frontier.lvlMode()]
-    .as_mut_ptr();
-    i = gPyramidBagMenuState.cursorPosition + gPyramidBagMenuState.scrollPosition;
-    if *items.at(i) == itemId && *quantities.at(i) as u16 >= count {
-        *quantities.at(i) -= count as u8;
-        if *quantities.at(i) == 0 {
-            *items.at(i) = ITEM_NONE;
-        }
-        return TRUE;
-    } else {
-        let mut newItems: *mut u16 = Alloc(20) as *mut u16;
-        let mut newQuantities: *mut u8 = Alloc(PYRAMID_BAG_ITEMS_COUNT) as *mut u8;
-        memcpy(newItems as *mut u8, items as *mut u8, 20);
-        memcpy(newQuantities, quantities, PYRAMID_BAG_ITEMS_COUNT);
-        i = 0;
-        while i < PYRAMID_BAG_ITEMS_COUNT as u16 {
-            if *newItems.at(i) == itemId {
-                if *newQuantities.at(i) as u16 >= count {
-                    *newQuantities.at(i) -= count as u8;
-                    count = 0;
-                    if *newQuantities.at(i) == 0 {
-                        *newItems.at(i) = ITEM_NONE;
-                    }
-                } else {
-                    count -= *newQuantities.at(i) as u16;
-                    *newQuantities.at(i) = 0;
-                    *newItems.at(i) = ITEM_NONE;
-                }
-                if count == 0 {
-                    break;
-                }
-            }
-            i += 1;
-        }
-        if count == 0 {
-            memcpy(items as *mut u8, newItems as *mut u8, 20);
-            memcpy(quantities, newQuantities, PYRAMID_BAG_ITEMS_COUNT);
-            Free(newItems as *mut c_void);
-            Free(newQuantities as *mut c_void);
-            return TRUE;
-        } else {
-            Free(newItems as *mut c_void);
-            Free(newQuantities as *mut c_void);
-            return FALSE;
-        }
-    }
-    #[allow(unreachable_code)]
-    {
-        return 0;
-    }
-}
-pub(crate) unsafe extern "C" fn SanitizeItemId(itemId: u16) -> u16 {
-    if itemId >= ITEMS_COUNT {
-        return ITEM_NONE;
-    } else {
-        return itemId;
-    }
-    #[allow(unreachable_code)]
-    {
-        return 0;
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemName(itemId: u16) -> *mut u8 {
-    return gItems[SanitizeItemId(itemId)].name.as_ptr().cast_mut();
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemId(itemId: u16) -> u16 {
-    return gItems[SanitizeItemId(itemId)].itemId;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemPrice(itemId: u16) -> u16 {
-    return gItems[SanitizeItemId(itemId)].price;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemHoldEffect(itemId: u16) -> u8 {
-    return gItems[SanitizeItemId(itemId)].holdEffect;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemHoldEffectParam(itemId: u16) -> u8 {
-    return gItems[SanitizeItemId(itemId)].holdEffectParam;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemDescription(itemId: u16) -> *mut u8 {
-    return gItems[SanitizeItemId(itemId)].description;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemImportance(itemId: u16) -> u8 {
-    return gItems[SanitizeItemId(itemId)].importance;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemRegistrability(itemId: u16) -> u8 {
-    return gItems[SanitizeItemId(itemId)].registrability;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemPocket(itemId: u16) -> u8 {
-    return gItems[SanitizeItemId(itemId)].pocket;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemType(itemId: u16) -> u8 {
-    return gItems[SanitizeItemId(itemId)].r#type;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemFieldFunc(itemId: u16) -> Option<unsafe extern "C" fn(u8)> {
-    return gItems[SanitizeItemId(itemId)].fieldUseFunc;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemBattleUsage(itemId: u16) -> u8 {
-    return gItems[SanitizeItemId(itemId)].battleUsage;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemBattleFunc(itemId: u16) -> Option<unsafe extern "C" fn(u8)> {
-    return gItems[SanitizeItemId(itemId)].battleUseFunc;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetItemSecondaryId(itemId: u16) -> u8 {
-    return gItems[SanitizeItemId(itemId)].secondaryId;
 }

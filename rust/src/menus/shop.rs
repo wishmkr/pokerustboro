@@ -3,44 +3,195 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::missing_transmute_annotations,
+    clippy::unnecessary_cast,
+    clippy::useless_transmute,
+    dead_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::agb_main::SetVBlankCallback;
+use crate::agb_main::gMain;
+use crate::bg::{FillBgTilemapBufferRect_Palette0, ResetBgsAndClearDma3BusyFlags, ShowBg};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::decoration::AddDecorationIconObject;
+use crate::decoration_inventory::DecorationAdd;
+use crate::event_object_movement::{
+    CreateObjectGraphicsSprite, GetObjectEventGraphicsInfo, GetObjectEventIdByXY,
+};
+use crate::field_player_avatar::{GetXYCoordsOneStepInFrontOfPlayer, gObjectEvents};
+use crate::field_screen_effect::FadeInFromBlack;
+use crate::field_weather::{FadeScreen, IsWeatherNotFadingIn};
+use crate::fieldmap::{MapGridGetMetatileIdAt, MapGridGetMetatileLayerTypeAt, gMapHeader};
+use crate::gpu_regs::SetGpuReg;
+use crate::item::{
+    AddBagItem, CopyItemName, CountTotalItemQuantityInBag, GetItemPocket, GetItemPrice,
+};
+use crate::item_icon::AddItemIconSprite;
+use crate::item_menu::CB2_GoToSellMenu;
+use crate::list_menu::{
+    AddScrollIndicatorArrowPairParameterized, ListMenu_ProcessInput, ListMenuGetScrollAndRow,
+    ListMenuGetYCoordForPrintingArrowCursor, ListMenuInit, RemoveScrollIndicatorArrowPair,
+    gMultiuseListMenuTemplate,
+};
+use crate::load_save::gSaveBlock1Ptr;
+use crate::menu::{
+    AddTextPrinterParameterized4, ClearDialogWindowAndFrameToTransparent,
+    ClearScheduledBgCopiesToVram, ClearStdWindowAndFrameToTransparent,
+    DecompressAndCopyTileDataToVram, DisplayItemMessageOnField, DoScheduledBgTilemapCopiesToVram,
+    DrawStdFrameWithCustomTileAndPalette, FreeTempTileDataBuffersIfPossible,
+    GetPlayerTextSpeedDelay, InitMenuInUpperLeftCornerNormal, Menu_ProcessInputNoWrap,
+    PrintMenuTable, ResetTempTileDataBuffers, ScheduleBgCopyTilemapToVram,
+    SetStandardWindowBorderStyle,
+};
+use crate::menu_helpers::{
+    AdjustQuantityAccordingToDPadInput, CreateYesNoMenuWithCallbacks,
+    DisplayMessageAndContinueTask, SetVBlankHBlankCallbacksToNull,
+};
+use crate::money::{
+    AddMoneyLabelObject, GetMoney, IsEnoughMoney, PrintMoneyAmount, PrintMoneyAmountInMoneyBox,
+    PrintMoneyAmountInMoneyBoxWithBorder, RemoveMoney, RemoveMoneyLabelObject,
+};
+use crate::overworld::{CB2_ReturnToField, IncrementGameStat, gFieldCallback};
+use crate::palette::{
+    BeginNormalPaletteFade, BlendPalettes, LoadCompressedPalette, ResetPaletteFade,
+    TransferPlttBuffer, UpdatePaletteFade, gPaletteFade,
+};
+use crate::party_menu::ItemIdToBattleMoveId;
+use crate::scanline_effect::ScanlineEffect_Stop;
+use crate::script::{LockPlayerFieldControls, ScriptContext_Enable, UnlockPlayerFieldControls};
+use crate::sound::PlaySE;
+use crate::sprite::gSprites;
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, FreeSpritePaletteByTag,
+    FreeSpriteTilesByTag, LoadOam, ProcessSpriteCopyRequests, ResetSpriteData,
+};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar3, gStringVar4};
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::task::{gTasks, task_set, task_set_func};
+use crate::text::DeactivateAllTextPrinters;
+use crate::text_window::{LoadMessageBoxGfx, LoadUserWindowBorderGfx};
+use crate::tv::{IsPokeNewsActive, TryPutSmartShopperOnAir};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{
+    ClearWindowTilemap, CopyWindowToVram, FillWindowPixelBuffer, FreeAllWindowBuffers,
+    PutWindowTilemap, RemoveWindow,
+};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `ConvertIntToDecimalStringN` with this module's view of its types.
+#[inline]
+unsafe fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8 {
+    unsafe { crate::string_util::ConvertIntToDecimalStringN(a0 as _, a1, a2, a3) as *mut u8 }
+}
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
+/// `GetMaxWidthInMenuTable` with this module's view of its types.
+#[inline]
+unsafe fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32 {
+    unsafe { crate::international_string_util::GetMaxWidthInMenuTable(a0 as _, a1) }
+}
+/// `GetStringRightAlignXOffset` with this module's view of its types.
+#[inline]
+unsafe fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32 {
+    unsafe { crate::international_string_util::GetStringRightAlignXOffset(a0, a1 as _, a2) }
+}
+/// `InitBgsFromTemplates` with this module's view of its types.
+#[inline]
+unsafe fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8) {
+    unsafe {
+        crate::bg::InitBgsFromTemplates(a0, a1 as _, a2);
+    }
+}
+/// `InitWindows` with this module's view of its types.
+#[inline]
+unsafe fn InitWindows(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::InitWindows(a0 as _) }
+}
+/// `LZDecompressWram` with this module's view of its types.
+#[inline]
+unsafe fn LZDecompressWram(a0: *mut u32, a1: *mut c_void) {
+    unsafe {
+        crate::decompress::LZDecompressWram(a0 as _, a1 as _);
+    }
+}
+/// `SetBgTilemapBuffer` with this module's view of its types.
+#[inline]
+unsafe fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void) {
+    unsafe {
+        crate::bg::SetBgTilemapBuffer(a0, a1 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
+/// `StringCopy` with this module's view of its types.
+#[inline]
+unsafe fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringCopy(a0 as _, a1 as _) as *mut u8 }
+}
+/// `StringExpandPlaceholders` with this module's view of its types.
+#[inline]
+unsafe fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8 {
+    unsafe { crate::string_util::StringExpandPlaceholders(a0 as _, a1 as _) as *mut u8 }
+}
+// The C's names for task and sprite data slots.
+const tListTaskId: usize = 7;
 // Data tables (translate with cdata.py): sShopPurchaseYesNoFuncs sShopMenuActions_BuySellQuit sShopMenuActions_BuyQuit sShopMenuWindowTemplates sShopBuyMenuListTemplate sShopBuyMenuBgTemplates sShopBuyMenuWindowTemplates sShopBuyMenuYesNoWindowTemplates sShopBuyMenuTextColors
 
 /// `struct MartInfo`
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct MartInfo {
-    pub callback: Option<unsafe extern "C" fn()>,
+    pub callback: Option<unsafe fn()>,
     pub menuActions: *mut MenuAction,
     pub itemList: *mut u16,
     pub itemCount: u16,
@@ -144,229 +295,53 @@ pub(crate) static mut sListMenuItems: *mut ListMenuItem = null_mut();
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sItemNames: *mut CArray<u8, 16> = null_mut();
 #[unsafe(link_section = "ewram_data")]
-pub(crate) static mut sPurchaseHistoryId: u8 = 0;
-#[unsafe(no_mangle)]
+pub(crate) static sPurchaseHistoryId: crate::global::Global<u8> = crate::global::Global::new(0);
 #[unsafe(link_section = "ewram_data")]
 pub static mut gMartPurchaseHistory: CArray<ItemSlot, 3> = unsafe { zeroed() };
 
-unsafe extern "C" {
-    static gDecorations: CArray<Decoration, 0>;
-    static mut gFieldCallback: Option<unsafe extern "C" fn()>;
-    static mut gMain: Main;
-    static mut gMapHeader: MapHeader;
-    static gMoveNames: CArray<CArray<u8, 13>, 355>;
-    static mut gMultiuseListMenuTemplate: ListMenuTemplate;
-    static mut gObjectEvents: CArray<ObjectEvent, 16>;
-    static mut gPaletteFade: PaletteFadeControl;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static gShopMenu_Gfx: CArray<u32, 0>;
-    static gShopMenu_Pal: CArray<u32, 0>;
-    static gShopMenu_Tilemap: CArray<u32, 0>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar3: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static mut gTasks: CArray<Task, 0>;
-    static gText_AnythingElseICanHelp: CArray<u8, 0>;
-    static gText_CanIHelpWithAnythingElse: CArray<u8, 0>;
-    static gText_Cancel2: CArray<u8, 0>;
-    static gText_HereYouGoThankYou: CArray<u8, 0>;
-    static gText_InBagVar1: CArray<u8, 0>;
-    static gText_NoMoreRoomForThis: CArray<u8, 0>;
-    static gText_PokedollarVar1: CArray<u8, 0>;
-    static gText_QuitShopping: CArray<u8, 0>;
-    static gText_SelectorArrow2: CArray<u8, 0>;
-    static gText_SpaceForVar1Full: CArray<u8, 0>;
-    static gText_ThankYouIllSendItHome: CArray<u8, 0>;
-    static gText_ThanksIllSendItHome: CArray<u8, 0>;
-    static gText_ThrowInPremierBall: CArray<u8, 0>;
-    static gText_Var1AndYouWantedVar2: CArray<u8, 0>;
-    static gText_Var1CertainlyHowMany: CArray<u8, 0>;
-    static gText_Var1CertainlyHowMany2: CArray<u8, 0>;
-    static gText_Var1IsItThatllBeVar2: CArray<u8, 0>;
-    static gText_YouDontHaveMoney: CArray<u8, 0>;
-    static gText_YouWantedVar1ThatllBeVar2: CArray<u8, 0>;
-    static gText_xVar1: CArray<u8, 0>;
-    fn AddBagItem(a0: u16, a1: u16) -> u8;
-    fn AddDecorationIconObject(a0: u8, a1: i16, a2: i16, a3: u8, a4: u16, a5: u16) -> u8;
-    fn AddItemIconSprite(a0: u16, a1: u16, a2: u16) -> u8;
-    fn AddMoneyLabelObject(a0: u16, a1: u16);
-    fn AddScrollIndicatorArrowPairParameterized(
-        a0: u32,
-        a1: i32,
-        a2: i32,
-        a3: i32,
-        a4: i32,
-        a5: i32,
-        a6: i32,
-        a7: *mut u16,
-    ) -> u8;
-    fn AddTextPrinterParameterized4(
-        a0: u8,
-        a1: u8,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: i8,
-        a8: *mut u8,
-    );
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AdjustQuantityAccordingToDPadInput(a0: *mut i16, a1: u16) -> u8;
-    fn Alloc(a0: u32) -> *mut c_void;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn AnimateSprites();
-    fn BeginNormalPaletteFade(a0: u32, a1: i8, a2: u8, a3: u8, a4: u16) -> u8;
-    fn BlendPalettes(a0: u32, a1: u8, a2: u16);
-    fn BuildOamBuffer();
-    fn CB2_GoToSellMenu();
-    fn CB2_ReturnToField();
-    fn ClearDialogWindowAndFrameToTransparent(a0: u8, a1: u8);
-    fn ClearScheduledBgCopiesToVram();
-    fn ClearStdWindowAndFrameToTransparent(a0: u8, a1: u8);
-    fn ClearWindowTilemap(a0: u8);
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyItemName(a0: u16, a1: *mut u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CountTotalItemQuantityInBag(a0: u16) -> u16;
-    fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateObjectGraphicsSprite(
-        a0: u16,
-        a1: Option<unsafe extern "C" fn(*mut Sprite)>,
-        a2: i16,
-        a3: i16,
-        a4: u8,
-    ) -> u8;
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn CreateYesNoMenuWithCallbacks(
-        a0: u8,
-        a1: *mut WindowTemplate,
-        a2: u8,
-        a3: u8,
-        a4: u8,
-        a5: u16,
-        a6: u8,
-        a7: *mut YesNoFuncTable,
-    );
-    fn DeactivateAllTextPrinters();
-    fn DecompressAndCopyTileDataToVram(
-        a0: u8,
-        a1: *mut c_void,
-        a2: u32,
-        a3: u16,
-        a4: u8,
-    ) -> *mut c_void;
-    fn DecorationAdd(a0: u8) -> u8;
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroyTask(a0: u8);
-    fn DisplayItemMessageOnField(a0: u8, a1: *mut u8, a2: Option<unsafe extern "C" fn(u8)>);
-    fn DisplayMessageAndContinueTask(
-        a0: u8,
-        a1: u8,
-        a2: u16,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: *mut u8,
-        a7: *mut c_void,
-    );
-    fn DoScheduledBgTilemapCopiesToVram();
-    fn DrawStdFrameWithCustomTileAndPalette(a0: u8, a1: u8, a2: u16, a3: u8);
-    fn FadeInFromBlack();
-    fn FadeScreen(a0: u8, a1: i8);
-    fn FillBgTilemapBufferRect_Palette0(a0: u8, a1: u16, a2: u8, a3: u8, a4: u8, a5: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn Free(a0: *mut c_void);
-    fn FreeAllSpritePalettes();
-    fn FreeAllWindowBuffers();
-    fn FreeSpritePaletteByTag(a0: u16);
-    fn FreeSpriteTilesByTag(a0: u16);
-    fn FreeTempTileDataBuffersIfPossible() -> u8;
-    fn GetItemDescription(a0: u16) -> *mut u8;
-    fn GetItemPocket(a0: u16) -> u8;
-    fn GetItemPrice(a0: u16) -> u16;
-    fn GetMaxWidthInMenuTable(a0: *mut MenuAction, a1: i32) -> i32;
-    fn GetMoney(a0: *mut u32) -> u32;
-    fn GetObjectEventGraphicsInfo(a0: u8) -> *mut ObjectEventGraphicsInfo;
-    fn GetObjectEventIdByXY(a0: i16, a1: i16) -> u8;
-    fn GetPlayerTextSpeedDelay() -> u8;
-    fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetXYCoordsOneStepInFrontOfPlayer(a0: *mut i16, a1: *mut i16);
-    fn IncrementGameStat(a0: u8);
-    fn InitBgsFromTemplates(a0: u8, a1: *mut BgTemplate, a2: u8);
-    fn InitMenuInUpperLeftCornerNormal(a0: u8, a1: u8, a2: u8) -> u8;
-    fn InitWindows(a0: *mut WindowTemplate) -> u16;
-    fn IsEnoughMoney(a0: *mut u32, a1: u32) -> u8;
-    fn IsPokeNewsActive(a0: u8) -> u8;
-    fn IsWeatherNotFadingIn() -> u8;
-    fn ItemIdToBattleMoveId(a0: u16) -> u16;
-    fn LZDecompressWram(a0: *mut u32, a1: *mut c_void);
-    fn ListMenuGetScrollAndRow(a0: u8, a1: *mut u16, a2: *mut u16);
-    fn ListMenuGetYCoordForPrintingArrowCursor(a0: u8) -> u16;
-    fn ListMenuInit(a0: *mut ListMenuTemplate, a1: u16, a2: u16) -> u8;
-    fn ListMenu_ProcessInput(a0: u8) -> i32;
-    fn LoadCompressedPalette(a0: *mut u32, a1: u16, a2: u16);
-    fn LoadMessageBoxGfx(a0: u8, a1: u16, a2: u8);
-    fn LoadOam();
-    fn LoadUserWindowBorderGfx(a0: u8, a1: u16, a2: u8);
-    fn LockPlayerFieldControls();
-    fn MapGridGetMetatileIdAt(a0: i32, a1: i32) -> i32;
-    fn MapGridGetMetatileLayerTypeAt(a0: i32, a1: i32) -> u8;
-    fn Menu_ProcessInputNoWrap() -> i8;
-    fn PlaySE(a0: u16);
-    fn PrintMenuTable(a0: u8, a1: u8, a2: *mut MenuAction);
-    fn PrintMoneyAmount(a0: u8, a1: u8, a2: u8, a3: i32, a4: u8);
-    fn PrintMoneyAmountInMoneyBox(a0: u8, a1: i32, a2: u8);
-    fn PrintMoneyAmountInMoneyBoxWithBorder(a0: u8, a1: u16, a2: u8, a3: i32);
-    fn ProcessSpriteCopyRequests();
-    fn PutWindowTilemap(a0: u8);
-    fn RemoveMoney(a0: *mut u32, a1: u32);
-    fn RemoveMoneyLabelObject();
-    fn RemoveScrollIndicatorArrowPair(a0: u8);
-    fn RemoveWindow(a0: u8);
-    fn ResetBgsAndClearDma3BusyFlags(a0: u32);
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn ResetTempTileDataBuffers();
-    fn RunTasks();
-    fn ScanlineEffect_Stop();
-    fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn ScriptContext_Enable();
-    fn SetBgTilemapBuffer(a0: u8, a1: *mut c_void);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetStandardWindowBorderStyle(a0: u8, a1: u8);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankHBlankCallbacksToNull();
-    fn ShowBg(a0: u8);
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TransferPlttBuffer();
-    fn TryPutSmartShopperOnAir();
-    fn UnlockPlayerFieldControls();
-    fn UpdatePaletteFade() -> u8;
+/// `Alloc` with this module's view of its types.
+#[inline]
+unsafe fn Alloc(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::Alloc(a0) as *mut c_void }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `CpuFastSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuFastSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuFastSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `GetItemDescription` with this module's view of its types.
+#[inline]
+unsafe fn GetItemDescription(a0: u16) -> *mut u8 {
+    crate::item::GetItemDescription(a0) as *mut u8
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn CreateShopMenu(martType: u8) -> u8 {
+unsafe fn CreateShopMenu(martType: u8) -> u8 {
     let mut numMenuItems: i32 = 0;
     LockPlayerFieldControls();
     sMartInfo.martType = martType;
     if martType == MART_TYPE_NORMAL {
-        let mut winTemplate: WindowTemplate = zeroed();
-        winTemplate = sShopMenuWindowTemplates[0];
+        let mut winTemplate: WindowTemplate = sShopMenuWindowTemplates[0];
         winTemplate.width =
             GetMaxWidthInMenuTable(sShopMenuActions_BuySellQuit.as_ptr().cast_mut(), 3) as u8;
         sMartInfo.windowId = AddWindow(&raw mut winTemplate) as u8;
         sMartInfo.menuActions = sShopMenuActions_BuySellQuit.as_ptr().cast_mut();
         numMenuItems = 3;
     } else {
-        let mut winTemplate: WindowTemplate = zeroed();
-        winTemplate = sShopMenuWindowTemplates[1];
+        let mut winTemplate: WindowTemplate = sShopMenuWindowTemplates[1];
         winTemplate.width =
             GetMaxWidthInMenuTable(sShopMenuActions_BuyQuit.as_ptr().cast_mut(), 2) as u8;
         sMartInfo.windowId = AddWindow(&raw mut winTemplate) as u8;
@@ -382,12 +357,12 @@ pub(crate) unsafe extern "C" fn CreateShopMenu(martType: u8) -> u8 {
     InitMenuInUpperLeftCornerNormal(sMartInfo.windowId, numMenuItems as u8, 0);
     PutWindowTilemap(sMartInfo.windowId);
     CopyWindowToVram(sMartInfo.windowId, COPYWIN_MAP);
-    return CreateTask(Some(Task_ShopMenu), 8);
+    CreateTask(Some(Task_ShopMenu), 8)
 }
-pub(crate) unsafe extern "C" fn SetShopMenuCallback(callback: Option<unsafe extern "C" fn()>) {
+unsafe fn SetShopMenuCallback(callback: Option<unsafe fn()>) {
     sMartInfo.callback = callback;
 }
-pub(crate) unsafe extern "C" fn SetShopItemsForSale(items: *mut u16) {
+unsafe fn SetShopItemsForSale(items: *mut u16) {
     let mut i: u16 = 0;
     sMartInfo.itemList = items;
     sMartInfo.itemCount = 0;
@@ -396,8 +371,8 @@ pub(crate) unsafe extern "C" fn SetShopItemsForSale(items: *mut u16) {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn Task_ShopMenu(taskId: u8) {
-    let mut inputCode: i8 = Menu_ProcessInputNoWrap();
+pub(crate) unsafe fn Task_ShopMenu(taskId: u8) {
+    let inputCode: i8 = Menu_ProcessInputNoWrap();
     match inputCode {
         MENU_NOTHING_CHOSEN => {}
         MENU_B_PRESSED => {
@@ -412,26 +387,25 @@ pub(crate) unsafe extern "C" fn Task_ShopMenu(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_HandleShopMenuBuy(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_HandleShopMenuBuy(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(8) = (CB2_InitBuyMenu as *const () as usize as u32 >> 16) as i16;
     *data.at(9) = CB2_InitBuyMenu as *const () as usize as u32 as i16;
-    gTasks[taskId].func = Some(Task_GoToBuyOrSellMenu);
+    task_set_func(taskId, Some(Task_GoToBuyOrSellMenu));
     FadeScreen(FADE_TO_BLACK, 0);
 }
-pub(crate) unsafe extern "C" fn Task_HandleShopMenuSell(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_HandleShopMenuSell(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     *data.at(8) = (CB2_GoToSellMenu as *const () as usize as u32 >> 16) as i16;
     *data.at(9) = CB2_GoToSellMenu as *const () as usize as u32 as i16;
-    gTasks[taskId].func = Some(Task_GoToBuyOrSellMenu);
+    task_set_func(taskId, Some(Task_GoToBuyOrSellMenu));
     FadeScreen(FADE_TO_BLACK, 0);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CB2_ExitSellMenu() {
+pub unsafe fn CB2_ExitSellMenu() {
     gFieldCallback = Some(MapPostLoadHook_ReturnToShopMenu);
     SetMainCallback2(Some(CB2_ReturnToField));
 }
-pub(crate) unsafe extern "C" fn Task_HandleShopMenuQuit(taskId: u8) {
+pub(crate) unsafe fn Task_HandleShopMenuQuit(taskId: u8) {
     ClearStdWindowAndFrameToTransparent(sMartInfo.windowId, 2);
     RemoveWindow(sMartInfo.windowId);
     TryPutSmartShopperOnAir();
@@ -441,55 +415,59 @@ pub(crate) unsafe extern "C" fn Task_HandleShopMenuQuit(taskId: u8) {
         sMartInfo.callback.unwrap_unchecked()();
     }
 }
-pub(crate) unsafe extern "C" fn Task_GoToBuyOrSellMenu(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_GoToBuyOrSellMenu(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if gPaletteFade.active() == 0 {
         DestroyTask(taskId);
-        SetMainCallback2(
-            core::mem::transmute::<usize, Option<unsafe extern "C" fn()>>(
-                ((*data.at(8) as u16 as i32) << 16 | *data.at(9) as u16 as i32) as usize,
-            ),
-        );
+        SetMainCallback2(core::mem::transmute::<usize, Option<unsafe fn()>>(
+            ((*data.at(8) as u16 as i32) << 16 | *data.at(9) as u16 as i32) as usize,
+        ));
     }
 }
-pub(crate) unsafe extern "C" fn MapPostLoadHook_ReturnToShopMenu() {
+pub(crate) unsafe fn MapPostLoadHook_ReturnToShopMenu() {
     FadeInFromBlack();
     CreateTask(Some(Task_ReturnToShopMenu), 8);
 }
-pub(crate) unsafe extern "C" fn Task_ReturnToShopMenu(taskId: u8) {
+pub(crate) unsafe fn Task_ReturnToShopMenu(taskId: u8) {
     if IsWeatherNotFadingIn() == TRUE {
         if sMartInfo.martType == MART_TYPE_DECOR2 {
             DisplayItemMessageOnField(
                 taskId,
-                gText_CanIHelpWithAnythingElse.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_CanIHelpWithAnythingElse)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 Some(ShowShopMenuAfterExitingBuyOrSellMenu),
             );
         } else {
             DisplayItemMessageOnField(
                 taskId,
-                gText_AnythingElseICanHelp.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_AnythingElseICanHelp)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 Some(ShowShopMenuAfterExitingBuyOrSellMenu),
             );
         }
     }
 }
-pub(crate) unsafe extern "C" fn ShowShopMenuAfterExitingBuyOrSellMenu(taskId: u8) {
+pub(crate) unsafe fn ShowShopMenuAfterExitingBuyOrSellMenu(taskId: u8) {
     CreateShopMenu(sMartInfo.martType);
     DestroyTask(taskId);
 }
-pub(crate) unsafe extern "C" fn CB2_BuyMenu() {
+pub(crate) unsafe fn CB2_BuyMenu() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
     DoScheduledBgTilemapCopiesToVram();
     UpdatePaletteFade();
 }
-pub(crate) unsafe extern "C" fn VBlankCB_BuyMenu() {
+pub(crate) unsafe fn VBlankCB_BuyMenu() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn CB2_InitBuyMenu() {
+pub(crate) unsafe fn CB2_InitBuyMenu() {
     let mut taskId: u8 = 0;
     match gMain.state {
         0 => {
@@ -533,7 +511,11 @@ pub(crate) unsafe extern "C" fn CB2_InitBuyMenu() {
             BuyMenuDrawGraphics();
             BuyMenuAddScrollIndicatorArrows();
             taskId = CreateTask(Some(Task_BuyMenu), 8);
-            gTasks[taskId].data[7] = ListMenuInit(&raw mut gMultiuseListMenuTemplate, 0, 0) as i16;
+            task_set(
+                taskId,
+                tListTaskId,
+                ListMenuInit(&raw mut gMultiuseListMenuTemplate, 0, 0) as i16,
+            );
             BlendPalettes(PALETTES_ALL, 16, 0);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, 0);
             SetVBlankCallback(Some(VBlankCB_BuyMenu));
@@ -541,17 +523,16 @@ pub(crate) unsafe extern "C" fn CB2_InitBuyMenu() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn BuyMenuFreeMemory() {
+unsafe fn BuyMenuFreeMemory() {
     Free(sShopData as *mut c_void);
     Free(sListMenuItems as *mut c_void);
     Free(sItemNames as *mut c_void);
     FreeAllWindowBuffers();
 }
-pub(crate) unsafe extern "C" fn BuyMenuBuildListMenuTemplate() {
-    let mut i: u16 = 0;
+unsafe fn BuyMenuBuildListMenuTemplate() {
     sListMenuItems = Alloc((sMartInfo.itemCount as u32 + 1) * 8) as *mut ListMenuItem;
     sItemNames = Alloc((sMartInfo.itemCount as u32 + 1) * 16) as *mut CArray<u8, 16>;
-    i = 0;
+    let mut i: u16 = 0;
     while i < sMartInfo.itemCount {
         BuyMenuSetListEntry(
             sListMenuItems.at(i),
@@ -562,7 +543,9 @@ pub(crate) unsafe extern "C" fn BuyMenuBuildListMenuTemplate() {
     }
     StringCopy(
         (*sItemNames.at(i)).as_mut_ptr(),
-        gText_Cancel2.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Cancel2).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     (*sListMenuItems.at(i)).name = (*sItemNames.at(i)).as_mut_ptr();
     (*sListMenuItems.at(i)).id = LIST_CANCEL;
@@ -576,20 +559,23 @@ pub(crate) unsafe extern "C" fn BuyMenuBuildListMenuTemplate() {
     }
     (*sShopData).itemsShowed = gMultiuseListMenuTemplate.maxShowed;
 }
-pub(crate) unsafe extern "C" fn BuyMenuSetListEntry(
-    menuItem: *mut ListMenuItem,
-    item: u16,
-    name: *mut u8,
-) {
+unsafe fn BuyMenuSetListEntry(menuItem: *mut ListMenuItem, item: u16, name: *mut u8) {
     if sMartInfo.martType == MART_TYPE_NORMAL {
         CopyItemName(item, name);
     } else {
-        StringCopy(name, gDecorations[item].name.as_ptr().cast_mut());
+        StringCopy(
+            name,
+            (*(&raw const crate::data::decoration::gDecorations).cast::<CArray<Decoration, 0>>())
+                [item]
+                .name
+                .as_ptr()
+                .cast_mut(),
+        );
     }
     (*menuItem).name = name;
     (*menuItem).id = item as i32;
 }
-pub(crate) unsafe extern "C" fn BuyMenuPrintItemDescriptionAndShowItemIcon(
+pub(crate) unsafe fn BuyMenuPrintItemDescriptionAndShowItemIcon(
     item: i32,
     onInit: u8,
     list: *mut ListMenu,
@@ -609,15 +595,20 @@ pub(crate) unsafe extern "C" fn BuyMenuPrintItemDescriptionAndShowItemIcon(
         if sMartInfo.martType == MART_TYPE_NORMAL {
             description = GetItemDescription(item as u16);
         } else {
-            description = gDecorations[item].description;
+            description = (*(&raw const crate::data::decoration::gDecorations)
+                .cast::<CArray<Decoration, 0>>())[item]
+                .description;
         }
     } else {
-        description = gText_QuitShopping.as_ptr().cast_mut();
+        description = (*(&raw const crate::data::strings::gText_QuitShopping)
+            .cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     }
     FillWindowPixelBuffer(WIN_ITEM_DESCRIPTION, 0);
     BuyMenuPrint(WIN_ITEM_DESCRIPTION, description, 3, 1, 0, COLORID_NORMAL);
 }
-pub(crate) unsafe extern "C" fn BuyMenuPrintPriceInList(windowId: u8, itemId: u32, y: u8) {
+pub(crate) unsafe fn BuyMenuPrintPriceInList(windowId: u8, itemId: u32, y: u8) {
     let mut x: u8 = 0;
     if itemId != LIST_CANCEL as u32 {
         if sMartInfo.martType == MART_TYPE_NORMAL {
@@ -633,14 +624,18 @@ pub(crate) unsafe extern "C" fn BuyMenuPrintPriceInList(windowId: u8, itemId: u3
         } else {
             ConvertIntToDecimalStringN(
                 gStringVar1.as_mut_ptr(),
-                gDecorations[itemId].price as i32,
+                (*(&raw const crate::data::decoration::gDecorations)
+                    .cast::<CArray<Decoration, 0>>())[itemId]
+                    .price as i32,
                 STR_CONV_MODE_LEFT_ALIGN,
                 5,
             );
         }
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_PokedollarVar1.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_PokedollarVar1).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
         );
         x = GetStringRightAlignXOffset(FONT_NARROW as i32, gStringVar4.as_mut_ptr(), 120) as u8;
         AddTextPrinterParameterized4(
@@ -656,7 +651,7 @@ pub(crate) unsafe extern "C" fn BuyMenuPrintPriceInList(windowId: u8, itemId: u3
         );
     }
 }
-pub(crate) unsafe extern "C" fn BuyMenuAddScrollIndicatorArrows() {
+unsafe fn BuyMenuAddScrollIndicatorArrows() {
     if (*sShopData).scrollIndicatorsTaskId == TASK_NONE
         && sMartInfo.itemCount as i32 + 1 > MAX_ITEMS_SHOWN as i32
     {
@@ -672,26 +667,28 @@ pub(crate) unsafe extern "C" fn BuyMenuAddScrollIndicatorArrows() {
         );
     }
 }
-pub(crate) unsafe extern "C" fn BuyMenuRemoveScrollIndicatorArrows() {
+unsafe fn BuyMenuRemoveScrollIndicatorArrows() {
     if (*sShopData).scrollIndicatorsTaskId != TASK_NONE {
         RemoveScrollIndicatorArrowPair((*sShopData).scrollIndicatorsTaskId);
         (*sShopData).scrollIndicatorsTaskId = TASK_NONE;
     }
 }
-pub(crate) unsafe extern "C" fn BuyMenuPrintCursor(scrollIndicatorsTaskId: u8, colorSet: u8) {
-    let mut y: u8 = ListMenuGetYCoordForPrintingArrowCursor(scrollIndicatorsTaskId) as u8;
+unsafe fn BuyMenuPrintCursor(scrollIndicatorsTaskId: u8, colorSet: u8) {
+    let y: u8 = ListMenuGetYCoordForPrintingArrowCursor(scrollIndicatorsTaskId) as u8;
     BuyMenuPrint(
         WIN_ITEM_LIST,
-        gText_SelectorArrow2.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_SelectorArrow2).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         0,
         y,
         0,
         colorSet,
     );
 }
-pub(crate) unsafe extern "C" fn BuyMenuAddItemIcon(item: u16, iconSlot: u8) {
+unsafe fn BuyMenuAddItemIcon(item: u16, iconSlot: u8) {
     let mut spriteId: u8 = 0;
-    let mut spriteIdPtr: *mut u8 = &raw mut (*sShopData).itemSpriteIds[iconSlot];
+    let spriteIdPtr: *mut u8 = &raw mut (*sShopData).itemSpriteIds[iconSlot];
     if *spriteIdPtr != SPRITE_NONE {
         return;
     }
@@ -720,8 +717,8 @@ pub(crate) unsafe extern "C" fn BuyMenuAddItemIcon(item: u16, iconSlot: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn BuyMenuRemoveItemIcon(item: u16, iconSlot: u8) {
-    let mut spriteIdPtr: *mut u8 = &raw mut (*sShopData).itemSpriteIds[iconSlot];
+unsafe fn BuyMenuRemoveItemIcon(item: u16, iconSlot: u8) {
+    let spriteIdPtr: *mut u8 = &raw mut (*sShopData).itemSpriteIds[iconSlot];
     if *spriteIdPtr == SPRITE_NONE {
         return;
     }
@@ -730,7 +727,7 @@ pub(crate) unsafe extern "C" fn BuyMenuRemoveItemIcon(item: u16, iconSlot: u8) {
     DestroySprite(&raw mut gSprites[*spriteIdPtr]);
     *spriteIdPtr = SPRITE_NONE;
 }
-pub(crate) unsafe extern "C" fn BuyMenuInitBgs() {
+unsafe fn BuyMenuInitBgs() {
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, sShopBuyMenuBgTemplates.as_ptr().cast_mut(), 4);
     SetBgTilemapBuffer(
@@ -760,21 +757,31 @@ pub(crate) unsafe extern "C" fn BuyMenuInitBgs() {
     ShowBg(2);
     ShowBg(3);
 }
-pub(crate) unsafe extern "C" fn BuyMenuDecompressBgGraphics() {
+unsafe fn BuyMenuDecompressBgGraphics() {
     DecompressAndCopyTileDataToVram(
         1,
-        gShopMenu_Gfx.as_ptr().cast_mut() as *mut c_void,
+        (*(&raw const crate::data::graphics::gShopMenu_Gfx).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut() as *mut c_void,
         0x3A0,
         0x3E3,
         0,
     );
     LZDecompressWram(
-        gShopMenu_Tilemap.as_ptr().cast_mut(),
+        (*(&raw const crate::data::graphics::gShopMenu_Tilemap).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
         (*sShopData).tilemapBuffers[0].as_mut_ptr() as *mut c_void,
     );
-    LoadCompressedPalette(gShopMenu_Pal.as_ptr().cast_mut(), 192, 32);
+    LoadCompressedPalette(
+        (*(&raw const crate::data::graphics::gShopMenu_Pal).cast::<CArray<u32, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        192,
+        32,
+    );
 }
-pub(crate) unsafe extern "C" fn BuyMenuInitWindows() {
+unsafe fn BuyMenuInitWindows() {
     InitWindows(sShopBuyMenuWindowTemplates.as_ptr().cast_mut());
     DeactivateAllTextPrinters();
     LoadUserWindowBorderGfx(WIN_MONEY, 1, 208);
@@ -783,14 +790,7 @@ pub(crate) unsafe extern "C" fn BuyMenuInitWindows() {
     PutWindowTilemap(WIN_ITEM_LIST);
     PutWindowTilemap(WIN_ITEM_DESCRIPTION);
 }
-pub(crate) unsafe extern "C" fn BuyMenuPrint(
-    windowId: u8,
-    text: *mut u8,
-    x: u8,
-    y: u8,
-    speed: i8,
-    colorSet: u8,
-) {
+unsafe fn BuyMenuPrint(windowId: u8, text: *mut u8, x: u8, y: u8, speed: i8, colorSet: u8) {
     AddTextPrinterParameterized4(
         windowId,
         FONT_NORMAL,
@@ -803,11 +803,7 @@ pub(crate) unsafe extern "C" fn BuyMenuPrint(
         text,
     );
 }
-pub(crate) unsafe extern "C" fn BuyMenuDisplayMessage(
-    taskId: u8,
-    text: *mut u8,
-    callback: Option<unsafe extern "C" fn(u8)>,
-) {
+unsafe fn BuyMenuDisplayMessage(taskId: u8, text: *mut u8, callback: Option<unsafe fn(u8)>) {
     DisplayMessageAndContinueTask(
         taskId,
         WIN_MESSAGE,
@@ -816,11 +812,11 @@ pub(crate) unsafe extern "C" fn BuyMenuDisplayMessage(
         FONT_NORMAL,
         GetPlayerTextSpeedDelay(),
         text,
-        core::mem::transmute::<Option<unsafe extern "C" fn(u8)>, *mut c_void>(callback),
+        core::mem::transmute::<Option<unsafe fn(u8)>, *mut c_void>(callback),
     );
     ScheduleBgCopyTilemapToVram(0);
 }
-pub(crate) unsafe extern "C" fn BuyMenuDrawGraphics() {
+unsafe fn BuyMenuDrawGraphics() {
     BuyMenuDrawMapGraphics();
     BuyMenuCopyMenuBgToBg1TilemapBuffer();
     AddMoneyLabelObject(19, 11);
@@ -835,14 +831,12 @@ pub(crate) unsafe extern "C" fn BuyMenuDrawGraphics() {
     ScheduleBgCopyTilemapToVram(2);
     ScheduleBgCopyTilemapToVram(3);
 }
-pub(crate) unsafe extern "C" fn BuyMenuDrawMapGraphics() {
+unsafe fn BuyMenuDrawMapGraphics() {
     BuyMenuCollectObjectEventData();
     BuyMenuDrawObjectEvents();
     BuyMenuDrawMapBg();
 }
-pub(crate) unsafe extern "C" fn BuyMenuDrawMapBg() {
-    let mut i: i16 = 0;
-    let mut j: i16 = 0;
+unsafe fn BuyMenuDrawMapBg() {
     let mut x: i16 = 0;
     let mut y: i16 = 0;
     let mut mapLayout: *mut MapLayout = null_mut();
@@ -852,10 +846,8 @@ pub(crate) unsafe extern "C" fn BuyMenuDrawMapBg() {
     GetXYCoordsOneStepInFrontOfPlayer(&raw mut x, &raw mut y);
     x -= 4;
     y -= 4;
-    j = 0;
-    while j < 10 {
-        i = 0;
-        while i < 15 {
+    for j in 0..10i16 {
+        for i in 0..15i16 {
             metatile = MapGridGetMetatileIdAt(x as i32 + i as i32, y as i32 + j as i32) as u16;
             if BuyMenuCheckForOverlapWithMenuBg(i as i32, j as i32) == TRUE {
                 metatileLayerType =
@@ -883,19 +875,12 @@ pub(crate) unsafe extern "C" fn BuyMenuDrawMapBg() {
                     metatileLayerType,
                 );
             }
-            i += 1;
         }
-        j += 1;
     }
 }
-pub(crate) unsafe extern "C" fn BuyMenuDrawMapMetatile(
-    x: i16,
-    y: i16,
-    src: *mut u16,
-    metatileLayerType: u8,
-) {
-    let mut offset1: u16 = x as u16 * 2;
-    let mut offset2: u16 = y as u16 * 64;
+unsafe fn BuyMenuDrawMapMetatile(x: i16, y: i16, src: *mut u16, metatileLayerType: u8) {
+    let offset1: u16 = x as u16 * 2;
+    let offset2: u16 = y as u16 * 64;
     match metatileLayerType {
         0 => {
             BuyMenuDrawMapMetatileLayer(
@@ -942,34 +927,23 @@ pub(crate) unsafe extern "C" fn BuyMenuDrawMapMetatile(
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn BuyMenuDrawMapMetatileLayer(
-    mut dest: *mut u16,
-    offset1: i16,
-    offset2: i16,
-    src: *mut u16,
-) {
+unsafe fn BuyMenuDrawMapMetatileLayer(dest: *mut u16, offset1: i16, offset2: i16, src: *mut u16) {
     *dest.at(offset1 as i32 + offset2 as i32) = *src;
     *dest.at(offset1 as i32 + offset2 as i32 + 1) = *src.at(1);
     *dest.at(offset1 as i32 + offset2 as i32 + 32) = *src.at(2);
     *dest.at(offset1 as i32 + offset2 as i32 + 33) = *src.at(3);
 }
-pub(crate) unsafe extern "C" fn BuyMenuCollectObjectEventData() {
+unsafe fn BuyMenuCollectObjectEventData() {
     let mut facingX: i16 = 0;
     let mut facingY: i16 = 0;
-    let mut y: u8 = 0;
-    let mut x: u8 = 0;
     let mut numObjects: u8 = 0;
     GetXYCoordsOneStepInFrontOfPlayer(&raw mut facingX, &raw mut facingY);
-    y = 0;
-    while y < OBJECT_EVENTS_COUNT {
+    for y in 0..OBJECT_EVENTS_COUNT {
         (*sShopData).viewportObjects[y][0] = OBJECT_EVENTS_COUNT as i16;
-        y += 1;
     }
-    y = 0;
-    while y < 5 {
-        x = 0;
-        while x < 7 {
-            let mut objEventId: u8 =
+    for y in 0..5u8 {
+        for x in 0..7u8 {
+            let objEventId: u8 =
                 GetObjectEventIdByXY(facingX - 4 + x as i16, facingY - 2 + y as i16);
             if objEventId != OBJECT_EVENTS_COUNT {
                 (*sShopData).viewportObjects[numObjects][0] = objEventId as i16;
@@ -995,17 +969,13 @@ pub(crate) unsafe extern "C" fn BuyMenuCollectObjectEventData() {
                 }
                 numObjects += 1;
             }
-            x += 1;
         }
-        y += 1;
     }
 }
-pub(crate) unsafe extern "C" fn BuyMenuDrawObjectEvents() {
-    let mut i: u8 = 0;
+unsafe fn BuyMenuDrawObjectEvents() {
     let mut spriteId: u8 = 0;
     let mut graphicsInfo: *mut ObjectEventGraphicsInfo = null_mut();
-    i = 0;
-    while i < OBJECT_EVENTS_COUNT {
+    for i in 0..OBJECT_EVENTS_COUNT {
         'l1: {
             if (*sShopData).viewportObjects[i][0] == OBJECT_EVENTS_COUNT as i16 {
                 break 'l1;
@@ -1032,10 +1002,9 @@ pub(crate) unsafe extern "C" fn BuyMenuDrawObjectEvents() {
                 (*sShopData).viewportObjects[i][3] as u8,
             );
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn BuyMenuCheckIfObjectEventOverlapsMenuBg(object: *mut i16) -> u8 {
+unsafe fn BuyMenuCheckIfObjectEventOverlapsMenuBg(object: *mut i16) -> u8 {
     if BuyMenuCheckForOverlapWithMenuBg(*object.at(1) as i32, *object.at(2) as i32 + 2) == 0
         && *object.at(4) != METATILE_LAYER_TYPE_COVERED as i16
     {
@@ -1045,25 +1014,22 @@ pub(crate) unsafe extern "C" fn BuyMenuCheckIfObjectEventOverlapsMenuBg(object: 
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn BuyMenuCopyMenuBgToBg1TilemapBuffer() {
-    let mut i: i16 = 0;
-    let mut dest: *mut u16 = (*sShopData).tilemapBuffers[1].as_mut_ptr();
-    let mut src: *mut u16 = (*sShopData).tilemapBuffers[0].as_mut_ptr();
-    i = 0;
-    while i < 1024 {
+unsafe fn BuyMenuCopyMenuBgToBg1TilemapBuffer() {
+    let dest: *mut u16 = (*sShopData).tilemapBuffers[1].as_mut_ptr();
+    let src: *mut u16 = (*sShopData).tilemapBuffers[0].as_mut_ptr();
+    for i in 0..1024i16 {
         if *src.at(i) != 0 {
             *dest.at(i) = *src.at(i) + 50147;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn BuyMenuCheckForOverlapWithMenuBg(x: i32, y: i32) -> u8 {
-    let mut metatile: *mut u16 = (*sShopData).tilemapBuffers[0].as_mut_ptr();
-    let mut offset1: i32 = x * 2;
-    let mut offset2: i32 = y * 64;
+unsafe fn BuyMenuCheckForOverlapWithMenuBg(x: i32, y: i32) -> u8 {
+    let metatile: *mut u16 = (*sShopData).tilemapBuffers[0].as_mut_ptr();
+    let offset1: i32 = x * 2;
+    let offset2: i32 = y * 64;
     if *metatile.at(offset2 + offset1) == 0
         && *metatile.at(offset2 + offset1 + 32) == 0
         && *metatile.at(offset2 + offset1 + 1) == 0
@@ -1071,12 +1037,12 @@ pub(crate) unsafe extern "C" fn BuyMenuCheckForOverlapWithMenuBg(x: i32, y: i32)
     {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn Task_BuyMenu(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_BuyMenu(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if gPaletteFade.active() == 0 {
-        let mut itemId: i32 = ListMenu_ProcessInput(*data.at(7) as u8);
+        let itemId: i32 = ListMenu_ProcessInput(*data.at(7) as u8);
         ListMenuGetScrollAndRow(
             *data.at(7) as u8,
             &raw mut (*sShopData).scrollOffset,
@@ -1100,12 +1066,17 @@ pub(crate) unsafe extern "C" fn Task_BuyMenu(taskId: u8) {
                         IsPokeNewsActive(POKENEWS_SLATEPORT) as u32,
                     ) as u32;
                 } else {
-                    (*sShopData).totalCost = gDecorations[itemId].price as u32;
+                    (*sShopData).totalCost = (*(&raw const crate::data::decoration::gDecorations)
+                        .cast::<CArray<Decoration, 0>>())[itemId]
+                        .price as u32;
                 }
                 if IsEnoughMoney(&raw mut (*gSaveBlock1Ptr).money, (*sShopData).totalCost) == 0 {
                     BuyMenuDisplayMessage(
                         taskId,
-                        gText_YouDontHaveMoney.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::strings::gText_YouDontHaveMoney)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                         Some(BuyMenuReturnToItemList),
                     );
                 } else {
@@ -1114,26 +1085,43 @@ pub(crate) unsafe extern "C" fn Task_BuyMenu(taskId: u8) {
                         if GetItemPocket(itemId as u16) == POCKET_TM_HM {
                             StringCopy(
                                 gStringVar2.as_mut_ptr(),
-                                gMoveNames[ItemIdToBattleMoveId(itemId as u16)]
-                                    .as_ptr()
-                                    .cast_mut(),
+                                (*(&raw const crate::data::data_tables::gMoveNames).cast::<CArray<
+                                    CArray<u8, 13>,
+                                    355,
+                                >>(
+                                ))[ItemIdToBattleMoveId(itemId as u16)]
+                                .as_ptr()
+                                .cast_mut(),
                             );
                             BuyMenuDisplayMessage(
                                 taskId,
-                                gText_Var1CertainlyHowMany2.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::strings::gText_Var1CertainlyHowMany2)
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                                 Some(Task_BuyHowManyDialogueInit),
                             );
                         } else {
                             BuyMenuDisplayMessage(
                                 taskId,
-                                gText_Var1CertainlyHowMany.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::strings::gText_Var1CertainlyHowMany)
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                                 Some(Task_BuyHowManyDialogueInit),
                             );
                         }
                     } else {
                         StringCopy(
                             gStringVar1.as_mut_ptr(),
-                            gDecorations[itemId].name.as_ptr().cast_mut(),
+                            (*(&raw const crate::data::decoration::gDecorations).cast::<CArray<
+                                Decoration,
+                                0,
+                            >>(
+                            ))[itemId]
+                                .name
+                                .as_ptr()
+                                .cast_mut(),
                         );
                         ConvertIntToDecimalStringN(
                             gStringVar2.as_mut_ptr(),
@@ -1144,12 +1132,15 @@ pub(crate) unsafe extern "C" fn Task_BuyMenu(taskId: u8) {
                         if sMartInfo.martType == MART_TYPE_DECOR {
                             StringExpandPlaceholders(
                                 gStringVar4.as_mut_ptr(),
-                                gText_Var1IsItThatllBeVar2.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::strings::gText_Var1IsItThatllBeVar2)
+                                    .cast::<CArray<u8, 0>>())
+                                .as_ptr()
+                                .cast_mut(),
                             );
                         } else {
                             StringExpandPlaceholders(
                                 gStringVar4.as_mut_ptr(),
-                                gText_YouWantedVar1ThatllBeVar2.as_ptr().cast_mut(),
+                                (*(&raw const crate::data::strings::gText_YouWantedVar1ThatllBeVar2).cast::<CArray<u8, 0>>()).as_ptr().cast_mut(),
                             );
                         }
                         BuyMenuDisplayMessage(
@@ -1163,10 +1154,9 @@ pub(crate) unsafe extern "C" fn Task_BuyMenu(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_BuyHowManyDialogueInit(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut quantityInBag: u16 = CountTotalItemQuantityInBag(*data.at(5) as u16);
-    let mut maxQuantity: u16 = 0;
+pub(crate) unsafe fn Task_BuyHowManyDialogueInit(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    let quantityInBag: u16 = CountTotalItemQuantityInBag(*data.at(5) as u16);
     DrawStdFrameWithCustomTileAndPalette(WIN_QUANTITY_IN_BAG, FALSE, 1, 13);
     ConvertIntToDecimalStringN(
         gStringVar1.as_mut_ptr(),
@@ -1176,7 +1166,9 @@ pub(crate) unsafe extern "C" fn Task_BuyHowManyDialogueInit(taskId: u8) {
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_InBagVar1.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_InBagVar1).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     BuyMenuPrint(
         WIN_QUANTITY_IN_BAG,
@@ -1190,7 +1182,7 @@ pub(crate) unsafe extern "C" fn Task_BuyHowManyDialogueInit(taskId: u8) {
     DrawStdFrameWithCustomTileAndPalette(WIN_QUANTITY_PRICE, FALSE, 1, 13);
     BuyMenuPrintItemQuantityAndPrice(taskId);
     ScheduleBgCopyTilemapToVram(0);
-    maxQuantity = div_u32(
+    let maxQuantity: u16 = div_u32(
         GetMoney(&raw mut (*gSaveBlock1Ptr).money),
         (*sShopData).totalCost,
     ) as u16;
@@ -1199,10 +1191,10 @@ pub(crate) unsafe extern "C" fn Task_BuyHowManyDialogueInit(taskId: u8) {
     } else {
         (*sShopData).maxQuantity = maxQuantity as u8;
     }
-    gTasks[taskId].func = Some(Task_BuyHowManyDialogueHandleInput);
+    task_set_func(taskId, Some(Task_BuyHowManyDialogueHandleInput));
 }
-pub(crate) unsafe extern "C" fn Task_BuyHowManyDialogueHandleInput(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_BuyHowManyDialogueHandleInput(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if AdjustQuantityAccordingToDPadInput(data.at(1), (*sShopData).maxQuantity as u16) == TRUE {
         (*sShopData).totalCost = shr_i32(
             GetItemPrice(*data.at(5) as u16) as i32,
@@ -1233,7 +1225,10 @@ pub(crate) unsafe extern "C" fn Task_BuyHowManyDialogueHandleInput(taskId: u8) {
             );
             BuyMenuDisplayMessage(
                 taskId,
-                gText_Var1AndYouWantedVar2.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_Var1AndYouWantedVar2)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 Some(BuyMenuConfirmPurchase),
             );
         } else if gMain.newKeys as i32 & B_BUTTON != 0 {
@@ -1246,7 +1241,7 @@ pub(crate) unsafe extern "C" fn Task_BuyHowManyDialogueHandleInput(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn BuyMenuConfirmPurchase(taskId: u8) {
+pub(crate) unsafe fn BuyMenuConfirmPurchase(taskId: u8) {
     CreateYesNoMenuWithCallbacks(
         taskId,
         (&raw const *sShopBuyMenuYesNoWindowTemplates).cast_mut(),
@@ -1258,21 +1253,27 @@ pub(crate) unsafe extern "C" fn BuyMenuConfirmPurchase(taskId: u8) {
         (&raw const *sShopPurchaseYesNoFuncs).cast_mut(),
     );
 }
-pub(crate) unsafe extern "C" fn BuyMenuTryMakePurchase(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn BuyMenuTryMakePurchase(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     PutWindowTilemap(WIN_ITEM_LIST);
     if sMartInfo.martType == MART_TYPE_NORMAL {
         if AddBagItem(*data.at(5) as u16, *data.at(1) as u16) == TRUE {
             BuyMenuDisplayMessage(
                 taskId,
-                gText_HereYouGoThankYou.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_HereYouGoThankYou)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 Some(BuyMenuSubtractMoney),
             );
             RecordItemPurchase(taskId);
         } else {
             BuyMenuDisplayMessage(
                 taskId,
-                gText_NoMoreRoomForThis.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_NoMoreRoomForThis)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 Some(BuyMenuReturnToItemList),
             );
         }
@@ -1281,26 +1282,35 @@ pub(crate) unsafe extern "C" fn BuyMenuTryMakePurchase(taskId: u8) {
             if sMartInfo.martType == MART_TYPE_DECOR {
                 BuyMenuDisplayMessage(
                     taskId,
-                    gText_ThankYouIllSendItHome.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_ThankYouIllSendItHome)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     Some(BuyMenuSubtractMoney),
                 );
             } else {
                 BuyMenuDisplayMessage(
                     taskId,
-                    gText_ThanksIllSendItHome.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::strings::gText_ThanksIllSendItHome)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                     Some(BuyMenuSubtractMoney),
                 );
             }
         } else {
             BuyMenuDisplayMessage(
                 taskId,
-                gText_SpaceForVar1Full.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_SpaceForVar1Full)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 Some(BuyMenuReturnToItemList),
             );
         }
     }
 }
-pub(crate) unsafe extern "C" fn BuyMenuSubtractMoney(taskId: u8) {
+pub(crate) unsafe fn BuyMenuSubtractMoney(taskId: u8) {
     IncrementGameStat(GAME_STAT_SHOPPED);
     RemoveMoney(&raw mut (*gSaveBlock1Ptr).money, (*sShopData).totalCost);
     PlaySE(SE_SHOP);
@@ -1310,13 +1320,13 @@ pub(crate) unsafe extern "C" fn BuyMenuSubtractMoney(taskId: u8) {
         0,
     );
     if sMartInfo.martType == MART_TYPE_NORMAL {
-        gTasks[taskId].func = Some(Task_ReturnToItemListAfterItemPurchase);
+        task_set_func(taskId, Some(Task_ReturnToItemListAfterItemPurchase));
     } else {
-        gTasks[taskId].func = Some(Task_ReturnToItemListAfterDecorationPurchase);
+        task_set_func(taskId, Some(Task_ReturnToItemListAfterDecorationPurchase));
     }
 }
-pub(crate) unsafe extern "C" fn Task_ReturnToItemListAfterItemPurchase(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_ReturnToItemListAfterItemPurchase(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if gMain.newKeys as i32 & 3 != 0 {
         PlaySE(SE_SELECT);
         if *data.at(5) == ITEM_POKE_BALL as i16
@@ -1325,7 +1335,10 @@ pub(crate) unsafe extern "C" fn Task_ReturnToItemListAfterItemPurchase(taskId: u
         {
             BuyMenuDisplayMessage(
                 taskId,
-                gText_ThrowInPremierBall.as_ptr().cast_mut(),
+                (*(&raw const crate::data::strings::gText_ThrowInPremierBall)
+                    .cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
                 Some(BuyMenuReturnToItemList),
             );
         } else {
@@ -1333,24 +1346,24 @@ pub(crate) unsafe extern "C" fn Task_ReturnToItemListAfterItemPurchase(taskId: u
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_ReturnToItemListAfterDecorationPurchase(taskId: u8) {
+pub(crate) unsafe fn Task_ReturnToItemListAfterDecorationPurchase(taskId: u8) {
     if gMain.newKeys as i32 & 3 != 0 {
         PlaySE(SE_SELECT);
         BuyMenuReturnToItemList(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn BuyMenuReturnToItemList(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn BuyMenuReturnToItemList(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     ClearDialogWindowAndFrameToTransparent(WIN_MESSAGE, FALSE);
     BuyMenuPrintCursor(*data.at(7) as u8, COLORID_ITEM_LIST);
     PutWindowTilemap(WIN_ITEM_LIST);
     PutWindowTilemap(WIN_ITEM_DESCRIPTION);
     ScheduleBgCopyTilemapToVram(0);
     BuyMenuAddScrollIndicatorArrows();
-    gTasks[taskId].func = Some(Task_BuyMenu);
+    task_set_func(taskId, Some(Task_BuyMenu));
 }
-pub(crate) unsafe extern "C" fn BuyMenuPrintItemQuantityAndPrice(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+unsafe fn BuyMenuPrintItemQuantityAndPrice(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     FillWindowPixelBuffer(WIN_QUANTITY_PRICE, 17);
     PrintMoneyAmount(
         WIN_QUANTITY_PRICE,
@@ -1365,7 +1378,12 @@ pub(crate) unsafe extern "C" fn BuyMenuPrintItemQuantityAndPrice(taskId: u8) {
         STR_CONV_MODE_LEADING_ZEROS,
         BAG_ITEM_CAPACITY_DIGITS,
     );
-    StringExpandPlaceholders(gStringVar4.as_mut_ptr(), gText_xVar1.as_ptr().cast_mut());
+    StringExpandPlaceholders(
+        gStringVar4.as_mut_ptr(),
+        (*(&raw const crate::data::strings::gText_xVar1).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+    );
     BuyMenuPrint(
         WIN_QUANTITY_PRICE,
         gStringVar4.as_mut_ptr(),
@@ -1375,12 +1393,12 @@ pub(crate) unsafe extern "C" fn BuyMenuPrintItemQuantityAndPrice(taskId: u8) {
         COLORID_NORMAL,
     );
 }
-pub(crate) unsafe extern "C" fn ExitBuyMenu(taskId: u8) {
+unsafe fn ExitBuyMenu(taskId: u8) {
     gFieldCallback = Some(MapPostLoadHook_ReturnToShopMenu);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
-    gTasks[taskId].func = Some(Task_ExitBuyMenu);
+    task_set_func(taskId, Some(Task_ExitBuyMenu));
 }
-pub(crate) unsafe extern "C" fn Task_ExitBuyMenu(taskId: u8) {
+pub(crate) unsafe fn Task_ExitBuyMenu(taskId: u8) {
     if gPaletteFade.active() == 0 {
         RemoveMoneyLabelObject();
         BuyMenuFreeMemory();
@@ -1388,15 +1406,13 @@ pub(crate) unsafe extern "C" fn Task_ExitBuyMenu(taskId: u8) {
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn ClearItemPurchases() {
-    sPurchaseHistoryId = 0;
+unsafe fn ClearItemPurchases() {
+    sPurchaseHistoryId.set(0);
     memset(gMartPurchaseHistory.as_mut_ptr() as *mut u8, 0, 12);
 }
-pub(crate) unsafe extern "C" fn RecordItemPurchase(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
-    let mut i: u16 = 0;
-    i = 0;
-    while i < 3 {
+unsafe fn RecordItemPurchase(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
+    for i in 0..3u16 {
         if gMartPurchaseHistory[i].itemId as i32 == *data.at(5) as i32
             && gMartPurchaseHistory[i].quantity != 0
         {
@@ -1407,29 +1423,25 @@ pub(crate) unsafe extern "C" fn RecordItemPurchase(taskId: u8) {
             }
             return;
         }
-        i += 1;
     }
-    if sPurchaseHistoryId < 3 {
-        gMartPurchaseHistory[sPurchaseHistoryId].itemId = *data.at(5) as u16;
-        gMartPurchaseHistory[sPurchaseHistoryId].quantity = *data.at(1) as u16;
-        sPurchaseHistoryId += 1;
+    if sPurchaseHistoryId.get() < 3 {
+        gMartPurchaseHistory[sPurchaseHistoryId.get()].itemId = *data.at(5) as u16;
+        gMartPurchaseHistory[sPurchaseHistoryId.get()].quantity = *data.at(1) as u16;
+        sPurchaseHistoryId.set(sPurchaseHistoryId.get() + 1);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreatePokemartMenu(itemsForSale: *mut u16) {
+pub unsafe fn CreatePokemartMenu(itemsForSale: *mut u16) {
     CreateShopMenu(MART_TYPE_NORMAL);
     SetShopItemsForSale(itemsForSale);
     ClearItemPurchases();
     SetShopMenuCallback(Some(ScriptContext_Enable));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateDecorationShop1Menu(itemsForSale: *mut u16) {
+pub unsafe fn CreateDecorationShop1Menu(itemsForSale: *mut u16) {
     CreateShopMenu(MART_TYPE_DECOR);
     SetShopItemsForSale(itemsForSale);
     SetShopMenuCallback(Some(ScriptContext_Enable));
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateDecorationShop2Menu(itemsForSale: *mut u16) {
+pub unsafe fn CreateDecorationShop2Menu(itemsForSale: *mut u16) {
     CreateShopMenu(MART_TYPE_DECOR2);
     SetShopItemsForSale(itemsForSale);
     SetShopMenuCallback(Some(ScriptContext_Enable));

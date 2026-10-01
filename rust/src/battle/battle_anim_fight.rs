@@ -3,29 +3,40 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    unused_assignments
 )]
 
+use crate::battle_anim::gBattleAnimArgs;
+use crate::battle_anim::{
+    DestroyAnimSprite, DestroyAnimVisualTask, IsContest, gAnimMoveTurn, gBattleAnimAttacker,
+    gBattleAnimTarget,
+};
+use crate::battle_anim_mons::{
+    AnimTranslateLinear, AnimTranslateLinear_WithFollowup, AnimTravelDiagonally,
+    DestroySpriteAndMatrix, GetBattlerPosition, GetBattlerSide, GetBattlerSpriteBGPriority,
+    GetBattlerSpriteCoord, GetBattlerSpriteCoordAttr, InitAnimLinearTranslation,
+    InitSpritePosToAnimAttacker, InitSpritePosToAnimTarget, LoadPointerFromVars,
+    RunStoredCallbackWhenAnimEnds, SetAnimSpriteInitialXOffset, StartAnimLinearTranslation,
+    StorePointerInVars, StoreSpriteCallbackInData6, UpdateAnimBg3ScreenSize, WaitAnimForDuration,
+};
+use crate::battle_main::gBattlerPositions;
+use crate::battle_main::{gBattle_BG3_X, gBattle_BG3_Y, gBattlerAttacker};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::gpu_regs::SetGpuReg;
+use crate::random::Random2;
+use crate::sprite::FreeOamMatrix;
+use crate::sprite::gSprites;
+use crate::task::gTasks;
+use crate::trig::Sin;
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,62 +45,49 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateSprite` with this module's view of its types.
+#[inline]
+unsafe fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8 {
+    unsafe { crate::sprite::CreateSprite(a0 as _, a1, a2, a3) }
+}
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
+/// `SpriteCallbackDummy` with this module's view of its types.
+#[inline]
+unsafe fn SpriteCallbackDummy(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::SpriteCallbackDummy(a0 as _);
+    }
+}
+/// `StartSpriteAffineAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAffineAnim(a0 as _, a1);
+    }
+}
+/// `StartSpriteAnim` with this module's view of its types.
+#[inline]
+unsafe fn StartSpriteAnim(a0: *mut Sprite, a1: u8) {
+    unsafe {
+        crate::sprite::StartSpriteAnim(a0 as _, a1);
+    }
+}
 // Data tables (translate with cdata.py): sUnusedHumanoidFootSpriteTemplate sAnim_Fist sAnim_FootWide sAnim_FootTall sAnim_HandLeft sAnim_HandRight sAnims_HandsAndFeet gKarateChopSpriteTemplate gJumpKickSpriteTemplate gFistFootSpriteTemplate gFistFootRandomPosSpriteTemplate gCrossChopHandSpriteTemplate gSlidingKickSpriteTemplate sAffineAnim_SpinningHandOrFoot sAffineAnims_SpinningHandOrFoot gSpinningHandOrFootSpriteTemplate sAffineAnim_MegaPunchKick sAffineAnims_MegaPunchKick gMegaPunchKickSpriteTemplate gStompFootSpriteTemplate gDizzyPunchDuckSpriteTemplate gBrickBreakWallSpriteTemplate gBrickBreakWallShardSpriteTemplate sAffineAnim_SuperpowerOrb sAffineAnims_SuperpowerOrb gSuperpowerOrbSpriteTemplate gSuperpowerRockSpriteTemplate gSuperpowerFireballSpriteTemplate gArmThrustHandSpriteTemplate sAnim_RevengeSmallScratch_0 sAnim_RevengeSmallScratch_1 sAnim_RevengeSmallScratch_2 sAnims_RevengeSmallScratch gRevengeSmallScratchSpriteTemplate sAnim_RevengeBigScratch_0 sAnim_RevengeBigScratch_1 sAnim_RevengeBigScratch_2 sAnims_RevengeBigScratch gRevengeBigScratchSpriteTemplate sAffineAnim_FocusPunchFist sAffineAnims_FocusPunchFist gFocusPunchFistSpriteTemplate
 
-unsafe extern "C" {
-    static mut gAnimMoveTurn: u8;
-    static gBasicHitSplatSpriteTemplate: SpriteTemplate;
-    static mut gBattleAnimArgs: CArray<i16, 8>;
-    static mut gBattleAnimAttacker: u8;
-    static mut gBattleAnimTarget: u8;
-    static mut gBattle_BG3_X: u16;
-    static mut gBattle_BG3_Y: u16;
-    static mut gBattlerAttacker: u8;
-    static mut gBattlerPositions: CArray<u8, 4>;
-    static mut gSprites: CArray<Sprite, 65>;
-    static mut gTasks: CArray<Task, 0>;
-    fn AnimTranslateLinear(a0: *mut Sprite) -> u8;
-    fn AnimTranslateLinear_WithFollowup(a0: *mut Sprite);
-    fn AnimTravelDiagonally(a0: *mut Sprite);
-    fn CreateSprite(a0: *mut SpriteTemplate, a1: i16, a2: i16, a3: u8) -> u8;
-    fn DestroyAnimSprite(a0: *mut Sprite);
-    fn DestroyAnimVisualTask(a0: u8);
-    fn DestroySprite(a0: *mut Sprite);
-    fn DestroySpriteAndMatrix(a0: *mut Sprite);
-    fn FreeOamMatrix(a0: u8);
-    fn GetBattlerPosition(a0: u8) -> u8;
-    fn GetBattlerSide(a0: u8) -> u8;
-    fn GetBattlerSpriteBGPriority(a0: u8) -> u8;
-    fn GetBattlerSpriteCoord(a0: u8, a1: u8) -> u8;
-    fn GetBattlerSpriteCoordAttr(a0: u8, a1: u8) -> i16;
-    fn InitAnimLinearTranslation(a0: *mut Sprite);
-    fn InitSpritePosToAnimAttacker(a0: *mut Sprite, a1: u8);
-    fn InitSpritePosToAnimTarget(a0: *mut Sprite, a1: u8);
-    fn IsContest() -> u8;
-    fn LoadPointerFromVars(a0: i16, a1: i16) -> *mut c_void;
-    fn Random2() -> u16;
-    fn RunStoredCallbackWhenAnimEnds(a0: *mut Sprite);
-    fn SetAnimSpriteInitialXOffset(a0: *mut Sprite, a1: i16);
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn Sin(a0: i16, a1: i16) -> i16;
-    fn SpriteCallbackDummy(a0: *mut Sprite);
-    fn StartAnimLinearTranslation(a0: *mut Sprite);
-    fn StartSpriteAffineAnim(a0: *mut Sprite, a1: u8);
-    fn StartSpriteAnim(a0: *mut Sprite, a1: u8);
-    fn StorePointerInVars(a0: *mut i16, a1: *mut i16, a2: *mut c_void);
-    fn StoreSpriteCallbackInData6(a0: *mut Sprite, a1: Option<unsafe extern "C" fn(*mut Sprite)>);
-    fn UpdateAnimBg3ScreenSize(a0: u8);
-    fn WaitAnimForDuration(a0: *mut Sprite);
-}
-
-pub(crate) unsafe extern "C" fn AnimUnusedHumanoidFoot(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimUnusedHumanoidFoot(sprite: *mut Sprite) {
     SetAnimSpriteInitialXOffset(sprite, gBattleAnimArgs[0]);
     (*sprite).y += gBattleAnimArgs[1];
     (*sprite).data[0] = 15;
     (*sprite).callback = Some(WaitAnimForDuration);
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
-pub(crate) unsafe extern "C" fn AnimSlideHandOrFootToTarget(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSlideHandOrFootToTarget(sprite: *mut Sprite) {
     if gBattleAnimArgs[7] == 1 && GetBattlerSide(gBattleAnimAttacker) != B_SIDE_PLAYER {
         gBattleAnimArgs[1] = -gBattleAnimArgs[1];
         gBattleAnimArgs[3] = -gBattleAnimArgs[3];
@@ -98,14 +96,14 @@ pub(crate) unsafe extern "C" fn AnimSlideHandOrFootToTarget(sprite: *mut Sprite)
     gBattleAnimArgs[6] = 0;
     AnimTravelDiagonally(sprite);
 }
-pub(crate) unsafe extern "C" fn AnimJumpKick(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimJumpKick(sprite: *mut Sprite) {
     if IsContest() != 0 {
         gBattleAnimArgs[1] = -gBattleAnimArgs[1];
         gBattleAnimArgs[3] = -gBattleAnimArgs[3];
     }
     AnimSlideHandOrFootToTarget(sprite);
 }
-pub(crate) unsafe extern "C" fn AnimBasicFistOrFoot(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimBasicFistOrFoot(sprite: *mut Sprite) {
     StartSpriteAnim(sprite, gBattleAnimArgs[4] as u8);
     if gBattleAnimArgs[3] == 0 {
         InitSpritePosToAnimAttacker(sprite, TRUE);
@@ -116,10 +114,8 @@ pub(crate) unsafe extern "C" fn AnimBasicFistOrFoot(sprite: *mut Sprite) {
     (*sprite).callback = Some(WaitAnimForDuration);
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
-pub(crate) unsafe extern "C" fn AnimFistOrFootRandomPos(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimFistOrFootRandomPos(sprite: *mut Sprite) {
     let mut battler: u8 = 0;
-    let mut xMod: i16 = 0;
-    let mut yMod: i16 = 0;
     let mut x: i16 = 0;
     let mut y: i16 = 0;
     if gBattleAnimArgs[0] == 0 {
@@ -133,8 +129,8 @@ pub(crate) unsafe extern "C" fn AnimFistOrFootRandomPos(sprite: *mut Sprite) {
     StartSpriteAnim(sprite, gBattleAnimArgs[2] as u8);
     (*sprite).x = GetBattlerSpriteCoord(battler, BATTLER_COORD_X_2) as i16;
     (*sprite).y = GetBattlerSpriteCoord(battler, BATTLER_COORD_Y_PIC_OFFSET) as i16;
-    xMod = GetBattlerSpriteCoordAttr(battler, BATTLER_COORD_ATTR_WIDTH) / 2;
-    yMod = GetBattlerSpriteCoordAttr(battler, BATTLER_COORD_ATTR_HEIGHT) / 4;
+    let xMod: i16 = GetBattlerSpriteCoordAttr(battler, BATTLER_COORD_ATTR_WIDTH) / 2;
+    let yMod: i16 = GetBattlerSpriteCoordAttr(battler, BATTLER_COORD_ATTR_HEIGHT) / 4;
     x = rem_i32(Random2() as i32, xMod as i32) as i16;
     y = rem_i32(Random2() as i32, yMod as i32) as i16;
     if Random2() as i32 & 1 != 0 {
@@ -150,7 +146,9 @@ pub(crate) unsafe extern "C" fn AnimFistOrFootRandomPos(sprite: *mut Sprite) {
     (*sprite).y += y;
     (*sprite).data[0] = gBattleAnimArgs[1];
     (*sprite).data[7] = CreateSprite(
-        (&raw const gBasicHitSplatSpriteTemplate).cast_mut(),
+        (&raw const (*(&raw const crate::data::battle_anim_normal::gBasicHitSplatSpriteTemplate)
+            .cast::<SpriteTemplate>()))
+            .cast_mut(),
         (*sprite).x,
         (*sprite).y,
         (*sprite).subpriority + 1,
@@ -161,7 +159,7 @@ pub(crate) unsafe extern "C" fn AnimFistOrFootRandomPos(sprite: *mut Sprite) {
     }
     (*sprite).callback = Some(AnimFistOrFootRandomPos_Step);
 }
-pub(crate) unsafe extern "C" fn AnimFistOrFootRandomPos_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimFistOrFootRandomPos_Step(sprite: *mut Sprite) {
     if (*sprite).data[0] == 0 {
         if (*sprite).data[7] != MAX_SPRITES as i16 {
             FreeOamMatrix(gSprites[(*sprite).data[7]].oam.matrixNum() as u8);
@@ -172,7 +170,7 @@ pub(crate) unsafe extern "C" fn AnimFistOrFootRandomPos_Step(sprite: *mut Sprite
         (*sprite).data[0] -= 1;
     }
 }
-pub(crate) unsafe extern "C" fn AnimCrossChopHand(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimCrossChopHand(sprite: *mut Sprite) {
     InitSpritePosToAnimTarget(sprite, TRUE);
     (*sprite).data[0] = 30;
     if gBattleAnimArgs[2] == 0 {
@@ -185,7 +183,7 @@ pub(crate) unsafe extern "C" fn AnimCrossChopHand(sprite: *mut Sprite) {
     (*sprite).callback = Some(StartAnimLinearTranslation);
     StoreSpriteCallbackInData6(sprite, Some(AnimCrossChopHand_Step));
 }
-pub(crate) unsafe extern "C" fn AnimCrossChopHand_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimCrossChopHand_Step(sprite: *mut Sprite) {
     if ({
         (*sprite).data[5] += 1;
         (*sprite).data[5]
@@ -202,7 +200,7 @@ pub(crate) unsafe extern "C" fn AnimCrossChopHand_Step(sprite: *mut Sprite) {
         StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
     }
 }
-pub(crate) unsafe extern "C" fn AnimSlidingKick(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSlidingKick(sprite: *mut Sprite) {
     if gBattleAnimAttacker as i32 ^ 2 == gBattleAnimTarget as i32
         && GetBattlerPosition(gBattleAnimTarget) < B_POSITION_PLAYER_RIGHT
     {
@@ -223,7 +221,7 @@ pub(crate) unsafe extern "C" fn AnimSlidingKick(sprite: *mut Sprite) {
     (*sprite).data[7] = 0;
     (*sprite).callback = Some(AnimSlidingKick_Step);
 }
-pub(crate) unsafe extern "C" fn AnimSlidingKick_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSlidingKick_Step(sprite: *mut Sprite) {
     if AnimTranslateLinear(sprite) == 0 {
         (*sprite).y2 += Sin((*sprite).data[7] >> 8, (*sprite).data[5]);
         (*sprite).data[7] += (*sprite).data[6];
@@ -231,26 +229,26 @@ pub(crate) unsafe extern "C" fn AnimSlidingKick_Step(sprite: *mut Sprite) {
         DestroyAnimSprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimSpinningKickOrPunch(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSpinningKickOrPunch(sprite: *mut Sprite) {
     InitSpritePosToAnimTarget(sprite, TRUE);
     StartSpriteAnim(sprite, gBattleAnimArgs[2] as u8);
     (*sprite).data[0] = gBattleAnimArgs[3];
     (*sprite).callback = Some(WaitAnimForDuration);
     StoreSpriteCallbackInData6(sprite, Some(AnimSpinningKickOrPunchFinish));
 }
-pub(crate) unsafe extern "C" fn AnimSpinningKickOrPunchFinish(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSpinningKickOrPunchFinish(sprite: *mut Sprite) {
     StartSpriteAffineAnim(sprite, 0);
     (*sprite).set_affineAnimPaused(1);
     (*sprite).data[0] = 20;
     (*sprite).callback = Some(WaitAnimForDuration);
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
-pub(crate) unsafe extern "C" fn AnimStompFoot(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimStompFoot(sprite: *mut Sprite) {
     InitSpritePosToAnimTarget(sprite, TRUE);
     (*sprite).data[0] = gBattleAnimArgs[2];
     (*sprite).callback = Some(AnimStompFoot_Step);
 }
-pub(crate) unsafe extern "C" fn AnimStompFoot_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimStompFoot_Step(sprite: *mut Sprite) {
     if ({
         (*sprite).data[0] -= 1;
         (*sprite).data[0]
@@ -264,12 +262,12 @@ pub(crate) unsafe extern "C" fn AnimStompFoot_Step(sprite: *mut Sprite) {
         StoreSpriteCallbackInData6(sprite, Some(AnimStompFoot_End));
     }
 }
-pub(crate) unsafe extern "C" fn AnimStompFoot_End(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimStompFoot_End(sprite: *mut Sprite) {
     (*sprite).data[0] = 15;
     (*sprite).callback = Some(WaitAnimForDuration);
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
-pub(crate) unsafe extern "C" fn AnimDizzyPunchDuck(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimDizzyPunchDuck(sprite: *mut Sprite) {
     if (*sprite).data[0] == 0 {
         InitSpritePosToAnimTarget(sprite, TRUE);
         (*sprite).data[1] = gBattleAnimArgs[2];
@@ -279,7 +277,7 @@ pub(crate) unsafe extern "C" fn AnimDizzyPunchDuck(sprite: *mut Sprite) {
         (*sprite).data[4] += (*sprite).data[1];
         (*sprite).x2 = (*sprite).data[4] >> 8;
         (*sprite).y2 = Sin((*sprite).data[3], (*sprite).data[2]);
-        (*sprite).data[3] = (*sprite).data[3] + 3 & 0xFF;
+        (*sprite).data[3] = ((*sprite).data[3] + 3) & 0xFF;
         if (*sprite).data[3] > 100 {
             (*sprite).set_invisible(((*sprite).data[3] % 2) as u16);
         }
@@ -288,7 +286,7 @@ pub(crate) unsafe extern "C" fn AnimDizzyPunchDuck(sprite: *mut Sprite) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn AnimBrickBreakWall(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimBrickBreakWall(sprite: *mut Sprite) {
     if gBattleAnimArgs[0] == 0 {
         (*sprite).x = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X) as i16;
         (*sprite).y = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y) as i16;
@@ -304,7 +302,7 @@ pub(crate) unsafe extern "C" fn AnimBrickBreakWall(sprite: *mut Sprite) {
     (*sprite).data[3] = 0;
     (*sprite).callback = Some(AnimBrickBreakWall_Step);
 }
-pub(crate) unsafe extern "C" fn AnimBrickBreakWall_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimBrickBreakWall_Step(sprite: *mut Sprite) {
     match (*sprite).data[0] {
         0 => {
             if ({
@@ -344,7 +342,7 @@ pub(crate) unsafe extern "C" fn AnimBrickBreakWall_Step(sprite: *mut Sprite) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn AnimBrickBreakWallShard(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimBrickBreakWallShard(sprite: *mut Sprite) {
     if gBattleAnimArgs[0] == 0 {
         (*sprite).x =
             GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X) as i16 + gBattleAnimArgs[2];
@@ -384,7 +382,7 @@ pub(crate) unsafe extern "C" fn AnimBrickBreakWallShard(sprite: *mut Sprite) {
     }
     (*sprite).callback = Some(AnimBrickBreakWallShard_Step);
 }
-pub(crate) unsafe extern "C" fn AnimBrickBreakWallShard_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimBrickBreakWallShard_Step(sprite: *mut Sprite) {
     (*sprite).x += (*sprite).data[6];
     (*sprite).y += (*sprite).data[7];
     if ({
@@ -395,7 +393,7 @@ pub(crate) unsafe extern "C" fn AnimBrickBreakWallShard_Step(sprite: *mut Sprite
         DestroyAnimSprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimSuperpowerOrb(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSuperpowerOrb(sprite: *mut Sprite) {
     if gBattleAnimArgs[0] == 0 {
         (*sprite).x = GetBattlerSpriteCoord(gBattlerAttacker, BATTLER_COORD_X_2) as i16;
         (*sprite).y = GetBattlerSpriteCoord(gBattlerAttacker, BATTLER_COORD_Y_PIC_OFFSET) as i16;
@@ -414,7 +412,7 @@ pub(crate) unsafe extern "C" fn AnimSuperpowerOrb(sprite: *mut Sprite) {
     (*sprite).data[2] = 8;
     (*sprite).callback = Some(AnimSuperpowerOrb_Step);
 }
-pub(crate) unsafe extern "C" fn AnimSuperpowerOrb_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSuperpowerOrb_Step(sprite: *mut Sprite) {
     if ({
         (*sprite).data[0] += 1;
         (*sprite).data[0]
@@ -433,7 +431,7 @@ pub(crate) unsafe extern "C" fn AnimSuperpowerOrb_Step(sprite: *mut Sprite) {
         (*sprite).callback = Some(AnimTranslateLinear_WithFollowup);
     }
 }
-pub(crate) unsafe extern "C" fn AnimSuperpowerRock(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSuperpowerRock(sprite: *mut Sprite) {
     (*sprite).x = gBattleAnimArgs[0];
     (*sprite).y = 120;
     (*sprite).data[0] = gBattleAnimArgs[3];
@@ -448,7 +446,7 @@ pub(crate) unsafe extern "C" fn AnimSuperpowerRock(sprite: *mut Sprite) {
         .set_tileNum((*sprite).oam.tileNum() + gBattleAnimArgs[2] as u16 * 4);
     (*sprite).callback = Some(AnimSuperpowerRock_Step1);
 }
-pub(crate) unsafe extern "C" fn AnimSuperpowerRock_Step1(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSuperpowerRock_Step1(sprite: *mut Sprite) {
     let mut var0: *mut c_void = null_mut();
     if (*sprite).data[0] != 0 {
         var0 = LoadPointerFromVars((*sprite).data[4], (*sprite).data[5]);
@@ -462,12 +460,11 @@ pub(crate) unsafe extern "C" fn AnimSuperpowerRock_Step1(sprite: *mut Sprite) {
             (*sprite).data[0] -= 1;
         }
     } else {
-        let mut pos0: i16 = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2) as i16;
-        let mut pos1: i16 =
+        let pos0: i16 = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2) as i16;
+        let pos1: i16 =
             GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y_PIC_OFFSET) as i16;
-        let mut pos2: i16 = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
-        let mut pos3: i16 =
-            GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16;
+        let pos2: i16 = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
+        let pos3: i16 = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16;
         (*sprite).data[0] = pos2 - pos0;
         (*sprite).data[1] = pos3 - pos1;
         (*sprite).data[2] = (*sprite).x << 4;
@@ -475,18 +472,17 @@ pub(crate) unsafe extern "C" fn AnimSuperpowerRock_Step1(sprite: *mut Sprite) {
         (*sprite).callback = Some(AnimSuperpowerRock_Step2);
     }
 }
-pub(crate) unsafe extern "C" fn AnimSuperpowerRock_Step2(sprite: *mut Sprite) {
-    let mut edgeX: u16 = 0;
+pub(crate) unsafe fn AnimSuperpowerRock_Step2(sprite: *mut Sprite) {
     (*sprite).data[2] += (*sprite).data[0];
     (*sprite).data[3] += (*sprite).data[1];
     (*sprite).x = (*sprite).data[2] >> 4;
     (*sprite).y = (*sprite).data[3] >> 4;
-    edgeX = (*sprite).x as u16 + 8;
+    let edgeX: u16 = (*sprite).x as u16 + 8;
     if edgeX > 256 || (*sprite).y < -8 || (*sprite).y > 120 {
         DestroyAnimSprite(sprite);
     }
 }
-pub(crate) unsafe extern "C" fn AnimSuperpowerFireball(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimSuperpowerFireball(sprite: *mut Sprite) {
     let mut battler: u8 = 0;
     if gBattleAnimArgs[0] == 0 {
         (*sprite).x = GetBattlerSpriteCoord(gBattlerAttacker, BATTLER_COORD_X_2) as i16;
@@ -517,21 +513,20 @@ pub(crate) unsafe extern "C" fn AnimSuperpowerFireball(sprite: *mut Sprite) {
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
     (*sprite).callback = Some(AnimTranslateLinear_WithFollowup);
 }
-pub(crate) unsafe extern "C" fn AnimArmThrustHit_Step(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimArmThrustHit_Step(sprite: *mut Sprite) {
     if (*sprite).data[0] == (*sprite).data[4] {
         DestroyAnimSprite(sprite);
     }
     (*sprite).data[0] += 1;
 }
-pub(crate) unsafe extern "C" fn AnimArmThrustHit(sprite: *mut Sprite) {
-    let mut turn: u8 = 0;
+pub(crate) unsafe fn AnimArmThrustHit(sprite: *mut Sprite) {
     (*sprite).x = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_X_2) as i16;
     (*sprite).y = GetBattlerSpriteCoord(gBattleAnimTarget, BATTLER_COORD_Y_PIC_OFFSET) as i16;
     (*sprite).data[1] = gBattleAnimArgs[3];
     (*sprite).data[2] = gBattleAnimArgs[0];
     (*sprite).data[3] = gBattleAnimArgs[1];
     (*sprite).data[4] = gBattleAnimArgs[2];
-    turn = gAnimMoveTurn;
+    let mut turn: u8 = gAnimMoveTurn;
     if GetBattlerSide(gBattleAnimTarget) == B_SIDE_PLAYER {
         turn += 1;
     }
@@ -544,7 +539,7 @@ pub(crate) unsafe extern "C" fn AnimArmThrustHit(sprite: *mut Sprite) {
     (*sprite).y2 = (*sprite).data[3];
     (*sprite).callback = Some(AnimArmThrustHit_Step);
 }
-pub(crate) unsafe extern "C" fn AnimRevengeScratch(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimRevengeScratch(sprite: *mut Sprite) {
     if gBattleAnimArgs[2] == ANIM_ATTACKER as i16 {
         InitSpritePosToAnimAttacker(sprite, FALSE);
     } else {
@@ -558,9 +553,9 @@ pub(crate) unsafe extern "C" fn AnimRevengeScratch(sprite: *mut Sprite) {
     (*sprite).callback = Some(RunStoredCallbackWhenAnimEnds);
     StoreSpriteCallbackInData6(sprite, Some(DestroyAnimSprite));
 }
-pub(crate) unsafe extern "C" fn AnimFocusPunchFist(sprite: *mut Sprite) {
+pub(crate) unsafe fn AnimFocusPunchFist(sprite: *mut Sprite) {
     if (*sprite).affineAnimEnded() != 0 {
-        (*sprite).data[1] = (*sprite).data[1] + 40 & 0xFF;
+        (*sprite).data[1] = ((*sprite).data[1] + 40) & 0xFF;
         (*sprite).x2 = Sin((*sprite).data[1], 2);
         if ({
             (*sprite).data[0] += 1;
@@ -572,8 +567,8 @@ pub(crate) unsafe extern "C" fn AnimFocusPunchFist(sprite: *mut Sprite) {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn AnimTask_MoveSkyUppercutBg(taskId: u8) {
-    let mut task: *mut Task = &raw mut gTasks[taskId];
+pub unsafe fn AnimTask_MoveSkyUppercutBg(taskId: u8) {
+    let task: *mut Task = &raw mut (*gTasks.as_ptr())[taskId];
     match (*task).data[0] {
         0 => {
             UpdateAnimBg3ScreenSize(FALSE);

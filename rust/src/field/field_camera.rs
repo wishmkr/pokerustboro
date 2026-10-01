@@ -3,29 +3,35 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    dead_code,
+    unused_assignments
 )]
 
+use crate::berry::SetBerryTreesSeen;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_object_movement::{AddCameraObject, UpdateObjectEventsForCameraUpdate};
+use crate::field_player_avatar::{GetPlayerMovementDirection, gPlayerAvatar};
+use crate::fieldmap::{
+    CameraMove, MapGridGetMetatileIdAt, MapGridGetMetatileLayerTypeAt, gMapHeader,
+};
+use crate::gpu_regs::SetGpuReg;
+use crate::load_save::gSaveBlock1Ptr;
+use crate::menu::ScheduleBgCopyTilemapToVram;
+use crate::overworld::{
+    gOverworldTilemapBuffer_Bg1, gOverworldTilemapBuffer_Bg2, gOverworldTilemapBuffer_Bg3,
+};
+use crate::rotating_gate::RotatingGatePuzzleCameraUpdate;
+use crate::sprite::gSprites;
+use crate::sprite::{gSpriteCoordOffsetX, gSpriteCoordOffsetY};
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,6 +40,13 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `DestroySprite` with this module's view of its types.
+#[inline]
+unsafe fn DestroySprite(a0: *mut Sprite) {
+    unsafe {
+        crate::sprite::DestroySprite(a0 as _);
+    }
+}
 
 /// `struct FieldCameraOffset`
 #[repr(C, align(4))]
@@ -60,82 +73,43 @@ const _: () = {
     assert!(offset_of!(FieldCameraOffset, copyBGToVRAM) == 4);
 };
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "ewram_data")]
-pub static mut gUnusedBikeCameraAheadPanback: u8 = 0;
+pub static gUnusedBikeCameraAheadPanback: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static mut sFieldCameraOffset: FieldCameraOffset = unsafe { zeroed() };
-pub(crate) static mut sHorizontalCameraPan: i16 = 0;
-pub(crate) static mut sVerticalCameraPan: i16 = 0;
-pub(crate) static mut sBikeCameraPanFlag: u8 = 0;
-pub(crate) static mut sFieldCameraPanningCallback: Option<unsafe extern "C" fn()> = None;
-#[unsafe(no_mangle)]
+pub(crate) static sHorizontalCameraPan: crate::global::Global<i16> = crate::global::Global::new(0);
+pub(crate) static sVerticalCameraPan: crate::global::Global<i16> = crate::global::Global::new(0);
+pub(crate) static sBikeCameraPanFlag: crate::global::Global<u8> = crate::global::Global::new(0);
+pub(crate) static mut sFieldCameraPanningCallback: Option<unsafe fn()> = None;
 #[unsafe(link_section = "common_data")]
 pub static mut gFieldCamera: CameraObject = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gTotalCameraPixelOffsetY: u16 = 0;
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gTotalCameraPixelOffsetX: u16 = 0;
 
-unsafe extern "C" {
-    static mut gMapHeader: MapHeader;
-    static mut gOverworldTilemapBuffer_Bg1: *mut u16;
-    static mut gOverworldTilemapBuffer_Bg2: *mut u16;
-    static mut gOverworldTilemapBuffer_Bg3: *mut u16;
-    static mut gPlayerAvatar: PlayerAvatar;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSpriteCoordOffsetX: i16;
-    static mut gSpriteCoordOffsetY: i16;
-    static mut gSprites: CArray<Sprite, 65>;
-    fn AddCameraObject(a0: u8) -> u8;
-    fn CameraMove(a0: i32, a1: i32) -> u8;
-    fn DestroySprite(a0: *mut Sprite);
-    fn GetPlayerMovementDirection() -> u8;
-    fn MapGridGetMetatileIdAt(a0: i32, a1: i32) -> i32;
-    fn MapGridGetMetatileLayerTypeAt(a0: i32, a1: i32) -> u8;
-    fn RotatingGatePuzzleCameraUpdate(a0: i16, a1: i16);
-    fn ScheduleBgCopyTilemapToVram(a0: u8);
-    fn SetBerryTreesSeen();
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn UpdateObjectEventsForCameraUpdate(a0: i16, a1: i16);
-}
-
-pub(crate) unsafe extern "C" fn ResetCameraOffset(cameraOffset: *mut FieldCameraOffset) {
+unsafe fn ResetCameraOffset(cameraOffset: *mut FieldCameraOffset) {
     (*cameraOffset).xTileOffset = 0;
     (*cameraOffset).yTileOffset = 0;
     (*cameraOffset).xPixelOffset = 0;
     (*cameraOffset).yPixelOffset = 0;
     (*cameraOffset).copyBGToVRAM = TRUE;
 }
-pub(crate) unsafe extern "C" fn AddCameraTileOffset(
-    cameraOffset: *mut FieldCameraOffset,
-    xOffset: u32,
-    yOffset: u32,
-) {
+unsafe fn AddCameraTileOffset(cameraOffset: *mut FieldCameraOffset, xOffset: u32, yOffset: u32) {
     (*cameraOffset).xTileOffset += xOffset as u8;
     (*cameraOffset).xTileOffset = ((*cameraOffset).xTileOffset as i32 % 32) as u8;
     (*cameraOffset).yTileOffset += yOffset as u8;
     (*cameraOffset).yTileOffset = ((*cameraOffset).yTileOffset as i32 % 32) as u8;
 }
-pub(crate) unsafe extern "C" fn AddCameraPixelOffset(
-    cameraOffset: *mut FieldCameraOffset,
-    xOffset: u32,
-    yOffset: u32,
-) {
+unsafe fn AddCameraPixelOffset(cameraOffset: *mut FieldCameraOffset, xOffset: u32, yOffset: u32) {
     (*cameraOffset).xPixelOffset += xOffset as u8;
     (*cameraOffset).yPixelOffset += yOffset as u8;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetFieldCamera() {
+pub unsafe fn ResetFieldCamera() {
     ResetCameraOffset(&raw mut sFieldCameraOffset);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn FieldUpdateBgTilemapScroll() {
-    let mut r4: u32 = 0;
-    let mut r5: u32 = 0;
-    r5 = sFieldCameraOffset.xPixelOffset as u32 + sHorizontalCameraPan as u32;
-    r4 = sVerticalCameraPan as u32 + sFieldCameraOffset.yPixelOffset as u32 + 8;
+pub unsafe fn FieldUpdateBgTilemapScroll() {
+    let r5: u32 = sFieldCameraOffset.xPixelOffset as u32 + sHorizontalCameraPan.get() as u32;
+    let r4: u32 = sVerticalCameraPan.get() as u32 + sFieldCameraOffset.yPixelOffset as u32 + 8;
     SetGpuReg(REG_OFFSET_BG1HOFS, r5 as u16);
     SetGpuReg(REG_OFFSET_BG1VOFS, r4 as u16);
     SetGpuReg(REG_OFFSET_BG2HOFS, r5 as u16);
@@ -143,13 +117,12 @@ pub unsafe extern "C" fn FieldUpdateBgTilemapScroll() {
     SetGpuReg(REG_OFFSET_BG3HOFS, r5 as u16);
     SetGpuReg(REG_OFFSET_BG3VOFS, r4 as u16);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetCameraOffsetWithPan(x: *mut i16, y: *mut i16) {
-    *x = sFieldCameraOffset.xPixelOffset as i16 + sHorizontalCameraPan;
-    *y = sFieldCameraOffset.yPixelOffset as i16 + sVerticalCameraPan + 8;
+pub unsafe fn GetCameraOffsetWithPan(x: *mut i16, y: *mut i16) {
+    *x = sFieldCameraOffset.xPixelOffset as i16 + sHorizontalCameraPan.get();
+    *y = sFieldCameraOffset.yPixelOffset as i16 + sVerticalCameraPan.get() + 8;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawWholeMapView() {
+pub unsafe fn DrawWholeMapView() {
     DrawWholeMapViewInternal(
         (*gSaveBlock1Ptr).pos.x as i32,
         (*gSaveBlock1Ptr).pos.y as i32,
@@ -157,16 +130,11 @@ pub unsafe extern "C" fn DrawWholeMapView() {
     );
     sFieldCameraOffset.copyBGToVRAM = TRUE;
 }
-pub(crate) unsafe extern "C" fn DrawWholeMapViewInternal(
-    x: i32,
-    y: i32,
-    mapLayout: *mut MapLayout,
-) {
-    let mut i: u8 = 0;
+unsafe fn DrawWholeMapViewInternal(x: i32, y: i32, mapLayout: *mut MapLayout) {
     let mut j: u8 = 0;
     let mut r6: u32 = 0;
     let mut temp: u8 = 0;
-    i = 0;
+    let mut i: u8 = 0;
     while i < 32 {
         temp = sFieldCameraOffset.yTileOffset + i;
         if temp >= 32 {
@@ -190,12 +158,8 @@ pub(crate) unsafe extern "C" fn DrawWholeMapViewInternal(
         i += 2;
     }
 }
-pub(crate) unsafe extern "C" fn RedrawMapSlicesForCameraUpdate(
-    cameraOffset: *mut FieldCameraOffset,
-    x: i32,
-    y: i32,
-) {
-    let mut mapLayout: *mut MapLayout = gMapHeader.mapLayout;
+unsafe fn RedrawMapSlicesForCameraUpdate(cameraOffset: *mut FieldCameraOffset, x: i32, y: i32) {
+    let mapLayout: *mut MapLayout = gMapHeader.mapLayout;
     if x > 0 {
         RedrawMapSliceWest(cameraOffset, mapLayout);
     }
@@ -210,19 +174,13 @@ pub(crate) unsafe extern "C" fn RedrawMapSlicesForCameraUpdate(
     }
     (*cameraOffset).copyBGToVRAM = TRUE;
 }
-pub(crate) unsafe extern "C" fn RedrawMapSliceNorth(
-    cameraOffset: *mut FieldCameraOffset,
-    mapLayout: *mut MapLayout,
-) {
-    let mut i: u8 = 0;
-    let mut temp: u8 = 0;
-    let mut r7: u32 = 0;
-    temp = (*cameraOffset).yTileOffset + 28;
+unsafe fn RedrawMapSliceNorth(cameraOffset: *mut FieldCameraOffset, mapLayout: *mut MapLayout) {
+    let mut temp: u8 = (*cameraOffset).yTileOffset + 28;
     if temp >= 32 {
         temp -= 32;
     }
-    r7 = temp as u32 * 32;
-    i = 0;
+    let r7: u32 = temp as u32 * 32;
+    let mut i: u8 = 0;
     while i < 32 {
         temp = (*cameraOffset).xTileOffset + i;
         if temp >= 32 {
@@ -237,14 +195,10 @@ pub(crate) unsafe extern "C" fn RedrawMapSliceNorth(
         i += 2;
     }
 }
-pub(crate) unsafe extern "C" fn RedrawMapSliceSouth(
-    cameraOffset: *mut FieldCameraOffset,
-    mapLayout: *mut MapLayout,
-) {
-    let mut i: u8 = 0;
+unsafe fn RedrawMapSliceSouth(cameraOffset: *mut FieldCameraOffset, mapLayout: *mut MapLayout) {
     let mut temp: u8 = 0;
-    let mut r7: u32 = (*cameraOffset).yTileOffset as u32 * 32;
-    i = 0;
+    let r7: u32 = (*cameraOffset).yTileOffset as u32 * 32;
+    let mut i: u8 = 0;
     while i < 32 {
         temp = (*cameraOffset).xTileOffset + i;
         if temp >= 32 {
@@ -259,14 +213,10 @@ pub(crate) unsafe extern "C" fn RedrawMapSliceSouth(
         i += 2;
     }
 }
-pub(crate) unsafe extern "C" fn RedrawMapSliceEast(
-    cameraOffset: *mut FieldCameraOffset,
-    mapLayout: *mut MapLayout,
-) {
-    let mut i: u8 = 0;
+unsafe fn RedrawMapSliceEast(cameraOffset: *mut FieldCameraOffset, mapLayout: *mut MapLayout) {
     let mut temp: u8 = 0;
-    let mut r6: u32 = (*cameraOffset).xTileOffset as u32;
-    i = 0;
+    let r6: u32 = (*cameraOffset).xTileOffset as u32;
+    let mut i: u8 = 0;
     while i < 32 {
         temp = (*cameraOffset).yTileOffset + i;
         if temp >= 32 {
@@ -281,17 +231,13 @@ pub(crate) unsafe extern "C" fn RedrawMapSliceEast(
         i += 2;
     }
 }
-pub(crate) unsafe extern "C" fn RedrawMapSliceWest(
-    cameraOffset: *mut FieldCameraOffset,
-    mapLayout: *mut MapLayout,
-) {
-    let mut i: u8 = 0;
+unsafe fn RedrawMapSliceWest(cameraOffset: *mut FieldCameraOffset, mapLayout: *mut MapLayout) {
     let mut temp: u8 = 0;
     let mut r5: u8 = (*cameraOffset).xTileOffset + 28;
     if r5 >= 32 {
         r5 -= 32;
     }
-    i = 0;
+    let mut i: u8 = 0;
     while i < 32 {
         temp = (*cameraOffset).yTileOffset + i;
         if temp >= 32 {
@@ -306,28 +252,21 @@ pub(crate) unsafe extern "C" fn RedrawMapSliceWest(
         i += 2;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CurrentMapDrawMetatileAt(x: i32, y: i32) {
-    let mut offset: i32 = MapPosToBgTilemapOffset(&raw mut sFieldCameraOffset, x, y);
+pub unsafe fn CurrentMapDrawMetatileAt(x: i32, y: i32) {
+    let offset: i32 = MapPosToBgTilemapOffset(&raw mut sFieldCameraOffset, x, y);
     if offset >= 0 {
         DrawMetatileAt(gMapHeader.mapLayout, offset as u16, x, y);
         sFieldCameraOffset.copyBGToVRAM = TRUE;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DrawDoorMetatileAt(x: i32, y: i32, tiles: *mut u16) {
-    let mut offset: i32 = MapPosToBgTilemapOffset(&raw mut sFieldCameraOffset, x, y);
+pub unsafe fn DrawDoorMetatileAt(x: i32, y: i32, tiles: *mut u16) {
+    let offset: i32 = MapPosToBgTilemapOffset(&raw mut sFieldCameraOffset, x, y);
     if offset >= 0 {
         DrawMetatile(METATILE_LAYER_TYPE_COVERED, tiles, offset as u16);
         sFieldCameraOffset.copyBGToVRAM = TRUE;
     }
 }
-pub(crate) unsafe extern "C" fn DrawMetatileAt(
-    mapLayout: *mut MapLayout,
-    offset: u16,
-    x: i32,
-    y: i32,
-) {
+unsafe fn DrawMetatileAt(mapLayout: *mut MapLayout, offset: u16, x: i32, y: i32) {
     let mut metatileId: u16 = MapGridGetMetatileIdAt(x, y) as u16;
     let mut metatiles: *mut u16 = null_mut();
     if metatileId > NUM_METATILES_TOTAL {
@@ -345,7 +284,7 @@ pub(crate) unsafe extern "C" fn DrawMetatileAt(
         offset,
     );
 }
-pub(crate) unsafe extern "C" fn DrawMetatile(metatileLayerType: i32, tiles: *mut u16, offset: u16) {
+unsafe fn DrawMetatile(metatileLayerType: i32, tiles: *mut u16, offset: u16) {
     match metatileLayerType {
         METATILE_LAYER_TYPE_SPLIT => {
             *gOverworldTilemapBuffer_Bg3.at(offset) = *tiles;
@@ -395,38 +334,37 @@ pub(crate) unsafe extern "C" fn DrawMetatile(metatileLayerType: i32, tiles: *mut
     ScheduleBgCopyTilemapToVram(2);
     ScheduleBgCopyTilemapToVram(3);
 }
-pub(crate) unsafe extern "C" fn MapPosToBgTilemapOffset(
+unsafe fn MapPosToBgTilemapOffset(
     cameraOffset: *mut FieldCameraOffset,
     mut x: i32,
     mut y: i32,
 ) -> i32 {
     x -= (*gSaveBlock1Ptr).pos.x as i32;
     x *= 2;
-    if x >= 32 || x < 0 {
+    if !(0..32).contains(&x) {
         return -1;
     }
-    x = x + (*cameraOffset).xTileOffset as i32;
+    x += (*cameraOffset).xTileOffset as i32;
     if x >= 32 {
         x -= 32;
     }
     y = (y - (*gSaveBlock1Ptr).pos.y as i32) * 2;
-    if y >= 32 || y < 0 {
+    if !(0..32).contains(&y) {
         return -1;
     }
-    y = y + (*cameraOffset).yTileOffset as i32;
+    y += (*cameraOffset).yTileOffset as i32;
     if y >= 32 {
         y -= 32;
     }
-    return y * 32 + x;
+    y * 32 + x
 }
-pub(crate) unsafe extern "C" fn CameraUpdateCallback(fieldCamera: *mut CameraObject) {
+pub(crate) unsafe fn CameraUpdateCallback(fieldCamera: *mut CameraObject) {
     if (*fieldCamera).spriteId != 0 {
         (*fieldCamera).movementSpeedX = gSprites[(*fieldCamera).spriteId].data[2] as i32;
         (*fieldCamera).movementSpeedY = gSprites[(*fieldCamera).spriteId].data[3] as i32;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetCameraUpdateInfo() {
+pub unsafe fn ResetCameraUpdateInfo() {
     gFieldCamera.movementSpeedX = 0;
     gFieldCamera.movementSpeedY = 0;
     gFieldCamera.x = 0;
@@ -434,21 +372,15 @@ pub unsafe extern "C" fn ResetCameraUpdateInfo() {
     gFieldCamera.spriteId = 0;
     gFieldCamera.callback = None;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitCameraUpdateCallback(trackedSpriteId: u8) -> u32 {
+pub unsafe fn InitCameraUpdateCallback(trackedSpriteId: u8) -> u32 {
     if gFieldCamera.spriteId != 0 {
         DestroySprite(&raw mut gSprites[gFieldCamera.spriteId]);
     }
     gFieldCamera.spriteId = AddCameraObject(trackedSpriteId) as u32;
     gFieldCamera.callback = Some(CameraUpdateCallback);
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CameraUpdate() {
-    let mut deltaX: i32 = 0;
-    let mut deltaY: i32 = 0;
-    let mut curMovementOffsetY: i32 = 0;
-    let mut curMovementOffsetX: i32 = 0;
+pub unsafe fn CameraUpdate() {
     let mut movementSpeedX: i32 = 0;
     let mut movementSpeedY: i32 = 0;
     if gFieldCamera.callback.is_some() {
@@ -456,10 +388,10 @@ pub unsafe extern "C" fn CameraUpdate() {
     }
     movementSpeedX = gFieldCamera.movementSpeedX;
     movementSpeedY = gFieldCamera.movementSpeedY;
-    deltaX = 0;
-    deltaY = 0;
-    curMovementOffsetX = gFieldCamera.x;
-    curMovementOffsetY = gFieldCamera.y;
+    let mut deltaX: i32 = 0;
+    let mut deltaY: i32 = 0;
+    let curMovementOffsetX: i32 = gFieldCamera.x;
+    let curMovementOffsetY: i32 = gFieldCamera.y;
     if curMovementOffsetX == 0 && movementSpeedX != 0 {
         if movementSpeedX > 0 {
             deltaX = 1;
@@ -489,9 +421,9 @@ pub unsafe extern "C" fn CameraUpdate() {
         }
     }
     gFieldCamera.x += movementSpeedX;
-    gFieldCamera.x = gFieldCamera.x % 16;
+    gFieldCamera.x %= 16;
     gFieldCamera.y += movementSpeedY;
-    gFieldCamera.y = gFieldCamera.y % 16;
+    gFieldCamera.y %= 16;
     if deltaX != 0 || deltaY != 0 {
         CameraMove(deltaX, deltaY);
         UpdateObjectEventsForCameraUpdate(deltaX as i16, deltaY as i16);
@@ -512,8 +444,7 @@ pub unsafe extern "C" fn CameraUpdate() {
     gTotalCameraPixelOffsetX -= movementSpeedX as u16;
     gTotalCameraPixelOffsetY -= movementSpeedY as u16;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn MoveCameraAndRedrawMap(deltaX: i32, deltaY: i32) {
+pub unsafe fn MoveCameraAndRedrawMap(deltaX: i32, deltaY: i32) {
     CameraMove(deltaX, deltaY);
     UpdateObjectEventsForCameraUpdate(deltaX as i16, deltaY as i16);
     DrawWholeMapView();
@@ -521,55 +452,54 @@ pub unsafe extern "C" fn MoveCameraAndRedrawMap(deltaX: i32, deltaY: i32) {
     gTotalCameraPixelOffsetY -= deltaY as u16 * 16;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCameraPanningCallback(callback: Option<unsafe extern "C" fn()>) {
+pub unsafe fn SetCameraPanningCallback(callback: Option<unsafe fn()>) {
     sFieldCameraPanningCallback = callback;
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetCameraPanning(horizontal: i16, vertical: i16) {
-    sHorizontalCameraPan = horizontal;
-    sVerticalCameraPan = vertical + 32;
+pub unsafe fn SetCameraPanning(horizontal: i16, vertical: i16) {
+    sHorizontalCameraPan.set(horizontal);
+    sVerticalCameraPan.set(vertical + 32);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InstallCameraPanAheadCallback() {
+pub unsafe fn InstallCameraPanAheadCallback() {
     sFieldCameraPanningCallback = Some(CameraPanningCB_PanAhead);
-    sBikeCameraPanFlag = FALSE;
-    sHorizontalCameraPan = 0;
-    sVerticalCameraPan = 32;
+    sBikeCameraPanFlag.set(FALSE);
+    sHorizontalCameraPan.set(0);
+    sVerticalCameraPan.set(32);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateCameraPanning() {
+pub unsafe fn UpdateCameraPanning() {
     if sFieldCameraPanningCallback.is_some() {
         sFieldCameraPanningCallback.unwrap_unchecked()();
     }
-    gSpriteCoordOffsetX = gTotalCameraPixelOffsetX as i16 - sHorizontalCameraPan;
-    gSpriteCoordOffsetY = gTotalCameraPixelOffsetY as i16 - sVerticalCameraPan - 8;
+    gSpriteCoordOffsetX = gTotalCameraPixelOffsetX as i16 - sHorizontalCameraPan.get();
+    gSpriteCoordOffsetY = gTotalCameraPixelOffsetY as i16 - sVerticalCameraPan.get() - 8;
 }
-pub(crate) unsafe extern "C" fn CameraPanningCB_PanAhead() {
+pub(crate) unsafe fn CameraPanningCB_PanAhead() {
     let mut var: u8 = 0;
-    if gUnusedBikeCameraAheadPanback == FALSE {
+    if gUnusedBikeCameraAheadPanback.get() == FALSE {
         InstallCameraPanAheadCallback();
     } else {
         if gPlayerAvatar.tileTransitionState == T_TILE_TRANSITION {
-            sBikeCameraPanFlag ^= 1;
-            if sBikeCameraPanFlag == FALSE {
+            sBikeCameraPanFlag.set(sBikeCameraPanFlag.get() ^ 1);
+            if sBikeCameraPanFlag.get() == FALSE {
                 return;
             }
         } else {
-            sBikeCameraPanFlag = FALSE;
+            sBikeCameraPanFlag.set(FALSE);
         }
         var = GetPlayerMovementDirection();
         if var == 2 {
-            if sVerticalCameraPan > -8 {
-                sVerticalCameraPan -= 2;
+            if sVerticalCameraPan.get() > -8 {
+                sVerticalCameraPan.set(sVerticalCameraPan.get() - 2);
             }
         } else if var == 1 {
-            if sVerticalCameraPan < 72 {
-                sVerticalCameraPan += 2;
+            if sVerticalCameraPan.get() < 72 {
+                sVerticalCameraPan.set(sVerticalCameraPan.get() + 2);
             }
-        } else if sVerticalCameraPan < 32 {
-            sVerticalCameraPan += 2;
-        } else if sVerticalCameraPan > 32 {
-            sVerticalCameraPan -= 2;
+        } else if sVerticalCameraPan.get() < 32 {
+            sVerticalCameraPan.set(sVerticalCameraPan.get() + 2);
+        } else if sVerticalCameraPan.get() > 32 {
+            sVerticalCameraPan.set(sVerticalCameraPan.get() - 2);
         }
     }
 }

@@ -200,7 +200,7 @@ pub unsafe fn strcpy(dst: *mut u8, src: *mut u8) -> *mut u8 {
 /// to order (newlib's version for this CPU is empty too).
 #[cfg(target_arch = "arm")]
 #[unsafe(no_mangle)]
-pub extern "C" fn __sync_synchronize() {}
+pub fn __sync_synchronize() {}
 
 /// A C struct or union passed by value, as its bytes. The alignment matches
 /// the C type so the size (and so the calling convention) does too.

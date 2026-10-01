@@ -3,37 +3,93 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::explicit_counter_loop,
+    clippy::if_same_then_else,
+    clippy::missing_transmute_annotations,
+    clippy::too_many_arguments,
+    clippy::type_complexity,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::apprentice::BufferApprenticeChallengeText;
+use crate::battle_dome::{GetDomeTrainerSelectedMons, TrainerIdToDomeTournamentId};
+use crate::battle_main::{gBattleOutcome, gBattleScripting, gBattleTypeFlags};
+use crate::battle_records::gRecordsWindowId;
+use crate::battle_setup::gTrainerBattleOpponent_A;
+use crate::battle_tower::{
+    FrontierSpeechToString, GetFrontierTrainerName, SetFacilityPtrsGetLevel,
+    ValidateEReaderTrainer, gFacilityTrainers,
+};
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::event_data::{FlagGet, FlagSet, VarGet, VarSet};
+use crate::ffi::{gSpecialVar_0x8004, gSpecialVar_0x8005, gSpecialVar_0x8006, gSpecialVar_Result};
+use crate::field_specials::FrontierGamblerSetWonOrLost;
+use crate::international_string_util::{
+    GetStringCenterAlignXOffset, GetStringRightAlignXOffset, TVShowConvertInternationalString,
+};
+use crate::link::gLinkPlayers;
+use crate::load_save::{
+    ClearContinueGameWarpStatus2, LoadPlayerParty, SetContinueGameWarpStatusToDynamicWarp,
+};
+use crate::load_save::{gSaveBlock1Ptr, gSaveBlock2Ptr};
+use crate::menu::DrawStdWindowFrame;
+use crate::new_game::CopyTrainerId;
+use crate::new_game::SetTrainerId;
+use crate::overworld::SetGameStat;
+use crate::party_menu::ClearSelectedPartyOrder;
+use crate::party_menu::gSelectedOrderFromParty;
+use crate::pokedex::GetSetPokedexFlag;
+use crate::pokemon::{
+    CalculateMonStats, CreateMon, GetMonData2, GetMonData3, GetNatureFromPersonality,
+    IsShinyOtIdPersonality, SetMonData, SetMonMoveSlot, SpeciesToNationalPokedexNum,
+    ZeroEnemyPartyMons, gEnemyParty, gPlayerParty, gPlayerPartyCount,
+};
+use crate::random::Random;
+use crate::record_mixing::GetPlayerHallRecords;
+use crate::recorded_battle::{
+    GetRecordedBattleApprenticeId, GetRecordedBattleEasyChatSpeech,
+    GetRecordedBattleFronterBrainSymbol, GetRecordedBattleFrontierFacility,
+    MoveRecordedBattleToSaveData,
+};
+use crate::save::TrySavingData;
+use crate::script_pokemon_util::ReducePlayerPartyToSelectedMons;
+use crate::string_util::{
+    ConvertIntToDecimalStringN, StringAppend, StringCopy, StringExpandPlaceholders,
+};
+use crate::string_util::{IsStringJapanese, StripExtCtrlCodes};
+use crate::string_util::{gStringVar1, gStringVar2, gStringVar4};
+use crate::tv::{IncrementDailyBattlePoints, ShouldAirFrontierTVShow, TryPutFrontierTVShowOnAir};
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::window::{CopyWindowToVram, FillWindowPixelBuffer, PutWindowTilemap};
 #[allow(unused_imports)]
 use core::ffi::c_void;
 #[allow(unused_imports)]
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `AddWindow` with this module's view of its types.
+#[inline]
+unsafe fn AddWindow(a0: *mut WindowTemplate) -> u16 {
+    unsafe { crate::window::AddWindow(a0 as _) }
+}
+/// `Free` with this module's view of its types.
+#[inline]
+unsafe fn Free(a0: *mut c_void) {
+    unsafe {
+        crate::malloc::Free(a0 as _);
+    }
+}
 // Data tables (translate with cdata.py): sFrontierBrainStreakAppearances sFrontierBrainsMons sBattlePointAwards sBattledBrainBitFlags sFrontierUtilFuncs sFrontierResultsWindowTemplate sLinkContestResultsWindowTemplate sRankingHallRecordsWindowTemplate sFrontierBrainObjEventGfx gFrontierBannedSpecies sRecordsWindowChallengeTexts sLevelModeText sHallFacilityToRecordsText sFrontierBrainTrainerIds sFrontierBrainPlayerLostSilverTexts sFrontierBrainPlayerWonSilverTexts sFrontierBrainPlayerLostGoldTexts sFrontierBrainPlayerWonGoldTexts sFrontierBrainPlayerLostTexts sFrontierBrainPlayerWonTexts
 
 /// `struct FrontierBrainMon`
@@ -85,7 +141,7 @@ static sFrontierBrainsMons: Table<CArray<CArray<CArray<FrontierBrainMon, 3>, 2>,
     Table((&raw const crate::data::frontier_util::sFrontierBrainsMons).cast());
 static sFrontierResultsWindowTemplate: Table<WindowTemplate> =
     Table((&raw const crate::data::frontier_util::sFrontierResultsWindowTemplate).cast());
-static sFrontierUtilFuncs: Table<CArray<Option<unsafe extern "C" fn()>, 23>> =
+static sFrontierUtilFuncs: Table<CArray<Option<unsafe fn()>, 23>> =
     Table((&raw const crate::data::frontier_util::sFrontierUtilFuncs).cast());
 static sHallFacilityToRecordsText: Table<CArray<*mut u8, 10>> =
     Table((&raw const crate::data::frontier_util::sHallFacilityToRecordsText).cast());
@@ -98,152 +154,50 @@ static sRankingHallRecordsWindowTemplate: Table<WindowTemplate> =
 static sRecordsWindowChallengeTexts: Table<CArray<CArray<*mut u8, 2>, 10>> =
     Table((&raw const crate::data::frontier_util::sRecordsWindowChallengeTexts).cast());
 
-unsafe extern "C" {
-    static gApprentices: CArray<ApprenticeTrainer, 0>;
-    static gBattleFrontierTrainers: CArray<BattleFrontierTrainer, 0>;
-    static mut gBattleOutcome: u8;
-    static mut gBattleScripting: BattleScripting;
-    static mut gBattleTypeFlags: u32;
-    static mut gEnemyParty: CArray<Pokemon, 6>;
-    static mut gFacilityTrainers: *mut BattleFrontierTrainer;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gPlayerParty: CArray<Pokemon, 6>;
-    static mut gPlayerPartyCount: u8;
-    static mut gRecordsWindowId: u8;
-    static mut gSaveBlock1Ptr: *mut SaveBlock1;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSelectedOrderFromParty: CArray<u8, 4>;
-    static mut gSpecialVar_0x8004: u16;
-    static mut gSpecialVar_0x8005: u16;
-    static mut gSpecialVar_0x8006: u16;
-    static mut gSpecialVar_Result: u16;
-    static gSpeciesNames: CArray<CArray<u8, 11>, 0>;
-    static mut gStringVar1: CArray<u8, 256>;
-    static mut gStringVar2: CArray<u8, 256>;
-    static mut gStringVar4: CArray<u8, 1000>;
-    static gText_123Dot: CArray<CArray<u8, 3>, 0>;
-    static gText_1st: CArray<u8, 0>;
-    static gText_2nd: CArray<u8, 0>;
-    static gText_3rd: CArray<u8, 0>;
-    static gText_4th: CArray<u8, 0>;
-    static gText_Are: CArray<u8, 0>;
-    static gText_Are2: CArray<u8, 0>;
-    static gText_BattleChoiceResults: CArray<u8, 0>;
-    static gText_BattleQuestResults: CArray<u8, 0>;
-    static gText_BattleSwapDoubleResults: CArray<u8, 0>;
-    static gText_BattleSwapSingleResults: CArray<u8, 0>;
-    static gText_Beauty: CArray<u8, 0>;
-    static gText_Championships: CArray<u8, 0>;
-    static gText_ClearStreak: CArray<u8, 0>;
-    static gText_CommaSpace: CArray<u8, 0>;
-    static gText_Cool: CArray<u8, 0>;
-    static gText_Current: CArray<u8, 0>;
-    static gText_Cute: CArray<u8, 0>;
-    static gText_DoubleBattleHallResults: CArray<u8, 0>;
-    static gText_DoubleBattleRoomResults: CArray<u8, 0>;
-    static gText_DoubleBattleTourneyResults: CArray<u8, 0>;
-    static gText_FloorsCleared: CArray<u8, 0>;
-    static gText_KOsInARow: CArray<u8, 0>;
-    static gText_LineBreak: CArray<u8, 0>;
-    static gText_LinkContestResults: CArray<u8, 0>;
-    static gText_LinkMultiBattleRoomResults: CArray<u8, 0>;
-    static gText_Lv502: CArray<u8, 0>;
-    static gText_MultiBattleRoomResults: CArray<u8, 0>;
-    static gText_NewLine: CArray<u8, 0>;
-    static gText_OpenLv: CArray<u8, 0>;
-    static gText_Prev: CArray<u8, 0>;
-    static gText_Record: CArray<u8, 0>;
-    static gText_RentalSwap: CArray<u8, 0>;
-    static gText_RoomsCleared: CArray<u8, 0>;
-    static gText_SetKOTourneyResults: CArray<u8, 0>;
-    static gText_SingleBattleHallResults: CArray<u8, 0>;
-    static gText_SingleBattleRoomResults: CArray<u8, 0>;
-    static gText_SingleBattleTourneyResults: CArray<u8, 0>;
-    static gText_Smart: CArray<u8, 0>;
-    static gText_Space2: CArray<u8, 0>;
-    static gText_SpaceAndSpace: CArray<u8, 0>;
-    static gText_TimesCleared: CArray<u8, 0>;
-    static gText_TimesVar1: CArray<u8, 0>;
-    static gText_Total: CArray<u8, 0>;
-    static gText_Tough: CArray<u8, 0>;
-    static gText_WinStreak: CArray<u8, 0>;
-    static mut gTrainerBattleOpponent_A: u16;
-    static gTrainers: CArray<Trainer, 0>;
-    fn AddTextPrinterParameterized(
-        a0: u8,
-        a1: u8,
-        a2: *mut u8,
-        a3: u8,
-        a4: u8,
-        a5: u8,
-        a6: Option<unsafe extern "C" fn(*mut TextPrinterTemplate, u16)>,
-    ) -> u16;
-    fn AddWindow(a0: *mut WindowTemplate) -> u16;
-    fn AllocZeroed(a0: u32) -> *mut c_void;
-    fn BufferApprenticeChallengeText(a0: u8);
-    fn CalculateMonStats(a0: *mut Pokemon);
-    fn ClearContinueGameWarpStatus2();
-    fn ClearSelectedPartyOrder();
-    fn ConvertIntToDecimalStringN(a0: *mut u8, a1: i32, a2: i32, a3: u8) -> *mut u8;
-    fn CopyTrainerId(a0: *mut u8, a1: *mut u8);
-    fn CopyWindowToVram(a0: u8, a1: u8);
-    fn CreateMon(a0: *mut Pokemon, a1: u16, a2: u8, a3: u8, a4: u8, a5: u32, a6: u8, a7: u32);
-    fn DoSoftReset();
-    fn DrawStdWindowFrame(a0: u8, a1: u8);
-    fn FillWindowPixelBuffer(a0: u8, a1: u8);
-    fn FlagGet(a0: u16) -> u8;
-    fn FlagSet(a0: u16) -> u8;
-    fn Free(a0: *mut c_void);
-    fn FrontierGamblerSetWonOrLost(a0: u8);
-    fn FrontierSpeechToString(a0: *mut u16);
-    fn GetDomeTrainerSelectedMons(a0: u16) -> i32;
-    fn GetFrontierTrainerName(a0: *mut u8, a1: u16);
-    fn GetMonData2(a0: *mut Pokemon, a1: i32) -> u32;
-    fn GetMonData3(a0: *mut Pokemon, a1: i32, a2: *mut u8) -> u32;
-    fn GetNatureFromPersonality(a0: u32) -> u8;
-    fn GetPlayerHallRecords(a0: *mut PlayerHallRecords);
-    fn GetRecordedBattleApprenticeId() -> u8;
-    fn GetRecordedBattleEasyChatSpeech() -> *mut u16;
-    fn GetRecordedBattleFronterBrainSymbol() -> u8;
-    fn GetRecordedBattleFrontierFacility() -> u8;
-    fn GetSetPokedexFlag(a0: u16, a1: u8) -> i8;
-    fn GetStringCenterAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn GetStringRightAlignXOffset(a0: i32, a1: *mut u8, a2: i32) -> i32;
-    fn IncrementDailyBattlePoints(a0: u16);
-    fn IsShinyOtIdPersonality(a0: u32, a1: u32) -> u8;
-    fn IsStringJapanese(a0: *mut u8) -> u32;
-    fn LoadPlayerParty();
-    fn MoveRecordedBattleToSaveData() -> u32;
-    fn PutWindowTilemap(a0: u8);
-    fn Random() -> u16;
-    fn ReducePlayerPartyToSelectedMons();
-    fn SetContinueGameWarpStatusToDynamicWarp();
-    fn SetFacilityPtrsGetLevel() -> u8;
-    fn SetGameStat(a0: u8, a1: u32);
-    fn SetMonData(a0: *mut Pokemon, a1: i32, a2: *mut c_void);
-    fn SetMonMoveSlot(a0: *mut Pokemon, a1: u16, a2: u8);
-    fn SetTrainerId(a0: u32, a1: *mut u8);
-    fn ShouldAirFrontierTVShow() -> u8;
-    fn SpeciesToNationalPokedexNum(a0: u16) -> u16;
-    fn StringAppend(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StringExpandPlaceholders(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn StripExtCtrlCodes(a0: *mut u8);
-    fn TVShowConvertInternationalString(a0: *mut u8, a1: *mut u8, a2: i32);
-    fn TrainerIdToDomeTournamentId(a0: u16) -> i32;
-    fn TryPutFrontierTVShowOnAir(a0: u16, a1: u8);
-    fn TrySavingData(a0: u8) -> u8;
-    fn ValidateEReaderTrainer();
-    fn VarGet(a0: u16) -> u16;
-    fn VarSet(a0: u16, a1: u16) -> u8;
-    fn ZeroEnemyPartyMons();
+/// `AddTextPrinterParameterized` with this module's view of its types.
+#[inline]
+unsafe fn AddTextPrinterParameterized(
+    a0: u8,
+    a1: u8,
+    a2: *mut u8,
+    a3: u8,
+    a4: u8,
+    a5: u8,
+    a6: Option<unsafe fn(*mut TextPrinterTemplate, u16)>,
+) -> u16 {
+    unsafe {
+        crate::text::AddTextPrinterParameterized(
+            a0,
+            a1,
+            a2 as _,
+            a3,
+            a4,
+            a5,
+            core::mem::transmute(a6),
+        )
+    }
+}
+/// `AllocZeroed` with this module's view of its types.
+#[inline]
+unsafe fn AllocZeroed(a0: u32) -> *mut c_void {
+    unsafe { crate::malloc::AllocZeroed(a0) as *mut c_void }
+}
+/// `DoSoftReset` with this module's view of its types.
+#[inline]
+unsafe fn DoSoftReset() {
+    unsafe {
+        crate::agb_main::DoSoftReset();
+    }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn CallFrontierUtilFunc() {
-    sFrontierUtilFuncs[gSpecialVar_0x8004].unwrap_unchecked()();
+pub unsafe fn CallFrontierUtilFunc() {
+    sFrontierUtilFuncs[*(&raw const crate::ffi::gSpecialVar_0x8004)
+        .cast::<u16>()
+        .cast_mut()]
+    .unwrap_unchecked()();
 }
-pub(crate) unsafe extern "C" fn GetChallengeStatus() {
+pub(crate) unsafe fn GetChallengeStatus() {
     VarSet(VAR_TEMP_CHALLENGE_STATUS, 0xFF);
     match (*gSaveBlock2Ptr).frontier.challengeStatus {
         0 => {}
@@ -277,13 +231,16 @@ pub(crate) unsafe extern "C" fn GetChallengeStatus() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn GetFrontierData() {
-    let mut facility: u8 = VarGet(VAR_FRONTIER_FACILITY) as u8;
+pub(crate) unsafe fn GetFrontierData() {
+    let facility: u8 = VarGet(VAR_FRONTIER_FACILITY) as u8;
     let mut hasSymbol: u8 = GetPlayerSymbolCountForFacility(facility);
     if hasSymbol == 2 {
         hasSymbol = 1;
     }
-    match gSpecialVar_0x8005 {
+    match *(&raw const crate::ffi::gSpecialVar_0x8005)
+        .cast::<u16>()
+        .cast_mut()
+    {
         FRONTIER_DATA_CHALLENGE_STATUS => {
             gSpecialVar_Result = (*gSaveBlock2Ptr).frontier.challengeStatus as u16;
         }
@@ -310,14 +267,17 @@ pub(crate) unsafe extern "C" fn GetFrontierData() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SetFrontierData() {
+pub(crate) unsafe fn SetFrontierData() {
     let mut i: i32 = 0;
-    let mut facility: u8 = VarGet(VAR_FRONTIER_FACILITY) as u8;
+    let facility: u8 = VarGet(VAR_FRONTIER_FACILITY) as u8;
     let mut hasSymbol: u8 = GetPlayerSymbolCountForFacility(facility);
     if hasSymbol == 2 {
         hasSymbol = 1;
     }
-    match gSpecialVar_0x8005 {
+    match *(&raw const crate::ffi::gSpecialVar_0x8005)
+        .cast::<u16>()
+        .cast_mut()
+    {
         FRONTIER_DATA_CHALLENGE_STATUS => {
             (*gSaveBlock2Ptr).frontier.challengeStatus = gSpecialVar_0x8006 as u8;
         }
@@ -327,7 +287,10 @@ pub(crate) unsafe extern "C" fn SetFrontierData() {
                 .set_lvlMode(gSpecialVar_0x8006 as u8);
         }
         FRONTIER_DATA_BATTLE_NUM => {
-            (*gSaveBlock2Ptr).frontier.curChallengeBattleNum = gSpecialVar_0x8006;
+            (*gSaveBlock2Ptr).frontier.curChallengeBattleNum =
+                *(&raw const crate::ffi::gSpecialVar_0x8006)
+                    .cast::<u16>()
+                    .cast_mut();
         }
         FRONTIER_DATA_PAUSED => {
             (*gSaveBlock2Ptr)
@@ -359,25 +322,24 @@ pub(crate) unsafe extern "C" fn SetFrontierData() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn SetSelectedPartyOrder() {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn SetSelectedPartyOrder() {
     ClearSelectedPartyOrder();
-    i = 0;
-    while i < gSpecialVar_0x8005 as i32 {
+    for i in 0..(gSpecialVar_0x8005 as i32) {
         gSelectedOrderFromParty[i] = (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as u8;
-        i += 1;
     }
     ReducePlayerPartyToSelectedMons();
 }
-pub(crate) unsafe extern "C" fn DoSoftReset_() {
+pub(crate) unsafe fn DoSoftReset_() {
     DoSoftReset();
 }
-pub(crate) unsafe extern "C" fn SetFrontierTrainers() {
-    gFacilityTrainers = gBattleFrontierTrainers.as_ptr().cast_mut();
+pub(crate) unsafe fn SetFrontierTrainers() {
+    gFacilityTrainers = (*(&raw const crate::data::battle_tower::gBattleFrontierTrainers)
+        .cast::<CArray<BattleFrontierTrainer, 0>>())
+    .as_ptr()
+    .cast_mut();
 }
-pub(crate) unsafe extern "C" fn SaveSelectedParty() {
+pub(crate) unsafe fn SaveSelectedParty() {
     let mut i: u8 = 0;
-    i = 0;
     while (i as i32)
         < (if 3 >= (if 4 >= 2 { 4 } else { 2 }) {
             3
@@ -385,7 +347,7 @@ pub(crate) unsafe extern "C" fn SaveSelectedParty() {
             if 4 >= 2 { 4 } else { 2 }
         })
     {
-        let mut monId: u16 = (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] - 1;
+        let monId: u16 = (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] - 1;
         if monId < PARTY_SIZE as u16 {
             (*gSaveBlock1Ptr).playerParty
                 [(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1] = gPlayerParty[i];
@@ -393,11 +355,14 @@ pub(crate) unsafe extern "C" fn SaveSelectedParty() {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ShowFacilityResultsWindow() {
+pub(crate) unsafe fn ShowFacilityResultsWindow() {
     if gSpecialVar_0x8006 >= FRONTIER_MODE_COUNT {
         gSpecialVar_0x8006 = 0;
     }
-    match gSpecialVar_0x8005 {
+    match *(&raw const crate::ffi::gSpecialVar_0x8005)
+        .cast::<u16>()
+        .cast_mut()
+    {
         FRONTIER_FACILITY_TOWER => {
             ShowTowerResultsWindow(gSpecialVar_0x8006 as u8);
         }
@@ -425,7 +390,7 @@ pub(crate) unsafe extern "C" fn ShowFacilityResultsWindow() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn IsWinStreakActive(challenge: u32) -> u8 {
+unsafe fn IsWinStreakActive(challenge: u32) -> u8 {
     if (*gSaveBlock2Ptr).frontier.winStreakActiveFlags & challenge != 0 {
         return TRUE;
     } else {
@@ -433,14 +398,14 @@ pub(crate) unsafe extern "C" fn IsWinStreakActive(challenge: u32) -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn PrintAligned(str: *mut u8, mut y: i32) {
-    let mut x: i32 = GetStringCenterAlignXOffset(FONT_NORMAL as i32, str, 224);
+unsafe fn PrintAligned(str: *mut u8, mut y: i32) {
+    let x: i32 = GetStringCenterAlignXOffset(FONT_NORMAL as i32, str, 224);
     y = y * 8 + 1;
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         str,
         x as u8,
@@ -449,10 +414,9 @@ pub(crate) unsafe extern "C" fn PrintAligned(str: *mut u8, mut y: i32) {
         None,
     );
 }
-pub(crate) unsafe extern "C" fn PrintHyphens(mut y: i32) {
-    let mut i: i32 = 0;
+unsafe fn PrintHyphens(mut y: i32) {
     let mut text: CArray<u8, 37> = zeroed();
-    i = 0;
+    let mut i: i32 = 0;
     while i < 36 {
         text[i] = CHAR_HYPHEN;
         i += 1;
@@ -460,7 +424,7 @@ pub(crate) unsafe extern "C" fn PrintHyphens(mut y: i32) {
     text[i] = EOS;
     y = y * 8 + 1;
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         text.as_mut_ptr(),
         4,
@@ -469,15 +433,9 @@ pub(crate) unsafe extern "C" fn PrintHyphens(mut y: i32) {
         None,
     );
 }
-pub(crate) unsafe extern "C" fn TowerPrintStreak(
-    str: *mut u8,
-    mut num: u16,
-    x1: u8,
-    x2: u8,
-    y: u8,
-) {
+unsafe fn TowerPrintStreak(str: *mut u8, mut num: u16, x1: u8, x2: u8, y: u8) {
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         str,
         x1,
@@ -496,10 +454,12 @@ pub(crate) unsafe extern "C" fn TowerPrintStreak(
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_WinStreak.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_WinStreak).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         x2,
@@ -508,18 +468,20 @@ pub(crate) unsafe extern "C" fn TowerPrintStreak(
         None,
     );
 }
-pub(crate) unsafe extern "C" fn TowerPrintRecordStreak(
-    battleMode: u8,
-    lvlMode: u8,
-    x1: u8,
-    x2: u8,
-    y: u8,
-) {
-    let mut num: u16 = (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[battleMode][lvlMode];
-    TowerPrintStreak(gText_Record.as_ptr().cast_mut(), num, x1, x2, y);
+unsafe fn TowerPrintRecordStreak(battleMode: u8, lvlMode: u8, x1: u8, x2: u8, y: u8) {
+    let num: u16 = (*gSaveBlock2Ptr).frontier.towerRecordWinStreaks[battleMode][lvlMode];
+    TowerPrintStreak(
+        (*(&raw const crate::data::strings::gText_Record).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        num,
+        x1,
+        x2,
+        y,
+    );
 }
-pub(crate) unsafe extern "C" fn TowerGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
-    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode];
+unsafe fn TowerGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
+    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -527,18 +489,12 @@ pub(crate) unsafe extern "C" fn TowerGetWinStreak(battleMode: u8, lvlMode: u8) -
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn TowerPrintPrevOrCurrentStreak(
-    battleMode: u8,
-    lvlMode: u8,
-    x1: u8,
-    x2: u8,
-    y: u8,
-) {
+unsafe fn TowerPrintPrevOrCurrentStreak(battleMode: u8, lvlMode: u8, x1: u8, x2: u8, y: u8) {
     let mut isCurrent: u8 = 0;
-    let mut winStreak: u16 = TowerGetWinStreak(battleMode, lvlMode);
+    let winStreak: u16 = TowerGetWinStreak(battleMode, lvlMode);
     match battleMode {
         1 => {
             if lvlMode != FRONTIER_LVL_50 {
@@ -570,50 +526,82 @@ pub(crate) unsafe extern "C" fn TowerPrintPrevOrCurrentStreak(
         }
     }
     if isCurrent == TRUE {
-        TowerPrintStreak(gText_Current.as_ptr().cast_mut(), winStreak, x1, x2, y);
+        TowerPrintStreak(
+            (*(&raw const crate::data::strings::gText_Current).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            winStreak,
+            x1,
+            x2,
+            y,
+        );
     } else {
-        TowerPrintStreak(gText_Prev.as_ptr().cast_mut(), winStreak, x1, x2, y);
+        TowerPrintStreak(
+            (*(&raw const crate::data::strings::gText_Prev).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            winStreak,
+            x1,
+            x2,
+            y,
+        );
     }
 }
-pub(crate) unsafe extern "C" fn ShowTowerResultsWindow(battleMode: u8) {
-    gRecordsWindowId = AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8;
-    DrawStdWindowFrame(gRecordsWindowId, FALSE);
-    FillWindowPixelBuffer(gRecordsWindowId, 17);
+unsafe fn ShowTowerResultsWindow(battleMode: u8) {
+    gRecordsWindowId.set(AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8);
+    DrawStdWindowFrame(gRecordsWindowId.get(), FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId.get(), 17);
     if battleMode == FRONTIER_MODE_SINGLES as u8 {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_SingleBattleRoomResults.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_SingleBattleRoomResults)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
     } else if battleMode == FRONTIER_MODE_DOUBLES as u8 {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_DoubleBattleRoomResults.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_DoubleBattleRoomResults)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
     } else if battleMode == FRONTIER_MODE_MULTIS as u8 {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_MultiBattleRoomResults.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_MultiBattleRoomResults)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
     } else {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_LinkMultiBattleRoomResults.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_LinkMultiBattleRoomResults)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
     }
     PrintAligned(gStringVar4.as_mut_ptr(), 2);
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_Lv502.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Lv502).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         16,
         49,
         TEXT_SKIP_DRAW,
         None,
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_OpenLv.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_OpenLv).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         16,
         97,
         TEXT_SKIP_DRAW,
@@ -624,11 +612,11 @@ pub(crate) unsafe extern "C" fn ShowTowerResultsWindow(battleMode: u8) {
     TowerPrintRecordStreak(battleMode, FRONTIER_LVL_50, 72, 132, 65);
     TowerPrintPrevOrCurrentStreak(battleMode, FRONTIER_LVL_OPEN, 72, 132, 97);
     TowerPrintRecordStreak(battleMode, FRONTIER_LVL_OPEN, 72, 132, 113);
-    PutWindowTilemap(gRecordsWindowId);
-    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
+    PutWindowTilemap(gRecordsWindowId.get());
+    CopyWindowToVram(gRecordsWindowId.get(), COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn DomeGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
-    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode];
+unsafe fn DomeGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
+    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -636,19 +624,12 @@ pub(crate) unsafe extern "C" fn DomeGetWinStreak(battleMode: u8, lvlMode: u8) ->
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn PrintTwoStrings(
-    str1: *mut u8,
-    str2: *mut u8,
-    num: u16,
-    x1: u8,
-    x2: u8,
-    y: u8,
-) {
+unsafe fn PrintTwoStrings(str1: *mut u8, str2: *mut u8, num: u16, x1: u8, x2: u8, y: u8) {
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         str1,
         x1,
@@ -664,7 +645,7 @@ pub(crate) unsafe extern "C" fn PrintTwoStrings(
     );
     StringExpandPlaceholders(gStringVar4.as_mut_ptr(), str2);
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         x2,
@@ -673,15 +654,9 @@ pub(crate) unsafe extern "C" fn PrintTwoStrings(
         None,
     );
 }
-pub(crate) unsafe extern "C" fn DomePrintPrevOrCurrentStreak(
-    battleMode: u8,
-    lvlMode: u8,
-    x1: u8,
-    x2: u8,
-    y: u8,
-) {
+unsafe fn DomePrintPrevOrCurrentStreak(battleMode: u8, lvlMode: u8, x1: u8, x2: u8, y: u8) {
     let mut isCurrent: u8 = 0;
-    let mut winStreak: u16 = DomeGetWinStreak(battleMode, lvlMode);
+    let winStreak: u16 = DomeGetWinStreak(battleMode, lvlMode);
     match battleMode {
         1 => {
             if lvlMode != FRONTIER_LVL_50 {
@@ -700,8 +675,12 @@ pub(crate) unsafe extern "C" fn DomePrintPrevOrCurrentStreak(
     }
     if isCurrent == TRUE {
         PrintTwoStrings(
-            gText_Current.as_ptr().cast_mut(),
-            gText_ClearStreak.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_Current).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            (*(&raw const crate::data::strings::gText_ClearStreak).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             winStreak,
             x1,
             x2,
@@ -709,8 +688,12 @@ pub(crate) unsafe extern "C" fn DomePrintPrevOrCurrentStreak(
         );
     } else {
         PrintTwoStrings(
-            gText_Prev.as_ptr().cast_mut(),
-            gText_ClearStreak.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_Prev).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            (*(&raw const crate::data::strings::gText_ClearStreak).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             winStreak,
             x1,
             x2,
@@ -718,35 +701,45 @@ pub(crate) unsafe extern "C" fn DomePrintPrevOrCurrentStreak(
         );
     }
 }
-pub(crate) unsafe extern "C" fn ShowDomeResultsWindow(battleMode: u8) {
-    gRecordsWindowId = AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8;
-    DrawStdWindowFrame(gRecordsWindowId, FALSE);
-    FillWindowPixelBuffer(gRecordsWindowId, 17);
+unsafe fn ShowDomeResultsWindow(battleMode: u8) {
+    gRecordsWindowId.set(AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8);
+    DrawStdWindowFrame(gRecordsWindowId.get(), FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId.get(), 17);
     if battleMode == FRONTIER_MODE_SINGLES as u8 {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_SingleBattleTourneyResults.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_SingleBattleTourneyResults)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
     } else {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_DoubleBattleTourneyResults.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_DoubleBattleTourneyResults)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
     }
     PrintAligned(gStringVar4.as_mut_ptr(), 0);
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_Lv502.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Lv502).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         8,
         33,
         TEXT_SKIP_DRAW,
         None,
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_OpenLv.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_OpenLv).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         8,
         97,
         TEXT_SKIP_DRAW,
@@ -755,16 +748,24 @@ pub(crate) unsafe extern "C" fn ShowDomeResultsWindow(battleMode: u8) {
     PrintHyphens(10);
     DomePrintPrevOrCurrentStreak(battleMode, FRONTIER_LVL_50, 64, 121, 33);
     PrintTwoStrings(
-        gText_Record.as_ptr().cast_mut(),
-        gText_ClearStreak.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Record).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        (*(&raw const crate::data::strings::gText_ClearStreak).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[battleMode][0],
         64,
         121,
         49,
     );
     PrintTwoStrings(
-        gText_Total.as_ptr().cast_mut(),
-        gText_Championships.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Total).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        (*(&raw const crate::data::strings::gText_Championships).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         (*gSaveBlock2Ptr).frontier.domeTotalChampionships[battleMode][0],
         64,
         112,
@@ -772,33 +773,35 @@ pub(crate) unsafe extern "C" fn ShowDomeResultsWindow(battleMode: u8) {
     );
     DomePrintPrevOrCurrentStreak(battleMode, FRONTIER_LVL_OPEN, 64, 121, 97);
     PrintTwoStrings(
-        gText_Record.as_ptr().cast_mut(),
-        gText_ClearStreak.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Record).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        (*(&raw const crate::data::strings::gText_ClearStreak).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         (*gSaveBlock2Ptr).frontier.domeRecordWinStreaks[battleMode][1],
         64,
         121,
         113,
     );
     PrintTwoStrings(
-        gText_Total.as_ptr().cast_mut(),
-        gText_Championships.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Total).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        (*(&raw const crate::data::strings::gText_Championships).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         (*gSaveBlock2Ptr).frontier.domeTotalChampionships[battleMode][1],
         64,
         112,
         129,
     );
-    PutWindowTilemap(gRecordsWindowId);
-    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
+    PutWindowTilemap(gRecordsWindowId.get());
+    CopyWindowToVram(gRecordsWindowId.get(), COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn PalacePrintStreak(
-    str: *mut u8,
-    mut num: u16,
-    x1: u8,
-    x2: u8,
-    y: u8,
-) {
+unsafe fn PalacePrintStreak(str: *mut u8, mut num: u16, x1: u8, x2: u8, y: u8) {
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         str,
         x1,
@@ -817,10 +820,12 @@ pub(crate) unsafe extern "C" fn PalacePrintStreak(
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_WinStreak.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_WinStreak).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         x2,
@@ -829,18 +834,20 @@ pub(crate) unsafe extern "C" fn PalacePrintStreak(
         None,
     );
 }
-pub(crate) unsafe extern "C" fn PalacePrintRecordStreak(
-    battleMode: u8,
-    lvlMode: u8,
-    x1: u8,
-    x2: u8,
-    y: u8,
-) {
-    let mut num: u16 = (*gSaveBlock2Ptr).frontier.palaceRecordWinStreaks[battleMode][lvlMode];
-    PalacePrintStreak(gText_Record.as_ptr().cast_mut(), num, x1, x2, y);
+unsafe fn PalacePrintRecordStreak(battleMode: u8, lvlMode: u8, x1: u8, x2: u8, y: u8) {
+    let num: u16 = (*gSaveBlock2Ptr).frontier.palaceRecordWinStreaks[battleMode][lvlMode];
+    PalacePrintStreak(
+        (*(&raw const crate::data::strings::gText_Record).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        num,
+        x1,
+        x2,
+        y,
+    );
 }
-pub(crate) unsafe extern "C" fn PalaceGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
-    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode];
+unsafe fn PalaceGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
+    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.palaceWinStreaks[battleMode][lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -848,18 +855,12 @@ pub(crate) unsafe extern "C" fn PalaceGetWinStreak(battleMode: u8, lvlMode: u8) 
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn PalacePrintPrevOrCurrentStreak(
-    battleMode: u8,
-    lvlMode: u8,
-    x1: u8,
-    x2: u8,
-    y: u8,
-) {
+unsafe fn PalacePrintPrevOrCurrentStreak(battleMode: u8, lvlMode: u8, x1: u8, x2: u8, y: u8) {
     let mut isCurrent: u8 = 0;
-    let mut winStreak: u16 = PalaceGetWinStreak(battleMode, lvlMode);
+    let winStreak: u16 = PalaceGetWinStreak(battleMode, lvlMode);
     match battleMode {
         1 => {
             if lvlMode != FRONTIER_LVL_50 {
@@ -877,40 +878,66 @@ pub(crate) unsafe extern "C" fn PalacePrintPrevOrCurrentStreak(
         }
     }
     if isCurrent == TRUE {
-        PalacePrintStreak(gText_Current.as_ptr().cast_mut(), winStreak, x1, x2, y);
+        PalacePrintStreak(
+            (*(&raw const crate::data::strings::gText_Current).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            winStreak,
+            x1,
+            x2,
+            y,
+        );
     } else {
-        PalacePrintStreak(gText_Prev.as_ptr().cast_mut(), winStreak, x1, x2, y);
+        PalacePrintStreak(
+            (*(&raw const crate::data::strings::gText_Prev).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            winStreak,
+            x1,
+            x2,
+            y,
+        );
     }
 }
-pub(crate) unsafe extern "C" fn ShowPalaceResultsWindow(battleMode: u8) {
-    gRecordsWindowId = AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8;
-    DrawStdWindowFrame(gRecordsWindowId, FALSE);
-    FillWindowPixelBuffer(gRecordsWindowId, 17);
+unsafe fn ShowPalaceResultsWindow(battleMode: u8) {
+    gRecordsWindowId.set(AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8);
+    DrawStdWindowFrame(gRecordsWindowId.get(), FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId.get(), 17);
     if battleMode == FRONTIER_MODE_SINGLES as u8 {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_SingleBattleHallResults.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_SingleBattleHallResults)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
     } else {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_DoubleBattleHallResults.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_DoubleBattleHallResults)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
     }
     PrintAligned(gStringVar4.as_mut_ptr(), 2);
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_Lv502.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Lv502).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         16,
         49,
         TEXT_SKIP_DRAW,
         None,
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_OpenLv.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_OpenLv).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         16,
         97,
         TEXT_SKIP_DRAW,
@@ -921,11 +948,11 @@ pub(crate) unsafe extern "C" fn ShowPalaceResultsWindow(battleMode: u8) {
     PalacePrintRecordStreak(battleMode, FRONTIER_LVL_50, 72, 131, 65);
     PalacePrintPrevOrCurrentStreak(battleMode, FRONTIER_LVL_OPEN, 72, 131, 97);
     PalacePrintRecordStreak(battleMode, FRONTIER_LVL_OPEN, 72, 131, 113);
-    PutWindowTilemap(gRecordsWindowId);
-    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
+    PutWindowTilemap(gRecordsWindowId.get());
+    CopyWindowToVram(gRecordsWindowId.get(), COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn PikeGetWinStreak(lvlMode: u8) -> u16 {
-    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode];
+unsafe fn PikeGetWinStreak(lvlMode: u8) -> u16 {
+    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -933,19 +960,12 @@ pub(crate) unsafe extern "C" fn PikeGetWinStreak(lvlMode: u8) -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn PikePrintCleared(
-    str1: *mut u8,
-    str2: *mut u8,
-    num: u16,
-    x1: u8,
-    x2: u8,
-    y: u8,
-) {
+unsafe fn PikePrintCleared(str1: *mut u8, str2: *mut u8, num: u16, x1: u8, x2: u8, y: u8) {
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         str1,
         x1,
@@ -961,7 +981,7 @@ pub(crate) unsafe extern "C" fn PikePrintCleared(
     );
     StringExpandPlaceholders(gStringVar4.as_mut_ptr(), str2);
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         x2,
@@ -970,9 +990,9 @@ pub(crate) unsafe extern "C" fn PikePrintCleared(
         None,
     );
 }
-pub(crate) unsafe extern "C" fn PikePrintPrevOrCurrentStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
+unsafe fn PikePrintPrevOrCurrentStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
     let mut isCurrent: u8 = 0;
-    let mut winStreak: u16 = PikeGetWinStreak(lvlMode);
+    let winStreak: u16 = PikeGetWinStreak(lvlMode);
     if lvlMode != FRONTIER_LVL_50 {
         isCurrent = IsWinStreakActive(STREAK_PIKE_OPEN);
     } else {
@@ -980,8 +1000,12 @@ pub(crate) unsafe extern "C" fn PikePrintPrevOrCurrentStreak(lvlMode: u8, x1: u8
     }
     if isCurrent == TRUE {
         PrintTwoStrings(
-            gText_Current.as_ptr().cast_mut(),
-            gText_RoomsCleared.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_Current).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            (*(&raw const crate::data::strings::gText_RoomsCleared).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             winStreak,
             x1,
             x2,
@@ -989,8 +1013,12 @@ pub(crate) unsafe extern "C" fn PikePrintPrevOrCurrentStreak(lvlMode: u8, x1: u8
         );
     } else {
         PrintTwoStrings(
-            gText_Prev.as_ptr().cast_mut(),
-            gText_RoomsCleared.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_Prev).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            (*(&raw const crate::data::strings::gText_RoomsCleared).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             winStreak,
             x1,
             x2,
@@ -998,28 +1026,34 @@ pub(crate) unsafe extern "C" fn PikePrintPrevOrCurrentStreak(lvlMode: u8, x1: u8
         );
     }
 }
-pub(crate) unsafe extern "C" fn ShowPikeResultsWindow() {
-    gRecordsWindowId = AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8;
-    DrawStdWindowFrame(gRecordsWindowId, FALSE);
-    FillWindowPixelBuffer(gRecordsWindowId, 17);
+unsafe fn ShowPikeResultsWindow() {
+    gRecordsWindowId.set(AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8);
+    DrawStdWindowFrame(gRecordsWindowId.get(), FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId.get(), 17);
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_BattleChoiceResults.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_BattleChoiceResults).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     PrintAligned(gStringVar4.as_mut_ptr(), 0);
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_Lv502.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Lv502).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         8,
         33,
         TEXT_SKIP_DRAW,
         None,
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_OpenLv.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_OpenLv).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         8,
         97,
         TEXT_SKIP_DRAW,
@@ -1028,16 +1062,24 @@ pub(crate) unsafe extern "C" fn ShowPikeResultsWindow() {
     PrintHyphens(10);
     PikePrintPrevOrCurrentStreak(FRONTIER_LVL_50, 64, 114, 33);
     PikePrintCleared(
-        gText_Record.as_ptr().cast_mut(),
-        gText_RoomsCleared.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Record).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        (*(&raw const crate::data::strings::gText_RoomsCleared).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[0],
         64,
         114,
         49,
     );
     PikePrintCleared(
-        gText_Total.as_ptr().cast_mut(),
-        gText_TimesCleared.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Total).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        (*(&raw const crate::data::strings::gText_TimesCleared).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         (*gSaveBlock2Ptr).frontier.pikeTotalStreaks[0],
         64,
         114,
@@ -1045,33 +1087,35 @@ pub(crate) unsafe extern "C" fn ShowPikeResultsWindow() {
     );
     PikePrintPrevOrCurrentStreak(FRONTIER_LVL_OPEN, 64, 114, 97);
     PikePrintCleared(
-        gText_Record.as_ptr().cast_mut(),
-        gText_RoomsCleared.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Record).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        (*(&raw const crate::data::strings::gText_RoomsCleared).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         (*gSaveBlock2Ptr).frontier.pikeRecordStreaks[1],
         64,
         114,
         113,
     );
     PikePrintCleared(
-        gText_Total.as_ptr().cast_mut(),
-        gText_TimesCleared.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Total).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        (*(&raw const crate::data::strings::gText_TimesCleared).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         (*gSaveBlock2Ptr).frontier.pikeTotalStreaks[1],
         64,
         114,
         129,
     );
-    PutWindowTilemap(gRecordsWindowId);
-    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
+    PutWindowTilemap(gRecordsWindowId.get());
+    CopyWindowToVram(gRecordsWindowId.get(), COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn ArenaPrintStreak(
-    str: *mut u8,
-    mut num: u16,
-    x1: u8,
-    x2: u8,
-    y: u8,
-) {
+unsafe fn ArenaPrintStreak(str: *mut u8, mut num: u16, x1: u8, x2: u8, y: u8) {
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         str,
         x1,
@@ -1090,10 +1134,12 @@ pub(crate) unsafe extern "C" fn ArenaPrintStreak(
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_KOsInARow.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_KOsInARow).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         x2,
@@ -1102,12 +1148,20 @@ pub(crate) unsafe extern "C" fn ArenaPrintStreak(
         None,
     );
 }
-pub(crate) unsafe extern "C" fn ArenaPrintRecordStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
-    let mut num: u16 = (*gSaveBlock2Ptr).frontier.arenaRecordStreaks[lvlMode];
-    ArenaPrintStreak(gText_Record.as_ptr().cast_mut(), num, x1, x2, y);
+unsafe fn ArenaPrintRecordStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
+    let num: u16 = (*gSaveBlock2Ptr).frontier.arenaRecordStreaks[lvlMode];
+    ArenaPrintStreak(
+        (*(&raw const crate::data::strings::gText_Record).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        num,
+        x1,
+        x2,
+        y,
+    );
 }
-pub(crate) unsafe extern "C" fn ArenaGetWinStreak(lvlMode: u8) -> u16 {
-    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode];
+unsafe fn ArenaGetWinStreak(lvlMode: u8) -> u16 {
+    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.arenaWinStreaks[lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -1115,46 +1169,68 @@ pub(crate) unsafe extern "C" fn ArenaGetWinStreak(lvlMode: u8) -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn ArenaPrintPrevOrCurrentStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
+unsafe fn ArenaPrintPrevOrCurrentStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
     let mut isCurrent: u8 = 0;
-    let mut winStreak: u16 = ArenaGetWinStreak(lvlMode);
+    let winStreak: u16 = ArenaGetWinStreak(lvlMode);
     if lvlMode != FRONTIER_LVL_50 {
         isCurrent = IsWinStreakActive(STREAK_ARENA_OPEN);
     } else {
         isCurrent = IsWinStreakActive(STREAK_ARENA_50);
     }
     if isCurrent == TRUE {
-        ArenaPrintStreak(gText_Current.as_ptr().cast_mut(), winStreak, x1, x2, y);
+        ArenaPrintStreak(
+            (*(&raw const crate::data::strings::gText_Current).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            winStreak,
+            x1,
+            x2,
+            y,
+        );
     } else {
-        ArenaPrintStreak(gText_Prev.as_ptr().cast_mut(), winStreak, x1, x2, y);
+        ArenaPrintStreak(
+            (*(&raw const crate::data::strings::gText_Prev).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            winStreak,
+            x1,
+            x2,
+            y,
+        );
     }
 }
-pub(crate) unsafe extern "C" fn ShowArenaResultsWindow() {
-    gRecordsWindowId = AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8;
-    DrawStdWindowFrame(gRecordsWindowId, FALSE);
-    FillWindowPixelBuffer(gRecordsWindowId, 17);
+unsafe fn ShowArenaResultsWindow() {
+    gRecordsWindowId.set(AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8);
+    DrawStdWindowFrame(gRecordsWindowId.get(), FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId.get(), 17);
     PrintHyphens(10);
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_SetKOTourneyResults.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_SetKOTourneyResults).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     PrintAligned(gStringVar4.as_mut_ptr(), 2);
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_Lv502.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Lv502).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         16,
         49,
         TEXT_SKIP_DRAW,
         None,
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_OpenLv.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_OpenLv).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         16,
         97,
         TEXT_SKIP_DRAW,
@@ -1164,10 +1240,10 @@ pub(crate) unsafe extern "C" fn ShowArenaResultsWindow() {
     ArenaPrintRecordStreak(FRONTIER_LVL_50, 72, 126, 65);
     ArenaPrintPrevOrCurrentStreak(FRONTIER_LVL_OPEN, 72, 126, 97);
     ArenaPrintRecordStreak(FRONTIER_LVL_OPEN, 72, 126, 113);
-    PutWindowTilemap(gRecordsWindowId);
-    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
+    PutWindowTilemap(gRecordsWindowId.get());
+    CopyWindowToVram(gRecordsWindowId.get(), COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn FactoryPrintStreak(
+unsafe fn FactoryPrintStreak(
     str: *mut u8,
     mut num1: u16,
     num2: u16,
@@ -1177,7 +1253,7 @@ pub(crate) unsafe extern "C" fn FactoryPrintStreak(
     y: u8,
 ) {
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         str,
         x1,
@@ -1196,10 +1272,12 @@ pub(crate) unsafe extern "C" fn FactoryPrintStreak(
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_WinStreak.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_WinStreak).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         x2,
@@ -1215,10 +1293,12 @@ pub(crate) unsafe extern "C" fn FactoryPrintStreak(
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_TimesVar1.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_TimesVar1).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         x3,
@@ -1227,20 +1307,23 @@ pub(crate) unsafe extern "C" fn FactoryPrintStreak(
         None,
     );
 }
-pub(crate) unsafe extern "C" fn FactoryPrintRecordStreak(
-    battleMode: u8,
-    lvlMode: u8,
-    x1: u8,
-    x2: u8,
-    x3: u8,
-    y: u8,
-) {
-    let mut num1: u16 = (*gSaveBlock2Ptr).frontier.factoryRecordWinStreaks[battleMode][lvlMode];
-    let mut num2: u16 = (*gSaveBlock2Ptr).frontier.factoryRecordRentsCount[battleMode][lvlMode];
-    FactoryPrintStreak(gText_Record.as_ptr().cast_mut(), num1, num2, x1, x2, x3, y);
+unsafe fn FactoryPrintRecordStreak(battleMode: u8, lvlMode: u8, x1: u8, x2: u8, x3: u8, y: u8) {
+    let num1: u16 = (*gSaveBlock2Ptr).frontier.factoryRecordWinStreaks[battleMode][lvlMode];
+    let num2: u16 = (*gSaveBlock2Ptr).frontier.factoryRecordRentsCount[battleMode][lvlMode];
+    FactoryPrintStreak(
+        (*(&raw const crate::data::strings::gText_Record).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        num1,
+        num2,
+        x1,
+        x2,
+        x3,
+        y,
+    );
 }
-pub(crate) unsafe extern "C" fn FactoryGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
-    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode];
+unsafe fn FactoryGetWinStreak(battleMode: u8, lvlMode: u8) -> u16 {
+    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.factoryWinStreaks[battleMode][lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -1248,11 +1331,11 @@ pub(crate) unsafe extern "C" fn FactoryGetWinStreak(battleMode: u8, lvlMode: u8)
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn FactoryGetRentsCount(battleMode: u8, lvlMode: u8) -> u16 {
-    let mut rents: u16 = (*gSaveBlock2Ptr).frontier.factoryRentsCount[battleMode][lvlMode];
+unsafe fn FactoryGetRentsCount(battleMode: u8, lvlMode: u8) -> u16 {
+    let rents: u16 = (*gSaveBlock2Ptr).frontier.factoryRentsCount[battleMode][lvlMode];
     if rents > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -1260,10 +1343,10 @@ pub(crate) unsafe extern "C" fn FactoryGetRentsCount(battleMode: u8, lvlMode: u8
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn FactoryPrintPrevOrCurrentStreak(
+unsafe fn FactoryPrintPrevOrCurrentStreak(
     battleMode: u8,
     lvlMode: u8,
     x1: u8,
@@ -1272,8 +1355,8 @@ pub(crate) unsafe extern "C" fn FactoryPrintPrevOrCurrentStreak(
     y: u8,
 ) {
     let mut isCurrent: u8 = 0;
-    let mut winStreak: u16 = FactoryGetWinStreak(battleMode, lvlMode);
-    let mut rents: u16 = FactoryGetRentsCount(battleMode, lvlMode);
+    let winStreak: u16 = FactoryGetWinStreak(battleMode, lvlMode);
+    let rents: u16 = FactoryGetRentsCount(battleMode, lvlMode);
     match battleMode {
         1 => {
             if lvlMode != FRONTIER_LVL_50 {
@@ -1292,7 +1375,9 @@ pub(crate) unsafe extern "C" fn FactoryPrintPrevOrCurrentStreak(
     }
     if isCurrent == TRUE {
         FactoryPrintStreak(
-            gText_Current.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_Current).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             winStreak,
             rents,
             x1,
@@ -1302,7 +1387,9 @@ pub(crate) unsafe extern "C" fn FactoryPrintPrevOrCurrentStreak(
         );
     } else {
         FactoryPrintStreak(
-            gText_Prev.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_Prev).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
             winStreak,
             rents,
             x1,
@@ -1312,44 +1399,56 @@ pub(crate) unsafe extern "C" fn FactoryPrintPrevOrCurrentStreak(
         );
     }
 }
-pub(crate) unsafe extern "C" fn ShowFactoryResultsWindow(battleMode: u8) {
-    gRecordsWindowId = AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8;
-    DrawStdWindowFrame(gRecordsWindowId, FALSE);
-    FillWindowPixelBuffer(gRecordsWindowId, 17);
+unsafe fn ShowFactoryResultsWindow(battleMode: u8) {
+    gRecordsWindowId.set(AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8);
+    DrawStdWindowFrame(gRecordsWindowId.get(), FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId.get(), 17);
     if battleMode == FRONTIER_MODE_SINGLES as u8 {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_BattleSwapSingleResults.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_BattleSwapSingleResults)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
     } else {
         StringExpandPlaceholders(
             gStringVar4.as_mut_ptr(),
-            gText_BattleSwapDoubleResults.as_ptr().cast_mut(),
+            (*(&raw const crate::data::strings::gText_BattleSwapDoubleResults)
+                .cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         );
     }
     PrintAligned(gStringVar4.as_mut_ptr(), 0);
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_Lv502.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Lv502).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         8,
         33,
         TEXT_SKIP_DRAW,
         None,
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_RentalSwap.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_RentalSwap).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         152,
         33,
         TEXT_SKIP_DRAW,
         None,
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_OpenLv.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_OpenLv).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         8,
         97,
         TEXT_SKIP_DRAW,
@@ -1360,18 +1459,12 @@ pub(crate) unsafe extern "C" fn ShowFactoryResultsWindow(battleMode: u8) {
     FactoryPrintRecordStreak(battleMode, FRONTIER_LVL_50, 8, 64, 158, 65);
     FactoryPrintPrevOrCurrentStreak(battleMode, FRONTIER_LVL_OPEN, 8, 64, 158, 113);
     FactoryPrintRecordStreak(battleMode, FRONTIER_LVL_OPEN, 8, 64, 158, 129);
-    PutWindowTilemap(gRecordsWindowId);
-    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
+    PutWindowTilemap(gRecordsWindowId.get());
+    CopyWindowToVram(gRecordsWindowId.get(), COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn PyramidPrintStreak(
-    str: *mut u8,
-    mut num: u16,
-    x1: u8,
-    x2: u8,
-    y: u8,
-) {
+unsafe fn PyramidPrintStreak(str: *mut u8, mut num: u16, x1: u8, x2: u8, y: u8) {
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         str,
         x1,
@@ -1390,10 +1483,12 @@ pub(crate) unsafe extern "C" fn PyramidPrintStreak(
     );
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_FloorsCleared.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_FloorsCleared).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         x2,
@@ -1402,12 +1497,20 @@ pub(crate) unsafe extern "C" fn PyramidPrintStreak(
         None,
     );
 }
-pub(crate) unsafe extern "C" fn PyramidPrintRecordStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
-    let mut num: u16 = (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[lvlMode];
-    PyramidPrintStreak(gText_Record.as_ptr().cast_mut(), num, x1, x2, y);
+unsafe fn PyramidPrintRecordStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
+    let num: u16 = (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[lvlMode];
+    PyramidPrintStreak(
+        (*(&raw const crate::data::strings::gText_Record).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
+        num,
+        x1,
+        x2,
+        y,
+    );
 }
-pub(crate) unsafe extern "C" fn PyramidGetWinStreak(lvlMode: u8) -> u16 {
-    let mut winStreak: u16 = (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode];
+unsafe fn PyramidGetWinStreak(lvlMode: u8) -> u16 {
+    let winStreak: u16 = (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode];
     if winStreak > MAX_STREAK {
         return MAX_STREAK;
     } else {
@@ -1415,50 +1518,67 @@ pub(crate) unsafe extern "C" fn PyramidGetWinStreak(lvlMode: u8) -> u16 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-pub(crate) unsafe extern "C" fn PyramidPrintPrevOrCurrentStreak(
-    lvlMode: u8,
-    x1: u8,
-    x2: u8,
-    y: u8,
-) {
+unsafe fn PyramidPrintPrevOrCurrentStreak(lvlMode: u8, x1: u8, x2: u8, y: u8) {
     let mut isCurrent: u8 = 0;
-    let mut winStreak: u16 = PyramidGetWinStreak(lvlMode);
+    let winStreak: u16 = PyramidGetWinStreak(lvlMode);
     if lvlMode != FRONTIER_LVL_50 {
         isCurrent = IsWinStreakActive(STREAK_PYRAMID_OPEN);
     } else {
         isCurrent = IsWinStreakActive(STREAK_PYRAMID_50);
     }
     if isCurrent == TRUE {
-        PyramidPrintStreak(gText_Current.as_ptr().cast_mut(), winStreak, x1, x2, y);
+        PyramidPrintStreak(
+            (*(&raw const crate::data::strings::gText_Current).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            winStreak,
+            x1,
+            x2,
+            y,
+        );
     } else {
-        PyramidPrintStreak(gText_Prev.as_ptr().cast_mut(), winStreak, x1, x2, y);
+        PyramidPrintStreak(
+            (*(&raw const crate::data::strings::gText_Prev).cast::<CArray<u8, 0>>())
+                .as_ptr()
+                .cast_mut(),
+            winStreak,
+            x1,
+            x2,
+            y,
+        );
     }
 }
-pub(crate) unsafe extern "C" fn ShowPyramidResultsWindow() {
-    gRecordsWindowId = AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8;
-    DrawStdWindowFrame(gRecordsWindowId, FALSE);
-    FillWindowPixelBuffer(gRecordsWindowId, 17);
+unsafe fn ShowPyramidResultsWindow() {
+    gRecordsWindowId.set(AddWindow((&raw const *sFrontierResultsWindowTemplate).cast_mut()) as u8);
+    DrawStdWindowFrame(gRecordsWindowId.get(), FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId.get(), 17);
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_BattleQuestResults.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_BattleQuestResults).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
     PrintAligned(gStringVar4.as_mut_ptr(), 2);
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_Lv502.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Lv502).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         8,
         49,
         TEXT_SKIP_DRAW,
         None,
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_OpenLv.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_OpenLv).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         8,
         97,
         TEXT_SKIP_DRAW,
@@ -1469,24 +1589,23 @@ pub(crate) unsafe extern "C" fn ShowPyramidResultsWindow() {
     PyramidPrintRecordStreak(FRONTIER_LVL_50, 64, 111, 65);
     PyramidPrintPrevOrCurrentStreak(FRONTIER_LVL_OPEN, 64, 111, 97);
     PyramidPrintRecordStreak(FRONTIER_LVL_OPEN, 64, 111, 113);
-    PutWindowTilemap(gRecordsWindowId);
-    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
+    PutWindowTilemap(gRecordsWindowId.get());
+    CopyWindowToVram(gRecordsWindowId.get(), COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn ShowLinkContestResultsWindow() {
-    let mut str: *mut u8 = null_mut();
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    let mut x: i32 = 0;
-    gRecordsWindowId = AddWindow((&raw const *sLinkContestResultsWindowTemplate).cast_mut()) as u8;
-    DrawStdWindowFrame(gRecordsWindowId, FALSE);
-    FillWindowPixelBuffer(gRecordsWindowId, 17);
+unsafe fn ShowLinkContestResultsWindow() {
+    gRecordsWindowId
+        .set(AddWindow((&raw const *sLinkContestResultsWindowTemplate).cast_mut()) as u8);
+    DrawStdWindowFrame(gRecordsWindowId.get(), FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId.get(), 17);
     StringExpandPlaceholders(
         gStringVar4.as_mut_ptr(),
-        gText_LinkContestResults.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_LinkContestResults).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
     );
-    x = GetStringCenterAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 208);
+    let mut x: i32 = GetStringCenterAlignXOffset(FONT_NORMAL as i32, gStringVar4.as_mut_ptr(), 208);
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         x as u8,
@@ -1494,10 +1613,12 @@ pub(crate) unsafe extern "C" fn ShowLinkContestResultsWindow() {
         TEXT_SKIP_DRAW,
         None,
     );
-    str = gText_1st.as_ptr().cast_mut();
+    let mut str: *mut u8 = (*(&raw const crate::data::strings::gText_1st).cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     x = GetStringRightAlignXOffset(FONT_NORMAL as i32, str, 38) + 50;
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         str,
         x as u8,
@@ -1505,10 +1626,12 @@ pub(crate) unsafe extern "C" fn ShowLinkContestResultsWindow() {
         TEXT_SKIP_DRAW,
         None,
     );
-    str = gText_2nd.as_ptr().cast_mut();
+    str = (*(&raw const crate::data::strings::gText_2nd).cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     x = GetStringRightAlignXOffset(FONT_NORMAL as i32, str, 38) + 88;
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         str,
         x as u8,
@@ -1516,10 +1639,12 @@ pub(crate) unsafe extern "C" fn ShowLinkContestResultsWindow() {
         TEXT_SKIP_DRAW,
         None,
     );
-    str = gText_3rd.as_ptr().cast_mut();
+    str = (*(&raw const crate::data::strings::gText_3rd).cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     x = GetStringRightAlignXOffset(FONT_NORMAL as i32, str, 38) + 126;
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         str,
         x as u8,
@@ -1527,10 +1652,12 @@ pub(crate) unsafe extern "C" fn ShowLinkContestResultsWindow() {
         TEXT_SKIP_DRAW,
         None,
     );
-    str = gText_4th.as_ptr().cast_mut();
+    str = (*(&raw const crate::data::strings::gText_4th).cast::<CArray<u8, 0>>())
+        .as_ptr()
+        .cast_mut();
     x = GetStringRightAlignXOffset(FONT_NORMAL as i32, str, 38) + 164;
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         str,
         x as u8,
@@ -1540,54 +1667,62 @@ pub(crate) unsafe extern "C" fn ShowLinkContestResultsWindow() {
     );
     x = 6;
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_Cool.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Cool).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         x as u8,
         41,
         TEXT_SKIP_DRAW,
         None,
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_Beauty.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Beauty).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         x as u8,
         57,
         TEXT_SKIP_DRAW,
         None,
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_Cute.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Cute).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         x as u8,
         73,
         TEXT_SKIP_DRAW,
         None,
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_Smart.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Smart).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         x as u8,
         89,
         TEXT_SKIP_DRAW,
         None,
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_Tough.as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_Tough).cast::<CArray<u8, 0>>())
+            .as_ptr()
+            .cast_mut(),
         x as u8,
         105,
         TEXT_SKIP_DRAW,
         None,
     );
-    i = 0;
-    while i < CONTEST_CATEGORIES_COUNT {
-        j = 0;
-        while j < CONTESTANT_COUNT {
+    for i in 0..CONTEST_CATEGORIES_COUNT {
+        for j in 0..CONTESTANT_COUNT {
             ConvertIntToDecimalStringN(
                 gStringVar4.as_mut_ptr(),
                 (*gSaveBlock2Ptr).contestLinkResults[i][j] as i32,
@@ -1595,7 +1730,7 @@ pub(crate) unsafe extern "C" fn ShowLinkContestResultsWindow() {
                 4,
             );
             AddTextPrinterParameterized(
-                gRecordsWindowId,
+                gRecordsWindowId.get(),
                 FONT_NORMAL,
                 gStringVar4.as_mut_ptr(),
                 j as u8 * 38 + 64,
@@ -1603,18 +1738,16 @@ pub(crate) unsafe extern "C" fn ShowLinkContestResultsWindow() {
                 TEXT_SKIP_DRAW,
                 None,
             );
-            j += 1;
         }
-        i += 1;
     }
-    PutWindowTilemap(gRecordsWindowId);
-    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
+    PutWindowTilemap(gRecordsWindowId.get());
+    CopyWindowToVram(gRecordsWindowId.get(), COPYWIN_FULL);
 }
-pub(crate) unsafe extern "C" fn CheckPutFrontierTVShowOnAir() {
+pub(crate) unsafe fn CheckPutFrontierTVShowOnAir() {
     let mut name: CArray<u8, 32> = zeroed();
-    let mut lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
-    let mut battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
+    let lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
     match facility {
         0 => {
             if (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode]
@@ -1775,42 +1908,39 @@ pub(crate) unsafe extern "C" fn CheckPutFrontierTVShowOnAir() {
                 }
             }
         }
-        FRONTIER_FACILITY_PYRAMID => {
+        FRONTIER_FACILITY_PYRAMID
             if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode]
-                > (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[lvlMode]
+                > (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[lvlMode] =>
+        {
+            (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[lvlMode] =
+                (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode];
+            if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] > 1
+                && ShouldAirFrontierTVShow() != 0
             {
-                (*gSaveBlock2Ptr).frontier.pyramidRecordStreaks[lvlMode] =
-                    (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode];
-                if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] > 1
-                    && ShouldAirFrontierTVShow() != 0
-                {
-                    TryPutFrontierTVShowOnAir(
-                        (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode],
-                        FRONTIER_SHOW_PYRAMID,
-                    );
-                }
+                TryPutFrontierTVShowOnAir(
+                    (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode],
+                    FRONTIER_SHOW_PYRAMID,
+                );
             }
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn Script_GetFrontierBrainStatus() {
+pub(crate) unsafe fn Script_GetFrontierBrainStatus() {
     VarGet(VAR_FRONTIER_FACILITY);
     gSpecialVar_Result = GetFrontierBrainStatus() as u16;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFrontierBrainStatus() -> u8 {
+pub unsafe fn GetFrontierBrainStatus() -> u8 {
     let mut status: i32 = FRONTIER_BRAIN_NOT_READY as i32;
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
-    let mut battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
-    let mut winStreakNoModifier: u16 = GetCurrentFacilityWinStreak() as u16;
-    let mut winStreak: i32 =
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
+    let winStreakNoModifier: u16 = GetCurrentFacilityWinStreak() as u16;
+    let winStreak: i32 =
         winStreakNoModifier as i32 + sFrontierBrainStreakAppearances[facility][3] as i32;
-    let mut symbolsCount: i32 = 0;
     if battleMode != FRONTIER_MODE_SINGLES {
         return FRONTIER_BRAIN_NOT_READY;
     }
-    symbolsCount = GetPlayerSymbolCountForFacility(facility as u8) as i32;
+    let symbolsCount: i32 = GetPlayerSymbolCountForFacility(facility as u8) as i32;
     match symbolsCount {
         0 | 1 => {
             if winStreak == sFrontierBrainStreakAppearances[facility][symbolsCount] as i32 {
@@ -1832,10 +1962,9 @@ pub unsafe extern "C" fn GetFrontierBrainStatus() -> u8 {
             }
         }
     }
-    return status as u8;
+    status as u8
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyFrontierTrainerText(whichText: u8, mut trainerId: u16) {
+pub unsafe fn CopyFrontierTrainerText(whichText: u8, mut trainerId: u16) {
     match whichText {
         FRONTIER_BEFORE_TEXT => {
             if trainerId == TRAINER_EREADER {
@@ -1929,27 +2058,40 @@ pub unsafe extern "C" fn CopyFrontierTrainerText(whichText: u8, mut trainerId: u
             } else {
                 if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
                     trainerId = GetRecordedBattleApprenticeId() as u16;
-                    FrontierSpeechToString(gApprentices[trainerId].speechLost.as_ptr().cast_mut());
+                    FrontierSpeechToString(
+                        (*(&raw const crate::data::apprentice::gApprentices).cast::<CArray<
+                            ApprenticeTrainer,
+                            0,
+                        >>(
+                        ))[trainerId]
+                            .speechLost
+                            .as_ptr()
+                            .cast_mut(),
+                    );
                 } else {
                     trainerId = (*gSaveBlock2Ptr).apprentices
                         [trainerId as i32 - TRAINER_RECORD_MIXING_APPRENTICE]
                         .id() as u16;
-                    FrontierSpeechToString(gApprentices[trainerId].speechLost.as_ptr().cast_mut());
+                    FrontierSpeechToString(
+                        (*(&raw const crate::data::apprentice::gApprentices).cast::<CArray<
+                            ApprenticeTrainer,
+                            0,
+                        >>(
+                        ))[trainerId]
+                            .speechLost
+                            .as_ptr()
+                            .cast_mut(),
+                    );
                 }
             }
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetWinStreaks() {
-    let mut battleMode: i32 = 0;
-    let mut lvlMode: i32 = 0;
+pub unsafe fn ResetWinStreaks() {
     (*gSaveBlock2Ptr).frontier.winStreakActiveFlags = 0;
-    battleMode = 0;
-    while battleMode < FRONTIER_MODE_COUNT as i32 {
-        lvlMode = 0;
-        while lvlMode < FRONTIER_LVL_TENT as i32 {
+    for battleMode in 0..(FRONTIER_MODE_COUNT as i32) {
+        for lvlMode in 0..(FRONTIER_LVL_TENT as i32) {
             (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] = 0;
             if battleMode < FRONTIER_MODE_MULTIS as i32 {
                 (*gSaveBlock2Ptr).frontier.domeWinStreaks[battleMode][lvlMode] = 0;
@@ -1961,19 +2103,16 @@ pub unsafe extern "C" fn ResetWinStreaks() {
                 (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] = 0;
                 (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] = 0;
             }
-            lvlMode += 1;
         }
-        battleMode += 1;
     }
     if (*gSaveBlock2Ptr).frontier.challengeStatus != 0 {
         (*gSaveBlock2Ptr).frontier.challengeStatus = CHALLENGE_STATUS_SAVING;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetCurrentFacilityWinStreak() -> u32 {
-    let mut lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
-    let mut battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+pub unsafe fn GetCurrentFacilityWinStreak() -> u32 {
+    let lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
+    let battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
     match facility {
         0 => {
             return (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] as u32;
@@ -2002,36 +2141,30 @@ pub unsafe extern "C" fn GetCurrentFacilityWinStreak() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetFrontierTrainerIds() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 20 {
+pub unsafe fn ResetFrontierTrainerIds() {
+    for i in 0..20i32 {
         (*gSaveBlock2Ptr).frontier.trainerIds[i] = 0xFFFF;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn IsTrainerFrontierBrain() {
+pub(crate) unsafe fn IsTrainerFrontierBrain() {
     if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
         gSpecialVar_Result = TRUE as u16;
     } else {
         gSpecialVar_Result = FALSE as u16;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetPlayerSymbolCountForFacility(facility: u8) -> u8 {
-    return FlagGet(FLAG_SYS_TOWER_SILVER + facility as u16 * 2)
-        + FlagGet(FLAG_SYS_TOWER_GOLD + facility as u16 * 2);
+pub unsafe fn GetPlayerSymbolCountForFacility(facility: u8) -> u8 {
+    FlagGet(FLAG_SYS_TOWER_SILVER + facility as u16 * 2)
+        + FlagGet(FLAG_SYS_TOWER_GOLD + facility as u16 * 2)
 }
-pub(crate) unsafe extern "C" fn GiveBattlePoints() {
+pub(crate) unsafe fn GiveBattlePoints() {
     let mut challengeNum: i32 = 0;
-    let mut lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
-    let mut battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
-    let mut points: i32 = 0;
+    let lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
     match facility {
         0 => {
             challengeNum =
@@ -2065,7 +2198,7 @@ pub(crate) unsafe extern "C" fn GiveBattlePoints() {
     if challengeNum >= 30 {
         challengeNum = 29;
     }
-    points = sBattlePointAwards[challengeNum][facility][battleMode] as i32;
+    let mut points: i32 = sBattlePointAwards[challengeNum][facility][battleMode] as i32;
     if gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN {
         points += 10;
     }
@@ -2091,26 +2224,26 @@ pub(crate) unsafe extern "C" fn GiveBattlePoints() {
     }
     (*gSaveBlock2Ptr).frontier.cardBattlePoints = points as u16;
 }
-pub(crate) unsafe extern "C" fn GetFacilitySymbolCount() {
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+pub(crate) unsafe fn GetFacilitySymbolCount() {
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
     gSpecialVar_Result = GetPlayerSymbolCountForFacility(facility as u8) as u16;
 }
-pub(crate) unsafe extern "C" fn GiveFacilitySymbol() {
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+pub(crate) unsafe fn GiveFacilitySymbol() {
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
     if GetPlayerSymbolCountForFacility(facility as u8) == 0 {
         FlagSet(FLAG_SYS_TOWER_SILVER + facility as u16 * 2);
     } else {
         FlagSet(FLAG_SYS_TOWER_GOLD + facility as u16 * 2);
     }
 }
-pub(crate) unsafe extern "C" fn CheckBattleTypeFlag() {
+pub(crate) unsafe fn CheckBattleTypeFlag() {
     if gBattleTypeFlags & gSpecialVar_0x8005 as u32 != 0 {
         gSpecialVar_Result = TRUE as u16;
     } else {
         gSpecialVar_Result = FALSE as u16;
     }
 }
-pub(crate) unsafe extern "C" fn AppendCaughtBannedMonSpeciesName(
+unsafe fn AppendCaughtBannedMonSpeciesName(
     species: u16,
     mut count: u8,
     numBannedMonsCaught: i32,
@@ -2122,12 +2255,18 @@ pub(crate) unsafe extern "C" fn AppendCaughtBannedMonSpeciesName(
                 if numBannedMonsCaught == count as i32 {
                     StringAppend(
                         gStringVar1.as_mut_ptr(),
-                        gText_SpaceAndSpace.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::battle_message::gText_SpaceAndSpace)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     );
                 } else if numBannedMonsCaught > count as i32 {
                     StringAppend(
                         gStringVar1.as_mut_ptr(),
-                        gText_CommaSpace.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::battle_message::gText_CommaSpace)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     );
                 }
             }
@@ -2135,56 +2274,79 @@ pub(crate) unsafe extern "C" fn AppendCaughtBannedMonSpeciesName(
                 if count as i32 == numBannedMonsCaught {
                     StringAppend(
                         gStringVar1.as_mut_ptr(),
-                        gText_SpaceAndSpace.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::battle_message::gText_SpaceAndSpace)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     );
                 } else {
                     StringAppend(
                         gStringVar1.as_mut_ptr(),
-                        gText_CommaSpace.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::battle_message::gText_CommaSpace)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     );
                 }
-                StringAppend(gStringVar1.as_mut_ptr(), gText_NewLine.as_ptr().cast_mut());
+                StringAppend(
+                    gStringVar1.as_mut_ptr(),
+                    (*(&raw const crate::data::battle_message::gText_NewLine)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                );
             }
             _ => {
                 if count as i32 == numBannedMonsCaught {
                     StringAppend(
                         gStringVar1.as_mut_ptr(),
-                        gText_SpaceAndSpace.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::battle_message::gText_SpaceAndSpace)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     );
                 } else {
                     StringAppend(
                         gStringVar1.as_mut_ptr(),
-                        gText_CommaSpace.as_ptr().cast_mut(),
+                        (*(&raw const crate::data::battle_message::gText_CommaSpace)
+                            .cast::<CArray<u8, 0>>())
+                        .as_ptr()
+                        .cast_mut(),
                     );
                 }
                 StringAppend(
                     gStringVar1.as_mut_ptr(),
-                    gText_LineBreak.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::battle_message::gText_LineBreak)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
             }
         }
         StringAppend(
             gStringVar1.as_mut_ptr(),
-            gSpeciesNames[species].as_ptr().cast_mut(),
+            (*(&raw const crate::data::data_tables::gSpeciesNames)
+                .cast::<CArray<CArray<u8, 11>, 0>>())[species]
+                .as_ptr()
+                .cast_mut(),
         );
     }
-    return count;
+    count
 }
-pub(crate) unsafe extern "C" fn AppendIfValid(
+unsafe fn AppendIfValid(
     species: u16,
     heldItem: u16,
     hp: u16,
     lvlMode: u8,
     monLevel: u8,
-    mut speciesArray: *mut u16,
-    mut itemsArray: *mut u16,
+    speciesArray: *mut u16,
+    itemsArray: *mut u16,
     count: *mut u8,
 ) {
-    let mut i: i32 = 0;
     if species == SPECIES_EGG as u16 || species == SPECIES_NONE {
         return;
     }
-    i = 0;
+    let mut i: i32 = 0;
     while gFrontierBannedSpecies[i] != 0xFFFF && gFrontierBannedSpecies[i] != species {
         i += 1;
     }
@@ -2214,14 +2376,13 @@ pub(crate) unsafe extern "C" fn AppendIfValid(
     *itemsArray.at(*count) = heldItem;
     *count += 1;
 }
-pub(crate) unsafe extern "C" fn CheckPartyIneligibility() {
+pub(crate) unsafe fn CheckPartyIneligibility() {
     let mut speciesArray: CArray<u16, 6> = zeroed();
     let mut itemArray: CArray<u16, 6> = zeroed();
     let mut monId: i32 = 0;
     let mut toChoose: i32 = 0;
     let mut count: u8 = 0;
-    let mut battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
-    let mut monIdLooper: i32 = 0;
+    let battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
     match battleMode {
         FRONTIER_MODE_SINGLES => {
             toChoose = FRONTIER_PARTY_SIZE;
@@ -2238,17 +2399,17 @@ pub(crate) unsafe extern "C" fn CheckPartyIneligibility() {
         }
         _ => {}
     }
-    monIdLooper = 0;
+    let mut monIdLooper: i32 = 0;
     loop {
         monId = monIdLooper;
         count = 0;
         loop {
-            let mut species: u16 =
+            let species: u16 =
                 GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_SPECIES_OR_EGG) as u16;
-            let mut heldItem: u16 =
+            let heldItem: u16 =
                 GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HELD_ITEM) as u16;
-            let mut level: u8 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_LEVEL) as u8;
-            let mut hp: u16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HP) as u16;
+            let level: u8 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_LEVEL) as u8;
+            let hp: u16 = GetMonData2(&raw mut gPlayerParty[monId], MON_DATA_HP) as u16;
             if VarGet(VAR_FRONTIER_FACILITY) == FRONTIER_FACILITY_PYRAMID as u16 {
                 if heldItem == ITEM_NONE {
                     AppendIfValid(
@@ -2288,10 +2449,9 @@ pub(crate) unsafe extern "C" fn CheckPartyIneligibility() {
         }
     }
     if (count as i32) < toChoose {
-        let mut i: i32 = 0;
         let mut caughtBannedMons: i32 = 0;
         let mut species: i32 = gFrontierBannedSpecies[0] as i32;
-        i = 0;
+        let mut i: i32 = 0;
         while species != 0xFFFF {
             if GetSetPokedexFlag(SpeciesToNationalPokedexNum(species as u16), FLAG_GET_CAUGHT) != 0
             {
@@ -2313,18 +2473,42 @@ pub(crate) unsafe extern "C" fn CheckPartyIneligibility() {
             i += 1;
         }
         if count == 0 {
-            StringAppend(gStringVar1.as_mut_ptr(), gText_Space2.as_ptr().cast_mut());
-            StringAppend(gStringVar1.as_mut_ptr(), gText_Are.as_ptr().cast_mut());
+            StringAppend(
+                gStringVar1.as_mut_ptr(),
+                (*(&raw const crate::data::battle_message::gText_Space2).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
+            StringAppend(
+                gStringVar1.as_mut_ptr(),
+                (*(&raw const crate::data::battle_message::gText_Are).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
         } else {
             if count as i32 & 1 != 0 {
                 StringAppend(
                     gStringVar1.as_mut_ptr(),
-                    gText_LineBreak.as_ptr().cast_mut(),
+                    (*(&raw const crate::data::battle_message::gText_LineBreak)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
                 );
             } else {
-                StringAppend(gStringVar1.as_mut_ptr(), gText_Space2.as_ptr().cast_mut());
+                StringAppend(
+                    gStringVar1.as_mut_ptr(),
+                    (*(&raw const crate::data::battle_message::gText_Space2)
+                        .cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+                );
             }
-            StringAppend(gStringVar1.as_mut_ptr(), gText_Are2.as_ptr().cast_mut());
+            StringAppend(
+                gStringVar1.as_mut_ptr(),
+                (*(&raw const crate::data::battle_message::gText_Are2).cast::<CArray<u8, 0>>())
+                    .as_ptr()
+                    .cast_mut(),
+            );
         }
     } else {
         gSpecialVar_0x8004 = FALSE as u16;
@@ -2333,13 +2517,13 @@ pub(crate) unsafe extern "C" fn CheckPartyIneligibility() {
             .set_lvlMode(gSpecialVar_Result as u8);
     }
 }
-pub(crate) unsafe extern "C" fn ValidateVisitingTrainer() {
+pub(crate) unsafe fn ValidateVisitingTrainer() {
     ValidateEReaderTrainer();
 }
-pub(crate) unsafe extern "C" fn IncrementWinStreak() {
-    let mut lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
-    let mut battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+pub(crate) unsafe fn IncrementWinStreak() {
+    let lvlMode: i32 = (*gSaveBlock2Ptr).frontier.lvlMode() as i32;
+    let battleMode: i32 = VarGet(VAR_FRONTIER_BATTLE_MODE) as i32;
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
     match facility {
         0 => {
             if (*gSaveBlock2Ptr).frontier.towerWinStreaks[battleMode][lvlMode] < MAX_STREAK {
@@ -2382,17 +2566,16 @@ pub(crate) unsafe extern "C" fn IncrementWinStreak() {
                 (*gSaveBlock2Ptr).frontier.pikeWinStreaks[lvlMode] += 1;
             }
         }
-        FRONTIER_FACILITY_PYRAMID => {
-            if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] < MAX_STREAK {
-                (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] += 1;
-            }
+        FRONTIER_FACILITY_PYRAMID
+            if (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] < MAX_STREAK =>
+        {
+            (*gSaveBlock2Ptr).frontier.pyramidWinStreaks[lvlMode] += 1;
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn RestoreHeldItems() {
+pub(crate) unsafe fn RestoreHeldItems() {
     let mut i: u8 = 0;
-    i = 0;
     while (i as i32)
         < (if 3 >= (if 4 >= 2 { 4 } else { 2 }) {
             3
@@ -2416,12 +2599,15 @@ pub(crate) unsafe extern "C" fn RestoreHeldItems() {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SaveRecordBattle() {
+pub(crate) unsafe fn SaveRecordBattle() {
     gSpecialVar_Result = MoveRecordedBattleToSaveData() as u16;
     (*gSaveBlock2Ptr).frontier.set_disableRecordBattle(TRUE);
 }
-pub(crate) unsafe extern "C" fn BufferFrontierTrainerName() {
-    match gSpecialVar_0x8005 {
+pub(crate) unsafe fn BufferFrontierTrainerName() {
+    match *(&raw const crate::ffi::gSpecialVar_0x8005)
+        .cast::<u16>()
+        .cast_mut()
+    {
         0 => {
             GetFrontierTrainerName(gStringVar1.as_mut_ptr(), gTrainerBattleOpponent_A);
         }
@@ -2431,11 +2617,9 @@ pub(crate) unsafe extern "C" fn BufferFrontierTrainerName() {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn ResetSketchedMoves() {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
+pub(crate) unsafe fn ResetSketchedMoves() {
     let mut k: u8 = 0;
-    i = 0;
+    let mut i: u8 = 0;
     while (i as i32)
         < (if 3 >= (if 4 >= 2 { 4 } else { 2 }) {
             3
@@ -2443,10 +2627,9 @@ pub(crate) unsafe extern "C" fn ResetSketchedMoves() {
             if 4 >= 2 { 4 } else { 2 }
         })
     {
-        let mut monId: u16 = (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] - 1;
+        let monId: u16 = (*gSaveBlock2Ptr).frontier.selectedPartyMons[i] - 1;
         if monId < PARTY_SIZE as u16 {
-            j = 0;
-            while j < MAX_MON_MOVES as u8 {
+            for j in 0..(MAX_MON_MOVES as u8) {
                 k = 0;
                 while k < MAX_MON_MOVES as u8 {
                     if GetMonData3(
@@ -2466,7 +2649,6 @@ pub(crate) unsafe extern "C" fn ResetSketchedMoves() {
                 if k == MAX_MON_MOVES as u8 {
                     SetMonMoveSlot(&raw mut gPlayerParty[i], MOVE_SKETCH, j);
                 }
-                j += 1;
             }
             (*gSaveBlock1Ptr).playerParty
                 [(*gSaveBlock2Ptr).frontier.selectedPartyMons[i] as i32 - 1] = gPlayerParty[i];
@@ -2474,10 +2656,10 @@ pub(crate) unsafe extern "C" fn ResetSketchedMoves() {
         i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn SetFacilityBrainObjectEvent() {
+pub(crate) unsafe fn SetFacilityBrainObjectEvent() {
     SetFrontierBrainObjEventGfx(VarGet(VAR_FRONTIER_FACILITY) as u8);
 }
-pub(crate) unsafe extern "C" fn Print1PRecord(
+unsafe fn Print1PRecord(
     position: i32,
     x: i32,
     y: i32,
@@ -2487,9 +2669,12 @@ pub(crate) unsafe extern "C" fn Print1PRecord(
     let mut text: CArray<u8, 32> = zeroed();
     let mut winStreak: u16 = 0;
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_123Dot[position].as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_123Dot).cast::<CArray<CArray<u8, 3>, 0>>())
+            [position]
+            .as_ptr()
+            .cast_mut(),
         x as u8 * 8,
         8 * (y as u8 + 5 * position as u8) + 1,
         TEXT_SKIP_DRAW,
@@ -2503,7 +2688,7 @@ pub(crate) unsafe extern "C" fn Print1PRecord(
             (*hallRecord).language as i32,
         );
         AddTextPrinterParameterized(
-            gRecordsWindowId,
+            gRecordsWindowId.get(),
             FONT_NORMAL,
             text.as_mut_ptr(),
             (x as u8 + 2) * 8,
@@ -2526,7 +2711,7 @@ pub(crate) unsafe extern "C" fn Print1PRecord(
             sHallFacilityToRecordsText[hallFacilityId],
         );
         AddTextPrinterParameterized(
-            gRecordsWindowId,
+            gRecordsWindowId.get(),
             FONT_NORMAL,
             gStringVar4.as_mut_ptr(),
             GetStringRightAlignXOffset(
@@ -2540,18 +2725,16 @@ pub(crate) unsafe extern "C" fn Print1PRecord(
         );
     }
 }
-pub(crate) unsafe extern "C" fn Print2PRecord(
-    position: i32,
-    x: i32,
-    y: i32,
-    hallRecord: *mut RankingHall2P,
-) {
+unsafe fn Print2PRecord(position: i32, x: i32, y: i32, hallRecord: *mut RankingHall2P) {
     let mut text: CArray<u8, 32> = zeroed();
     let mut winStreak: u16 = 0;
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
-        gText_123Dot[position].as_ptr().cast_mut(),
+        (*(&raw const crate::data::strings::gText_123Dot).cast::<CArray<CArray<u8, 3>, 0>>())
+            [position]
+            .as_ptr()
+            .cast_mut(),
         x as u8 * 8,
         8 * (y as u8 + 5 * position as u8) + 1,
         TEXT_SKIP_DRAW,
@@ -2566,7 +2749,7 @@ pub(crate) unsafe extern "C" fn Print2PRecord(
             (*hallRecord).language as i32,
         );
         AddTextPrinterParameterized(
-            gRecordsWindowId,
+            gRecordsWindowId.get(),
             FONT_NORMAL,
             text.as_mut_ptr(),
             (x as u8 + 2) * 8,
@@ -2584,7 +2767,7 @@ pub(crate) unsafe extern "C" fn Print2PRecord(
             StringCopy(text.as_mut_ptr(), (*hallRecord).name2.as_mut_ptr());
         }
         AddTextPrinterParameterized(
-            gRecordsWindowId,
+            gRecordsWindowId.get(),
             FONT_NORMAL,
             text.as_mut_ptr(),
             (x as u8 + 4) * 8,
@@ -2604,7 +2787,7 @@ pub(crate) unsafe extern "C" fn Print2PRecord(
         );
         StringExpandPlaceholders(gStringVar4.as_mut_ptr(), sHallFacilityToRecordsText[9]);
         AddTextPrinterParameterized(
-            gRecordsWindowId,
+            gRecordsWindowId.get(),
             FONT_NORMAL,
             gStringVar4.as_mut_ptr(),
             GetStringRightAlignXOffset(FONT_NORMAL as i32, sHallFacilityToRecordsText[9], 0xC8)
@@ -2615,79 +2798,61 @@ pub(crate) unsafe extern "C" fn Print2PRecord(
         );
     }
 }
-pub(crate) unsafe extern "C" fn Fill1PRecords(
-    mut dst: *mut RankingHall1P,
-    hallFacilityId: i32,
-    lvlMode: i32,
-) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+unsafe fn Fill1PRecords(dst: *mut RankingHall1P, hallFacilityId: i32, lvlMode: i32) {
     let mut record1P: CArray<RankingHall1P, 4> = zeroed();
-    let mut playerHallRecords: *mut PlayerHallRecords = AllocZeroed(344) as *mut PlayerHallRecords;
+    let playerHallRecords: *mut PlayerHallRecords = AllocZeroed(344) as *mut PlayerHallRecords;
     GetPlayerHallRecords(playerHallRecords);
-    i = 0;
+    let mut i: i32 = 0;
     while i < HALL_RECORDS_COUNT {
         record1P[i] = (*gSaveBlock2Ptr).hallRecords1P[hallFacilityId][lvlMode][i];
         i += 1;
     }
     record1P[3] = (*playerHallRecords).onePlayer[hallFacilityId][lvlMode];
-    i = 0;
-    while i < HALL_RECORDS_COUNT {
+    for i in 0..HALL_RECORDS_COUNT {
         let mut highestWinStreak: i32 = 0;
         let mut highestId: i32 = 0;
-        j = 0;
-        while j < 4 {
+        for j in 0..4i32 {
             if record1P[j].winStreak as i32 > highestWinStreak {
                 highestId = j;
                 highestWinStreak = record1P[j].winStreak as i32;
             }
-            j += 1;
         }
         if record1P[3].winStreak as i32 >= highestWinStreak {
             highestId = HALL_RECORDS_COUNT;
         }
         *dst.at(i) = record1P[highestId];
         record1P[highestId].winStreak = 0;
-        i += 1;
     }
     Free(playerHallRecords as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn Fill2PRecords(mut dst: *mut RankingHall2P, lvlMode: i32) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+unsafe fn Fill2PRecords(dst: *mut RankingHall2P, lvlMode: i32) {
     let mut record2P: CArray<RankingHall2P, 4> = zeroed();
-    let mut playerHallRecords: *mut PlayerHallRecords = AllocZeroed(344) as *mut PlayerHallRecords;
+    let playerHallRecords: *mut PlayerHallRecords = AllocZeroed(344) as *mut PlayerHallRecords;
     GetPlayerHallRecords(playerHallRecords);
-    i = 0;
+    let mut i: i32 = 0;
     while i < HALL_RECORDS_COUNT {
         record2P[i] = (*gSaveBlock2Ptr).hallRecords2P[lvlMode][i];
         i += 1;
     }
     record2P[3] = (*playerHallRecords).twoPlayers[lvlMode];
-    i = 0;
-    while i < HALL_RECORDS_COUNT {
+    for i in 0..HALL_RECORDS_COUNT {
         let mut highestWinStreak: i32 = 0;
         let mut highestId: i32 = 0;
-        j = 0;
-        while j < HALL_RECORDS_COUNT {
+        for j in 0..HALL_RECORDS_COUNT {
             if record2P[j].winStreak as i32 > highestWinStreak {
                 highestId = j;
                 highestWinStreak = record2P[j].winStreak as i32;
             }
-            j += 1;
         }
         if record2P[3].winStreak as i32 >= highestWinStreak {
             highestId = HALL_RECORDS_COUNT;
         }
         *dst.at(i) = record2P[highestId];
         record2P[highestId].winStreak = 0;
-        i += 1;
     }
     Free(playerHallRecords as *mut c_void);
 }
-pub(crate) unsafe extern "C" fn PrintHallRecords(hallFacilityId: i32, lvlMode: i32) {
-    let mut i: i32 = 0;
-    let mut x: i32 = 0;
+unsafe fn PrintHallRecords(hallFacilityId: i32, lvlMode: i32) {
     let mut records1P: CArray<RankingHall1P, 3> = zeroed();
     let mut records2P: CArray<RankingHall2P, 3> = zeroed();
     StringCopy(
@@ -2699,7 +2864,7 @@ pub(crate) unsafe extern "C" fn PrintHallRecords(hallFacilityId: i32, lvlMode: i
         sRecordsWindowChallengeTexts[hallFacilityId][1],
     );
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         gStringVar4.as_mut_ptr(),
         0,
@@ -2707,9 +2872,9 @@ pub(crate) unsafe extern "C" fn PrintHallRecords(hallFacilityId: i32, lvlMode: i
         TEXT_SKIP_DRAW,
         None,
     );
-    x = GetStringRightAlignXOffset(FONT_NORMAL as i32, sLevelModeText[lvlMode], 208);
+    let x: i32 = GetStringRightAlignXOffset(FONT_NORMAL as i32, sLevelModeText[lvlMode], 208);
     AddTextPrinterParameterized(
-        gRecordsWindowId,
+        gRecordsWindowId.get(),
         FONT_NORMAL,
         sLevelModeText[lvlMode],
         x as u8,
@@ -2721,63 +2886,49 @@ pub(crate) unsafe extern "C" fn PrintHallRecords(hallFacilityId: i32, lvlMode: i
         (*gSaveBlock2Ptr).frontier.opponentNames[0][7] = EOS;
         (*gSaveBlock2Ptr).frontier.opponentNames[1][7] = EOS;
         Fill2PRecords(records2P.as_mut_ptr(), lvlMode);
-        i = 0;
-        while i < HALL_RECORDS_COUNT {
+        for i in 0..HALL_RECORDS_COUNT {
             Print2PRecord(i, 1, 4, &raw mut records2P[i]);
-            i += 1;
         }
     } else {
         Fill1PRecords(records1P.as_mut_ptr(), hallFacilityId, lvlMode);
-        i = 0;
-        while i < HALL_RECORDS_COUNT {
+        for i in 0..HALL_RECORDS_COUNT {
             Print1PRecord(i, 1, 4, &raw mut records1P[i], hallFacilityId);
-            i += 1;
         }
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ShowRankingHallRecordsWindow() {
-    gRecordsWindowId = AddWindow((&raw const *sRankingHallRecordsWindowTemplate).cast_mut()) as u8;
-    DrawStdWindowFrame(gRecordsWindowId, FALSE);
-    FillWindowPixelBuffer(gRecordsWindowId, 17);
+pub unsafe fn ShowRankingHallRecordsWindow() {
+    gRecordsWindowId
+        .set(AddWindow((&raw const *sRankingHallRecordsWindowTemplate).cast_mut()) as u8);
+    DrawStdWindowFrame(gRecordsWindowId.get(), FALSE);
+    FillWindowPixelBuffer(gRecordsWindowId.get(), 17);
     PrintHallRecords(gSpecialVar_0x8005 as i32, FRONTIER_LVL_50 as i32);
-    PutWindowTilemap(gRecordsWindowId);
-    CopyWindowToVram(gRecordsWindowId, COPYWIN_FULL);
+    PutWindowTilemap(gRecordsWindowId.get());
+    CopyWindowToVram(gRecordsWindowId.get(), COPYWIN_FULL);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ScrollRankingHallRecordsWindow() {
-    FillWindowPixelBuffer(gRecordsWindowId, 17);
+pub unsafe fn ScrollRankingHallRecordsWindow() {
+    FillWindowPixelBuffer(gRecordsWindowId.get(), 17);
     PrintHallRecords(gSpecialVar_0x8005 as i32, FRONTIER_LVL_OPEN as i32);
-    CopyWindowToVram(gRecordsWindowId, COPYWIN_GFX);
+    CopyWindowToVram(gRecordsWindowId.get(), COPYWIN_GFX);
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearRankingHallRecords() {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    let mut k: i32 = 0;
+pub unsafe fn ClearRankingHallRecords() {
     let mut emptyId: CArray<u8, 4> = CArray([0, 0, 0, 0]);
-    i = 0;
-    while i < HALL_FACILITIES_COUNT {
-        j = 0;
-        while j < FRONTIER_LVL_MODE_COUNT {
-            k = 0;
-            while k < HALL_RECORDS_COUNT {
+    for i in 0..HALL_FACILITIES_COUNT {
+        for j in 0..FRONTIER_LVL_MODE_COUNT {
+            for k in 0..HALL_RECORDS_COUNT {
                 CopyTrainerId(
                     (*gSaveBlock2Ptr).hallRecords1P[i][j][k].id.as_mut_ptr(),
                     emptyId.as_mut_ptr(),
                 );
                 (*gSaveBlock2Ptr).hallRecords1P[i][j][k].name[0] = EOS;
                 (*gSaveBlock2Ptr).hallRecords1P[i][j][k].winStreak = 0;
-                k += 1;
             }
-            j += 1;
         }
-        i += 1;
     }
-    j = 0;
-    while j < FRONTIER_LVL_MODE_COUNT {
-        k = 0;
-        while k < HALL_RECORDS_COUNT {
+    for j in 0..FRONTIER_LVL_MODE_COUNT {
+        for k in 0..HALL_RECORDS_COUNT {
             CopyTrainerId(
                 (*gSaveBlock2Ptr).hallRecords2P[j][k].id1.as_mut_ptr(),
                 emptyId.as_mut_ptr(),
@@ -2789,92 +2940,81 @@ pub unsafe extern "C" fn ClearRankingHallRecords() {
             (*gSaveBlock2Ptr).hallRecords2P[j][k].name1[0] = EOS;
             (*gSaveBlock2Ptr).hallRecords2P[j][k].name2[0] = EOS;
             (*gSaveBlock2Ptr).hallRecords2P[j][k].winStreak = 0;
-            k += 1;
         }
-        j += 1;
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn SaveGameFrontier() {
-    let mut i: i32 = 0;
-    let mut monsParty: *mut Pokemon = AllocZeroed(600) as *mut Pokemon;
-    i = 0;
-    while i < PARTY_SIZE {
+pub unsafe fn SaveGameFrontier() {
+    let monsParty: *mut Pokemon = AllocZeroed(600) as *mut Pokemon;
+    for i in 0..PARTY_SIZE {
         *monsParty.at(i) = gPlayerParty[i];
-        i += 1;
     }
-    i = gPlayerPartyCount as i32;
+    let i: i32 = gPlayerPartyCount as i32;
     LoadPlayerParty();
     SetContinueGameWarpStatusToDynamicWarp();
     TrySavingData(SAVE_LINK);
     ClearContinueGameWarpStatus2();
     gPlayerPartyCount = i as u8;
-    i = 0;
-    while i < PARTY_SIZE {
+    for i in 0..PARTY_SIZE {
         gPlayerParty[i] = *monsParty.at(i);
-        i += 1;
     }
     Free(monsParty as *mut c_void);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFrontierBrainTrainerPicIndex() -> u8 {
+pub unsafe fn GetFrontierBrainTrainerPicIndex() -> u8 {
     let mut facility: i32 = 0;
     if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
         facility = GetRecordedBattleFrontierFacility() as i32;
     } else {
         facility = VarGet(VAR_FRONTIER_FACILITY) as i32;
     }
-    return gTrainers[sFrontierBrainTrainerIds[facility]].trainerPic;
+    (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
+        [sFrontierBrainTrainerIds[facility]]
+        .trainerPic
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFrontierBrainTrainerClass() -> u8 {
+pub unsafe fn GetFrontierBrainTrainerClass() -> u8 {
     let mut facility: i32 = 0;
     if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
         facility = GetRecordedBattleFrontierFacility() as i32;
     } else {
         facility = VarGet(VAR_FRONTIER_FACILITY) as i32;
     }
-    return gTrainers[sFrontierBrainTrainerIds[facility]].trainerClass;
+    (*(&raw const crate::data::data_tables::gTrainers).cast::<CArray<Trainer, 0>>())
+        [sFrontierBrainTrainerIds[facility]]
+        .trainerClass
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CopyFrontierBrainTrainerName(mut dst: *mut u8) {
+pub unsafe fn CopyFrontierBrainTrainerName(dst: *mut u8) {
+    let mut facility: i32 = 0;
+    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
+        facility = GetRecordedBattleFrontierFacility() as i32;
+    } else {
+        facility = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    }
     let mut i: i32 = 0;
-    let mut facility: i32 = 0;
-    if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {
-        facility = GetRecordedBattleFrontierFacility() as i32;
-    } else {
-        facility = VarGet(VAR_FRONTIER_FACILITY) as i32;
-    }
-    i = 0;
     while i < PLAYER_NAME_LENGTH {
-        *dst.at(i) = gTrainers[sFrontierBrainTrainerIds[facility]].trainerName[i];
+        *dst.at(i) = (*(&raw const crate::data::data_tables::gTrainers)
+            .cast::<CArray<Trainer, 0>>())[sFrontierBrainTrainerIds[facility]]
+            .trainerName[i];
         i += 1;
     }
     *dst.at(i) = EOS;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsFrontierBrainFemale() -> u8 {
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
-    return sFrontierBrainObjEventGfx[facility][1];
+pub unsafe fn IsFrontierBrainFemale() -> u8 {
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    sFrontierBrainObjEventGfx[facility][1]
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetFrontierBrainObjEventGfx_2() {
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+pub unsafe fn SetFrontierBrainObjEventGfx_2() {
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
     VarSet(
         VAR_OBJ_GFX_ID_0,
         sFrontierBrainObjEventGfx[facility][0] as u16,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateFrontierBrainPokemon() {
-    let mut i: i32 = 0;
+pub unsafe fn CreateFrontierBrainPokemon() {
     let mut j: i32 = 0;
     let mut selectedMonBits: i32 = 0;
-    let mut monPartyId: i32 = 0;
-    let mut monLevel: i32 = 0;
     let mut friendship: u8 = 0;
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
-    let mut symbol: i32 = GetFronterBrainSymbol();
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let symbol: i32 = GetFronterBrainSymbol();
     if facility == FRONTIER_FACILITY_DOME {
         selectedMonBits =
             GetDomeTrainerSelectedMons(TrainerIdToDomeTournamentId(TRAINER_FRONTIER_BRAIN) as u16);
@@ -2882,10 +3022,9 @@ pub unsafe extern "C" fn CreateFrontierBrainPokemon() {
         selectedMonBits = 7;
     }
     ZeroEnemyPartyMons();
-    monPartyId = 0;
-    monLevel = SetFacilityPtrsGetLevel() as i32;
-    i = 0;
-    while i < FRONTIER_PARTY_SIZE {
+    let mut monPartyId: i32 = 0;
+    let monLevel: i32 = SetFacilityPtrsGetLevel() as i32;
+    for i in 0..FRONTIER_PARTY_SIZE {
         'l1: {
             if selectedMonBits & 1 == 0 {
                 break 'l1;
@@ -2930,8 +3069,7 @@ pub unsafe extern "C" fn CreateFrontierBrainPokemon() {
                 j += 1;
             }
             friendship = MAX_FRIENDSHIP;
-            j = 0;
-            while j < MAX_MON_MOVES {
+            for j in 0..MAX_MON_MOVES {
                 SetMonMoveSlot(
                     &raw mut gEnemyParty[monPartyId],
                     sFrontierBrainsMons[facility][symbol][i].moves[j],
@@ -2940,7 +3078,6 @@ pub unsafe extern "C" fn CreateFrontierBrainPokemon() {
                 if sFrontierBrainsMons[facility][symbol][i].moves[j] == MOVE_FRUSTRATION {
                     friendship = 0;
                 }
-                j += 1;
             }
             SetMonData(
                 &raw mut gEnemyParty[monPartyId],
@@ -2951,47 +3088,40 @@ pub unsafe extern "C" fn CreateFrontierBrainPokemon() {
             monPartyId += 1;
         }
         selectedMonBits >>= 1;
-        i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFrontierBrainMonSpecies(monId: u8) -> u16 {
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
-    let mut symbol: i32 = GetFronterBrainSymbol();
-    return sFrontierBrainsMons[facility][symbol][monId].species;
+pub unsafe fn GetFrontierBrainMonSpecies(monId: u8) -> u16 {
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let symbol: i32 = GetFronterBrainSymbol();
+    sFrontierBrainsMons[facility][symbol][monId].species
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetFrontierBrainObjEventGfx(facility: u8) {
+pub unsafe fn SetFrontierBrainObjEventGfx(facility: u8) {
     gTrainerBattleOpponent_A = TRAINER_FRONTIER_BRAIN;
     VarSet(
         VAR_OBJ_GFX_ID_0,
         sFrontierBrainObjEventGfx[facility][0] as u16,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFrontierBrainMonMove(monId: u8, moveSlotId: u8) -> u16 {
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
-    let mut symbol: i32 = GetFronterBrainSymbol();
-    return sFrontierBrainsMons[facility][symbol][monId].moves[moveSlotId];
+pub unsafe fn GetFrontierBrainMonMove(monId: u8, moveSlotId: u8) -> u16 {
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let symbol: i32 = GetFronterBrainSymbol();
+    sFrontierBrainsMons[facility][symbol][monId].moves[moveSlotId]
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFrontierBrainMonNature(monId: u8) -> u8 {
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
-    let mut symbol: i32 = GetFronterBrainSymbol();
-    return sFrontierBrainsMons[facility][symbol][monId].nature;
+pub unsafe fn GetFrontierBrainMonNature(monId: u8) -> u8 {
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let symbol: i32 = GetFronterBrainSymbol();
+    sFrontierBrainsMons[facility][symbol][monId].nature
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFrontierBrainMonEvs(monId: u8, evStatId: u8) -> u8 {
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
-    let mut symbol: i32 = GetFronterBrainSymbol();
-    return sFrontierBrainsMons[facility][symbol][monId].evs[evStatId];
+pub unsafe fn GetFrontierBrainMonEvs(monId: u8, evStatId: u8) -> u8 {
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+    let symbol: i32 = GetFronterBrainSymbol();
+    sFrontierBrainsMons[facility][symbol][monId].evs[evStatId]
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetFronterBrainSymbol() -> i32 {
-    let mut facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
+pub unsafe fn GetFronterBrainSymbol() -> i32 {
+    let facility: i32 = VarGet(VAR_FRONTIER_FACILITY) as i32;
     let mut symbol: i32 = GetPlayerSymbolCountForFacility(facility as u8) as i32;
     if symbol == 2 {
-        let mut winStreak: u16 = GetCurrentFacilityWinStreak() as u16;
+        let winStreak: u16 = GetCurrentFacilityWinStreak() as u16;
         if winStreak as i32 + sFrontierBrainStreakAppearances[facility][3] as i32
             == sFrontierBrainStreakAppearances[facility][0] as i32
         {
@@ -3011,9 +3141,9 @@ pub unsafe extern "C" fn GetFronterBrainSymbol() -> i32 {
             symbol = 1;
         }
     }
-    return symbol;
+    symbol
 }
-pub(crate) unsafe extern "C" fn CopyFrontierBrainText(playerWonText: u8) {
+unsafe fn CopyFrontierBrainText(playerWonText: u8) {
     let mut facility: i32 = 0;
     let mut symbol: i32 = 0;
     if gBattleTypeFlags & BATTLE_TYPE_RECORDED != 0 {

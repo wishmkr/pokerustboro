@@ -3,29 +3,71 @@
     non_snake_case,
     non_upper_case_globals,
     non_camel_case_types,
-    unused_mut,
-    unused_variables,
-    unused_assignments,
-    unused_parens,
-    unused_braces,
-    unused_labels,
-    unused_comparisons,
-    overflowing_literals,
-    unused_unsafe,
-    dead_code,
-    unreachable_code,
     static_mut_refs,
     unsafe_op_in_unsafe_fn,
-    clippy::all,
     clashing_extern_declarations,
     unpredictable_function_pointer_comparisons,
-    dangerous_implicit_autorefs
+    dangerous_implicit_autorefs,
+    overflowing_literals,
+    clippy::manual_is_multiple_of,
+    clippy::missing_transmute_annotations,
+    clippy::type_complexity,
+    clippy::useless_transmute,
+    dead_code,
+    unreachable_code,
+    unused_assignments,
+    unused_variables
 )]
 
+use crate::AgbRfu_LinkManager::{
+    lman, rfu_LMAN_CHILD_connectParent, rfu_LMAN_REQ_sendData, rfu_LMAN_establishConnection,
+    rfu_LMAN_forceChangeSP, rfu_LMAN_initializeManager, rfu_LMAN_initializeRFU,
+    rfu_LMAN_manager_entity, rfu_LMAN_powerDownRFU, rfu_LMAN_requestChangeAgbClockMaster,
+    rfu_LMAN_setLinkRecovery, rfu_LMAN_setMSCCallback, rfu_LMAN_stopManager, rfu_LMAN_syncVBlank,
+};
+use crate::agb_main::gMain;
+use crate::agb_main::{SetVBlankCallback, gLinkTransferringData};
+use crate::battle_main::gBattleTypeFlags;
+use crate::berry_blender::GetBlenderArrowPosition;
 #[allow(unused_imports)]
 use crate::c::*;
 #[allow(unused_imports)]
 use crate::consts::*;
+use crate::gpu_regs::SetGpuReg;
+use crate::librfu_rfu::{
+    gRfuLinkStatus, gRfuSlotStatusNI, gRfuSlotStatusUNI, rfu_NI_setSendData,
+    rfu_REQ_PARENT_resumeRetransmitAndChange, rfu_REQ_configGameData, rfu_REQ_disconnect,
+    rfu_REQ_recvData, rfu_REQ_stopMode, rfu_UNI_clearRecvNewDataFlag, rfu_UNI_readySendData,
+    rfu_UNI_setSendData, rfu_clearAllSlot, rfu_clearSlot, rfu_initializeAPI, rfu_setRecvBuffer,
+    rfu_setTimerInterrupt, rfu_waitREQComplete,
+};
+use crate::link::{
+    CB2_LinkError, ClearSavedLinkPlayers, CloseLink, ConvertLinkPlayerName, GetBlockReceivedStatus,
+    GetLinkPlayerCount, GetMultiplayerId, IsLinkTaskFinished, IsWirelessAdapterConnected,
+    LinkPlayerFromBlock, LocalLinkPlayerToBlock, OpenLink, ResetBlockReceivedFlag,
+    ResetBlockReceivedFlags, SendBlock, SetLinkErrorBuffer, SetWirelessCommType1,
+    gBerryBlenderKeySendAttempts, gLinkPlayers, gLinkType, gReceivedRemoteLinkPlayers,
+    gWirelessCommType,
+};
+use crate::link::{gBlockRecvBuffer, gBlockSendBuffer, gLinkPartnersHeldKeys, gRecvCmds, gSendCmd};
+use crate::link_rfu_3::{
+    InitHostRfuGameData, RfuBackupQueue_Dequeue, RfuBackupQueue_Enqueue, RfuRecvQueue_Dequeue,
+    RfuRecvQueue_Enqueue, RfuRecvQueue_Reset, RfuSendQueue_Dequeue, RfuSendQueue_Enqueue,
+    RfuSendQueue_Reset,
+};
+use crate::load_save::gSaveBlock2Ptr;
+use crate::mystery_gift_menu::CB2_MysteryGiftEReader;
+use crate::overworld::gHeldKeyCodeToSend;
+use crate::palette::{ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade};
+use crate::random::{Random, Random2, SeedRng};
+use crate::sprite::{
+    AnimateSprites, BuildOamBuffer, FreeAllSpritePalettes, LoadOam, ProcessSpriteCopyRequests,
+    ResetSpriteData,
+};
+use crate::string_util::{StringCompare, StringCopy};
+use crate::task::gTasks;
+use crate::task::{DestroyTask, ResetTasks, RunTasks};
+use crate::task::{task_get, task_set};
 #[allow(unused_imports)]
 use crate::types::*;
 #[allow(unused_imports)]
@@ -34,6 +76,27 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 #[allow(unused_imports)]
 use core::ptr::null_mut;
+/// `CreateTask` with this module's view of its types.
+#[inline]
+unsafe fn CreateTask(a0: Option<unsafe fn(u8)>, a1: u8) -> u8 {
+    unsafe { crate::task::CreateTask(core::mem::transmute(a0), a1) }
+}
+/// `FindTaskIdByFunc` with this module's view of its types.
+#[inline]
+unsafe fn FindTaskIdByFunc(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FindTaskIdByFunc(core::mem::transmute(a0)) }
+}
+/// `FuncIsActiveTask` with this module's view of its types.
+#[inline]
+unsafe fn FuncIsActiveTask(a0: Option<unsafe fn(u8)>) -> u8 {
+    unsafe { crate::task::FuncIsActiveTask(core::mem::transmute(a0)) }
+}
+// The C's names for task and sprite data slots.
+const tDisconnectPlayers: usize = 0;
+const tState: usize = 0;
+const tActivity: usize = 1;
+const tDisconnectMode: usize = 1;
+const tConnectingForChat: usize = 7;
 // Data tables (translate with cdata.py): sRfuReqConfigTemplate sAvailSlots sAllBlocksReceived sSlotToLinkPlayerTableId sPlayerBitsToCount sPlayerBitsToNewChildIdx sBlockRequests sAcceptedSerialNos sASCII_RfuCmds sASCII_RecoverCmds sShutdownTasks sASCII_PokemonSioInfo sASCII_LinkLossDisconnect sASCII_LinkLossRecoveryNow sASCII_30Spaces sASCII_15Spaces sASCII_8Spaces sASCII_Space sASCII_Asterisk sASCII_NowSlot sASCII_ClockCmds sASCII_ChildParentSearch
 
 /// `struct RfuDebug`
@@ -143,18 +206,16 @@ static sPlayerBitsToNewChildIdx: Table<CArray<u8, 16>> =
     Table((&raw const crate::data::link_rfu_2::sPlayerBitsToNewChildIdx).cast());
 static sRfuReqConfigTemplate: Table<InitializeParametersTag> =
     Table((&raw const crate::data::link_rfu_2::sRfuReqConfigTemplate).cast());
-static sShutdownTasks: Table<CArray<Option<unsafe extern "C" fn(u8)>, 3>> =
+static sShutdownTasks: Table<CArray<Option<unsafe fn(u8)>, 3>> =
     Table((&raw const crate::data::link_rfu_2::sShutdownTasks).cast());
 static sSlotToLinkPlayerTableId: Table<CArray<u8, 9>> =
     Table((&raw const crate::data::link_rfu_2::sSlotToLinkPlayerTableId).cast());
 
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gRfuAPIBuffer: CArray<u32, 921> = unsafe { zeroed() };
-#[unsafe(no_mangle)]
 #[unsafe(link_section = "common_data")]
 pub static mut gRfu: RfuManager = unsafe { zeroed() };
-pub(crate) static mut sHeldKeyCount: u8 = 0;
+pub(crate) static sHeldKeyCount: crate::global::Global<u8> = crate::global::Global::new(0);
 pub(crate) static mut sResendBlock8: Aligned<CArray<u8, 16>> = Aligned(unsafe { zeroed() });
 pub(crate) static mut sResendBlock16: Aligned<CArray<u16, 8>> = Aligned(unsafe { zeroed() });
 #[unsafe(no_mangle)]
@@ -168,124 +229,25 @@ pub(crate) static mut sRfuReqConfig: InitializeParametersTag = unsafe { zeroed()
 #[unsafe(link_section = "ewram_data")]
 pub(crate) static mut sRfuDebug: RfuDebug = unsafe { zeroed() };
 
-unsafe extern "C" {
-    static mut gBattleTypeFlags: u32;
-    static mut gBerryBlenderKeySendAttempts: u32;
-    static mut gBlockRecvBuffer: CArray<CArray<u16, 128>, 5>;
-    static mut gBlockSendBuffer: CArray<u8, 256>;
-    static mut gHeldKeyCodeToSend: u16;
-    static mut gIntrTable: CArray<Option<unsafe extern "C" fn()>, 0>;
-    static mut gLinkPartnersHeldKeys: CArray<u16, 6>;
-    static mut gLinkPlayers: CArray<LinkPlayer, 5>;
-    static mut gLinkTransferringData: u8;
-    static mut gLinkType: u16;
-    static mut gMain: Main;
-    static mut gReceivedRemoteLinkPlayers: u8;
-    static mut gRecvCmds: CArray<CArray<u16, 8>, 5>;
-    static mut gRfuLinkStatus: *mut RfuLinkStatus;
-    static mut gRfuSlotStatusNI: CArray<*mut RfuSlotStatusNI, 4>;
-    static mut gRfuSlotStatusUNI: CArray<*mut RfuSlotStatusUNI, 4>;
-    static mut gSaveBlock2Ptr: *mut SaveBlock2;
-    static mut gSendCmd: CArray<u16, 8>;
-    static mut gTasks: CArray<Task, 0>;
-    static mut gWirelessCommType: u8;
-    static mut lman: linkManagerTag;
-    fn AnimateSprites();
-    fn BuildOamBuffer();
-    fn CB2_LinkError();
-    fn CB2_MysteryGiftEReader();
-    fn ClearSavedLinkPlayers();
-    fn CloseLink();
-    fn ConvertLinkPlayerName(a0: *mut LinkPlayer);
-    fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32);
-    fn CreateTask(a0: Option<unsafe extern "C" fn(u8)>, a1: u8) -> u8;
-    fn DestroyTask(a0: u8);
-    fn FindTaskIdByFunc(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn FreeAllSpritePalettes();
-    fn FuncIsActiveTask(a0: Option<unsafe extern "C" fn(u8)>) -> u8;
-    fn GetBlenderArrowPosition() -> u16;
-    fn GetBlockReceivedStatus() -> u8;
-    fn GetLinkPlayerCount() -> u8;
-    fn GetMultiplayerId() -> u8;
-    fn InitHostRfuGameData(a0: *mut RfuGameData, a1: u8, a2: u32, a3: i32);
-    fn IsLinkTaskFinished() -> u8;
-    fn IsWirelessAdapterConnected() -> u8;
-    fn LinkPlayerFromBlock(a0: u32);
-    fn LoadOam();
-    fn LocalLinkPlayerToBlock();
-    fn OpenLink();
-    fn ProcessSpriteCopyRequests();
-    fn Random() -> u16;
-    fn Random2() -> u16;
-    fn ResetBlockReceivedFlag(a0: u8);
-    fn ResetBlockReceivedFlags();
-    fn ResetPaletteFade();
-    fn ResetSpriteData();
-    fn ResetTasks();
-    fn RfuBackupQueue_Dequeue(a0: *mut RfuBackupQueue, a1: *mut u8) -> u8;
-    fn RfuBackupQueue_Enqueue(a0: *mut RfuBackupQueue, a1: *mut u8);
-    fn RfuRecvQueue_Dequeue(a0: *mut RfuRecvQueue, a1: *mut u8) -> u8;
-    fn RfuRecvQueue_Enqueue(a0: *mut RfuRecvQueue, a1: *mut u8);
-    fn RfuRecvQueue_Reset(a0: *mut RfuRecvQueue);
-    fn RfuSendQueue_Dequeue(a0: *mut RfuSendQueue, a1: *mut u8) -> u8;
-    fn RfuSendQueue_Enqueue(a0: *mut RfuSendQueue, a1: *mut u8);
-    fn RfuSendQueue_Reset(a0: *mut RfuSendQueue);
-    fn RunTasks();
-    fn SeedRng(a0: u16);
-    fn SendBlock(a0: u8, a1: *mut c_void, a2: u16) -> u8;
-    fn SetGpuReg(a0: u8, a1: u16);
-    fn SetLinkErrorBuffer(a0: u32, a1: u8, a2: u8, a3: u8);
-    fn SetMainCallback2(a0: Option<unsafe extern "C" fn()>);
-    fn SetVBlankCallback(a0: Option<unsafe extern "C" fn()>);
-    fn SetWirelessCommType1();
-    fn StringCompare(a0: *mut u8, a1: *mut u8) -> i32;
-    fn StringCopy(a0: *mut u8, a1: *mut u8) -> *mut u8;
-    fn TransferPlttBuffer();
-    fn UpdatePaletteFade() -> u8;
-    fn rfu_LMAN_CHILD_connectParent(a0: u16, a1: u16) -> u8;
-    fn rfu_LMAN_REQ_sendData(a0: u8);
-    fn rfu_LMAN_establishConnection(a0: u8, a1: u16, a2: u16, a3: *mut u16) -> u8;
-    fn rfu_LMAN_forceChangeSP();
-    fn rfu_LMAN_initializeManager(
-        a0: Option<unsafe extern "C" fn(u8, u8)>,
-        a1: Option<unsafe extern "C" fn(u16)>,
-    ) -> u8;
-    fn rfu_LMAN_initializeRFU(a0: *mut InitializeParametersTag);
-    fn rfu_LMAN_manager_entity(a0: u32);
-    fn rfu_LMAN_powerDownRFU();
-    fn rfu_LMAN_requestChangeAgbClockMaster();
-    fn rfu_LMAN_setLinkRecovery(a0: u8, a1: u16) -> u8;
-    fn rfu_LMAN_setMSCCallback(a0: Option<unsafe extern "C" fn(u16)>);
-    fn rfu_LMAN_stopManager(a0: u8);
-    fn rfu_LMAN_syncVBlank();
-    fn rfu_NI_setSendData(a0: u8, a1: u8, a2: *mut c_void, a3: u32) -> u16;
-    fn rfu_REQ_PARENT_resumeRetransmitAndChange();
-    fn rfu_REQ_configGameData(a0: u8, a1: u16, a2: *mut u8, a3: *mut u8);
-    fn rfu_REQ_disconnect(a0: u8);
-    fn rfu_REQ_recvData();
-    fn rfu_REQ_stopMode();
-    fn rfu_UNI_clearRecvNewDataFlag(a0: u8);
-    fn rfu_UNI_readySendData(a0: u8);
-    fn rfu_UNI_setSendData(a0: u8, a1: *mut c_void, a2: u8) -> u16;
-    fn rfu_clearAllSlot();
-    fn rfu_clearSlot(a0: u8, a1: u8) -> u16;
-    fn rfu_initializeAPI(
-        a0: *mut u32,
-        a1: u16,
-        a2: *mut Option<unsafe extern "C" fn()>,
-        a3: u8,
-    ) -> u16;
-    fn rfu_setRecvBuffer(a0: u8, a1: u8, a2: *mut c_void, a3: u32) -> u16;
-    fn rfu_setTimerInterrupt(a0: u8, a1: *mut Option<unsafe extern "C" fn()>);
-    fn rfu_waitREQComplete() -> u16;
+/// `CpuSet` with this module's view of its types.
+#[inline]
+unsafe fn CpuSet(a0: *mut c_void, a1: *mut c_void, a2: u32) {
+    unsafe {
+        crate::syscall::CpuSet(a0 as _, a1 as _, a2);
+    }
+}
+/// `SetMainCallback2` with this module's view of its types.
+#[inline]
+unsafe fn SetMainCallback2(a0: Option<unsafe fn()>) {
+    unsafe {
+        crate::agb_main::SetMainCallback2(core::mem::transmute(a0));
+    }
 }
 
-pub(crate) unsafe extern "C" fn Debug_PrintString(str: *mut c_void, x: u8, y: u8) {}
-pub(crate) unsafe extern "C" fn Debug_PrintNum(num: u16, x: u8, y: u8, numDigits: u8) {}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetLinkRfuGFLayer() {
-    let mut i: i32 = 0;
-    let mut errorState: u8 = (&raw mut gRfu.errorState).read_volatile();
+fn Debug_PrintString(str: *mut c_void, x: u8, y: u8) {}
+unsafe fn Debug_PrintNum(num: u16, x: u8, y: u8, numDigits: u8) {}
+pub unsafe fn ResetLinkRfuGFLayer() {
+    let errorState: u8 = (&raw mut gRfu.errorState).read_volatile();
     {
         {
             let mut tmp: u16 = 0;
@@ -302,10 +264,8 @@ pub unsafe extern "C" fn ResetLinkRfuGFLayer() {
     if (&raw mut gRfu.errorState).read_volatile() != RFU_ERROR_STATE_IGNORE {
         volatile_write(&raw mut gRfu.errorState, RFU_ERROR_STATE_NONE);
     }
-    i = 0;
-    while i < MAX_RFU_PLAYERS {
+    for i in 0..MAX_RFU_PLAYERS {
         ResetSendDataManager(&raw mut gRfu.recvBlock[i]);
-        i += 1;
     }
     ResetSendDataManager(&raw mut gRfu.sendBlock);
     RfuRecvQueue_Reset(&raw mut gRfu.recvQueue);
@@ -345,23 +305,32 @@ pub unsafe extern "C" fn ResetLinkRfuGFLayer() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitRFU() {
-    let mut serialIntr: Option<unsafe extern "C" fn()> = gIntrTable[1];
-    let mut timerIntr: Option<unsafe extern "C" fn()> = gIntrTable[2];
+pub unsafe fn InitRFU() {
+    let serialIntr: Option<crate::agb_main::IntrFunc> = (*(&raw const crate::agb_main::gIntrTable)
+        .cast::<CArray<Option<crate::agb_main::IntrFunc>, 0>>()
+        .cast_mut())[1];
+    let timerIntr: Option<crate::agb_main::IntrFunc> = (*(&raw const crate::agb_main::gIntrTable)
+        .cast::<CArray<Option<crate::agb_main::IntrFunc>, 0>>()
+        .cast_mut())[2];
     InitRFUAPI();
     rfu_REQ_stopMode();
     rfu_waitREQComplete();
-    volatile_write(67109384 as usize as *mut u16, 0);
-    gIntrTable[1] = serialIntr;
-    gIntrTable[2] = timerIntr;
-    volatile_write(67109384 as usize as *mut u16, INTR_FLAG_VBLANK);
+    volatile_write(67109384_usize as *mut u16, 0);
+    (*(&raw const crate::agb_main::gIntrTable)
+        .cast::<CArray<Option<crate::agb_main::IntrFunc>, 0>>()
+        .cast_mut())[1] = serialIntr;
+    (*(&raw const crate::agb_main::gIntrTable)
+        .cast::<CArray<Option<crate::agb_main::IntrFunc>, 0>>()
+        .cast_mut())[2] = timerIntr;
+    volatile_write(67109384_usize as *mut u16, INTR_FLAG_VBLANK);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitRFUAPI() {
+pub unsafe fn InitRFUAPI() {
     if rfu_initializeAPI(
         gRfuAPIBuffer.as_mut_ptr() as *mut c_void as *mut u32,
         3684,
-        &raw mut gIntrTable[1],
+        &raw mut (*(&raw const crate::agb_main::gIntrTable)
+            .cast::<CArray<Option<crate::agb_main::IntrFunc>, 0>>()
+            .cast_mut())[1],
         1,
     ) == 0
     {
@@ -369,16 +338,21 @@ pub unsafe extern "C" fn InitRFUAPI() {
         ClearSavedLinkPlayers();
         RfuSetIgnoreError(FALSE as u32);
         ResetLinkRfuGFLayer();
-        rfu_setTimerInterrupt(3, &raw mut gIntrTable[2]);
+        rfu_setTimerInterrupt(
+            3,
+            &raw mut (*(&raw const crate::agb_main::gIntrTable)
+                .cast::<CArray<Option<crate::agb_main::IntrFunc>, 0>>()
+                .cast_mut())[2],
+        );
     }
 }
-pub(crate) unsafe extern "C" fn Task_ParentSearchForChildren(taskId: u8) {
+pub(crate) unsafe fn Task_ParentSearchForChildren(taskId: u8) {
     UpdateChildStatuses();
     match gRfu.state {
         RFUSTATE_INIT => {
             rfu_LMAN_initializeRFU(&raw mut sRfuReqConfig);
             gRfu.state = RFUSTATE_INIT_END;
-            gTasks[taskId].data[1] = 1;
+            task_set(taskId, 1, 1);
         }
         RFUSTATE_INIT_END => {}
         RFUSTATE_PARENT_CONNECT => {
@@ -389,7 +363,7 @@ pub(crate) unsafe extern "C" fn Task_ParentSearchForChildren(taskId: u8) {
                 sAcceptedSerialNos.as_ptr().cast_mut(),
             );
             gRfu.state = RFUSTATE_PARENT_CONNECT_END;
-            gTasks[taskId].data[1] = 6;
+            task_set(taskId, 1, 6);
         }
         RFUSTATE_PARENT_CONNECT_END => {}
         RFUSTATE_STOP_MANAGER => {
@@ -403,31 +377,28 @@ pub(crate) unsafe extern "C" fn Task_ParentSearchForChildren(taskId: u8) {
             InitChildRecvBuffers();
             InitParentSendData();
             gRfu.state = RFUSTATE_FINALIZED;
-            gTasks[taskId].data[1] = 8;
+            task_set(taskId, 1, 8);
             CreateTask(Some(Task_PlayerExchange), 5);
             DestroyTask(taskId);
         }
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_GetIndexOfNewestChild(bits: u8) -> i32 {
-    return sPlayerBitsToNewChildIdx[bits] as i32;
+pub unsafe fn Rfu_GetIndexOfNewestChild(bits: u8) -> i32 {
+    sPlayerBitsToNewChildIdx[bits] as i32
 }
-pub(crate) unsafe extern "C" fn SetLinkPlayerIdsFromSlots(mut baseSlots: i32, mut addSlots: i32) {
+unsafe fn SetLinkPlayerIdsFromSlots(mut baseSlots: i32, mut addSlots: i32) {
     let mut i: u8 = 0;
     let mut baseId: u8 = 1;
     let mut baseSlotsCopy: i32 = baseSlots;
     let mut newId: i32 = 0;
     if addSlots == -1 {
-        i = 0;
-        while i < RFU_CHILD_MAX {
+        for i in 0..RFU_CHILD_MAX {
             if baseSlots & 1 != 0 {
                 gRfu.linkPlayerIdx[i] = baseId;
                 baseId += 1;
             }
             baseSlots >>= 1;
-            i += 1;
         }
     } else {
         i = 0;
@@ -450,8 +421,7 @@ pub(crate) unsafe extern "C" fn SetLinkPlayerIdsFromSlots(mut baseSlots: i32, mu
             baseId -= 1;
         }
         addSlots &= !baseSlots;
-        i = 0;
-        while i < RFU_CHILD_MAX {
+        for i in 0..RFU_CHILD_MAX {
             if addSlots & 1 != 0 {
                 gRfu.linkPlayerIdx[i] = ({
                     let t1 = newId;
@@ -460,17 +430,16 @@ pub(crate) unsafe extern "C" fn SetLinkPlayerIdsFromSlots(mut baseSlots: i32, mu
                 }) as u8;
             }
             addSlots >>= 1;
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_ChildSearchForParent(taskId: u8) {
+pub(crate) unsafe fn Task_ChildSearchForParent(taskId: u8) {
     'l1: {
         match gRfu.state {
             RFUSTATE_INIT => {
                 rfu_LMAN_initializeRFU((&raw const *sRfuReqConfigTemplate).cast_mut());
                 gRfu.state = RFUSTATE_INIT_END;
-                gTasks[taskId].data[1] = 1;
+                task_set(taskId, 1, 1);
             }
             RFUSTATE_INIT_END => {}
             RFUSTATE_CHILD_CONNECT => {
@@ -481,11 +450,11 @@ pub(crate) unsafe extern "C" fn Task_ChildSearchForParent(taskId: u8) {
                     sAcceptedSerialNos.as_ptr().cast_mut(),
                 );
                 gRfu.state = RFUSTATE_CHILD_CONNECT_END;
-                gTasks[taskId].data[1] = 7;
+                task_set(taskId, 1, 7);
             }
             RFUSTATE_CHILD_CONNECT_END => {}
             RFUSTATE_RECONNECTED => {
-                gTasks[taskId].data[1] = 10;
+                task_set(taskId, 1, 10);
             }
             RFUSTATE_CHILD_TRY_JOIN => match GetJoinGroupStatus() {
                 5 => {
@@ -499,7 +468,7 @@ pub(crate) unsafe extern "C" fn Task_ChildSearchForParent(taskId: u8) {
                 _ => {}
             },
             RFUSTATE_CHILD_JOINED => {
-                let mut bmChildSlot: u8 =
+                let bmChildSlot: u8 =
                     shl_i32(1, (&raw mut gRfu.childSlot).read_volatile() as u32) as u8;
                 rfu_clearSlot(12, (&raw mut gRfu.childSlot).read_volatile());
                 rfu_setRecvBuffer(
@@ -513,7 +482,7 @@ pub(crate) unsafe extern "C" fn Task_ChildSearchForParent(taskId: u8) {
                     gRfu.childSendBuffer.as_mut_ptr() as *mut c_void,
                     14,
                 );
-                gTasks[taskId].data[1] = 8;
+                task_set(taskId, 1, 8);
                 DestroyTask(taskId);
                 if sRfuDebug.childJoinCount == 0 {
                     Debug_PrintEmpty();
@@ -526,11 +495,9 @@ pub(crate) unsafe extern "C" fn Task_ChildSearchForParent(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn InitChildRecvBuffers() {
-    let mut i: u8 = 0;
+unsafe fn InitChildRecvBuffers() {
     let mut acceptSlot: u8 = lman.acceptSlot_flag;
-    i = 0;
-    while i < RFU_CHILD_MAX {
+    for i in 0..RFU_CHILD_MAX {
         if acceptSlot as i32 & 1 != 0 {
             rfu_setRecvBuffer(
                 TYPE_UNI,
@@ -541,18 +508,17 @@ pub(crate) unsafe extern "C" fn InitChildRecvBuffers() {
             rfu_clearSlot(3, i);
         }
         acceptSlot >>= 1;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn InitParentSendData() {
-    let mut acceptSlot: u8 = lman.acceptSlot_flag;
+unsafe fn InitParentSendData() {
+    let acceptSlot: u8 = lman.acceptSlot_flag;
     rfu_UNI_setSendData(acceptSlot, gRfu.recvCmds.as_mut_ptr() as *mut c_void, 70);
     gRfu.parentSendSlot = Rfu_GetIndexOfNewestChild(acceptSlot) as u8;
     gRfu.parentSlots = acceptSlot;
     SetLinkPlayerIdsFromSlots(acceptSlot as i32, -1);
     gRfu.parentChild = MODE_PARENT;
 }
-pub(crate) unsafe extern "C" fn Task_UnionRoomListen(taskId: u8) {
+pub(crate) unsafe fn Task_UnionRoomListen(taskId: u8) {
     if (*GetHostRfuGameData()).activity() == 84 && RfuGetStatus() == RFU_STATUS_NEW_CHILD_DETECTED {
         rfu_REQ_disconnect(lman.acceptSlot_flag);
         rfu_waitREQComplete();
@@ -562,7 +528,7 @@ pub(crate) unsafe extern "C" fn Task_UnionRoomListen(taskId: u8) {
         RFUSTATE_INIT => {
             rfu_LMAN_initializeRFU(&raw mut sRfuReqConfig);
             gRfu.state = RFUSTATE_INIT_END;
-            gTasks[taskId].data[1] = 1;
+            task_set(taskId, 1, 1);
         }
         RFUSTATE_INIT_END => {}
         RFUSTATE_UR_CONNECT => {
@@ -585,7 +551,7 @@ pub(crate) unsafe extern "C" fn Task_UnionRoomListen(taskId: u8) {
             {
                 gRfu.parentChild = MODE_CHILD;
                 DestroyTask(taskId);
-                if gTasks[taskId].data[7] != 0 {
+                if task_get(taskId, tConnectingForChat) != 0 {
                     CreateTask(Some(Task_PlayerExchangeChat), 1);
                 } else {
                     CreateTask(Some(Task_PlayerExchange), 5);
@@ -604,7 +570,7 @@ pub(crate) unsafe extern "C" fn Task_UnionRoomListen(taskId: u8) {
             InitChildRecvBuffers();
             InitParentSendData();
             gRfu.state = RFUSTATE_FINALIZED;
-            gTasks[taskId].data[1] = 8;
+            task_set(taskId, 1, 8);
             gRfu.parentChild = MODE_PARENT;
             CreateTask(Some(Task_PlayerExchange), 5);
             gRfu.playerExchangeActive = TRUE;
@@ -613,20 +579,15 @@ pub(crate) unsafe extern "C" fn Task_UnionRoomListen(taskId: u8) {
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LinkRfu_CreateConnectionAsParent() {
+pub unsafe fn LinkRfu_CreateConnectionAsParent() {
     rfu_LMAN_establishConnection(MODE_PARENT, 0, 240, sAcceptedSerialNos.as_ptr().cast_mut());
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LinkRfu_StopManagerBeforeEnteringChat() {
+pub unsafe fn LinkRfu_StopManagerBeforeEnteringChat() {
     rfu_LMAN_stopManager(FALSE);
 }
-pub(crate) unsafe extern "C" fn MSCCallback_Child(REQ_commandID: u16) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < COMM_SLOT_LENGTH {
+pub(crate) unsafe fn MSCCallback_Child(REQ_commandID: u16) {
+    for i in 0..COMM_SLOT_LENGTH {
         gRfu.childSendBuffer[i] = 0;
-        i += 1;
     }
     rfu_REQ_recvData();
     rfu_waitREQComplete();
@@ -647,12 +608,10 @@ pub(crate) unsafe extern "C" fn MSCCallback_Child(REQ_commandID: u16) {
     }
     rfu_LMAN_REQ_sendData(TRUE);
 }
-pub(crate) unsafe extern "C" fn MSCCallback_Parent(REQ_commandID: u16) {
+pub(crate) unsafe fn MSCCallback_Parent(REQ_commandID: u16) {
     volatile_write(&raw mut gRfu.parentFinished, TRUE);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LinkRfu_Shutdown() {
-    let mut i: u8 = 0;
+pub unsafe fn LinkRfu_Shutdown() {
     rfu_LMAN_powerDownRFU();
     if gRfu.parentChild == MODE_PARENT {
         if FuncIsActiveTask(Some(Task_ParentSearchForChildren)) == TRUE {
@@ -664,30 +623,28 @@ pub unsafe extern "C" fn LinkRfu_Shutdown() {
             DestroyTask(gRfu.searchTaskId);
             ResetLinkRfuGFLayer();
         }
-    } else if gRfu.parentChild == MODE_P_C_SWITCH {
-        if FuncIsActiveTask(Some(Task_UnionRoomListen)) == TRUE {
-            DestroyTask(gRfu.searchTaskId);
-            ResetLinkRfuGFLayer();
-        }
+    } else if gRfu.parentChild == MODE_P_C_SWITCH
+        && FuncIsActiveTask(Some(Task_UnionRoomListen)) == TRUE
+    {
+        DestroyTask(gRfu.searchTaskId);
+        ResetLinkRfuGFLayer();
     }
-    i = 0;
-    while i < 3 {
+    for i in 0..3u8 {
         if FuncIsActiveTask(sShutdownTasks[i]) == TRUE {
             DestroyTask(FindTaskIdByFunc(sShutdownTasks[i]));
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn CreateTask_ParentSearchForChildren() {
+unsafe fn CreateTask_ParentSearchForChildren() {
     gRfu.searchTaskId = CreateTask(Some(Task_ParentSearchForChildren), 1);
 }
-pub(crate) unsafe extern "C" fn CanTryReconnectParent() -> u8 {
+unsafe fn CanTryReconnectParent() -> u8 {
     if gRfu.state == RFUSTATE_CHILD_CONNECT_END && gRfu.parentId != 0 {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-pub(crate) unsafe extern "C" fn TryReconnectParent() -> u32 {
+unsafe fn TryReconnectParent() -> u32 {
     if gRfu.state == RFUSTATE_CHILD_CONNECT_END
         && rfu_LMAN_CHILD_connectParent((*gRfuLinkStatus).partner[gRfu.reconnectParentId].id, 240)
             == 0
@@ -695,60 +652,47 @@ pub(crate) unsafe extern "C" fn TryReconnectParent() -> u32 {
         gRfu.state = RFUSTATE_RECONNECTED;
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn CreateTask_ChildSearchForParent() {
+unsafe fn CreateTask_ChildSearchForParent() {
     gRfu.searchTaskId = CreateTask(Some(Task_ChildSearchForParent), 1);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LmanAcceptSlotFlagIsNotZero() -> u8 {
+pub unsafe fn LmanAcceptSlotFlagIsNotZero() -> u8 {
     if lman.acceptSlot_flag != 0 {
         return TRUE;
     }
-    return FALSE;
+    FALSE
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn LinkRfu_StopManagerAndFinalizeSlots() {
+pub unsafe fn LinkRfu_StopManagerAndFinalizeSlots() {
     gRfu.state = RFUSTATE_STOP_MANAGER;
     gRfu.acceptSlot_flag = lman.acceptSlot_flag;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WaitRfuState(force: u32) -> u32 {
+pub unsafe fn WaitRfuState(force: u32) -> u32 {
     if gRfu.state == RFUSTATE_PARENT_FINALIZE_START || force != 0 {
         gRfu.state = RFUSTATE_PARENT_FINALIZE;
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn StopUnionRoomLinkManager() {
+pub unsafe fn StopUnionRoomLinkManager() {
     gRfu.state = RFUSTATE_UR_STOP_MANAGER;
 }
-pub(crate) unsafe extern "C" fn ReadySendDataForSlots(mut slots: u8) {
-    let mut i: u8 = 0;
-    i = 0;
-    while i < RFU_CHILD_MAX {
+unsafe fn ReadySendDataForSlots(mut slots: u8) {
+    for i in 0..RFU_CHILD_MAX {
         if slots as i32 & 1 != 0 {
             rfu_UNI_readySendData(i);
             break;
         }
         slots >>= 1;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ReadAllPlayerRecvCmds() {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
-    i = 0;
-    while i < MAX_RFU_PLAYERS {
-        let mut rfu: *mut RfuManager = &raw mut gRfu;
-        j = 0;
-        while j < 7 {
+unsafe fn ReadAllPlayerRecvCmds() {
+    for i in 0..MAX_RFU_PLAYERS {
+        let rfu: *mut RfuManager = &raw mut gRfu;
+        for j in 0..7i32 {
             (*rfu).recvCmds[i][j][1] = (gRecvCmds[i][j] >> 8) as u8;
             (*rfu).recvCmds[i][j][0] = gRecvCmds[i][j] as u8;
-            j += 1;
         }
-        i += 1;
     }
     {
         {
@@ -762,22 +706,17 @@ pub(crate) unsafe extern "C" fn ReadAllPlayerRecvCmds() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn MoveSendCmdToRecv() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 7 {
+unsafe fn MoveSendCmdToRecv() {
+    for i in 0..7i32 {
         gRecvCmds[0][i] = gSendCmd[i];
-        i += 1;
     }
-    i = 0;
-    while i < 7 {
+    for i in 0..7i32 {
         gSendCmd[i] = 0;
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn UpdateBackupQueue() {
+unsafe fn UpdateBackupQueue() {
     if (&raw mut gRfu.linkRecovered).read_volatile() != 0 {
-        let mut backupEmpty: u8 =
+        let backupEmpty: u8 =
             RfuBackupQueue_Dequeue(&raw mut gRfu.backupQueue, gRfu.childSendBuffer.as_mut_ptr());
         if (&raw mut gRfu.backupQueue.count).read_volatile() == 0 {
             volatile_write(&raw mut gRfu.linkRecovered, FALSE);
@@ -791,27 +730,20 @@ pub(crate) unsafe extern "C" fn UpdateBackupQueue() {
         RfuBackupQueue_Enqueue(&raw mut gRfu.backupQueue, gRfu.childSendBuffer.as_mut_ptr());
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsRfuRecvQueueEmpty() -> u32 {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+pub unsafe fn IsRfuRecvQueueEmpty() -> u32 {
     if (*gRfuLinkStatus).sendSlotUNIFlag == 0 {
         return FALSE as u32;
     }
-    i = 0;
-    while i < MAX_RFU_PLAYERS {
-        j = 0;
-        while j < 7 {
+    for i in 0..MAX_RFU_PLAYERS {
+        for j in 0..7i32 {
             if gRecvCmds[i][j] != 0 {
                 return FALSE as u32;
             }
-            j += 1;
         }
-        i += 1;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn RfuMain1_Parent() -> u32 {
+unsafe fn RfuMain1_Parent() -> u32 {
     if gRfu.state < RFUSTATE_FINALIZED {
         rfu_REQ_recvData();
         rfu_waitREQComplete();
@@ -846,14 +778,12 @@ pub(crate) unsafe extern "C" fn RfuMain1_Parent() -> u32 {
             gRfu.runParentMain2 = TRUE;
         }
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn RfuMain2_Parent() -> u32 {
+unsafe fn RfuMain2_Parent() -> u32 {
     let mut i: u16 = 0;
     let mut flags: u16 = 0;
     let mut r0: u8 = 0;
-    let mut j: u16 = 0;
-    let mut failed: u8 = 0;
     if gRfu.state >= RFUSTATE_FINALIZED && gRfu.runParentMain2 == TRUE {
         rfu_waitREQComplete();
         while (&raw mut gRfu.parentFinished).read_volatile() == FALSE {
@@ -875,7 +805,7 @@ pub(crate) unsafe extern "C" fn RfuMain2_Parent() -> u32 {
                     if gRfu.childRecvBuffer[i][1] != 0 {
                         if gRfu.childRecvIds[i] != 0xFF
                             && (gRfu.childRecvBuffer[i][0] >> 5) as i32
-                                != gRfu.childRecvIds[i] as i32 + 1 & 7
+                                != (gRfu.childRecvIds[i] as i32 + 1) & 7
                         {
                             if ({
                                 gRfu.numChildRecvErrors[i] += 1;
@@ -889,14 +819,12 @@ pub(crate) unsafe extern "C" fn RfuMain2_Parent() -> u32 {
                             gRfu.numChildRecvErrors[i] = 0;
                             gRfu.childRecvBuffer[i][0] &= 0x1f;
                             r0 = gRfu.linkPlayerIdx[i];
-                            j = 0;
-                            while j < 7 {
+                            for j in 0..7u16 {
                                 gRecvCmds[r0][j] =
                                     (gRfu.childRecvBuffer[i][((j as i32) << 1) + 1] as u16) << 8
-                                        | gRfu.childRecvBuffer[i][((j as i32) << 1) + 0] as u16;
+                                        | gRfu.childRecvBuffer[i][(j as i32) << 1] as u16;
                                 gRfu.childRecvBuffer[i][((j as i32) << 1) + 1] = 0;
-                                gRfu.childRecvBuffer[i][((j as i32) << 1) + 0] = 0;
-                                j += 1;
+                                gRfu.childRecvBuffer[i][(j as i32) << 1] = 0;
                             }
                         }
                     }
@@ -911,8 +839,7 @@ pub(crate) unsafe extern "C" fn RfuMain2_Parent() -> u32 {
             if gRfu.nextChildBits != 0 && gRfu.stopNewConnections == 0 {
                 volatile_write(&raw mut sRfuDebug.unkFlag, FALSE);
                 rfu_clearSlot(3, gRfu.parentSendSlot);
-                i = 0;
-                while i < RFU_CHILD_MAX as u16 {
+                for i in 0..(RFU_CHILD_MAX as u16) {
                     if shr_i32(gRfu.nextChildBits as i32, i as u32) & 1 != 0 {
                         rfu_setRecvBuffer(
                             TYPE_UNI,
@@ -921,7 +848,6 @@ pub(crate) unsafe extern "C" fn RfuMain2_Parent() -> u32 {
                             14,
                         );
                     }
-                    i += 1;
                 }
                 SetLinkPlayerIdsFromSlots(
                     gRfu.parentSlots as i32,
@@ -944,46 +870,37 @@ pub(crate) unsafe extern "C" fn RfuMain2_Parent() -> u32 {
         }
         gRfu.runParentMain2 = FALSE;
     }
-    failed = (&raw mut gRfu.parentMain2Failed).read_volatile();
-    return (if (*gRfuLinkStatus).sendSlotUNIFlag != 0 {
+    let failed: u8 = (&raw mut gRfu.parentMain2Failed).read_volatile();
+    (if (*gRfuLinkStatus).sendSlotUNIFlag != 0 {
         failed as i32 & 1
     } else {
         FALSE as i32
-    }) as u32;
+    }) as u32
 }
-pub(crate) unsafe extern "C" fn ChildBuildSendCmd(mut sendCmd: *mut u16, mut dst: *mut u8) {
-    let mut i: i32 = 0;
+unsafe fn ChildBuildSendCmd(sendCmd: *mut u16, dst: *mut u8) {
     if *sendCmd != 0 {
         *sendCmd |= (gRfu.childSendCmdId as u16) << 5;
-        gRfu.childSendCmdId = gRfu.childSendCmdId + 1 & 7;
-        i = 0;
-        while i < 7 {
+        gRfu.childSendCmdId = (gRfu.childSendCmdId + 1) & 7;
+        for i in 0..7i32 {
             *dst.at(2 * i + 1) = (*sendCmd.at(i) >> 8) as u8;
-            *dst.at(2 * i + 0) = *sendCmd.at(i) as u8;
-            i += 1;
+            *dst.at(2 * i) = *sendCmd.at(i) as u8;
         }
     } else {
-        i = 0;
-        while i < COMM_SLOT_LENGTH {
+        for i in 0..COMM_SLOT_LENGTH {
             *dst.at(i) = 0;
-            i += 1;
         }
     }
 }
-pub(crate) unsafe extern "C" fn RfuMain1_Child() -> u32 {
-    let mut i: u8 = 0;
-    let mut j: u8 = 0;
+unsafe fn RfuMain1_Child() -> u32 {
     let mut recv: CArray<u8, 70> = zeroed();
     let mut send: CArray<u8, 14> = zeroed();
     let mut status: u8 = 0;
     RfuRecvQueue_Dequeue(&raw mut gRfu.recvQueue, recv.as_mut_ptr());
-    i = 0;
+    let mut i: u8 = 0;
     while i < MAX_RFU_PLAYERS as u8 {
-        j = 0;
-        while j < 7 {
+        for j in 0..7u8 {
             gRecvCmds[i][j] = (recv[i as i32 * COMM_SLOT_LENGTH + j as i32 * 2 + 1] as u16) << 8
-                | recv[i as i32 * COMM_SLOT_LENGTH + j as i32 * 2 + 0] as u16;
-            j += 1;
+                | recv[i as i32 * COMM_SLOT_LENGTH + j as i32 * 2] as u16;
         }
         i += 1;
     }
@@ -1021,36 +938,28 @@ pub(crate) unsafe extern "C" fn RfuMain1_Child() -> u32 {
         CallRfuFunc();
         ChildBuildSendCmd(gSendCmd.as_mut_ptr(), send.as_mut_ptr());
         RfuSendQueue_Enqueue(&raw mut gRfu.sendQueue, send.as_mut_ptr());
-        i = 0;
-        while i < 7 {
+        for i in 0..7u8 {
             gSendCmd[i] = 0;
-            i += 1;
         }
     }
-    return IsRfuRecvQueueEmpty();
+    IsRfuRecvQueueEmpty()
 }
-pub(crate) unsafe extern "C" fn HandleSendFailure(unused: u8, mut flags: u32) {
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+unsafe fn HandleSendFailure(unused: u8, mut flags: u32) {
     let mut temp: i32 = 0;
-    let mut payload: *mut u8 = gRfu.sendBlock.payload;
-    i = 0;
+    let payload: *mut u8 = gRfu.sendBlock.payload;
+    let mut i: i32 = 0;
     while i < gRfu.sendBlock.count as i32 {
         if flags & 1 == 0 {
             sResendBlock16[0] = RFUCMD_SEND_BLOCK | i as u16;
-            j = 0;
-            while j < 7 {
+            for j in 0..7i32 {
                 temp = j * 2;
                 sResendBlock16[j + 1] = (*payload.at(12 * i + temp + 1) as u16) << 8
-                    | *payload.at(12 * i + temp + 0) as u16;
-                j += 1;
+                    | *payload.at(12 * i + temp) as u16;
             }
-            j = 0;
-            while j < 7 {
+            for j in 0..7i32 {
                 temp = j * 2;
                 sResendBlock8[temp + 1] = (sResendBlock16[j] >> 8) as u8;
-                sResendBlock8[temp + 0] = sResendBlock16[j] as u8;
-                j += 1;
+                sResendBlock8[temp] = sResendBlock16[j] as u8;
             }
             RfuSendQueue_Enqueue(&raw mut gRfu.sendQueue, sResendBlock8.as_mut_ptr());
             gRfu.sendBlock.failedFlags |= shl_i32(1, i as u32) as u32;
@@ -1059,75 +968,62 @@ pub(crate) unsafe extern "C" fn HandleSendFailure(unused: u8, mut flags: u32) {
         i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_SetBlockReceivedFlag(linkPlayerId: u8) {
+pub unsafe fn Rfu_SetBlockReceivedFlag(linkPlayerId: u8) {
     if gRfu.parentChild == MODE_PARENT && linkPlayerId != 0 {
         gRfu.numBlocksReceived[linkPlayerId] = 1;
     } else {
         gRfu.blockReceived[linkPlayerId] = TRUE;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_ResetBlockReceivedFlag(linkPlayerId: u8) {
+pub unsafe fn Rfu_ResetBlockReceivedFlag(linkPlayerId: u8) {
     gRfu.blockReceived[linkPlayerId] = FALSE;
     gRfu.recvBlock[linkPlayerId].receiving = RECV_STATE_READY;
 }
-pub(crate) unsafe extern "C" fn LoadLinkPlayerIds(ids: *mut u8) -> u8 {
-    let mut i: u8 = 0;
+unsafe fn LoadLinkPlayerIds(ids: *mut u8) -> u8 {
     if gRfu.parentChild == MODE_PARENT {
         return FALSE;
     }
-    i = 0;
-    while i < RFU_CHILD_MAX {
+    for i in 0..RFU_CHILD_MAX {
         gRfu.linkPlayerIdx[i] = *ids.at(i);
-        i += 1;
     }
-    return *ids.at((&raw mut gRfu.childSlot).read_volatile());
+    *ids.at((&raw mut gRfu.childSlot).read_volatile())
 }
-pub(crate) unsafe extern "C" fn SendKeysToRfu() {
+pub(crate) unsafe fn SendKeysToRfu() {
     if gReceivedRemoteLinkPlayers != 0
         && gHeldKeyCodeToSend != LINK_KEY_CODE_NULL
         && gLinkTransferringData != TRUE
     {
-        sHeldKeyCount += 1;
-        gHeldKeyCodeToSend |= (sHeldKeyCount as u16) << 8;
+        sHeldKeyCount.set(sHeldKeyCount.get() + 1);
+        gHeldKeyCodeToSend |= (sHeldKeyCount.get() as u16) << 8;
         RfuPrepareSendBuffer(RFUCMD_SEND_HELD_KEYS);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetHostRfuGameData() -> *mut RfuGameData {
-    return (&raw mut gHostRfuGameData).cast::<RfuGameData>();
+pub unsafe fn GetHostRfuGameData() -> *mut RfuGameData {
+    (&raw mut gHostRfuGameData).cast::<RfuGameData>()
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsSendingKeysToRfu() -> u32 {
-    return (gRfu.callback == Some(SendKeysToRfu as unsafe extern "C" fn())) as u32;
+pub unsafe fn IsSendingKeysToRfu() -> u32 {
+    (gRfu.callback == Some(SendKeysToRfu as unsafe fn())) as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn StartSendingKeysToRfu() {
+pub unsafe fn StartSendingKeysToRfu() {
     gRfu.callback = Some(SendKeysToRfu);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearLinkRfuCallback() {
+pub unsafe fn ClearLinkRfuCallback() {
     gRfu.callback = None;
 }
-pub(crate) unsafe extern "C" fn Rfu_BerryBlenderSendHeldKeys() {
+pub(crate) unsafe fn Rfu_BerryBlenderSendHeldKeys() {
     RfuPrepareSendBuffer(RFUCMD_BLENDER_SEND_KEYS);
     if GetMultiplayerId() == 0 {
         gSendCmd[6] = GetBlenderArrowPosition();
     }
     gBerryBlenderKeySendAttempts += 1;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_SetBerryBlenderLinkCallback() {
+pub unsafe fn Rfu_SetBerryBlenderLinkCallback() {
     if gRfu.callback.is_none() {
         gRfu.callback = Some(Rfu_BerryBlenderSendHeldKeys);
     }
 }
-pub(crate) unsafe extern "C" fn RfuHandleReceiveCommand(unused: u8) {
-    let mut i: u16 = 0;
-    let mut j: u16 = 0;
-    i = 0;
-    while i < MAX_RFU_PLAYERS as u16 {
+unsafe fn RfuHandleReceiveCommand(unused: u8) {
+    for i in 0..(MAX_RFU_PLAYERS as u16) {
         'l2: {
             let sw1: i32 = gRecvCmds[i][0] as i32 & RFUCMD_MASK;
             let mut fall = false;
@@ -1138,7 +1034,6 @@ pub(crate) unsafe extern "C" fn RfuHandleReceiveCommand(unused: u8) {
                 }
             }
             if fall || sw1 == 30464 {
-                fall = true;
                 if (*gRfuLinkStatus).parentChild == MODE_CHILD {
                     gRfu.playerCount = gRecvCmds[i][1] as u8;
                     gRfu.multiplayerId =
@@ -1147,7 +1042,6 @@ pub(crate) unsafe extern "C" fn RfuHandleReceiveCommand(unused: u8) {
                 break 'l2;
             }
             if sw1 == 34816 {
-                fall = true;
                 if gRfu.recvBlock[i].receiving == RECV_STATE_READY {
                     gRfu.recvBlock[i].next = 0;
                     gRfu.recvBlock[i].count = gRecvCmds[i][1];
@@ -1159,16 +1053,13 @@ pub(crate) unsafe extern "C" fn RfuHandleReceiveCommand(unused: u8) {
                 break 'l2;
             }
             if sw1 == 35072 {
-                fall = true;
                 if gRfu.recvBlock[i].receiving == RECV_STATE_RECEIVING {
                     gRfu.recvBlock[i].next = gRecvCmds[i][0] & 0xff;
                     gRfu.recvBlock[i].receivedFlags |=
                         shl_i32(1, gRfu.recvBlock[i].next as u32) as u32;
-                    j = 0;
-                    while j < 6 {
+                    for j in 0..6u16 {
                         gBlockRecvBuffer[i][gRfu.recvBlock[i].next as i32 * 6 + j as i32] =
                             gRecvCmds[i][j as i32 + 1];
-                        j += 1;
                     }
                     if gRfu.recvBlock[i].receivedFlags
                         == sAllBlocksReceived[gRfu.recvBlock[i].count]
@@ -1188,7 +1079,6 @@ pub(crate) unsafe extern "C" fn RfuHandleReceiveCommand(unused: u8) {
                 break 'l2;
             }
             if sw1 == 41216 {
-                fall = true;
                 Rfu_InitBlockSend(
                     sBlockRequests[gRecvCmds[i][1]].address as *mut u8,
                     sBlockRequests[gRecvCmds[i][1]].size as u16 as u32,
@@ -1196,19 +1086,16 @@ pub(crate) unsafe extern "C" fn RfuHandleReceiveCommand(unused: u8) {
                 break 'l2;
             }
             if sw1 == 24320 {
-                fall = true;
                 gRfu.readyCloseLink[i] = TRUE;
                 break 'l2;
             }
             if sw1 == 26112 {
-                fall = true;
                 if gRfu.allReadyNum == gRecvCmds[i][1] {
                     gRfu.readyExitStandby[i] = TRUE;
                 }
                 break 'l2;
             }
             if sw1 == 60672 {
-                fall = true;
                 if gRfu.parentChild == MODE_CHILD {
                     if gReceivedRemoteLinkPlayers != 0 {
                         if gRecvCmds[i][1] as i32 & (*gRfuLinkStatus).connSlotFlag as i32 != 0 {
@@ -1228,7 +1115,6 @@ pub(crate) unsafe extern "C" fn RfuHandleReceiveCommand(unused: u8) {
                 break 'l2;
             }
             if sw1 == 60928 {
-                fall = true;
                 if gRfu.parentChild == MODE_PARENT {
                     gRfu.disconnectSlots |= gRecvCmds[i][1] as u8;
                     gRfu.disconnectMode = gRecvCmds[i][2] as u8;
@@ -1237,7 +1123,6 @@ pub(crate) unsafe extern "C" fn RfuHandleReceiveCommand(unused: u8) {
                 break 'l2;
             }
             if sw1 == 17408 || sw1 == 48640 {
-                fall = true;
                 gLinkPartnersHeldKeys[i] = gRecvCmds[i][1];
                 break 'l2;
             }
@@ -1250,32 +1135,25 @@ pub(crate) unsafe extern "C" fn RfuHandleReceiveCommand(unused: u8) {
                 gRfu.numBlocksReceived[i] += 1;
             }
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn AreAllPlayersReadyToReceive() -> u8 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < MAX_RFU_PLAYERS {
+unsafe fn AreAllPlayersReadyToReceive() -> u8 {
+    for i in 0..MAX_RFU_PLAYERS {
         if gRfu.recvBlock[i].receiving != RECV_STATE_READY {
             return FALSE;
         }
-        i += 1;
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn AreAllPlayersFinishedReceiving() -> u8 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < gRfu.playerCount as i32 {
+unsafe fn AreAllPlayersFinishedReceiving() -> u8 {
+    for i in 0..(gRfu.playerCount as i32) {
         if gRfu.recvBlock[i].receiving != RECV_STATE_FINISHED || gRfu.blockReceived[i] != TRUE {
             return FALSE;
         }
-        i += 1;
     }
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn ResetSendDataManager(data: *mut RfuBlockSend) {
+unsafe fn ResetSendDataManager(data: *mut RfuBlockSend) {
     (*data).next = 0;
     (*data).count = 0;
     (*data).payload = null_mut();
@@ -1284,21 +1162,16 @@ pub(crate) unsafe extern "C" fn ResetSendDataManager(data: *mut RfuBlockSend) {
     (*data).owner = 0;
     (*data).receiving = RECV_STATE_READY;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_GetBlockReceivedStatus() -> u8 {
+pub unsafe fn Rfu_GetBlockReceivedStatus() -> u8 {
     let mut flags: u8 = 0;
-    let mut i: i32 = 0;
-    i = 0;
-    while i < MAX_RFU_PLAYERS {
+    for i in 0..MAX_RFU_PLAYERS {
         if gRfu.recvBlock[i].receiving == RECV_STATE_FINISHED && gRfu.blockReceived[i] == TRUE {
             flags |= shl_i32(1, i as u32) as u8;
         }
-        i += 1;
     }
-    return flags;
+    flags
 }
-pub(crate) unsafe extern "C" fn RfuPrepareSendBuffer(command: u16) {
-    let mut i: u8 = 0;
+unsafe fn RfuPrepareSendBuffer(command: u16) {
     let mut buff: *mut u8 = null_mut();
     let mut tmp: u8 = 0;
     gSendCmd[0] = command;
@@ -1317,10 +1190,8 @@ pub(crate) unsafe extern "C" fn RfuPrepareSendBuffer(command: u16) {
             gRfu.playerCount = sPlayerBitsToCount[tmp] + 1;
             gSendCmd[1] = gRfu.playerCount as u16;
             buff = &raw mut gSendCmd[2] as *mut u8;
-            i = 0;
-            while i < RFU_CHILD_MAX {
+            for i in 0..RFU_CHILD_MAX {
                 *buff.at(i) = gRfu.linkPlayerIdx[i];
-                i += 1;
             }
         }
         RFUCMD_READY_EXIT_STANDBY | RFUCMD_READY_CLOSE_LINK => {
@@ -1331,10 +1202,8 @@ pub(crate) unsafe extern "C" fn RfuPrepareSendBuffer(command: u16) {
             gSendCmd[1] = gMain.heldKeys;
         }
         12032 => {
-            i = 0;
-            while i < RFU_PACKET_SIZE {
+            for i in 0..RFU_PACKET_SIZE {
                 gSendCmd[1 + i as i32] = gRfu.packet[i];
-                i += 1;
             }
         }
         RFUCMD_SEND_HELD_KEYS => {
@@ -1344,16 +1213,13 @@ pub(crate) unsafe extern "C" fn RfuPrepareSendBuffer(command: u16) {
         _ => {}
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_SendPacket(data: *mut c_void) {
+pub unsafe fn Rfu_SendPacket(data: *mut c_void) {
     if gSendCmd[0] == 0 && RfuHasErrored() == 0 {
         memcpy(gRfu.packet.as_mut_ptr() as *mut u8, data as *mut u8, 12);
         RfuPrepareSendBuffer(RFUCMD_SEND_PACKET as u16);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_InitBlockSend(src: *mut u8, size: u32) -> u32 {
-    let mut r4: u8 = 0;
+pub unsafe fn Rfu_InitBlockSend(src: *mut u8, size: u32) -> u32 {
     if gRfu.callback.is_some() {
         return FALSE as u32;
     }
@@ -1364,7 +1230,7 @@ pub unsafe extern "C" fn Rfu_InitBlockSend(src: *mut u8, size: u32) -> u32 {
         sRfuDebug.blockSendTime += 1;
         return FALSE as u32;
     }
-    r4 = (size % 12 != 0) as u8;
+    let r4: u8 = (size % 12 != 0) as u8;
     gRfu.sendBlock.owner = GetMultiplayerId();
     gRfu.sendBlock.sending = TRUE;
     gRfu.sendBlock.count = (size / 12) as u16 + r4 as u16;
@@ -1380,9 +1246,9 @@ pub unsafe extern "C" fn Rfu_InitBlockSend(src: *mut u8, size: u32) -> u32 {
     RfuPrepareSendBuffer(RFUCMD_SEND_BLOCK_INIT);
     gRfu.callback = Some(HandleBlockSend);
     gRfu.blockSendAttempts = 0;
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn HandleBlockSend() {
+pub(crate) unsafe fn HandleBlockSend() {
     if gSendCmd[0] == 0 {
         RfuPrepareSendBuffer(RFUCMD_SEND_BLOCK_INIT);
         if gRfu.parentChild == MODE_PARENT {
@@ -1402,15 +1268,12 @@ pub(crate) unsafe extern "C" fn HandleBlockSend() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SendNextBlock() {
-    let mut i: i32 = 0;
-    let mut src: *mut u8 = gRfu.sendBlock.payload;
+pub(crate) unsafe fn SendNextBlock() {
+    let src: *mut u8 = gRfu.sendBlock.payload;
     gSendCmd[0] = RFUCMD_SEND_BLOCK | gRfu.sendBlock.next;
-    i = 0;
-    while i < 7 {
+    for i in 0..7i32 {
         gSendCmd[i + 1] = (*src.at((i << 1) + gRfu.sendBlock.next as i32 * 12 + 1) as u16) << 8
-            | *src.at((i << 1) + gRfu.sendBlock.next as i32 * 12 + 0) as u16;
-        i += 1;
+            | *src.at((i << 1) + gRfu.sendBlock.next as i32 * 12) as u16;
     }
     gRfu.sendBlock.next += 1;
     if gRfu.sendBlock.count <= gRfu.sendBlock.next {
@@ -1418,18 +1281,15 @@ pub(crate) unsafe extern "C" fn SendNextBlock() {
         gRfu.callback = Some(SendLastBlock);
     }
 }
-pub(crate) unsafe extern "C" fn SendLastBlock() {
-    let mut src: *mut u8 = gRfu.sendBlock.payload;
-    let mut mpId: u8 = GetMultiplayerId();
-    let mut i: i32 = 0;
+pub(crate) unsafe fn SendLastBlock() {
+    let src: *mut u8 = gRfu.sendBlock.payload;
+    let mpId: u8 = GetMultiplayerId();
     if gRfu.parentChild == MODE_CHILD {
-        gSendCmd[0] = RFUCMD_SEND_BLOCK | gRfu.sendBlock.count - 1;
-        i = 0;
-        while i < 7 {
+        gSendCmd[0] = RFUCMD_SEND_BLOCK | (gRfu.sendBlock.count - 1);
+        for i in 0..7i32 {
             gSendCmd[i + 1] =
                 (*src.at((i << 1) + (gRfu.sendBlock.count as i32 - 1) * 12 + 1) as u16) << 8
-                    | *src.at((i << 1) + (gRfu.sendBlock.count as i32 - 1) * 12 + 0) as u16;
-            i += 1;
+                    | *src.at((i << 1) + (gRfu.sendBlock.count as i32 - 1) * 12) as u16;
         }
         if gRecvCmds[mpId][0] as u8 as i32 == gRfu.sendBlock.count as i32 - 1 {
             if gRfu.recvBlock[mpId].receivedFlags != sAllBlocksReceived[gRfu.recvBlock[mpId].count]
@@ -1444,25 +1304,24 @@ pub(crate) unsafe extern "C" fn SendLastBlock() {
         gRfu.callback = None;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_SendBlockRequest(r#type: u8) -> u8 {
+pub unsafe fn Rfu_SendBlockRequest(r#type: u8) -> u8 {
     gRfu.blockRequestType = r#type;
     RfuPrepareSendBuffer(RFUCMD_SEND_BLOCK_REQ);
-    return TRUE;
+    TRUE
 }
-pub(crate) unsafe extern "C" fn RfuShutdownAfterDisconnect() {
+unsafe fn RfuShutdownAfterDisconnect() {
     rfu_clearAllSlot();
     rfu_LMAN_powerDownRFU();
     gReceivedRemoteLinkPlayers = 0;
     gRfu.isShuttingDown = TRUE;
     gRfu.callback = None;
 }
-pub(crate) unsafe extern "C" fn DisconnectRfu() {
+pub(crate) unsafe fn DisconnectRfu() {
     rfu_REQ_disconnect((*gRfuLinkStatus).connSlotFlag | (*gRfuLinkStatus).linkLossSlotFlag);
     rfu_waitREQComplete();
     RfuShutdownAfterDisconnect();
 }
-pub(crate) unsafe extern "C" fn TryDisconnectRfu() {
+pub(crate) unsafe fn TryDisconnectRfu() {
     if gRfu.parentChild == MODE_CHILD {
         rfu_LMAN_requestChangeAgbClockMaster();
         gRfu.disconnectMode = RFU_DISCONNECT_NORMAL;
@@ -1471,21 +1330,18 @@ pub(crate) unsafe extern "C" fn TryDisconnectRfu() {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn LinkRfu_FatalError() {
+pub unsafe fn LinkRfu_FatalError() {
     rfu_LMAN_requestChangeAgbClockMaster();
     gRfu.disconnectMode = RFU_DISCONNECT_ERROR;
     gRfu.disconnectSlots = (*gRfuLinkStatus).connSlotFlag | (*gRfuLinkStatus).linkLossSlotFlag;
 }
-pub(crate) unsafe extern "C" fn WaitAllReadyToCloseLink() {
-    let mut i: i32 = 0;
-    let mut playerCount: u8 = gRfu.playerCount;
+pub(crate) unsafe fn WaitAllReadyToCloseLink() {
+    let playerCount: u8 = gRfu.playerCount;
     let mut count: i32 = 0;
-    i = 0;
-    while i < MAX_RFU_PLAYERS {
+    for i in 0..MAX_RFU_PLAYERS {
         if gRfu.readyCloseLink[i] != 0 {
             count += 1;
         }
-        i += 1;
     }
     if count == playerCount as i32 {
         gBattleTypeFlags &= 0xffffffdf;
@@ -1497,37 +1353,34 @@ pub(crate) unsafe extern "C" fn WaitAllReadyToCloseLink() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn SendReadyCloseLink() {
+pub(crate) unsafe fn SendReadyCloseLink() {
     if gSendCmd[0] == 0 && gRfu.playerExchangeActive == 0 {
         RfuPrepareSendBuffer(RFUCMD_READY_CLOSE_LINK);
         gRfu.callback = Some(WaitAllReadyToCloseLink);
     }
 }
-pub(crate) unsafe extern "C" fn Task_TryReadyCloseLink(taskId: u8) {
+pub(crate) unsafe fn Task_TryReadyCloseLink(taskId: u8) {
     if gRfu.callback.is_none() {
         gRfu.stopNewConnections = TRUE;
         gRfu.callback = Some(SendReadyCloseLink);
         DestroyTask(taskId);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_SetCloseLinkCallback() {
+pub unsafe fn Rfu_SetCloseLinkCallback() {
     if FuncIsActiveTask(Some(Task_TryReadyCloseLink)) == 0 {
         CreateTask(Some(Task_TryReadyCloseLink), 5);
     }
 }
-pub(crate) unsafe extern "C" fn SendReadyExitStandbyUntilAllReady() {
-    let mut playerCount: u8 = 0;
-    let mut i: u8 = 0;
-    if GetMultiplayerId() != 0 {
-        if (&raw mut gRfu.recvQueue.count).read_volatile() == 0 && gRfu.resendExitStandbyTimer > 60
-        {
-            RfuPrepareSendBuffer(RFUCMD_READY_EXIT_STANDBY);
-            gRfu.resendExitStandbyTimer = 0;
-        }
+pub(crate) unsafe fn SendReadyExitStandbyUntilAllReady() {
+    if GetMultiplayerId() != 0
+        && (&raw mut gRfu.recvQueue.count).read_volatile() == 0
+        && gRfu.resendExitStandbyTimer > 60
+    {
+        RfuPrepareSendBuffer(RFUCMD_READY_EXIT_STANDBY);
+        gRfu.resendExitStandbyTimer = 0;
     }
-    playerCount = GetLinkPlayerCount();
-    i = 0;
+    let playerCount: u8 = GetLinkPlayerCount();
+    let mut i: u8 = 0;
     while i < playerCount {
         if gRfu.readyExitStandby[i] == 0 {
             break;
@@ -1535,23 +1388,21 @@ pub(crate) unsafe extern "C" fn SendReadyExitStandbyUntilAllReady() {
         i += 1;
     }
     if i == playerCount {
-        i = 0;
-        while i < MAX_RFU_PLAYERS as u8 {
+        for i in 0..(MAX_RFU_PLAYERS as u8) {
             gRfu.readyExitStandby[i] = FALSE;
-            i += 1;
         }
         gRfu.allReadyNum += 1;
         gRfu.callback = None;
     }
     gRfu.resendExitStandbyTimer += 1;
 }
-pub(crate) unsafe extern "C" fn LinkLeaderReadyToExitStandby() {
+pub(crate) unsafe fn LinkLeaderReadyToExitStandby() {
     if (&raw mut gRfu.recvQueue.count).read_volatile() == 0 && gSendCmd[0] == 0 {
         RfuPrepareSendBuffer(RFUCMD_READY_EXIT_STANDBY);
         gRfu.callback = Some(SendReadyExitStandbyUntilAllReady);
     }
 }
-pub(crate) unsafe extern "C" fn Rfu_LinkStandby() {
+pub(crate) unsafe fn Rfu_LinkStandby() {
     let mut i: u8 = 0;
     let mut playerCount: u8 = 0;
     if GetMultiplayerId() != 0 {
@@ -1568,78 +1419,69 @@ pub(crate) unsafe extern "C" fn Rfu_LinkStandby() {
             }
             i += 1;
         }
-        if i == playerCount {
-            if (&raw mut gRfu.recvQueue.count).read_volatile() == 0 && gSendCmd[0] == 0 {
-                RfuPrepareSendBuffer(RFUCMD_READY_EXIT_STANDBY);
-                gRfu.callback = Some(LinkLeaderReadyToExitStandby);
-            }
+        if i == playerCount
+            && (&raw mut gRfu.recvQueue.count).read_volatile() == 0
+            && gSendCmd[0] == 0
+        {
+            RfuPrepareSendBuffer(RFUCMD_READY_EXIT_STANDBY);
+            gRfu.callback = Some(LinkLeaderReadyToExitStandby);
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_SetLinkStandbyCallback() {
+pub unsafe fn Rfu_SetLinkStandbyCallback() {
     if gRfu.callback.is_none() {
         gRfu.callback = Some(Rfu_LinkStandby);
         gRfu.resendExitStandbyTimer = 0;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsRfuSerialNumberValid(serialNo: u32) -> u32 {
+pub unsafe fn IsRfuSerialNumberValid(serialNo: u32) -> u32 {
     let mut i: i32 = 0;
-    i = 0;
     while sAcceptedSerialNos[i] as u32 != serialNo {
         if sAcceptedSerialNos[i] == RFU_SERIAL_END {
             return FALSE as u32;
         }
         i += 1;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_SetLinkRecovery(enable: u32) -> u8 {
+pub unsafe fn Rfu_SetLinkRecovery(enable: u32) -> u8 {
     if enable == FALSE as u32 {
         return rfu_LMAN_setLinkRecovery(0, 0);
     }
     rfu_LMAN_setLinkRecovery(1, 600);
-    return 0;
+    0
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_StopPartnerSearch() {
+pub unsafe fn Rfu_StopPartnerSearch() {
     gRfu.stopNewConnections = TRUE;
     rfu_LMAN_stopManager(FALSE);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_GetMultiplayerId() -> u8 {
+pub unsafe fn Rfu_GetMultiplayerId() -> u8 {
     if gRfu.parentChild == MODE_PARENT {
         return 0;
     }
-    return gRfu.multiplayerId;
+    gRfu.multiplayerId
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_GetLinkPlayerCount() -> u8 {
-    return gRfu.playerCount;
+pub unsafe fn Rfu_GetLinkPlayerCount() -> u8 {
+    gRfu.playerCount
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsLinkRfuTaskFinished() -> u8 {
+pub unsafe fn IsLinkRfuTaskFinished() -> u8 {
     if gRfu.status == RFU_STATUS_CONNECTION_ERROR {
         return FALSE;
     }
-    return (if gRfu.callback.is_some() {
+    (if gRfu.callback.is_some() {
         FALSE as i32
     } else {
         TRUE as i32
-    }) as u8;
+    }) as u8
 }
-pub(crate) unsafe extern "C" fn CallRfuFunc() {
+unsafe fn CallRfuFunc() {
     if gRfu.callback.is_some() {
         gRfu.callback.unwrap_unchecked()();
     }
 }
-pub(crate) unsafe extern "C" fn CheckForLeavingGroupMembers() -> u8 {
-    let mut i: i32 = 0;
+unsafe fn CheckForLeavingGroupMembers() -> u8 {
     let mut memberLeft: u8 = FALSE;
-    i = 0;
-    while i < RFU_CHILD_MAX as i32 {
+    for i in 0..(RFU_CHILD_MAX as i32) {
         if gRfu.partnerSendStatuses[i] < RFU_STATUS_JOIN_GROUP_OK
             || gRfu.partnerSendStatuses[i] > RFU_STATUS_JOIN_GROUP_NO
         {
@@ -1666,15 +1508,12 @@ pub(crate) unsafe extern "C" fn CheckForLeavingGroupMembers() -> u8 {
                 rfu_clearSlot(TYPE_NI_RECV, i as u8);
             }
         }
-        i += 1;
     }
-    return memberLeft;
+    memberLeft
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuTryDisconnectLeavingChildren() -> u32 {
+pub unsafe fn RfuTryDisconnectLeavingChildren() -> u32 {
     let mut childrenLeaving: u8 = 0;
     let mut i: i32 = 0;
-    i = 0;
     while i < RFU_CHILD_MAX as i32 {
         if gRfu.partnerRecvStatuses[i] == RFU_STATUS_CHILD_LEAVE {
             childrenLeaving |= shl_i32(1, i as u32) as u8;
@@ -1686,31 +1525,27 @@ pub unsafe extern "C" fn RfuTryDisconnectLeavingChildren() -> u32 {
         rfu_REQ_disconnect(childrenLeaving);
         rfu_waitREQComplete();
     }
-    i = 0;
-    while i < RFU_CHILD_MAX as i32 {
+    for i in 0..(RFU_CHILD_MAX as i32) {
         if gRfu.partnerRecvStatuses[i] == RFU_STATUS_CHILD_LEAVE_READY
             || gRfu.partnerRecvStatuses[i] == RFU_STATUS_CHILD_LEAVE
         {
             return TRUE as u32;
         }
-        i += 1;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn HasTrainerLeftPartnersList(trainerId: u16, name: *mut u8) -> u32 {
-    let mut idx: u8 = GetPartnerIndexByNameAndTrainerID(name, trainerId);
+pub unsafe fn HasTrainerLeftPartnersList(trainerId: u16, name: *mut u8) -> u32 {
+    let idx: u8 = GetPartnerIndexByNameAndTrainerID(name, trainerId);
     if idx == 0xFF {
         return TRUE as u32;
     }
     if gRfu.partnerSendStatuses[idx] == RFU_STATUS_LEAVE_GROUP {
         return TRUE as u32;
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SendRfuStatusToPartner(status: u8, trainerId: u16, name: *mut u8) {
-    let mut idx: u8 = GetPartnerIndexByNameAndTrainerID(name, trainerId);
+pub unsafe fn SendRfuStatusToPartner(status: u8, trainerId: u16, name: *mut u8) {
+    let idx: u8 = GetPartnerIndexByNameAndTrainerID(name, trainerId);
     gRfu.partnerSendStatuses[idx] = status;
     rfu_clearSlot(TYPE_NI_SEND, idx);
     rfu_NI_setSendData(
@@ -1720,8 +1555,7 @@ pub unsafe extern "C" fn SendRfuStatusToPartner(status: u8, trainerId: u16, name
         1,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SendLeaveGroupNotice() {
+pub unsafe fn SendLeaveGroupNotice() {
     gRfu.leaveGroupStatus = RFU_STATUS_LEAVE_GROUP_NOTICE;
     rfu_clearSlot(TYPE_NI_SEND, (&raw mut gRfu.childSlot).read_volatile());
     rfu_NI_setSendData(
@@ -1731,22 +1565,19 @@ pub unsafe extern "C" fn SendLeaveGroupNotice() {
         1,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn WaitSendRfuStatusToPartner(trainerId: u16, name: *mut u8) -> u32 {
-    let mut idx: u8 = GetPartnerIndexByNameAndTrainerID(name, trainerId);
+pub unsafe fn WaitSendRfuStatusToPartner(trainerId: u16, name: *mut u8) -> u32 {
+    let idx: u8 = GetPartnerIndexByNameAndTrainerID(name, trainerId);
     if idx == 0xFF {
         return 2;
     }
     if (*gRfuSlotStatusNI[idx]).send.state == 0 {
         return 1;
     }
-    return 0;
+    0
 }
-pub(crate) unsafe extern "C" fn UpdateChildStatuses() {
-    let mut i: i32 = 0;
+unsafe fn UpdateChildStatuses() {
     CheckForLeavingGroupMembers();
-    i = 0;
-    while i < RFU_CHILD_MAX as i32 {
+    for i in 0..(RFU_CHILD_MAX as i32) {
         if (*gRfuSlotStatusNI[i]).send.state == SLOT_STATE_SEND_SUCCESS
             || (*gRfuSlotStatusNI[i]).send.state == SLOT_STATE_SEND_FAILED
         {
@@ -1755,23 +1586,21 @@ pub(crate) unsafe extern "C" fn UpdateChildStatuses() {
             }
             rfu_clearSlot(TYPE_NI_SEND, i as u8);
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn GetJoinGroupStatus() -> i32 {
+unsafe fn GetJoinGroupStatus() -> i32 {
     let mut status: i32 = RFU_STATUS_OK as i32;
-    if gRfu.leaveGroupStatus == RFU_STATUS_LEAVE_GROUP_NOTICE {
-        if (*gRfuSlotStatusNI[(&raw mut gRfu.childSlot).read_volatile()])
+    if gRfu.leaveGroupStatus == RFU_STATUS_LEAVE_GROUP_NOTICE
+        && ((*gRfuSlotStatusNI[(&raw mut gRfu.childSlot).read_volatile()])
             .send
             .state
             == SLOT_STATE_SEND_SUCCESS
             || (*gRfuSlotStatusNI[(&raw mut gRfu.childSlot).read_volatile()])
                 .send
                 .state
-                == SLOT_STATE_SEND_FAILED
-        {
-            rfu_clearSlot(TYPE_NI_SEND, (&raw mut gRfu.childSlot).read_volatile());
-        }
+                == SLOT_STATE_SEND_FAILED)
+    {
+        rfu_clearSlot(TYPE_NI_SEND, (&raw mut gRfu.childSlot).read_volatile());
     }
     if (*gRfuSlotStatusNI[(&raw mut gRfu.childSlot).read_volatile()])
         .recv
@@ -1793,20 +1622,20 @@ pub(crate) unsafe extern "C" fn GetJoinGroupStatus() -> i32 {
         rfu_clearSlot(TYPE_NI_RECV, (&raw mut gRfu.childSlot).read_volatile());
         status = RFU_STATUS_JOIN_GROUP_NO as i32;
     }
-    return status;
+    status
 }
-pub(crate) unsafe extern "C" fn Task_PlayerExchange(taskId: u8) {
+pub(crate) unsafe fn Task_PlayerExchange(taskId: u8) {
     let mut i: i32 = 0;
     if gRfu.status == RFU_STATUS_FATAL_ERROR || gRfu.status == RFU_STATUS_CONNECTION_ERROR {
         gRfu.playerExchangeActive = FALSE;
         DestroyTask(taskId);
     }
-    match gTasks[taskId].data[0] {
+    match task_get(taskId, tState) {
         0 => {
             if AreAllPlayersReadyToReceive() != 0 {
                 ResetBlockReceivedFlags();
                 LocalLinkPlayerToBlock();
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
         1 => {
@@ -1816,19 +1645,19 @@ pub(crate) unsafe extern "C" fn Task_PlayerExchange(taskId: u8) {
                 } else {
                     RfuPrepareSendBuffer(RFUCMD_SEND_PLAYER_IDS);
                 }
-                gTasks[taskId].data[0] = 101;
+                task_set(taskId, tState, 101);
             } else {
-                gTasks[taskId].data[0] = 2;
+                task_set(taskId, tState, 2);
             }
         }
         101 => {
             if gSendCmd[0] == 0 {
-                gTasks[taskId].data[0] = 2;
+                task_set(taskId, tState, 2);
             }
         }
         2 => {
             if gRfu.playerCount != 0 {
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
         3 => {
@@ -1836,15 +1665,15 @@ pub(crate) unsafe extern "C" fn Task_PlayerExchange(taskId: u8) {
                 if AreAllPlayersReadyToReceive() != 0 {
                     gRfu.blockRequestType = BLOCK_REQ_SIZE_NONE;
                     RfuPrepareSendBuffer(RFUCMD_SEND_BLOCK_REQ);
-                    gTasks[taskId].data[0] += 1;
+                    task_set(taskId, tState, task_get(taskId, tState) + 1);
                 }
             } else {
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
         4 => {
             if AreAllPlayersFinishedReceiving() != 0 {
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
         5 => {
@@ -1854,7 +1683,7 @@ pub(crate) unsafe extern "C" fn Task_PlayerExchange(taskId: u8) {
                 Rfu_ResetBlockReceivedFlag(i as u8);
                 i += 1;
             }
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         6 => {
             DestroyTask(taskId);
@@ -1862,45 +1691,37 @@ pub(crate) unsafe extern "C" fn Task_PlayerExchange(taskId: u8) {
             gRfu.playerExchangeActive = FALSE;
             rfu_LMAN_setLinkRecovery(1, 600);
             if gRfu.newChildQueue != 0 {
-                i = 0;
-                while i < RFU_CHILD_MAX as i32 {
+                for i in 0..(RFU_CHILD_MAX as i32) {
                     if shr_i32(gRfu.newChildQueue as i32, i as u32) & 1 != 0 {
                         gRfu.nextChildBits = shl_i32(1, i as u32) as u8;
                         gRfu.newChildQueue ^= shl_i32(1, i as u32) as u8;
                     }
-                    i += 1;
                 }
             }
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn ClearSelectedLinkPlayerIds(selected: u16) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < RFU_CHILD_MAX as i32 {
+unsafe fn ClearSelectedLinkPlayerIds(selected: u16) {
+    for i in 0..(RFU_CHILD_MAX as i32) {
         if shr_i32(selected as i32, i as u32) & 1 != 0 {
             gRfu.linkPlayerIdx[i] = 0;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ReceiveRfuLinkPlayers(sioInfo: *mut SioInfo) {
-    let mut i: i32 = 0;
+unsafe fn ReceiveRfuLinkPlayers(sioInfo: *mut SioInfo) {
     gRfu.playerCount = (*sioInfo).playerCount;
-    i = 0;
+    let mut i: i32 = 0;
     while i < RFU_CHILD_MAX as i32 {
         gRfu.linkPlayerIdx[i] = (*sioInfo).linkPlayerIdx[i];
         i += 1;
     }
-    i = 0;
-    while i < MAX_RFU_PLAYERS {
+    for i in 0..MAX_RFU_PLAYERS {
         gLinkPlayers[i] = (*sioInfo).linkPlayers[i];
         ConvertLinkPlayerName(gLinkPlayers.as_mut_ptr().at(i));
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn ValidateAndReceivePokemonSioInfo(recvBuffer: *mut c_void) {
+unsafe fn ValidateAndReceivePokemonSioInfo(recvBuffer: *mut c_void) {
     if strcmp(
         sASCII_PokemonSioInfo.as_ptr().cast_mut(),
         recvBuffer as *mut u8,
@@ -1917,42 +1738,38 @@ pub(crate) unsafe extern "C" fn ValidateAndReceivePokemonSioInfo(recvBuffer: *mu
         ResetBlockReceivedFlag(0);
     }
 }
-pub(crate) unsafe extern "C" fn Task_PlayerExchangeUpdate(taskId: u8) {
-    let mut i: i32 = 0;
+pub(crate) unsafe fn Task_PlayerExchangeUpdate(taskId: u8) {
     let mut playerBlock: *mut LinkPlayerBlock = null_mut();
     let mut sio: *mut SioInfo = null_mut();
-    let mut playerId: u8 = gRfu.linkPlayerIdx[sSlotToLinkPlayerTableId[gRfu.incomingChild]];
+    let playerId: u8 = gRfu.linkPlayerIdx[sSlotToLinkPlayerTableId[gRfu.incomingChild]];
     if gRfu.status == RFU_STATUS_FATAL_ERROR || gRfu.status == RFU_STATUS_CONNECTION_ERROR {
         gRfu.playerExchangeActive = FALSE;
         DestroyTask(taskId);
     }
     'l1: {
-        let sw1: i16 = gTasks[taskId].data[0];
+        let sw1: i16 = task_get(taskId, tState);
         let mut fall = false;
         if sw1 == 0 {
-            fall = true;
             if gSendCmd[0] == 0 {
                 ResetBlockReceivedFlag(playerId);
                 RfuPrepareSendBuffer(RFUCMD_SEND_PLAYER_IDS_NEW);
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
             break 'l1;
         }
         if sw1 == 1 {
-            fall = true;
             if gSendCmd[0] == 0 {
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
             break 'l1;
         }
         if sw1 == 2 {
-            fall = true;
             if shr_i32(GetBlockReceivedStatus() as i32, playerId as u32) & 1 != 0 {
                 ResetBlockReceivedFlag(playerId);
                 playerBlock = gBlockRecvBuffer[playerId].as_mut_ptr() as *mut LinkPlayerBlock;
                 gLinkPlayers[playerId] = (*playerBlock).linkPlayer;
                 ConvertLinkPlayerName(&raw mut gLinkPlayers[playerId]);
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
             break 'l1;
         }
@@ -1965,26 +1782,21 @@ pub(crate) unsafe extern "C" fn Task_PlayerExchangeUpdate(taskId: u8) {
                 15,
             );
             (*sio).playerCount = gRfu.playerCount;
-            i = 0;
-            while i < RFU_CHILD_MAX as i32 {
+            for i in 0..(RFU_CHILD_MAX as i32) {
                 (*sio).linkPlayerIdx[i] = gRfu.linkPlayerIdx[i];
-                i += 1;
             }
             memcpy(
                 (*sio).linkPlayers.as_mut_ptr() as *mut u8,
                 gLinkPlayers.as_mut_ptr() as *mut u8,
                 140,
             );
-            gTasks[taskId].data[0] += 1;
+            task_set(taskId, tState, task_get(taskId, tState) + 1);
         }
         if fall || sw1 == 4 {
-            fall = true;
             sio = gBlockSendBuffer.as_mut_ptr() as *mut SioInfo;
             (*sio).playerCount = gRfu.playerCount;
-            i = 0;
-            while i < RFU_CHILD_MAX as i32 {
+            for i in 0..(RFU_CHILD_MAX as i32) {
                 (*sio).linkPlayerIdx[i] = gRfu.linkPlayerIdx[i];
-                i += 1;
             }
             memcpy(
                 (*sio).linkPlayers.as_mut_ptr() as *mut u8,
@@ -1992,12 +1804,11 @@ pub(crate) unsafe extern "C" fn Task_PlayerExchangeUpdate(taskId: u8) {
                 140,
             );
             if SendBlock(0, gBlockSendBuffer.as_mut_ptr() as *mut c_void, 160) != 0 {
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
             break 'l1;
         }
         if sw1 == 5 {
-            fall = true;
             if IsLinkTaskFinished() != 0 && GetBlockReceivedStatus() as i32 & 1 != 0 {
                 {
                     {
@@ -2013,15 +1824,13 @@ pub(crate) unsafe extern "C" fn Task_PlayerExchangeUpdate(taskId: u8) {
                 ResetBlockReceivedFlag(0);
                 gRfu.playerExchangeActive = FALSE;
                 if gRfu.newChildQueue != 0 {
-                    i = 0;
-                    while i < RFU_CHILD_MAX as i32 {
+                    for i in 0..(RFU_CHILD_MAX as i32) {
                         if shr_i32(gRfu.newChildQueue as i32, i as u32) & 1 != 0 {
                             gRfu.nextChildBits = shl_i32(1, i as u32) as u8;
                             gRfu.newChildQueue ^= shl_i32(1, i as u32) as u8;
                             gRfu.playerExchangeActive = TRUE;
                             break;
                         }
-                        i += 1;
                     }
                 }
                 DestroyTask(taskId);
@@ -2030,39 +1839,37 @@ pub(crate) unsafe extern "C" fn Task_PlayerExchangeUpdate(taskId: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_PlayerExchangeChat(taskId: u8) {
+pub(crate) unsafe fn Task_PlayerExchangeChat(taskId: u8) {
     if gRfu.status == RFU_STATUS_FATAL_ERROR || gRfu.status == RFU_STATUS_CONNECTION_ERROR {
         DestroyTask(taskId);
     }
-    match gTasks[taskId].data[0] {
+    match task_get(taskId, tState) {
         0 => {
             if gRfu.playerCount != 0 {
                 LocalLinkPlayerToBlock();
                 SendBlock(0, gBlockSendBuffer.as_mut_ptr() as *mut c_void, 60);
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
         1 => {
             if IsLinkTaskFinished() != 0 {
-                gTasks[taskId].data[0] += 1;
+                task_set(taskId, tState, task_get(taskId, tState) + 1);
             }
         }
-        2 => {
-            if GetBlockReceivedStatus() as i32 & 1 != 0 {
-                ReceiveRfuLinkPlayers(gBlockRecvBuffer.as_mut_ptr() as *mut SioInfo);
-                ResetBlockReceivedFlag(0);
-                gReceivedRemoteLinkPlayers = 1;
-                DestroyTask(taskId);
-            }
+        2 if GetBlockReceivedStatus() as i32 & 1 != 0 => {
+            ReceiveRfuLinkPlayers(gBlockRecvBuffer.as_mut_ptr() as *mut SioInfo);
+            ResetBlockReceivedFlag(0);
+            gReceivedRemoteLinkPlayers = 1;
+            DestroyTask(taskId);
         }
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn RfuCheckErrorStatus() {
+unsafe fn RfuCheckErrorStatus() {
     if (&raw mut gRfu.errorState).read_volatile() == RFU_ERROR_STATE_OCCURRED
         && (&raw mut lman.childClockSlave_flag).read_volatile() == 0
     {
-        if gMain.callback2 == Some(CB2_MysteryGiftEReader as unsafe extern "C" fn())
+        if gMain.callback2 == Some(CB2_MysteryGiftEReader as unsafe fn())
             || (*lman.init_param).mboot_flag != 0
         {
             gWirelessCommType = 2;
@@ -2089,15 +1896,14 @@ pub(crate) unsafe extern "C" fn RfuCheckErrorStatus() {
         RfuSetErrorParams(28672);
     }
 }
-pub(crate) unsafe extern "C" fn RfuMain1_UnionRoom() {
+unsafe fn RfuMain1_UnionRoom() {
     if lman.parent_child == MODE_PARENT {
         rfu_REQ_recvData();
         rfu_waitREQComplete();
         rfu_LMAN_REQ_sendData(FALSE);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuMain1() -> u32 {
+pub unsafe fn RfuMain1() -> u32 {
     let mut retval: u32 = FALSE as u32;
     gRfu.parentId = 0;
     rfu_LMAN_manager_entity(Random2() as u32);
@@ -2115,10 +1921,9 @@ pub unsafe extern "C" fn RfuMain1() -> u32 {
             _ => {}
         }
     }
-    return retval;
+    retval
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuMain2() -> u32 {
+pub unsafe fn RfuMain2() -> u32 {
     let mut retval: u32 = FALSE as u32;
     if gRfu.isShuttingDown == 0 {
         if gRfu.parentChild == MODE_PARENT {
@@ -2126,16 +1931,15 @@ pub unsafe extern "C" fn RfuMain2() -> u32 {
         }
         RfuCheckErrorStatus();
     }
-    return retval;
+    retval
 }
-pub(crate) unsafe extern "C" fn SetHostRfuUsername() {
+unsafe fn SetHostRfuUsername() {
     StringCopy(
         gHostRfuUsername.as_mut_ptr(),
         (*gSaveBlock2Ptr).playerName.as_mut_ptr(),
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ResetHostRfuGameData() {
+pub unsafe fn ResetHostRfuGameData() {
     memset(
         (&raw mut gHostRfuGameData).cast::<RfuGameData>() as *mut u8,
         0,
@@ -2143,8 +1947,7 @@ pub unsafe extern "C" fn ResetHostRfuGameData() {
     );
     InitHostRfuGameData((&raw mut gHostRfuGameData).cast::<RfuGameData>(), 0, 0, 0);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetHostRfuGameData(activity: u8, partnerInfo: u32, startedActivity: u32) {
+pub unsafe fn SetHostRfuGameData(activity: u8, partnerInfo: u32, startedActivity: u32) {
     InitHostRfuGameData(
         (&raw mut gHostRfuGameData).cast::<RfuGameData>(),
         activity,
@@ -2152,36 +1955,30 @@ pub unsafe extern "C" fn SetHostRfuGameData(activity: u8, partnerInfo: u32, star
         partnerInfo as i32,
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetHostRfuWonderFlags(hasNews: u32, hasCard: u32) {
+pub unsafe fn SetHostRfuWonderFlags(hasNews: u32, hasCard: u32) {
     gHostRfuGameData.compatibility.set_hasNews(hasNews as u16);
     gHostRfuGameData.compatibility.set_hasCard(hasCard as u16);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetTradeBoardRegisteredMonInfo(r#type: u32, species: u32, level: u32) {
+pub unsafe fn SetTradeBoardRegisteredMonInfo(r#type: u32, species: u32, level: u32) {
     (*gHostRfuGameData).set_tradeType(r#type as u16);
     (*gHostRfuGameData).set_tradeSpecies(species as u16);
     (*gHostRfuGameData).set_tradeLevel(level as u8);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetLinkPlayerInfoFlags(playerId: i32) -> u8 {
+pub unsafe fn GetLinkPlayerInfoFlags(playerId: i32) -> u8 {
     let mut retval: u8 = PINFO_ACTIVE_FLAG;
     retval |= gLinkPlayers[playerId].gender << 3;
     retval |= gLinkPlayers[playerId].trainerId as u8 & PINFO_TID_MASK;
-    return retval;
+    retval
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetOtherPlayersInfoFlags() {
-    let mut data: *mut RfuGameData = (&raw mut gHostRfuGameData).cast::<RfuGameData>();
-    let mut i: i32 = 0;
-    i = 1;
+pub unsafe fn GetOtherPlayersInfoFlags() {
+    let data: *mut RfuGameData = (&raw mut gHostRfuGameData).cast::<RfuGameData>();
+    let mut i: i32 = 1;
     while i < GetLinkPlayerCount() as i32 {
         (*data).partnerInfo[i - 1] = GetLinkPlayerInfoFlags(i);
         i += 1;
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateGameData_GroupLockedIn(startedActivity: u8) {
+pub unsafe fn UpdateGameData_GroupLockedIn(startedActivity: u8) {
     (*gHostRfuGameData).set_startedActivity(startedActivity);
     rfu_REQ_configGameData(
         0,
@@ -2190,12 +1987,7 @@ pub unsafe extern "C" fn UpdateGameData_GroupLockedIn(startedActivity: u8) {
         gHostRfuUsername.as_mut_ptr(),
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn UpdateGameData_SetActivity(
-    activity: u8,
-    partnerInfo: u32,
-    startedActivity: u32,
-) {
+pub unsafe fn UpdateGameData_SetActivity(activity: u8, partnerInfo: u32, startedActivity: u32) {
     if activity != ACTIVITY_NONE {
         SetHostRfuGameData(activity, partnerInfo, startedActivity);
     }
@@ -2206,9 +1998,7 @@ pub unsafe extern "C" fn UpdateGameData_SetActivity(
         gHostRfuUsername.as_mut_ptr(),
     );
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn SetUnionRoomChatPlayerData(numPlayers: u32) {
-    let mut i: i32 = 0;
+pub unsafe fn SetUnionRoomChatPlayerData(numPlayers: u32) {
     let mut numConnectedChildren: u32 = 0;
     let mut partnerInfo: u32 = 0;
     let mut slots: i32 = 0;
@@ -2216,8 +2006,7 @@ pub unsafe extern "C" fn SetUnionRoomChatPlayerData(numPlayers: u32) {
         numConnectedChildren = 0;
         partnerInfo = 0;
         slots = gRfu.parentSlots as i32 ^ gRfu.disconnectSlots as i32;
-        i = 0;
-        while i < RFU_CHILD_MAX as i32 {
+        for i in 0..(RFU_CHILD_MAX as i32) {
             if shr_i32(slots, i as u32) & 1 != 0 {
                 partnerInfo |= shl_u32(
                     PINFO_ACTIVE_FLAG as u32
@@ -2230,13 +2019,11 @@ pub unsafe extern "C" fn SetUnionRoomChatPlayerData(numPlayers: u32) {
                     break;
                 }
             }
-            i += 1;
         }
         UpdateGameData_SetActivity(69, partnerInfo, FALSE as u32);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuSetErrorParams(errorInfo: u32) {
+pub unsafe fn RfuSetErrorParams(errorInfo: u32) {
     if (&raw mut gRfu.errorState).read_volatile() == RFU_ERROR_STATE_NONE {
         gRfu.errorParam0 = lman.param[0];
         gRfu.errorParam1 = lman.param[1];
@@ -2244,26 +2031,24 @@ pub unsafe extern "C" fn RfuSetErrorParams(errorInfo: u32) {
         volatile_write(&raw mut gRfu.errorState, RFU_ERROR_STATE_OCCURRED);
     }
 }
-pub(crate) unsafe extern "C" fn ResetErrorState() {
+unsafe fn ResetErrorState() {
     volatile_write(&raw mut gRfu.errorState, RFU_ERROR_STATE_NONE);
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuSetIgnoreError(enable: u32) {
+pub unsafe fn RfuSetIgnoreError(enable: u32) {
     if enable == 0 {
         volatile_write(&raw mut gRfu.errorState, RFU_ERROR_STATE_NONE);
     } else {
         volatile_write(&raw mut gRfu.errorState, RFU_ERROR_STATE_IGNORE);
     }
 }
-pub(crate) unsafe extern "C" fn DisconnectNewChild() {
+pub(crate) unsafe fn DisconnectNewChild() {
     SendDisconnectCommand(lman.acceptSlot_flag as u32, RFU_DISCONNECT_ERROR as u32);
     gRfu.callback = None;
 }
-pub(crate) unsafe extern "C" fn StartDisconnectNewChild() {
+unsafe fn StartDisconnectNewChild() {
     gRfu.callback = Some(DisconnectNewChild);
 }
-pub(crate) unsafe extern "C" fn LinkManagerCB_Parent(msg: u8, paramCount: u8) {
-    let mut i: u8 = 0;
+pub(crate) unsafe fn LinkManagerCB_Parent(msg: u8, paramCount: u8) {
     let mut disconnectFlag: u8 = 0;
     match msg {
         LMAN_MSG_INITIALIZE_COMPLETED => {
@@ -2272,10 +2057,9 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_Parent(msg: u8, paramCount: u8) {
         LMAN_MSG_NEW_CHILD_CONNECT_DETECTED => {}
         LMAN_MSG_NEW_CHILD_CONNECT_ACCEPTED => {
             ParentResetChildRecvMetadata(lman.param[0] as i32);
-            i = 0;
-            while i < RFU_CHILD_MAX {
+            for i in 0..RFU_CHILD_MAX {
                 if shr_i32(lman.param[0] as i32, i as u32) & 1 != 0 {
-                    let mut data: *mut RfuGameData = (*gRfuLinkStatus).partner[i].gname.as_mut_ptr()
+                    let data: *mut RfuGameData = (*gRfuLinkStatus).partner[i].gname.as_mut_ptr()
                         as *mut c_void
                         as *mut RfuGameData;
                     if (*data).activity() == (*GetHostRfuGameData()).activity() {
@@ -2291,7 +2075,6 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_Parent(msg: u8, paramCount: u8) {
                         disconnectFlag |= shl_i32(1, i as u32) as u8;
                     }
                 }
-                i += 1;
             }
             if disconnectFlag != 0 {
                 rfu_REQ_disconnect(disconnectFlag);
@@ -2346,36 +2129,30 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_Parent(msg: u8, paramCount: u8) {
         _ => {}
     }
 }
-pub(crate) unsafe extern "C" fn LinkManagerCB_Child(msg: u8, unused1: u8) {
+pub(crate) unsafe fn LinkManagerCB_Child(msg: u8, unused1: u8) {
     'l1: {
         let sw1: u8 = msg;
         let mut fall = false;
         if sw1 == LMAN_MSG_INITIALIZE_COMPLETED {
-            fall = true;
             gRfu.state = RFUSTATE_CHILD_CONNECT;
             break 'l1;
         }
         if sw1 == LMAN_MSG_PARENT_FOUND {
-            fall = true;
             gRfu.parentId = lman.param[0] as u8;
             break 'l1;
         }
         if sw1 == LMAN_MSG_SEARCH_PARENT_PERIOD_EXPIRED {
-            fall = true;
             break 'l1;
         }
         if sw1 == LMAN_MSG_CONNECT_PARENT_SUCCESSED {
-            fall = true;
             volatile_write(&raw mut gRfu.childSlot, lman.param[0] as u8);
             break 'l1;
         }
         if sw1 == LMAN_MSG_CONNECT_PARENT_FAILED {
-            fall = true;
             RfuSetStatus(RFU_STATUS_CONNECTION_ERROR, msg as u16);
             break 'l1;
         }
         if sw1 == LMAN_MSG_CHILD_NAME_SEND_COMPLETED {
-            fall = true;
             gRfu.state = RFUSTATE_CHILD_TRY_JOIN;
             gRfu.leaveGroupStatus = RFU_STATUS_OK;
             gRfu.childRecvStatus = RFU_STATUS_OK;
@@ -2394,7 +2171,6 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_Child(msg: u8, unused1: u8) {
             break 'l1;
         }
         if sw1 == LMAN_MSG_CHILD_NAME_SEND_FAILED_AND_DISCONNECTED {
-            fall = true;
             RfuSetStatus(RFU_STATUS_CONNECTION_ERROR, msg as u16);
             break 'l1;
         }
@@ -2406,7 +2182,6 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_Child(msg: u8, unused1: u8) {
             }
         }
         if fall || sw1 == LMAN_MSG_LINK_RECOVERY_FAILED_AND_DISCONNECTED {
-            fall = true;
             if gRfu.linkLossRecoveryState != 2 {
                 gRfu.linkLossRecoveryState = 4;
             }
@@ -2424,7 +2199,6 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_Child(msg: u8, unused1: u8) {
             break 'l1;
         }
         if sw1 == LMAN_MSG_LINK_LOSS_DETECTED_AND_START_RECOVERY {
-            fall = true;
             gRfu.linkLossRecoveryState = 1;
             Debug_PrintString(
                 sASCII_LinkLossRecoveryNow.as_ptr().cast_mut() as *mut c_void,
@@ -2434,24 +2208,20 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_Child(msg: u8, unused1: u8) {
             break 'l1;
         }
         if sw1 == LMAN_MSG_LINK_RECOVERY_SUCCESSED {
-            fall = true;
             gRfu.linkLossRecoveryState = 3;
             volatile_write(&raw mut gRfu.linkRecovered, TRUE);
             break 'l1;
         }
         if sw1 == 52 {
-            fall = true;
             break 'l1;
         }
         if sw1 == LMAN_MSG_RFU_POWER_DOWN
             || sw1 == LMAN_MSG_MANAGER_STOPPED
             || sw1 == LMAN_MSG_MANAGER_FORCED_STOPPED_AND_RFU_RESET
         {
-            fall = true;
             break 'l1;
         }
         if sw1 == LMAN_MSG_LMAN_API_ERROR_RETURN {
-            fall = true;
             RfuSetStatus(RFU_STATUS_FATAL_ERROR, msg as u16);
             RfuSetErrorParams(msg as u32);
             gRfu.isShuttingDown = TRUE;
@@ -2462,7 +2232,6 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_Child(msg: u8, unused1: u8) {
             || sw1 == LMAN_MSG_CLOCK_SLAVE_MS_CHANGE_ERROR_BY_DMA
             || sw1 == LMAN_MSG_RFU_FATAL_ERROR
         {
-            fall = true;
             RfuSetStatus(RFU_STATUS_FATAL_ERROR, msg as u16);
             RfuSetErrorParams(msg as u32);
             volatile_write(&raw mut gRfu.parentFinished, TRUE);
@@ -2470,52 +2239,43 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_Child(msg: u8, unused1: u8) {
         }
     }
 }
-pub(crate) unsafe extern "C" fn ParentResetChildRecvMetadata(slot: i32) {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < RFU_CHILD_MAX as i32 {
+unsafe fn ParentResetChildRecvMetadata(slot: i32) {
+    for i in 0..(RFU_CHILD_MAX as i32) {
         if shr_i32(slot, i as u32) & 1 != 0 {
             gRfu.numChildRecvErrors[i] = 0;
             gRfu.childRecvIds[i] = 0xFF;
         }
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn GetNewChildrenInUnionRoomChat(emptySlotMask: i32) -> u8 {
+unsafe fn GetNewChildrenInUnionRoomChat(emptySlotMask: i32) -> u8 {
     let mut ret: u8 = 0;
-    let mut i: u8 = 0;
-    i = 0;
-    while i < RFU_CHILD_MAX {
+    for i in 0..RFU_CHILD_MAX {
         if shr_i32(emptySlotMask, i as u32) & 1 != 0 {
-            let mut data: *mut RfuGameData =
+            let data: *mut RfuGameData =
                 (*gRfuLinkStatus).partner[i].gname.as_mut_ptr() as *mut c_void as *mut RfuGameData;
             if (*data).activity() == 69 {
                 ret |= shl_i32(1, i as u32) as u8;
             }
         }
-        i += 1;
     }
-    return ret;
+    ret
 }
-pub(crate) unsafe extern "C" fn LinkManagerCB_UnionRoom(msg: u8, paramCount: u8) {
+pub(crate) unsafe fn LinkManagerCB_UnionRoom(msg: u8, paramCount: u8) {
     let mut acceptSlot: u8 = 0;
     'l1: {
         let sw1: u8 = msg;
         let mut fall = false;
         if sw1 == LMAN_MSG_INITIALIZE_COMPLETED {
-            fall = true;
             gRfu.state = RFUSTATE_UR_CONNECT;
             break 'l1;
         }
         if sw1 == LMAN_MSG_NEW_CHILD_CONNECT_DETECTED {
-            fall = true;
             RfuSetStatus(RFU_STATUS_NEW_CHILD_DETECTED, 0);
             break 'l1;
         }
         if sw1 == LMAN_MSG_NEW_CHILD_CONNECT_ACCEPTED {
-            fall = true;
             if (*GetHostRfuGameData()).activity() == 69 && gRfu.stopNewConnections == 0 {
-                let mut newChildren: u8 = GetNewChildrenInUnionRoomChat(lman.param[0] as i32);
+                let newChildren: u8 = GetNewChildrenInUnionRoomChat(lman.param[0] as i32);
                 if newChildren != 0 {
                     acceptSlot = shl_i32(1, Rfu_GetIndexOfNewestChild(newChildren) as u32) as u8;
                     if gRfu.newChildQueue == 0 && gRfu.playerExchangeActive == 0 {
@@ -2538,15 +2298,12 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_UnionRoom(msg: u8, paramCount: u8)
             break 'l1;
         }
         if sw1 == LMAN_MSG_NEW_CHILD_CONNECT_REJECTED {
-            fall = true;
             break 'l1;
         }
         if sw1 == LMAN_MSG_SEARCH_CHILD_PERIOD_EXPIRED {
-            fall = true;
             break 'l1;
         }
         if sw1 == LMAN_MSG_END_WAIT_CHILD_NAME {
-            fall = true;
             if (*GetHostRfuGameData()).activity() != 69 && lman.acceptCount > 1 {
                 acceptSlot =
                     shl_i32(1, Rfu_GetIndexOfNewestChild(lman.param[0] as u8) as u32) as u8;
@@ -2560,21 +2317,17 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_UnionRoom(msg: u8, paramCount: u8)
             break 'l1;
         }
         if sw1 == LMAN_MSG_PARENT_FOUND {
-            fall = true;
             gRfu.parentId = lman.param[0] as u8;
             break 'l1;
         }
         if sw1 == LMAN_MSG_SEARCH_PARENT_PERIOD_EXPIRED {
-            fall = true;
             break 'l1;
         }
         if sw1 == LMAN_MSG_CONNECT_PARENT_SUCCESSED {
-            fall = true;
             volatile_write(&raw mut gRfu.childSlot, lman.param[0] as u8);
             break 'l1;
         }
         if sw1 == LMAN_MSG_CONNECT_PARENT_FAILED {
-            fall = true;
             gRfu.state = RFUSTATE_UR_CONNECT_END;
             if gRfu.connectParentFailures < 2 {
                 gRfu.connectParentFailures += 1;
@@ -2585,7 +2338,6 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_UnionRoom(msg: u8, paramCount: u8)
             break 'l1;
         }
         if sw1 == LMAN_MSG_CHILD_NAME_SEND_COMPLETED {
-            fall = true;
             gRfu.state = RFUSTATE_UR_PLAYER_EXCHANGE;
             RfuSetStatus(RFU_STATUS_CHILD_SEND_COMPLETE, 0);
             rfu_setRecvBuffer(
@@ -2597,19 +2349,16 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_UnionRoom(msg: u8, paramCount: u8)
             break 'l1;
         }
         if sw1 == LMAN_MSG_CHILD_NAME_SEND_FAILED_AND_DISCONNECTED {
-            fall = true;
             RfuSetStatus(RFU_STATUS_CONNECTION_ERROR, msg as u16);
             break 'l1;
         }
         if sw1 == LMAN_MSG_LINK_LOSS_DETECTED_AND_START_RECOVERY {
-            fall = true;
             if lman.acceptSlot_flag as i32 & lman.param[0] as i32 != 0 {
                 gRfu.linkLossRecoveryState = 1;
             }
             break 'l1;
         }
         if sw1 == LMAN_MSG_LINK_RECOVERY_SUCCESSED {
-            fall = true;
             gRfu.linkLossRecoveryState = 3;
             if (*gRfuLinkStatus).parentChild == MODE_CHILD {
                 volatile_write(&raw mut gRfu.linkRecovered, TRUE);
@@ -2621,7 +2370,6 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_UnionRoom(msg: u8, paramCount: u8)
             gRfu.linkLossRecoveryState = 2;
         }
         if fall || sw1 == LMAN_MSG_LINK_RECOVERY_FAILED_AND_DISCONNECTED {
-            fall = true;
             if gRfu.linkLossRecoveryState != 2 {
                 gRfu.linkLossRecoveryState = 4;
             }
@@ -2650,7 +2398,6 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_UnionRoom(msg: u8, paramCount: u8)
             break 'l1;
         }
         if sw1 == LMAN_MSG_LINK_DISCONNECTED_BY_USER {
-            fall = true;
             gRfu.disconnectSlots = 0;
             break 'l1;
         }
@@ -2658,11 +2405,9 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_UnionRoom(msg: u8, paramCount: u8)
             || sw1 == LMAN_MSG_MANAGER_STOPPED
             || sw1 == LMAN_MSG_MANAGER_FORCED_STOPPED_AND_RFU_RESET
         {
-            fall = true;
             break 'l1;
         }
         if sw1 == LMAN_MSG_LMAN_API_ERROR_RETURN {
-            fall = true;
             RfuSetStatus(RFU_STATUS_FATAL_ERROR, msg as u16);
             RfuSetErrorParams(msg as u32);
             gRfu.isShuttingDown = TRUE;
@@ -2673,7 +2418,6 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_UnionRoom(msg: u8, paramCount: u8)
             || sw1 == LMAN_MSG_CLOCK_SLAVE_MS_CHANGE_ERROR_BY_DMA
             || sw1 == LMAN_MSG_RFU_FATAL_ERROR
         {
-            fall = true;
             RfuSetErrorParams(msg as u32);
             RfuSetStatus(RFU_STATUS_FATAL_ERROR, msg as u16);
             volatile_write(&raw mut gRfu.parentFinished, FALSE);
@@ -2681,22 +2425,18 @@ pub(crate) unsafe extern "C" fn LinkManagerCB_UnionRoom(msg: u8, paramCount: u8)
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuSetNormalDisconnectMode() {
+pub unsafe fn RfuSetNormalDisconnectMode() {
     gRfu.disconnectMode = RFU_DISCONNECT_NORMAL;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuSetStatus(status: u8, errorInfo: u16) {
+pub unsafe fn RfuSetStatus(status: u8, errorInfo: u16) {
     gRfu.status = status;
     gRfu.errorInfo = errorInfo;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuGetStatus() -> u8 {
-    return gRfu.status;
+pub unsafe fn RfuGetStatus() -> u8 {
+    gRfu.status
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuHasErrored() -> u32 {
-    let mut status: u32 = RfuGetStatus() as u32;
+pub unsafe fn RfuHasErrored() -> u32 {
+    let status: u32 = RfuGetStatus() as u32;
     if status == RFU_STATUS_FATAL_ERROR as u32 || status == RFU_STATUS_CONNECTION_ERROR as u32 {
         return TRUE as u32;
     } else {
@@ -2704,23 +2444,20 @@ pub unsafe extern "C" fn RfuHasErrored() -> u32 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_IsPlayerExchangeActive() -> u32 {
-    return gRfu.playerExchangeActive as u32;
+pub unsafe fn Rfu_IsPlayerExchangeActive() -> u32 {
+    gRfu.playerExchangeActive as u32
+}
+pub unsafe fn Rfu_IsMaster() -> u8 {
+    gRfu.parentChild
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_IsMaster() -> u8 {
-    return gRfu.parentChild;
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RfuVSync() {
+pub unsafe fn RfuVSync() {
     rfu_LMAN_syncVBlank();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn ClearRecvCommands() {
+pub unsafe fn ClearRecvCommands() {
     {
         {
             let mut tmp: u32 = 0;
@@ -2733,13 +2470,12 @@ pub unsafe extern "C" fn ClearRecvCommands() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn VBlank_RfuIdle() {
+pub(crate) unsafe fn VBlank_RfuIdle() {
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
 }
-pub(crate) unsafe extern "C" fn Debug_RfuIdle() {
-    let mut i: i32 = 0;
+unsafe fn Debug_RfuIdle() {
     ResetSpriteData();
     FreeAllSpritePalettes();
     ResetTasks();
@@ -2750,10 +2486,8 @@ pub(crate) unsafe extern "C" fn Debug_RfuIdle() {
         SetWirelessCommType1();
         OpenLink();
         SeedRng(gMain.vblankCounter2 as u16);
-        i = 0;
-        while i < TRAINER_ID_LENGTH as i32 {
+        for i in 0..(TRAINER_ID_LENGTH as i32) {
             (*gSaveBlock2Ptr).playerTrainerId[i] = (Random() as i32 % 256) as u8;
-            i += 1;
         }
         SetGpuReg(REG_OFFSET_DISPCNT, 5440);
         RunTasks();
@@ -2764,30 +2498,26 @@ pub(crate) unsafe extern "C" fn Debug_RfuIdle() {
         SetMainCallback2(Some(CB2_RfuIdle));
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsUnionRoomListenTaskActive() -> u32 {
-    return FuncIsActiveTask(Some(Task_UnionRoomListen)) as u32;
+pub unsafe fn IsUnionRoomListenTaskActive() -> u32 {
+    FuncIsActiveTask(Some(Task_UnionRoomListen)) as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateTask_RfuIdle() {
+pub unsafe fn CreateTask_RfuIdle() {
     if FuncIsActiveTask(Some(Task_Idle)) == 0 {
         gRfu.idleTaskId = CreateTask(Some(Task_Idle), 0);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn DestroyTask_RfuIdle() {
+pub unsafe fn DestroyTask_RfuIdle() {
     if FuncIsActiveTask(Some(Task_Idle)) == TRUE {
         DestroyTask(gRfu.idleTaskId);
     }
 }
-pub(crate) unsafe extern "C" fn CB2_RfuIdle() {
+pub(crate) unsafe fn CB2_RfuIdle() {
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
     UpdatePaletteFade();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitializeRfuLinkManager_LinkLeader(groupMax: u32) {
+pub unsafe fn InitializeRfuLinkManager_LinkLeader(groupMax: u32) {
     gRfu.parentChild = MODE_PARENT;
     SetHostRfuUsername();
     rfu_LMAN_initializeManager(Some(LinkManagerCB_Parent), None);
@@ -2795,15 +2525,13 @@ pub unsafe extern "C" fn InitializeRfuLinkManager_LinkLeader(groupMax: u32) {
     sRfuReqConfig.availSlot_flag = sAvailSlots[groupMax - 1] as u16;
     CreateTask_ParentSearchForChildren();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitializeRfuLinkManager_JoinGroup() {
+pub unsafe fn InitializeRfuLinkManager_JoinGroup() {
     gRfu.parentChild = MODE_CHILD;
     SetHostRfuUsername();
     rfu_LMAN_initializeManager(Some(LinkManagerCB_Child), Some(MSCCallback_Child));
     CreateTask_ChildSearchForParent();
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn InitializeRfuLinkManager_EnterUnionRoom() {
+pub unsafe fn InitializeRfuLinkManager_EnterUnionRoom() {
     gRfu.parentChild = MODE_P_C_SWITCH;
     SetHostRfuUsername();
     rfu_LMAN_initializeManager(Some(LinkManagerCB_UnionRoom), None);
@@ -2812,16 +2540,14 @@ pub unsafe extern "C" fn InitializeRfuLinkManager_EnterUnionRoom() {
     sRfuReqConfig.linkRecovery_period = 600;
     gRfu.searchTaskId = CreateTask(Some(Task_UnionRoomListen), 1);
 }
-pub(crate) unsafe extern "C" fn ReadU16(ptr: *mut c_void) -> u16 {
-    let mut ptr_: *mut u8 = ptr as *mut u8;
-    return (*ptr_.at(1) as u16) << 8 | *ptr_ as u16;
+unsafe fn ReadU16(ptr: *mut c_void) -> u16 {
+    let ptr_: *mut u8 = ptr as *mut u8;
+    (*ptr_.at(1) as u16) << 8 | *ptr_ as u16
 }
-pub(crate) unsafe extern "C" fn GetPartnerIndexByNameAndTrainerID(name: *mut u8, id: u16) -> u8 {
-    let mut i: u8 = 0;
+unsafe fn GetPartnerIndexByNameAndTrainerID(name: *mut u8, id: u16) -> u8 {
     let mut idx: u8 = 0xFF;
-    i = 0;
-    while i < RFU_CHILD_MAX {
-        let mut trainerId: u16 = ReadU16(
+    for i in 0..RFU_CHILD_MAX {
+        let trainerId: u16 = ReadU16(
             (*((*gRfuLinkStatus).partner[i].gname.as_mut_ptr() as *mut RfuGameData))
                 .compatibility
                 .playerTrainerId
@@ -2836,11 +2562,10 @@ pub(crate) unsafe extern "C" fn GetPartnerIndexByNameAndTrainerID(name: *mut u8,
                 break;
             }
         }
-        i += 1;
     }
-    return idx;
+    idx
 }
-pub(crate) unsafe extern "C" fn RfuReqDisconnectSlot(slot: u32) {
+unsafe fn RfuReqDisconnectSlot(slot: u32) {
     rfu_REQ_disconnect(slot as u8);
     rfu_waitREQComplete();
     gRfu.parentSlots &= !(slot as u8);
@@ -2852,59 +2577,55 @@ pub(crate) unsafe extern "C" fn RfuReqDisconnectSlot(slot: u32) {
     );
     gRfu.parentSendSlot = Rfu_GetIndexOfNewestChild(gRfu.parentSlots) as u8;
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn RequestDisconnectSlotByTrainerNameAndId(name: *mut u8, id: u16) {
-    let mut index: u8 = GetPartnerIndexByNameAndTrainerID(name, id);
+pub unsafe fn RequestDisconnectSlotByTrainerNameAndId(name: *mut u8, id: u16) {
+    let index: u8 = GetPartnerIndexByNameAndTrainerID(name, id);
     if index != 0xFF {
         RfuReqDisconnectSlot(shl_i32(1, index as u32) as u32);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn Rfu_DisconnectPlayerById(playerIdx: u32) {
+pub unsafe fn Rfu_DisconnectPlayerById(playerIdx: u32) {
     if playerIdx != 0 {
-        let mut i: i32 = 0;
         let mut toDisconnect: u8 = 0;
-        i = 0;
-        while i < RFU_CHILD_MAX as i32 {
+        for i in 0..(RFU_CHILD_MAX as i32) {
             if gRfu.linkPlayerIdx[i] as u32 == playerIdx
                 && shr_i32(gRfu.parentSlots as i32, i as u32) & 1 != 0
             {
                 toDisconnect |= shl_i32(1, i as u32) as u8;
             }
-            i += 1;
         }
         if toDisconnect != 0 {
             SendDisconnectCommand(toDisconnect as u32, RFU_DISCONNECT_NORMAL as u32);
         }
     }
 }
-pub(crate) unsafe extern "C" fn Task_SendDisconnectCommand(taskId: u8) {
+pub(crate) unsafe fn Task_SendDisconnectCommand(taskId: u8) {
     if gSendCmd[0] == 0 && gRfu.playerExchangeActive == 0 {
         RfuPrepareSendBuffer(RFUCMD_DISCONNECT);
-        gSendCmd[1] = gTasks[taskId].data[0] as u16;
-        gSendCmd[2] = gTasks[taskId].data[1] as u16;
-        gRfu.playerCount -= sPlayerBitsToCount[gTasks[taskId].data[0]];
+        gSendCmd[1] = task_get(taskId, tDisconnectPlayers) as u16;
+        gSendCmd[2] = task_get(taskId, tDisconnectMode) as u16;
+        gRfu.playerCount -= sPlayerBitsToCount[task_get(taskId, tDisconnectPlayers)];
         gSendCmd[3] = gRfu.playerCount as u16;
         DestroyTask(taskId);
     }
 }
-pub(crate) unsafe extern "C" fn SendDisconnectCommand(
-    playersToDisconnect: u32,
-    disconnectMode: u32,
-) {
+unsafe fn SendDisconnectCommand(playersToDisconnect: u32, disconnectMode: u32) {
     let mut taskId: u8 = FindTaskIdByFunc(Some(Task_SendDisconnectCommand));
     if taskId == TASK_NONE {
         taskId = CreateTask(Some(Task_SendDisconnectCommand), 5);
-        gTasks[taskId].data[0] = playersToDisconnect as i16;
+        task_set(taskId, tDisconnectPlayers, playersToDisconnect as i16);
     } else {
-        gTasks[taskId].data[0] |= playersToDisconnect as i16;
+        task_set(
+            taskId,
+            tDisconnectPlayers,
+            task_get(taskId, tDisconnectPlayers) | (playersToDisconnect as i16),
+        );
     }
-    gTasks[taskId].data[1] = disconnectMode as i16;
+    task_set(taskId, tDisconnectMode, disconnectMode as i16);
 }
-pub(crate) unsafe extern "C" fn Task_RfuReconnectWithParent(taskId: u8) {
-    let mut data: *mut i16 = gTasks[taskId].data.as_mut_ptr();
+pub(crate) unsafe fn Task_RfuReconnectWithParent(taskId: u8) {
+    let data: *mut i16 = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     if CanTryReconnectParent() != 0 {
-        let mut id: u8 =
+        let id: u8 =
             GetPartnerIndexByNameAndTrainerID(data as *mut u8, ReadU16(data.at(8) as *mut c_void));
         if id != 0xFF {
             if (*gRfuLinkStatus).partner[id].slot != 0xFF {
@@ -2932,20 +2653,15 @@ pub(crate) unsafe extern "C" fn Task_RfuReconnectWithParent(taskId: u8) {
         DestroyTask(taskId);
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn CreateTask_RfuReconnectWithParent(name: *mut u8, trainerId: u16) {
-    let mut taskId: u8 = 0;
+pub unsafe fn CreateTask_RfuReconnectWithParent(name: *mut u8, trainerId: u16) {
     let mut data: *mut i16 = null_mut();
     gRfu.status = RFU_STATUS_OK;
-    taskId = CreateTask(Some(Task_RfuReconnectWithParent), 3);
-    data = gTasks[taskId].data.as_mut_ptr();
+    let taskId: u8 = CreateTask(Some(Task_RfuReconnectWithParent), 3);
+    data = (*gTasks.as_ptr())[taskId].data.as_mut_ptr();
     StringCopy(data as *mut u8, name);
     *data.at(8) = trainerId as i16;
 }
-pub(crate) unsafe extern "C" fn IsPartnerActivityIncompatible(
-    activity: i16,
-    partner: *mut RfuGameData,
-) -> u32 {
+unsafe fn IsPartnerActivityIncompatible(activity: i16, partner: *mut RfuGameData) -> u32 {
     if (*GetHostRfuGameData()).activity() == 69 {
         if (*partner).activity() != 69 {
             return TRUE as u32;
@@ -2953,7 +2669,7 @@ pub(crate) unsafe extern "C" fn IsPartnerActivityIncompatible(
     } else if (*partner).activity() != IN_UNION_ROOM {
         return TRUE as u32;
     } else if activity == 68 {
-        let mut original: *mut RfuGameData = &raw mut gRfu.parent;
+        let original: *mut RfuGameData = &raw mut gRfu.parent;
         if (*original).tradeSpecies() == SPECIES_EGG as u16 {
             if (*partner).tradeSpecies() == (*original).tradeSpecies() {
                 return FALSE as u32;
@@ -2967,27 +2683,27 @@ pub(crate) unsafe extern "C" fn IsPartnerActivityIncompatible(
             return TRUE as u32;
         }
     }
-    return FALSE as u32;
+    FALSE as u32
 }
-pub(crate) unsafe extern "C" fn Task_TryConnectToUnionRoomParent(taskId: u8) {
+pub(crate) unsafe fn Task_TryConnectToUnionRoomParent(taskId: u8) {
     if gRfu.status == RFU_STATUS_NEW_CHILD_DETECTED {
         DestroyTask(taskId);
     }
     if ({
-        gTasks[taskId].data[0] += 1;
-        gTasks[taskId].data[0]
+        task_set(taskId, 0, task_get(taskId, 0) + 1);
+        task_get(taskId, 0)
     }) > 300
     {
         RfuSetStatus(RFU_STATUS_CONNECTION_ERROR, 28672);
         DestroyTask(taskId);
     }
     if gRfu.parentId != 0 && lman.parent_child == 0x00 {
-        let mut trainerId: u16 =
+        let trainerId: u16 =
             ReadU16(gRfu.parent.compatibility.playerTrainerId.as_mut_ptr() as *mut c_void);
-        let mut id: u8 = GetPartnerIndexByNameAndTrainerID(gRfu.parentName.as_mut_ptr(), trainerId);
+        let id: u8 = GetPartnerIndexByNameAndTrainerID(gRfu.parentName.as_mut_ptr(), trainerId);
         if id != 0xFF {
             if IsPartnerActivityIncompatible(
-                gTasks[taskId].data[1],
+                task_get(taskId, tActivity),
                 (*gRfuLinkStatus).partner[id].gname.as_mut_ptr() as *mut c_void as *mut RfuGameData,
             ) == 0
             {
@@ -3004,14 +2720,7 @@ pub(crate) unsafe extern "C" fn Task_TryConnectToUnionRoomParent(taskId: u8) {
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn TryConnectToUnionRoomParent(
-    name: *mut u8,
-    parent: *mut RfuGameData,
-    activity: u8,
-) {
-    let mut taskId: u8 = 0;
-    let mut listenTaskId: u8 = 0;
+pub unsafe fn TryConnectToUnionRoomParent(name: *mut u8, parent: *mut RfuGameData, activity: u8) {
     gRfu.connectParentFailures = 0;
     gRfu.status = RFU_STATUS_OK;
     StringCopy(gRfu.parentName.as_mut_ptr(), name);
@@ -3021,21 +2730,20 @@ pub unsafe extern "C" fn TryConnectToUnionRoomParent(
         RFU_GAME_NAME_LENGTH,
     );
     rfu_LMAN_forceChangeSP();
-    taskId = CreateTask(Some(Task_TryConnectToUnionRoomParent), 2);
-    gTasks[taskId].data[1] = activity as i16;
-    listenTaskId = FindTaskIdByFunc(Some(Task_UnionRoomListen));
+    let taskId: u8 = CreateTask(Some(Task_TryConnectToUnionRoomParent), 2);
+    task_set(taskId, tActivity, activity as i16);
+    let listenTaskId: u8 = FindTaskIdByFunc(Some(Task_UnionRoomListen));
     if activity == 69 {
         if listenTaskId != TASK_NONE {
-            gTasks[listenTaskId].data[7] = TRUE as i16;
+            task_set(listenTaskId, tConnectingForChat, TRUE as i16);
         }
     } else {
         if listenTaskId != TASK_NONE {
-            gTasks[listenTaskId].data[7] = FALSE as i16;
+            task_set(listenTaskId, tConnectingForChat, FALSE as i16);
         }
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsRfuRecoveringFromLinkLoss() -> u8 {
+pub unsafe fn IsRfuRecoveringFromLinkLoss() -> u8 {
     if gRfu.linkLossRecoveryState == 1 {
         return TRUE;
     } else {
@@ -3043,38 +2751,30 @@ pub unsafe extern "C" fn IsRfuRecoveringFromLinkLoss() -> u8 {
     }
     #[allow(unreachable_code)]
     {
-        return 0;
+        0
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn IsRfuCommunicatingWithAllChildren() -> u32 {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < RFU_CHILD_MAX as i32 {
+pub unsafe fn IsRfuCommunicatingWithAllChildren() -> u32 {
+    for i in 0..(RFU_CHILD_MAX as i32) {
         if shr_i32(lman.acceptSlot_flag as i32, i as u32) & 1 != 0
             && gRfu.partnerSendStatuses[i] == RFU_STATUS_OK
         {
             return FALSE as u32;
         }
-        i += 1;
     }
-    return TRUE as u32;
+    TRUE as u32
 }
-pub(crate) unsafe extern "C" fn Debug_PrintEmpty() {
-    let mut i: i32 = 0;
-    i = 0;
-    while i < 20 {
+fn Debug_PrintEmpty() {
+    for i in 0..20i32 {
         Debug_PrintString(
             sASCII_30Spaces.as_ptr().cast_mut() as *mut c_void,
             0,
             i as u8,
         );
-        i += 1;
     }
 }
-pub(crate) unsafe extern "C" fn Debug_PrintStatus() {
+unsafe fn Debug_PrintStatus() {
     let mut i: i32 = 0;
-    let mut j: i32 = 0;
     Debug_PrintNum(GetBlockReceivedStatus() as u16, 28, 19, 2);
     Debug_PrintNum((*gRfuLinkStatus).connSlotFlag as u16, 20, 1, 1);
     Debug_PrintNum((*gRfuLinkStatus).linkLossSlotFlag as u16, 23, 1, 1);
@@ -3096,24 +2796,19 @@ pub(crate) unsafe extern "C" fn Debug_PrintStatus() {
             }
             i += 1;
         }
-        i = 0;
-        while i < RFU_CHILD_MAX as i32 {
-            j = 0;
-            while j < COMM_SLOT_LENGTH {
+        for i in 0..(RFU_CHILD_MAX as i32) {
+            for j in 0..COMM_SLOT_LENGTH {
                 Debug_PrintNum(
                     gRfu.childRecvBuffer[i][j] as u16,
                     j as u8 * 2,
                     i as u8 + 11,
                     2,
                 );
-                j += 1;
             }
-            i += 1;
         }
         Debug_PrintString(sASCII_NowSlot.as_ptr().cast_mut() as *mut c_void, 1, 15);
     } else if (*gRfuLinkStatus).connSlotFlag != 0 && (*gRfuLinkStatus).getNameFlag != 0 {
-        i = 0;
-        while i < RFU_CHILD_MAX as i32 {
+        for i in 0..(RFU_CHILD_MAX as i32) {
             Debug_PrintNum(0, 1, i as u8 + 3, 4);
             Debug_PrintString(
                 sASCII_15Spaces.as_ptr().cast_mut() as *mut c_void,
@@ -3125,7 +2820,6 @@ pub(crate) unsafe extern "C" fn Debug_PrintStatus() {
                 22,
                 i as u8 + 3,
             );
-            i += 1;
         }
         Debug_PrintNum(
             (*gRfuLinkStatus).partner[(&raw mut gRfu.childSlot).read_volatile()].serialNo,
@@ -3177,11 +2871,10 @@ pub(crate) unsafe extern "C" fn Debug_PrintStatus() {
         }
     }
 }
-pub(crate) unsafe extern "C" fn GetRfuSendQueueLength() -> u32 {
-    return (&raw mut gRfu.sendQueue.count).read_volatile() as u32;
+unsafe fn GetRfuSendQueueLength() -> u32 {
+    (&raw mut gRfu.sendQueue.count).read_volatile() as u32
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn GetRfuRecvQueueLength() -> u32 {
-    return (&raw mut gRfu.recvQueue.count).read_volatile() as u32;
+pub unsafe fn GetRfuRecvQueueLength() -> u32 {
+    (&raw mut gRfu.recvQueue.count).read_volatile() as u32
 }
-pub(crate) unsafe extern "C" fn Task_Idle(taskId: u8) {}
+pub(crate) unsafe fn Task_Idle(taskId: u8) {}
