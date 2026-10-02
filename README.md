@@ -41,6 +41,8 @@ ROM that runs on emulators.
 - [Roadmap](#roadmap)
 - [Credits and license](#credits-and-license)
 
+What changed in each version: [CHANGELOG.md](CHANGELOG.md).
+
 ---
 
 ## Status
